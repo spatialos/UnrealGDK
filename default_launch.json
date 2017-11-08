@@ -1,0 +1,48 @@
+{
+  "template": "small",
+  "world": {
+    "dimensions": {
+      "x_meters": 5000,
+      "z_meters": 5000
+    },
+    "chunk_edge_length_meters": 100,
+    "streaming_query_interval": 4,
+    "snapshots": {
+      "snapshot_write_period_seconds": 0
+    },
+    "legacy_flags": [
+      {
+        "name": "enable_grpc_receptionist_replacement",
+        "value": "true"
+      }
+    ]
+  },
+  "workers": [
+    {
+      "worker_type": "UnrealWorker",
+      "flags": [],
+      "load_balancing": {
+          "auto_hex_grid": {
+          "num_workers": 2
+        }
+      },
+      "permissions": [
+        {
+          "all": {}
+        }
+      ]
+    },
+    {
+      "worker_type": "UnrealClient",
+      "permissions": [
+        {
+          "all": {}
+        }
+      ]
+    },
+    {
+      "worker_type": "gsim",
+      "flags": []
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "build": {
+    "tasks_filename": "Game/Intermediate/Improbable/spatialos.unreal.client.build.json",
+    "generated_build_scripts_type": "unreal"
+  },
+  "bridge": {
+    "worker_attribute_set": {
+      "attributes": [
+        "UnrealClient"
+      ]
+    },
+    "entity_interest": {
+      "range_entity_interest": {
+        "radius": 2
+      }
+    },
+    "streaming_query": [],
+    "component_delivery": {
+      "default": "RELIABLE_ORDERED",
+      "checkout_all_initially": true
+    }
+  },
+  "external": {
+    "default": {
+      "run_type": "EXECUTABLE_ZIP",
+      "windows": {
+        "artifactName": "UnrealClient@Windows.zip",
+        "command": "./NUF/Binaries/Win64/NUF.exe",
+        "arguments": [
+          "+workerType",
+          "UnrealClient"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+package improbable.spawner;
+import "improbable/standard_library.schema";
+
+type SpawnPlayerRequest
+{
+     Coordinates position = 1;
+}
+
+type SpawnPlayerResponse
+{
+    bool success = 1;
+    string error_message = 2;
+    EntityId created_entity_id = 3;
+}
+
+component Spawner
+{
+    id = 21010;
+
+    command SpawnPlayerResponse spawn_player(SpawnPlayerRequest);
+}

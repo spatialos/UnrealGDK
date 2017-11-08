@@ -1,0 +1,13 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{8EAC0144-4E78-FB2B-D576-519AC143F70B}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "NUF",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
