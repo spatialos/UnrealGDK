@@ -57,7 +57,7 @@ Build/*/**
 !Build/**/*.ico
 
 # Built data for maps
-*_BuiltData.uasset
+#*_BuiltData.uasset
 
 **/Binaries/
 **/Build
