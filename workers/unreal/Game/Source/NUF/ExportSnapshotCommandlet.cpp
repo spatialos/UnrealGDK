@@ -3,6 +3,7 @@
 #include "EntityBuilder.h"
 #include "ExportSnapshotCommandlet.h"
 #include "SpatialOSCommon.h"
+#include "SpatialOSConversionFunctionLibrary.h"
 #include "improbable/collections.h"
 #include "improbable/standard_library.h"
 #include <improbable/spawner/spawner.h>
@@ -86,7 +87,8 @@ worker::Entity UExportSnapshotCommandlet::CreateSpawnerEntity() const
 // This entity is just a placeholder with absolutely no functionality.
 worker::Entity UExportSnapshotCommandlet::CreatePlayerEntity() const
 {
-	const Coordinates initialPosition{ 0, 0, 0 };
+	FVector UnrealPos = FVector(-1000, -100, 228);
+	const Coordinates initialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(UnrealPos);
 
 	WorkerAttributeSet unrealWorkerAttributeSet{ worker::List<std::string>{"UnrealWorker"} };
 	WorkerAttributeSet unrealClientAttributeSet{ worker::List<std::string>{"UnrealClient"} };
