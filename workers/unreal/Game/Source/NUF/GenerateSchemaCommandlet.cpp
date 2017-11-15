@@ -376,10 +376,10 @@ void GenerateUnpackedStructUnrealToSchemaConversion(CodeWriter& Writer, TArray<U
 }
 
 // Returns the output expression to assign to the schema value.
-void GenerateUnrealToSchemaConversion(CodeWriter& Writer, TArray<UProperty*> PropertyChain, const FString& PropertyValue) {
+void GenerateUnrealToSchemaConversion(CodeWriter& Writer, const FString& ReplicatedData, TArray<UProperty*> PropertyChain, const FString& PropertyValue) {
 	// Get result type.
 	UProperty* Property = PropertyChain[PropertyChain.Num() - 1];
-	FString SchemaPropertyName = TEXT("NativeComponent->") + GetFullyQualifiedCppName(PropertyChain);
+	FString SchemaPropertyName = ReplicatedData + TEXT("->") + GetFullyQualifiedCppName(PropertyChain);
 
 	if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property)) {
 		Writer.Print(TEXT("// UNSUPPORTED"));
@@ -423,7 +423,7 @@ void GenerateUnrealToSchemaConversion(CodeWriter& Writer, TArray<UProperty*> Pro
 				Writer.Print(TEXT("{")).Indent();
 				TArray<UProperty*> NewChain = PropertyChain;
 				NewChain.Add(*It);
-				GenerateUnrealToSchemaConversion(Writer, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP());
+				//GenerateUnrealToSchemaConversion(Writer, ReplicatedData, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP());
 				Writer.Outdent().Print(TEXT("}"));
 			}
 		}
@@ -550,9 +550,14 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	OutputSchema.WriteToFile(SchemaPath + TEXT("UnrealNative.schema"));
 
 	// Forwarding code.
+	OutputForwardingCode.Print(FString::Printf(
+		TEXT("void ApplyUpdateToSpatial_%s(AActor* Actor, int CmdIndex, UProperty* ParentProperty, UProperty* Property, U%sComponent* ReplicatedData)"),
+		*Class->GetName(),
+		*GetSchemaReplicatedComponentFromUnreal(Class)));
 	OutputForwardingCode.Print(TEXT("{"));
 	OutputForwardingCode.Indent();
-	OutputForwardingCode.Print("switch (cmdIndex) {");
+	OutputForwardingCode.Print(TEXT("UObject* Container = Actor;"));
+	OutputForwardingCode.Print(TEXT("switch (CmdIndex)\n{"));
 	OutputForwardingCode.Indent();
     for (auto& RepLayoutPair : RepLayoutProperties) {
         auto cmdIndex = RepLayoutPair.Key;
@@ -565,10 +570,22 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
         OutputForwardingCode.Indent();
 
         // Value expression.
-        FString ValueName = TEXT("Value");
-        FString ValueCppType = PropertyInfo.Property->GetCPPType();
-        OutputForwardingCode.Print(FString::Printf(TEXT("auto& %s = *Property->ContainerPtrToValuePtr<%s>(this);"), *ValueName, *ValueCppType));
-        GenerateUnrealToSchemaConversion(OutputForwardingCode, PropertyInfo.Chain, ValueName);
+		FString Container = TEXT("Container");
+        FString PropertyValueName = TEXT("Value");
+		FString FieldValueName = PropertyValueName;
+        FString PropertyValueCppType = PropertyInfo.Property->GetCPPType();
+		FString PropertyName = TEXT("Property");
+		if (PropertyInfo.Chain.Num() > 1)
+		{
+			PropertyName = TEXT("ParentProperty");
+			PropertyValueCppType = PropertyInfo.Chain[0]->GetCPPType();
+			FieldValueName += TEXT(".") + PropertyInfo.Property->GetNameCPP();
+		}
+        OutputForwardingCode.Print(FString::Printf(TEXT("auto& %s = *%s->ContainerPtrToValuePtr<%s>(%s);"), *PropertyValueName, *PropertyName, *PropertyValueCppType, *Container));
+
+		// Schema conversion.
+        GenerateUnrealToSchemaConversion(OutputForwardingCode, TEXT("ReplicatedData"), PropertyInfo.Chain, FieldValueName);
+
         OutputForwardingCode.Print(TEXT("break;"));
         OutputForwardingCode.Outdent();
         OutputForwardingCode.Print(TEXT("}"));

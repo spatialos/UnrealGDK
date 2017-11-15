@@ -22,41 +22,59 @@ void USpatialShadowActorPipelineBlock::AddEntity(const worker::AddEntityOp& AddE
 {
 	// Add this to the list of entities waiting to be spawned
 	PendingAddEntity.AddUnique(AddEntityOp.EntityId);
-	NextBlock->AddEntity(AddEntityOp);
+	if (NextBlock) {
+		NextBlock->AddEntity(AddEntityOp);
+	}
 }
 
 void USpatialShadowActorPipelineBlock::RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp)
 {
 	// Add this to the list of entities waiting to be deleted
 	PendingRemoveEntity.AddUnique(RemoveEntityOp.EntityId);
-	NextBlock->RemoveEntity(RemoveEntityOp);
+	if (NextBlock) {
+		NextBlock->RemoveEntity(RemoveEntityOp);
+	}
 }
 
 void USpatialShadowActorPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddComponentOp)
 {
 	// Store this op to be used later on when setting the initial state of the component
 	PendingAddComponentMap.Emplace(FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId}, AddComponentOp);
-	NextBlock->AddComponent(AddComponentOp);
+	if (NextBlock) {
+		NextBlock->AddComponent(AddComponentOp);
+	}
 }
 
 void USpatialShadowActorPipelineBlock::RemoveComponent(const worker::ComponentId ComponentId, const worker::RemoveComponentOp& RemoveComponentOp)
 {
 	// Add this to the list of components waiting to be disabled
 	PendingRemoveComponent.Emplace(FComponentIdentifier{RemoveComponentOp.EntityId, ComponentId});
-	NextBlock->RemoveComponent(ComponentId, RemoveComponentOp);
+	if (NextBlock) {
+		NextBlock->RemoveComponent(ComponentId, RemoveComponentOp);
+	}
 }
 
 void USpatialShadowActorPipelineBlock::ChangeAuthority(const worker::ComponentId ComponentId, const worker::AuthorityChangeOp& AuthChangeOp)
 {
 	// Set the latest authority value for this Component on the owning entity
 	PendingAuthorityChange.Emplace(FComponentIdentifier{AuthChangeOp.EntityId, ComponentId}, AuthChangeOp);
-	NextBlock->ChangeAuthority(ComponentId, AuthChangeOp);
+	if (NextBlock) {
+		NextBlock->ChangeAuthority(ComponentId, AuthChangeOp);
+	}
 }
 
 ASpatialShadowActor* USpatialShadowActorPipelineBlock::GetShadowActor(const FEntityId& EntityId) const
 {
 	ASpatialShadowActor* const* Value = ShadowActors.Find(EntityId);
 	return Value ? *Value : nullptr;
+}
+
+void USpatialShadowActorPipelineBlock::ReplicateShadowActorChanges(float DeltaTime)
+{
+	for (auto& Actor : ShadowActors)
+	{
+		Actor.Value->ReplicatedData->ReplicateChanges(DeltaTime);
+	}
 }
 
 void USpatialShadowActorPipelineBlock::AddEntities(
@@ -66,6 +84,11 @@ void USpatialShadowActorPipelineBlock::AddEntities(
 	UCallbackDispatcher* InCallbackDispatcher)
 {
 	TArray<FEntityId> SpawnedEntities;
+
+	if (World == nullptr)
+	{
+		return;
+	}
 
 	// We can only spawn an entity if it exists in the entity registry.
 	for (auto& Entity : PendingAddEntity)

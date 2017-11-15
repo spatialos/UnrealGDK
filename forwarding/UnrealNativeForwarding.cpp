@@ -1,290 +1,286 @@
+void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* ParentProperty, UProperty* Property, UUnrealACharacterReplicatedDataComponent* ReplicatedData)
 {
-  switch (cmdIndex) {
+  UObject* Container = Actor;
+  switch (CmdIndex)
+  {
     case 0:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<uint8>(this);
-        NativeComponent->FieldBhidden = Value != 0;
+        auto& Value = *Property->ContainerPtrToValuePtr<uint8>(Container);
+        ReplicatedData->FieldBhidden = Value != 0;
         break;
       }
     case 1:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<uint8>(this);
-        NativeComponent->FieldBreplicatemovement = Value != 0;
+        auto& Value = *Property->ContainerPtrToValuePtr<uint8>(Container);
+        ReplicatedData->FieldBreplicatemovement = Value != 0;
         break;
       }
     case 2:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<uint8>(this);
-        NativeComponent->FieldBtearoff = Value != 0;
+        auto& Value = *Property->ContainerPtrToValuePtr<uint8>(Container);
+        ReplicatedData->FieldBtearoff = Value != 0;
         break;
       }
     case 3:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<TEnumAsByte<ENetRole>>(this);
-        NativeComponent->FieldRemoterole = int(Value);
+        auto& Value = *Property->ContainerPtrToValuePtr<TEnumAsByte<ENetRole>>(Container);
+        ReplicatedData->FieldRemoterole = int(Value);
         break;
       }
     case 4:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<AActor*>(this);
-        // WEAK OBJECT REPLICATION - NativeComponent->FieldOwner = Value;
+        auto& Value = *Property->ContainerPtrToValuePtr<AActor*>(Container);
+        // WEAK OBJECT REPLICATION - ReplicatedData->FieldOwner = Value;
         break;
       }
     case 5:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<FRepMovement>(this);
+        auto& Value = *Property->ContainerPtrToValuePtr<FRepMovement>(Container);
         TArray<uint8> Data;
         FMemoryWriter Writer(Data);
         bool Success;
         Value.NetSerialize(Writer, nullptr, Success);
-        NativeComponent->FieldReplicatedmovement = FBase64::Encode(Data);
+        ReplicatedData->FieldReplicatedmovement = FBase64::Encode(Data);
         break;
       }
     case 6:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<AActor*>(this);
-        // WEAK OBJECT REPLICATION - NativeComponent->FieldAttachmentreplicationAttachparent = Value;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepAttachment>(Container);
+        // WEAK OBJECT REPLICATION - ReplicatedData->FieldAttachmentreplicationAttachparent = Value.AttachParent;
         break;
       }
     case 7:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<FVector_NetQuantize100>(this);
-        NativeComponent->FieldAttachmentreplicationLocationoffset = Value;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepAttachment>(Container);
+        ReplicatedData->FieldAttachmentreplicationLocationoffset = Value.LocationOffset;
         break;
       }
     case 8:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<FVector_NetQuantize100>(this);
-        NativeComponent->FieldAttachmentreplicationRelativescale3d = Value;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepAttachment>(Container);
+        ReplicatedData->FieldAttachmentreplicationRelativescale3d = Value.RelativeScale3D;
         break;
       }
     case 9:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<FRotator>(this);
-        auto& Rotator = NativeComponent->FieldAttachmentreplicationRotationoffset;
-        Rotator->SetPitch(Value.Pitch);
-        Rotator->SetYaw(Value.Yaw);
-        Rotator->SetRoll(Value.Roll);
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepAttachment>(Container);
+        auto& Rotator = ReplicatedData->FieldAttachmentreplicationRotationoffset;
+        Rotator->SetPitch(Value.RotationOffset.Pitch);
+        Rotator->SetYaw(Value.RotationOffset.Yaw);
+        Rotator->SetRoll(Value.RotationOffset.Roll);
         break;
       }
     case 10:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<FName>(this);
-        NativeComponent->FieldAttachmentreplicationAttachsocket = Value.ToString();
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepAttachment>(Container);
+        ReplicatedData->FieldAttachmentreplicationAttachsocket = Value.AttachSocket.ToString();
         break;
       }
     case 11:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<USceneComponent*>(this);
-        // WEAK OBJECT REPLICATION - NativeComponent->FieldAttachmentreplicationAttachcomponent = Value;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepAttachment>(Container);
+        // WEAK OBJECT REPLICATION - ReplicatedData->FieldAttachmentreplicationAttachcomponent = Value.AttachComponent;
         break;
       }
     case 12:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<TEnumAsByte<ENetRole>>(this);
-        NativeComponent->FieldRole = int(Value);
+        auto& Value = *Property->ContainerPtrToValuePtr<TEnumAsByte<ENetRole>>(Container);
+        ReplicatedData->FieldRole = int(Value);
         break;
       }
     case 13:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<uint8>(this);
-        NativeComponent->FieldBcanbedamaged = Value != 0;
+        auto& Value = *Property->ContainerPtrToValuePtr<uint8>(Container);
+        ReplicatedData->FieldBcanbedamaged = Value != 0;
         break;
       }
     case 14:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<APawn*>(this);
-        // WEAK OBJECT REPLICATION - NativeComponent->FieldInstigator = Value;
+        auto& Value = *Property->ContainerPtrToValuePtr<APawn*>(Container);
+        // WEAK OBJECT REPLICATION - ReplicatedData->FieldInstigator = Value;
         break;
       }
     case 15:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<APlayerState*>(this);
-        // WEAK OBJECT REPLICATION - NativeComponent->FieldPlayerstate = Value;
+        auto& Value = *Property->ContainerPtrToValuePtr<APlayerState*>(Container);
+        // WEAK OBJECT REPLICATION - ReplicatedData->FieldPlayerstate = Value;
         break;
       }
     case 16:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<uint8>(this);
-        NativeComponent->FieldRemoteviewpitch = int(Value);
+        auto& Value = *Property->ContainerPtrToValuePtr<uint8>(Container);
+        ReplicatedData->FieldRemoteviewpitch = int(Value);
         break;
       }
     case 17:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<AController*>(this);
-        // WEAK OBJECT REPLICATION - NativeComponent->FieldController = Value;
+        auto& Value = *Property->ContainerPtrToValuePtr<AController*>(Container);
+        // WEAK OBJECT REPLICATION - ReplicatedData->FieldController = Value;
         break;
       }
     case 18:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<UPrimitiveComponent*>(this);
-        // WEAK OBJECT REPLICATION - NativeComponent->FieldReplicatedbasedmovementMovementbase = Value;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
+        // WEAK OBJECT REPLICATION - ReplicatedData->FieldReplicatedbasedmovementMovementbase = Value.MovementBase;
         break;
       }
     case 19:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<FName>(this);
-        NativeComponent->FieldReplicatedbasedmovementBonename = Value.ToString();
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
+        ReplicatedData->FieldReplicatedbasedmovementBonename = Value.BoneName.ToString();
         break;
       }
     case 20:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<FVector_NetQuantize100>(this);
-        NativeComponent->FieldReplicatedbasedmovementLocation = Value;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
+        ReplicatedData->FieldReplicatedbasedmovementLocation = Value.Location;
         break;
       }
     case 21:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<FRotator>(this);
-        auto& Rotator = NativeComponent->FieldReplicatedbasedmovementRotation;
-        Rotator->SetPitch(Value.Pitch);
-        Rotator->SetYaw(Value.Yaw);
-        Rotator->SetRoll(Value.Roll);
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
+        auto& Rotator = ReplicatedData->FieldReplicatedbasedmovementRotation;
+        Rotator->SetPitch(Value.Rotation.Pitch);
+        Rotator->SetYaw(Value.Rotation.Yaw);
+        Rotator->SetRoll(Value.Rotation.Roll);
         break;
       }
     case 22:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<bool>(this);
-        NativeComponent->FieldReplicatedbasedmovementBserverhasbasecomponent = Value != 0;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
+        ReplicatedData->FieldReplicatedbasedmovementBserverhasbasecomponent = Value.bServerHasBaseComponent != 0;
         break;
       }
     case 23:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<bool>(this);
-        NativeComponent->FieldReplicatedbasedmovementBrelativerotation = Value != 0;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
+        ReplicatedData->FieldReplicatedbasedmovementBrelativerotation = Value.bRelativeRotation != 0;
         break;
       }
     case 24:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<bool>(this);
-        NativeComponent->FieldReplicatedbasedmovementBserverhasvelocity = Value != 0;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
+        ReplicatedData->FieldReplicatedbasedmovementBserverhasvelocity = Value.bServerHasVelocity != 0;
         break;
       }
     case 25:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<float>(this);
-        NativeComponent->FieldAnimrootmotiontranslationscale = Value;
+        auto& Value = *Property->ContainerPtrToValuePtr<float>(Container);
+        ReplicatedData->FieldAnimrootmotiontranslationscale = Value;
         break;
       }
     case 26:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<float>(this);
-        NativeComponent->FieldReplicatedserverlasttransformupdatetimestamp = Value;
+        auto& Value = *Property->ContainerPtrToValuePtr<float>(Container);
+        ReplicatedData->FieldReplicatedserverlasttransformupdatetimestamp = Value;
         break;
       }
     case 27:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<uint8>(this);
-        NativeComponent->FieldReplicatedmovementmode = int(Value);
+        auto& Value = *Property->ContainerPtrToValuePtr<uint8>(Container);
+        ReplicatedData->FieldReplicatedmovementmode = int(Value);
         break;
       }
     case 28:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<uint8>(this);
-        NativeComponent->FieldBiscrouched = Value != 0;
+        auto& Value = *Property->ContainerPtrToValuePtr<uint8>(Container);
+        ReplicatedData->FieldBiscrouched = Value != 0;
         break;
       }
     case 29:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<float>(this);
-        NativeComponent->FieldJumpmaxholdtime = Value;
+        auto& Value = *Property->ContainerPtrToValuePtr<float>(Container);
+        ReplicatedData->FieldJumpmaxholdtime = Value;
         break;
       }
     case 30:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<int32>(this);
-        NativeComponent->FieldJumpmaxcount = Value;
+        auto& Value = *Property->ContainerPtrToValuePtr<int32>(Container);
+        ReplicatedData->FieldJumpmaxcount = Value;
         break;
       }
     case 31:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<bool>(this);
-        NativeComponent->FieldReprootmotionBisactive = Value != 0;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
+        ReplicatedData->FieldReprootmotionBisactive = Value.bIsActive != 0;
         break;
       }
     case 32:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<UAnimMontage*>(this);
-        // WEAK OBJECT REPLICATION - NativeComponent->FieldReprootmotionAnimmontage = Value;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
+        // WEAK OBJECT REPLICATION - ReplicatedData->FieldReprootmotionAnimmontage = Value.AnimMontage;
         break;
       }
     case 33:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<float>(this);
-        NativeComponent->FieldReprootmotionPosition = Value;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
+        ReplicatedData->FieldReprootmotionPosition = Value.Position;
         break;
       }
     case 34:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<FVector_NetQuantize100>(this);
-        NativeComponent->FieldReprootmotionLocation = Value;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
+        ReplicatedData->FieldReprootmotionLocation = Value.Location;
         break;
       }
     case 35:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<FRotator>(this);
-        auto& Rotator = NativeComponent->FieldReprootmotionRotation;
-        Rotator->SetPitch(Value.Pitch);
-        Rotator->SetYaw(Value.Yaw);
-        Rotator->SetRoll(Value.Roll);
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
+        auto& Rotator = ReplicatedData->FieldReprootmotionRotation;
+        Rotator->SetPitch(Value.Rotation.Pitch);
+        Rotator->SetYaw(Value.Rotation.Yaw);
+        Rotator->SetRoll(Value.Rotation.Roll);
         break;
       }
     case 36:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<UPrimitiveComponent*>(this);
-        // WEAK OBJECT REPLICATION - NativeComponent->FieldReprootmotionMovementbase = Value;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
+        // WEAK OBJECT REPLICATION - ReplicatedData->FieldReprootmotionMovementbase = Value.MovementBase;
         break;
       }
     case 37:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<FName>(this);
-        NativeComponent->FieldReprootmotionMovementbasebonename = Value.ToString();
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
+        ReplicatedData->FieldReprootmotionMovementbasebonename = Value.MovementBaseBoneName.ToString();
         break;
       }
     case 38:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<bool>(this);
-        NativeComponent->FieldReprootmotionBrelativeposition = Value != 0;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
+        ReplicatedData->FieldReprootmotionBrelativeposition = Value.bRelativePosition != 0;
         break;
       }
     case 39:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<bool>(this);
-        NativeComponent->FieldReprootmotionBrelativerotation = Value != 0;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
+        ReplicatedData->FieldReprootmotionBrelativerotation = Value.bRelativeRotation != 0;
         break;
       }
     case 40:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<FRootMotionSourceGroup>(this);
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
         {
-          NativeComponent->FieldReprootmotionAuthoritativerootmotionBhasadditivesources = Value.bHasAdditiveSources != 0;
         }
         {
-          NativeComponent->FieldReprootmotionAuthoritativerootmotionBhasoverridesources = Value.bHasOverrideSources != 0;
         }
         {
-          NativeComponent->FieldReprootmotionAuthoritativerootmotionLastpreadditivevelocity = Value.LastPreAdditiveVelocity;
         }
         {
-          NativeComponent->FieldReprootmotionAuthoritativerootmotionBisadditivevelocityapplied = Value.bIsAdditiveVelocityApplied != 0;
         }
         {
-          {
-            NativeComponent->FieldReprootmotionAuthoritativerootmotionLastaccumulatedsettingsFlags = int(Value.LastAccumulatedSettings.Flags);
-          }
         }
         break;
       }
     case 41:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<FVector_NetQuantize10>(this);
-        NativeComponent->FieldReprootmotionAcceleration = Value;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
+        ReplicatedData->FieldReprootmotionAcceleration = Value.Acceleration;
         break;
       }
     case 42:
       {
-        auto& Value = *Property->ContainerPtrToValuePtr<FVector_NetQuantize10>(this);
-        NativeComponent->FieldReprootmotionLinearvelocity = Value;
+        auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
+        ReplicatedData->FieldReprootmotionLinearvelocity = Value.LinearVelocity;
         break;
       }
   }

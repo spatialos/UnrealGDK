@@ -38,6 +38,8 @@ public:
 
 	ASpatialShadowActor* GetShadowActor(const FEntityId& EntityId) const;
 
+	void ReplicateShadowActorChanges(float DeltaTime);
+
 private:
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
