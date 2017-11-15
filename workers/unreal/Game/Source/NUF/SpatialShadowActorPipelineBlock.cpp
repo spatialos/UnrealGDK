@@ -22,7 +22,8 @@ void USpatialShadowActorPipelineBlock::AddEntity(const worker::AddEntityOp& AddE
 {
 	// Add this to the list of entities waiting to be spawned
 	PendingAddEntity.AddUnique(AddEntityOp.EntityId);
-	if (NextBlock) {
+	if (NextBlock)
+	{
 		NextBlock->AddEntity(AddEntityOp);
 	}
 }
@@ -31,7 +32,8 @@ void USpatialShadowActorPipelineBlock::RemoveEntity(const worker::RemoveEntityOp
 {
 	// Add this to the list of entities waiting to be deleted
 	PendingRemoveEntity.AddUnique(RemoveEntityOp.EntityId);
-	if (NextBlock) {
+	if (NextBlock)
+	{
 		NextBlock->RemoveEntity(RemoveEntityOp);
 	}
 }
@@ -40,7 +42,8 @@ void USpatialShadowActorPipelineBlock::AddComponent(UAddComponentOpWrapperBase* 
 {
 	// Store this op to be used later on when setting the initial state of the component
 	PendingAddComponentMap.Emplace(FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId}, AddComponentOp);
-	if (NextBlock) {
+	if (NextBlock)
+	{
 		NextBlock->AddComponent(AddComponentOp);
 	}
 }
@@ -49,7 +52,8 @@ void USpatialShadowActorPipelineBlock::RemoveComponent(const worker::ComponentId
 {
 	// Add this to the list of components waiting to be disabled
 	PendingRemoveComponent.Emplace(FComponentIdentifier{RemoveComponentOp.EntityId, ComponentId});
-	if (NextBlock) {
+	if (NextBlock)
+	{
 		NextBlock->RemoveComponent(ComponentId, RemoveComponentOp);
 	}
 }
@@ -58,7 +62,8 @@ void USpatialShadowActorPipelineBlock::ChangeAuthority(const worker::ComponentId
 {
 	// Set the latest authority value for this Component on the owning entity
 	PendingAuthorityChange.Emplace(FComponentIdentifier{AuthChangeOp.EntityId, ComponentId}, AuthChangeOp);
-	if (NextBlock) {
+	if (NextBlock)
+	{
 		NextBlock->ChangeAuthority(ComponentId, AuthChangeOp);
 	}
 }
@@ -93,12 +98,9 @@ void USpatialShadowActorPipelineBlock::AddEntities(
 	// We can only spawn an entity if it exists in the entity registry.
 	for (auto& Entity : PendingAddEntity)
 	{
+		// Wait for the "real" entity to be checked out.
+		// TODO: For now, just use the first player controllers pawn.
 		AActor* PairedEntity = World->GetFirstPlayerController() ? World->GetFirstPlayerController()->GetControlledPawn() : nullptr;//EntityRegistry->GetActorFromEntityId(Entity);
-
-		//UAddComponentOpWrapperBase* PositionBaseComponent = GetPendingAddComponent(Entity, UPositionComponent::ComponentId);
-		//UAddComponentOpWrapperBase* MetadataBaseComponent = GetPendingAddComponent(Entity, UMetadataComponent::ComponentId);
-
-		// If we've received the position and metadata components, wait for the _correct_ replicated data components.
 		if (PairedEntity)
 		{
 			// Retrieve the EntityType string from the Metadata component.
@@ -138,68 +140,6 @@ void USpatialShadowActorPipelineBlock::AddEntities(
 	}
 }
 
-void USpatialShadowActorPipelineBlock::AddComponents(
-	const TWeakPtr<worker::View>& InView,
-	const TWeakPtr<worker::Connection>& InConnection,
-	UCallbackDispatcher* InCallbackDispatcher)
-{
-/*
-	TArray<FComponentIdentifier> InitialisedComponents;
-
-	for (auto& ComponentToAdd : PendingAddComponentMap) {
-		AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentToAdd.Key.EntityId);
-		if (Actor) {
-			auto ComponentClass = KnownComponents.Find(ComponentToAdd.Key.ComponentId);
-			if (ComponentClass) {
-				USpatialOsComponent* Component =
-					Cast<USpatialOsComponent>(Actor->GetComponentByClass(*ComponentClass));
-				if (Component) {
-					Component->Init(InConnection, InView, ComponentToAdd.Key.EntityId, InCallbackDispatcher);
-					Component->ApplyInitialState(*ComponentToAdd.Value);
-
-					auto QueuedAuthChangeOp = PendingAuthorityChange.Find(ComponentToAdd.Key);
-					if (QueuedAuthChangeOp) {
-						Component->ApplyInitialAuthority(*QueuedAuthChangeOp);
-					}
-
-					InitialisedComponents.Add(ComponentToAdd.Key);
-				}
-			}
-		}
-	}
-
-	for (auto& Component : InitialisedComponents) {
-		PendingAddComponentMap.Remove(Component);
-	}
-	*/
-}
-
-void USpatialShadowActorPipelineBlock::RemoveComponents(UCallbackDispatcher* InCallbackDispatcher)
-{
-/*
-	for (auto& ComponentToRemove : ComponentsToRemove) {
-		const worker::EntityId EntityId = ComponentToRemove.EntityId;
-		const worker::ComponentId ComponentId = ComponentToRemove.ComponentId;
-
-		AActor* Actor = EntityRegistry->GetActorFromEntityId(EntityId);
-		auto ComponentClass = KnownComponents.Find(ComponentToRemove.ComponentId);
-
-		if (!Actor || !ComponentClass) {
-			continue;
-		}
-
-		USpatialOsComponent* Component =
-			Cast<USpatialOsComponent>(Actor->GetComponentByClass(*ComponentClass));
-
-		if (Component) {
-			Component->Disable(EntityId, InCallbackDispatcher);
-		}
-	}
-
-	ComponentsToRemove.Empty();
-	*/
-}
-
 void USpatialShadowActorPipelineBlock::RemoveEntities(UWorld* World)
 {
 	for (auto& EntityToRemove : PendingRemoveEntity)
@@ -221,8 +161,6 @@ void USpatialShadowActorPipelineBlock::ProcessOps(
 	UCallbackDispatcher* InCallbackDispatcher)
 {
 	AddEntities(World, InView, InConnection, InCallbackDispatcher);
-	//AddComponents(InView, InConnection, InCallbackDispatcher);
-	//RemoveComponents(InCallbackDispatcher);
 	RemoveEntities(World);
 }
 
@@ -249,20 +187,8 @@ ASpatialShadowActor* USpatialShadowActorPipelineBlock::TrySpawnShadowActor(
 		return nullptr;
 	}
 
-	// Look up entity class.
-	//FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
-
-	// Get initial coordinates.
-	/*
-	auto Coords = PositionComponent->Data->coords();
-	FVector InitialTransform =
-		USpatialOSConversionFunctionLibrary::SpatialOsCoordinatesToUnrealCoordinates(
-			FVector(Coords.x(), Coords.y(), Coords.z()));
-
-		*/
-	FVector InitialTransform{0.0f, 0.0f, 0.0f};
-
 	// Spawn shadow actor.
+	FVector InitialTransform{ 0.0f, 0.0f, 0.0f };
 	auto NewActor = World->SpawnActor<ASpatialShadowActor>(ASpatialShadowActor::StaticClass(), InitialTransform, FRotator::ZeroRotator, FActorSpawnParameters());
 
 	// Initialise replicated and complete data.

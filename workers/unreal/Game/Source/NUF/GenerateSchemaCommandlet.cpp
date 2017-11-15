@@ -13,6 +13,11 @@ public:
 	CodeWriter() : Scope(0) {
 	}
 
+	CodeWriter& Print() {
+		OutputSource += TEXT("\n");
+		return *this;
+	}
+
 	CodeWriter& Print(const FString& String) {
 		TArray<FString> Lines;
 		String.ParseIntoArray(Lines, TEXT("\n"), false);
@@ -453,6 +458,7 @@ void GenerateUnrealToSchemaConversion(CodeWriter& Writer, const FString& Replica
 void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, UClass* Class) {
 	CodeWriter OutputSchema;
 	CodeWriter OutputForwardingCode;
+	CodeWriter OutputForwardingCodeHeader;
 
     // Parse RepLayout.
     FRepLayout RepLayout;
@@ -549,11 +555,25 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
     OutputSchema.Outdent().Print(TEXT("}"));
 	OutputSchema.WriteToFile(SchemaPath + TEXT("UnrealNative.schema"));
 
-	// Forwarding code.
-	OutputForwardingCode.Print(FString::Printf(
+	// Forwarding code function signatures.
+	FString ForwardingFunctionSignature = FString::Printf(
 		TEXT("void ApplyUpdateToSpatial_%s(AActor* Actor, int CmdIndex, UProperty* ParentProperty, UProperty* Property, U%sComponent* ReplicatedData)"),
 		*Class->GetName(),
-		*GetSchemaReplicatedComponentFromUnreal(Class)));
+		*GetSchemaReplicatedComponentFromUnreal(Class));
+
+	// Forwarding code header file.
+	OutputForwardingCodeHeader.Print(TEXT("#include \"GameFramework/Actor.h\""));
+	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("#include \"%sComponent.h\""), *GetSchemaReplicatedComponentFromUnreal(Class)));
+	OutputForwardingCodeHeader.Print();
+	OutputForwardingCodeHeader.Print(ForwardingFunctionSignature + TEXT(";"));
+	OutputForwardingCodeHeader.WriteToFile(ForwardingCodePath + FString::Printf(TEXT("SpatialInterop%s.h"), *Class->GetName()));
+
+	// Forwarding code source file.
+	OutputForwardingCode.Print(FString::Printf(TEXT("#include \"SpatialInterop%s.h\""), *Class->GetName()));
+	OutputForwardingCode.Print(TEXT("#include \"CoreMinimal.h\""));
+	OutputForwardingCode.Print(TEXT("#include \"Misc/Base64.h\""));
+	OutputForwardingCode.Print();
+	OutputForwardingCode.Print(ForwardingFunctionSignature);
 	OutputForwardingCode.Print(TEXT("{"));
 	OutputForwardingCode.Indent();
 	OutputForwardingCode.Print(TEXT("UObject* Container = Actor;"));
@@ -595,7 +615,7 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	OutputForwardingCode.Print(TEXT("}"));
 	OutputForwardingCode.Outdent();
 	OutputForwardingCode.Print(TEXT("}"));
-	OutputForwardingCode.WriteToFile(ForwardingCodePath + TEXT("UnrealNativeForwarding.cpp"));
+	OutputForwardingCode.WriteToFile(ForwardingCodePath + FString::Printf(TEXT("SpatialInterop%s.cpp"), *Class->GetName()));
 }
 }
 
@@ -609,7 +629,7 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Params) {
 	FString CombinedSchemaPath =
 		FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../schema/generated/"));
 	FString CombinedForwardingCodePath =
-		FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../forwarding/"));
+		FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath)) {
 		UE_LOG(LogTemp, Warning, TEXT("================================================================================="));

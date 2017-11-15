@@ -70,11 +70,6 @@ private:
 		const TWeakPtr<worker::Connection>& InConnection,
 		UCallbackDispatcher* InCallbackDispatcher);
 
-	void AddComponents(const TWeakPtr<worker::View>& InView,
-		const TWeakPtr<worker::Connection>& InConnection,
-		UCallbackDispatcher* InCallbackDispatcher);
-	void RemoveComponents(UCallbackDispatcher* InCallbackDispatcher);
-
 	void RemoveEntities(UWorld* World);
 
 	UAddComponentOpWrapperBase* GetPendingAddComponent(const FEntityId& EntityId, const worker::ComponentId& ComponentId);

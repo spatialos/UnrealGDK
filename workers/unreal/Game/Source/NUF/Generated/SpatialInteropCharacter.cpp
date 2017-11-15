@@ -1,3 +1,7 @@
+#include "SpatialInteropCharacter.h"
+#include "CoreMinimal.h"
+#include "Misc/Base64.h"
+
 void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* ParentProperty, UProperty* Property, UUnrealACharacterReplicatedDataComponent* ReplicatedData)
 {
   UObject* Container = Actor;
