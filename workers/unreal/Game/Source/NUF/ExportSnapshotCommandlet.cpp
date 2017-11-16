@@ -9,6 +9,7 @@
 #include <improbable/spawner/spawner.h>
 #include <improbable/player/player.h>
 #include <improbable/worker.h>
+#include <generated/UnrealNative.h>
 #include <array>
 
 using namespace improbable;
@@ -46,7 +47,7 @@ void UExportSnapshotCommandlet::GenerateSnapshot(const FString& savePath) const
 	const FString fullPath = FPaths::Combine(*savePath, TEXT("default.snapshot"));
 
 	std::unordered_map<worker::EntityId, worker::Entity> snapshotEntities;
-	snapshotEntities.emplace(std::make_pair(g_SpawnerEntityId, CreateSpawnerEntity()));
+	//snapshotEntities.emplace(std::make_pair(g_SpawnerEntityId, CreateSpawnerEntity()));
 	snapshotEntities.emplace(std::make_pair(g_playerEntityId, CreatePlayerEntity()));
 	worker::Option<std::string> Result =
 		worker::SaveSnapshot(improbable::unreal::Components{}, TCHAR_TO_UTF8(*fullPath), snapshotEntities);
@@ -99,12 +100,14 @@ worker::Entity UExportSnapshotCommandlet::CreatePlayerEntity() const
 		{ unrealClientAttributeSet, unrealWorkerAttributeSet } };
 
 	auto snapshotEntity = improbable::unreal::FEntityBuilder::Begin()
-		.AddPositionComponent(Position::Data{ initialPosition }, unrealWorkerWritePermission)
-		.AddMetadataComponent(Metadata::Data{ "NUFCharacter_BP" })
+		.AddPositionComponent(Position::Data{initialPosition}, unrealWorkerWritePermission)
+		.AddMetadataComponent(Metadata::Data{"NUFCharacter_BP"})
 		.SetPersistence(true)
 		.SetReadAcl(anyWorkerReadPermission)
 		.AddComponent<player::PlayerControlClient>(player::PlayerControlClient::Data{}, unrealClientWritePermission)
 		.AddComponent<player::PlayerControlServer>(player::PlayerControlServer::Data{}, unrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealACharacterReplicatedData>(improbable::unreal::UnrealACharacterReplicatedData::Data{}, unrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealACharacterCompleteData>(improbable::unreal::UnrealACharacterCompleteData::Data{}, unrealWorkerWritePermission)
 		.Build();
 
 	return snapshotEntity;

@@ -13,13 +13,18 @@ public:
 	CodeWriter() : Scope(0) {
 	}
 
+	CodeWriter& Print() {
+		OutputSource += TEXT("\n");
+		return *this;
+	}
+
 	CodeWriter& Print(const FString& String) {
 		TArray<FString> Lines;
 		String.ParseIntoArray(Lines, TEXT("\n"), false);
 		for (auto& Line : Lines) {
 			FString ScopeIdent;
 			for (int ScopeLevel = 0; ScopeLevel < Scope; ++ScopeLevel) {
-				ScopeIdent += FString(TEXT("  "));
+				ScopeIdent += FString(TEXT("\t"));
 			}
 			OutputSource += ScopeIdent + Line + TEXT("\n");
 		}
@@ -192,28 +197,40 @@ FString SchemaHeader(const FString& PackageName) {
 	return
 		FString::Printf(TEXT("package %s;\n"), *PackageName) +
 		TEXT("import \"improbable/vector3.schema\";\n")
-		TEXT("type UnrealFRotator{ float pitch = 1; float yaw = 2; float roll = 3; }\n")
+		TEXT("type UnrealFRotator { float pitch = 1; float yaw = 2; float roll = 3; }\n")
 		TEXT("type UnrealFPlane { float x = 1; float y = 2; float z = 3; float w = 4; }\n")
 		TEXT("type UnrealObjectRef { EntityId entity = 1; uint32 offset = 2; }");
 }
 
-FString GetSchemaTypeFromUnreal(UStruct* Type) {
-	FString Prefix;
-	if (Type->IsChildOf<AActor>()) {
-		// Actor.
-		Prefix = TEXT("UnrealA");
-	} else if (Type->IsChildOf<UObject>()) {
-		// Object.
-		Prefix = TEXT("UnrealU");
-	} else {
-		// Struct.
-		Prefix = TEXT("UnrealF");
-	}
-	return Prefix + Type->GetName();
+FString GetUnrealCompleteTypeName(UStruct* Type) {
+    FString Prefix;
+    if (Type->IsChildOf<AActor>()) {
+        // Actor.
+        Prefix = TEXT("A");
+    } else if (Type->IsChildOf<UObject>()) {
+        // Object.
+        Prefix = TEXT("U");
+    } else {
+        // Struct.
+        Prefix = TEXT("F");
+    }
+    return Prefix + Type->GetName();
 }
 
-FString GetSchemaComponentFromUnreal(UStruct* Type) {
-	return TEXT("Unreal") + Type->GetName() + TEXT("NativeData");
+FString GetSchemaReplicatedTypeFromUnreal(UStruct* Type) {
+    return TEXT("Unreal") + GetUnrealCompleteTypeName(Type) + TEXT("Replicated");
+}
+
+FString GetSchemaCompleteTypeFromUnreal(UStruct* Type) {
+    return TEXT("Unreal") + GetUnrealCompleteTypeName(Type) + TEXT("Complete");
+}
+
+FString GetSchemaReplicatedComponentFromUnreal(UStruct* Type) {
+    return GetSchemaReplicatedTypeFromUnreal(Type) + TEXT("Data");
+}
+
+FString GetSchemaCompleteDataComponentFromUnreal(UStruct* Type) {
+	return GetSchemaCompleteTypeFromUnreal(Type) + TEXT("Data");
 }
 
 FString GetFullyQualifiedName(TArray<UProperty*> Chain) {
@@ -287,6 +304,12 @@ void VisitProperty(TArray<PropertyInfo>& PropertyInfo, UObject* CDO, TArray<UPro
 				// If we have the CDO, resolve the actual type pointed to by the pointer (to deal with polymorphism).
 				UObject* Value = ObjectProperty->GetPropertyValue_InContainer(CDO);
 				if (Value) {
+					// If this is an editor-only property, skip it.
+					if (Value->IsEditorOnly()) {
+						UE_LOG(LogTemp, Warning, TEXT("%s - editor only, skipping"), *Property->GetName());
+						return;
+					}
+
 					// Make sure the owner of the property value is the CDO, otherwise this is a weak reference.
 					if (Value->GetOuter() == CDO) {
 						UE_LOG(LogTemp, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
@@ -314,9 +337,6 @@ void VisitProperty(TArray<PropertyInfo>& PropertyInfo, UObject* CDO, TArray<UPro
 					return;
 				}
 				if (PropertyValueClass->IsChildOf(FTickFunction::StaticStruct())) {
-					return;
-				}
-				if (PropertyValueClass->IsChildOf(UArrowComponent::StaticClass())) {
 					return;
 				}
 			}
@@ -358,10 +378,10 @@ void GenerateUnpackedStructUnrealToSchemaConversion(CodeWriter& Writer, TArray<U
 }
 
 // Returns the output expression to assign to the schema value.
-void GenerateUnrealToSchemaConversion(CodeWriter& Writer, const TMap<FString, PropertyInfo>& PropertyInfoMap, TArray<UProperty*> PropertyChain, const FString& PropertyValue) {
+void GenerateUnrealToSchemaConversion(CodeWriter& Writer, const FString& ReplicatedData, TArray<UProperty*> PropertyChain, const FString& PropertyValue) {
 	// Get result type.
 	UProperty* Property = PropertyChain[PropertyChain.Num() - 1];
-	FString SchemaPropertyName = TEXT("NativeComponent->") + GetFullyQualifiedCppName(PropertyChain);
+	FString SchemaPropertyName = ReplicatedData + TEXT("->") + GetFullyQualifiedCppName(PropertyChain);
 
 	if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property)) {
 		Writer.Print(TEXT("// UNSUPPORTED"));
@@ -405,7 +425,7 @@ void GenerateUnrealToSchemaConversion(CodeWriter& Writer, const TMap<FString, Pr
 				Writer.Print(TEXT("{")).Indent();
 				TArray<UProperty*> NewChain = PropertyChain;
 				NewChain.Add(*It);
-				GenerateUnrealToSchemaConversion(Writer, PropertyInfoMap, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP());
+				//GenerateUnrealToSchemaConversion(Writer, ReplicatedData, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP());
 				Writer.Outdent().Print(TEXT("}"));
 			}
 		}
@@ -435,6 +455,36 @@ void GenerateUnrealToSchemaConversion(CodeWriter& Writer, const TMap<FString, Pr
 void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, UClass* Class) {
 	CodeWriter OutputSchema;
 	CodeWriter OutputForwardingCode;
+	CodeWriter OutputForwardingCodeHeader;
+
+    // Parse RepLayout.
+    FRepLayout RepLayout;
+    RepLayout.InitFromObjectClass(Class);
+    TArray<TPair<int, PropertyInfo>> RepLayoutProperties;
+    for (int cmdIndex = 0; cmdIndex < RepLayout.Cmds.Num(); ++cmdIndex) {
+        if (RepLayout.Cmds[cmdIndex].Type == REPCMD_Return || RepLayout.Cmds[cmdIndex].Type == REPCMD_DynamicArray)
+            continue;
+
+        if (RepLayout.Cmds[cmdIndex].Property == nullptr)
+            continue;
+
+        // Get property and parent property from RepLayout.
+        UProperty* Property = RepLayout.Cmds[cmdIndex].Property;
+        UProperty* ParentProperty = RepLayout.Parents[RepLayout.Cmds[cmdIndex].ParentIndex].Property;
+        if (ParentProperty == Property) {
+            ParentProperty = nullptr;
+        }
+        TArray<UProperty*> PropertyChain;
+        if (ParentProperty) {
+            PropertyChain = { ParentProperty, Property };
+        } else {
+            PropertyChain = { Property };
+        }
+
+        RepLayoutProperties.Add(MakeTuple(cmdIndex, PropertyInfo{
+            Property, (ERepLayoutCmdType)RepLayout.Cmds[cmdIndex].Type, PropertyChain
+        }));
+    }
 
 	// Recurse into class properties.
 	TArray<PropertyInfo> Properties;
@@ -442,93 +492,199 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 		VisitProperty(Properties, Class->GetDefaultObject(), {}, *It);
 	}
 
+    // Divide properties into replicated and non-replicated properties.
+    TArray<PropertyInfo> ReplicatedProperties, CompleteProperties;
+    for (auto& RepLayoutProperty : RepLayoutProperties) {
+        ReplicatedProperties.Add(RepLayoutProperty.Value);
+    }
+    for (auto& Property : Properties) {
+        // Skip properties which are already marked as replicated.
+        for (auto& ReplicatedProperty : ReplicatedProperties) {
+            if (ReplicatedProperty.Chain == Property.Chain) {
+                continue;
+            }
+        }
+        CompleteProperties.Add(Property);
+    }
+
 	// Schema.
 	OutputSchema.Print(SchemaHeader(TEXT("improbable.unreal")));
-	OutputSchema.Print(FString::Printf(TEXT("type %s {"), *GetSchemaTypeFromUnreal(Class)));
-	OutputSchema.Indent();
-	int FieldCounter = 0;
-	for (auto& Prop : Properties) {
-		FieldCounter++;
-		OutputSchema.Print(
-			FString::Printf(
-				TEXT("%s %s = %d;"),
-				*RepLayoutTypeToSchemaType(Prop.Type),
-				*GetFullyQualifiedName(Prop.Chain),
-				FieldCounter
-			)
-		);
-	}
-	OutputSchema.Outdent().Print(TEXT("}"));
+    OutputSchema.Print(FString::Printf(TEXT("type %s {"), *GetSchemaReplicatedTypeFromUnreal(Class)));
+    OutputSchema.Indent();
+    int FieldCounter = 0;
+    for (auto& Prop : ReplicatedProperties) {
+        FieldCounter++;
+        OutputSchema.Print(
+            FString::Printf(
+                TEXT("%s %s = %d;"),
+                *RepLayoutTypeToSchemaType(Prop.Type),
+                *GetFullyQualifiedName(Prop.Chain),
+                FieldCounter
+            )
+        );
+    }
+    OutputSchema.Outdent().Print(TEXT("}"));
+    OutputSchema.Print(FString::Printf(TEXT("type %s {"), *GetSchemaCompleteTypeFromUnreal(Class)));
+    OutputSchema.Indent();
+    for (auto& Prop : CompleteProperties) {
+        FieldCounter++;
+        OutputSchema.Print(
+            FString::Printf(
+                TEXT("%s %s = %d;"),
+                *RepLayoutTypeToSchemaType(Prop.Type),
+                *GetFullyQualifiedName(Prop.Chain),
+                FieldCounter
+            )
+        );
+    }
+    OutputSchema.Outdent().Print(TEXT("}"));
 
-	// Component.
-	OutputSchema.Print(FString::Printf(TEXT("component %s {"), *GetSchemaComponentFromUnreal(Class)));
-	OutputSchema.Indent();
-	OutputSchema.Print(TEXT("id = 100000;"));
-	OutputSchema.Print(FString::Printf(TEXT("data %s;"), *GetSchemaTypeFromUnreal(Class)));
-	OutputSchema.Outdent().Print(TEXT("}"));
-
+	// Components.
+    OutputSchema.Print(FString::Printf(TEXT("component %s {"), *GetSchemaReplicatedComponentFromUnreal(Class)));
+    OutputSchema.Indent();
+    OutputSchema.Print(TEXT("id = 100000;"));
+    OutputSchema.Print(FString::Printf(TEXT("data %s;"), *GetSchemaReplicatedTypeFromUnreal(Class)));
+    OutputSchema.Outdent().Print(TEXT("}"));
+    OutputSchema.Print(FString::Printf(TEXT("component %s {"), *GetSchemaCompleteDataComponentFromUnreal(Class)));
+    OutputSchema.Indent();
+    OutputSchema.Print(TEXT("id = 100001;"));
+    OutputSchema.Print(FString::Printf(TEXT("data %s;"), *GetSchemaCompleteTypeFromUnreal(Class)));
+    OutputSchema.Outdent().Print(TEXT("}"));
 	OutputSchema.WriteToFile(SchemaPath + TEXT("UnrealNative.schema"));
 
-	// Forwarding code.
-	// -----------------------------------------------------------------------------------
+	// Forwarding code function signatures.
+	FString CmdIndexToPropertyMapSignature = FString::Printf(
+		TEXT("TMap<int, TPair<UProperty*, UProperty*>> CreateCmdIndexToPropertyMap_%s()"),
+		*Class->GetName());
+	FString ForwardingFunctionSignature = FString::Printf(
+		TEXT("void ApplyUpdateToSpatial_%s(AActor* Actor, int CmdIndex, UProperty* ParentProperty, UProperty* Property, U%sComponent* ReplicatedData)"),
+		*Class->GetName(),
+		*GetSchemaReplicatedComponentFromUnreal(Class));
+	FString SpatialToUnrealSignature = FString::Printf(
+		TEXT("void ReceiveUpdateFromSpatial_%s(AActor* Actor, TMap<int, TPair<UProperty*, UProperty*>>& CmdIndexToPropertyMap, U%sComponentUpdate* Update)"),
+		*Class->GetName(),
+		*GetSchemaReplicatedComponentFromUnreal(Class));
 
-	// Create RepLayout.
-	FRepLayout RepLayout;
-	RepLayout.InitFromObjectClass(Class);
+	// Forwarding code header file.
+	OutputForwardingCodeHeader.Print(TEXT("#include \"GameFramework/Actor.h\""));
+	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("#include \"%sComponent.h\""), *GetSchemaReplicatedComponentFromUnreal(Class)));
+	OutputForwardingCodeHeader.Print();
+	OutputForwardingCodeHeader.Print(CmdIndexToPropertyMapSignature + TEXT(";"));
+	OutputForwardingCodeHeader.Print();
+	OutputForwardingCodeHeader.Print(ForwardingFunctionSignature + TEXT(";"));
+	OutputForwardingCodeHeader.Print();
+	OutputForwardingCodeHeader.Print(SpatialToUnrealSignature + TEXT(";"));
+	OutputForwardingCodeHeader.WriteToFile(ForwardingCodePath + FString::Printf(TEXT("SpatialInterop%s.h"), *Class->GetName()));
 
-	// Build a lookup table of properties which maps from fully qualified name to property info
-	TMap<FString, PropertyInfo> PropertyInfoMap;
-	for (auto& Info : Properties) {
-		PropertyInfoMap.Add(GetFullyQualifiedName(Info.Chain), Info);
-	}
+	// Forwarding code source file.
+	OutputForwardingCode.Print(FString::Printf(TEXT("#include \"SpatialInterop%s.h\""), *Class->GetName()));
+	OutputForwardingCode.Print(TEXT("#include \"CoreMinimal.h\""));
+	OutputForwardingCode.Print(TEXT("#include \"Misc/Base64.h\""));
+	OutputForwardingCode.Print();
 
+	// Cmd Index to Property map.
+	OutputForwardingCode.Print(CmdIndexToPropertyMapSignature);
 	OutputForwardingCode.Print(TEXT("{"));
 	OutputForwardingCode.Indent();
-	OutputForwardingCode.Print("switch (cmdIndex) {");
-	OutputForwardingCode.Indent();
-	for (int cmdIndex = 0; cmdIndex < RepLayout.Cmds.Num(); ++cmdIndex) {
-		if (RepLayout.Cmds[cmdIndex].Type == REPCMD_Return || RepLayout.Cmds[cmdIndex].Type == REPCMD_DynamicArray)
-			continue;
-
-		if (RepLayout.Cmds[cmdIndex].Property == nullptr)
-			continue;
-
-		// Get property and parent property from RepLayout, then look up PropertyInfo.
-		UProperty* Property = RepLayout.Cmds[cmdIndex].Property;
-		UProperty* ParentProperty = RepLayout.Parents[RepLayout.Cmds[cmdIndex].ParentIndex].Property;
-		if (ParentProperty == Property) {
-			ParentProperty = nullptr;
-		}
-		TArray<UProperty*> PropertyChain;
-		if (ParentProperty) {
-			PropertyChain = { ParentProperty, Property };
+	OutputForwardingCode.Print(FString::Printf(TEXT("UClass* Class = %s::StaticClass();"), *GetUnrealCompleteTypeName(Class)));
+	OutputForwardingCode.Print(TEXT("TMap<int, TPair<UProperty*, UProperty*>> Properties;"));
+	for (auto& RepLayoutPair : RepLayoutProperties) {
+		auto CmdIndex = RepLayoutPair.Key;
+		PropertyInfo& PropertyInfo = RepLayoutPair.Value;
+		// Parent case.
+		if (PropertyInfo.Chain.Num() > 1) {
+			OutputForwardingCode.Print(FString::Printf(TEXT("Properties[%d] = MakeTuple<UProperty*, UProperty*>(Class->FindPropertyByName(\"%s\"), nullptr);"),
+				CmdIndex, *PropertyInfo.Chain[0]->GetName()));
+			OutputForwardingCode.Print(FString::Printf(TEXT("Properties[%d].Value = Cast<UStructProperty>(Properties[%d].Key)->Struct->FindPropertyByName(\"%s\");"),
+				CmdIndex, CmdIndex, *PropertyInfo.Chain[1]->GetName()));
 		} else {
-			PropertyChain = { Property };
+			OutputForwardingCode.Print(FString::Printf(TEXT("Properties[%d] = MakeTuple<UProperty*, UProperty*>(nullptr, Class->FindPropertyByName(\"%s\"));"),
+				CmdIndex, *PropertyInfo.Property->GetName()));
 		}
-		FString FullyQualifiedName = GetFullyQualifiedName(PropertyChain);
-		PropertyInfo* PropertyInfo = PropertyInfoMap.Find(FullyQualifiedName);
+	}
+	OutputForwardingCode.Print(TEXT("return Properties;"));
+	OutputForwardingCode.Outdent();
+	OutputForwardingCode.Print(TEXT("}"));
+	OutputForwardingCode.Print();
+
+	// Unreal -> Spatial.
+	OutputForwardingCode.Print(ForwardingFunctionSignature);
+	OutputForwardingCode.Print(TEXT("{"));
+	OutputForwardingCode.Indent();
+	OutputForwardingCode.Print(TEXT("UObject* Container = Actor;"));
+	OutputForwardingCode.Print(TEXT("switch (CmdIndex)\n{"));
+	OutputForwardingCode.Indent();
+	for (auto& RepLayoutPair : RepLayoutProperties) {
+		auto CmdIndex = RepLayoutPair.Key;
+		PropertyInfo& PropertyInfo = RepLayoutPair.Value;
 
 		// Output conversion code.
-		OutputForwardingCode.Print(FString::Printf(TEXT("case %d:"), cmdIndex));
-		OutputForwardingCode.Indent();
+		OutputForwardingCode.Print(FString::Printf(TEXT("case %d:"), CmdIndex));
 		OutputForwardingCode.Print(TEXT("{"));
 		OutputForwardingCode.Indent();
 
 		// Value expression.
-		FString ValueName = TEXT("Value");
-		FString ValueCppType = Property->GetCPPType();
-		OutputForwardingCode.Print(FString::Printf(TEXT("auto& %s = *Property->ContainerPtrToValuePtr<%s>(this);"), *ValueName, *ValueCppType));
-		GenerateUnrealToSchemaConversion(OutputForwardingCode, PropertyInfoMap, PropertyChain, ValueName);
+		FString Container = TEXT("Container");
+		FString PropertyValueName = TEXT("Value");
+		FString FieldValueName = PropertyValueName;
+		FString PropertyValueCppType = PropertyInfo.Property->GetCPPType();
+		FString PropertyName = TEXT("Property");
+		if (PropertyInfo.Chain.Num() > 1) {
+			PropertyName = TEXT("ParentProperty");
+			PropertyValueCppType = PropertyInfo.Chain[0]->GetCPPType();
+			FieldValueName += TEXT(".") + PropertyInfo.Property->GetNameCPP();
+		}
+		OutputForwardingCode.Print(FString::Printf(TEXT("auto& %s = *%s->ContainerPtrToValuePtr<%s>(%s);"), *PropertyValueName, *PropertyName, *PropertyValueCppType, *Container));
+
+		// Schema conversion.
+		GenerateUnrealToSchemaConversion(OutputForwardingCode, TEXT("ReplicatedData"), PropertyInfo.Chain, FieldValueName);
+
 		OutputForwardingCode.Print(TEXT("break;"));
 		OutputForwardingCode.Outdent();
 		OutputForwardingCode.Print(TEXT("}"));
-		OutputForwardingCode.Outdent();
 	}
 	OutputForwardingCode.Outdent();
 	OutputForwardingCode.Print(TEXT("}"));
 	OutputForwardingCode.Outdent();
 	OutputForwardingCode.Print(TEXT("}"));
-	OutputForwardingCode.WriteToFile(ForwardingCodePath + TEXT("UnrealNativeForwarding.cpp"));
+
+	// Spatial -> Unreal.
+	OutputForwardingCode.Print(SpatialToUnrealSignature);
+	OutputForwardingCode.Print(TEXT("{"));
+	OutputForwardingCode.Indent();
+	OutputForwardingCode.Print(TEXT("UObject* Container = Actor;"));
+	for (auto& RepLayoutPair : RepLayoutProperties) {
+		auto CmdIndex = RepLayoutPair.Key;
+		PropertyInfo& PropertyInfo = RepLayoutPair.Value;
+
+		OutputForwardingCode.Print(FString::Printf(TEXT("if (Update->Has%s())\n{"), *GetFullyQualifiedCppName(PropertyInfo.Chain)));
+		OutputForwardingCode.Indent();
+		OutputForwardingCode.Print(FString::Printf(TEXT("UProperty* ParentProperty = CmdIndexToPropertyMap[%d].Key;"), CmdIndex));
+		OutputForwardingCode.Print(FString::Printf(TEXT("UProperty* Property = CmdIndexToPropertyMap[%d].Value;"), CmdIndex));
+
+		// Value expression.
+		FString Container = TEXT("Container");
+		FString PropertyValueName = TEXT("Value");
+		FString FieldValueName = PropertyValueName;
+		FString PropertyValueCppType = PropertyInfo.Property->GetCPPType();
+		FString PropertyName = TEXT("Property");
+		if (PropertyInfo.Chain.Num() > 1) {
+			PropertyName = TEXT("ParentProperty");
+			PropertyValueCppType = PropertyInfo.Chain[0]->GetCPPType();
+			FieldValueName += TEXT(".") + PropertyInfo.Property->GetNameCPP();
+		}
+		OutputForwardingCode.Print(FString::Printf(TEXT("auto& %s = *%s->ContainerPtrToValuePtr<%s>(%s);"), *PropertyValueName, *PropertyName, *PropertyValueCppType, *Container));
+
+		// Schema -> Unreal conversion.
+		//GenerateUnrealToSchemaConversion(OutputForwardingCode, TEXT("ReplicatedData"), PropertyInfo.Chain, FieldValueName);
+
+		OutputForwardingCode.Outdent();
+		OutputForwardingCode.Print(TEXT("}"));
+	}
+	OutputForwardingCode.Outdent();
+	OutputForwardingCode.Print(TEXT("}"));
+
+	OutputForwardingCode.WriteToFile(ForwardingCodePath + FString::Printf(TEXT("SpatialInterop%s.cpp"), *Class->GetName()));
 }
 }
 
@@ -542,7 +698,7 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Params) {
 	FString CombinedSchemaPath =
 		FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../schema/generated/"));
 	FString CombinedForwardingCodePath =
-		FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../forwarding/"));
+		FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath)) {
 		UE_LOG(LogTemp, Warning, TEXT("================================================================================="));
