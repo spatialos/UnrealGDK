@@ -100,7 +100,7 @@ void USpatialShadowActorPipelineBlock::AddEntities(
 	{
 		// Wait for the "real" entity to be checked out.
 		// TODO: For now, just use the first player controllers pawn.
-		AActor* PairedEntity = World->GetFirstPlayerController() ? World->GetFirstPlayerController()->GetControlledPawn() : nullptr;//EntityRegistry->GetActorFromEntityId(Entity);
+		AActor* PairedEntity = World->GetFirstPlayerController() ? World->GetFirstPlayerController()->GetPawn() : nullptr;//EntityRegistry->GetActorFromEntityId(Entity);
 		if (PairedEntity)
 		{
 			// Retrieve the EntityType string from the Metadata component.
@@ -125,6 +125,7 @@ void USpatialShadowActorPipelineBlock::AddEntities(
 					InView,
 					InConnection,
 					InCallbackDispatcher);
+				EntityActor->PairedActor = PairedEntity;
 				if (EntityActor)
 				{
 					ShadowActors.Add(Entity, EntityActor);
