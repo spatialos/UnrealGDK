@@ -12,12 +12,9 @@
 UCLASS()
 class NUF_API USpatialPackageMapClient : public UPackageMapClient
 {
-	GENERATED_BODY()
-	bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
-	bool SerializeNewActor(FArchive& Ar, class UActorChannel *Channel, class AActor*& Actor) override;
-		
+	GENERATED_BODY()		
 public:
-	void RegisterStaticObjectGUID(FNetworkGUID& GUID, FString& Path);
+	void ResolveStaticObjectGUID(FNetworkGUID& GUID, FString& Path);
 };
 
 
@@ -29,7 +26,7 @@ public:
 	// requires this to be made virtual in UPackageMapClient.h
 	FNetworkGUID AssignNewNetGUID_Server(const UObject* Object) override;
 
-	void RegisterSpatialNetGUID(const FNetworkGUID& NetGUID, const UObject* Object, const FString& Path);
+	void RegisterPreallocatedNetGUID(const FNetworkGUID& NetGUID, const UObject* Object, const FString& Path);
 
 	TMap<FNetworkGUID, int64> NetGuidToEntityIdMap;
 };

@@ -1,7 +1,7 @@
 #include "SpatialInteropCharacter.h"
 #include "CoreMinimal.h"
-#include "SpatialPackageMapClient.h"
 #include "Misc/Base64.h"
+#include "Engine/PackageMapClient.h"
 
 TMap<int, TPair<UProperty*, UProperty*>> CreateCmdIndexToPropertyMap_Character()
 {
@@ -78,7 +78,7 @@ TMap<int, TPair<UProperty*, UProperty*>> CreateCmdIndexToPropertyMap_Character()
 	return Properties;
 }
 
-void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* ParentProperty, UProperty* Property, UUnrealACharacterReplicatedDataComponent* ReplicatedData, USpatialPackageMapClient* PackageMap)
+void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* ParentProperty, UProperty* Property, UUnrealACharacterReplicatedDataComponent* ReplicatedData, UPackageMapClient* PackageMap)
 {
 	UObject* Container = Actor;
 	switch (CmdIndex)
@@ -110,7 +110,9 @@ void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* Pare
 		case 4:
 		{
 			auto& Value = *Property->ContainerPtrToValuePtr<AActor*>(Container);
-			// WEAK OBJECT REPLICATION - ReplicatedData->FieldOwner = Value;
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			ReplicatedData->FieldOwner = UObjectRef;
 			break;
 		}
 		case 5:
@@ -126,7 +128,9 @@ void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* Pare
 		case 6:
 		{
 			auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepAttachment>(Container);
-			// WEAK OBJECT REPLICATION - ReplicatedData->FieldAttachmentreplicationAttachparent = Value.AttachParent;
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value.AttachParent).Value))));
+			ReplicatedData->FieldAttachmentreplicationAttachparent = UObjectRef;
 			break;
 		}
 		case 7:
@@ -159,7 +163,9 @@ void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* Pare
 		case 11:
 		{
 			auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepAttachment>(Container);
-			// WEAK OBJECT REPLICATION - ReplicatedData->FieldAttachmentreplicationAttachcomponent = Value.AttachComponent;
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value.AttachComponent).Value))));
+			ReplicatedData->FieldAttachmentreplicationAttachcomponent = UObjectRef;
 			break;
 		}
 		case 12:
@@ -177,13 +183,17 @@ void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* Pare
 		case 14:
 		{
 			auto& Value = *Property->ContainerPtrToValuePtr<APawn*>(Container);
-			// WEAK OBJECT REPLICATION - ReplicatedData->FieldInstigator = Value;
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			ReplicatedData->FieldInstigator = UObjectRef;
 			break;
 		}
 		case 15:
 		{
 			auto& Value = *Property->ContainerPtrToValuePtr<APlayerState*>(Container);
-			// WEAK OBJECT REPLICATION - ReplicatedData->FieldPlayerstate = Value;
+			/*auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			ReplicatedData->FieldPlayerstate = UObjectRef;*/
 			break;
 		}
 		case 16:
@@ -195,16 +205,16 @@ void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* Pare
 		case 17:
 		{
 			auto& Value = *Property->ContainerPtrToValuePtr<AController*>(Container);
-			//auto UObjectRef = NewObject<UUnrealObjectRef>();
-			//UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));// Value
-			//ReplicatedData->FieldController = UObjectRef;
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			ReplicatedData->FieldController = UObjectRef;
 			break;
 		}
 		case 18:
 		{
 			auto& Value = *ParentProperty->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
-			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value.MovementBase).Value))));// Value
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value.MovementBase).Value))));
 			ReplicatedData->FieldReplicatedbasedmovementMovementbase = UObjectRef;
 			break;
 		}
@@ -292,7 +302,9 @@ void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* Pare
 		case 32:
 		{
 			auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-			// WEAK OBJECT REPLICATION - ReplicatedData->FieldReprootmotionAnimmontage = Value.AnimMontage;
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value.AnimMontage).Value))));
+			ReplicatedData->FieldReprootmotionAnimmontage = UObjectRef;
 			break;
 		}
 		case 33:
@@ -319,7 +331,9 @@ void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* Pare
 		case 36:
 		{
 			auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-			// WEAK OBJECT REPLICATION - ReplicatedData->FieldReprootmotionMovementbase = Value.MovementBase;
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value.MovementBase).Value))));
+			ReplicatedData->FieldReprootmotionMovementbase = UObjectRef;
 			break;
 		}
 		case 37:

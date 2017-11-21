@@ -174,7 +174,7 @@ void USpatialShadowActorPipelineBlock::AddEntities(
 							{
 								FNetworkGUID NetGUID(It->first);
 								FString Path(It->second.c_str());
-								PMC->RegisterStaticObjectGUID(NetGUID, Path);
+								PMC->ResolveStaticObjectGUID(NetGUID, Path);
 							}
 							SpawnedEntities.Add(Entity);
 						}

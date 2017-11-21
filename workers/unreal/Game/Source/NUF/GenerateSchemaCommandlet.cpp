@@ -432,7 +432,7 @@ void GenerateUnrealToSchemaConversion(CodeWriter& Writer, const FString& Replica
 	} else if (Property->IsA(UByteProperty::StaticClass())) {
 		Writer.Print(FString::Printf(TEXT("%s = int(%s);"), *SchemaPropertyName, *PropertyValue));
 	} else if (Property->IsA(UObjectPropertyBase::StaticClass())) {
-		Writer.Print(FString::Printf(TEXT("// WEAK OBJECT REPLICATION - %s = %s;"), *SchemaPropertyName, *PropertyValue));
+		Writer.Print(FString::Printf(TEXT("auto UObjectRef = NewObject<UUnrealObjectRef>();\nUObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(%s).Value))));\n%s = UObjectRef;"), *PropertyValue, *SchemaPropertyName));
 	} else if (Property->IsA(UNameProperty::StaticClass())) {
 		Writer.Print(FString::Printf(TEXT("%s = %s.ToString();"), *SchemaPropertyName, *PropertyValue));
 	} else if (Property->IsA(UUInt32Property::StaticClass())) {
@@ -551,7 +551,7 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 		TEXT("TMap<int, TPair<UProperty*, UProperty*>> CreateCmdIndexToPropertyMap_%s()"),
 		*Class->GetName());
 	FString ForwardingFunctionSignature = FString::Printf(
-		TEXT("void ApplyUpdateToSpatial_%s(AActor* Actor, int CmdIndex, UProperty* ParentProperty, UProperty* Property, U%sComponent* ReplicatedData)"),
+		TEXT("void ApplyUpdateToSpatial_%s(AActor* Actor, int CmdIndex, UProperty* ParentProperty, UProperty* Property, U%sComponent* ReplicatedData, USpatialPackageMapClient* PackageMap)"),
 		*Class->GetName(),
 		*GetSchemaReplicatedComponentFromUnreal(Class));
 	FString SpatialToUnrealSignature = FString::Printf(
@@ -574,6 +574,7 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	OutputForwardingCode.Print(FString::Printf(TEXT("#include \"SpatialInterop%s.h\""), *Class->GetName()));
 	OutputForwardingCode.Print(TEXT("#include \"CoreMinimal.h\""));
 	OutputForwardingCode.Print(TEXT("#include \"Misc/Base64.h\""));
+	OutputForwardingCode.Print(TEXT("#include \"Engine/PackageMapClient.h\""));
 	OutputForwardingCode.Print();
 
 	// Cmd Index to Property map.

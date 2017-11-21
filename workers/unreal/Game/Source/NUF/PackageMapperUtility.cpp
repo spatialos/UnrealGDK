@@ -15,7 +15,7 @@ void APackageMapperUtility::MapActorPaths(TMap<uint32, FString>& OutMap, UObject
 	{
 		AActor* Actor = *Itr;
 		FStringAssetReference StringRef(Actor);
-		FString ActorPath = *StringRef.AssetLongPathname;
+		FString ActorPath = *StringRef.ToString();
 		FString PathHash = *FMD5::HashAnsiString(*Actor->GetPathName());
 		uint32 IntPathHash = std::strtoul(TCHAR_TO_UTF8(*PathHash), NULL, 10);
 		OutMap.Emplace(IntPathHash/* + StaticObjectOffset*/, ActorPath);

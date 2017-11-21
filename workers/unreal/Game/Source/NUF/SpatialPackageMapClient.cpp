@@ -38,15 +38,17 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID_Server(const UObject* Object
 {
 	check(IsNetGUIDAuthority());
 
-	const int32 IsStatic = IsDynamicObject(Object) ? 0 : 1;
+	/** 
+		Should only be assigning GUIDs for dynamic objects 
+		Static objects' NetGUIDs are predetermined and registered in RegisterPreallocatedNetGUID
+	**/
 
-	if (!IsStatic)
+	if (IsDynamicObject(Object))
 	{
 		// Dynamic objects (excluding subobjects) should all be entities
 		const AActor* Actor = Cast<AActor>(Object);	
 
 		int64 Id = Cast<USpatialNetDriver>(Driver)->GetEntityRegistry()->GetEntityIdFromActor(Actor).ToSpatialEntityId();
-
 		if (Id > 0)
 		{	
 			// Allocate a unique dynamic GUID (this just does what the ALLOC_NEW_NET_GUID macro does)
@@ -60,7 +62,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID_Server(const UObject* Object
 	return FNetGUIDCache::AssignNewNetGUID_Server(Object);
 }
 
-void FSpatialNetGUIDCache::RegisterSpatialNetGUID(const FNetworkGUID& NetGUID, const UObject* Object, const FString& Path)
+void FSpatialNetGUIDCache::RegisterPreallocatedNetGUID(const FNetworkGUID& NetGUID, const UObject* Object, const FString& Path)
 {
 	check(!ObjectLookup.Contains(NetGUID));
 	FNetGuidCacheObject CacheObject;
@@ -69,47 +71,9 @@ void FSpatialNetGUIDCache::RegisterSpatialNetGUID(const FNetworkGUID& NetGUID, c
 	RegisterNetGUID_Internal(NetGUID, CacheObject);
 }
 
-bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID /*= NULL*/)
+void USpatialPackageMapClient::ResolveStaticObjectGUID(FNetworkGUID& GUID, FString& Path)
 {
-	return Super::SerializeObject(Ar, InClass, Obj, OutNetGUID);
-}
-
-bool USpatialPackageMapClient::SerializeNewActor(FArchive& Ar, class UActorChannel *Channel, class AActor*& Actor)
-{
-	return Super::SerializeNewActor(Ar, Channel, Actor);
-}
-
-void USpatialPackageMapClient::RegisterStaticObjectGUID(FNetworkGUID& GUID, FString& Path)
-{
-	//FNetBitWriter Ar(sizeof(GUID) + sizeof(uint8) + sizeof(Path));
-
-	//FExportFlags ExportFlags;
-	//ExportFlags.bHasNetworkChecksum = 0;
-	//ExportFlags.bHasPath = 1;
-
-	//Ar << GUID;
-	//Ar << ExportFlags.Value;
-	//Ar << Path;
-
-	//// pretend this is a received FArchive
-	//Ar.ArIsSaving = 0;
-	//Ar.ArIsLoading = 1;
-
-	//FNetworkGUID TestGUID;
-	//Ar << TestGUID; 
-	//UE_LOG(LogTemp, Log, TEXT("Read GUID: %i"), TestGUID.Value);
-
-	//FExportFlags TestFlags;
-	//Ar << TestFlags.Value;
-	//
-	//FString TestPath;
-	//Ar << TestPath;
-	//UE_LOG(LogTemp, Log, TEXT("Read Path: %s"), *TestPath);
-
-	//UObject* Obj = nullptr;
-	//InternalLoadObject(Ar, Obj, 0);
-
 	FStringAssetReference AssetRef(*Path);
 	UObject* Object = AssetRef.TryLoad();
-	static_cast<FSpatialNetGUIDCache*>(GuidCache.Get())->RegisterSpatialNetGUID(GUID, Object, Path);
+	static_cast<FSpatialNetGUIDCache*>(GuidCache.Get())->RegisterPreallocatedNetGUID(GUID, Object, Path);
 }
