@@ -5,13 +5,33 @@
 #include "CallbackDispatcher.h"
 #include "EngineMinimal.h"
 #include "EntityRegistry.h"
+#include "SpatialNetDriver.h"
+#include "SpatialPackageMapClient.h"
 #include "MetadataAddComponentOp.h"
 #include "MetadataComponent.h"
+#include "PackageMapComponent.h"
 #include "PositionAddComponentOp.h"
 #include "PositionComponent.h"
 #include "SpatialOSConversionFunctionLibrary.h"
 #include "improbable/view.h"
 #include "improbable/worker.h"
+
+struct FMockExportFlags
+{
+	union
+	{
+		struct
+		{
+			uint8 bHasPath : 1;
+			uint8 bNoLoad : 1;
+			uint8 bHasNetworkChecksum : 1;
+		};
+
+		uint8	Value;
+	};
+
+	FMockExportFlags(){ Value = 0; }
+};
 
 void USpatialShadowActorPipelineBlock::Init(UEntityRegistry* Registry)
 {
@@ -132,6 +152,35 @@ void USpatialShadowActorPipelineBlock::AddEntities(
 					SpawnedEntities.Add(Entity);
 				}
 			}
+
+			// Hardcoding to PackageMap entityId for now
+			if (Entity.ToSpatialEntityId() == 3)
+			{
+				bool bPackageMapImported = false;
+				UAddComponentOpWrapperBase* PackageMapComponent = GetPendingAddComponent(Entity, UPackageMapComponent::ComponentId);
+				if (PackageMapComponent)
+				{
+					USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetOuter());
+					if (Driver->ClientConnections.Num() > 0)
+					{
+						USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(Driver->ClientConnections[0]->PackageMap);
+						if (PMC)
+						{
+							UPackageMapAddComponentOp* Op = Cast<UPackageMapAddComponentOp>(PackageMapComponent);
+							worker::Map<std::uint32_t, std::string> PackageMap = Op->Data->id_to_path_map();
+							for (auto It = PackageMap.begin();
+								It != PackageMap.end();
+								It++)
+							{
+								FNetworkGUID NetGUID(It->first);
+								FString Path(It->second.c_str());
+								PMC->RegisterStaticObjectGUID(NetGUID, Path);
+							}
+							SpawnedEntities.Add(Entity);
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -149,6 +198,8 @@ void USpatialShadowActorPipelineBlock::RemoveEntities(UWorld* World)
 		if (ActorPtr)
 		{
 			World->DestroyActor(*ActorPtr);
+
+
 			ShadowActors.Remove(EntityToRemove);
 		}
 	}

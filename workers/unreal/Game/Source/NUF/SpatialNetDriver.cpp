@@ -8,6 +8,7 @@
 #include "Engine/ActorChannel.h"
 #include "Net/RepLayout.h"
 #include "Net/DataReplication.h"
+#include "SpatialPackageMapClient.h"
 
 #include "Generated/SpatialInteropCharacter.h"
 
@@ -48,7 +49,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Connected to SpatialOS."));
-	ShadowActorPipelineBlock = NewObject<USpatialShadowActorPipelineBlock>();
+	ShadowActorPipelineBlock = NewObject<USpatialShadowActorPipelineBlock>(this);
 	ShadowActorPipelineBlock->Init(EntityRegistry);
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(ShadowActorPipelineBlock);
 	auto EntitySpawnerBlock = NewObject<USimpleEntitySpawnerBlock>();
@@ -146,10 +147,14 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 						UProperty* Property = RepLayout->Cmds[CmdIndex].Property;
 						UProperty* ParentProperty = RepLayout->Parents[RepLayout->Cmds[CmdIndex].ParentIndex].Property;
-						ApplyUpdateToSpatial_Character(ActorChannel->Actor, CmdIndex, ParentProperty, Property, ShadowActor->ReplicatedData);
 
-						FString ChangedProp = Property->GetNameCPP();
-						UE_LOG(LogTemp, Warning, TEXT("Actor: %s, cmd %s"), *GetNameSafe(ActorChannel->Actor), *ChangedProp);
+						if (ClientConnections.Num() > 0)
+						{
+							ApplyUpdateToSpatial_Character(ActorChannel->Actor, CmdIndex, ParentProperty, Property, ShadowActor->ReplicatedData, Cast<USpatialPackageMapClient>(ClientConnections[0]->PackageMap));
+
+							FString ChangedProp = Property->GetNameCPP();
+							UE_LOG(LogTemp, Warning, TEXT("Actor: %s, cmd %s"), *GetNameSafe(ActorChannel->Actor), *ChangedProp);
+						}
 					}
 				}
 			}
@@ -174,3 +179,19 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		}
 	}
 }
+
+void USpatialNetDriver::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	if (!HasAnyFlags(RF_ClassDefaultObject))
+	{
+		GuidCache = TSharedPtr<FSpatialNetGUIDCache>(new FSpatialNetGUIDCache(this));
+	}
+}
+
+UEntityRegistry* USpatialNetDriver::GetEntityRegistry()
+{
+	return EntityRegistry;
+}
+

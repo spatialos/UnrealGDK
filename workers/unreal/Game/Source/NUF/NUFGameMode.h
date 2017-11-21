@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SpatialOS/Generated/UClasses/EntityTemplate.h"
 #include "GameFramework/GameModeBase.h"
 #include "NUFGameMode.generated.h"
 
@@ -13,6 +14,9 @@ class ANUFGameMode : public AGameModeBase
 
 public:
 	ANUFGameMode();
+
+	//UFUNCTION(BlueprintPure, Category = "NUFGameMode")
+	//UEntityTemplate* CreatePlayerEntityTemplate(FString clientWorkerId, const FVector& position);
 };
 
 

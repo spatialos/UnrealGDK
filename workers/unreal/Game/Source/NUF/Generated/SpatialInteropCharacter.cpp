@@ -1,5 +1,6 @@
 #include "SpatialInteropCharacter.h"
 #include "CoreMinimal.h"
+#include "SpatialPackageMapClient.h"
 #include "Misc/Base64.h"
 
 TMap<int, TPair<UProperty*, UProperty*>> CreateCmdIndexToPropertyMap_Character()
@@ -77,7 +78,7 @@ TMap<int, TPair<UProperty*, UProperty*>> CreateCmdIndexToPropertyMap_Character()
 	return Properties;
 }
 
-void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* ParentProperty, UProperty* Property, UUnrealACharacterReplicatedDataComponent* ReplicatedData)
+void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* ParentProperty, UProperty* Property, UUnrealACharacterReplicatedDataComponent* ReplicatedData, USpatialPackageMapClient* PackageMap)
 {
 	UObject* Container = Actor;
 	switch (CmdIndex)
@@ -194,13 +195,17 @@ void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* Pare
 		case 17:
 		{
 			auto& Value = *Property->ContainerPtrToValuePtr<AController*>(Container);
-			// WEAK OBJECT REPLICATION - ReplicatedData->FieldController = Value;
+			//auto UObjectRef = NewObject<UUnrealObjectRef>();
+			//UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));// Value
+			//ReplicatedData->FieldController = UObjectRef;
 			break;
 		}
 		case 18:
 		{
 			auto& Value = *ParentProperty->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
-			// WEAK OBJECT REPLICATION - ReplicatedData->FieldReplicatedbasedmovementMovementbase = Value.MovementBase;
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value.MovementBase).Value))));// Value
+			ReplicatedData->FieldReplicatedbasedmovementMovementbase = UObjectRef;
 			break;
 		}
 		case 19:

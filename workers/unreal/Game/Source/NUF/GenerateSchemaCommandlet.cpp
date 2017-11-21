@@ -7,55 +7,49 @@
 #include "Misc/FileHelper.h"
 #include "Components/ArrowComponent.h"
 
-namespace {
-class CodeWriter {
-public:
-	CodeWriter() : Scope(0) {
-	}
+CodeWriter::CodeWriter() : Scope(0) 
+{
+}
 
-	CodeWriter& Print() {
-		OutputSource += TEXT("\n");
-		return *this;
-	}
+CodeWriter& CodeWriter::Print() {
+	OutputSource += TEXT("\n");
+	return *this;
+}
 
-	CodeWriter& Print(const FString& String) {
-		TArray<FString> Lines;
-		String.ParseIntoArray(Lines, TEXT("\n"), false);
-		for (auto& Line : Lines) {
-			FString ScopeIdent;
-			for (int ScopeLevel = 0; ScopeLevel < Scope; ++ScopeLevel) {
-				ScopeIdent += FString(TEXT("\t"));
-			}
-			OutputSource += ScopeIdent + Line + TEXT("\n");
+CodeWriter& CodeWriter::Print(const FString& String) {
+	TArray<FString> Lines;
+	String.ParseIntoArray(Lines, TEXT("\n"), false);
+	for (auto& Line : Lines) {
+		FString ScopeIdent;
+		for (int ScopeLevel = 0; ScopeLevel < Scope; ++ScopeLevel) {
+			ScopeIdent += FString(TEXT("\t"));
 		}
-		return *this;
+		OutputSource += ScopeIdent + Line + TEXT("\n");
 	}
+	return *this;
+}
 
-	void WriteToFile(const FString& Filename) {
-		check(Scope == 0);
-		FFileHelper::SaveStringToFile(OutputSource, *Filename);
-	}
+void CodeWriter::WriteToFile(const FString& Filename) {
+	check(Scope == 0);
+	FFileHelper::SaveStringToFile(OutputSource, *Filename);
+}
 
-	void Dump() {
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *OutputSource);
-	}
+void CodeWriter::Dump() {
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *OutputSource);
+}
 
-	CodeWriter& Indent() {
-		Scope++;
-		return *this;
-	}
+CodeWriter& CodeWriter::Indent() {
+	Scope++;
+	return *this;
+}
 
-	CodeWriter& Outdent() {
-		check(Scope > 0);
-		Scope--;
-		return *this;
-	}
+CodeWriter& CodeWriter::Outdent() {
+	check(Scope > 0);
+	Scope--;
+	return *this;
+}
 
-private:
-	FString OutputSource;
-	int Scope;
-};
-
+namespace {
 FString PropertySchemaName(UProperty* Property) {
 	FString FullPath = Property->GetFullGroupName(false);
 	FullPath.ReplaceInline(TEXT("."), TEXT("_"));
