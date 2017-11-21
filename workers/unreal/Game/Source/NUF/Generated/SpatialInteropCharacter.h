@@ -1,8 +1,14 @@
 #include "GameFramework/Actor.h"
 #include "UnrealACharacterReplicatedDataComponent.h"
 
-TMap<int, TPair<UProperty*, UProperty*>> CreateCmdIndexToPropertyMap_Character();
+struct RepHandleData
+{
+UProperty* Parent;
+UProperty* Property;
+int32 Offset;
+};
 
-void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* ParentProperty, UProperty* Property, UUnrealACharacterReplicatedDataComponent* ReplicatedData);
-
-void ReceiveUpdateFromSpatial_Character(AActor* Actor, TMap<int, TPair<UProperty*, UProperty*>>& CmdIndexToPropertyMap, UUnrealACharacterReplicatedDataComponentUpdate* Update);
+TMap<int, RepHandleData> CreateHandleToPropertyMap_Character();
+void ApplyUpdateToSpatial_Character(FArchive& Reader, int32 Handle, UProperty* Property, UUnrealACharacterReplicatedDataComponent* ReplicatedData);
+void ApplyUpdateToSpatial_Old_Character(AActor* Actor, int32 Handle, UProperty* ParentProperty, UProperty* Property, UUnrealACharacterReplicatedDataComponent* ReplicatedData);
+void ReceiveUpdateFromSpatial_Character(AActor* Actor, TMap<int, RepHandleData>& HandleToPropertyMap, UUnrealACharacterReplicatedDataComponentUpdate* Update);
