@@ -2,10 +2,14 @@
 
 // For GenerateSchemaFromClass
 #include "Net/DataReplication.h"
-#include "Net/RepLayout.h"
 #include "GameFramework/Character.h"
 #include "Misc/FileHelper.h"
 #include "Components/ArrowComponent.h"
+
+// Hack to access private members of FRepLayout.
+#define private public
+#include "Net/RepLayout.h"
+#undef private
 
 namespace
 {
@@ -720,47 +724,68 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	OutputSchema.Outdent().Print(TEXT("}"));
 	OutputSchema.WriteToFile(SchemaPath + TEXT("UnrealNative.schema"));
 
-	// Forwarding code function signatures.W
-	FString CmdIndexToPropertyMapSignature = FString::Printf(
-		TEXT("TMap<int, RepHandleData> CreateHandleToPropertyMap_%s()"),
-		*Class->GetName());
-	FString UnrealToSpatialSignature = FString::Printf(
-		TEXT("void ApplyUpdateToSpatial_%s(FArchive& Reader, int32 Handle, UProperty* Property, U%sComponent* ReplicatedData)"),
-		*Class->GetName(),
-		*GetSchemaReplicatedComponentFromUnreal(Class));
-	FString UnrealToSpatialOldSignature = FString::Printf(
-		TEXT("void ApplyUpdateToSpatial_Old_%s(AActor* Actor, int32 Handle, UProperty* ParentProperty, UProperty* Property, U%sComponent* ReplicatedData)"),
-		*Class->GetName(),
-		*GetSchemaReplicatedComponentFromUnreal(Class));
+	FString ShadowActorClass = FString::Printf(TEXT("SpatialShadowActor_%s"), *Class->GetName());
+
+	// Forwarding code function signatures.
+	FString UnrealToSpatialReturnType = TEXT("void");
+	FString UnrealToSpatialSignature = TEXT("ApplyUpdateToSpatial(FArchive& Reader, int32 Handle, UProperty* Property)");
+	FString SpatialToUnrealReturnType = TEXT("void");
 	FString SpatialToUnrealSignature = FString::Printf(
-		TEXT("void ReceiveUpdateFromSpatial_%s(AActor* Actor, TMap<int, RepHandleData>& HandleToPropertyMap, U%sComponentUpdate* Update)"),
-		*Class->GetName(),
+		TEXT("ReceiveUpdateFromSpatial(AActor* Actor, U%sComponentUpdate* Update)"),
 		*GetSchemaReplicatedComponentFromUnreal(Class));
 
 	// Forwarding code header file.
-	OutputForwardingCodeHeader.Print(TEXT("#include \"GameFramework/Actor.h\""));
+	OutputForwardingCodeHeader.Print(TEXT("#include \"SpatialShadowActor.h\""));
 	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("#include \"%sComponent.h\""), *GetSchemaReplicatedComponentFromUnreal(Class)));
+	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("#include \"%sComponent.h\""), *GetSchemaCompleteDataComponentFromUnreal(Class)));
+	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("#include \"%s.generated.h\""), *ShadowActorClass));
 	OutputForwardingCodeHeader.Print();
-	OutputForwardingCodeHeader.Print(TEXT("struct RepHandleData\n{\nUProperty* Parent;\nUProperty* Property;\nint32 Offset;\n};"));
+	OutputForwardingCodeHeader.Print(TEXT("struct RepHandleData\n{\n\tUProperty* Parent;\n\tUProperty* Property;\n\tint32 Offset;\n};"));
 	OutputForwardingCodeHeader.Print();
-	OutputForwardingCodeHeader.Print(CmdIndexToPropertyMapSignature + TEXT(";"));
-	OutputForwardingCodeHeader.Print(UnrealToSpatialSignature + TEXT(";"));
-	OutputForwardingCodeHeader.Print(UnrealToSpatialOldSignature + TEXT(";"));
-	OutputForwardingCodeHeader.Print(SpatialToUnrealSignature + TEXT(";"));
-	OutputForwardingCodeHeader.WriteToFile(ForwardingCodePath + FString::Printf(TEXT("SpatialInterop%s.h"), *Class->GetName()));
+	OutputForwardingCodeHeader.Print(TEXT("UCLASS()"));
+	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("class A%s : public ASpatialShadowActor"), *ShadowActorClass));
+	OutputForwardingCodeHeader.Print(TEXT("{")).Indent();
+	OutputForwardingCodeHeader.Print(TEXT("GENERATED_BODY()"));
+	OutputForwardingCodeHeader.Outdent().Print(TEXT("public:")).Indent();
+	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("A%s();"), *ShadowActorClass));
+	OutputForwardingCodeHeader.Print();
+	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("%s %s;"), *UnrealToSpatialReturnType, *UnrealToSpatialSignature));
+	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("%s %s;"), *SpatialToUnrealReturnType, *SpatialToUnrealSignature));
+	OutputForwardingCodeHeader.Print();
+	OutputForwardingCodeHeader.Print(TEXT("void ReplicateChanges(float DeltaTime) override;"));
+	OutputForwardingCodeHeader.Print(TEXT("const TMap<int32, RepHandleData>& GetHandlePropertyMap() const;"));
+	OutputForwardingCodeHeader.Print();
+	OutputForwardingCodeHeader.Print("UPROPERTY()");
+	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("U%sComponent* ReplicatedData;"), *GetSchemaReplicatedComponentFromUnreal(Class)));
+	OutputForwardingCodeHeader.Print("UPROPERTY()");
+	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("U%sComponent* CompleteData; "), *GetSchemaCompleteDataComponentFromUnreal(Class)));
+	OutputForwardingCodeHeader.Print();
+	OutputForwardingCodeHeader.Outdent().Print(TEXT("private:")).Indent();
+	OutputForwardingCodeHeader.Print(TEXT("TMap<int32, RepHandleData> HandleToPropertyMap;"));
+	OutputForwardingCodeHeader.Outdent().Print(TEXT("};"));
+	OutputForwardingCodeHeader.WriteToFile(ForwardingCodePath + FString::Printf(TEXT("%s.h"), *ShadowActorClass));
 
 	// Forwarding code source file.
-	OutputForwardingCode.Print(FString::Printf(TEXT("#include \"SpatialInterop%s.h\""), *Class->GetName()));
+	OutputForwardingCode.Print(FString::Printf(TEXT("#include \"%s.h\""), *ShadowActorClass));
 	OutputForwardingCode.Print(TEXT("#include \"CoreMinimal.h\""));
 	OutputForwardingCode.Print(TEXT("#include \"Misc/Base64.h\""));
+	
+	// Constructor.
 	OutputForwardingCode.Print();
+	OutputForwardingCode.Print(FString::Printf(TEXT("A%s::A%s()"), *ShadowActorClass, *ShadowActorClass));
+	OutputForwardingCode.Print(TEXT("{")).Indent();
+	OutputForwardingCode.Print(FString::Printf(
+		TEXT("ReplicatedData = CreateDefaultSubobject<U%sComponent>(TEXT(\"%sComponent\"));"),
+		*GetSchemaReplicatedComponentFromUnreal(Class),
+		*GetSchemaReplicatedComponentFromUnreal(Class)));
+	OutputForwardingCode.Print(FString::Printf(
+		TEXT("CompleteData = CreateDefaultSubobject<U%sComponent>(TEXT(\"%sComponent\"));"),
+		*GetSchemaCompleteDataComponentFromUnreal(Class),
+		*GetSchemaCompleteDataComponentFromUnreal(Class)));
 
-	// Cmd Index to Property map.
-	OutputForwardingCode.Print(CmdIndexToPropertyMapSignature);
-	OutputForwardingCode.Print(TEXT("{"));
-	OutputForwardingCode.Indent();
+	// Handle to Property map.
+	OutputForwardingCode.Print();
 	OutputForwardingCode.Print(FString::Printf(TEXT("UClass* Class = %s::StaticClass();"), *GetUnrealCompleteTypeName(Class)));
-	OutputForwardingCode.Print(TEXT("TMap<int, RepHandleData> Properties;"));
 	for (auto& RepLayoutPair : RepLayoutProperties)
 	{
 		auto CmdIndex = RepLayoutPair.Key;
@@ -768,24 +793,23 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 		// Parent case.
 		if (PropertyInfo.Chain.Num() > 1)
 		{
-			OutputForwardingCode.Print(FString::Printf(TEXT("Properties.Add(%d, RepHandleData{Class->FindPropertyByName(\"%s\"), nullptr, %d});"),
+			OutputForwardingCode.Print(FString::Printf(TEXT("HandleToPropertyMap.Add(%d, RepHandleData{Class->FindPropertyByName(\"%s\"), nullptr, %d});"),
 				CmdIndex, *PropertyInfo.Chain[0]->GetName(), RepLayoutPair.Value.Offset));
-			OutputForwardingCode.Print(FString::Printf(TEXT("Properties[%d].Property = Cast<UStructProperty>(Properties[%d].Parent)->Struct->FindPropertyByName(\"%s\");"),
+			OutputForwardingCode.Print(FString::Printf(TEXT("HandleToPropertyMap[%d].Property = Cast<UStructProperty>(HandleToPropertyMap[%d].Parent)->Struct->FindPropertyByName(\"%s\");"),
 				CmdIndex, CmdIndex, *PropertyInfo.Chain[1]->GetName()));
 		}
 		else
 		{
-			OutputForwardingCode.Print(FString::Printf(TEXT("Properties.Add(%d, RepHandleData{nullptr, Class->FindPropertyByName(\"%s\"), %d});"),
+			OutputForwardingCode.Print(FString::Printf(TEXT("HandleToPropertyMap.Add(%d, RepHandleData{nullptr, Class->FindPropertyByName(\"%s\"), %d});"),
 				CmdIndex, *PropertyInfo.Property->GetName(), RepLayoutPair.Value.Offset));
 		}
 	}
-	OutputForwardingCode.Print(TEXT("return Properties;"));
 	OutputForwardingCode.Outdent();
 	OutputForwardingCode.Print(TEXT("}"));
-	OutputForwardingCode.Print();
 
 	// Unreal -> Spatial (replicated)
-	OutputForwardingCode.Print(UnrealToSpatialSignature);
+	OutputForwardingCode.Print();
+	OutputForwardingCode.Print(FString::Printf(TEXT("%s A%s::%s"), *UnrealToSpatialReturnType, *ShadowActorClass, *UnrealToSpatialSignature));
 	OutputForwardingCode.Print(TEXT("{"));
 	OutputForwardingCode.Indent();
 	OutputForwardingCode.Print(TEXT("switch (Handle)\n{"));
@@ -826,10 +850,14 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	OutputForwardingCode.Print(TEXT("}"));
 	OutputForwardingCode.Outdent();
 	OutputForwardingCode.Print(TEXT("}"));
-	OutputForwardingCode.Print();
 
 	// Unreal -> Spatial (old).
 	// TODO: Keeping this around to help implement complete data serialisation later.
+	/*
+	FString UnrealToSpatialOldSignature = FString::Printf(
+		TEXT("void ApplyUpdateToSpatial_Old(AActor* Actor, int32 Handle, UProperty* ParentProperty, UProperty* Property, U%sComponent* ReplicatedData)"),
+		*GetSchemaReplicatedComponentFromUnreal(Class));
+	OutputForwardingCode.Print();
 	OutputForwardingCode.Print(UnrealToSpatialOldSignature);
 	OutputForwardingCode.Print(TEXT("{"));
 	OutputForwardingCode.Indent();
@@ -871,10 +899,11 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	OutputForwardingCode.Print(TEXT("}"));
 	OutputForwardingCode.Outdent();
 	OutputForwardingCode.Print(TEXT("}"));
-	OutputForwardingCode.Print();
+	*/
 
 	// Spatial -> Unreal.
-	OutputForwardingCode.Print(SpatialToUnrealSignature);
+	OutputForwardingCode.Print();
+	OutputForwardingCode.Print(FString::Printf(TEXT("%s A%s::%s"), *SpatialToUnrealReturnType, *ShadowActorClass, *SpatialToUnrealSignature));
 	OutputForwardingCode.Print(TEXT("{"));
 	OutputForwardingCode.Indent();
 	OutputForwardingCode.Print(TEXT("UObject* Container = Actor;"));
@@ -910,7 +939,21 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	OutputForwardingCode.Outdent();
 	OutputForwardingCode.Print(TEXT("}"));
 
-	OutputForwardingCode.WriteToFile(ForwardingCodePath + FString::Printf(TEXT("SpatialInterop%s.cpp"), *Class->GetName()));
+	// ReplicateChanges.
+	OutputForwardingCode.Print();
+	OutputForwardingCode.Print(FString::Printf(TEXT("void A%s::ReplicateChanges(float DeltaTime)"), *ShadowActorClass));
+	OutputForwardingCode.Print(TEXT("{")).Indent();
+	OutputForwardingCode.Print(TEXT("ReplicatedData->ReplicateChanges(DeltaTime);"));
+	OutputForwardingCode.Outdent().Print(TEXT("}"));
+
+	// GetHandlePropertyMap
+	OutputForwardingCode.Print();
+	OutputForwardingCode.Print(FString::Printf(TEXT("const TMap<int32, RepHandleData>& A%s::GetHandlePropertyMap() const"), *ShadowActorClass));
+	OutputForwardingCode.Print(TEXT("{")).Indent();
+	OutputForwardingCode.Print(TEXT("return HandleToPropertyMap;"));
+	OutputForwardingCode.Outdent().Print(TEXT("}"));
+
+	OutputForwardingCode.WriteToFile(ForwardingCodePath + FString::Printf(TEXT("%s.cpp"), *ShadowActorClass));
 }
 }
 

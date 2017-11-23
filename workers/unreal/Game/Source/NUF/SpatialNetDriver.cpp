@@ -10,9 +10,9 @@
 #include "Engine/ActorChannel.h"
 #include "Net/RepLayout.h"
 #include "Net/DataReplication.h"
-
 #include "SpatialActorChannel.h"
-#include "Generated/SpatialInteropCharacter.h"
+
+//#include "Generated/SpatialInteropCharacter.h"
 
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
 

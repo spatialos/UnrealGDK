@@ -4,7 +4,8 @@
 #include "SpatialNetDriver.h"
 #include "Engine/NetConnection.h"
 #include "Net/DataBunch.h"
-#include "Generated/SpatialInteropCharacter.h"
+
+#include "Generated/SpatialShadowActor_Character.h"
 
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer & objectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(objectInitializer)
@@ -126,10 +127,6 @@ FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge
 	// Run default actor channel code.
 	auto ReturnValue = UActorChannel::SendBunch(BunchPtr, bMerge);
 
-	// Get property map.
-	// TODO: Store this in the shadow actor.
-	auto PropertyMap = CreateHandleToPropertyMap_Character();
-
 	// Read bunch.
 	bool bHasRepLayout;
 	bool bIsActor;
@@ -150,27 +147,31 @@ FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("-> Header: HasRepLayout %d IsActor %d PayloadBitCount %d"), (int)bHasRepLayout, (int)bIsActor, (int)PayloadBitCount);
-
+	
 	// Parse payload.
 	bool bDoChecksum = Reader.ReadBit() != 0;
 	uint32 Handle;
 	Reader.SerializeIntPacked(Handle);
 	if (bDoChecksum)
 	{
+		// Skip checksum bits.
 		uint32 Checksum;
 		Reader << Checksum;
 	}
 
+	// Ignore null terminator handle.
 	if (Handle == 0)
 	{
 		return ReturnValue;
 	}
 
-	UProperty* Property = PropertyMap[Handle].Property;
-	UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
-
 	// Get SpatialNetDriver.
 	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
+	if (!Driver->ShadowActorPipelineBlock)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SpatialOS is not connected yet."));
+		return ReturnValue;
+	}
 
 	// Get entity ID.
 	// TODO: Replace with EntityId from registry corresponding to this replicated actor.
@@ -181,16 +182,21 @@ FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge
 	}
 
 	// Get shadow actor.
-	ASpatialShadowActor* ShadowActor = Driver->ShadowActorPipelineBlock->GetShadowActor(EntityId);
+	ASpatialShadowActor_Character* ShadowActor = Cast<ASpatialShadowActor_Character>(Driver->ShadowActorPipelineBlock->GetShadowActor(EntityId));
 	if (!ShadowActor)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Actor channel has no corresponding shadow actor. That means the entity hasn't been checked out yet."));
 		return ReturnValue;
 	}
 
-	ApplyUpdateToSpatial_Character(Reader, Handle, Property, ShadowActor->ReplicatedData);
+	// Get property and apply update to SpatialOS.
+	auto PropertyMap = ShadowActor->GetHandlePropertyMap();
+	UProperty* Property = PropertyMap[Handle].Property;
+	UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
+	ShadowActor->ApplyUpdateToSpatial(Reader, Handle, Property);
 
-	// Receive property
+	// Skip checksum bits.
+	// TODO: Do this if more replicated updates can be appended to one bunch.
 	if (bDoChecksum)
 	{
 		// Skip.

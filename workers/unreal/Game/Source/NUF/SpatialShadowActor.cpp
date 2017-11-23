@@ -1,18 +1,14 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialShadowActor.h"
-#include "Generated/SpatialInteropCharacter.h"
 
 ASpatialShadowActor::ASpatialShadowActor() : PairedActor(nullptr)
 {
 	SetActorTickEnabled(false);
 
-	ReplicatedData = CreateDefaultSubobject<UUnrealACharacterReplicatedDataComponent>(TEXT("UnrealACharacterReplicatedDataComponent"));
-	CompleteData = CreateDefaultSubobject<UUnrealACharacterCompleteDataComponent>(TEXT("UnrealACharacterCompleteDataComponent"));
+	//ReplicatedData->OnComponentUpdate.AddDynamic(this, &ASpatialShadowActor::OnReplicatedDataUpdate);
 }
 
-void ASpatialShadowActor::OnReplicatedDataUpdate(UUnrealACharacterReplicatedDataComponentUpdate* Update)
+void ASpatialShadowActor::ReplicateChanges(float DeltaTime)
 {
-	auto Map = CreateHandleToPropertyMap_Character();
-	ReceiveUpdateFromSpatial_Character(PairedActor, Map, Update);
 }
