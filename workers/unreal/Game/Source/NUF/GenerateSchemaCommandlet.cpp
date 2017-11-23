@@ -735,10 +735,14 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 		*GetSchemaReplicatedComponentFromUnreal(Class));
 
 	// Forwarding code header file.
+	OutputForwardingCodeHeader.Print(TEXT("#pragma once"));
+	OutputForwardingCodeHeader.Print();
 	OutputForwardingCodeHeader.Print(TEXT("#include \"SpatialShadowActor.h\""));
-	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("#include \"%sComponent.h\""), *GetSchemaReplicatedComponentFromUnreal(Class)));
-	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("#include \"%sComponent.h\""), *GetSchemaCompleteDataComponentFromUnreal(Class)));
 	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("#include \"%s.generated.h\""), *ShadowActorClass));
+	OutputForwardingCodeHeader.Print();
+	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("class U%sComponent;"), *GetSchemaReplicatedComponentFromUnreal(Class)));
+	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("class U%sComponentUpdate;"), *GetSchemaReplicatedComponentFromUnreal(Class)));
+	OutputForwardingCodeHeader.Print(FString::Printf(TEXT("class U%sComponent;"), *GetSchemaCompleteDataComponentFromUnreal(Class)));
 	OutputForwardingCodeHeader.Print();
 	OutputForwardingCodeHeader.Print(TEXT("struct RepHandleData\n{\n\tUProperty* Parent;\n\tUProperty* Property;\n\tint32 Offset;\n};"));
 	OutputForwardingCodeHeader.Print();
@@ -767,6 +771,8 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 
 	// Forwarding code source file.
 	OutputForwardingCode.Print(FString::Printf(TEXT("#include \"%s.h\""), *ShadowActorClass));
+	OutputForwardingCode.Print(FString::Printf(TEXT("#include \"%sComponent.h\""), *GetSchemaReplicatedComponentFromUnreal(Class)));
+	OutputForwardingCode.Print(FString::Printf(TEXT("#include \"%sComponent.h\""), *GetSchemaCompleteDataComponentFromUnreal(Class)));
 	OutputForwardingCode.Print(TEXT("#include \"CoreMinimal.h\""));
 	OutputForwardingCode.Print(TEXT("#include \"Misc/Base64.h\""));
 	

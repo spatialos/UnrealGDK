@@ -1,7 +1,11 @@
+#pragma once
+
 #include "SpatialShadowActor.h"
-#include "UnrealACharacterReplicatedDataComponent.h"
-#include "UnrealACharacterCompleteDataComponent.h"
 #include "SpatialShadowActor_Character.generated.h"
+
+class UUnrealACharacterReplicatedDataComponent;
+class UUnrealACharacterReplicatedDataComponentUpdate;
+class UUnrealACharacterCompleteDataComponent;
 
 struct RepHandleData
 {

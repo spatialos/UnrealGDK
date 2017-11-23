@@ -15,6 +15,8 @@
 #include "improbable/worker.h"
 
 #include "Generated/SpatialShadowActor_Character.h"
+#include "UnrealACharacterReplicatedDataComponent.h"
+#include "UnrealACharacterCompleteDataComponent.h"
 
 void USpatialShadowActorPipelineBlock::Init(UEntityRegistry* Registry)
 {

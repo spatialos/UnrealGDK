@@ -13,7 +13,8 @@ public:
 	ASpatialShadowActor();
 
 	// Actor which this actor is "shadowing".
-	AActor* PairedActor;
+	UPROPERTY()
+	TWeakObjectPtr<AActor> PairedActor;
 
 	virtual void ReplicateChanges(float DeltaTime);
 };

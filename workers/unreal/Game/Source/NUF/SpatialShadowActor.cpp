@@ -2,11 +2,9 @@
 
 #include "SpatialShadowActor.h"
 
-ASpatialShadowActor::ASpatialShadowActor() : PairedActor(nullptr)
+ASpatialShadowActor::ASpatialShadowActor()
 {
 	SetActorTickEnabled(false);
-
-	//ReplicatedData->OnComponentUpdate.AddDynamic(this, &ASpatialShadowActor::OnReplicatedDataUpdate);
 }
 
 void ASpatialShadowActor::ReplicateChanges(float DeltaTime)

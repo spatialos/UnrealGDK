@@ -1,4 +1,6 @@
 #include "SpatialShadowActor_Character.h"
+#include "UnrealACharacterReplicatedDataComponent.h"
+#include "UnrealACharacterCompleteDataComponent.h"
 #include "CoreMinimal.h"
 #include "Misc/Base64.h"
 
