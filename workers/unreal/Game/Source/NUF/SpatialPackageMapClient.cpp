@@ -6,27 +6,6 @@
 
 const uint32 StaticObjectOffset = 0x80000000; // 2^31
 
-struct FExportFlags
-{
-	union
-	{
-		struct
-		{
-			uint8 bHasPath : 1;
-			uint8 bNoLoad : 1;
-			uint8 bHasNetworkChecksum : 1;
-		};
-
-		uint8	Value;
-	};
-
-	FExportFlags()
-	{
-		Value = 0;
-	}
-};
-
-
 struct FCompareComponentNames
 {
 	bool operator()(UObject& A, UObject& B) const 
