@@ -9,7 +9,8 @@
 #include "Net/RepLayout.h"
 #include "Net/DataReplication.h"
 #include "SpatialPackageMapClient.h"
-
+#include "SpatialShadowActorPipelineBlock.h"
+#include "SpatialPackageMapInteropBlock.h"
 #include "Generated/SpatialInteropCharacter.h"
 
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
@@ -49,9 +50,15 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Connected to SpatialOS."));
+
 	ShadowActorPipelineBlock = NewObject<USpatialShadowActorPipelineBlock>(this);
 	ShadowActorPipelineBlock->Init(EntityRegistry);
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(ShadowActorPipelineBlock);
+
+	SpatialPackageMapInteropBlock = NewObject<USpatialPackageMapInteropBlock>(this);
+	SpatialPackageMapInteropBlock->Init(EntityRegistry);
+	SpatialOSInstance->GetEntityPipeline()->AddBlock(SpatialPackageMapInteropBlock);
+
 	auto EntitySpawnerBlock = NewObject<USimpleEntitySpawnerBlock>();
 	//EntitySpawnerBlock->Init(EntityRegistry);
 	//SpatialOSInstance->GetEntityPipeline()->AddBlock(EntitySpawnerBlock);

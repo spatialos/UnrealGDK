@@ -2,10 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "IpNetDriver.h"
-#include "SpatialShadowActorPipelineBlock.h"
 #include "SpatialNetDriver.generated.h"
 
 class UEntityPipeline;
+class USpatialPackageMapInteropBlock;
+class USpatialShadowActorPipelineBlock;
 class UEntityRegistry;
 class UCallbackDispatcher;
 class USpatialOSComponentUpdater;
@@ -29,6 +30,9 @@ class NUF_API USpatialNetDriver : public UIpNetDriver
 
 	UPROPERTY()
 	USpatialShadowActorPipelineBlock* ShadowActorPipelineBlock;
+
+	UPROPERTY()
+	USpatialPackageMapInteropBlock* SpatialPackageMapInteropBlock;
 
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
