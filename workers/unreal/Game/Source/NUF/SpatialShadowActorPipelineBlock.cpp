@@ -172,10 +172,14 @@ void USpatialShadowActorPipelineBlock::AddEntities(
 								It != PackageMap.end();
 								It++)
 							{
+								// Can directly register this object with the PackageMap using the GUID we've received as 
+								// we know it is a static object and that this GUID is unique
+
 								FNetworkGUID NetGUID(It->first);
 								FString Path(It->second.c_str());
 								PMC->ResolveStaticObjectGUID(NetGUID, Path);
 							}
+
 							SpawnedEntities.Add(Entity);
 						}
 					}

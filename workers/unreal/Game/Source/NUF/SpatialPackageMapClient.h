@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/PackageMapClient.h"
+#include "EntityId.h"
 #include "SpatialPackageMapClient.generated.h"
 
 /**
@@ -14,7 +15,8 @@ class NUF_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()		
 public:
-	void ResolveStaticObjectGUID(FNetworkGUID& GUID, FString& Path);
+	void ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FString& Path);
+	void ResolveEntityActor(AActor* Actor, FEntityId EntityId);
 };
 
 
@@ -26,7 +28,17 @@ public:
 	// requires this to be made virtual in UPackageMapClient.h
 	FNetworkGUID AssignNewNetGUID_Server(const UObject* Object) override;
 
-	void RegisterPreallocatedNetGUID(const FNetworkGUID& NetGUID, const UObject* Object, const FString& Path);
+	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor);
 
-	TMap<FNetworkGUID, int64> NetGuidToEntityIdMap;
+	FEntityId GetEntityIdFromNetGUID(const FNetworkGUID NetGUID);
+	FNetworkGUID GetNetGUIDFromEntityId(const FEntityId EntityId);
+
+private:
+
+	FNetworkGUID AssignNewNetGUID(const UObject* Object);
+
+	UPROPERTY()
+	TMap<FNetworkGUID, FEntityId> NetGUIDToEntityIdMap;
+	UPROPERTY()
+	TMap<FEntityId, FNetworkGUID> EntityIdToNetGUIDMap;
 };

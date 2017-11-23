@@ -19,5 +19,6 @@ class NUF_API APackageMapperUtility : public APlacedEditorUtilityBase
 
 private:
 
+	static uint32 Hash(FString& Input);
 	void MapActorPaths(TMap<uint32, FString>& OutMap, UObject* WorldContextObject);
 };
