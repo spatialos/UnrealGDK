@@ -1,18 +1,12 @@
-// Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialShadowActor.h"
-#include "Generated/SpatialInteropCharacter.h"
 
-ASpatialShadowActor::ASpatialShadowActor() : PairedActor(nullptr)
+ASpatialShadowActor::ASpatialShadowActor()
 {
 	SetActorTickEnabled(false);
-
-	ReplicatedData = CreateDefaultSubobject<UUnrealACharacterReplicatedDataComponent>(TEXT("UnrealACharacterReplicatedDataComponent"));
-	CompleteData = CreateDefaultSubobject<UUnrealACharacterCompleteDataComponent>(TEXT("UnrealACharacterCompleteDataComponent"));
 }
 
-void ASpatialShadowActor::OnReplicatedDataUpdate(UUnrealACharacterReplicatedDataComponentUpdate* Update)
+void ASpatialShadowActor::ReplicateChanges(float DeltaTime)
 {
-	auto Map = CreateCmdIndexToPropertyMap_Character();
-	ReceiveUpdateFromSpatial_Character(PairedActor, Map, Update);
 }

@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -15,10 +17,15 @@ UCLASS()
 class NUF_API USpatialNetDriver : public UIpNetDriver
 {
 	GENERATED_BODY()
-	
+
+public:
 	virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error) override;
 	virtual int32 ServerReplicateActors(float DeltaSeconds) override;
 	virtual void TickDispatch(float DeltaTime) override;
+
+	// TOOD: Provide accessor to get shadow actors.
+	UPROPERTY()
+	USpatialShadowActorPipelineBlock* ShadowActorPipelineBlock;
 
 private:
 	UPROPERTY()
@@ -26,9 +33,6 @@ private:
 
 	UPROPERTY()
 	USpatialOSComponentUpdater* SpatialOSComponentUpdater;
-
-	UPROPERTY()
-	USpatialShadowActorPipelineBlock* ShadowActorPipelineBlock;
 
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;

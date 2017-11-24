@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "SpatialNetDriver.h"
 #include "SpatialNetConnection.h"
 #include "EntityRegistry.h"
@@ -8,8 +10,9 @@
 #include "Engine/ActorChannel.h"
 #include "Net/RepLayout.h"
 #include "Net/DataReplication.h"
+#include "SpatialActorChannel.h"
 
-#include "Generated/SpatialInteropCharacter.h"
+//#include "Generated/SpatialInteropCharacter.h"
 
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
 
@@ -19,6 +22,9 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	{
 		return false;
 	}
+
+	// make absolutely sure that the actor channel that we are using is our Spatial actor channel
+	UChannel::ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
 	SpatialOSInstance = NewObject<USpatialOS>(this);
 
@@ -81,6 +87,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	}
 
 #if WITH_SERVER_CODE
+	/*
 	for (int32 ClientId = 0; ClientId < ClientConnections.Num(); ClientId++)
 	{
 		UNetConnection* NetConnection = ClientConnections[ClientId];
@@ -146,7 +153,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 						UProperty* Property = RepLayout->Cmds[CmdIndex].Property;
 						UProperty* ParentProperty = RepLayout->Parents[RepLayout->Cmds[CmdIndex].ParentIndex].Property;
-						ApplyUpdateToSpatial_Character(ActorChannel->Actor, CmdIndex, ParentProperty, Property, ShadowActor->ReplicatedData);
+						//ApplyUpdateToSpatial_Character(ActorChannel->Actor, CmdIndex, ParentProperty, Property, ShadowActor->ReplicatedData);
 
 						FString ChangedProp = Property->GetNameCPP();
 						UE_LOG(LogTemp, Warning, TEXT("Actor: %s, cmd %s"), *GetNameSafe(ActorChannel->Actor), *ChangedProp);
@@ -155,6 +162,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 			}
 		}
 	}
+	*/
 #endif
 	return RetVal;
 }
