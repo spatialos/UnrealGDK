@@ -13,7 +13,6 @@
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer & objectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(objectInitializer)
 {
-	ChannelClasses[CHTYPE_Actor] = GetClass();
 	ChType = CHTYPE_Actor;
 }
 
@@ -32,14 +31,14 @@ void USpatialActorChannel::Close()
 	UActorChannel::Close();
 }
 
-void USpatialActorChannel::ReceivedBunch(FInBunch & bunch)
+void USpatialActorChannel::ReceivedBunch(FInBunch &Bunch)
 {
-	UActorChannel::ReceivedBunch(bunch);
+	UActorChannel::ReceivedBunch(Bunch);
 }
 
-void USpatialActorChannel::ReceivedNak(int32 packetId)
+void USpatialActorChannel::ReceivedNak(int32 PacketId)
 {
-	UActorChannel::ReceivedNak(packetId);
+	UActorChannel::ReceivedNak(PacketId);
 }
 
 void USpatialActorChannel::Tick()
@@ -240,4 +239,31 @@ void USpatialActorChannel::BecomeDormant()
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 	return UActorChannel::CleanUp(bForDestroy);
+}
+
+void USpatialActorChannel::SpatialReceivePropertyUpdate(FNetBitWriter& Payload)
+{
+	FNetBitWriter OutBunchData(nullptr, 0);
+	
+	// Write header.
+	OutBunchData.WriteBit(1); // bHasRepLayout
+	OutBunchData.WriteBit(1); // bIsActor
+
+	// Add null terminator to payload.
+	uint32 Terminator = 0;
+	Payload.SerializeIntPacked(Terminator);
+
+	// Write property info.
+	uint32 PayloadSize = Payload.GetNumBits() + 1; // extra bit for bDoChecksum
+	OutBunchData.SerializeIntPacked(PayloadSize);
+#ifdef ENABLE_PROPERTY_CHECKSUMS
+	OutBunchData.WriteBit(0); // bDoChecksum
+#endif
+	OutBunchData.SerializeBits(Payload.GetData(), Payload.GetNumBits());
+
+	FInBunch Bunch(Connection, OutBunchData.GetData(), OutBunchData.GetNumBits());
+	Bunch.ChIndex = ChIndex;
+	Bunch.bHasMustBeMappedGUIDs = false;
+	Bunch.bIsReplicationPaused = false;
+	ReceivedBunch(Bunch);
 }

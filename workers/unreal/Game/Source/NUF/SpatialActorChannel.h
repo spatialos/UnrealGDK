@@ -27,6 +27,9 @@ public:
 	virtual FPacketIdRange SendBunch(FOutBunch * bunch, bool bMerge) override;
 	virtual void StartBecomingDormant() override;
 
+	// Used by implementations of SpatialActorChannel.
+	void SpatialReceivePropertyUpdate(FNetBitWriter& Payload);
+
 protected:
 	// UChannel interface
 	virtual void BecomeDormant() override;

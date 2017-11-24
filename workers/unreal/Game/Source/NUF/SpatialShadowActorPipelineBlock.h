@@ -22,6 +22,7 @@ class UCallbackDispatcher;
 class UEntityRegistry;
 class UEntityPipeline;
 class USpatialOsComponent;
+class USpatialNetDriver;
 
 UCLASS()
 class NUF_API USpatialShadowActorPipelineBlock : public UEntityPipelineBlock {
@@ -41,6 +42,9 @@ public:
 	ASpatialShadowActor* GetShadowActor(const FEntityId& EntityId) const;
 
 	void ReplicateShadowActorChanges(float DeltaTime);
+
+	UPROPERTY()
+	USpatialNetDriver* NetDriver;
 
 private:
 	UPROPERTY()
@@ -84,5 +88,6 @@ private:
 		UWorld* World,
 		const TWeakPtr<worker::View>& InView,
 		const TWeakPtr<worker::Connection>& InConnection,
-		UCallbackDispatcher* InCallbackDispatcher);
+		UCallbackDispatcher* InCallbackDispatcher,
+		AActor* PairedEntity);
 };

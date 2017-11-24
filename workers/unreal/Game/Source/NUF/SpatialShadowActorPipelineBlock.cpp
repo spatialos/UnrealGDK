@@ -18,6 +18,9 @@
 #include "UnrealACharacterReplicatedDataComponent.h"
 #include "UnrealACharacterCompleteDataComponent.h"
 
+#include "SpatialNetDriver.h"
+#include "SpatialActorChannel.h"
+
 void USpatialShadowActorPipelineBlock::Init(UEntityRegistry* Registry)
 {
 	EntityRegistry = Registry;
@@ -129,8 +132,9 @@ void USpatialShadowActorPipelineBlock::AddEntities(
 					World,
 					InView,
 					InConnection,
-					InCallbackDispatcher);
-				EntityActor->PairedActor = PairedEntity;
+					InCallbackDispatcher,
+					PairedEntity);
+
 				if (EntityActor)
 				{
 					ShadowActors.Add(Entity, EntityActor);
@@ -185,7 +189,8 @@ ASpatialShadowActor* USpatialShadowActorPipelineBlock::TrySpawnShadowActor(
 	UWorld* World,
 	const TWeakPtr<worker::View>& InView,
 	const TWeakPtr<worker::Connection>& InConnection,
-	UCallbackDispatcher* InCallbackDispatcher)
+	UCallbackDispatcher* InCallbackDispatcher,
+	AActor* PairedEntity)
 {
 	if (!World)
 	{
@@ -196,6 +201,16 @@ ASpatialShadowActor* USpatialShadowActorPipelineBlock::TrySpawnShadowActor(
 	// Spawn shadow actor.
 	FVector InitialTransform{ 0.0f, 0.0f, 0.0f };
 	auto NewActor = World->SpawnActor<ASpatialShadowActor_Character>(ASpatialShadowActor_Character::StaticClass(), InitialTransform, FRotator::ZeroRotator, FActorSpawnParameters());
+
+	NewActor->PairedActor = PairedEntity;
+
+	// TODO: Hack for now until we create SpatialActorChannels properly.
+	// If we're a client connected to SpatialOS, get the actor channel for the paired actor, which will always be in an actor channel
+	// because we connect to SpatialOS after connecting to an Unreal server (whilst the connection flow is unimplemented).
+	if (NetDriver && NetDriver->ServerConnection)
+	{
+		NewActor->ClientActorChannel = Cast<USpatialActorChannel>(NetDriver->ServerConnection->ActorChannels[PairedEntity]);
+	}
 
 	// Initialise replicated and complete data.
 	NewActor->ReplicatedData->Init(InConnection, InView, EntityId.ToSpatialEntityId(), InCallbackDispatcher);

@@ -2,12 +2,15 @@
 #include "UnrealACharacterReplicatedDataComponent.h"
 #include "UnrealACharacterCompleteDataComponent.h"
 #include "CoreMinimal.h"
+#include "SpatialActorChannel.h"
 #include "Misc/Base64.h"
 
 ASpatialShadowActor_Character::ASpatialShadowActor_Character()
 {
 	ReplicatedData = CreateDefaultSubobject<UUnrealACharacterReplicatedDataComponent>(TEXT("UnrealACharacterReplicatedDataComponent"));
 	CompleteData = CreateDefaultSubobject<UUnrealACharacterCompleteDataComponent>(TEXT("UnrealACharacterCompleteDataComponent"));
+
+	ReplicatedData->OnFieldReplicatedmovementUpdate.AddDynamic(this, &ASpatialShadowActor_Character::OnReplicatedMovement);
 
 	UClass* Class = ACharacter::StaticClass();
 	HandleToPropertyMap.Add(1, RepHandleData{nullptr, Class->FindPropertyByName("bHidden"), 148});
@@ -618,4 +621,24 @@ void ASpatialShadowActor_Character::ReplicateChanges(float DeltaTime)
 const TMap<int32, RepHandleData>& ASpatialShadowActor_Character::GetHandlePropertyMap() const
 {
 	return HandleToPropertyMap;
+}
+
+void ASpatialShadowActor_Character::OnReplicatedMovement()
+{
+	if (!ClientActorChannel)
+	{
+		return;
+	}
+
+	// Header.
+	uint32 Handle = 6;
+	FNetBitWriter Writer(nullptr, 0);
+	Writer.SerializeIntPacked(Handle);
+	// Data.
+	RepHandleData& Data = HandleToPropertyMap[Handle];
+	// DEPENDS ON GENERATED CODE.
+	FRepMovement RepMovement;
+	Data.Property->NetSerializeItem(Writer, nullptr, &RepMovement);
+	// DEPENDS ON GENERATED CODE END.
+	ClientActorChannel->SpatialReceivePropertyUpdate(Writer);
 }

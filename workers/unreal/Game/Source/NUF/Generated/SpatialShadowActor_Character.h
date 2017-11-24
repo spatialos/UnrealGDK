@@ -34,4 +34,7 @@ public:
 
 private:
 	TMap<int32, RepHandleData> HandleToPropertyMap;
+
+	UFUNCTION()
+	void OnReplicatedMovement();
 };
