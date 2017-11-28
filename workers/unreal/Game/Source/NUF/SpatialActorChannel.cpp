@@ -13,6 +13,20 @@
 
 using namespace improbable;
 
+
+//EntityCreationCallbackDispatcher::EntityCreationCallbackDispatcher(std::weak_ptr<worker::View> InView)
+// : View(InView)
+//{
+//	LockedView->OnReserveEntityIdResponse(std::bind(&EntityCreationCallbackDispatcher::InternalOnCreateEntityResponse, this, std::placeholders::_1));
+//}
+//
+//void EntityCreationCallbackDispatcher::AddCallback(worker::RequestId RequestId, USpatialActorChannel* ActorChannel)
+//{
+//	std::shared_ptr<worker::View> LockedView = View.lock();
+//
+//	RequestIdToActorChannel.emplace(std::make_pair(RequestId, ActorChannel));
+//}
+
 // We assume that #define ENABLE_PROPERTY_CHECKSUMS exists in RepLayout.cpp:88 here.
 #define ENABLE_PROPERTY_CHECKSUMS
 
@@ -283,55 +297,58 @@ bool USpatialActorChannel::ReplicateActor()
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op)
 {
-	//check(Op.RequestId == ReserveEntityIdRequestId)
-
-	if (!(Op.StatusCode == worker::StatusCode::kSuccess))
+	// just filter for now
+	if (Op.RequestId == ReserveEntityIdRequestId)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to reserve entity id"));
-		return;
-	}
-	else
-	{
-		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
-		if (PinnedConnection.IsValid())
+		if (!(Op.StatusCode == worker::StatusCode::kSuccess))
 		{
-			FVector Loc = GetActor()->GetActorLocation();
-			FStringAssetReference ActorRef(GetActor());
-			FString PathStr = ActorRef.ToString();
-
-			UE_LOG(LogTemp, Log, TEXT("Creating entity for actor with path: %s on ActorChannel: %s"), *PathStr, *GetName());
-
-			WorkerAttributeSet UnrealWorkerAttributeSet{ { worker::List<std::string>{"UnrealWorker"} } };
-			WorkerAttributeSet UnrealClientAttributeSet{ { worker::List<std::string>{"UnrealClient"} } };
-
-			// UnrealWorker write authority, any worker read authority
-			WorkerRequirementSet UnrealWorkerWritePermission{ { UnrealWorkerAttributeSet } };
-			WorkerRequirementSet AnyWorkerReadRequirement{ { UnrealWorkerAttributeSet, UnrealClientAttributeSet } };
-
-			auto Entity = unreal::FEntityBuilder::Begin()
-				.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Loc), UnrealWorkerWritePermission)
-				.AddMetadataComponent(Metadata::Data{ TCHAR_TO_UTF8(*GetName()) })
-				.SetPersistence(true)
-				.SetReadAcl(AnyWorkerReadRequirement)
-				.Build();
-			
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Op.EntityId, 0);
+			UE_LOG(LogTemp, Warning, TEXT("Failed to reserve entity id"));
+			return;
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
-			return;
+			TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
+			if (PinnedConnection.IsValid())
+			{
+				FVector Loc = GetActor()->GetActorLocation();
+				FStringAssetReference ActorClassRef(GetActor()->GetClass());
+				FString PathStr = ActorClassRef.ToString();
+
+				UE_LOG(LogTemp, Log, TEXT("Creating entity for actor with path: %s on ActorChannel: %s"), *PathStr, *GetName());
+
+				WorkerAttributeSet UnrealWorkerAttributeSet{ { worker::List<std::string>{"UnrealWorker"} } };
+				WorkerAttributeSet UnrealClientAttributeSet{ { worker::List<std::string>{"UnrealClient"} } };
+
+				// UnrealWorker write authority, any worker read authority
+				WorkerRequirementSet UnrealWorkerWritePermission{ { UnrealWorkerAttributeSet } };
+				WorkerRequirementSet AnyWorkerReadRequirement{ { UnrealWorkerAttributeSet, UnrealClientAttributeSet } };
+
+				auto Entity = unreal::FEntityBuilder::Begin()
+					.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Loc), UnrealWorkerWritePermission)
+					.AddMetadataComponent(Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
+					.SetPersistence(true)
+					.SetReadAcl(AnyWorkerReadRequirement)
+					.Build();
+
+				CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Op.EntityId, 0);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
+				return;
+			}
 		}
 	}
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
 {
-	//check(Op.RequestId == CreateEntityRequestId)
-
-	if (!(Op.StatusCode == worker::StatusCode::kSuccess))
+	if (Op.RequestId == CreateEntityRequestId)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to create entity!"));
+		if (!(Op.StatusCode == worker::StatusCode::kSuccess))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to create entity!"));
+		}
 	}
 }	
 

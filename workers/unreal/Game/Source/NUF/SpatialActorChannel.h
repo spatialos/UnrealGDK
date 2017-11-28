@@ -9,6 +9,24 @@
 #include "improbable/worker.h"
 #include "SpatialActorChannel.generated.h"
 
+//namespace {
+//	class EntityCreationCallbackDispatcher
+//	{
+//	public:
+//		EntityCreationCallbackDispatcher() = delete;
+//		EntityCreationCallbackDispatcher(std::weak_ptr<worker::View> InView);
+//		std::weak_ptr<worker::View> View;		
+//
+//		void AddCallback(worker::RequestId RequestId, USpatialActorChannel* ActorChannel);
+//
+//	private:
+//		std::map<worker::RequestId, USpatialActorChannel*> RequestIdToActorChannel;
+//		void InternalOnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
+//		void InternalOnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
+//	};
+//}
+
+
 // A replacement actor channel that plugs into the Engine's replication system and works with SpatialOS
 UCLASS(Transient)
 class NUF_API USpatialActorChannel : public UActorChannel
