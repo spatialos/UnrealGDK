@@ -13,20 +13,6 @@
 
 using namespace improbable;
 
-
-//EntityCreationCallbackDispatcher::EntityCreationCallbackDispatcher(std::weak_ptr<worker::View> InView)
-// : View(InView)
-//{
-//	LockedView->OnReserveEntityIdResponse(std::bind(&EntityCreationCallbackDispatcher::InternalOnCreateEntityResponse, this, std::placeholders::_1));
-//}
-//
-//void EntityCreationCallbackDispatcher::AddCallback(worker::RequestId RequestId, USpatialActorChannel* ActorChannel)
-//{
-//	std::shared_ptr<worker::View> LockedView = View.lock();
-//
-//	RequestIdToActorChannel.emplace(std::make_pair(RequestId, ActorChannel));
-//}
-
 // We assume that #define ENABLE_PROPERTY_CHECKSUMS exists in RepLayout.cpp:88 here.
 #define ENABLE_PROPERTY_CHECKSUMS
 
@@ -297,7 +283,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op)
 {
-	// just filter for now
+	// just filter incorrect callbacks for now
 	if (Op.RequestId == ReserveEntityIdRequestId)
 	{
 		if (!(Op.StatusCode == worker::StatusCode::kSuccess))
