@@ -27,6 +27,8 @@ public:
 	UPROPERTY()
 	USpatialShadowActorPipelineBlock* ShadowActorPipelineBlock;
 
+	USpatialOS* GetSpatialOS() {return SpatialOSInstance; }
+
 private:
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;

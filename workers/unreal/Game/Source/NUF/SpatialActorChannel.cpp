@@ -4,8 +4,14 @@
 #include "SpatialNetDriver.h"
 #include "Engine/NetConnection.h"
 #include "Net/DataBunch.h"
-
+#include <improbable/worker.h>
+#include <improbable/standard_library.h>
+#include "Commander.h"
+#include "EntityTemplate.h"
+#include "EntityBuilder.h"
 #include "Generated/SpatialShadowActor_Character.h"
+
+using namespace improbable;
 
 // We assume that #define ENABLE_PROPERTY_CHECKSUMS exists in RepLayout.cpp:88 here.
 #define ENABLE_PROPERTY_CHECKSUMS
@@ -20,6 +26,19 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer & objectInit
 void USpatialActorChannel::Init(UNetConnection* connection, int32 channelIndex, bool bOpenedLocally)
 {
 	UActorChannel::Init(connection, channelIndex, bOpenedLocally);
+
+	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(connection->Driver);
+	WorkerView = Driver->GetSpatialOS()->GetView();
+	WorkerConnection = Driver->GetSpatialOS()->GetConnection();
+
+	Callbacks.Reset(new unreal::callbacks::FScopedViewCallbacks(WorkerView));
+
+	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
+	if (PinnedView.IsValid())
+	{
+		Callbacks->Add(PinnedView->OnReserveEntityIdResponse(std::bind(&USpatialActorChannel::OnReserveEntityIdResponse, this, std::placeholders::_1)));
+		Callbacks->Add(PinnedView->OnCreateEntityResponse(std::bind(&USpatialActorChannel::OnCreateEntityResponse, this, std::placeholders::_1)));
+	}
 }
 
 void USpatialActorChannel::SetClosingFlag()
@@ -241,3 +260,78 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 	return UActorChannel::CleanUp(bForDestroy);
 }
+
+bool USpatialActorChannel::ReplicateActor()
+{
+	// if this is the first time through replication of this actor, create an entity
+	if (OpenPacketId.First == INDEX_NONE && OpenedLocally)
+	{
+		if (!EntitisedActors.Contains(GetActor()->GetName()))
+		{
+			TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
+			if (PinnedConnection.IsValid())
+			{
+				ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
+				EntitisedActors.Emplace(GetActor()->GetName());
+			}
+		}
+	}
+
+	return Super::ReplicateActor();
+}
+
+
+void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op)
+{
+	//check(Op.RequestId == ReserveEntityIdRequestId)
+
+	if (!(Op.StatusCode == worker::StatusCode::kSuccess))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to reserve entity id"));
+		return;
+	}
+	else
+	{
+		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
+		if (PinnedConnection.IsValid())
+		{
+			FVector Loc = GetActor()->GetActorLocation();
+			FStringAssetReference ActorRef(GetActor());
+			FString PathStr = ActorRef.ToString();
+
+			UE_LOG(LogTemp, Log, TEXT("Creating entity for actor with path: %s on ActorChannel: %s"), *PathStr, *GetName());
+
+			WorkerAttributeSet UnrealWorkerAttributeSet{ { worker::List<std::string>{"UnrealWorker"} } };
+			WorkerAttributeSet UnrealClientAttributeSet{ { worker::List<std::string>{"UnrealClient"} } };
+
+			// UnrealWorker write authority, any worker read authority
+			WorkerRequirementSet UnrealWorkerWritePermission{ { UnrealWorkerAttributeSet } };
+			WorkerRequirementSet AnyWorkerReadRequirement{ { UnrealWorkerAttributeSet, UnrealClientAttributeSet } };
+
+			auto Entity = unreal::FEntityBuilder::Begin()
+				.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Loc), UnrealWorkerWritePermission)
+				.AddMetadataComponent(Metadata::Data{ TCHAR_TO_UTF8(*GetName()) })
+				.SetPersistence(true)
+				.SetReadAcl(AnyWorkerReadRequirement)
+				.Build();
+			
+			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Op.EntityId, 0);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
+			return;
+		}
+	}
+}
+
+void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
+{
+	//check(Op.RequestId == CreateEntityRequestId)
+
+	if (!(Op.StatusCode == worker::StatusCode::kSuccess))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to create entity!"));
+	}
+}	
+

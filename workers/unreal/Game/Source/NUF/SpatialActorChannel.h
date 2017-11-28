@@ -3,6 +3,10 @@
 #pragma once
 
 #include "Engine/ActorChannel.h"
+#include "EntityId.h"
+#include "SpatialOSCommandResult.h"
+#include "Commander.h"
+#include "improbable/worker.h"
 #include "SpatialActorChannel.generated.h"
 
 // A replacement actor channel that plugs into the Engine's replication system and works with SpatialOS
@@ -26,9 +30,25 @@ public:
 	virtual void AppendMustBeMappedGuids(FOutBunch * bunch) override;
 	virtual FPacketIdRange SendBunch(FOutBunch * bunch, bool bMerge) override;
 	virtual void StartBecomingDormant() override;
+	virtual bool ReplicateActor() override;
+
+
+	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
+	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
 
 protected:
 	// UChannel interface
 	virtual void BecomeDormant() override;
 	virtual bool CleanUp(const bool bForDestroy) override;
+
+private:
+	
+	TSet<FString> EntitisedActors;
+	TWeakPtr<worker::Connection> WorkerConnection;
+	TWeakPtr<worker::View> WorkerView;	
+
+	TUniquePtr<improbable::unreal::callbacks::FScopedViewCallbacks> Callbacks;
+
+	worker::RequestId<worker::ReserveEntityIdRequest> ReserveEntityIdRequestId;	
+	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 };
