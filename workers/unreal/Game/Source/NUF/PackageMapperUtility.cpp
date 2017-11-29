@@ -36,15 +36,11 @@ void APackageMapperUtility::MapActorPaths(TMap<uint32, FString>& OutMap, UObject
 
 void APackageMapperUtility::GeneratePackageMap(UObject* WorldContextObject)
 {
-	CodeWriter OutputMap;
-
 	TMap<uint32, FString> ObjectPathMap;
 	MapActorPaths(ObjectPathMap, WorldContextObject);
 
 	for (auto MapEntry = ObjectPathMap.CreateConstIterator(); MapEntry; ++MapEntry)
 	{
-		OutputMap.Print(FString::Printf(TEXT("ObjectMap.emplace(%" PRIu32 ", \"%s\");"), MapEntry.Key(), *MapEntry.Value()));
-	}
-	OutputMap.Dump();
-		
+		UE_LOG(LogTemp, Log, TEXT("ObjectMap.emplace(%" PRIu32 ", \"%s\");"), MapEntry.Key(), *MapEntry.Value());
+	}	
 }
