@@ -3,6 +3,8 @@
 #include "SpatialActorChannel.h"
 #include "SpatialNetDriver.h"
 #include "Engine/NetConnection.h"
+#include "SpatialPackageMapClient.h"
+#include "EntityRegistry.h"
 #include "Net/DataBunch.h"
 #include <improbable/worker.h>
 #include <improbable/standard_library.h>
@@ -266,14 +268,10 @@ bool USpatialActorChannel::ReplicateActor()
 	// if this is the first time through replication of this actor, create an entity
 	if (OpenPacketId.First == INDEX_NONE && OpenedLocally)
 	{
-		if (!EntitisedActors.Contains(GetActor()->GetName()))
+		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
+		if (PinnedConnection.IsValid())
 		{
-			TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
-			if (PinnedConnection.IsValid())
-			{
-				ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
-				EntitisedActors.Emplace(GetActor()->GetName());
-			}
+			ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
 		}
 	}
 
@@ -334,6 +332,22 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		if (!(Op.StatusCode == worker::StatusCode::kSuccess))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Failed to create entity!"));
+		}
+	}
+
+	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
+	if (Driver->ClientConnections.Num() > 0)
+	{
+		// should provide a better way of getting hold of the SpatialOS client connection 
+		USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(Driver->ClientConnections[0]->PackageMap);
+		if (PMC)
+		{
+			FEntityId EntityId(Op.EntityId.value_or(0));
+
+			// once we know the entity was successfully spawned, add the local actor 
+			// to the package map and to the EntityRegistry
+			PMC->ResolveEntityActor(GetActor(), EntityId);
+			Driver->GetEntityRegistry()->AddToRegistry(EntityId, GetActor());
 		}
 	}
 }	

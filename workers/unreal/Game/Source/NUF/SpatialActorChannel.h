@@ -46,7 +46,6 @@ protected:
 
 private:
 	
-	TSet<FString> EntitisedActors;
 	TWeakPtr<worker::Connection> WorkerConnection;
 	TWeakPtr<worker::View> WorkerView;	
 
