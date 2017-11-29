@@ -27,6 +27,8 @@ public:
 	UPROPERTY()
 	USpatialShadowActorPipelineBlock* ShadowActorPipelineBlock;
 
+	UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
+
 private:
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
