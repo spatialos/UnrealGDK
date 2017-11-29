@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "SpatialNetDriver.h"
 #include "SpatialNetConnection.h"
 #include "EntityRegistry.h"
@@ -8,10 +10,9 @@
 #include "Engine/ActorChannel.h"
 #include "Net/RepLayout.h"
 #include "Net/DataReplication.h"
-#include "SpatialPackageMapClient.h"
-#include "SpatialShadowActorPipelineBlock.h"
-#include "SpatialPackageMapInteropBlock.h"
-#include "Generated/SpatialInteropCharacter.h"
+#include "SpatialActorChannel.h"
+
+//#include "Generated/SpatialInteropCharacter.h"
 
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
 
@@ -21,6 +22,9 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	{
 		return false;
 	}
+
+	// make absolutely sure that the actor channel that we are using is our Spatial actor channel
+	UChannel::ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
 	SpatialOSInstance = NewObject<USpatialOS>(this);
 
@@ -50,15 +54,9 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Connected to SpatialOS."));
-
-	ShadowActorPipelineBlock = NewObject<USpatialShadowActorPipelineBlock>(this);
+	ShadowActorPipelineBlock = NewObject<USpatialShadowActorPipelineBlock>();
 	ShadowActorPipelineBlock->Init(EntityRegistry);
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(ShadowActorPipelineBlock);
-
-	SpatialPackageMapInteropBlock = NewObject<USpatialPackageMapInteropBlock>(this);
-	SpatialPackageMapInteropBlock->Init(EntityRegistry);
-	SpatialOSInstance->GetEntityPipeline()->AddBlock(SpatialPackageMapInteropBlock);
-
 	auto EntitySpawnerBlock = NewObject<USimpleEntitySpawnerBlock>();
 	//EntitySpawnerBlock->Init(EntityRegistry);
 	//SpatialOSInstance->GetEntityPipeline()->AddBlock(EntitySpawnerBlock);
@@ -89,6 +87,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	}
 
 #if WITH_SERVER_CODE
+	/*
 	for (int32 ClientId = 0; ClientId < ClientConnections.Num(); ClientId++)
 	{
 		UNetConnection* NetConnection = ClientConnections[ClientId];
@@ -154,19 +153,16 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 						UProperty* Property = RepLayout->Cmds[CmdIndex].Property;
 						UProperty* ParentProperty = RepLayout->Parents[RepLayout->Cmds[CmdIndex].ParentIndex].Property;
+						//ApplyUpdateToSpatial_Character(ActorChannel->Actor, CmdIndex, ParentProperty, Property, ShadowActor->ReplicatedData);
 
-						if (ClientConnections.Num() > 0)
-						{
-							ApplyUpdateToSpatial_Character(ActorChannel->Actor, CmdIndex, ParentProperty, Property, ShadowActor->ReplicatedData, Cast<USpatialPackageMapClient>(ClientConnections[0]->PackageMap));
-
-							FString ChangedProp = Property->GetNameCPP();
-							UE_LOG(LogTemp, Warning, TEXT("Actor: %s, cmd %s"), *GetNameSafe(ActorChannel->Actor), *ChangedProp);
-						}
+						FString ChangedProp = Property->GetNameCPP();
+						UE_LOG(LogTemp, Warning, TEXT("Actor: %s, cmd %s"), *GetNameSafe(ActorChannel->Actor), *ChangedProp);
 					}
 				}
 			}
 		}
 	}
+	*/
 #endif
 	return RetVal;
 }
@@ -186,19 +182,3 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		}
 	}
 }
-
-void USpatialNetDriver::PostInitProperties()
-{
-	Super::PostInitProperties();
-
-	if (!HasAnyFlags(RF_ClassDefaultObject))
-	{
-		GuidCache = TSharedPtr<FSpatialNetGUIDCache>(new FSpatialNetGUIDCache(this));
-	}
-}
-
-UEntityRegistry* USpatialNetDriver::GetEntityRegistry()
-{
-	return EntityRegistry;
-}
-
