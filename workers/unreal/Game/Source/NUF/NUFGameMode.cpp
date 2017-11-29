@@ -13,3 +13,8 @@ ANUFGameMode::ANUFGameMode()
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
 }
+
+//UEntityTemplate* ANUFGameMode::CreatePlayerEntityTemplate(FString clientWorkerId, const FVector& position)
+//{
+//return nullptr;
+//}
