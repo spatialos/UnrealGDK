@@ -1,0 +1,7 @@
+package improbable.package_map;
+
+component PackageMap
+{
+	id = 1005;
+	map<uint32, string> id_to_path_map = 1;
+}

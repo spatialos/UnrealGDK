@@ -22,10 +22,13 @@ public:
 	virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error) override;
 	virtual int32 ServerReplicateActors(float DeltaSeconds) override;
 	virtual void TickDispatch(float DeltaTime) override;
+	virtual void PostInitProperties() override;
 
 	// TOOD: Provide accessor to get shadow actors.
 	UPROPERTY()
 	USpatialShadowActorPipelineBlock* ShadowActorPipelineBlock;
+
+	UEntityRegistry* GetEntityRegistry();
 
 private:
 	UPROPERTY()

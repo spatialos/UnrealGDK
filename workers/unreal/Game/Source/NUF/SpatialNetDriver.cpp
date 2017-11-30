@@ -10,6 +10,7 @@
 #include "Engine/ActorChannel.h"
 #include "Net/RepLayout.h"
 #include "Net/DataReplication.h"
+#include "SpatialPackageMapClient.h"
 #include "SpatialActorChannel.h"
 
 //#include "Generated/SpatialInteropCharacter.h"
@@ -54,7 +55,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Connected to SpatialOS."));
-	ShadowActorPipelineBlock = NewObject<USpatialShadowActorPipelineBlock>();
+	ShadowActorPipelineBlock = NewObject<USpatialShadowActorPipelineBlock>(this);
 	ShadowActorPipelineBlock->Init(EntityRegistry);
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(ShadowActorPipelineBlock);
 	auto EntitySpawnerBlock = NewObject<USimpleEntitySpawnerBlock>();
@@ -182,3 +183,19 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		}
 	}
 }
+
+void USpatialNetDriver::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	if (!HasAnyFlags(RF_ClassDefaultObject))
+	{
+		GuidCache = TSharedPtr<FSpatialNetGUIDCache>(new FSpatialNetGUIDCache(this));
+	}
+}
+
+UEntityRegistry* USpatialNetDriver::GetEntityRegistry()
+{
+	return EntityRegistry;
+}
+

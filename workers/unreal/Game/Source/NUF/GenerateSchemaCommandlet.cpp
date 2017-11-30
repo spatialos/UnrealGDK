@@ -3,73 +3,14 @@
 // For GenerateSchemaFromClass
 #include "Net/DataReplication.h"
 #include "GameFramework/Character.h"
-#include "Misc/FileHelper.h"
 #include "Components/ArrowComponent.h"
+#include "Utils/CodeWriter.h"
 
 // Hack to access private members of FRepLayout.
 #define private public
 #include "Net/RepLayout.h"
 #undef private
 
-namespace
-{
-class CodeWriter
-{
-public:
-	CodeWriter() : Scope(0)
-	{
-	}
-
-	CodeWriter& Print()
-	{
-		OutputSource += TEXT("\n");
-		return *this;
-	}
-
-	CodeWriter& Print(const FString& String)
-	{
-		TArray<FString> Lines;
-		String.ParseIntoArray(Lines, TEXT("\n"), false);
-		for (auto& Line : Lines)
-		{
-			FString ScopeIdent;
-			for (int ScopeLevel = 0; ScopeLevel < Scope; ++ScopeLevel)
-			{
-				ScopeIdent += FString(TEXT("\t"));
-			}
-			OutputSource += ScopeIdent + Line + TEXT("\n");
-		}
-		return *this;
-	}
-
-	void WriteToFile(const FString& Filename)
-	{
-		check(Scope == 0);
-		FFileHelper::SaveStringToFile(OutputSource, *Filename);
-	}
-
-	void Dump()
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *OutputSource);
-	}
-
-	CodeWriter& Indent()
-	{
-		Scope++;
-		return *this;
-	}
-
-	CodeWriter& Outdent()
-	{
-		check(Scope > 0);
-		Scope--;
-		return *this;
-	}
-
-private:
-	FString OutputSource;
-	int Scope;
-};
 
 FString PropertySchemaName(UProperty* Property)
 {
@@ -485,13 +426,11 @@ void VisitProperty(TArray<PropertyInfo>& PropertyInfo, UObject* CDO, TArray<UPro
 	});
 }
 
-void GenerateUnpackedStructUnrealToSchemaConversion(CodeWriter& Writer, TArray<UProperty*> PropertyChain, UStruct* Struct)
-{
+void GenerateUnpackedStructUnrealToSchemaConversion(FCodeWriter& Writer, TArray<UProperty*> PropertyChain, UStruct* Struct) {
 }
 
 // Returns the output expression to assign to the schema value.
-void GenerateUnrealToSchemaConversion(CodeWriter& Writer, const FString& ReplicatedData, TArray<UProperty*> PropertyChain, const FString& PropertyValue)
-{
+void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& ReplicatedData, TArray<UProperty*> PropertyChain, const FString& PropertyValue) {
 	// Get result type.
 	UProperty* Property = PropertyChain[PropertyChain.Num() - 1];
 	FString SchemaPropertyName = ReplicatedData + TEXT("->") + GetFullyQualifiedCppName(PropertyChain);
@@ -580,12 +519,12 @@ void GenerateUnrealToSchemaConversion(CodeWriter& Writer, const FString& Replica
 	else if (Property->IsA(UByteProperty::StaticClass()))
 	{
 		Writer.Print(FString::Printf(TEXT("%s = int(%s);"), *SchemaPropertyName, *PropertyValue));
-	}
+	} 
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
-		Writer.Print(FString::Printf(TEXT("// WEAK OBJECT REPLICATION - %s = %s;"), *SchemaPropertyName, *PropertyValue));
-	}
-	else if (Property->IsA(UNameProperty::StaticClass()))
+		Writer.Print(FString::Printf(TEXT("auto UObjectRef = NewObject<UUnrealObjectRef>();\nUObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(%s).Value))));\n%s = UObjectRef;"), *PropertyValue, *SchemaPropertyName));
+	} 
+	else if (Property->IsA(UNameProperty::StaticClass())) 
 	{
 		Writer.Print(FString::Printf(TEXT("%s = %s.ToString();"), *SchemaPropertyName, *PropertyValue));
 	}
@@ -607,11 +546,10 @@ void GenerateUnrealToSchemaConversion(CodeWriter& Writer, const FString& Replica
 	}
 }
 
-void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, UClass* Class)
-{
-	CodeWriter OutputSchema;
-	CodeWriter OutputForwardingCode;
-	CodeWriter OutputForwardingCodeHeader;
+void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, UClass* Class) {
+	FCodeWriter OutputSchema;
+	FCodeWriter OutputForwardingCode;
+	FCodeWriter OutputForwardingCodeHeader;
 
 	// Parse RepLayout.
 	FRepLayout RepLayout;
@@ -728,7 +666,7 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 
 	// Forwarding code function signatures.
 	FString UnrealToSpatialReturnType = TEXT("void");
-	FString UnrealToSpatialSignature = TEXT("ApplyUpdateToSpatial(FArchive& Reader, int32 Handle, UProperty* Property)");
+	FString UnrealToSpatialSignature = TEXT("ApplyUpdateToSpatial(FArchive& Reader, int32 Handle, UProperty* Property, USpatialPackageMapClient* PackageMap)");
 	FString SpatialToUnrealReturnType = TEXT("void");
 	FString SpatialToUnrealSignature = FString::Printf(
 		TEXT("ReceiveUpdateFromSpatial(AActor* Actor, U%sComponentUpdate* Update)"),
@@ -775,6 +713,7 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	OutputForwardingCode.Print(FString::Printf(TEXT("#include \"%sComponent.h\""), *GetSchemaCompleteDataComponentFromUnreal(Class)));
 	OutputForwardingCode.Print(TEXT("#include \"CoreMinimal.h\""));
 	OutputForwardingCode.Print(TEXT("#include \"Misc/Base64.h\""));
+	OutputForwardingCode.Print(TEXT("#include \"Engine/PackageMapClient.h\""));
 	
 	// Constructor.
 	OutputForwardingCode.Print();
@@ -961,7 +900,7 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 
 	OutputForwardingCode.WriteToFile(ForwardingCodePath + FString::Printf(TEXT("%s.cpp"), *ShadowActorClass));
 }
-}
+
 
 UGenerateSchemaCommandlet::UGenerateSchemaCommandlet()
 {
