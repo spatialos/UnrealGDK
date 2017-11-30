@@ -214,17 +214,17 @@ AActor* USpatialInteropBlock::SpawnNewEntity(UMetadataAddComponentOp* MetadataCo
 	UPositionAddComponentOp* PositionComponent,
 	UWorld* World)
 {
-	FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
-
-	// Attempt to find the class that has been registered to the EntityType string
-	UClass** EntityClassTemplate = EntityRegistry->GetRegisteredEntityClass(EntityTypeString);
-
 	if (World)
 	{
 		auto Coords = PositionComponent->Data->coords();
 		FVector InitialTransform =
 			USpatialOSConversionFunctionLibrary::SpatialOsCoordinatesToUnrealCoordinates(
 				FVector(Coords.x(), Coords.y(), Coords.z()));
+
+		FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
+
+		// Attempt to find the class that has been registered to the EntityType string
+		UClass** EntityClassTemplate = EntityRegistry->GetRegisteredEntityClass(EntityTypeString);
 
 		// this is all horrendous
 		if((EntityClassTemplate == nullptr) || (*EntityClassTemplate == nullptr))
