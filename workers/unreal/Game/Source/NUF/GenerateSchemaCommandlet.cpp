@@ -520,10 +520,12 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Replic
 	{
 		Writer.Print(FString::Printf(TEXT("%s = int(%s);"), *SchemaPropertyName, *PropertyValue));
 	} 
-	else if (Property->IsA(UObjectPropertyBase::StaticClass())) {
+	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
+	{
 		Writer.Print(FString::Printf(TEXT("auto UObjectRef = NewObject<UUnrealObjectRef>();\nUObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(%s).Value))));\n%s = UObjectRef;"), *PropertyValue, *SchemaPropertyName));
 	} 
-	else if (Property->IsA(UNameProperty::StaticClass())) {
+	else if (Property->IsA(UNameProperty::StaticClass())) 
+	{
 		Writer.Print(FString::Printf(TEXT("%s = %s.ToString();"), *SchemaPropertyName, *PropertyValue));
 	}
 	else if (Property->IsA(UUInt32Property::StaticClass()))
@@ -898,7 +900,7 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 
 	OutputForwardingCode.WriteToFile(ForwardingCodePath + FString::Printf(TEXT("%s.cpp"), *ShadowActorClass));
 }
-}
+
 
 UGenerateSchemaCommandlet::UGenerateSchemaCommandlet()
 {

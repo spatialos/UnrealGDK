@@ -35,8 +35,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID_Server(const UObject* Object
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID(const UObject* Object)
 {
-	// Allocate a unique dynamic GUID (this just does what the ALLOC_NEW_NET_GUID macro does)
-	FNetworkGUID GUID = (0x80000000 - 1) & ((++UniqueNetIDs[0]) << 1 | 0);
+	
+	FNetworkGUID GUID = (0x80000000 - 1) & ++UniqueNetIDs[0];
 	FNetGuidCacheObject CacheObject;
 	CacheObject.Object = Object;
 

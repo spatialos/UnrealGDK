@@ -28,6 +28,8 @@ public:
 	UPROPERTY()
 	USpatialShadowActorPipelineBlock* ShadowActorPipelineBlock;
 
+	UEntityRegistry* GetEntityRegistry();
+
 private:
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
@@ -46,6 +48,4 @@ private:
 
 	UFUNCTION()
 	void OnSpatialOSDisconnected();
-
-	UEntityRegistry* GetEntityRegistry();
 };

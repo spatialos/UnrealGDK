@@ -13,7 +13,9 @@
 #include "SpatialOSConversionFunctionLibrary.h"
 #include "improbable/view.h"
 #include "improbable/worker.h"
-
+#include "PackageMapComponent.h"
+#include "SpatialPackageMapClient.h"
+#include "SpatialNetDriver.h"
 #include "Generated/SpatialShadowActor_Character.h"
 #include "UnrealACharacterReplicatedDataComponent.h"
 #include "UnrealACharacterCompleteDataComponent.h"
