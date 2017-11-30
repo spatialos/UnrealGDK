@@ -12,7 +12,11 @@
 #include "Net/DataReplication.h"
 #include "SpatialActorChannel.h"
 
+#include "EntityBuilder.h"
+
 //#include "Generated/SpatialInteropCharacter.h"
+
+using namespace improbable;
 
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
 
@@ -66,6 +70,24 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	BlueprintPaths.Add(TEXT(ENTITY_BLUEPRINTS_FOLDER));
 
 	EntityRegistry->RegisterEntityBlueprints(BlueprintPaths);
+
+	// DEBUGGING, REMOVE LATER
+	TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
+	TSharedPtr<worker::Connection> Connection = SpatialOSInstance->GetConnection().Pin();
+	View->OnReserveEntityIdResponse([this, Connection](const worker::ReserveEntityIdResponseOp& callback) {
+		std::string ClientWorkerIdString = TCHAR_TO_UTF8(*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId());
+		WorkerAttributeSet ClientAttribute{ { "workerId:" + ClientWorkerIdString } };
+		WorkerRequirementSet OwnClientOnly{ { ClientAttribute } };
+		auto Entity = unreal::FEntityBuilder::Begin()
+			.AddPositionComponent(Position::Data{ {10.0f, 10.0f, 10.0f} }, OwnClientOnly)
+			.AddMetadataComponent(Metadata::Data{ "TEST" })
+			.SetPersistence(true)
+			.SetReadAcl(OwnClientOnly)
+			.Build();
+
+		Connection->SendCreateEntityRequest(Entity, callback.EntityId, 0);
+	});
+	Connection->SendReserveEntityIdRequest({});
 }
 
 void USpatialNetDriver::OnSpatialOSDisconnected()

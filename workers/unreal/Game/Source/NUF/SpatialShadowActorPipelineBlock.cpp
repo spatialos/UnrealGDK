@@ -21,6 +21,8 @@
 #include "SpatialNetDriver.h"
 #include "SpatialActorChannel.h"
 
+#include "Engine/PackageMapClient.h"
+
 void USpatialShadowActorPipelineBlock::Init(UEntityRegistry* Registry)
 {
 	EntityRegistry = Registry;
@@ -108,7 +110,9 @@ void USpatialShadowActorPipelineBlock::AddEntities(
 	{
 		// Wait for the "real" entity to be checked out.
 		// TODO: For now, just use the first player controllers pawn.
-		AActor* PairedEntity = World->GetFirstPlayerController() ? World->GetFirstPlayerController()->GetPawn() : nullptr;//EntityRegistry->GetActorFromEntityId(Entity);
+		UObject* PairedObject = NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false);
+		AActor* PairedEntity = Cast<AActor>(PairedObject);
+		//AActor* PairedEntity = World->GetFirstPlayerController() ? World->GetFirstPlayerController()->GetPawn() : nullptr;//EntityRegistry->GetActorFromEntityId(Entity);
 		if (PairedEntity)
 		{
 			// Retrieve the EntityType string from the Metadata component.

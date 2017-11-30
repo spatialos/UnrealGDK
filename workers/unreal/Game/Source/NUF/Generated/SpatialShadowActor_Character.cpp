@@ -625,6 +625,10 @@ const TMap<int32, RepHandleData>& ASpatialShadowActor_Character::GetHandleProper
 
 void ASpatialShadowActor_Character::OnReplicatedMovement()
 {
+	if (PairedActor.Get()->Role != ROLE_SimulatedProxy)
+	{
+		return;
+	}
 	if (!ClientActorChannel)
 	{
 		return;
@@ -637,8 +641,15 @@ void ASpatialShadowActor_Character::OnReplicatedMovement()
 	// Data.
 	RepHandleData& Data = HandleToPropertyMap[Handle];
 	// DEPENDS ON GENERATED CODE.
-	FRepMovement RepMovement;
-	Data.Property->NetSerializeItem(Writer, nullptr, &RepMovement);
+	FRepMovement Value;
+	TArray<uint8> ValueData;
+	FBase64::Decode(ReplicatedData->FieldReplicatedmovement, ValueData);
+	FMemoryReader Reader(ValueData);
+	bool Success;
+	Value.NetSerialize(Reader, nullptr, Success);
+	// Repack.
+	Data.Property->NetSerializeItem(Writer, nullptr, &Value);
 	// DEPENDS ON GENERATED CODE END.
 	ClientActorChannel->SpatialReceivePropertyUpdate(Writer);
+	UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 }

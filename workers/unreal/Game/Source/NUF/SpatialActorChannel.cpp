@@ -4,64 +4,15 @@
 #include "SpatialNetDriver.h"
 #include "Engine/NetConnection.h"
 #include "Net/DataBunch.h"
+#include "Engine/PackageMapClient.h"
 
 #include "Generated/SpatialShadowActor_Character.h"
 
 // We assume that #define ENABLE_PROPERTY_CHECKSUMS exists in RepLayout.cpp:88 here.
 #define ENABLE_PROPERTY_CHECKSUMS
 
-USpatialActorChannel::USpatialActorChannel(const FObjectInitializer & objectInitializer /*= FObjectInitializer::Get()*/)
-	: Super(objectInitializer)
-{
-	ChType = CHTYPE_Actor;
-}
-
-void USpatialActorChannel::Init(UNetConnection* connection, int32 channelIndex, bool bOpenedLocally)
-{
-	UActorChannel::Init(connection, channelIndex, bOpenedLocally);
-}
-
-void USpatialActorChannel::SetClosingFlag()
-{
-	UActorChannel::SetClosingFlag();
-}
-
-void USpatialActorChannel::Close()
-{
-	UActorChannel::Close();
-}
-
-void USpatialActorChannel::ReceivedBunch(FInBunch &Bunch)
-{
-	UActorChannel::ReceivedBunch(Bunch);
-}
-
-void USpatialActorChannel::ReceivedNak(int32 PacketId)
-{
-	UActorChannel::ReceivedNak(PacketId);
-}
-
-void USpatialActorChannel::Tick()
-{
-	UActorChannel::Tick();
-}
-
-bool USpatialActorChannel::CanStopTicking() const
-{
-	return UActorChannel::CanStopTicking();
-}
-
-void USpatialActorChannel::AppendExportBunches(TArray<FOutBunch *> & outExportBunches)
-{
-	UActorChannel::AppendExportBunches(outExportBunches);
-}
-
-void USpatialActorChannel::AppendMustBeMappedGuids(FOutBunch * bunch)
-{
-	UActorChannel::AppendMustBeMappedGuids(bunch);
-}
-
 // TODO: Epic should expose this.
+namespace {
 struct FExportFlags
 {
 	union
@@ -120,6 +71,202 @@ static bool ParseHeader(FNetBitReader& Bunch, bool bIsServer, bool& bHasRepLayou
 	}
 	// If we have enough space to read another byte, then we should continue.
 	return (Bunch.GetPosBits() + 8 <= Bunch.GetNumBits());
+}
+
+class BunchData
+{
+public:
+	struct ReplicatedData
+	{
+		UProperty* Property;
+		TArray<uint8> Data;
+	};
+
+	BunchData() = default;
+
+	// The lifetime of BunchData must be <= the lifetime of Bunch.
+	bool Parse(FNetBitReader& Bunch, bool bIsServer, UPackageMap* PackageMap, const TMap<int32, RepHandleData>& PropertyMap)
+	{
+		bool bHasRepLayout;
+		bool bIsActor;
+		if (!ParseHeader(Bunch, bIsServer, bHasRepLayout, bIsActor))
+		{
+			return true;
+		}
+
+		if (!bHasRepLayout)
+		{
+			return true;
+		}
+
+		// Get payload data.
+		uint32 PayloadBitCount;
+		Bunch.SerializeIntPacked(PayloadBitCount);
+		FNetBitReader Payload;
+		Payload.SetData(Bunch, PayloadBitCount);
+
+		// Read replicated properties.
+#ifdef ENABLE_PROPERTY_CHECKSUMS
+		bool bDoChecksum = Payload.ReadBit() != 0;
+#else
+		bool bDoChecksum = false;
+#endif
+		while (Payload.GetBitsLeft() > 0)
+		{
+			uint32 Handle;
+			Payload.SerializeIntPacked(Handle);
+			if (bDoChecksum)
+			{
+				// Skip checksum bits.
+				uint32 Checksum;
+				Payload << Checksum;
+			}
+
+			// Ignore null terminator handle.
+			if (Handle == 0)
+			{
+				break;
+			}
+
+			// Look up property.
+			if (Handle >= (uint32)PropertyMap.Num())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Read invalid handle %d."), Handle);
+				break;
+			}
+			UProperty* Property = PropertyMap[Handle].Property;
+
+			// TODO: We have no PackageMap.
+			if (!PackageMap)
+			{
+				if (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass()))
+				{
+					break;
+				}
+			}
+
+			// Read bytes from bitstream.
+			// Property data size: RepLayout.cpp:237
+			TArray<uint8> PropertyData;
+			PropertyData.AddZeroed(Property->ElementSize);
+			Property->InitializeValue(PropertyData.GetData());
+			Property->NetSerializeItem(Payload, PackageMap, PropertyData.GetData());
+
+			// Add to properties list.
+			ReplicatedProperties.Add(Handle, ReplicatedData{Property, PropertyData});
+
+			// Skip checksum bits.
+			if (bDoChecksum)
+			{
+				// Skip.
+				uint32 Checksum;
+				Payload << Checksum;
+				if (!Property->IsA(UObjectPropertyBase::StaticClass()))
+				{
+					Payload << Checksum;
+				}
+			}
+		}
+		return true;
+	}
+
+	// Access properties.
+	const TMap<int32, ReplicatedData>& GetReplicatedProperties() const {
+		return ReplicatedProperties;
+	}
+
+private:
+	TMap<int32, ReplicatedData> ReplicatedProperties;
+};
+}
+
+USpatialActorChannel::USpatialActorChannel(const FObjectInitializer & objectInitializer /*= FObjectInitializer::Get()*/)
+	: Super(objectInitializer)
+{
+	ChType = CHTYPE_Actor;
+}
+
+void USpatialActorChannel::Init(UNetConnection* connection, int32 channelIndex, bool bOpenedLocally)
+{
+	UActorChannel::Init(connection, channelIndex, bOpenedLocally);
+}
+
+void USpatialActorChannel::SetClosingFlag()
+{
+	UActorChannel::SetClosingFlag();
+}
+
+void USpatialActorChannel::Close()
+{
+	UActorChannel::Close();
+}
+
+void USpatialActorChannel::ReceivedBunch(FInBunch &Bunch)
+{
+	// Get SpatialNetDriver.
+	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
+	if (!Driver->ShadowActorPipelineBlock)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SpatialOS is not connected yet."));
+		UActorChannel::ReceivedBunch(Bunch);
+		return;
+	}
+
+	// Get entity ID.
+	// TODO: Replace with EntityId from registry corresponding to this replicated actor.
+	FEntityId EntityId = 2;//EntityRegistry->GetEntityIdFromActor(ActorChannel->Actor);
+	if (EntityId == FEntityId())
+	{
+		UActorChannel::ReceivedBunch(Bunch);
+		return;
+	}
+
+	// Get shadow actor.
+	ASpatialShadowActor_Character* ShadowActor = Cast<ASpatialShadowActor_Character>(Driver->ShadowActorPipelineBlock->GetShadowActor(EntityId));
+	if (!ShadowActor)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Actor channel has no corresponding shadow actor. That means the entity hasn't been checked out yet."));
+		UActorChannel::ReceivedBunch(Bunch);
+		return;
+	}
+
+	// Skip bunches sent by built in Unreal.
+	auto& PropertyMap = ShadowActor->GetHandlePropertyMap();
+	FNetBitReader BunchReader(nullptr, Bunch.GetData(), Bunch.GetNumBits());
+	BunchData BunchData;
+	BunchData.Parse(BunchReader, Connection->Driver->IsServer(), nullptr, PropertyMap);
+	auto& ReplicatedProperties = BunchData.GetReplicatedProperties();
+	if (ReplicatedProperties.Contains(6))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Skipping Handle 6."));
+		return;
+	}
+	UActorChannel::ReceivedBunch(Bunch);
+}
+
+void USpatialActorChannel::ReceivedNak(int32 PacketId)
+{
+	UActorChannel::ReceivedNak(PacketId);
+}
+
+void USpatialActorChannel::Tick()
+{
+	UActorChannel::Tick();
+}
+
+bool USpatialActorChannel::CanStopTicking() const
+{
+	return UActorChannel::CanStopTicking();
+}
+
+void USpatialActorChannel::AppendExportBunches(TArray<FOutBunch *> & outExportBunches)
+{
+	UActorChannel::AppendExportBunches(outExportBunches);
+}
+
+void USpatialActorChannel::AppendMustBeMappedGuids(FOutBunch * bunch)
+{
+	UActorChannel::AppendMustBeMappedGuids(bunch);
 }
 
 FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge)
@@ -203,6 +350,8 @@ FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge
 		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
 		ShadowActor->ApplyUpdateToSpatial(Reader, Handle, Property);
 
+		UE_LOG(LogTemp, Log, TEXT("-> NETGUID OF PLAYER %s"), *Driver->GuidCache->GetNetGUID(ShadowActor->PairedActor.Get()).ToString());
+
 		// TODO: Currently, object references are not handled properly in ApplyUpdateToSpatial.
 		if (Property->IsA(UObjectPropertyBase::StaticClass()))
 		{
@@ -265,5 +414,5 @@ void USpatialActorChannel::SpatialReceivePropertyUpdate(FNetBitWriter& Payload)
 	Bunch.ChIndex = ChIndex;
 	Bunch.bHasMustBeMappedGUIDs = false;
 	Bunch.bIsReplicationPaused = false;
-	ReceivedBunch(Bunch);
+	UActorChannel::ReceivedBunch(Bunch);
 }
