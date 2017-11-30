@@ -4,50 +4,9 @@
 #include "Net/DataReplication.h"
 #include "Net/RepLayout.h"
 #include "GameFramework/Character.h"
-#include "Misc/FileHelper.h"
 #include "Components/ArrowComponent.h"
+#include "Utils/CodeWriter.h"
 
-CodeWriter::CodeWriter() : Scope(0) 
-{
-}
-
-CodeWriter& CodeWriter::Print() {
-	OutputSource += TEXT("\n");
-	return *this;
-}
-
-CodeWriter& CodeWriter::Print(const FString& String) {
-	TArray<FString> Lines;
-	String.ParseIntoArray(Lines, TEXT("\n"), false);
-	for (auto& Line : Lines) {
-		FString ScopeIdent;
-		for (int ScopeLevel = 0; ScopeLevel < Scope; ++ScopeLevel) {
-			ScopeIdent += FString(TEXT("\t"));
-		}
-		OutputSource += ScopeIdent + Line + TEXT("\n");
-	}
-	return *this;
-}
-
-void CodeWriter::WriteToFile(const FString& Filename) {
-	check(Scope == 0);
-	FFileHelper::SaveStringToFile(OutputSource, *Filename);
-}
-
-void CodeWriter::Dump() {
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *OutputSource);
-}
-
-CodeWriter& CodeWriter::Indent() {
-	Scope++;
-	return *this;
-}
-
-CodeWriter& CodeWriter::Outdent() {
-	check(Scope > 0);
-	Scope--;
-	return *this;
-}
 
 namespace {
 FString PropertySchemaName(UProperty* Property) {
@@ -368,11 +327,11 @@ void VisitProperty(TArray<PropertyInfo>& PropertyInfo, UObject* CDO, TArray<UPro
 	});
 }
 
-void GenerateUnpackedStructUnrealToSchemaConversion(CodeWriter& Writer, TArray<UProperty*> PropertyChain, UStruct* Struct) {
+void GenerateUnpackedStructUnrealToSchemaConversion(FCodeWriter& Writer, TArray<UProperty*> PropertyChain, UStruct* Struct) {
 }
 
 // Returns the output expression to assign to the schema value.
-void GenerateUnrealToSchemaConversion(CodeWriter& Writer, const FString& ReplicatedData, TArray<UProperty*> PropertyChain, const FString& PropertyValue) {
+void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& ReplicatedData, TArray<UProperty*> PropertyChain, const FString& PropertyValue) {
 	// Get result type.
 	UProperty* Property = PropertyChain[PropertyChain.Num() - 1];
 	FString SchemaPropertyName = ReplicatedData + TEXT("->") + GetFullyQualifiedCppName(PropertyChain);
@@ -447,9 +406,9 @@ void GenerateUnrealToSchemaConversion(CodeWriter& Writer, const FString& Replica
 }
 
 void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, UClass* Class) {
-	CodeWriter OutputSchema;
-	CodeWriter OutputForwardingCode;
-	CodeWriter OutputForwardingCodeHeader;
+	FCodeWriter OutputSchema;
+	FCodeWriter OutputForwardingCode;
+	FCodeWriter OutputForwardingCodeHeader;
 
     // Parse RepLayout.
     FRepLayout RepLayout;

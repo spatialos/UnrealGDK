@@ -4,7 +4,7 @@
 #include <string>
 #include "Misc/SecureHash.h"
 #include "EngineUtils.h"
-#include "Utils/CodeWriter.h"
+#include "CodeWriter.h"
 #include <inttypes.h>
 
 const uint32 StaticObjectOffset = 0x80000000;
