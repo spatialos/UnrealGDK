@@ -23,19 +23,30 @@ void USpatialInteropBlock::AddEntity(const worker::AddEntityOp& AddEntityOp)
 {
 	// Add this to the list of entities waiting to be spawned
 	EntitiesToSpawn.AddUnique(AddEntityOp.EntityId);
+	if (NextBlock)
+	{
+		NextBlock->AddEntity(AddEntityOp);
+	}
 }
 
 void USpatialInteropBlock::RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp)
 {
 	// Add this to the list of entities waiting to be deleted
 	EntitiesToRemove.AddUnique(RemoveEntityOp.EntityId);
+	if (NextBlock)
+	{
+		NextBlock->RemoveEntity(RemoveEntityOp);
+	}
 }
 
 void USpatialInteropBlock::AddComponent(UAddComponentOpWrapperBase* AddComponentOp)
 {
 	// Store this op to be used later on when setting the initial state of the component
-	ComponentsToAdd.Emplace(
-		FComponentIdentifier{ AddComponentOp->EntityId, AddComponentOp->ComponentId }, AddComponentOp);
+	ComponentsToAdd.Emplace(FComponentIdentifier{ AddComponentOp->EntityId, AddComponentOp->ComponentId }, AddComponentOp);
+	if (NextBlock)
+	{
+		NextBlock->AddComponent(AddComponentOp);
+	}
 }
 
 void USpatialInteropBlock::RemoveComponent(const worker::ComponentId ComponentId,
@@ -43,6 +54,10 @@ void USpatialInteropBlock::RemoveComponent(const worker::ComponentId ComponentId
 {
 	// Add this to the list of components waiting to be disabled
 	ComponentsToRemove.Emplace(FComponentIdentifier{ RemoveComponentOp.EntityId, ComponentId });
+	if (NextBlock)
+	{
+		NextBlock->RemoveComponent(ComponentId, RemoveComponentOp);
+	}
 }
 
 void USpatialInteropBlock::ChangeAuthority(const worker::ComponentId ComponentId,
@@ -51,6 +66,10 @@ void USpatialInteropBlock::ChangeAuthority(const worker::ComponentId ComponentId
 	// Set the latest authority value for this Component on the owning entity
 	ComponentAuthorities.Emplace(FComponentIdentifier{ AuthChangeOp.EntityId, ComponentId },
 		AuthChangeOp);
+	if (NextBlock)
+	{
+		NextBlock->ChangeAuthority(ComponentId, AuthChangeOp);	
+	}
 }
 
 void USpatialInteropBlock::AddEntities(UWorld* World,
@@ -223,10 +242,10 @@ AActor* USpatialInteropBlock::SpawnNewEntity(UMetadataAddComponentOp* MetadataCo
 
 		FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
 
-		// Attempt to find the class that has been registered to the EntityType string
+		// Initially, attempt to find the class that has been registered to the EntityType string
 		UClass** EntityClassTemplate = EntityRegistry->GetRegisteredEntityClass(EntityTypeString);
 
-		// this is all horrendous
+		// This is all horrendous, but assume it's a full CDO path if not registered
 		if((EntityClassTemplate == nullptr) || (*EntityClassTemplate == nullptr))
 		{
 			FStringAssetReference ActorStringRef(EntityTypeString);
