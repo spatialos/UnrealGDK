@@ -1,37 +1,22 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "SpatialShadowActorPipelineBlock.h"
 
 #include "AddComponentOpWrapperBase.h"
 #include "CallbackDispatcher.h"
 #include "EngineMinimal.h"
 #include "EntityRegistry.h"
-#include "SpatialNetDriver.h"
-#include "SpatialPackageMapClient.h"
 #include "MetadataAddComponentOp.h"
 #include "MetadataComponent.h"
-#include "PackageMapComponent.h"
 #include "PositionAddComponentOp.h"
 #include "PositionComponent.h"
 #include "SpatialOSConversionFunctionLibrary.h"
 #include "improbable/view.h"
 #include "improbable/worker.h"
 
-struct FMockExportFlags
-{
-	union
-	{
-		struct
-		{
-			uint8 bHasPath : 1;
-			uint8 bNoLoad : 1;
-			uint8 bHasNetworkChecksum : 1;
-		};
-
-		uint8	Value;
-	};
-
-	FMockExportFlags(){ Value = 0; }
-};
+#include "Generated/SpatialShadowActor_Character.h"
+#include "UnrealACharacterReplicatedDataComponent.h"
+#include "UnrealACharacterCompleteDataComponent.h"
 
 void USpatialShadowActorPipelineBlock::Init(UEntityRegistry* Registry)
 {
@@ -98,7 +83,7 @@ void USpatialShadowActorPipelineBlock::ReplicateShadowActorChanges(float DeltaTi
 {
 	for (auto& Actor : ShadowActors)
 	{
-		Actor.Value->ReplicatedData->ReplicateChanges(DeltaTime);
+		Actor.Value->ReplicateChanges(DeltaTime);
 	}
 }
 
@@ -245,7 +230,7 @@ ASpatialShadowActor* USpatialShadowActorPipelineBlock::TrySpawnShadowActor(
 
 	// Spawn shadow actor.
 	FVector InitialTransform{ 0.0f, 0.0f, 0.0f };
-	auto NewActor = World->SpawnActor<ASpatialShadowActor>(ASpatialShadowActor::StaticClass(), InitialTransform, FRotator::ZeroRotator, FActorSpawnParameters());
+	auto NewActor = World->SpawnActor<ASpatialShadowActor_Character>(ASpatialShadowActor_Character::StaticClass(), InitialTransform, FRotator::ZeroRotator, FActorSpawnParameters());
 
 	// Initialise replicated and complete data.
 	NewActor->ReplicatedData->Init(InConnection, InView, EntityId.ToSpatialEntityId(), InCallbackDispatcher);

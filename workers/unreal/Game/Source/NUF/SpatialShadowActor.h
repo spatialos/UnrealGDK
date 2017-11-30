@@ -1,10 +1,8 @@
-// Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "UnrealACharacterReplicatedDataComponent.h"
-#include "UnrealACharacterCompleteDataComponent.h"
 #include "SpatialShadowActor.generated.h"
 
 UCLASS()
@@ -14,19 +12,10 @@ class ASpatialShadowActor : public AActor
 public:
 	ASpatialShadowActor();
 
-	// Replication component
-	UPROPERTY()
-	UUnrealACharacterReplicatedDataComponent* ReplicatedData;
-
-	// Complete data component
-	UPROPERTY()
-	UUnrealACharacterCompleteDataComponent* CompleteData;
-
 	// Actor which this actor is "shadowing".
-	AActor* PairedActor;
+	UPROPERTY()
+	TWeakObjectPtr<AActor> PairedActor;
 
-	// TODO: Need to register this somewhere.
-	UFUNCTION()
-	void OnReplicatedDataUpdate(UUnrealACharacterReplicatedDataComponentUpdate* Update);
+	virtual void ReplicateChanges(float DeltaTime);
 };
 
