@@ -28,8 +28,6 @@ public:
 	UPROPERTY()
 	USpatialShadowActorPipelineBlock* ShadowActorPipelineBlock;
 
-	UEntityRegistry* GetEntityRegistry();
-
 	UPROPERTY()
 	USpatialInteropBlock* SpatialInteropBlock;
 

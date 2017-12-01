@@ -112,7 +112,7 @@ void USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntityId Entit
 	
 	// check we haven't already assigned a NetGUID to this object
 	if (!SpatialGuidCache->GetNetGUIDFromEntityId(EntityId).IsValid())
-	{
+	{ 
 		SpatialGuidCache->AssignNewEntityActorNetGUID(Actor);
 	}	
 }

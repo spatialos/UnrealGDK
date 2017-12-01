@@ -10,6 +10,8 @@
 #include "MetadataComponent.h"
 #include "PositionAddComponentOp.h"
 #include "PositionComponent.h"
+#include "PackageMapComponent.h"
+#include "PackageMapAddComponentOp.h"
 #include "SpatialOSConversionFunctionLibrary.h"
 #include "improbable/view.h"
 #include "improbable/worker.h"
@@ -93,6 +95,41 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 				Cast<UMetadataAddComponentOp>(*MetadataBaseComponent);
 			UPositionAddComponentOp* PositionAddComponentOp =
 				Cast<UPositionAddComponentOp>(*PositionBaseComponent);
+
+			// Hardcoding to PackageMap entityId for now
+			if (EntityToSpawn.ToSpatialEntityId() == 3)
+			{
+				bool bPackageMapImported = false;
+				UAddComponentOpWrapperBase* PackageMapComponent = GetPendingAddComponent(EntityToSpawn, UPackageMapComponent::ComponentId);
+				if (PackageMapComponent)
+				{
+					USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetOuter());
+					if (Driver->ClientConnections.Num() > 0)
+					{
+						USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(Driver->ClientConnections[0]->PackageMap);
+						if (PMC)
+						{
+							UPackageMapAddComponentOp* Op = Cast<UPackageMapAddComponentOp>(PackageMapComponent);
+							worker::Map<std::uint32_t, std::string> PackageMap = Op->Data->id_to_path_map();
+							for (auto It = PackageMap.begin();
+								It != PackageMap.end();
+								It++)
+							{
+								// Can directly register this object with the PackageMap using the GUID we've received as 
+								// we know it is a static object and that this GUID is unique
+
+								FNetworkGUID NetGUID(It->first);
+								FString Path(It->second.c_str());
+								PMC->ResolveStaticObjectGUID(NetGUID, Path);
+							}
+
+							// early out here as the PackageMap has effectively been 'spawned'
+							SpawnedEntities.Add(EntityToSpawn);
+							continue;
+						}
+					}
+				}
+			}
 
 
 			// We may already have an actor for this entity if it was spawned locally on the server.
@@ -242,28 +279,39 @@ AActor* USpatialInteropBlock::SpawnNewEntity(UMetadataAddComponentOp* MetadataCo
 
 		FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
 
+		UClass* EntityClassTemplate = nullptr;
 		// Initially, attempt to find the class that has been registered to the EntityType string
-		UClass** EntityClassTemplate = EntityRegistry->GetRegisteredEntityClass(EntityTypeString);
-
+		auto RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString);
+		if (RegisteredClass)
+		{
+			EntityClassTemplate = *RegisteredClass;
+		}
+		
 		// This is all horrendous, but assume it's a full CDO path if not registered
-		if((EntityClassTemplate == nullptr) || (*EntityClassTemplate == nullptr))
+		if(EntityClassTemplate == nullptr)
 		{
 			FStringAssetReference ActorStringRef(EntityTypeString);
-			*EntityClassTemplate = ActorStringRef.TryLoad()->GetClass();
+			auto LoadedObject = ActorStringRef.TryLoad();
+			if (LoadedObject)
+			{
+				EntityClassTemplate = LoadedObject->GetClass();
+			}
 		}
 
 		// TryLoad is apparently very slow, so this should be revisited. Class will probably already be loaded a lot of the time
-		auto NewActor = World->SpawnActor<AActor>(*EntityClassTemplate, InitialTransform,
+		auto NewActor = World->SpawnActor<AActor>(EntityClassTemplate, InitialTransform,
 			FRotator::ZeroRotator, FActorSpawnParameters());
-
-		TArray<UActorComponent*> SpatialOSComponents =
-			NewActor->GetComponentsByClass(USpatialOsComponent::StaticClass());
-
-		for (auto Component : SpatialOSComponents)
+		if (NewActor)
 		{
-			USpatialOsComponent* SpatialOSComponent = Cast<USpatialOsComponent>(Component);
-			KnownComponents.Emplace(SpatialOSComponent->GetComponentId().ToSpatialComponentId(),
-				Component->GetClass());
+			TArray<UActorComponent*> SpatialOSComponents =
+				NewActor->GetComponentsByClass(USpatialOsComponent::StaticClass());
+
+			for (auto Component : SpatialOSComponents)
+			{
+				USpatialOsComponent* SpatialOSComponent = Cast<USpatialOsComponent>(Component);
+				KnownComponents.Emplace(SpatialOSComponent->GetComponentId().ToSpatialComponentId(),
+					Component->GetClass());
+			}
 		}
 
 		return NewActor;		
@@ -300,3 +348,9 @@ void USpatialInteropBlock::SetupComponentInterests(
 	}
 }
 
+UAddComponentOpWrapperBase* USpatialInteropBlock::GetPendingAddComponent(
+	const FEntityId& EntityId, const worker::ComponentId& ComponentId)
+{
+	UAddComponentOpWrapperBase** BaseWrapper = ComponentsToAdd.Find(FComponentIdentifier{ EntityId.ToSpatialEntityId(), ComponentId });
+	return (BaseWrapper && (*BaseWrapper)->IsValidLowLevel()) ? *BaseWrapper : nullptr;
+}

@@ -43,6 +43,7 @@ private:
 	UPROPERTY()
 		UEntityRegistry* EntityRegistry;
 
+	UAddComponentOpWrapperBase* GetPendingAddComponent(const FEntityId& EntityId, const worker::ComponentId& ComponentId);
 	TArray<FEntityId> EntitiesToSpawn;
 	TArray<FEntityId> EntitiesToRemove;
 	// Maps ComponentId to USpatialOsComponent* class name

@@ -56,7 +56,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Connected to SpatialOS."));
 
-	SpatialInteropBlock = NewObject<USpatialInteropBlock>();
+	SpatialInteropBlock = NewObject<USpatialInteropBlock>(this);
 	SpatialInteropBlock->Init(EntityRegistry);
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(SpatialInteropBlock);
 
