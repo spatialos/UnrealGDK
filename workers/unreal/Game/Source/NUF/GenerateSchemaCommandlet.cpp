@@ -11,7 +11,6 @@
 #include "Net/RepLayout.h"
 #undef private
 
-
 FString PropertySchemaName(UProperty* Property)
 {
 	FString FullPath = Property->GetFullGroupName(false);
@@ -519,7 +518,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Replic
 	else if (Property->IsA(UByteProperty::StaticClass()))
 	{
 		Writer.Print(FString::Printf(TEXT("%s = int(%s);"), *SchemaPropertyName, *PropertyValue));
-	} 
+	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
 		Writer.Print(FString::Printf(TEXT("auto UObjectRef = NewObject<UUnrealObjectRef>();\nUObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(%s).Value))));\n%s = UObjectRef;"), *PropertyValue, *SchemaPropertyName));

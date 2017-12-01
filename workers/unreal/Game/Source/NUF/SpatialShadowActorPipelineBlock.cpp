@@ -139,39 +139,6 @@ void USpatialShadowActorPipelineBlock::AddEntities(
 					SpawnedEntities.Add(Entity);
 				}
 			}
-
-			// Hardcoding to PackageMap entityId for now
-			if (Entity.ToSpatialEntityId() == 3)
-			{
-				bool bPackageMapImported = false;
-				UAddComponentOpWrapperBase* PackageMapComponent = GetPendingAddComponent(Entity, UPackageMapComponent::ComponentId);
-				if (PackageMapComponent)
-				{
-					USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetOuter());
-					if (Driver->ClientConnections.Num() > 0)
-					{
-						USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(Driver->ClientConnections[0]->PackageMap);
-						if (PMC)
-						{
-							UPackageMapAddComponentOp* Op = Cast<UPackageMapAddComponentOp>(PackageMapComponent);
-							worker::Map<std::uint32_t, std::string> PackageMap = Op->Data->id_to_path_map();
-							for (auto It = PackageMap.begin();
-								It != PackageMap.end();
-								It++)
-							{
-								// Can directly register this object with the PackageMap using the GUID we've received as 
-								// we know it is a static object and that this GUID is unique
-
-								FNetworkGUID NetGUID(It->first);
-								FString Path(It->second.c_str());
-								PMC->ResolveStaticObjectGUID(NetGUID, Path);
-							}
-
-							SpawnedEntities.Add(Entity);
-						}
-					}
-				}
-			}
 		}
 	}
 
@@ -189,8 +156,6 @@ void USpatialShadowActorPipelineBlock::RemoveEntities(UWorld* World)
 		if (ActorPtr)
 		{
 			World->DestroyActor(*ActorPtr);
-
-
 			ShadowActors.Remove(EntityToRemove);
 		}
 	}

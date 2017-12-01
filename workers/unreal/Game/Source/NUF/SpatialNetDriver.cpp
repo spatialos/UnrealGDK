@@ -4,7 +4,7 @@
 #include "SpatialNetConnection.h"
 #include "EntityRegistry.h"
 #include "EntityPipeline.h"
-#include "SimpleEntitySpawnerBlock.h"
+#include "SpatialInteropBlock.h"
 #include "SpatialOS.h"
 #include "SpatialOSComponentUpdater.h"
 #include "Engine/ActorChannel.h"
@@ -55,12 +55,14 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Connected to SpatialOS."));
-	ShadowActorPipelineBlock = NewObject<USpatialShadowActorPipelineBlock>(this);
+
+	SpatialInteropBlock = NewObject<USpatialInteropBlock>();
+	SpatialInteropBlock->Init(EntityRegistry);
+	SpatialOSInstance->GetEntityPipeline()->AddBlock(SpatialInteropBlock);
+
+	ShadowActorPipelineBlock = NewObject<USpatialShadowActorPipelineBlock>();
 	ShadowActorPipelineBlock->Init(EntityRegistry);
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(ShadowActorPipelineBlock);
-	auto EntitySpawnerBlock = NewObject<USimpleEntitySpawnerBlock>();
-	//EntitySpawnerBlock->Init(EntityRegistry);
-	//SpatialOSInstance->GetEntityPipeline()->AddBlock(EntitySpawnerBlock);
 
 	TArray<FString> BlueprintPaths;
 	BlueprintPaths.Add(TEXT(ENTITY_BLUEPRINTS_FOLDER));
@@ -183,19 +185,3 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		}
 	}
 }
-
-void USpatialNetDriver::PostInitProperties()
-{
-	Super::PostInitProperties();
-
-	if (!HasAnyFlags(RF_ClassDefaultObject))
-	{
-		GuidCache = TSharedPtr<FSpatialNetGUIDCache>(new FSpatialNetGUIDCache(this));
-	}
-}
-
-UEntityRegistry* USpatialNetDriver::GetEntityRegistry()
-{
-	return EntityRegistry;
-}
-
