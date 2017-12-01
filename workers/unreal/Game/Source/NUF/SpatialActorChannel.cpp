@@ -141,6 +141,7 @@ public:
 			{
 				if (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass()))
 				{
+					ReplicatedProperties.Add(Handle, ReplicatedData{Property, TArray<uint8>()});
 					break;
 				}
 			}
@@ -203,45 +204,46 @@ void USpatialActorChannel::Close()
 
 void USpatialActorChannel::ReceivedBunch(FInBunch &Bunch)
 {
-	// Get SpatialNetDriver.
-	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
-	if (!Driver->ShadowActorPipelineBlock)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("SpatialOS is not connected yet."));
-		UActorChannel::ReceivedBunch(Bunch);
-		return;
-	}
-
-	// Get entity ID.
-	// TODO: Replace with EntityId from registry corresponding to this replicated actor.
-	FEntityId EntityId = 2;//EntityRegistry->GetEntityIdFromActor(ActorChannel->Actor);
-	if (EntityId == FEntityId())
+	// If not a client, just call normal behaviour.
+	if (!Connection->Driver->ServerConnection)
 	{
 		UActorChannel::ReceivedBunch(Bunch);
 		return;
 	}
 
-	// Get shadow actor.
-	ASpatialShadowActor_Character* ShadowActor = Cast<ASpatialShadowActor_Character>(Driver->ShadowActorPipelineBlock->GetShadowActor(EntityId));
-	if (!ShadowActor)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Actor channel has no corresponding shadow actor. That means the entity hasn't been checked out yet."));
-		UActorChannel::ReceivedBunch(Bunch);
-		return;
-	}
-
-	// Skip bunches sent by built in Unreal.
-	auto& PropertyMap = ShadowActor->GetHandlePropertyMap();
+	// Skip bunches sent by built in Unreal unless they contain UObjectProperty's
+	auto& PropertyMap = GetHandlePropertyMap_Character();
 	FNetBitReader BunchReader(nullptr, Bunch.GetData(), Bunch.GetNumBits());
 	BunchData BunchData;
 	BunchData.Parse(BunchReader, Connection->Driver->IsServer(), nullptr, PropertyMap);
 	auto& ReplicatedProperties = BunchData.GetReplicatedProperties();
-	if (ReplicatedProperties.Contains(6))
+	if (ReplicatedProperties.Num() == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Skipping Handle 6."));
+		//UE_LOG(LogTemp, Warning, TEXT("<- Allowing through non replicated/non actor bunch."));
+		UActorChannel::ReceivedBunch(Bunch);
 		return;
 	}
-	UActorChannel::ReceivedBunch(Bunch);
+	if (ReplicatedProperties.Contains(13)) // Role
+	{
+		UE_LOG(LogTemp, Warning, TEXT("<- Allowing through Role update references."));
+		UActorChannel::ReceivedBunch(Bunch);
+		return;
+	}
+	if (ReplicatedProperties.Contains(4)) // Remote Role
+	{
+		UE_LOG(LogTemp, Warning, TEXT("<- Allowing through Remote Role update references."));
+		UActorChannel::ReceivedBunch(Bunch);
+		return;
+	}
+	for (auto& Property : ReplicatedProperties)
+	{
+		if (Property.Value.Property->IsA(UObjectPropertyBase::StaticClass()))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("<- Allowing through object references."));
+			UActorChannel::ReceivedBunch(Bunch);
+			return;
+		}
+	}
 }
 
 void USpatialActorChannel::ReceivedNak(int32 PacketId)
@@ -305,6 +307,7 @@ FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge
 		return ReturnValue;
 	}
 
+	/*
 	// Get entity ID.
 	// TODO: Replace with EntityId from registry corresponding to this replicated actor.
 	FEntityId EntityId = 2;//EntityRegistry->GetEntityIdFromActor(ActorChannel->Actor);
@@ -317,9 +320,13 @@ FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge
 	ASpatialShadowActor_Character* ShadowActor = Cast<ASpatialShadowActor_Character>(Driver->ShadowActorPipelineBlock->GetShadowActor(EntityId));
 	if (!ShadowActor)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Actor channel has no corresponding shadow actor. That means the entity hasn't been checked out yet."));
+		//UE_LOG(LogTemp, Warning, TEXT("Actor channel has no corresponding shadow actor. That means the entity hasn't been checked out yet."));
 		return ReturnValue;
 	}
+	*/
+
+	// Build SpatialOS update.
+	improbable::unreal::UnrealACharacterReplicatedData::Update SpatialUpdate;
 
 	// Parse payload.
 #ifdef ENABLE_PROPERTY_CHECKSUMS
@@ -344,13 +351,21 @@ FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge
 			break;
 		}
 
+		// TODO: Skip role/remote role update until we have a SimulatedProxy/AutonomousProxy split.
+		if (Handle == 13 || Handle == 4)
+		{
+			break;
+		}
+
 		// Get property and apply update to SpatialOS.
-		auto PropertyMap = ShadowActor->GetHandlePropertyMap();
+		//auto PropertyMap = ShadowActor->GetHandlePropertyMap();
+		auto PropertyMap = GetHandlePropertyMap_Character();
 		UProperty* Property = PropertyMap[Handle].Property;
 		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
-		ShadowActor->ApplyUpdateToSpatial(Reader, Handle, Property);
+		ApplyUpdateToSpatial_Character(Reader, Handle, Property, SpatialUpdate);
+		//ShadowActor->ApplyUpdateToSpatial(Reader, Handle, Property);
 
-		UE_LOG(LogTemp, Log, TEXT("-> NETGUID OF PLAYER %s"), *Driver->GuidCache->GetNetGUID(ShadowActor->PairedActor.Get()).ToString());
+		//UE_LOG(LogTemp, Log, TEXT("-> NETGUID OF PLAYER %s"), *Driver->GuidCache->GetNetGUID(ShadowActor->PairedActor.Get()).ToString());
 
 		// TODO: Currently, object references are not handled properly in ApplyUpdateToSpatial.
 		if (Property->IsA(UObjectPropertyBase::StaticClass()))
@@ -371,6 +386,10 @@ FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge
 			}
 		}
 	}
+
+	// Send SpatialOS update.
+	auto Connection = Driver->GetSpatialOS()->GetConnection().Pin();
+	Connection->SendComponentUpdate<improbable::unreal::UnrealACharacterReplicatedData>(worker::EntityId(2), SpatialUpdate);
 
 	return ReturnValue;
 }

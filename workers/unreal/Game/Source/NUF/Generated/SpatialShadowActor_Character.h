@@ -1,40 +1,16 @@
 #pragma once
 
-#include "SpatialShadowActor.h"
-#include "SpatialShadowActor_Character.generated.h"
+#include <generated/UnrealNative.h>
 
-class UUnrealACharacterReplicatedDataComponent;
-class UUnrealACharacterReplicatedDataComponentUpdate;
-class UUnrealACharacterCompleteDataComponent;
+class USpatialActorChannel;
 
 struct RepHandleData
 {
-	UProperty* Parent;
-	UProperty* Property;
-	int32 Offset;
+UProperty* Parent;
+UProperty* Property;
+int32 Offset;
 };
 
-UCLASS()
-class ASpatialShadowActor_Character : public ASpatialShadowActor
-{
-	GENERATED_BODY()
-public:
-	ASpatialShadowActor_Character();
-
-	void ApplyUpdateToSpatial(FArchive& Reader, int32 Handle, UProperty* Property);
-	void ReceiveUpdateFromSpatial(AActor* Actor, UUnrealACharacterReplicatedDataComponentUpdate* Update);
-
-	void ReplicateChanges(float DeltaTime) override;
-	const TMap<int32, RepHandleData>& GetHandlePropertyMap() const;
-
-	UPROPERTY()
-	UUnrealACharacterReplicatedDataComponent* ReplicatedData;
-	UPROPERTY()
-	UUnrealACharacterCompleteDataComponent* CompleteData; 
-
-private:
-	TMap<int32, RepHandleData> HandleToPropertyMap;
-
-	UFUNCTION()
-	void OnReplicatedMovement();
-};
+const TMap<int32, RepHandleData>& GetHandlePropertyMap_Character();
+void ApplyUpdateToSpatial_Character(FArchive& Reader, int32 Handle, UProperty* Property, improbable::unreal::UnrealACharacterReplicatedData::Update& Update);
+void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealACharacterReplicatedData::Update& Update);

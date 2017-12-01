@@ -1,367 +1,392 @@
 #include "SpatialShadowActor_Character.h"
-#include "UnrealACharacterReplicatedDataComponent.h"
-#include "UnrealACharacterCompleteDataComponent.h"
 #include "CoreMinimal.h"
+#include "GameFramework/Character.h"
+#include "Serialization/MemoryReader.h"
+#include "Serialization/MemoryWriter.h"
 #include "SpatialActorChannel.h"
-#include "Misc/Base64.h"
 
-ASpatialShadowActor_Character::ASpatialShadowActor_Character()
+const TMap<int32, RepHandleData>& GetHandlePropertyMap_Character()
 {
-	ReplicatedData = CreateDefaultSubobject<UUnrealACharacterReplicatedDataComponent>(TEXT("UnrealACharacterReplicatedDataComponent"));
-	CompleteData = CreateDefaultSubobject<UUnrealACharacterCompleteDataComponent>(TEXT("UnrealACharacterCompleteDataComponent"));
-
-	ReplicatedData->OnFieldReplicatedmovementUpdate.AddDynamic(this, &ASpatialShadowActor_Character::OnReplicatedMovement);
-
 	UClass* Class = ACharacter::StaticClass();
-	HandleToPropertyMap.Add(1, RepHandleData{nullptr, Class->FindPropertyByName("bHidden"), 148});
-	HandleToPropertyMap.Add(2, RepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), 148});
-	HandleToPropertyMap.Add(3, RepHandleData{nullptr, Class->FindPropertyByName("bTearOff"), 148});
-	HandleToPropertyMap.Add(4, RepHandleData{nullptr, Class->FindPropertyByName("RemoteRole"), 164});
-	HandleToPropertyMap.Add(5, RepHandleData{nullptr, Class->FindPropertyByName("Owner"), 168});
-	HandleToPropertyMap.Add(6, RepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovement"), 176});
-	HandleToPropertyMap.Add(7, RepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, 232});
-	HandleToPropertyMap[7].Property = Cast<UStructProperty>(HandleToPropertyMap[7].Parent)->Struct->FindPropertyByName("AttachParent");
-	HandleToPropertyMap.Add(8, RepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, 240});
-	HandleToPropertyMap[8].Property = Cast<UStructProperty>(HandleToPropertyMap[8].Parent)->Struct->FindPropertyByName("LocationOffset");
-	HandleToPropertyMap.Add(9, RepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, 252});
-	HandleToPropertyMap[9].Property = Cast<UStructProperty>(HandleToPropertyMap[9].Parent)->Struct->FindPropertyByName("RelativeScale3D");
-	HandleToPropertyMap.Add(10, RepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, 264});
-	HandleToPropertyMap[10].Property = Cast<UStructProperty>(HandleToPropertyMap[10].Parent)->Struct->FindPropertyByName("RotationOffset");
-	HandleToPropertyMap.Add(11, RepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, 276});
-	HandleToPropertyMap[11].Property = Cast<UStructProperty>(HandleToPropertyMap[11].Parent)->Struct->FindPropertyByName("AttachSocket");
-	HandleToPropertyMap.Add(12, RepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, 288});
-	HandleToPropertyMap[12].Property = Cast<UStructProperty>(HandleToPropertyMap[12].Parent)->Struct->FindPropertyByName("AttachComponent");
-	HandleToPropertyMap.Add(13, RepHandleData{nullptr, Class->FindPropertyByName("Role"), 296});
-	HandleToPropertyMap.Add(14, RepHandleData{nullptr, Class->FindPropertyByName("bCanBeDamaged"), 344});
-	HandleToPropertyMap.Add(15, RepHandleData{nullptr, Class->FindPropertyByName("Instigator"), 352});
-	HandleToPropertyMap.Add(16, RepHandleData{nullptr, Class->FindPropertyByName("PlayerState"), 1104});
-	HandleToPropertyMap.Add(17, RepHandleData{nullptr, Class->FindPropertyByName("RemoteViewPitch"), 1112});
-	HandleToPropertyMap.Add(18, RepHandleData{nullptr, Class->FindPropertyByName("Controller"), 1128});
-	HandleToPropertyMap.Add(19, RepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, 1248});
-	HandleToPropertyMap[19].Property = Cast<UStructProperty>(HandleToPropertyMap[19].Parent)->Struct->FindPropertyByName("MovementBase");
-	HandleToPropertyMap.Add(20, RepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, 1256});
-	HandleToPropertyMap[20].Property = Cast<UStructProperty>(HandleToPropertyMap[20].Parent)->Struct->FindPropertyByName("BoneName");
-	HandleToPropertyMap.Add(21, RepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, 1268});
-	HandleToPropertyMap[21].Property = Cast<UStructProperty>(HandleToPropertyMap[21].Parent)->Struct->FindPropertyByName("Location");
-	HandleToPropertyMap.Add(22, RepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, 1280});
-	HandleToPropertyMap[22].Property = Cast<UStructProperty>(HandleToPropertyMap[22].Parent)->Struct->FindPropertyByName("Rotation");
-	HandleToPropertyMap.Add(23, RepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, 1292});
-	HandleToPropertyMap[23].Property = Cast<UStructProperty>(HandleToPropertyMap[23].Parent)->Struct->FindPropertyByName("bServerHasBaseComponent");
-	HandleToPropertyMap.Add(24, RepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, 1293});
-	HandleToPropertyMap[24].Property = Cast<UStructProperty>(HandleToPropertyMap[24].Parent)->Struct->FindPropertyByName("bRelativeRotation");
-	HandleToPropertyMap.Add(25, RepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, 1294});
-	HandleToPropertyMap[25].Property = Cast<UStructProperty>(HandleToPropertyMap[25].Parent)->Struct->FindPropertyByName("bServerHasVelocity");
-	HandleToPropertyMap.Add(26, RepHandleData{nullptr, Class->FindPropertyByName("AnimRootMotionTranslationScale"), 1296});
-	HandleToPropertyMap.Add(27, RepHandleData{nullptr, Class->FindPropertyByName("ReplicatedServerLastTransformUpdateTimeStamp"), 1328});
-	HandleToPropertyMap.Add(28, RepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovementMode"), 1332});
-	HandleToPropertyMap.Add(29, RepHandleData{nullptr, Class->FindPropertyByName("bIsCrouched"), 1340});
-	HandleToPropertyMap.Add(30, RepHandleData{nullptr, Class->FindPropertyByName("JumpMaxHoldTime"), 1348});
-	HandleToPropertyMap.Add(31, RepHandleData{nullptr, Class->FindPropertyByName("JumpMaxCount"), 1352});
-	HandleToPropertyMap.Add(32, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1776});
-	HandleToPropertyMap[32].Property = Cast<UStructProperty>(HandleToPropertyMap[32].Parent)->Struct->FindPropertyByName("bIsActive");
-	HandleToPropertyMap.Add(33, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1784});
-	HandleToPropertyMap[33].Property = Cast<UStructProperty>(HandleToPropertyMap[33].Parent)->Struct->FindPropertyByName("AnimMontage");
-	HandleToPropertyMap.Add(34, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1792});
-	HandleToPropertyMap[34].Property = Cast<UStructProperty>(HandleToPropertyMap[34].Parent)->Struct->FindPropertyByName("Position");
-	HandleToPropertyMap.Add(35, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1796});
-	HandleToPropertyMap[35].Property = Cast<UStructProperty>(HandleToPropertyMap[35].Parent)->Struct->FindPropertyByName("Location");
-	HandleToPropertyMap.Add(36, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1808});
-	HandleToPropertyMap[36].Property = Cast<UStructProperty>(HandleToPropertyMap[36].Parent)->Struct->FindPropertyByName("Rotation");
-	HandleToPropertyMap.Add(37, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1824});
-	HandleToPropertyMap[37].Property = Cast<UStructProperty>(HandleToPropertyMap[37].Parent)->Struct->FindPropertyByName("MovementBase");
-	HandleToPropertyMap.Add(38, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1832});
-	HandleToPropertyMap[38].Property = Cast<UStructProperty>(HandleToPropertyMap[38].Parent)->Struct->FindPropertyByName("MovementBaseBoneName");
-	HandleToPropertyMap.Add(39, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1844});
-	HandleToPropertyMap[39].Property = Cast<UStructProperty>(HandleToPropertyMap[39].Parent)->Struct->FindPropertyByName("bRelativePosition");
-	HandleToPropertyMap.Add(40, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1845});
-	HandleToPropertyMap[40].Property = Cast<UStructProperty>(HandleToPropertyMap[40].Parent)->Struct->FindPropertyByName("bRelativeRotation");
-	HandleToPropertyMap.Add(41, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1848});
-	HandleToPropertyMap[41].Property = Cast<UStructProperty>(HandleToPropertyMap[41].Parent)->Struct->FindPropertyByName("AuthoritativeRootMotion");
-	HandleToPropertyMap.Add(42, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 2104});
-	HandleToPropertyMap[42].Property = Cast<UStructProperty>(HandleToPropertyMap[42].Parent)->Struct->FindPropertyByName("Acceleration");
-	HandleToPropertyMap.Add(43, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 2116});
-	HandleToPropertyMap[43].Property = Cast<UStructProperty>(HandleToPropertyMap[43].Parent)->Struct->FindPropertyByName("LinearVelocity");
+	static TMap<int32, RepHandleData>* HandleToPropertyMapData = nullptr;
+	if (HandleToPropertyMapData == nullptr)
+	{
+		HandleToPropertyMapData = new TMap<int32, RepHandleData>();
+		auto& HandleToPropertyMap = *HandleToPropertyMapData;
+		HandleToPropertyMap.Add(1, RepHandleData{nullptr, Class->FindPropertyByName("bHidden"), 148});
+		HandleToPropertyMap.Add(2, RepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), 148});
+		HandleToPropertyMap.Add(3, RepHandleData{nullptr, Class->FindPropertyByName("bTearOff"), 148});
+		HandleToPropertyMap.Add(4, RepHandleData{nullptr, Class->FindPropertyByName("RemoteRole"), 164});
+		HandleToPropertyMap.Add(5, RepHandleData{nullptr, Class->FindPropertyByName("Owner"), 168});
+		HandleToPropertyMap.Add(6, RepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovement"), 176});
+		HandleToPropertyMap.Add(7, RepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, 232});
+		HandleToPropertyMap[7].Property = Cast<UStructProperty>(HandleToPropertyMap[7].Parent)->Struct->FindPropertyByName("AttachParent");
+		HandleToPropertyMap.Add(8, RepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, 240});
+		HandleToPropertyMap[8].Property = Cast<UStructProperty>(HandleToPropertyMap[8].Parent)->Struct->FindPropertyByName("LocationOffset");
+		HandleToPropertyMap.Add(9, RepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, 252});
+		HandleToPropertyMap[9].Property = Cast<UStructProperty>(HandleToPropertyMap[9].Parent)->Struct->FindPropertyByName("RelativeScale3D");
+		HandleToPropertyMap.Add(10, RepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, 264});
+		HandleToPropertyMap[10].Property = Cast<UStructProperty>(HandleToPropertyMap[10].Parent)->Struct->FindPropertyByName("RotationOffset");
+		HandleToPropertyMap.Add(11, RepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, 276});
+		HandleToPropertyMap[11].Property = Cast<UStructProperty>(HandleToPropertyMap[11].Parent)->Struct->FindPropertyByName("AttachSocket");
+		HandleToPropertyMap.Add(12, RepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, 288});
+		HandleToPropertyMap[12].Property = Cast<UStructProperty>(HandleToPropertyMap[12].Parent)->Struct->FindPropertyByName("AttachComponent");
+		HandleToPropertyMap.Add(13, RepHandleData{nullptr, Class->FindPropertyByName("Role"), 296});
+		HandleToPropertyMap.Add(14, RepHandleData{nullptr, Class->FindPropertyByName("bCanBeDamaged"), 344});
+		HandleToPropertyMap.Add(15, RepHandleData{nullptr, Class->FindPropertyByName("Instigator"), 352});
+		HandleToPropertyMap.Add(16, RepHandleData{nullptr, Class->FindPropertyByName("PlayerState"), 1104});
+		HandleToPropertyMap.Add(17, RepHandleData{nullptr, Class->FindPropertyByName("RemoteViewPitch"), 1112});
+		HandleToPropertyMap.Add(18, RepHandleData{nullptr, Class->FindPropertyByName("Controller"), 1128});
+		HandleToPropertyMap.Add(19, RepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, 1248});
+		HandleToPropertyMap[19].Property = Cast<UStructProperty>(HandleToPropertyMap[19].Parent)->Struct->FindPropertyByName("MovementBase");
+		HandleToPropertyMap.Add(20, RepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, 1256});
+		HandleToPropertyMap[20].Property = Cast<UStructProperty>(HandleToPropertyMap[20].Parent)->Struct->FindPropertyByName("BoneName");
+		HandleToPropertyMap.Add(21, RepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, 1268});
+		HandleToPropertyMap[21].Property = Cast<UStructProperty>(HandleToPropertyMap[21].Parent)->Struct->FindPropertyByName("Location");
+		HandleToPropertyMap.Add(22, RepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, 1280});
+		HandleToPropertyMap[22].Property = Cast<UStructProperty>(HandleToPropertyMap[22].Parent)->Struct->FindPropertyByName("Rotation");
+		HandleToPropertyMap.Add(23, RepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, 1292});
+		HandleToPropertyMap[23].Property = Cast<UStructProperty>(HandleToPropertyMap[23].Parent)->Struct->FindPropertyByName("bServerHasBaseComponent");
+		HandleToPropertyMap.Add(24, RepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, 1293});
+		HandleToPropertyMap[24].Property = Cast<UStructProperty>(HandleToPropertyMap[24].Parent)->Struct->FindPropertyByName("bRelativeRotation");
+		HandleToPropertyMap.Add(25, RepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, 1294});
+		HandleToPropertyMap[25].Property = Cast<UStructProperty>(HandleToPropertyMap[25].Parent)->Struct->FindPropertyByName("bServerHasVelocity");
+		HandleToPropertyMap.Add(26, RepHandleData{nullptr, Class->FindPropertyByName("AnimRootMotionTranslationScale"), 1296});
+		HandleToPropertyMap.Add(27, RepHandleData{nullptr, Class->FindPropertyByName("ReplicatedServerLastTransformUpdateTimeStamp"), 1328});
+		HandleToPropertyMap.Add(28, RepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovementMode"), 1332});
+		HandleToPropertyMap.Add(29, RepHandleData{nullptr, Class->FindPropertyByName("bIsCrouched"), 1340});
+		HandleToPropertyMap.Add(30, RepHandleData{nullptr, Class->FindPropertyByName("JumpMaxHoldTime"), 1348});
+		HandleToPropertyMap.Add(31, RepHandleData{nullptr, Class->FindPropertyByName("JumpMaxCount"), 1352});
+		HandleToPropertyMap.Add(32, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1776});
+		HandleToPropertyMap[32].Property = Cast<UStructProperty>(HandleToPropertyMap[32].Parent)->Struct->FindPropertyByName("bIsActive");
+		HandleToPropertyMap.Add(33, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1784});
+		HandleToPropertyMap[33].Property = Cast<UStructProperty>(HandleToPropertyMap[33].Parent)->Struct->FindPropertyByName("AnimMontage");
+		HandleToPropertyMap.Add(34, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1792});
+		HandleToPropertyMap[34].Property = Cast<UStructProperty>(HandleToPropertyMap[34].Parent)->Struct->FindPropertyByName("Position");
+		HandleToPropertyMap.Add(35, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1796});
+		HandleToPropertyMap[35].Property = Cast<UStructProperty>(HandleToPropertyMap[35].Parent)->Struct->FindPropertyByName("Location");
+		HandleToPropertyMap.Add(36, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1808});
+		HandleToPropertyMap[36].Property = Cast<UStructProperty>(HandleToPropertyMap[36].Parent)->Struct->FindPropertyByName("Rotation");
+		HandleToPropertyMap.Add(37, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1824});
+		HandleToPropertyMap[37].Property = Cast<UStructProperty>(HandleToPropertyMap[37].Parent)->Struct->FindPropertyByName("MovementBase");
+		HandleToPropertyMap.Add(38, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1832});
+		HandleToPropertyMap[38].Property = Cast<UStructProperty>(HandleToPropertyMap[38].Parent)->Struct->FindPropertyByName("MovementBaseBoneName");
+		HandleToPropertyMap.Add(39, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1844});
+		HandleToPropertyMap[39].Property = Cast<UStructProperty>(HandleToPropertyMap[39].Parent)->Struct->FindPropertyByName("bRelativePosition");
+		HandleToPropertyMap.Add(40, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1845});
+		HandleToPropertyMap[40].Property = Cast<UStructProperty>(HandleToPropertyMap[40].Parent)->Struct->FindPropertyByName("bRelativeRotation");
+		HandleToPropertyMap.Add(41, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 1848});
+		HandleToPropertyMap[41].Property = Cast<UStructProperty>(HandleToPropertyMap[41].Parent)->Struct->FindPropertyByName("AuthoritativeRootMotion");
+		HandleToPropertyMap.Add(42, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 2104});
+		HandleToPropertyMap[42].Property = Cast<UStructProperty>(HandleToPropertyMap[42].Parent)->Struct->FindPropertyByName("Acceleration");
+		HandleToPropertyMap.Add(43, RepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, 2116});
+		HandleToPropertyMap[43].Property = Cast<UStructProperty>(HandleToPropertyMap[43].Parent)->Struct->FindPropertyByName("LinearVelocity");
+	}
+	return *HandleToPropertyMapData;
 }
 
-void ASpatialShadowActor_Character::ApplyUpdateToSpatial(FArchive& Reader, int32 Handle, UProperty* Property)
+void ApplyUpdateToSpatial_Character(FArchive& Reader, int32 Handle, UProperty* Property, improbable::unreal::UnrealACharacterReplicatedData::Update& Update)
 {
 	switch (Handle)
 	{
-		case 1:
+		case 1: // field_bhidden
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldBhidden = Value != 0;
+
+			Update.set_field_bhidden(Value != 0);
 			break;
 		}
-		case 2:
+		case 2: // field_breplicatemovement
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldBreplicatemovement = Value != 0;
+
+			Update.set_field_breplicatemovement(Value != 0);
 			break;
 		}
-		case 3:
+		case 3: // field_btearoff
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldBtearoff = Value != 0;
+
+			Update.set_field_btearoff(Value != 0);
 			break;
 		}
-		case 4:
+		case 4: // field_remoterole
 		{
 			TEnumAsByte<ENetRole> Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldRemoterole = int(Value);
+
+			Update.set_field_remoterole(uint32_t(Value));
 			break;
 		}
 		// case 5: - Owner is an object reference, skipping.
-		case 6:
+		case 6: // field_replicatedmovement
 		{
 			FRepMovement Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			TArray<uint8> Data;
-			FMemoryWriter Writer(Data);
+
+			TArray<uint8> ValueData;
+			FMemoryWriter ValueDataWriter(ValueData);
 			bool Success;
-			Value.NetSerialize(Writer, nullptr, Success);
-			ReplicatedData->FieldReplicatedmovement = FBase64::Encode(Data);
+			Value.NetSerialize(ValueDataWriter, nullptr, Success);
+			Update.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
 			break;
 		}
 		// case 7: - AttachParent is an object reference, skipping.
-		case 8:
+		case 8: // field_attachmentreplication_locationoffset
 		{
 			FVector_NetQuantize100 Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldAttachmentreplicationLocationoffset = Value;
+
+			Update.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
-		case 9:
+		case 9: // field_attachmentreplication_relativescale3d
 		{
 			FVector_NetQuantize100 Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldAttachmentreplicationRelativescale3d = Value;
+
+			Update.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
-		case 10:
+		case 10: // field_attachmentreplication_rotationoffset
 		{
 			FRotator Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			auto& Rotator = ReplicatedData->FieldAttachmentreplicationRotationoffset;
-			Rotator->SetPitch(Value.Pitch);
-			Rotator->SetYaw(Value.Yaw);
-			Rotator->SetRoll(Value.Roll);
+
+			Update.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
 			break;
 		}
-		case 11:
+		case 11: // field_attachmentreplication_attachsocket
 		{
 			FName Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldAttachmentreplicationAttachsocket = Value.ToString();
+
+			Update.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
 			break;
 		}
 		// case 12: - AttachComponent is an object reference, skipping.
-		case 13:
+		case 13: // field_role
 		{
 			TEnumAsByte<ENetRole> Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldRole = int(Value);
+
+			Update.set_field_role(uint32_t(Value));
 			break;
 		}
-		case 14:
+		case 14: // field_bcanbedamaged
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldBcanbedamaged = Value != 0;
+
+			Update.set_field_bcanbedamaged(Value != 0);
 			break;
 		}
 		// case 15: - Instigator is an object reference, skipping.
 		// case 16: - PlayerState is an object reference, skipping.
-		case 17:
+		case 17: // field_remoteviewpitch
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldRemoteviewpitch = int(Value);
+
+			Update.set_field_remoteviewpitch(uint32_t(Value));
 			break;
 		}
 		// case 18: - Controller is an object reference, skipping.
 		// case 19: - MovementBase is an object reference, skipping.
-		case 20:
+		case 20: // field_replicatedbasedmovement_bonename
 		{
 			FName Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReplicatedbasedmovementBonename = Value.ToString();
+
+			Update.set_field_replicatedbasedmovement_bonename(TCHAR_TO_UTF8(*Value.ToString()));
 			break;
 		}
-		case 21:
+		case 21: // field_replicatedbasedmovement_location
 		{
 			FVector_NetQuantize100 Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReplicatedbasedmovementLocation = Value;
+
+			Update.set_field_replicatedbasedmovement_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
-		case 22:
+		case 22: // field_replicatedbasedmovement_rotation
 		{
 			FRotator Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			auto& Rotator = ReplicatedData->FieldReplicatedbasedmovementRotation;
-			Rotator->SetPitch(Value.Pitch);
-			Rotator->SetYaw(Value.Yaw);
-			Rotator->SetRoll(Value.Roll);
+
+			Update.set_field_replicatedbasedmovement_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
 			break;
 		}
-		case 23:
+		case 23: // field_replicatedbasedmovement_bserverhasbasecomponent
 		{
 			bool Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReplicatedbasedmovementBserverhasbasecomponent = Value != 0;
+
+			Update.set_field_replicatedbasedmovement_bserverhasbasecomponent(Value != 0);
 			break;
 		}
-		case 24:
+		case 24: // field_replicatedbasedmovement_brelativerotation
 		{
 			bool Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReplicatedbasedmovementBrelativerotation = Value != 0;
+
+			Update.set_field_replicatedbasedmovement_brelativerotation(Value != 0);
 			break;
 		}
-		case 25:
+		case 25: // field_replicatedbasedmovement_bserverhasvelocity
 		{
 			bool Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReplicatedbasedmovementBserverhasvelocity = Value != 0;
+
+			Update.set_field_replicatedbasedmovement_bserverhasvelocity(Value != 0);
 			break;
 		}
-		case 26:
+		case 26: // field_animrootmotiontranslationscale
 		{
 			float Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldAnimrootmotiontranslationscale = Value;
+
+			Update.set_field_animrootmotiontranslationscale(Value);
 			break;
 		}
-		case 27:
+		case 27: // field_replicatedserverlasttransformupdatetimestamp
 		{
 			float Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReplicatedserverlasttransformupdatetimestamp = Value;
+
+			Update.set_field_replicatedserverlasttransformupdatetimestamp(Value);
 			break;
 		}
-		case 28:
+		case 28: // field_replicatedmovementmode
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReplicatedmovementmode = int(Value);
+
+			Update.set_field_replicatedmovementmode(uint32_t(Value));
 			break;
 		}
-		case 29:
+		case 29: // field_biscrouched
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldBiscrouched = Value != 0;
+
+			Update.set_field_biscrouched(Value != 0);
 			break;
 		}
-		case 30:
+		case 30: // field_jumpmaxholdtime
 		{
 			float Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldJumpmaxholdtime = Value;
+
+			Update.set_field_jumpmaxholdtime(Value);
 			break;
 		}
-		case 31:
+		case 31: // field_jumpmaxcount
 		{
 			int32 Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldJumpmaxcount = Value;
+
+			Update.set_field_jumpmaxcount(Value);
 			break;
 		}
-		case 32:
+		case 32: // field_reprootmotion_bisactive
 		{
 			bool Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReprootmotionBisactive = Value != 0;
+
+			Update.set_field_reprootmotion_bisactive(Value != 0);
 			break;
 		}
 		// case 33: - AnimMontage is an object reference, skipping.
-		case 34:
+		case 34: // field_reprootmotion_position
 		{
 			float Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReprootmotionPosition = Value;
+
+			Update.set_field_reprootmotion_position(Value);
 			break;
 		}
-		case 35:
+		case 35: // field_reprootmotion_location
 		{
 			FVector_NetQuantize100 Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReprootmotionLocation = Value;
+
+			Update.set_field_reprootmotion_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
-		case 36:
+		case 36: // field_reprootmotion_rotation
 		{
 			FRotator Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			auto& Rotator = ReplicatedData->FieldReprootmotionRotation;
-			Rotator->SetPitch(Value.Pitch);
-			Rotator->SetYaw(Value.Yaw);
-			Rotator->SetRoll(Value.Roll);
+
+			Update.set_field_reprootmotion_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
 			break;
 		}
 		// case 37: - MovementBase is an object reference, skipping.
-		case 38:
+		case 38: // field_reprootmotion_movementbasebonename
 		{
 			FName Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReprootmotionMovementbasebonename = Value.ToString();
+
+			Update.set_field_reprootmotion_movementbasebonename(TCHAR_TO_UTF8(*Value.ToString()));
 			break;
 		}
-		case 39:
+		case 39: // field_reprootmotion_brelativeposition
 		{
 			bool Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReprootmotionBrelativeposition = Value != 0;
+
+			Update.set_field_reprootmotion_brelativeposition(Value != 0);
 			break;
 		}
-		case 40:
+		case 40: // field_reprootmotion_brelativerotation
 		{
 			bool Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReprootmotionBrelativerotation = Value != 0;
+
+			Update.set_field_reprootmotion_brelativerotation(Value != 0);
 			break;
 		}
-		case 41:
+		case 41: // field_reprootmotion_authoritativerootmotion
 		{
 			FRootMotionSourceGroup Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
+
 			{
 			}
 			{
@@ -374,282 +399,732 @@ void ASpatialShadowActor_Character::ApplyUpdateToSpatial(FArchive& Reader, int32
 			}
 			break;
 		}
-		case 42:
+		case 42: // field_reprootmotion_acceleration
 		{
 			FVector_NetQuantize10 Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReprootmotionAcceleration = Value;
+
+			Update.set_field_reprootmotion_acceleration(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
-		case 43:
+		case 43: // field_reprootmotion_linearvelocity
 		{
 			FVector_NetQuantize10 Value;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, nullptr, &Value);
-			ReplicatedData->FieldReprootmotionLinearvelocity = Value;
+
+			Update.set_field_reprootmotion_linearvelocity(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
 	}
 }
 
-void ASpatialShadowActor_Character::ReceiveUpdateFromSpatial(AActor* Actor, UUnrealACharacterReplicatedDataComponentUpdate* Update)
+void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealACharacterReplicatedData::Update& Update)
 {
-	UObject* Container = Actor;
-	if (Update->HasFieldBhidden())
+	FNetBitWriter OutputWriter(nullptr, 0); 
+	auto& HandleToPropertyMap = GetHandlePropertyMap_Character();
+	if (!Update.field_bhidden().empty())
 	{
-		RepHandleData& Data = HandleToPropertyMap[1];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<uint8>(Container);
-	}
-	if (Update->HasFieldBreplicatemovement())
-	{
-		RepHandleData& Data = HandleToPropertyMap[2];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<uint8>(Container);
-	}
-	if (Update->HasFieldBtearoff())
-	{
-		RepHandleData& Data = HandleToPropertyMap[3];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<uint8>(Container);
-	}
-	if (Update->HasFieldRemoterole())
-	{
-		RepHandleData& Data = HandleToPropertyMap[4];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<TEnumAsByte<ENetRole>>(Container);
-	}
-	if (Update->HasFieldOwner())
-	{
-		RepHandleData& Data = HandleToPropertyMap[5];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<AActor*>(Container);
-	}
-	if (Update->HasFieldReplicatedmovement())
-	{
-		RepHandleData& Data = HandleToPropertyMap[6];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<FRepMovement>(Container);
-	}
-	if (Update->HasFieldAttachmentreplicationAttachparent())
-	{
-		RepHandleData& Data = HandleToPropertyMap[7];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepAttachment>(Container);
-	}
-	if (Update->HasFieldAttachmentreplicationLocationoffset())
-	{
-		RepHandleData& Data = HandleToPropertyMap[8];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepAttachment>(Container);
-	}
-	if (Update->HasFieldAttachmentreplicationRelativescale3d())
-	{
-		RepHandleData& Data = HandleToPropertyMap[9];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepAttachment>(Container);
-	}
-	if (Update->HasFieldAttachmentreplicationRotationoffset())
-	{
-		RepHandleData& Data = HandleToPropertyMap[10];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepAttachment>(Container);
-	}
-	if (Update->HasFieldAttachmentreplicationAttachsocket())
-	{
-		RepHandleData& Data = HandleToPropertyMap[11];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepAttachment>(Container);
-	}
-	if (Update->HasFieldAttachmentreplicationAttachcomponent())
-	{
-		RepHandleData& Data = HandleToPropertyMap[12];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepAttachment>(Container);
-	}
-	if (Update->HasFieldRole())
-	{
-		RepHandleData& Data = HandleToPropertyMap[13];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<TEnumAsByte<ENetRole>>(Container);
-	}
-	if (Update->HasFieldBcanbedamaged())
-	{
-		RepHandleData& Data = HandleToPropertyMap[14];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<uint8>(Container);
-	}
-	if (Update->HasFieldInstigator())
-	{
-		RepHandleData& Data = HandleToPropertyMap[15];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<APawn*>(Container);
-	}
-	if (Update->HasFieldPlayerstate())
-	{
-		RepHandleData& Data = HandleToPropertyMap[16];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<APlayerState*>(Container);
-	}
-	if (Update->HasFieldRemoteviewpitch())
-	{
-		RepHandleData& Data = HandleToPropertyMap[17];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<uint8>(Container);
-	}
-	if (Update->HasFieldController())
-	{
-		RepHandleData& Data = HandleToPropertyMap[18];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<AController*>(Container);
-	}
-	if (Update->HasFieldReplicatedbasedmovementMovementbase())
-	{
-		RepHandleData& Data = HandleToPropertyMap[19];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
-	}
-	if (Update->HasFieldReplicatedbasedmovementBonename())
-	{
-		RepHandleData& Data = HandleToPropertyMap[20];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
-	}
-	if (Update->HasFieldReplicatedbasedmovementLocation())
-	{
-		RepHandleData& Data = HandleToPropertyMap[21];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
-	}
-	if (Update->HasFieldReplicatedbasedmovementRotation())
-	{
-		RepHandleData& Data = HandleToPropertyMap[22];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
-	}
-	if (Update->HasFieldReplicatedbasedmovementBserverhasbasecomponent())
-	{
-		RepHandleData& Data = HandleToPropertyMap[23];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
-	}
-	if (Update->HasFieldReplicatedbasedmovementBrelativerotation())
-	{
-		RepHandleData& Data = HandleToPropertyMap[24];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
-	}
-	if (Update->HasFieldReplicatedbasedmovementBserverhasvelocity())
-	{
-		RepHandleData& Data = HandleToPropertyMap[25];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FBasedMovementInfo>(Container);
-	}
-	if (Update->HasFieldAnimrootmotiontranslationscale())
-	{
-		RepHandleData& Data = HandleToPropertyMap[26];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<float>(Container);
-	}
-	if (Update->HasFieldReplicatedserverlasttransformupdatetimestamp())
-	{
-		RepHandleData& Data = HandleToPropertyMap[27];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<float>(Container);
-	}
-	if (Update->HasFieldReplicatedmovementmode())
-	{
-		RepHandleData& Data = HandleToPropertyMap[28];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<uint8>(Container);
-	}
-	if (Update->HasFieldBiscrouched())
-	{
-		RepHandleData& Data = HandleToPropertyMap[29];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<uint8>(Container);
-	}
-	if (Update->HasFieldJumpmaxholdtime())
-	{
-		RepHandleData& Data = HandleToPropertyMap[30];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<float>(Container);
-	}
-	if (Update->HasFieldJumpmaxcount())
-	{
-		RepHandleData& Data = HandleToPropertyMap[31];
-		auto& Value = *Data.Property->ContainerPtrToValuePtr<int32>(Container);
-	}
-	if (Update->HasFieldReprootmotionBisactive())
-	{
-		RepHandleData& Data = HandleToPropertyMap[32];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-	}
-	if (Update->HasFieldReprootmotionAnimmontage())
-	{
-		RepHandleData& Data = HandleToPropertyMap[33];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-	}
-	if (Update->HasFieldReprootmotionPosition())
-	{
-		RepHandleData& Data = HandleToPropertyMap[34];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-	}
-	if (Update->HasFieldReprootmotionLocation())
-	{
-		RepHandleData& Data = HandleToPropertyMap[35];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-	}
-	if (Update->HasFieldReprootmotionRotation())
-	{
-		RepHandleData& Data = HandleToPropertyMap[36];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-	}
-	if (Update->HasFieldReprootmotionMovementbase())
-	{
-		RepHandleData& Data = HandleToPropertyMap[37];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-	}
-	if (Update->HasFieldReprootmotionMovementbasebonename())
-	{
-		RepHandleData& Data = HandleToPropertyMap[38];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-	}
-	if (Update->HasFieldReprootmotionBrelativeposition())
-	{
-		RepHandleData& Data = HandleToPropertyMap[39];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-	}
-	if (Update->HasFieldReprootmotionBrelativerotation())
-	{
-		RepHandleData& Data = HandleToPropertyMap[40];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-	}
-	if (Update->HasFieldReprootmotionAuthoritativerootmotion())
-	{
-		RepHandleData& Data = HandleToPropertyMap[41];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-	}
-	if (Update->HasFieldReprootmotionAcceleration())
-	{
-		RepHandleData& Data = HandleToPropertyMap[42];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-	}
-	if (Update->HasFieldReprootmotionLinearvelocity())
-	{
-		RepHandleData& Data = HandleToPropertyMap[43];
-		auto& Value = *Data.Parent->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-	}
-}
+		// field_bhidden
+		uint32 Handle = 1;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-void ASpatialShadowActor_Character::ReplicateChanges(float DeltaTime)
-{
-	ReplicatedData->ReplicateChanges(DeltaTime);
-}
+		uint8 Value;
+		check(Data.Property->ElementSize == sizeof(Value));
 
-const TMap<int32, RepHandleData>& ASpatialShadowActor_Character::GetHandlePropertyMap() const
-{
-	return HandleToPropertyMap;
-}
+		Value = *(Update.field_bhidden().data());
 
-void ASpatialShadowActor_Character::OnReplicatedMovement()
-{
-	if (PairedActor.Get()->Role != ROLE_SimulatedProxy)
-	{
-		return;
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 	}
-	if (!ClientActorChannel)
+	if (!Update.field_breplicatemovement().empty())
 	{
-		return;
-	}
+		// field_breplicatemovement
+		uint32 Handle = 2;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-	// Header.
-	uint32 Handle = 6;
-	FNetBitWriter Writer(nullptr, 0);
-	Writer.SerializeIntPacked(Handle);
-	// Data.
-	RepHandleData& Data = HandleToPropertyMap[Handle];
-	// DEPENDS ON GENERATED CODE.
-	FRepMovement Value;
-	TArray<uint8> ValueData;
-	FBase64::Decode(ReplicatedData->FieldReplicatedmovement, ValueData);
-	FMemoryReader Reader(ValueData);
-	bool Success;
-	Value.NetSerialize(Reader, nullptr, Success);
-	// Repack.
-	Data.Property->NetSerializeItem(Writer, nullptr, &Value);
-	// DEPENDS ON GENERATED CODE END.
-	ClientActorChannel->SpatialReceivePropertyUpdate(Writer);
-	UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		uint8 Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_breplicatemovement().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_btearoff().empty())
+	{
+		// field_btearoff
+		uint32 Handle = 3;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		uint8 Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_btearoff().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_remoterole().empty())
+	{
+		// field_remoterole
+		uint32 Handle = 4;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		TEnumAsByte<ENetRole> Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+		Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_remoterole().data())));
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_owner().empty())
+	{
+		// field_owner
+		uint32 Handle = 5;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		AActor* Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		// UNSUPPORTED ObjectProperty - Value *(Update.field_owner().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_replicatedmovement().empty())
+	{
+		// field_replicatedmovement
+		uint32 Handle = 6;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		FRepMovement Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		auto& ValueDataStr = *(Update.field_replicatedmovement().data());
+		TArray<uint8> ValueData;
+		ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+		FMemoryReader ValueDataReader(ValueData);
+		bool Success;
+		Value.NetSerialize(ValueDataReader, nullptr, Success);
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_attachmentreplication_attachparent().empty())
+	{
+		// field_attachmentreplication_attachparent
+		uint32 Handle = 7;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		AActor* Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		// UNSUPPORTED ObjectProperty - Value *(Update.field_attachmentreplication_attachparent().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_attachmentreplication_locationoffset().empty())
+	{
+		// field_attachmentreplication_locationoffset
+		uint32 Handle = 8;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		FVector_NetQuantize100 Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		auto& Vector = *(Update.field_attachmentreplication_locationoffset().data());
+		Value.X = Vector.x();
+		Value.Y = Vector.y();
+		Value.Z = Vector.z();
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_attachmentreplication_relativescale3d().empty())
+	{
+		// field_attachmentreplication_relativescale3d
+		uint32 Handle = 9;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		FVector_NetQuantize100 Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		auto& Vector = *(Update.field_attachmentreplication_relativescale3d().data());
+		Value.X = Vector.x();
+		Value.Y = Vector.y();
+		Value.Z = Vector.z();
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_attachmentreplication_rotationoffset().empty())
+	{
+		// field_attachmentreplication_rotationoffset
+		uint32 Handle = 10;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		FRotator Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		auto& Rotator = *(Update.field_attachmentreplication_rotationoffset().data());
+		Value.Yaw = Rotator.yaw();
+		Value.Pitch = Rotator.pitch();
+		Value.Roll = Rotator.roll();
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_attachmentreplication_attachsocket().empty())
+	{
+		// field_attachmentreplication_attachsocket
+		uint32 Handle = 11;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		FName Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = FName((*(Update.field_attachmentreplication_attachsocket().data())).data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_attachmentreplication_attachcomponent().empty())
+	{
+		// field_attachmentreplication_attachcomponent
+		uint32 Handle = 12;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		USceneComponent* Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		// UNSUPPORTED ObjectProperty - Value *(Update.field_attachmentreplication_attachcomponent().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_role().empty())
+	{
+		// field_role
+		uint32 Handle = 13;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		TEnumAsByte<ENetRole> Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+		Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_role().data())));
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_bcanbedamaged().empty())
+	{
+		// field_bcanbedamaged
+		uint32 Handle = 14;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		uint8 Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_bcanbedamaged().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_instigator().empty())
+	{
+		// field_instigator
+		uint32 Handle = 15;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		APawn* Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		// UNSUPPORTED ObjectProperty - Value *(Update.field_instigator().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_playerstate().empty())
+	{
+		// field_playerstate
+		uint32 Handle = 16;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		APlayerState* Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		// UNSUPPORTED ObjectProperty - Value *(Update.field_playerstate().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_remoteviewpitch().empty())
+	{
+		// field_remoteviewpitch
+		uint32 Handle = 17;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		uint8 Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+		Value = uint8(uint8(*(Update.field_remoteviewpitch().data())));
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_controller().empty())
+	{
+		// field_controller
+		uint32 Handle = 18;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		AController* Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		// UNSUPPORTED ObjectProperty - Value *(Update.field_controller().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_replicatedbasedmovement_movementbase().empty())
+	{
+		// field_replicatedbasedmovement_movementbase
+		uint32 Handle = 19;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		UPrimitiveComponent* Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		// UNSUPPORTED ObjectProperty - Value *(Update.field_replicatedbasedmovement_movementbase().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_replicatedbasedmovement_bonename().empty())
+	{
+		// field_replicatedbasedmovement_bonename
+		uint32 Handle = 20;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		FName Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = FName((*(Update.field_replicatedbasedmovement_bonename().data())).data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_replicatedbasedmovement_location().empty())
+	{
+		// field_replicatedbasedmovement_location
+		uint32 Handle = 21;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		FVector_NetQuantize100 Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		auto& Vector = *(Update.field_replicatedbasedmovement_location().data());
+		Value.X = Vector.x();
+		Value.Y = Vector.y();
+		Value.Z = Vector.z();
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_replicatedbasedmovement_rotation().empty())
+	{
+		// field_replicatedbasedmovement_rotation
+		uint32 Handle = 22;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		FRotator Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		auto& Rotator = *(Update.field_replicatedbasedmovement_rotation().data());
+		Value.Yaw = Rotator.yaw();
+		Value.Pitch = Rotator.pitch();
+		Value.Roll = Rotator.roll();
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_replicatedbasedmovement_bserverhasbasecomponent().empty())
+	{
+		// field_replicatedbasedmovement_bserverhasbasecomponent
+		uint32 Handle = 23;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		bool Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_replicatedbasedmovement_bserverhasbasecomponent().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_replicatedbasedmovement_brelativerotation().empty())
+	{
+		// field_replicatedbasedmovement_brelativerotation
+		uint32 Handle = 24;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		bool Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_replicatedbasedmovement_brelativerotation().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_replicatedbasedmovement_bserverhasvelocity().empty())
+	{
+		// field_replicatedbasedmovement_bserverhasvelocity
+		uint32 Handle = 25;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		bool Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_replicatedbasedmovement_bserverhasvelocity().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_animrootmotiontranslationscale().empty())
+	{
+		// field_animrootmotiontranslationscale
+		uint32 Handle = 26;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		float Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_animrootmotiontranslationscale().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_replicatedserverlasttransformupdatetimestamp().empty())
+	{
+		// field_replicatedserverlasttransformupdatetimestamp
+		uint32 Handle = 27;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		float Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_replicatedserverlasttransformupdatetimestamp().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_replicatedmovementmode().empty())
+	{
+		// field_replicatedmovementmode
+		uint32 Handle = 28;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		uint8 Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+		Value = uint8(uint8(*(Update.field_replicatedmovementmode().data())));
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_biscrouched().empty())
+	{
+		// field_biscrouched
+		uint32 Handle = 29;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		uint8 Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_biscrouched().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_jumpmaxholdtime().empty())
+	{
+		// field_jumpmaxholdtime
+		uint32 Handle = 30;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		float Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_jumpmaxholdtime().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_jumpmaxcount().empty())
+	{
+		// field_jumpmaxcount
+		uint32 Handle = 31;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		int32 Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_jumpmaxcount().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_reprootmotion_bisactive().empty())
+	{
+		// field_reprootmotion_bisactive
+		uint32 Handle = 32;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		bool Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_reprootmotion_bisactive().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_reprootmotion_animmontage().empty())
+	{
+		// field_reprootmotion_animmontage
+		uint32 Handle = 33;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		UAnimMontage* Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		// UNSUPPORTED ObjectProperty - Value *(Update.field_reprootmotion_animmontage().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_reprootmotion_position().empty())
+	{
+		// field_reprootmotion_position
+		uint32 Handle = 34;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		float Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_reprootmotion_position().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_reprootmotion_location().empty())
+	{
+		// field_reprootmotion_location
+		uint32 Handle = 35;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		FVector_NetQuantize100 Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		auto& Vector = *(Update.field_reprootmotion_location().data());
+		Value.X = Vector.x();
+		Value.Y = Vector.y();
+		Value.Z = Vector.z();
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_reprootmotion_rotation().empty())
+	{
+		// field_reprootmotion_rotation
+		uint32 Handle = 36;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		FRotator Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		auto& Rotator = *(Update.field_reprootmotion_rotation().data());
+		Value.Yaw = Rotator.yaw();
+		Value.Pitch = Rotator.pitch();
+		Value.Roll = Rotator.roll();
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_reprootmotion_movementbase().empty())
+	{
+		// field_reprootmotion_movementbase
+		uint32 Handle = 37;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		UPrimitiveComponent* Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		// UNSUPPORTED ObjectProperty - Value *(Update.field_reprootmotion_movementbase().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_reprootmotion_movementbasebonename().empty())
+	{
+		// field_reprootmotion_movementbasebonename
+		uint32 Handle = 38;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		FName Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = FName((*(Update.field_reprootmotion_movementbasebonename().data())).data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_reprootmotion_brelativeposition().empty())
+	{
+		// field_reprootmotion_brelativeposition
+		uint32 Handle = 39;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		bool Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_reprootmotion_brelativeposition().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_reprootmotion_brelativerotation().empty())
+	{
+		// field_reprootmotion_brelativerotation
+		uint32 Handle = 40;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		bool Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		Value = *(Update.field_reprootmotion_brelativerotation().data());
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_reprootmotion_authoritativerootmotion().empty())
+	{
+		// field_reprootmotion_authoritativerootmotion
+		uint32 Handle = 41;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		FRootMotionSourceGroup Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		{
+		}
+		{
+		}
+		{
+		}
+		{
+		}
+		{
+		}
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_reprootmotion_acceleration().empty())
+	{
+		// field_reprootmotion_acceleration
+		uint32 Handle = 42;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		FVector_NetQuantize10 Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		auto& Vector = *(Update.field_reprootmotion_acceleration().data());
+		Value.X = Vector.x();
+		Value.Y = Vector.y();
+		Value.Z = Vector.z();
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	if (!Update.field_reprootmotion_linearvelocity().empty())
+	{
+		// field_reprootmotion_linearvelocity
+		uint32 Handle = 43;
+		OutputWriter.SerializeIntPacked(Handle);
+		const RepHandleData& Data = HandleToPropertyMap[Handle];
+
+		FVector_NetQuantize10 Value;
+		check(Data.Property->ElementSize == sizeof(Value));
+
+		auto& Vector = *(Update.field_reprootmotion_linearvelocity().data());
+		Value.X = Vector.x();
+		Value.Y = Vector.y();
+		Value.Z = Vector.z();
+
+		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+	}
+	ActorChannel->SpatialReceivePropertyUpdate(OutputWriter);
 }

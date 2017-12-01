@@ -98,6 +98,7 @@ void USpatialShadowActorPipelineBlock::AddEntities(
 	const TWeakPtr<worker::Connection>& InConnection,
 	UCallbackDispatcher* InCallbackDispatcher)
 {
+	/*
 	TArray<FEntityId> SpawnedEntities;
 
 	if (World == nullptr)
@@ -152,6 +153,7 @@ void USpatialShadowActorPipelineBlock::AddEntities(
 	{
 		PendingAddEntity.Remove(SpawnedEntity);
 	}
+	*/
 }
 
 void USpatialShadowActorPipelineBlock::RemoveEntities(UWorld* World)
@@ -196,6 +198,7 @@ ASpatialShadowActor* USpatialShadowActorPipelineBlock::TrySpawnShadowActor(
 	UCallbackDispatcher* InCallbackDispatcher,
 	AActor* PairedEntity)
 {
+	/*
 	if (!World)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TrySpawnShadowActor() failed: invalid World context"));
@@ -229,6 +232,7 @@ ASpatialShadowActor* USpatialShadowActorPipelineBlock::TrySpawnShadowActor(
 		auto AuthorityChange = PendingAuthorityChange.FindAndRemoveChecked(FComponentIdentifier{EntityId.ToSpatialEntityId(), UUnrealACharacterCompleteDataComponent::ComponentId});
 		NewActor->CompleteData->ApplyInitialAuthority(AuthorityChange);
 	}
-
 	return NewActor;
+	*/
+	return nullptr;
 }

@@ -27,6 +27,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
+	bIsClient = bInitAsClient;
+
 	// make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	UChannel::ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
@@ -52,6 +54,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	EntityRegistry = NewObject<UEntityRegistry>(this);
 
+	UpdateInterop = NewObject<USpatialUpdateInterop>(this);
+
 	return true;
 }
 
@@ -71,23 +75,29 @@ void USpatialNetDriver::OnSpatialOSConnected()
 
 	EntityRegistry->RegisterEntityBlueprints(BlueprintPaths);
 
-	// DEBUGGING, REMOVE LATER
-	TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
-	TSharedPtr<worker::Connection> Connection = SpatialOSInstance->GetConnection().Pin();
-	View->OnReserveEntityIdResponse([this, Connection](const worker::ReserveEntityIdResponseOp& callback) {
-		std::string ClientWorkerIdString = TCHAR_TO_UTF8(*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId());
-		WorkerAttributeSet ClientAttribute{ { "workerId:" + ClientWorkerIdString } };
-		WorkerRequirementSet OwnClientOnly{ { ClientAttribute } };
-		auto Entity = unreal::FEntityBuilder::Begin()
-			.AddPositionComponent(Position::Data{ {10.0f, 10.0f, 10.0f} }, OwnClientOnly)
-			.AddMetadataComponent(Metadata::Data{ "TEST" })
-			.SetPersistence(true)
-			.SetReadAcl(OwnClientOnly)
-			.Build();
+	UpdateInterop->Init(bIsClient, SpatialOSInstance, this);
 
-		Connection->SendCreateEntityRequest(Entity, callback.EntityId, 0);
-	});
-	Connection->SendReserveEntityIdRequest({});
+	// DEBUGGING, REMOVE LATER
+	if (bIsClient)
+	{
+		TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
+		TSharedPtr<worker::Connection> Connection = SpatialOSInstance->GetConnection().Pin();
+		View->OnReserveEntityIdResponse([this, Connection](const worker::ReserveEntityIdResponseOp& callback)
+		{
+			std::string ClientWorkerIdString = TCHAR_TO_UTF8(*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId());
+			WorkerAttributeSet ClientAttribute{ { "workerId:" + ClientWorkerIdString } };
+			WorkerRequirementSet OwnClientOnly{ { ClientAttribute } };
+			auto Entity = unreal::FEntityBuilder::Begin()
+				.AddPositionComponent(Position::Data{ {10.0f, 10.0f, 10.0f} }, OwnClientOnly)
+				.AddMetadataComponent(Metadata::Data{ "TEST" })
+				.SetPersistence(true)
+				.SetReadAcl(OwnClientOnly)
+				.Build();
+
+			Connection->SendCreateEntityRequest(Entity, callback.EntityId, 0);
+		});
+		Connection->SendReserveEntityIdRequest({});
+	}
 }
 
 void USpatialNetDriver::OnSpatialOSDisconnected()
@@ -118,5 +128,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			ShadowActorPipelineBlock->ReplicateShadowActorChanges(DeltaTime);
 		}
+		UpdateInterop->Tick(DeltaTime);
 	}
 }

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "IpNetDriver.h"
 #include "SpatialShadowActorPipelineBlock.h"
+#include "SpatialUpdateInterop.h"
 #include "SpatialNetDriver.generated.h"
 
 class UEntityPipeline;
@@ -27,7 +28,15 @@ public:
 	UPROPERTY()
 	USpatialShadowActorPipelineBlock* ShadowActorPipelineBlock;
 
+	USpatialOS* GetSpatialOS() const
+	{
+		return SpatialOSInstance;
+	}
+
 private:
+	UPROPERTY()
+	bool bIsClient;
+	
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
 
@@ -36,6 +45,10 @@ private:
 
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
+
+	// Update interop.
+	UPROPERTY()
+	USpatialUpdateInterop* UpdateInterop;
 
 	UFUNCTION()
 	void OnSpatialOSConnected();
