@@ -113,7 +113,7 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 			
 				// register this entity with the PackageMap so that it has a GUID allocated
 				USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetOuter());
-				if (Driver->ClientConnections.Num() > 0)
+				if (Driver && Driver->ClientConnections.Num() > 0)
 				{
 					// should provide a better way of getting hold of the SpatialOS client connection 
 					USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(Driver->ClientConnections[0]->PackageMap);

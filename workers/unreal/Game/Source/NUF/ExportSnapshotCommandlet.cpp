@@ -2,6 +2,7 @@
 
 #include "EntityBuilder.h"
 #include "ExportSnapshotCommandlet.h"
+#include "SpatialConstants.h"
 #include "SpatialOSCommon.h"
 #include "SpatialOSConversionFunctionLibrary.h"
 #include "improbable/collections.h"
@@ -15,9 +16,6 @@
 
 using namespace improbable;
 
-const int g_SpawnerEntityId = 1;
-const int g_playerEntityId = 2;
-const int g_PackageMapEntityId = 3;
 
 UExportSnapshotCommandlet::UExportSnapshotCommandlet()
 {
@@ -49,9 +47,8 @@ void UExportSnapshotCommandlet::GenerateSnapshot(const FString& savePath) const
 	const FString fullPath = FPaths::Combine(*savePath, TEXT("default.snapshot"));
 
 	std::unordered_map<worker::EntityId, worker::Entity> snapshotEntities;
-	//snapshotEntities.emplace(std::make_pair(g_SpawnerEntityId, CreateSpawnerEntity()));
-	snapshotEntities.emplace(std::make_pair(g_playerEntityId, CreatePlayerEntity()));
-	snapshotEntities.emplace(std::make_pair(g_PackageMapEntityId, CreatePackageMapEntity()));
+	snapshotEntities.emplace(std::make_pair(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity()));
+	snapshotEntities.emplace(std::make_pair(SpatialConstants::PACKAGE_MAP_ENTITY_ID, CreatePackageMapEntity()));
 	worker::Option<std::string> Result =
 		worker::SaveSnapshot(improbable::unreal::Components{}, TCHAR_TO_UTF8(*fullPath), snapshotEntities);
 	if (!Result.empty())

@@ -3,7 +3,6 @@ import "improbable/standard_library.schema";
 
 type SpawnPlayerRequest
 {
-     Coordinates position = 1;
 }
 
 type SpawnPlayerResponse
@@ -16,6 +15,5 @@ type SpawnPlayerResponse
 component Spawner
 {
     id = 21010;
-
     command SpawnPlayerResponse spawn_player(SpawnPlayerRequest);
 }

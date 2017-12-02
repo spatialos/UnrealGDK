@@ -4,6 +4,7 @@
 #include "SpatialNetConnection.h"
 #include "EntityRegistry.h"
 #include "EntityPipeline.h"
+#include "SpatialConstants.h"
 #include "SpatialInteropBlock.h"
 #include "SpatialOS.h"
 #include "SpatialOSComponentUpdater.h"
@@ -11,10 +12,13 @@
 #include "Net/RepLayout.h"
 #include "Net/DataReplication.h"
 #include "SpatialActorChannel.h"
+#include "improbable/spawner/spawner.h"
 
 //#include "Generated/SpatialInteropCharacter.h"
 
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
+
+
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
 {
@@ -67,6 +71,20 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	BlueprintPaths.Add(TEXT(ENTITY_BLUEPRINTS_FOLDER));
 
 	EntityRegistry->RegisterEntityBlueprints(BlueprintPaths);
+
+	// If we're the client, we can now ask the server to spawn our controller.
+	if (ServerConnection)
+	{
+		auto LockedConnection = SpatialOSInstance->GetConnection().Pin();
+
+		if (LockedConnection.IsValid())
+		{
+			LockedConnection->SendCommandRequest<improbable::spawner::Spawner::Commands::SpawnPlayer>(SpatialConstants::SPAWNER_ENTITY_ID,
+				improbable::spawner::SpawnPlayerRequest(),
+				worker::Option<std::uint32_t>(0),
+				worker::CommandParameters());
+		}
+	}
 }
 
 void USpatialNetDriver::OnSpatialOSDisconnected()
@@ -184,3 +202,5 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		}
 	}
 }
+
+

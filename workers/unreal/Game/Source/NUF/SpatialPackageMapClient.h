@@ -25,7 +25,7 @@ class NUF_API FSpatialNetGUIDCache : public FNetGUIDCache
 public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
 
-	// requires this to be made virtual in UPackageMapClient.h
+	//NUF-sourcechange Make virtual in PackageMapClient.h
 	FNetworkGUID AssignNewNetGUID_Server(const UObject* Object) override;
 
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor);

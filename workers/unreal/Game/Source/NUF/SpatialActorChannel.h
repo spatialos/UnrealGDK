@@ -33,6 +33,7 @@ public:
 	virtual void AppendMustBeMappedGuids(FOutBunch * bunch) override;
 	virtual FPacketIdRange SendBunch(FOutBunch * bunch, bool bMerge) override;
 	virtual void StartBecomingDormant() override;
+	//NUF-sourcechange Requires ActorChannel.h
 	virtual bool ReplicateActor() override;
 
 
