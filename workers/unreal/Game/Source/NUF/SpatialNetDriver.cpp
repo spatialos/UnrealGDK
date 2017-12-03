@@ -11,6 +11,7 @@
 #include "Engine/ActorChannel.h"
 #include "Net/RepLayout.h"
 #include "Net/DataReplication.h"
+#include "SpatialPackageMapClient.h"
 #include "SpatialActorChannel.h"
 #include "improbable/spawner/spawner.h"
 

@@ -6,27 +6,6 @@
 
 const uint32 StaticObjectOffset = 0x80000000; // 2^31
 
-struct FExportFlags
-{
-	union
-	{
-		struct
-		{
-			uint8 bHasPath : 1;
-			uint8 bNoLoad : 1;
-			uint8 bHasNetworkChecksum : 1;
-		};
-
-		uint8	Value;
-	};
-
-	FExportFlags()
-	{
-		Value = 0;
-	}
-};
-
-
 struct FCompareComponentNames
 {
 	bool operator()(UObject& A, UObject& B) const 
@@ -56,8 +35,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID_Server(const UObject* Object
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID(const UObject* Object)
 {
-	// Allocate a unique dynamic GUID (this just does what the ALLOC_NEW_NET_GUID macro does)
-	FNetworkGUID GUID = (0x80000000 - 1) & ((++UniqueNetIDs[0]) << 1 | 0);
+	
+	FNetworkGUID GUID = (0x80000000 - 1) & ++UniqueNetIDs[0];
 	FNetGuidCacheObject CacheObject;
 	CacheObject.Object = Object;
 
