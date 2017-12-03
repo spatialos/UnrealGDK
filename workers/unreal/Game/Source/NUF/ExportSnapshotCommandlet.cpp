@@ -50,7 +50,7 @@ void UExportSnapshotCommandlet::GenerateSnapshot(const FString& savePath) const
 
 	std::unordered_map<worker::EntityId, worker::Entity> snapshotEntities;
 	//snapshotEntities.emplace(std::make_pair(g_SpawnerEntityId, CreateSpawnerEntity()));
-	snapshotEntities.emplace(std::make_pair(g_playerEntityId, CreatePlayerEntity()));
+	//snapshotEntities.emplace(std::make_pair(g_playerEntityId, CreatePlayerEntity()));
 	snapshotEntities.emplace(std::make_pair(g_PackageMapEntityId, CreatePackageMapEntity()));
 	worker::Option<std::string> Result =
 		worker::SaveSnapshot(improbable::unreal::Components{}, TCHAR_TO_UTF8(*fullPath), snapshotEntities);

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "IpNetDriver.h"
 #include "SpatialShadowActorPipelineBlock.h"
+#include "SpatialInteropBlock.h"
 #include "SpatialNetDriver.generated.h"
 
 class UEntityPipeline;
@@ -27,7 +28,12 @@ public:
 	UPROPERTY()
 	USpatialShadowActorPipelineBlock* ShadowActorPipelineBlock;
 
+	UPROPERTY()
+	USpatialInteropBlock* SpatialInteropBlock;
+
 	UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
+
+	USpatialOS* GetSpatialOS() { return SpatialOSInstance; }
 
 private:
 	UPROPERTY()

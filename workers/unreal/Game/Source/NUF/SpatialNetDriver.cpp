@@ -4,12 +4,13 @@
 #include "SpatialNetConnection.h"
 #include "EntityRegistry.h"
 #include "EntityPipeline.h"
-#include "SimpleEntitySpawnerBlock.h"
+#include "SpatialInteropBlock.h"
 #include "SpatialOS.h"
 #include "SpatialOSComponentUpdater.h"
 #include "Engine/ActorChannel.h"
 #include "Net/RepLayout.h"
 #include "Net/DataReplication.h"
+#include "SpatialPackageMapClient.h"
 #include "SpatialActorChannel.h"
 
 //#include "Generated/SpatialInteropCharacter.h"
@@ -54,12 +55,14 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Connected to SpatialOS."));
+
+	SpatialInteropBlock = NewObject<USpatialInteropBlock>(this);
+	SpatialInteropBlock->Init(EntityRegistry);
+	SpatialOSInstance->GetEntityPipeline()->AddBlock(SpatialInteropBlock);
+
 	ShadowActorPipelineBlock = NewObject<USpatialShadowActorPipelineBlock>();
 	ShadowActorPipelineBlock->Init(EntityRegistry);
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(ShadowActorPipelineBlock);
-	auto EntitySpawnerBlock = NewObject<USimpleEntitySpawnerBlock>();
-	//EntitySpawnerBlock->Init(EntityRegistry);
-	//SpatialOSInstance->GetEntityPipeline()->AddBlock(EntitySpawnerBlock);
 
 	TArray<FString> BlueprintPaths;
 	BlueprintPaths.Add(TEXT(ENTITY_BLUEPRINTS_FOLDER));

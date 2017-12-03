@@ -3,9 +3,17 @@
 #include "SpatialActorChannel.h"
 #include "SpatialNetDriver.h"
 #include "Engine/NetConnection.h"
+#include "SpatialPackageMapClient.h"
+#include "EntityRegistry.h"
 #include "Net/DataBunch.h"
-
+#include <improbable/worker.h>
+#include <improbable/standard_library.h>
+#include "Commander.h"
+#include "EntityTemplate.h"
+#include "EntityBuilder.h"
 #include "Generated/SpatialShadowActor_Character.h"
+
+using namespace improbable;
 
 // We assume that #define ENABLE_PROPERTY_CHECKSUMS exists in RepLayout.cpp:88 here.
 #define ENABLE_PROPERTY_CHECKSUMS
@@ -20,6 +28,19 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer & objectInit
 void USpatialActorChannel::Init(UNetConnection* connection, int32 channelIndex, bool bOpenedLocally)
 {
 	UActorChannel::Init(connection, channelIndex, bOpenedLocally);
+
+	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(connection->Driver);
+	WorkerView = Driver->GetSpatialOS()->GetView();
+	WorkerConnection = Driver->GetSpatialOS()->GetConnection();
+
+	Callbacks.Reset(new unreal::callbacks::FScopedViewCallbacks(WorkerView));
+
+	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
+	if (PinnedView.IsValid())
+	{
+		Callbacks->Add(PinnedView->OnReserveEntityIdResponse(std::bind(&USpatialActorChannel::OnReserveEntityIdResponse, this, std::placeholders::_1)));
+		Callbacks->Add(PinnedView->OnCreateEntityResponse(std::bind(&USpatialActorChannel::OnCreateEntityResponse, this, std::placeholders::_1)));
+	}
 }
 
 void USpatialActorChannel::SetClosingFlag()
@@ -241,3 +262,93 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 	return UActorChannel::CleanUp(bForDestroy);
 }
+
+bool USpatialActorChannel::ReplicateActor()
+{
+	// if this is the first time through replication of this actor, create an entity
+	if (OpenPacketId.First == INDEX_NONE && OpenedLocally)
+	{
+		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
+		if (PinnedConnection.IsValid())
+		{
+			ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
+		}
+	}
+
+	return Super::ReplicateActor();
+}
+
+
+void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op)
+{
+	// just filter incorrect callbacks for now
+	if (Op.RequestId == ReserveEntityIdRequestId)
+	{
+		if (!(Op.StatusCode == worker::StatusCode::kSuccess))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to reserve entity id"));
+			return;
+		}
+		else
+		{
+			TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
+			if (PinnedConnection.IsValid())
+			{
+				FVector Loc = GetActor()->GetActorLocation();
+				FStringAssetReference ActorClassRef(GetActor()->GetClass());
+				FString PathStr = ActorClassRef.ToString();
+
+				UE_LOG(LogTemp, Log, TEXT("Creating entity for actor with path: %s on ActorChannel: %s"), *PathStr, *GetName());
+
+				WorkerAttributeSet UnrealWorkerAttributeSet{ { worker::List<std::string>{"UnrealWorker"} } };
+				WorkerAttributeSet UnrealClientAttributeSet{ { worker::List<std::string>{"UnrealClient"} } };
+
+				// UnrealWorker write authority, any worker read authority
+				WorkerRequirementSet UnrealWorkerWritePermission{ { UnrealWorkerAttributeSet } };
+				WorkerRequirementSet AnyWorkerReadRequirement{ { UnrealWorkerAttributeSet, UnrealClientAttributeSet } };
+
+				auto Entity = unreal::FEntityBuilder::Begin()
+					.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Loc), UnrealWorkerWritePermission)
+					.AddMetadataComponent(Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
+					.SetPersistence(true)
+					.SetReadAcl(AnyWorkerReadRequirement)
+					.Build();
+
+				CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Op.EntityId, 0);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
+				return;
+			}
+		}
+	}
+}
+
+void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
+{
+	if (Op.RequestId == CreateEntityRequestId)
+	{
+		if (!(Op.StatusCode == worker::StatusCode::kSuccess))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to create entity!"));
+		}
+	}
+
+	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
+	if (Driver->ClientConnections.Num() > 0)
+	{
+		// should provide a better way of getting hold of the SpatialOS client connection 
+		USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(Driver->ClientConnections[0]->PackageMap);
+		if (PMC)
+		{
+			FEntityId EntityId(Op.EntityId.value_or(0));
+
+			// once we know the entity was successfully spawned, add the local actor 
+			// to the package map and to the EntityRegistry
+			PMC->ResolveEntityActor(GetActor(), EntityId);
+			Driver->GetEntityRegistry()->AddToRegistry(EntityId, GetActor());
+		}
+	}
+}	
+
