@@ -19,7 +19,6 @@ public:
 	void ResolveEntityActor(AActor* Actor, FEntityId EntityId);
 };
 
-
 class NUF_API FSpatialNetGUIDCache : public FNetGUIDCache
 {
 public:
@@ -34,11 +33,8 @@ public:
 	FNetworkGUID GetNetGUIDFromEntityId(const FEntityId EntityId);
 
 private:
-
 	FNetworkGUID AssignNewNetGUID(const UObject* Object);
 
-	UPROPERTY()
 	TMap<FNetworkGUID, FEntityId> NetGUIDToEntityIdMap;
-	UPROPERTY()
 	TMap<FEntityId, FNetworkGUID> EntityIdToNetGUIDMap;
 };

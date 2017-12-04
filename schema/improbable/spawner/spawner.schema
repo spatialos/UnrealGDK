@@ -3,6 +3,7 @@ import "improbable/standard_library.schema";
 
 type SpawnPlayerRequest
 {
+	string url = 1;
 }
 
 type SpawnPlayerResponse

@@ -23,6 +23,11 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID_Server(const UObject* Object)
 {
+	//todo-giray: Making this return early for now as it causes SerializeNewActor to fail on clients.
+
+	return FNetGUIDCache::AssignNewNetGUID_Server(Object);
+	/*
+
 	// Should only be assigning GUIDs for dynamic objects 
 	// Static objects' NetGUIDs are predetermined and registered in RegisterPreallocatedNetGUID
 	if (IsDynamicObject(Object))
@@ -30,7 +35,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID_Server(const UObject* Object
 		return FNetGUIDCache::AssignNewNetGUID_Server(Object);
 	}
 	
-	return FNetworkGUID(0);
+	return FNetworkGUID(0);*/
 }
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID(const UObject* Object)
@@ -52,6 +57,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	FNetworkGUID NetGUID = AssignNewNetGUID(Actor);
 	check(NetGUID.IsValid());
 	NetGUIDToEntityIdMap.Emplace(NetGUID, EntityId);
+	EntityIdToNetGUIDMap.Emplace(EntityId, NetGUID);
 
 	// Allocate GUIDs for each subobject too
 	TArray<UObject*> DefaultSubobjects;
@@ -107,12 +113,17 @@ void USpatialPackageMapClient::ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FS
 }
 
 void USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntityId EntityId)
-{	
+{
+	//todo-giray: re-enable this codepath.
+	// Currently disabling it because it causes too many crashes and I am trying to fix something else first.
+
+	return;
+	/*
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	
 	// check we haven't already assigned a NetGUID to this object
 	if (!SpatialGuidCache->GetNetGUIDFromEntityId(EntityId).IsValid())
 	{
 		SpatialGuidCache->AssignNewEntityActorNetGUID(Actor);
-	}	
+	}*/	
 }

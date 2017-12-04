@@ -4,7 +4,6 @@
 #include "SpatialNetConnection.h"
 #include "EntityRegistry.h"
 #include "EntityPipeline.h"
-#include "SocketSubsystem.h"
 #include "SpatialConstants.h"
 #include "SpatialInteropBlock.h"
 #include "SpatialOS.h"
@@ -64,28 +63,43 @@ bool USpatialNetDriver::InitConnect(FNetworkNotify* InNotify, const FURL& Connec
 		return false;
 	}
 		
+	// Create an unreal connection to the server
+	UOculusNetConnection* Connection = NewObject<UOculusNetConnection>(NetConnectionClass);
+	check(Connection);
+	TSharedRef<FInternetAddr> InternetAddr = MakeShareable(OculusAddr);
+	Connection->InitRemoteConnection(this, nullptr, ConnectURL, *InternetAddr, ovr_Net_IsConnected(OculusAddr->GetID()) ? USOCK_Open : USOCK_Pending);
+
+	ServerConnection = Connection;
+	Connections.Add(OculusAddr->GetID(), Connection);
+
+	// Connect via OVR_Networking
+	ovr_Net_Connect(OculusAddr->GetID());
+
+	// Create the control channel so we can send the Hello message
+	ServerConnection->CreateChannel(CHTYPE_Control, true, INDEX_NONE);
+
 	return true;
 }
 
 bool USpatialNetDriver::InitListen(FNetworkNotify* InNotify, FURL& LocalURL, bool bReuseAddressAndPort, FString& Error)
 {
-	if (!Super::InitListen(InNotify, LocalURL, bReuseAddressAndPort, Error))
+	if (!InitBase(false, InNotify, LocalURL, bReuseAddressAndPort, Error))
 	{
 		return false;
 	}
 
-	return true;
-}
-
-void USpatialNetDriver::PostInitProperties()
-{
-	Super::PostInitProperties();
-
-	if (!HasAnyFlags(RF_ClassDefaultObject))
+	// Listen for incoming peers
+	if (!PeerConnectRequestDelegateHandle.IsValid())
 	{
-		// GuidCache will be allocated as an FNetGUIDCache above. To avoid an engine code change, we re-do it with the Spatial equivalent.
-		GuidCache = TSharedPtr< FNetGUIDCache >(new FSpatialNetGUIDCache(this));
-	}	
+		auto OnlineSubsystem = static_cast<FOnlineSubsystemOculus*>(IOnlineSubsystem::Get(OCULUS_SUBSYSTEM));
+		PeerConnectRequestDelegateHandle =
+			OnlineSubsystem->GetNotifDelegate(ovrMessage_Notification_Networking_PeerConnectRequest)
+			.AddUObject(this, &UOculusNetDriver::OnNewNetworkingPeerRequest);
+	}
+
+	UE_LOG(LogNet, Verbose, TEXT("Init as a listen server"));
+
+	return true;
 }
 
 void USpatialNetDriver::OnSpatialOSConnected()
@@ -113,7 +127,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		if (LockedConnection.IsValid())
 		{
 			LockedConnection->SendCommandRequest<improbable::spawner::Spawner::Commands::SpawnPlayer>(SpatialConstants::SPAWNER_ENTITY_ID,
-				improbable::spawner::SpawnPlayerRequest(TCHAR_TO_UTF8(*ServerConnection->URL.ToString())),
+				improbable::spawner::SpawnPlayerRequest(),
 				worker::Option<std::uint32_t>(0),
 				worker::CommandParameters());
 		}
@@ -236,20 +250,15 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	}
 }
 
-bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
+bool USpatialNetDriver::AcceptNewPlayer()
 {
-	check(GetNetMode() != NM_Client);
-
-	bool bOk = true;
 	USpatialNetConnection* Connection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(Connection);
 	
 	// We create a "dummy" connection that corresponds to this player. This connection won't transmit any data.
 	// We may not need to keep it in the future, but for now it looks like path of least resistance is to have one UPlayer (UConnection) per player.
-	ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
-	TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
 
-	Connection->InitRemoteConnection(this, nullptr, InUrl, *FromAddr, USOCK_Open);
+	//Connection->InitRemoteConnection(this, nullptr, FURL(), FInternetAddr(), USOCK_Open);
 	Notify->NotifyAcceptedConnection(Connection);
 	AddClientConnection(Connection);
 
@@ -257,40 +266,31 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 	// Note that in the initial implementation, we carry over no data about the user here (such as a unique player id, or the real IP)
 	// In the future it would make sense to add metadata to the Spawn request and pass it here.
 	// For example we can check whether a user is banned by checking against an OnlineSubsystem.
-
-	// skip to the first option in the URL
-	const TCHAR* Tmp = *InUrl.ToString();
-	for (; *Tmp && *Tmp != '?'; Tmp++);
-
 	FString ErrorMsg;
 	AGameModeBase* GameMode = GetWorld()->GetAuthGameMode();
 	if (GameMode)
 	{
-		GameMode->PreLogin(Tmp, Connection->LowLevelGetRemoteAddress(), Connection->PlayerId, ErrorMsg);
+		//GameMode->PreLogin(Tmp, Connection->LowLevelGetRemoteAddress(), Connection->PlayerId, ErrorMsg);
 	}
-	
+	/*
 	if (!ErrorMsg.IsEmpty())
 	{
 		UE_LOG(LogNet, Log, TEXT("PreLogin failure: %s"), *ErrorMsg);
-		bOk = false;		
+		NETWORK_PROFILER(GNetworkProfiler.TrackEvent(TEXT("PRELOGIN FAILURE"), *ErrorMsg, Connection));
+		FNetControlMessage<NMT_Failure>::Send(Connection, ErrorMsg);
+		Connection->FlushNet(true);
+		//@todo sz - can't close the connection here since it will leave the failure message 
+		// in the send buffer and just close the socket. 
+		//Connection->Close();
 	}
 	else
 	{
-		FString LevelName = GetWorld()->GetCurrentLevel()->GetOutermost()->GetName();
-		Connection->ClientWorldPackageName = GetWorld()->GetCurrentLevel()->GetOutermost()->GetFName();
-
-		FString GameName;
-		FString RedirectURL;
-		if (GameMode)
-		{
-			GameName = GameMode->GetClass()->GetPathName();
-			GameMode->GameWelcomePlayer(Connection, RedirectURL);
-		}
-	}
+		WelcomePlayer(Connection);
+	}*/
 
 	// Go all the way to creating the player controller here.
 
-	return bOk;
+	return true;
 }
 
 

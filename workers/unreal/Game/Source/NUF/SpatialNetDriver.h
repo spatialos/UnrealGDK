@@ -20,9 +20,15 @@ class NUF_API USpatialNetDriver : public UIpNetDriver
 	GENERATED_BODY()
 
 public:
+	virtual void PostInitProperties() override;
+
+	// Begin UNetDriver interface.
 	virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error) override;
 	virtual int32 ServerReplicateActors(float DeltaSeconds) override;
 	virtual void TickDispatch(float DeltaTime) override;
+	virtual bool InitConnect(FNetworkNotify* InNotify, const FURL& ConnectURL, FString& Error) override;
+	virtual bool InitListen(FNetworkNotify* InNotify, FURL& LocalURL, bool bReuseAddressAndPort, FString& Error) override;
+	// End UNetDriver interface.
 
 	// TOOD: Provide accessor to get shadow actors.
 	UPROPERTY()
@@ -34,8 +40,10 @@ public:
 	UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
 
 	USpatialOS* GetSpatialOS() { return SpatialOSInstance; }
+	
+	bool AcceptNewPlayer(const FURL& InUrl);
 
-private:
+protected:
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
 

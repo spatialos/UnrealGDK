@@ -27,7 +27,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer & objectInit
 
 void USpatialActorChannel::Init(UNetConnection* connection, int32 channelIndex, bool bOpenedLocally)
 {
-	UActorChannel::Init(connection, channelIndex, bOpenedLocally);
+	Super::Init(connection, channelIndex, bOpenedLocally);
 
 	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(connection->Driver);
 	WorkerView = Driver->GetSpatialOS()->GetView();
@@ -45,42 +45,42 @@ void USpatialActorChannel::Init(UNetConnection* connection, int32 channelIndex, 
 
 void USpatialActorChannel::SetClosingFlag()
 {
-	UActorChannel::SetClosingFlag();
+	Super::SetClosingFlag();
 }
 
 void USpatialActorChannel::Close()
 {
-	UActorChannel::Close();
+	Super::Close();
 }
 
 void USpatialActorChannel::ReceivedBunch(FInBunch & bunch)
 {
-	UActorChannel::ReceivedBunch(bunch);
+	Super::ReceivedBunch(bunch);
 }
 
 void USpatialActorChannel::ReceivedNak(int32 packetId)
 {
-	UActorChannel::ReceivedNak(packetId);
+	Super::ReceivedNak(packetId);
 }
 
 void USpatialActorChannel::Tick()
 {
-	UActorChannel::Tick();
+	Super::Tick();
 }
 
 bool USpatialActorChannel::CanStopTicking() const
 {
-	return UActorChannel::CanStopTicking();
+	return Super::CanStopTicking();
 }
 
 void USpatialActorChannel::AppendExportBunches(TArray<FOutBunch *> & outExportBunches)
 {
-	UActorChannel::AppendExportBunches(outExportBunches);
+	Super::AppendExportBunches(outExportBunches);
 }
 
 void USpatialActorChannel::AppendMustBeMappedGuids(FOutBunch * bunch)
 {
-	UActorChannel::AppendMustBeMappedGuids(bunch);
+	Super::AppendMustBeMappedGuids(bunch);
 }
 
 // TODO: Epic should expose this.

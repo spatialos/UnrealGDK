@@ -243,29 +243,31 @@ AActor* USpatialInteropBlock::SpawnNewEntity(UMetadataAddComponentOp* MetadataCo
 		FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
 
 		// Initially, attempt to find the class that has been registered to the EntityType string
-		UClass** EntityClassTemplate = EntityRegistry->GetRegisteredEntityClass(EntityTypeString);
+		UClass** RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString);
+		UClass* ClassToSpawn = RegisteredClass ? *RegisteredClass : nullptr;
 
 		// This is all horrendous, but assume it's a full CDO path if not registered
-		if((EntityClassTemplate == nullptr) || (*EntityClassTemplate == nullptr))
+		if(!ClassToSpawn)
 		{
-			FStringAssetReference ActorStringRef(EntityTypeString);
-			*EntityClassTemplate = ActorStringRef.TryLoad()->GetClass();
+			ClassToSpawn = FindObject<UClass>(ANY_PACKAGE, *EntityTypeString);				
 		}
 
-		// TryLoad is apparently very slow, so this should be revisited. Class will probably already be loaded a lot of the time
-		auto NewActor = World->SpawnActor<AActor>(*EntityClassTemplate, InitialTransform,
-			FRotator::ZeroRotator, FActorSpawnParameters());
-
-		TArray<UActorComponent*> SpatialOSComponents =
-			NewActor->GetComponentsByClass(USpatialOsComponent::StaticClass());
-
-		for (auto Component : SpatialOSComponents)
+		AActor* NewActor = nullptr;
+		if (ClassToSpawn)
 		{
-			USpatialOsComponent* SpatialOSComponent = Cast<USpatialOsComponent>(Component);
-			KnownComponents.Emplace(SpatialOSComponent->GetComponentId().ToSpatialComponentId(),
-				Component->GetClass());
-		}
+			NewActor = World->SpawnActor<AActor>(ClassToSpawn, InitialTransform,
+				FRotator::ZeroRotator, FActorSpawnParameters());
 
+			TArray<UActorComponent*> SpatialOSComponents =
+				NewActor->GetComponentsByClass(USpatialOsComponent::StaticClass());
+
+			for (auto Component : SpatialOSComponents)
+			{
+				USpatialOsComponent* SpatialOSComponent = Cast<USpatialOsComponent>(Component);
+				KnownComponents.Emplace(SpatialOSComponent->GetComponentId().ToSpatialComponentId(),
+					Component->GetClass());
+			}
+		}
 		return NewActor;		
 	}
 	else

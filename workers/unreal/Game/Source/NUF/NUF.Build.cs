@@ -8,7 +8,7 @@ public class NUF : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "OnlineSubsystemUtils", "SpatialOS", "UnrealEd", "Blutility"});
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "OnlineSubsystemUtils", "Sockets", "SpatialOS", "UnrealEd", "Blutility"});
 		PrivateIncludePaths.Add( "../../../ThirdParty/ThirdPartyLib/include" );
 	}
 }
