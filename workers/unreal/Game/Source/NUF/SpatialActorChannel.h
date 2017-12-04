@@ -14,6 +14,9 @@ class NUF_API USpatialActorChannel : public UActorChannel
 public:
 	USpatialActorChannel(const FObjectInitializer & objectInitializer = FObjectInitializer::Get());
 
+	// Called when a SpatialOS update is received.
+	void SpatialReceivePropertyUpdate(FNetBitWriter& Payload);
+
 	// UChannel interface
 	virtual void Init(UNetConnection * connection, int32 channelIndex, bool bOpenedLocally) override;
 	virtual void SetClosingFlag() override;
@@ -26,9 +29,6 @@ public:
 	virtual void AppendMustBeMappedGuids(FOutBunch * bunch) override;
 	virtual FPacketIdRange SendBunch(FOutBunch * bunch, bool bMerge) override;
 	virtual void StartBecomingDormant() override;
-
-	// Used by implementations of SpatialActorChannel.
-	void SpatialReceivePropertyUpdate(FNetBitWriter& Payload);
 
 protected:
 	// UChannel interface

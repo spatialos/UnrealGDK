@@ -1,17 +1,19 @@
-#include "SpatialShadowActor_Character.h"
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+#include "SpatialUpdateInterop_Character.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Serialization/MemoryReader.h"
 #include "Serialization/MemoryWriter.h"
 #include "SpatialActorChannel.h"
 
-const TMap<int32, RepHandleData>& GetHandlePropertyMap_Character()
+const RepHandlePropertyMap& GetHandlePropertyMap_Character()
 {
 	UClass* Class = ACharacter::StaticClass();
-	static TMap<int32, RepHandleData>* HandleToPropertyMapData = nullptr;
+	static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;
 	if (HandleToPropertyMapData == nullptr)
 	{
-		HandleToPropertyMapData = new TMap<int32, RepHandleData>();
+		HandleToPropertyMapData = new RepHandlePropertyMap();
 		auto& HandleToPropertyMap = *HandleToPropertyMapData;
 		HandleToPropertyMap.Add(1, RepHandleData{nullptr, Class->FindPropertyByName("bHidden"), 148});
 		HandleToPropertyMap.Add(2, RepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), 148});
@@ -85,7 +87,7 @@ const TMap<int32, RepHandleData>& GetHandlePropertyMap_Character()
 	return *HandleToPropertyMapData;
 }
 
-void ApplyUpdateToSpatial_Character(FArchive& Reader, int32 Handle, UProperty* Property, improbable::unreal::UnrealACharacterReplicatedData::Update& Update)
+void ApplyUpdateToSpatial_Character(FArchive& Reader, int32 Handle, UProperty* Property, improbable::unreal::UnrealCharacterReplicatedData::Update& Update)
 {
 	switch (Handle)
 	{
@@ -420,7 +422,7 @@ void ApplyUpdateToSpatial_Character(FArchive& Reader, int32 Handle, UProperty* P
 	}
 }
 
-void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealACharacterReplicatedData::Update& Update)
+void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealCharacterReplicatedData::Update& Update)
 {
 	FNetBitWriter OutputWriter(nullptr, 0); 
 	auto& HandleToPropertyMap = GetHandlePropertyMap_Character();

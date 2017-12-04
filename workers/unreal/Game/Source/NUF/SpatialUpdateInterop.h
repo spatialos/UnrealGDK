@@ -32,12 +32,12 @@ private:
 	UPROPERTY()
 	bool bIsClient;
 
+	// TODO: Remove this once Girays stuff is merged. See the implementation of Tick(...)
+	UPROPERTY()
 	bool WaitingForGuid;
 
-	// On clients, they have a 1 to 1 mapping between an actor and an actor channel (as there's just one NetConnection).
+	// On clients, there is a 1 to 1 mapping between an actor and an actor channel (as there's just one NetConnection).
 	TMap<worker::EntityId, USpatialActorChannel*> EntityToClientActorChannel;
 
-	worker::Dispatcher::CallbackKey AddComponentCallback;
-	worker::Dispatcher::CallbackKey RemoveComponentCallback;
 	worker::Dispatcher::CallbackKey ComponentUpdateCallback;
 };

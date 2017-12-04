@@ -11,10 +11,9 @@
 #include "Net/RepLayout.h"
 #include "Net/DataReplication.h"
 #include "SpatialActorChannel.h"
+#include "EmptyPipelineBlock.h"
 
 #include "EntityBuilder.h"
-
-//#include "Generated/SpatialInteropCharacter.h"
 
 using namespace improbable;
 
@@ -62,13 +61,9 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Connected to SpatialOS."));
-	ShadowActorPipelineBlock = NewObject<USpatialShadowActorPipelineBlock>();
-	ShadowActorPipelineBlock->NetDriver = this;
-	ShadowActorPipelineBlock->Init(EntityRegistry);
-	SpatialOSInstance->GetEntityPipeline()->AddBlock(ShadowActorPipelineBlock);
-	auto EntitySpawnerBlock = NewObject<USimpleEntitySpawnerBlock>();
+	auto EntitySpawnerBlock = NewObject<UEmptyPipelineBlock>();
 	//EntitySpawnerBlock->Init(EntityRegistry);
-	//SpatialOSInstance->GetEntityPipeline()->AddBlock(EntitySpawnerBlock);
+	SpatialOSInstance->GetEntityPipeline()->AddBlock(EntitySpawnerBlock);
 
 	TArray<FString> BlueprintPaths;
 	BlueprintPaths.Add(TEXT(ENTITY_BLUEPRINTS_FOLDER));
@@ -124,10 +119,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		SpatialOSInstance->ProcessOps();
 		SpatialOSInstance->GetEntityPipeline()->ProcessOps(SpatialOSInstance->GetView(), SpatialOSInstance->GetConnection(), GetWorld());
 		SpatialOSComponentUpdater->UpdateComponents(EntityRegistry, DeltaTime);
-		if (ShadowActorPipelineBlock)
-		{
-			ShadowActorPipelineBlock->ReplicateShadowActorChanges(DeltaTime);
-		}
 		UpdateInterop->Tick(DeltaTime);
 	}
 }

@@ -6,7 +6,8 @@
 #include "GenerateSchemaCommandlet.generated.h"
 
 UCLASS()
-class UGenerateSchemaCommandlet : public UCommandlet {
+class UGenerateSchemaCommandlet : public UCommandlet
+{
 	GENERATED_BODY()
 public:
 	UGenerateSchemaCommandlet();

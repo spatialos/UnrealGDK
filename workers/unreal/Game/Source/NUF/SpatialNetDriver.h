@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "IpNetDriver.h"
-#include "SpatialShadowActorPipelineBlock.h"
 #include "SpatialUpdateInterop.h"
 #include "SpatialNetDriver.generated.h"
 
@@ -23,10 +22,6 @@ public:
 	virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error) override;
 	virtual int32 ServerReplicateActors(float DeltaSeconds) override;
 	virtual void TickDispatch(float DeltaTime) override;
-
-	// TOOD: Provide accessor to get shadow actors.
-	UPROPERTY()
-	USpatialShadowActorPipelineBlock* ShadowActorPipelineBlock;
 
 	USpatialOS* GetSpatialOS() const
 	{
