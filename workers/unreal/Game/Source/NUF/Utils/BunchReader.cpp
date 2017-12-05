@@ -6,6 +6,8 @@
 
 // We assume that #define ENABLE_PROPERTY_CHECKSUMS exists in RepLayout.cpp:88 here.
 #define ENABLE_PROPERTY_CHECKSUMS
+// This is assumed to match PackageMapClient.cpp:35
+#define INTERNAL_LOAD_OBJECT_RECURSION_LIMIT 16
 
 namespace
 {
@@ -29,22 +31,49 @@ struct FExportFlags
 	}
 };
 
-static void ParseHeader_Subobject(FNetBitReader& Bunch)
+static void ReadHeaderSubobject(FNetBitReader& Bunch, int RecursionCount)
 {
+	// This function heavily mirrors UPackageMapClient::InternalLoadObject, which is called
+	// by UPackageMapClient::SerializeObject.
+	if (RecursionCount > INTERNAL_LOAD_OBJECT_RECURSION_LIMIT)
+	{
+		return;
+	}
+
 	FNetworkGUID NetGUID;
 	FExportFlags ExportFlags;
-	Bunch << NetGUID;
-	Bunch << ExportFlags.Value;
+
+	Bunch << NetGUID; // UE4.16 PackageMapClient.cpp:702
+	if (!NetGUID.IsValid())
+	{
+		return;
+	}
+
+	//UE_LOG(LogTemp, Log, TEXT("Header: Subobject NetGUID %s"), *NetGUID.ToString());
+
+	// Attempt to resolve NetGUID.
+	if (NetGUID.IsValid() && !NetGUID.IsDefault()) // UE4.16 PackageMapClient.cpp:720
+	{
+		// PackageMapClient->GetObjectFromNetGUID(NetGUID)
+		// TODO(David): I guess this would just read from this clients "local" NetGUID cache.
+	}
+
+	// Read NetGUID in full.
+	if (NetGUID.IsDefault())
+	{
+		Bunch << ExportFlags.Value; // UE4.16 PackageMapClient.cpp:732
+	}
 	if (ExportFlags.bHasPath)
 	{
-		ParseHeader_Subobject(Bunch);
+		ReadHeaderSubobject(Bunch, RecursionCount + 1); // UE4.16 PackageMapClient.cpp:752
 
 		FString PathName;
-		Bunch << PathName;
 		uint32 NetworkChecksum;
+
+		Bunch << PathName; // UE4.16 PackageMapClient.cpp:757
 		if (ExportFlags.bHasNetworkChecksum)
 		{
-			Bunch << NetworkChecksum;
+			Bunch << NetworkChecksum; // UE4.16 PackageMapClient.cpp:771
 		}
 	}
 }
@@ -60,21 +89,26 @@ FBunchReader::FBunchReader(uint8* Data, int NumBits) :
 
 void FBunchReader::ReadHeader(bool bIsServer)
 {
-	bHasRepLayout = Bunch.ReadBit() != 0;
-	bIsActor = Bunch.ReadBit() != 0;
-	if (!bIsActor)
+	// This function heavily mirrors UActorChannel::ReadContentBlockHeader.
+	bHasRepLayout = Bunch.ReadBit() != 0; // UE4.16 DataChannel.cpp:2765
+	bIsActor = Bunch.ReadBit() != 0; // UE4.16 DataChannel.cpp:2773
+	if (bIsActor) // UE4.16 DataChannel.cpp:2781
 	{
-		// For now, just give up.
-		//bError = true;
 		return;
-
-		ParseHeader_Subobject(Bunch);
-		if (!bIsServer)
-		{
-			// bStablyNamed.
-			Bunch.ReadBit();
-		}
 	}
+
+	ReadHeaderSubobject(Bunch, 0); // UE4.16 DataChannel.cpp:2796
+	if (bIsServer) // UE4.16 DataChannel.cpp:2838
+	{
+		return;
+	}
+
+	const bool bStablyNamed = Bunch.ReadBit() != 0; // UE4.16 DataChannel.cpp:2851
+	if (bStablyNamed) // UE4.16 DataChannel.cpp:2859
+	{
+		return;
+	}
+	ReadHeaderSubobject(Bunch, 0); // UE4.16 DataChannel.cpp:2881
 }
 
 bool FBunchReader::Parse(bool bIsServer, UPackageMap* PackageMap, const TMap<int32, RepHandleData>& PropertyMap, RepDataHandler RepDataHandlerFunc)
