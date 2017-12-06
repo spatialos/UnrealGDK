@@ -15,6 +15,37 @@
 
 namespace
 {
+struct PropertyInfo
+{
+	UProperty* Property;
+	ERepLayoutCmdType Type;
+	// Properties that were traversed to reach this property, including the property itself.
+	TArray<UProperty*> Chain;
+
+	bool operator==(const PropertyInfo& Other) const
+	{
+		return Property == Other.Property && Type == Other.Type && Chain == Other.Chain;
+	}
+};
+
+struct RepLayoutEntry
+{
+	UProperty* Property;
+	UProperty* Parent;
+	TArray<UProperty*> Chain;
+	ERepLayoutCmdType Type;
+	int32 Handle;
+	int32 Offset;
+};
+
+struct RepLayoutPropertyInfo
+{
+	RepLayoutEntry Entry;
+	// Usually a singleton list containing the PropertyInfo this RepLayoutEntry refers to.
+	// In some cases (such as a struct within a struct), this can refer to many properties in schema.
+	TArray<PropertyInfo> PropertyList;
+};
+
 FString PropertySchemaName(UProperty* Property)
 {
 	FString FullPath = Property->GetFullGroupName(false);
@@ -272,20 +303,6 @@ FString GetUnrealFieldLvalue(TArray<UProperty*> Chain)
 	return TEXT("this->") + FString::Join(ChainNames, TEXT("->"));
 }
 
-struct PropertyInfo
-{
-	UProperty* Property;
-	ERepLayoutCmdType Type;
-	// Properties that were traversed to reach this property, including the property itself.
-	TArray<UProperty*> Chain;
-};
-
-struct RepLayoutPropertyInfo
-{
-	PropertyInfo Info;
-	int32 Offset;
-};
-
 // CDO - Class default object which contains Property
 void VisitProperty(TArray<PropertyInfo>& PropertyInfo, UObject* CDO, TArray<UProperty*> Stack, UProperty* Property)
 {
@@ -468,7 +485,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 				Writer.Print(TEXT("{")).Indent();
 				TArray<UProperty*> NewChain = PropertyChain;
 				NewChain.Add(*It);
-				//GenerateUnrealToSchemaConversion(Writer, ReplicatedData, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP());
+				GenerateUnrealToSchemaConversion(Writer, Update, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP());
 				Writer.Outdent().Print(TEXT("}"));
 			}
 		}
@@ -570,8 +587,8 @@ void GenerateSchemaToUnrealConversion(FCodeWriter& Writer, const FString& Update
 				TArray<uint8> ValueData;
 				ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
-				bool Success;
-				%s.NetSerialize(ValueDataReader, nullptr, Success);)"""), *SpatialValue, *PropertyValue));
+				bool bSuccess;
+				%s.NetSerialize(ValueDataReader, nullptr, bSuccess);)"""), *SpatialValue, *PropertyValue));
 		}
 		else
 		{
@@ -580,7 +597,7 @@ void GenerateSchemaToUnrealConversion(FCodeWriter& Writer, const FString& Update
 				Writer.Print(TEXT("{")).Indent();
 				TArray<UProperty*> NewChain = PropertyChain;
 				NewChain.Add(*It);
-				//GenerateUnrealToSchemaConversion(Writer, ReplicatedData, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP());
+				GenerateSchemaToUnrealConversion(Writer, Update, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP(), (*It)->GetCPPType());
 				Writer.Outdent().Print(TEXT("}"));
 			}
 		}
@@ -637,10 +654,10 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	FCodeWriter OutputForwardingCode;
 	FCodeWriter OutputForwardingCodeHeader;
 
-	// Parse RepLayout.
+	// Read the RepLayout for the class into a data structure.
 	FRepLayout RepLayout;
 	RepLayout.InitFromObjectClass(Class);
-	TArray<TPair<int, RepLayoutPropertyInfo>> RepLayoutProperties;
+	TArray<TPair<int, RepLayoutEntry>> RepLayoutProperties;
 	for (int CmdIndex = 0; CmdIndex < RepLayout.Cmds.Num(); ++CmdIndex)
 	{
 		auto& Cmd = RepLayout.Cmds[CmdIndex];
@@ -669,36 +686,47 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 		}
 
 		int32 Handle = CmdIndex + 1;
-		RepLayoutProperties.Add(MakeTuple(Handle, RepLayoutPropertyInfo{PropertyInfo{
-			Property, (ERepLayoutCmdType)Cmd.Type, PropertyChain
-		}, Cmd.Offset}));
+		RepLayoutProperties.Add(MakeTuple(Handle, RepLayoutEntry{
+			Property, ParentProperty, PropertyChain, (ERepLayoutCmdType)Cmd.Type, Handle, Cmd.Offset
+		}));
 	}
 
-	// Recurse into class properties.
+	// Recurse into class properties and build a complete property list.
 	TArray<PropertyInfo> Properties;
 	for (TFieldIterator<UProperty> It(Class); It; ++It)
 	{
 		VisitProperty(Properties, Class->GetDefaultObject(), {}, *It);
 	}
 
-	// Divide properties into replicated and non-replicated properties.
+	// Divide properties into replicated and complete properties.
 	TArray<RepLayoutPropertyInfo> ReplicatedProperties;
-	TArray<PropertyInfo> CompleteProperties;
-	for (auto& RepLayoutProperty : RepLayoutProperties)
+	TArray<PropertyInfo> CompleteProperties = Properties;
+	TArray<PropertyInfo> CompletePropertiesToRemove;
+	for (auto& Pair : RepLayoutProperties)
 	{
-		ReplicatedProperties.Add(RepLayoutProperty.Value);
-	}
-	for (auto& Property : Properties)
-	{
-		// Skip properties which are already marked as replicated.
-		for (auto& ReplicatedProperty : ReplicatedProperties)
+		RepLayoutEntry& Entry = Pair.Value;
+		RepLayoutPropertyInfo Info{Entry, {}};
+
+		// Search for all properties with a property chain that begins with either {Parent, Property} or {Property}.
+		Info.PropertyList = CompleteProperties.FilterByPredicate([Entry](const PropertyInfo& Property)
 		{
-			if (ReplicatedProperty.Info.Chain == Property.Chain)
+			if (Entry.Parent)
 			{
-				continue;
+				return Property.Chain.Num() >= 2 && Property.Chain[0] == Entry.Parent && Property.Chain[1] == Entry.Property;
+			} 
+			else
+			{
+				return Property.Chain.Num() >= 1 && Property.Chain[0] == Entry.Property;
 			}
-		}
-		CompleteProperties.Add(Property);
+		});
+		ReplicatedProperties.Add(Info);
+
+		// Append to the properties which need to be removed from the complete properties list.
+		CompletePropertiesToRemove.Append(Info.PropertyList);
+	}
+	for (auto& PropertyToRemove : CompletePropertiesToRemove)
+	{
+		CompleteProperties.Remove(PropertyToRemove);
 	}
 
 	// Schema.
@@ -706,21 +734,25 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	OutputSchema.Print(FString::Printf(TEXT("type %s {"), *GetSchemaReplicatedTypeFromUnreal(Class)));
 	OutputSchema.Indent();
 	int FieldCounter = 0;
-	for (auto& Prop : ReplicatedProperties)
+	for (auto& RepProp : ReplicatedProperties)
 	{
-		FieldCounter++;
-		OutputSchema.Print(
-			FString::Printf(
-				TEXT("%s %s = %d;"),
-				*RepLayoutTypeToSchemaType(Prop.Info.Type),
-				*GetFullyQualifiedName(Prop.Info.Chain),
-				FieldCounter
-			)
-		);
+		for (auto& Prop : RepProp.PropertyList)
+		{
+			FieldCounter++;
+			OutputSchema.Print(
+				FString::Printf(
+					TEXT("%s %s = %d;"),
+					*RepLayoutTypeToSchemaType(Prop.Type),
+					*GetFullyQualifiedName(Prop.Chain),
+					FieldCounter
+				)
+			);
+		}
 	}
 	OutputSchema.Outdent().Print(TEXT("}"));
 	OutputSchema.Print(FString::Printf(TEXT("type %s {"), *GetSchemaCompleteTypeFromUnreal(Class)));
 	OutputSchema.Indent();
+	FieldCounter = 0;
 	for (auto& Prop : CompleteProperties)
 	{
 		FieldCounter++;
@@ -769,6 +801,7 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 
 	// Forwarding code header file.
 	OutputForwardingCodeHeader.Print(TEXT("// Copyright (c) Improbable Worlds Ltd, All Rights Reserved"));
+	OutputForwardingCodeHeader.Print(TEXT("// Note that this file has been generated automatically"));
 	OutputForwardingCodeHeader.Print();
 	OutputForwardingCodeHeader.Print(TEXT("#pragma once"));
 	OutputForwardingCodeHeader.Print();
@@ -784,6 +817,7 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 
 	// Forwarding code source file.
 	OutputForwardingCode.Print(TEXT("// Copyright (c) Improbable Worlds Ltd, All Rights Reserved"));
+	OutputForwardingCode.Print(TEXT("// Note that this file has been generated automatically"));
 	OutputForwardingCode.Print();
 	OutputForwardingCode.Print(FString::Printf(TEXT(R"""(#include "%s.h"
 		#include "CoreMinimal.h"
@@ -803,22 +837,20 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	OutputForwardingCode.Print(TEXT("{")).Indent();
 	OutputForwardingCode.Print(TEXT("HandleToPropertyMapData = new RepHandlePropertyMap();"));
 	OutputForwardingCode.Print(TEXT("auto& HandleToPropertyMap = *HandleToPropertyMapData;"));
-	for (auto& RepLayoutPair : RepLayoutProperties)
+	for (auto& RepProp : ReplicatedProperties)
 	{
-		auto CmdIndex = RepLayoutPair.Key;
-		PropertyInfo& PropertyInfo = RepLayoutPair.Value.Info;
-		// Parent case.
-		if (PropertyInfo.Chain.Num() > 1)
+		auto Handle = RepProp.Entry.Handle;
+		if (RepProp.Entry.Parent)
 		{
 			OutputForwardingCode.Print(FString::Printf(TEXT("HandleToPropertyMap.Add(%d, RepHandleData{Class->FindPropertyByName(\"%s\"), nullptr, %d});"),
-				CmdIndex, *PropertyInfo.Chain[0]->GetName(), RepLayoutPair.Value.Offset));
+				Handle, *RepProp.Entry.Parent->GetName(), RepProp.Entry.Offset));
 			OutputForwardingCode.Print(FString::Printf(TEXT("HandleToPropertyMap[%d].Property = Cast<UStructProperty>(HandleToPropertyMap[%d].Parent)->Struct->FindPropertyByName(\"%s\");"),
-				CmdIndex, CmdIndex, *PropertyInfo.Chain[1]->GetName()));
+				Handle, Handle, *RepProp.Entry.Property->GetName()));
 		}
 		else
 		{
 			OutputForwardingCode.Print(FString::Printf(TEXT("HandleToPropertyMap.Add(%d, RepHandleData{nullptr, Class->FindPropertyByName(\"%s\"), %d});"),
-				CmdIndex, *PropertyInfo.Property->GetName(), RepLayoutPair.Value.Offset));
+				Handle, *RepProp.Entry.Property->GetName(), RepProp.Entry.Offset));
 		}
 	}
 	OutputForwardingCode.Outdent().Print(TEXT("}"));
@@ -833,30 +865,30 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	OutputForwardingCode.Indent();
 	OutputForwardingCode.Print(TEXT("switch (Handle)\n{"));
 	OutputForwardingCode.Indent();
-	for (auto& RepLayoutPair : RepLayoutProperties)
+	for (auto& RepProp : ReplicatedProperties)
 	{
-		auto Handle = RepLayoutPair.Key;
-		PropertyInfo& PropertyInfo = RepLayoutPair.Value.Info;
-
-		if (PropertyInfo.Property->IsA(UObjectPropertyBase::StaticClass()))
+		auto Handle = RepProp.Entry.Handle;
+		UProperty* Property = RepProp.Entry.Property;
+		
+		if (Property->IsA(UObjectPropertyBase::StaticClass()))
 		{
-			OutputForwardingCode.Print(FString::Printf(TEXT("// case %d: - %s is an object reference, skipping."), Handle, *PropertyInfo.Property->GetName()));
+			OutputForwardingCode.Print(FString::Printf(TEXT("// case %d: - %s is an object reference, skipping."), Handle, *Property->GetName()));
 			continue;
 		}
 
-		OutputForwardingCode.Print(FString::Printf(TEXT("case %d: // %s"), Handle, *GetFullyQualifiedName(PropertyInfo.Chain)));
+		OutputForwardingCode.Print(FString::Printf(TEXT("case %d: // %s"), Handle, *GetFullyQualifiedName(RepProp.Entry.Chain)));
 		OutputForwardingCode.Print(TEXT("{"));
 		OutputForwardingCode.Indent();
 
 		// Get unreal data by deserialising from the reader, convert and set the corresponding field in the update object.
 		FString PropertyValueName = TEXT("Value");
-		FString PropertyValueCppType = PropertyInfo.Property->GetCPPType();
+		FString PropertyValueCppType = Property->GetCPPType();
 		FString PropertyName = TEXT("Property");
 		OutputForwardingCode.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
 		OutputForwardingCode.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
 		OutputForwardingCode.Print(FString::Printf(TEXT("%s->NetSerializeItem(Reader, nullptr, &%s);"), *PropertyName, *PropertyValueName));
 		OutputForwardingCode.Print();
-		GenerateUnrealToSchemaConversion(OutputForwardingCode, TEXT("Update"), PropertyInfo.Chain, PropertyValueName);
+		GenerateUnrealToSchemaConversion(OutputForwardingCode, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName);
 		OutputForwardingCode.Print(TEXT("break;"));
 		OutputForwardingCode.Outdent();
 		OutputForwardingCode.Print(TEXT("}"));
@@ -873,16 +905,18 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	OutputForwardingCode.Indent();
 	OutputForwardingCode.Print(TEXT("FNetBitWriter OutputWriter(nullptr, 0); "));
 	OutputForwardingCode.Print(FString::Printf(TEXT("auto& HandleToPropertyMap = GetHandlePropertyMap_%s();"), *Class->GetName()));
-	for (auto& RepLayoutPair : RepLayoutProperties)
+	for (auto& RepProp : ReplicatedProperties)
 	{
-		auto Handle = RepLayoutPair.Key;
-		PropertyInfo& PropertyInfo = RepLayoutPair.Value.Info;
+		auto Handle = RepProp.Entry.Handle;
+		UProperty* Property = RepProp.Entry.Property;
 
-		OutputForwardingCode.Print(FString::Printf(TEXT("if (!Update.%s().empty())\n{"), *GetFullyQualifiedName(PropertyInfo.Chain)));
+		// Check if only the first property is in the property list. This implies that the rest is also in the update, as
+		// they are sent together atomically.
+		OutputForwardingCode.Print(FString::Printf(TEXT("if (!Update.%s().empty())\n{"), *GetFullyQualifiedName(RepProp.PropertyList[0].Chain)));
 		OutputForwardingCode.Indent();
 		
 		// Write handle.
-		OutputForwardingCode.Print(FString::Printf(TEXT("// %s"), *GetFullyQualifiedName(PropertyInfo.Chain)));
+		OutputForwardingCode.Print(FString::Printf(TEXT("// %s"), *GetFullyQualifiedName(RepProp.Entry.Chain)));
 		OutputForwardingCode.Print(FString::Printf(TEXT("uint32 Handle = %d;"), Handle));
 		OutputForwardingCode.Print(TEXT("OutputWriter.SerializeIntPacked(Handle);"));
 		OutputForwardingCode.Print(TEXT("const RepHandleData& Data = HandleToPropertyMap[Handle];"));
@@ -890,12 +924,12 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 
 		// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
 		FString PropertyValueName = TEXT("Value");
-		FString PropertyValueCppType = PropertyInfo.Property->GetCPPType();
+		FString PropertyValueCppType = Property->GetCPPType();
 		FString PropertyName = TEXT("Data.Property");
 		OutputForwardingCode.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
 		OutputForwardingCode.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
 		OutputForwardingCode.Print();
-		GenerateSchemaToUnrealConversion(OutputForwardingCode, TEXT("Update"), PropertyInfo.Chain, PropertyValueName, PropertyValueCppType);
+		GenerateSchemaToUnrealConversion(OutputForwardingCode, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName, PropertyValueCppType);
 		OutputForwardingCode.Print();
 		OutputForwardingCode.Print(FString::Printf(TEXT("%s->NetSerializeItem(OutputWriter, nullptr, &%s);"), *PropertyName, *PropertyValueName));
 		OutputForwardingCode.Print(TEXT("UE_LOG(LogTemp, Log, TEXT(\"<- Handle: %d Property %s\"), Handle, *Data.Property->GetName());"));

@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Note that this file has been generated automatically
 
 #include "SpatialUpdateInterop_Character.h"
 #include "CoreMinimal.h"
@@ -390,14 +391,21 @@ void ApplyUpdateToSpatial_Character(FArchive& Reader, int32 Handle, UProperty* P
 			Property->NetSerializeItem(Reader, nullptr, &Value);
 
 			{
+				Update.set_field_reprootmotion_authoritativerootmotion_bhasadditivesources(Value.bHasAdditiveSources != 0);
 			}
 			{
+				Update.set_field_reprootmotion_authoritativerootmotion_bhasoverridesources(Value.bHasOverrideSources != 0);
 			}
 			{
+				Update.set_field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity(improbable::Vector3f(Value.LastPreAdditiveVelocity.X, Value.LastPreAdditiveVelocity.Y, Value.LastPreAdditiveVelocity.Z));
 			}
 			{
+				Update.set_field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied(Value.bIsAdditiveVelocityApplied != 0);
 			}
 			{
+				{
+					Update.set_field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags(uint32_t(Value.LastAccumulatedSettings.Flags));
+				}
 			}
 			break;
 		}
@@ -519,8 +527,8 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 		TArray<uint8> ValueData;
 		ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
 		FMemoryReader ValueDataReader(ValueData);
-		bool Success;
-		Value.NetSerialize(ValueDataReader, nullptr, Success);
+		bool bSuccess;
+		Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
 
 		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
 		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1068,7 +1076,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
 		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 	}
-	if (!Update.field_reprootmotion_authoritativerootmotion().empty())
+	if (!Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().empty())
 	{
 		// field_reprootmotion_authoritativerootmotion
 		uint32 Handle = 41;
@@ -1079,14 +1087,28 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 		check(Data.Property->ElementSize == sizeof(Value));
 
 		{
+			Value.bHasAdditiveSources = *(Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().data());
 		}
 		{
+			Value.bHasOverrideSources = *(Update.field_reprootmotion_authoritativerootmotion_bhasoverridesources().data());
 		}
 		{
+			auto& Vector = *(Update.field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity().data());
+			Value.LastPreAdditiveVelocity.X = Vector.x();
+			Value.LastPreAdditiveVelocity.Y = Vector.y();
+			Value.LastPreAdditiveVelocity.Z = Vector.z();
 		}
 		{
+			Value.bIsAdditiveVelocityApplied = *(Update.field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied().data());
 		}
 		{
+			{
+				// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+				// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+				// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+				// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+				Value.LastAccumulatedSettings.Flags = uint8(uint8(*(Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
+			}
 		}
 
 		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);

@@ -11,7 +11,7 @@
 #include "Net/RepLayout.h"
 #include "Net/DataReplication.h"
 #include "SpatialActorChannel.h"
-#include "EmptyPipelineBlock.h"
+#include "NoOpEntityPipelineBlock.h"
 
 #include "EntityBuilder.h"
 
@@ -25,8 +25,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	{
 		return false;
 	}
-
-	bIsClient = bInitAsClient;
 
 	// make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	UChannel::ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
@@ -61,7 +59,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Connected to SpatialOS."));
-	auto EntitySpawnerBlock = NewObject<UEmptyPipelineBlock>();
+	auto EntitySpawnerBlock = NewObject<UNoOpEntityPipelineBlock>();
 	//EntitySpawnerBlock->Init(EntityRegistry);
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(EntitySpawnerBlock);
 
@@ -70,10 +68,10 @@ void USpatialNetDriver::OnSpatialOSConnected()
 
 	EntityRegistry->RegisterEntityBlueprints(BlueprintPaths);
 
-	UpdateInterop->Init(bIsClient, SpatialOSInstance, this);
+	UpdateInterop->Init(GetNetMode() == NM_Client, SpatialOSInstance, this);
 
 	// DEBUGGING, REMOVE LATER
-	if (bIsClient)
+	if (GetNetMode() == NM_Client)
 	{
 		TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
 		TSharedPtr<worker::Connection> Connection = SpatialOSInstance->GetConnection().Pin();

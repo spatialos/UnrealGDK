@@ -28,10 +28,7 @@ public:
 		return SpatialOSInstance;
 	}
 
-private:
-	UPROPERTY()
-	bool bIsClient;
-	
+private:	
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
 
