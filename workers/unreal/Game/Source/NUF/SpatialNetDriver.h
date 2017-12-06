@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "IpNetDriver.h"
-#include "SpatialShadowActorPipelineBlock.h"
+#include "SpatialUpdateInterop.h"
 #include "SpatialNetDriver.generated.h"
 
 class UEntityPipeline;
@@ -23,11 +23,12 @@ public:
 	virtual int32 ServerReplicateActors(float DeltaSeconds) override;
 	virtual void TickDispatch(float DeltaTime) override;
 
-	// TOOD: Provide accessor to get shadow actors.
-	UPROPERTY()
-	USpatialShadowActorPipelineBlock* ShadowActorPipelineBlock;
+	USpatialOS* GetSpatialOS() const
+	{
+		return SpatialOSInstance;
+	}
 
-private:
+private:	
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
 
@@ -36,6 +37,10 @@ private:
 
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
+
+	// Update interop.
+	UPROPERTY()
+	USpatialUpdateInterop* UpdateInterop;
 
 	UFUNCTION()
 	void OnSpatialOSConnected();

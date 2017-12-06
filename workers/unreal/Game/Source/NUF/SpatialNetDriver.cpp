@@ -11,8 +11,11 @@
 #include "Net/RepLayout.h"
 #include "Net/DataReplication.h"
 #include "SpatialActorChannel.h"
+#include "NoOpEntityPipelineBlock.h"
 
-//#include "Generated/SpatialInteropCharacter.h"
+#include "EntityBuilder.h"
+
+using namespace improbable;
 
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
 
@@ -48,23 +51,46 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	EntityRegistry = NewObject<UEntityRegistry>(this);
 
+	UpdateInterop = NewObject<USpatialUpdateInterop>(this);
+
 	return true;
 }
 
 void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Connected to SpatialOS."));
-	ShadowActorPipelineBlock = NewObject<USpatialShadowActorPipelineBlock>();
-	ShadowActorPipelineBlock->Init(EntityRegistry);
-	SpatialOSInstance->GetEntityPipeline()->AddBlock(ShadowActorPipelineBlock);
-	auto EntitySpawnerBlock = NewObject<USimpleEntitySpawnerBlock>();
+	auto EntitySpawnerBlock = NewObject<UNoOpEntityPipelineBlock>();
 	//EntitySpawnerBlock->Init(EntityRegistry);
-	//SpatialOSInstance->GetEntityPipeline()->AddBlock(EntitySpawnerBlock);
+	SpatialOSInstance->GetEntityPipeline()->AddBlock(EntitySpawnerBlock);
 
 	TArray<FString> BlueprintPaths;
 	BlueprintPaths.Add(TEXT(ENTITY_BLUEPRINTS_FOLDER));
 
 	EntityRegistry->RegisterEntityBlueprints(BlueprintPaths);
+
+	UpdateInterop->Init(GetNetMode() == NM_Client, SpatialOSInstance, this);
+
+	// DEBUGGING, REMOVE LATER
+	if (GetNetMode() == NM_Client)
+	{
+		TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
+		TSharedPtr<worker::Connection> Connection = SpatialOSInstance->GetConnection().Pin();
+		View->OnReserveEntityIdResponse([this, Connection](const worker::ReserveEntityIdResponseOp& callback)
+		{
+			std::string ClientWorkerIdString = TCHAR_TO_UTF8(*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId());
+			WorkerAttributeSet ClientAttribute{ { "workerId:" + ClientWorkerIdString } };
+			WorkerRequirementSet OwnClientOnly{ { ClientAttribute } };
+			auto Entity = unreal::FEntityBuilder::Begin()
+				.AddPositionComponent(Position::Data{ {10.0f, 10.0f, 10.0f} }, OwnClientOnly)
+				.AddMetadataComponent(Metadata::Data{ "TEST" })
+				.SetPersistence(true)
+				.SetReadAcl(OwnClientOnly)
+				.Build();
+
+			Connection->SendCreateEntityRequest(Entity, callback.EntityId, 0);
+		});
+		Connection->SendReserveEntityIdRequest({});
+	}
 }
 
 void USpatialNetDriver::OnSpatialOSDisconnected()
@@ -79,92 +105,7 @@ void USpatialNetDriver::OnSpatialOSConnectFailed()
 
 int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 {
-	int32 RetVal = Super::ServerReplicateActors(DeltaSeconds);
-
-	if (!ShadowActorPipelineBlock)
-	{
-		return RetVal;
-	}
-
-#if WITH_SERVER_CODE
-	/*
-	for (int32 ClientId = 0; ClientId < ClientConnections.Num(); ClientId++)
-	{
-		UNetConnection* NetConnection = ClientConnections[ClientId];
-		for (int32 ChannelId = 0; ChannelId < NetConnection->OpenChannels.Num(); ChannelId++)
-		{
-			UActorChannel* ActorChannel = Cast<UActorChannel>(NetConnection->OpenChannels[ChannelId]);
-			if (!ActorChannel)
-			{
-				continue;
-			}
-
-			// TODO: Remove this once we are using our entity pipeline.
-			if (!ActorChannel->Actor->IsA<ACharacter>())
-			{
-				continue;
-			}
-
-			// Get FRepState.
-			auto RepData = ActorChannel->ActorReplicator;
-			FRepState* RepState = RepData->RepState;
-			if (!RepState)
-			{
-				continue;
-			}
-
-			// Get entity ID.
-			// TODO: Replace with EntityId from registry corresponding to this replicated actor.
-			FEntityId EntityId = 2;//EntityRegistry->GetEntityIdFromActor(ActorChannel->Actor);
-			if (EntityId == FEntityId())
-			{
-				continue;
-			}
-
-			// Get shadow actor.
-			ASpatialShadowActor* ShadowActor = ShadowActorPipelineBlock->GetShadowActor(EntityId);
-			if (!ShadowActor)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Actor channel has no corresponding shadow actor. That means the entity hasn't been checked out yet."));
-				continue;
-			}
-
-			// Write changed properties to SpatialOS.
-			auto RepLayout = RepState->RepLayout;
-			for (int k = RepState->HistoryStart; k <= RepState->HistoryEnd; k++)
-			{
-				auto Changed = RepState->ChangeHistory[k].Changed;
-				if (Changed.Num() > 0)
-				{
-					for (int idx = 0; idx < Changed.Num(); idx++)
-					{
-						if (Changed[idx] == 0)
-						{
-							continue;
-						}
-						int CmdIndex = Changed[idx] - 1;
-
-						// Ignore dynamic arrays.
-						auto Type = RepLayout->Cmds[CmdIndex].Type;
-						if (Type == REPCMD_Return || Type == REPCMD_DynamicArray)
-						{
-							continue;
-						}
-
-						UProperty* Property = RepLayout->Cmds[CmdIndex].Property;
-						UProperty* ParentProperty = RepLayout->Parents[RepLayout->Cmds[CmdIndex].ParentIndex].Property;
-						//ApplyUpdateToSpatial_Character(ActorChannel->Actor, CmdIndex, ParentProperty, Property, ShadowActor->ReplicatedData);
-
-						FString ChangedProp = Property->GetNameCPP();
-						UE_LOG(LogTemp, Warning, TEXT("Actor: %s, cmd %s"), *GetNameSafe(ActorChannel->Actor), *ChangedProp);
-					}
-				}
-			}
-		}
-	}
-	*/
-#endif
-	return RetVal;
+	return Super::ServerReplicateActors(DeltaSeconds);
 }
 
 void USpatialNetDriver::TickDispatch(float DeltaTime)
@@ -176,9 +117,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		SpatialOSInstance->ProcessOps();
 		SpatialOSInstance->GetEntityPipeline()->ProcessOps(SpatialOSInstance->GetView(), SpatialOSInstance->GetConnection(), GetWorld());
 		SpatialOSComponentUpdater->UpdateComponents(EntityRegistry, DeltaTime);
-		if (ShadowActorPipelineBlock)
-		{
-			ShadowActorPipelineBlock->ReplicateShadowActorChanges(DeltaTime);
-		}
+		UpdateInterop->Tick(DeltaTime);
 	}
 }
