@@ -264,20 +264,23 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 }
 
 bool USpatialActorChannel::ReplicateActor()
-{
-	// if this is the first time through replication of this actor, create an entity
-	if (OpenPacketId.First == INDEX_NONE && OpenedLocally)
-	{
-		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
-		if (PinnedConnection.IsValid())
-		{
-			ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
-		}
-	}
-
-	return Super::ReplicateActor();
+{	
+	// Temporarily disabling actor replication to narrow down this branch's scope to actor creation.
+	// We'll revisit when merging with David's changes.
+	return true;
 }
 
+void USpatialActorChannel::SetChannelActor(AActor* InActor)
+{
+	Super::SetChannelActor(InActor);
+
+	// Create a Spatial entity that corresponds to this actor.
+	TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
+	if (PinnedConnection.IsValid())
+	{
+		ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
+	}
+}
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op)
 {

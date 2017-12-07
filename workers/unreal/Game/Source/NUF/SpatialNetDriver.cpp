@@ -13,6 +13,7 @@
 #include "Net/RepLayout.h"
 #include "Net/DataReplication.h"
 #include "SpatialPackageMapClient.h"
+#include "SpatialPendingNetGame.h"
 #include "SpatialActorChannel.h"
 #include "improbable/spawner/spawner.h"
 
@@ -117,6 +118,16 @@ void USpatialNetDriver::OnSpatialOSConnected()
 				worker::Option<std::uint32_t>(0),
 				worker::CommandParameters());
 		}
+
+		// 
+		FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this);
+
+		// Here we need to fake a few things to start ticking the level travel on client.
+		if (WorldContext && WorldContext->PendingNetGame)
+		{
+			WorldContext->PendingNetGame->bSuccessfullyConnected = true;
+			WorldContext->PendingNetGame->bSentJoinRequest = false;
+		}		
 	}
 }
 
@@ -222,7 +233,15 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 void USpatialNetDriver::TickDispatch(float DeltaTime)
 {
-	Super::TickDispatch(DeltaTime);
+	if (GetNetMode() == NM_Client)
+	{
+		// On client I want to disable all Unreal socket based communication.
+		UNetDriver::TickDispatch(DeltaTime);
+	}
+	else
+	{
+		Super::TickDispatch(DeltaTime);
+	}
 
 	if (SpatialOSInstance != nullptr && SpatialOSInstance->GetEntityPipeline() != nullptr)
 	{
@@ -293,4 +312,46 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 	return bOk;
 }
 
+USpatialPendingNetGame::USpatialPendingNetGame(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+}
 
+void USpatialPendingNetGame::InitNetDriver()
+{
+	check(GIsClient);
+
+	// This is a trimmed down version of UPendingNetGame::InitNetDriver(). We don't send any Unreal connection packets, just set up the net driver.
+	if (!GDisallowNetworkTravel)
+	{		
+		// Try to create network driver.
+		if (GEngine->CreateNamedNetDriver(this, NAME_PendingNetDriver, NAME_GameNetDriver))
+		{
+			NetDriver = GEngine->FindNamedNetDriver(this, NAME_PendingNetDriver);
+		}
+		check(NetDriver);
+
+		if (NetDriver->InitConnect(this, URL, ConnectionError))
+		{
+		
+		}
+		else 
+		{
+			// error initializing the network stack...
+			UE_LOG(LogNet, Warning, TEXT("error initializing the network stack"));
+			GEngine->DestroyNamedNetDriver(this, NetDriver->NetDriverName);
+			NetDriver = NULL;
+
+			// ConnectionError should be set by calling InitConnect...however, if we set NetDriver to NULL without setting a
+			// value for ConnectionError, we'll trigger the assertion at the top of UPendingNetGame::Tick() so make sure it's set
+			if (ConnectionError.Len() == 0)
+			{
+				ConnectionError = NSLOCTEXT("Engine", "NetworkInit", "Error initializing network layer.").ToString();
+			}
+		}
+	}
+	else
+	{
+		ConnectionError = NSLOCTEXT("Engine", "UsedCheatCommands", "Console commands were used which are disallowed in netplay.  You must restart the game to create a match.").ToString();
+	}
+}
