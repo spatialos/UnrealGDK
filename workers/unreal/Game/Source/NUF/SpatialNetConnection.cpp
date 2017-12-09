@@ -30,12 +30,22 @@ void USpatialNetConnection::InitRemoteConnection(UNetDriver* InDriver, class FSo
 	{
 		InternalAck = true;
 	}
+	bFakeSpatialClient = true;
 }
 
 void USpatialNetConnection::LowLevelSend(void* Data, int32 CountBytes, int32 CountBits)
 {
 	if (bVanillaUnrealConnection)
 	{
-		Super::LowLevelSend(Data, CountBytes, CountBits);
+		// Not sending anything anymore.
+		//Super::LowLevelSend(Data, CountBytes, CountBits);
 	}
+}
+
+bool USpatialNetConnection::ClientHasInitializedLevelFor(const UObject* TestObject) const
+{
+	if (bFakeSpatialClient)
+		return true;
+
+	return Super::ClientHasInitializedLevelFor(TestObject);	
 }

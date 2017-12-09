@@ -18,6 +18,7 @@ public:
 	virtual void InitRemoteConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, const class FInternetAddr& InRemoteAddr, EConnectionState InState, int32 InMaxPacket = 0, int32 InPacketOverhead = 0) override;
 	virtual void InitLocalConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket = 0, int32 InPacketOverhead = 0) override;
 	virtual void LowLevelSend(void* Data, int32 CountBytes, int32 CountBits) override;
+	virtual bool ClientHasInitializedLevelFor(const UObject* TestObject) const override;
 
 protected:
 
@@ -26,4 +27,8 @@ protected:
 	// We will eventually remove the old type of connection, but until then this flag will let us special case certain behavior (such as writing into a socket).
 	UPROPERTY()
 	bool bVanillaUnrealConnection;
+
+	//NUF: we might not need this in the end if we end up relying on bInternalAck.
+	UPROPERTY()
+	bool bFakeSpatialClient;
 };
