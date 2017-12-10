@@ -28,7 +28,7 @@ void USpatialNetConnection::InitRemoteConnection(UNetDriver* InDriver, class FSo
 	bVanillaUnrealConnection = InSocket ? true : false;
 	if (!bVanillaUnrealConnection)
 	{
-		InternalAck = true;
+		//InternalAck = true;
 	}
 	bFakeSpatialClient = true;
 }

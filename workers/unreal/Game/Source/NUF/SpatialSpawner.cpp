@@ -22,9 +22,12 @@ void ASpatialSpawner::BeginPlay()
 
 void ASpatialSpawner::BeginDestroy()
 {
-	Super::BeginDestroy();
-
-	SpawnerComponent->OnSpawnPlayerCommandRequest.RemoveDynamic(this, &ASpatialSpawner::HandleSpawnRequest);
+	if (SpawnerComponent)
+	{
+		SpawnerComponent->OnSpawnPlayerCommandRequest.RemoveDynamic(this, &ASpatialSpawner::HandleSpawnRequest);
+	}	
+	
+	Super::BeginDestroy();	
 }
 
 void ASpatialSpawner::HandleSpawnRequest(USpawnPlayerCommandResponder * Responder)
