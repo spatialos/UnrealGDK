@@ -8,6 +8,7 @@
 #include "Net/DataBunch.h"
 #include <improbable/worker.h>
 #include <improbable/standard_library.h>
+#include <improbable/player/player.h>
 #include "Commander.h"
 #include "EntityTemplate.h"
 #include "EntityBuilder.h"
@@ -306,13 +307,17 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 
 				// UnrealWorker write authority, any worker read authority
 				WorkerRequirementSet UnrealWorkerWritePermission{ { UnrealWorkerAttributeSet } };
+				WorkerRequirementSet UnrealClientWritePermission{ { UnrealClientAttributeSet } };
 				WorkerRequirementSet AnyWorkerReadRequirement{ { UnrealWorkerAttributeSet, UnrealClientAttributeSet } };
 
 				auto Entity = unreal::FEntityBuilder::Begin()
 					.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Loc), UnrealWorkerWritePermission)
 					.AddMetadataComponent(Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
+					// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
+					//todo-giray: Remove once we're using proper (generated) entity templates here.
 					.SetPersistence(true)
 					.SetReadAcl(AnyWorkerReadRequirement)
+					.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, UnrealClientWritePermission)
 					.Build();
 
 				CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Op.EntityId, 0);
