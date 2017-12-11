@@ -30,7 +30,6 @@ void USpatialNetConnection::InitRemoteConnection(UNetDriver* InDriver, class FSo
 	{
 		//InternalAck = true;
 	}
-	bFakeSpatialClient = true;
 }
 
 void USpatialNetConnection::LowLevelSend(void* Data, int32 CountBytes, int32 CountBits)

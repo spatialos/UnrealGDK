@@ -107,6 +107,10 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	EntityRegistry->RegisterEntityBlueprints(BlueprintPaths);
 
 	// If we're the client, we can now ask the server to spawn our controller.
+
+	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
+	// There may be more than one of these connections in the future for different replication conditions.
+
 	if (ServerConnection)
 	{
 		auto LockedConnection = SpatialOSInstance->GetConnection().Pin();
@@ -119,7 +123,6 @@ void USpatialNetDriver::OnSpatialOSConnected()
 				worker::CommandParameters());
 		}
 
-		// 
 		FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this);
 
 		// Here we need to fake a few things to start ticking the level travel on client.
@@ -128,6 +131,20 @@ void USpatialNetDriver::OnSpatialOSConnected()
 			WorldContext->PendingNetGame->bSuccessfullyConnected = true;
 			WorldContext->PendingNetGame->bSentJoinRequest = false;
 		}		
+	}
+	else
+	{
+		USpatialNetConnection* Connection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
+		check(Connection);
+
+		ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
+		TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
+		FURL DummyURL;
+
+		Connection->InitRemoteConnection(this, nullptr, DummyURL, *FromAddr, USOCK_Open);
+		Notify->NotifyAcceptedConnection(Connection);
+		Connection->bFakeSpatialClient = true;
+		AddClientConnection(Connection);
 	}
 }
 
@@ -349,7 +366,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			{
 				continue;
 			}
-
+	
 			// See of actor wants to try and go dormant
 			if (ShouldActorGoDormant(Actor, ConnectionViewers, Channel, Time, bLowNetBandwidth))
 			{
@@ -506,6 +523,15 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
 						PriorityActors[j]->ActorInfo->NextUpdateTime = Actor->GetWorld()->TimeSeconds + 0.2f * FMath::FRand();
 					}
+				}
+
+				//NUF: Do not start replicating data until we have established that there is a corresponding entity.
+				// The call to SetChannelActor (above) should have started that process.
+				check(GetEntityRegistry())
+
+				if (GetEntityRegistry()->GetEntityIdFromActor(Actor) == 0)
+				{
+					continue;
 				}
 
 				if (Channel)

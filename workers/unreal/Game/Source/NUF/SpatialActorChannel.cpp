@@ -265,9 +265,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 
 bool USpatialActorChannel::ReplicateActor()
 {	
-	// Temporarily disabling actor replication to narrow down this branch's scope to actor creation.
-	// We'll revisit when merging with David's changes.
-	return true;
+	return Super::ReplicateActor();
 }
 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
