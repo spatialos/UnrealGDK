@@ -68,7 +68,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 
 	for (UObject* Subobject : DefaultSubobjects)
 	{
-		AssignNewNetGUID(Subobject);
+		FNetworkGUID SubObjectNetGUID = GetOrAssignNetGUID(Subobject);
+		check(SubObjectNetGUID.IsValid());		
 	}
 
 	return NetGUID;
