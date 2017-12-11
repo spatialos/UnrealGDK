@@ -100,6 +100,7 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 			AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityToSpawn);
 			if (EntityActor == nullptr)
 			{
+				UE_LOG(LogTemp, Warning, TEXT("Received add entity op for %d"), EntityToSpawn.ToSpatialEntityId());
 				// we don't already have a actor for this entity, so we need to spawn one
 				EntityActor = SpawnNewEntity(MetadataAddComponentOp, PositionAddComponentOp, World);
 			}

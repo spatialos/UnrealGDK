@@ -328,13 +328,17 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
 {
-	if (Op.RequestId == CreateEntityRequestId)
+	if (Op.RequestId != CreateEntityRequestId)
 	{
-		if (!(Op.StatusCode == worker::StatusCode::kSuccess))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed to create entity!"));
-		}
+		//todo-giray: Need a less hacky way of finding the right create request, as there will be more than one in flight.
+		return;
 	}
+
+	if (!(Op.StatusCode == worker::StatusCode::kSuccess))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to create entity!"));
+		return;
+	}	
 
 	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
 	if (Driver->ClientConnections.Num() > 0)
@@ -345,6 +349,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		{
 			FEntityId EntityId(Op.EntityId.value_or(0));
 
+			UE_LOG(LogTemp, Warning, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
 			// once we know the entity was successfully spawned, add the local actor 
 			// to the package map and to the EntityRegistry
 			PMC->ResolveEntityActor(GetActor(), EntityId);
