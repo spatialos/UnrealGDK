@@ -54,7 +54,9 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 	using ServerMoveCommand = test::rpc::ServerRpcs::Commands::ServerMove;
 	View->OnCommandRequest<ServerMoveCommand>([this, Connection](const worker::CommandRequestOp<ServerMoveCommand>& Op) {
 		UCharacterMovementComponent* Component = nullptr;
-		AActor* Actor = Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false));
+		AActor* Actor = Op.EntityId == 2
+			? Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false))
+			: Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(12), false));
 		if (Actor) {
 			Component = Actor->FindComponentByClass<UCharacterMovementComponent>();
 		}
@@ -92,7 +94,9 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 	using ClientAckGoodMoveCommand = test::rpc::ClientRpcs::Commands::ClientAckGoodMove;
 	View->OnCommandRequest<ClientAckGoodMoveCommand>([this, Connection](const worker::CommandRequestOp<ClientAckGoodMoveCommand>& Op) {
 		UCharacterMovementComponent* Component = nullptr;
-		AActor* Actor = Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false));
+		AActor* Actor = Op.EntityId == 2
+			? Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false))
+			: Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(12), false));
 		if (Actor) {
 			Component = Actor->FindComponentByClass<UCharacterMovementComponent>();
 		}
@@ -101,9 +105,6 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 		}
 		Connection->SendCommandResponse<ClientAckGoodMoveCommand>(Op.RequestId, typename ClientAckGoodMoveCommand::Response{});
 	});
-
-	// TODO: Remove once the stuff inside USpatialUpdateInterop::Tick is removed.
-	WaitingForGuid = true;
 }
 
 void USpatialUpdateInterop::Tick(float DeltaTime)

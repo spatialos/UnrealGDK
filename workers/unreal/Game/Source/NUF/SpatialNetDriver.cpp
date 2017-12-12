@@ -138,7 +138,8 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	bool CorrectActor = false;
 	if (Connection) 
 	{
-		CorrectActor = Connection->PackageMap->GetNetGUIDFromObject(Actor).Value == 6;
+		FNetworkGUID NetGuid = Connection->PackageMap->GetNetGUIDFromObject(Actor).Value == 6;
+		CorrectActor = NetGuid == 6 || NetGuid == 12;
 	}
 
 	if (Function->FunctionFlags & FUNC_Net && CorrectActor) 
