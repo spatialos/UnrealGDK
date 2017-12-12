@@ -134,15 +134,15 @@ void USpatialNetDriver::ProcessRemoteFunction(
 {
 	UE_LOG(LogTemp, Warning, TEXT("Function: %s, actor: %s"), *Function->GetName(), *Actor->GetName())
 
-	auto* connection = Actor->GetNetConnection();
-	bool correctActor = false;
-	if (connection) {
-		correctActor = connection->PackageMap->GetNetGUIDFromObject(Actor).Value == 6;
+	auto* Connection = Actor->GetNetConnection();
+	bool CorrectActor = false;
+	if (Connection) 
+	{
+		CorrectActor = Connection->PackageMap->GetNetGUIDFromObject(Actor).Value == 6;
 	}
 
-	if (Function->FunctionFlags & FUNC_Net && correctActor) 
+	if (Function->FunctionFlags & FUNC_Net && CorrectActor) 
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Function: %s, actor: %s"), *Function->GetName(), *Actor->GetName())
 		if (Function->GetName().Equals("ServerMove")) 
 		{
 			ProcessServerMove(Function, Parameters);
@@ -159,90 +159,60 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 void USpatialNetDriver::ProcessServerMove(UFunction* Function, void* Parameters) 
 {
-	test::rpc::ServerMoveRequest request;
-	UField* argIter = Function->Children;
-	uint32 bytesRead = 0;
-	//UE_LOG(LogTemp, Log, TEXT("args: %s"), *Cast<UProperty>(argIter)->GetCPPType())
-	float timestamp = *static_cast<float*>(static_cast<void*>(static_cast<char*>(Parameters) + bytesRead));
-	request.set_field_time_stamp(timestamp);
-	//UE_LOG(LogTemp, Log, TEXT("value: %f"), timestamp) 
-	argIter = argIter->Next;
-	bytesRead += sizeof(float);
+	test::rpc::ServerMoveRequest Request;
+	uint32 BytesRead = 0;
+	float Timestamp = *static_cast<float*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
+	Request.set_field_time_stamp(Timestamp);
+	BytesRead += sizeof(float);
 
-	//UE_LOG(LogTemp, Log, TEXT("args: %s"), *Cast<UProperty>(argIter)->GetCPPType())
-	FVector accel = *static_cast<FVector*>(static_cast<void*>(static_cast<char*>(Parameters) + bytesRead));
-	request.set_field_in_accel(improbable::Vector3f{ accel.X, accel.Y, accel.Z });
-	//UE_LOG(LogTemp, Log, TEXT("value: %s"), *accel.ToString())
-	argIter = argIter->Next;
-	bytesRead += sizeof(FVector);
+	FVector Accel = *static_cast<FVector*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
+	Request.set_field_in_accel(improbable::Vector3f{ Accel.X, Accel.Y, Accel.Z });
+	BytesRead += sizeof(FVector);
 
-	//UE_LOG(LogTemp, Log, TEXT("args: %s"), *Cast<UProperty>(argIter)->GetCPPType())
-	FVector loc = *static_cast<FVector*>(static_cast<void*>(static_cast<char*>(Parameters) + bytesRead));
-	request.set_field_client_loc(improbable::Vector3f{ loc.X, loc.Y, loc.Z });
-	//UE_LOG(LogTemp, Log, TEXT("value: %s"), *loc.ToString())
-	argIter = argIter->Next;
-	bytesRead += sizeof(FVector);
+	FVector Loc = *static_cast<FVector*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
+	Request.set_field_client_loc(improbable::Vector3f{ Loc.X, Loc.Y, Loc.Z });
+	BytesRead += sizeof(FVector);
 
-	//UE_LOG(LogTemp, Log, TEXT("args: %s"), *Cast<UProperty>(argIter)->GetCPPType())
-	uint8 moveFlags = *static_cast<uint8*>(static_cast<void*>(static_cast<char*>(Parameters) + bytesRead));
-	request.set_field_compressed_move_flags(moveFlags);
-	//UE_LOG(LogTemp, Log, TEXT("value: %d"), moveFlags)
-	argIter = argIter->Next;
-	bytesRead += sizeof(uint8);
+	uint8 MoveFlags = *static_cast<uint8*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
+	Request.set_field_compressed_move_flags(MoveFlags);
+	BytesRead += sizeof(uint8);
 
-	//UE_LOG(LogTemp, Log, TEXT("args: %s"), *Cast<UProperty>(argIter)->GetCPPType())
-	uint8 roll = *static_cast<uint8*>(static_cast<void*>(static_cast<char*>(Parameters) + bytesRead));
-	request.set_field_client_roll(roll);
-	//UE_LOG(LogTemp, Log, TEXT("value: %d"), roll)
-	argIter = argIter->Next;
-	bytesRead += sizeof(uint8);
+	uint8 Roll = *static_cast<uint8*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
+	Request.set_field_client_roll(Roll);
+	BytesRead += sizeof(uint8);
 
-	//UE_LOG(LogTemp, Log, TEXT("args: %s"), *Cast<UProperty>(argIter)->GetCPPType())
-	uint32 view = *static_cast<uint32*>(static_cast<void*>(static_cast<char*>(Parameters) + bytesRead));
-	request.set_field_view(view);
-	//UE_LOG(LogTemp, Log, TEXT("value: %d"), )
-	argIter = argIter->Next;
-	bytesRead += sizeof(uint32);
+	uint32 View = *static_cast<uint32*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
+	Request.set_field_view(View);
+	BytesRead += sizeof(uint32);
 
-	//UE_LOG(LogTemp, Log, TEXT("args: %s"), *Cast<UProperty>(argIter)->GetCPPType())
-	UObject* movementBase = *static_cast<UObject**>(static_cast<void*>(static_cast<char*>(Parameters) + bytesRead + 6));
-	//UE_LOG(LogTemp, Log, TEXT("value: %p"), movementBase)
-	argIter = argIter->Next;
-	uint8 objPtr[14];
-	for (int i = 0; i < 14; ++i) {
-		objPtr[i] = *static_cast<uint8*>(static_cast<void*>(static_cast<char*>(Parameters) + bytesRead + i));
+	// This is the odd one. Given 14 bytes instead of 8. The first two are usually set, the next 4 aren't. The last 8 are the pointer in question.
+	UPrimitiveComponent* MovementBase = *static_cast<UPrimitiveComponent**>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead + 6));
+	if (MovementBase) 
+	{
+		Request.set_field_client_movement_base(TCHAR_TO_UTF8(*MovementBase->GetOwner()->GetName()));
 	}
-	UPrimitiveComponent* x = Cast<UPrimitiveComponent>(movementBase);
-	if (x) {
-		request.set_field_client_movement_base(TCHAR_TO_UTF8(*x->GetOwner()->GetName()));
+	else 
+	{
+		Request.set_field_client_movement_base(std::string{ "" });
 	}
-	else {
-		request.set_field_client_movement_base(std::string{ "" });
-	}
-	bytesRead += sizeof(UObject*) + 6;
+	BytesRead += sizeof(UPrimitiveComponent*) + 6;
 
-	//UE_LOG(LogTemp, Log, TEXT("args: %s"), *Cast<UProperty>(argIter)->GetCPPType())
-	FName boneName = *static_cast<FName*>(static_cast<void*>(static_cast<char*>(Parameters) + bytesRead));
-	request.set_field_client_base_bone_name(TCHAR_TO_UTF8(*boneName.ToString()));
-	//UE_LOG(LogTemp, Log, TEXT("value: %s"), *boneName.ToString())
-	argIter = argIter->Next;
-	bytesRead += sizeof(FName);
+	FName BoneName = *static_cast<FName*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
+	Request.set_field_client_base_bone_name(TCHAR_TO_UTF8(*BoneName.ToString()));
+	BytesRead += sizeof(FName);
 
-	//UE_LOG(LogTemp, Log, TEXT("args: %s"), *Cast<UProperty>(argIter)->GetCPPType())
-	uint8 movementMode = *static_cast<uint8*>(static_cast<void*>(static_cast<char*>(Parameters) + bytesRead));
-	request.set_field_client_movement_mode(movementMode);
-	//UE_LOG(LogTemp, Log, TEXT("value: %d"), movementMode)
-	argIter = argIter->Next;
-	bytesRead += sizeof(uint8);
+	uint8 MovementMode = *static_cast<uint8*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
+	Request.set_field_client_movement_mode(MovementMode);
+	BytesRead += sizeof(uint8);
 
-	GetSpatialOS()->GetConnection().Pin()->SendCommandRequest<test::rpc::ServerRpcs::Commands::ServerMove>(2, request, 0);
+	GetSpatialOS()->GetConnection().Pin()->SendCommandRequest<test::rpc::ServerRpcs::Commands::ServerMove>(2, Request, 0);
 }
 
 void USpatialNetDriver::ProcessClientAckGoodMove(UFunction* Function, void* Parameters) 
 {
-	test::rpc::ClientAckGoodMoveRequest request;
-	float timestamp = *static_cast<float*>(Parameters);
-	request.set_field_time_stamp(timestamp);
+	test::rpc::ClientAckGoodMoveRequest Request;
+	float Timestamp = *static_cast<float*>(Parameters);
+	Request.set_field_time_stamp(Timestamp);
 
-	GetSpatialOS()->GetConnection().Pin()->SendCommandRequest<test::rpc::ClientRpcs::Commands::ClientAckGoodMove>(2, request, 0);
+	GetSpatialOS()->GetConnection().Pin()->SendCommandRequest<test::rpc::ClientRpcs::Commands::ClientAckGoodMove>(2, Request, 0);
 }

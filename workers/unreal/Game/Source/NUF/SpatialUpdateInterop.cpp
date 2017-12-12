@@ -49,58 +49,57 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 		ReceiveUpdateFromSpatial_Character(ActorChannel, Op.Update);
 	});
 
-	auto connection = Instance->GetConnection().Pin();
+	TSharedPtr<worker::Connection> Connection = Instance->GetConnection().Pin();
 
 	using ServerMoveCommand = test::rpc::ServerRpcs::Commands::ServerMove;
-	View->OnCommandRequest<ServerMoveCommand>([this, connection](const worker::CommandRequestOp<ServerMoveCommand>& op) {
-		UCharacterMovementComponent* component = nullptr;
+	View->OnCommandRequest<ServerMoveCommand>([this, Connection](const worker::CommandRequestOp<ServerMoveCommand>& Op) {
+		UCharacterMovementComponent* Component = nullptr;
 		AActor* Actor = Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false));
 		if (Actor) {
-			component = Actor->FindComponentByClass<UCharacterMovementComponent>();
+			Component = Actor->FindComponentByClass<UCharacterMovementComponent>();
 		}
 
-		if (component && Actor->GetWorld()) {
-			const improbable::Vector3f& accel = op.Request.field_in_accel();
-			const improbable::Vector3f& loc = op.Request.field_client_loc();
+		if (Component && Actor->GetWorld()) {
+			const improbable::Vector3f& Accel = Op.Request.field_in_accel();
+			const improbable::Vector3f& Loc = Op.Request.field_client_loc();
 
-			UPrimitiveComponent* primitive = nullptr;
-			if (op.Request.field_client_movement_mode() == 1) {
+			UPrimitiveComponent* Primitive = nullptr;
+			if (Op.Request.field_client_movement_mode() == 1) {
 
 				for (TActorIterator<AStaticMeshActor> ActorItr(Actor->GetWorld()); ActorItr; ++ActorItr) {
-					if (ActorItr->GetName().Equals(op.Request.field_client_movement_base().c_str())) {
-						primitive = ActorItr->FindComponentByClass<UPrimitiveComponent>();
+					if (ActorItr->GetName().Equals(Op.Request.field_client_movement_base().c_str())) {
+						Primitive = ActorItr->FindComponentByClass<UPrimitiveComponent>();
 						break;
 					}
 				}
 			}
 
-			UE_LOG(LogTemp, Warning, TEXT("Timestamp: %f  Time elapsed: %f"), op.Request.field_time_stamp(), Actor->GetWorld()->GetTimeSeconds())
-			component->ServerMove_Implementation(
-				op.Request.field_time_stamp(), 
-				FVector{ accel.x(), accel.y(), accel.z() },
-				FVector{ loc.x(), loc.y(), loc.z() },
-				static_cast<uint8>(op.Request.field_compressed_move_flags()),
-				static_cast<uint8>(op.Request.field_client_roll()),
-				op.Request.field_view(),
-				primitive,
+			Component->ServerMove_Implementation(
+				Op.Request.field_time_stamp(), 
+				FVector{ Accel.x(), Accel.y(), Accel.z() },
+				FVector{ Loc.x(), Loc.y(), Loc.z() },
+				static_cast<uint8>(Op.Request.field_compressed_move_flags()),
+				static_cast<uint8>(Op.Request.field_client_roll()),
+				Op.Request.field_view(),
+				Primitive,
 				FName{},
-				static_cast<uint8>(op.Request.field_client_movement_mode())
+				static_cast<uint8>(Op.Request.field_client_movement_mode())
 				);
 		}
-		connection->SendCommandResponse<ServerMoveCommand>(op.RequestId, typename ServerMoveCommand::Response{});
+		Connection->SendCommandResponse<ServerMoveCommand>(Op.RequestId, typename ServerMoveCommand::Response{});
 	});
 
 	using ClientAckGoodMoveCommand = test::rpc::ClientRpcs::Commands::ClientAckGoodMove;
-	View->OnCommandRequest<ClientAckGoodMoveCommand>([this, connection](const worker::CommandRequestOp<ClientAckGoodMoveCommand>& op) {
-		UCharacterMovementComponent* component = nullptr;
+	View->OnCommandRequest<ClientAckGoodMoveCommand>([this, Connection](const worker::CommandRequestOp<ClientAckGoodMoveCommand>& Op) {
+		UCharacterMovementComponent* Component = nullptr;
 		AActor* Actor = Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false));
 		if (Actor) {
-			component = Actor->FindComponentByClass<UCharacterMovementComponent>();
+			Component = Actor->FindComponentByClass<UCharacterMovementComponent>();
 		}
 		if (Component && Actor->GetWorld()) {
 			Component->ClientAckGoodMove_Implementation(Op.Request.field_time_stamp());
 		}
-		connection->SendCommandResponse<ClientAckGoodMoveCommand>(op.RequestId, typename ClientAckGoodMoveCommand::Response{});
+		Connection->SendCommandResponse<ClientAckGoodMoveCommand>(Op.RequestId, typename ClientAckGoodMoveCommand::Response{});
 	});
 
 	// TODO: Remove once the stuff inside USpatialUpdateInterop::Tick is removed.
