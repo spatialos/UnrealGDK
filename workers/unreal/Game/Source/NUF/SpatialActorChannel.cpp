@@ -12,6 +12,8 @@
 
 #include "Generated/SpatialUpdateInterop_Character.h"
 
+#include <improbable/standard_library.h>
+
 // We assume that #define ENABLE_PROPERTY_CHECKSUMS exists in RepLayout.cpp:88 here.
 #define ENABLE_PROPERTY_CHECKSUMS
 
@@ -113,19 +115,21 @@ void USpatialActorChannel::AppendMustBeMappedGuids(FOutBunch * bunch)
 FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge)
 {
 	// Run default actor channel code.
+	// TODO(David) I believe that ReturnValue will always contain a PacketId which has the same First and Last value
+	// if we don't break up bunches, which in our case we wont as there's no need to at this layer.
 	auto ReturnValue = UActorChannel::SendBunch(BunchPtr, bMerge);
-
+	
 	// Get SpatialNetDriver.
 	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
-	TSharedPtr<worker::Connection> Connection = Driver->GetSpatialOS()->GetConnection().Pin();
-	if (!Connection.Get() || !Connection->IsConnected())
+	TSharedPtr<worker::Connection> WorkerConnection = Driver->GetSpatialOS()->GetConnection().Pin();
+	if (!WorkerConnection.Get() || !WorkerConnection->IsConnected())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("SpatialOS is not connected yet."));
 		return ReturnValue;
 	}
+
 	// Build SpatialOS update.
 	improbable::unreal::UnrealCharacterReplicatedData::Update SpatialUpdate;
-
 	auto& PropertyMap = GetHandlePropertyMap_Character();
 	FBunchReader BunchReader(BunchPtr->GetData(), BunchPtr->GetNumBits());
 	FBunchReader::RepDataHandler RepDataHandler = [&SpatialUpdate](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
@@ -144,14 +148,45 @@ FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge
 
 		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
 		ApplyUpdateToSpatial_Character(Reader, Handle, Property, SpatialUpdate);
+
 		return true;
 	};
 	BunchReader.Parse(Driver->IsServer(), nullptr, PropertyMap, RepDataHandler);
 
-	// Send SpatialOS update.
-	if (BunchReader.HasRepLayout())
+	FNetworkGUID NetGUID = Connection->PackageMap->GetNetGUIDFromObject(Actor);
+	/*
+	UE_LOG(LogTemp, Warning, TEXT("Actor: %s NetGUID: %s. RepLayout %d IsActor %d Return value: %d %d"),
+		*Actor->GetName(),
+		*NetGUID.ToString(),
+		(int)BunchReader.HasRepLayout(),
+		(int)BunchReader.IsActor(),
+		ReturnValue.First,
+		ReturnValue.Last);
+		*/
+
+	// TODO(david): Hacks :(
+	worker::EntityId EntityId;
+	if (NetGUID.Value == 6)
 	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterReplicatedData>(worker::EntityId(2), SpatialUpdate);
+		EntityId = {2};
+	}
+	else if (NetGUID.Value == 12)
+	{
+		EntityId = {3};
+	}
+	else
+	{
+		return ReturnValue;
+	}
+
+	// Send SpatialOS update.
+	if (!BunchReader.HasError() && BunchReader.HasRepLayout())
+	{
+		WorkerConnection->SendComponentUpdate<improbable::unreal::UnrealCharacterReplicatedData>(EntityId, SpatialUpdate);
+	}
+	else
+	{
+
 	}
 	return ReturnValue;
 }
