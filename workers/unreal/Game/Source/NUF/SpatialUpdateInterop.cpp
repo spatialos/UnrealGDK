@@ -6,8 +6,12 @@
 #include "SpatialActorChannel.h"
 
 #include "Engine/PackageMapClient.h"
+#include "Engine/StaticMeshActor.h"
+#include "EngineUtils.h"
 
 #include "Generated/SpatialUpdateInterop_Character.h"
+#include "Generated/Usr/test/rpc/server_rpcs.h"
+#include "Generated/Usr/test/rpc/client_rpcs.h"
 
 using improbable::unreal::UnrealCharacterReplicatedData;
 using improbable::unreal::UnrealCharacterCompleteData;
@@ -44,6 +48,63 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 		// Received replicated data from SpatialOS, pipe to Unreal.
 		ReceiveUpdateFromSpatial_Character(ActorChannel, Op.Update);
 	});
+
+	auto connection = Instance->GetConnection().Pin();
+
+	using ServerMoveCommand = test::rpc::ServerRpcs::Commands::ServerMove;
+	View->OnCommandRequest<ServerMoveCommand>([this, connection](const worker::CommandRequestOp<ServerMoveCommand>& op) {
+		UCharacterMovementComponent* component = nullptr;
+		AActor* Actor = Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false));
+		if (Actor) {
+			component = Actor->FindComponentByClass<UCharacterMovementComponent>();
+		}
+
+		if (component && Actor->GetWorld()) {
+			const improbable::Vector3f& accel = op.Request.field_in_accel();
+			const improbable::Vector3f& loc = op.Request.field_client_loc();
+
+			UPrimitiveComponent* primitive = nullptr;
+			if (op.Request.field_client_movement_mode() == 1) {
+
+				for (TActorIterator<AStaticMeshActor> ActorItr(Actor->GetWorld()); ActorItr; ++ActorItr) {
+					if (ActorItr->GetName().Equals(op.Request.field_client_movement_base().c_str())) {
+						primitive = ActorItr->FindComponentByClass<UPrimitiveComponent>();
+						break;
+					}
+				}
+			}
+
+			UE_LOG(LogTemp, Warning, TEXT("Timestamp: %f  Time elapsed: %f"), op.Request.field_time_stamp(), Actor->GetWorld()->GetTimeSeconds())
+			component->ServerMove_Implementation(
+				op.Request.field_time_stamp(), 
+				FVector{ accel.x(), accel.y(), accel.z() },
+				FVector{ loc.x(), loc.y(), loc.z() },
+				static_cast<uint8>(op.Request.field_compressed_move_flags()),
+				static_cast<uint8>(op.Request.field_client_roll()),
+				op.Request.field_view(),
+				primitive,
+				FName{},
+				static_cast<uint8>(op.Request.field_client_movement_mode())
+				);
+		}
+		connection->SendCommandResponse<ServerMoveCommand>(op.RequestId, typename ServerMoveCommand::Response{});
+	});
+
+	using ClientAckGoodMoveCommand = test::rpc::ClientRpcs::Commands::ClientAckGoodMove;
+	View->OnCommandRequest<ClientAckGoodMoveCommand>([this, connection](const worker::CommandRequestOp<ClientAckGoodMoveCommand>& op) {
+		UCharacterMovementComponent* component = nullptr;
+		AActor* Actor = Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false));
+		if (Actor) {
+			component = Actor->FindComponentByClass<UCharacterMovementComponent>();
+		}
+		if (Component && Actor->GetWorld()) {
+			Component->ClientAckGoodMove_Implementation(Op.Request.field_time_stamp());
+		}
+		connection->SendCommandResponse<ClientAckGoodMoveCommand>(op.RequestId, typename ClientAckGoodMoveCommand::Response{});
+	});
+
+	// TODO: Remove once the stuff inside USpatialUpdateInterop::Tick is removed.
+	WaitingForGuid = true;
 }
 
 void USpatialUpdateInterop::Tick(float DeltaTime)

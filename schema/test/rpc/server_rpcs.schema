@@ -1,0 +1,21 @@
+package test.rpc;
+import "improbable/vector3.schema";
+
+type ServerMoveRequest { 
+  float field_time_stamp = 1;
+  improbable.Vector3f field_in_accel = 2;
+  improbable.Vector3f field_client_loc = 3;
+  uint32 field_compressed_move_flags = 4;
+  uint32 field_client_roll = 5;
+  uint32 field_view = 6;
+  string field_client_movement_base = 7;
+  string field_client_base_bone_name = 8;
+  uint32 field_client_movement_mode = 9;
+}
+
+type ServerMoveResponse { }
+
+component ServerRpcs {
+  id = 3050;
+  command ServerMoveResponse server_move(ServerMoveRequest);
+}
