@@ -273,12 +273,15 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 {
 	Super::SetChannelActor(InActor);
 
-	// Create a Spatial entity that corresponds to this actor.
-	TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
-	if (PinnedConnection.IsValid())
+	if (Connection->Driver->IsServer())
 	{
-		ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
-	}
+		// Create a Spatial entity that corresponds to this actor.
+		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
+		if (PinnedConnection.IsValid())
+		{
+			ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
+		}
+	}	
 }
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op)
@@ -335,7 +338,6 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 {
 	if (Op.RequestId != CreateEntityRequestId)
 	{
-		//todo-giray: Need a less hacky way of finding the right create request, as there will be more than one in flight.
 		return;
 	}
 
