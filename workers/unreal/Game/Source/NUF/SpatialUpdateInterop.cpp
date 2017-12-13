@@ -38,7 +38,7 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 		if (ActorChannel->Actor->Role != ROLE_SimulatedProxy)
 		{
 			//UE_LOG(LogTemp, Warning, TEXT("Actor is not simulated proxy on %s. It's role is %d (SP=1)"), *SpatialOSInstance->GetWorkerConfiguration().GetWorkerId(), (int)ActorChannel->Actor->Role);
-			return;
+			//return;
 		}
 
 		// Received replicated data from SpatialOS, pipe to Unreal.

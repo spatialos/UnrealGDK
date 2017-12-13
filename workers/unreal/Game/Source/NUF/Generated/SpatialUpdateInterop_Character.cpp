@@ -434,6 +434,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 {
 	FNetBitWriter OutputWriter(nullptr, 0); 
 	auto& HandleToPropertyMap = GetHandlePropertyMap_Character();
+	ConditionMapFilter Filter(ActorChannel);
 	if (!Update.field_bhidden().empty())
 	{
 		// field_bhidden
@@ -1058,6 +1059,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 
 		Value = *(Update.field_reprootmotion_brelativeposition().data());
 
+		//Data.Propert
 		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
 		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 	}
