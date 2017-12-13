@@ -33,6 +33,7 @@ struct RepLayoutEntry
 	UProperty* Property;
 	UProperty* Parent;
 	TArray<UProperty*> Chain;
+	ELifetimeCondition Lifetime;
 	ERepLayoutCmdType Type;
 	int32 Handle;
 	int32 Offset;
@@ -687,7 +688,13 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 
 		int32 Handle = CmdIndex + 1;
 		RepLayoutProperties.Add(MakeTuple(Handle, RepLayoutEntry{
-			Property, ParentProperty, PropertyChain, (ERepLayoutCmdType)Cmd.Type, Handle, Cmd.Offset
+			Property,
+			ParentProperty,
+			PropertyChain,
+			RepLayout.Parents[Cmd.ParentIndex].Condition,
+			(ERepLayoutCmdType)Cmd.Type,
+			Handle,
+			Cmd.Offset
 		}));
 	}
 
@@ -905,6 +912,7 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	OutputForwardingCode.Indent();
 	OutputForwardingCode.Print(TEXT("FNetBitWriter OutputWriter(nullptr, 0); "));
 	OutputForwardingCode.Print(FString::Printf(TEXT("auto& HandleToPropertyMap = GetHandlePropertyMap_%s();"), *Class->GetName()));
+	OutputForwardingCode.Print(TEXT("ConditionMapFilter ConditionMap(ActorChannel);"));
 	for (auto& RepProp : ReplicatedProperties)
 	{
 		auto Handle = RepProp.Entry.Handle;
@@ -914,10 +922,14 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 		// they are sent together atomically.
 		OutputForwardingCode.Print(FString::Printf(TEXT("if (!Update.%s().empty())\n{"), *GetFullyQualifiedName(RepProp.PropertyList[0].Chain)));
 		OutputForwardingCode.Indent();
-		
-		// Write handle.
+
+		// Check if the property is relevant.
 		OutputForwardingCode.Print(FString::Printf(TEXT("// %s"), *GetFullyQualifiedName(RepProp.Entry.Chain)));
 		OutputForwardingCode.Print(FString::Printf(TEXT("uint32 Handle = %d;"), Handle));
+		OutputForwardingCode.Print(FString::Printf(TEXT("if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)%d))\n{"), (int32)RepProp.Entry.Lifetime));
+		OutputForwardingCode.Indent();
+
+		// Write handle.
 		OutputForwardingCode.Print(TEXT("OutputWriter.SerializeIntPacked(Handle);"));
 		OutputForwardingCode.Print(TEXT("const RepHandleData& Data = HandleToPropertyMap[Handle];"));
 		OutputForwardingCode.Print();
@@ -933,6 +945,12 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 		OutputForwardingCode.Print();
 		OutputForwardingCode.Print(FString::Printf(TEXT("%s->NetSerializeItem(OutputWriter, nullptr, &%s);"), *PropertyName, *PropertyValueName));
 		OutputForwardingCode.Print(TEXT("UE_LOG(LogTemp, Log, TEXT(\"<- Handle: %d Property %s\"), Handle, *Data.Property->GetName());"));
+
+		// End condition map check block.
+		OutputForwardingCode.Outdent();
+		OutputForwardingCode.Print(TEXT("}"));
+
+		// End property block.
 		OutputForwardingCode.Outdent();
 		OutputForwardingCode.Print(TEXT("}"));
 	}

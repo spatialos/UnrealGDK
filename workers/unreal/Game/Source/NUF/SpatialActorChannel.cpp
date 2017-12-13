@@ -60,9 +60,14 @@ void USpatialActorChannel::ReceivedBunch(FInBunch &Bunch)
 		}
 
 		// Filter Role (13) and RemoteRole (4)
-		if (Handle == 13 || Handle == 4)
+		if (Handle == 13)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("<- Allowing through Role/RemoteRole update."));
+			UE_LOG(LogTemp, Warning, TEXT("<- Allowing through Role update."));
+			return false;
+		}
+		if (Handle == 4)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("<- Allowing through RemoteRole update."));
 			return false;
 		}
 

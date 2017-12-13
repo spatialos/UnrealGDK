@@ -434,723 +434,851 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 {
 	FNetBitWriter OutputWriter(nullptr, 0); 
 	auto& HandleToPropertyMap = GetHandlePropertyMap_Character();
-	ConditionMapFilter Filter(ActorChannel);
+	ConditionMapFilter ConditionMap(ActorChannel);
 	if (!Update.field_bhidden().empty())
 	{
 		// field_bhidden
 		uint32 Handle = 1;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		uint8 Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			uint8 Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_bhidden().data());
+			Value = *(Update.field_bhidden().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_breplicatemovement().empty())
 	{
 		// field_breplicatemovement
 		uint32 Handle = 2;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		uint8 Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			uint8 Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_breplicatemovement().data());
+			Value = *(Update.field_breplicatemovement().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_btearoff().empty())
 	{
 		// field_btearoff
 		uint32 Handle = 3;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		uint8 Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			uint8 Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_btearoff().data());
+			Value = *(Update.field_btearoff().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_remoterole().empty())
 	{
 		// field_remoterole
 		uint32 Handle = 4;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		TEnumAsByte<ENetRole> Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			TEnumAsByte<ENetRole> Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-		Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_remoterole().data())));
+			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+			Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_remoterole().data())));
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_owner().empty())
 	{
 		// field_owner
 		uint32 Handle = 5;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		AActor* Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			AActor* Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		// UNSUPPORTED ObjectProperty - Value *(Update.field_owner().data());
+			// UNSUPPORTED ObjectProperty - Value *(Update.field_owner().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_replicatedmovement().empty())
 	{
 		// field_replicatedmovement
 		uint32 Handle = 6;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)12))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		FRepMovement Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			FRepMovement Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		auto& ValueDataStr = *(Update.field_replicatedmovement().data());
-		TArray<uint8> ValueData;
-		ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
-		FMemoryReader ValueDataReader(ValueData);
-		bool bSuccess;
-		Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
+			auto& ValueDataStr = *(Update.field_replicatedmovement().data());
+			TArray<uint8> ValueData;
+			ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+			FMemoryReader ValueDataReader(ValueData);
+			bool bSuccess;
+			Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_attachmentreplication_attachparent().empty())
 	{
 		// field_attachmentreplication_attachparent
 		uint32 Handle = 7;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)8))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		AActor* Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			AActor* Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		// UNSUPPORTED ObjectProperty - Value *(Update.field_attachmentreplication_attachparent().data());
+			// UNSUPPORTED ObjectProperty - Value *(Update.field_attachmentreplication_attachparent().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_attachmentreplication_locationoffset().empty())
 	{
 		// field_attachmentreplication_locationoffset
 		uint32 Handle = 8;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)8))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		FVector_NetQuantize100 Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			FVector_NetQuantize100 Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		auto& Vector = *(Update.field_attachmentreplication_locationoffset().data());
-		Value.X = Vector.x();
-		Value.Y = Vector.y();
-		Value.Z = Vector.z();
+			auto& Vector = *(Update.field_attachmentreplication_locationoffset().data());
+			Value.X = Vector.x();
+			Value.Y = Vector.y();
+			Value.Z = Vector.z();
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_attachmentreplication_relativescale3d().empty())
 	{
 		// field_attachmentreplication_relativescale3d
 		uint32 Handle = 9;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)8))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		FVector_NetQuantize100 Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			FVector_NetQuantize100 Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		auto& Vector = *(Update.field_attachmentreplication_relativescale3d().data());
-		Value.X = Vector.x();
-		Value.Y = Vector.y();
-		Value.Z = Vector.z();
+			auto& Vector = *(Update.field_attachmentreplication_relativescale3d().data());
+			Value.X = Vector.x();
+			Value.Y = Vector.y();
+			Value.Z = Vector.z();
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_attachmentreplication_rotationoffset().empty())
 	{
 		// field_attachmentreplication_rotationoffset
 		uint32 Handle = 10;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)8))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		FRotator Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			FRotator Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		auto& Rotator = *(Update.field_attachmentreplication_rotationoffset().data());
-		Value.Yaw = Rotator.yaw();
-		Value.Pitch = Rotator.pitch();
-		Value.Roll = Rotator.roll();
+			auto& Rotator = *(Update.field_attachmentreplication_rotationoffset().data());
+			Value.Yaw = Rotator.yaw();
+			Value.Pitch = Rotator.pitch();
+			Value.Roll = Rotator.roll();
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_attachmentreplication_attachsocket().empty())
 	{
 		// field_attachmentreplication_attachsocket
 		uint32 Handle = 11;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)8))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		FName Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			FName Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = FName((*(Update.field_attachmentreplication_attachsocket().data())).data());
+			Value = FName((*(Update.field_attachmentreplication_attachsocket().data())).data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_attachmentreplication_attachcomponent().empty())
 	{
 		// field_attachmentreplication_attachcomponent
 		uint32 Handle = 12;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)8))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		USceneComponent* Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			USceneComponent* Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		// UNSUPPORTED ObjectProperty - Value *(Update.field_attachmentreplication_attachcomponent().data());
+			// UNSUPPORTED ObjectProperty - Value *(Update.field_attachmentreplication_attachcomponent().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_role().empty())
 	{
 		// field_role
 		uint32 Handle = 13;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		TEnumAsByte<ENetRole> Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			TEnumAsByte<ENetRole> Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-		Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_role().data())));
+			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+			Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_role().data())));
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_bcanbedamaged().empty())
 	{
 		// field_bcanbedamaged
 		uint32 Handle = 14;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		uint8 Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			uint8 Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_bcanbedamaged().data());
+			Value = *(Update.field_bcanbedamaged().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_instigator().empty())
 	{
 		// field_instigator
 		uint32 Handle = 15;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		APawn* Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			APawn* Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		// UNSUPPORTED ObjectProperty - Value *(Update.field_instigator().data());
+			// UNSUPPORTED ObjectProperty - Value *(Update.field_instigator().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_playerstate().empty())
 	{
 		// field_playerstate
 		uint32 Handle = 16;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		APlayerState* Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			APlayerState* Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		// UNSUPPORTED ObjectProperty - Value *(Update.field_playerstate().data());
+			// UNSUPPORTED ObjectProperty - Value *(Update.field_playerstate().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_remoteviewpitch().empty())
 	{
 		// field_remoteviewpitch
 		uint32 Handle = 17;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)3))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		uint8 Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			uint8 Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-		Value = uint8(uint8(*(Update.field_remoteviewpitch().data())));
+			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+			Value = uint8(uint8(*(Update.field_remoteviewpitch().data())));
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_controller().empty())
 	{
 		// field_controller
 		uint32 Handle = 18;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		AController* Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			AController* Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		// UNSUPPORTED ObjectProperty - Value *(Update.field_controller().data());
+			// UNSUPPORTED ObjectProperty - Value *(Update.field_controller().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_replicatedbasedmovement_movementbase().empty())
 	{
 		// field_replicatedbasedmovement_movementbase
 		uint32 Handle = 19;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		UPrimitiveComponent* Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			UPrimitiveComponent* Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		// UNSUPPORTED ObjectProperty - Value *(Update.field_replicatedbasedmovement_movementbase().data());
+			// UNSUPPORTED ObjectProperty - Value *(Update.field_replicatedbasedmovement_movementbase().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_replicatedbasedmovement_bonename().empty())
 	{
 		// field_replicatedbasedmovement_bonename
 		uint32 Handle = 20;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		FName Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			FName Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = FName((*(Update.field_replicatedbasedmovement_bonename().data())).data());
+			Value = FName((*(Update.field_replicatedbasedmovement_bonename().data())).data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_replicatedbasedmovement_location().empty())
 	{
 		// field_replicatedbasedmovement_location
 		uint32 Handle = 21;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		FVector_NetQuantize100 Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			FVector_NetQuantize100 Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		auto& Vector = *(Update.field_replicatedbasedmovement_location().data());
-		Value.X = Vector.x();
-		Value.Y = Vector.y();
-		Value.Z = Vector.z();
+			auto& Vector = *(Update.field_replicatedbasedmovement_location().data());
+			Value.X = Vector.x();
+			Value.Y = Vector.y();
+			Value.Z = Vector.z();
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_replicatedbasedmovement_rotation().empty())
 	{
 		// field_replicatedbasedmovement_rotation
 		uint32 Handle = 22;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		FRotator Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			FRotator Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		auto& Rotator = *(Update.field_replicatedbasedmovement_rotation().data());
-		Value.Yaw = Rotator.yaw();
-		Value.Pitch = Rotator.pitch();
-		Value.Roll = Rotator.roll();
+			auto& Rotator = *(Update.field_replicatedbasedmovement_rotation().data());
+			Value.Yaw = Rotator.yaw();
+			Value.Pitch = Rotator.pitch();
+			Value.Roll = Rotator.roll();
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_replicatedbasedmovement_bserverhasbasecomponent().empty())
 	{
 		// field_replicatedbasedmovement_bserverhasbasecomponent
 		uint32 Handle = 23;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		bool Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			bool Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_replicatedbasedmovement_bserverhasbasecomponent().data());
+			Value = *(Update.field_replicatedbasedmovement_bserverhasbasecomponent().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_replicatedbasedmovement_brelativerotation().empty())
 	{
 		// field_replicatedbasedmovement_brelativerotation
 		uint32 Handle = 24;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		bool Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			bool Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_replicatedbasedmovement_brelativerotation().data());
+			Value = *(Update.field_replicatedbasedmovement_brelativerotation().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_replicatedbasedmovement_bserverhasvelocity().empty())
 	{
 		// field_replicatedbasedmovement_bserverhasvelocity
 		uint32 Handle = 25;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		bool Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			bool Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_replicatedbasedmovement_bserverhasvelocity().data());
+			Value = *(Update.field_replicatedbasedmovement_bserverhasvelocity().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_animrootmotiontranslationscale().empty())
 	{
 		// field_animrootmotiontranslationscale
 		uint32 Handle = 26;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		float Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			float Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_animrootmotiontranslationscale().data());
+			Value = *(Update.field_animrootmotiontranslationscale().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_replicatedserverlasttransformupdatetimestamp().empty())
 	{
 		// field_replicatedserverlasttransformupdatetimestamp
 		uint32 Handle = 27;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		float Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			float Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_replicatedserverlasttransformupdatetimestamp().data());
+			Value = *(Update.field_replicatedserverlasttransformupdatetimestamp().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_replicatedmovementmode().empty())
 	{
 		// field_replicatedmovementmode
 		uint32 Handle = 28;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		uint8 Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			uint8 Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-		Value = uint8(uint8(*(Update.field_replicatedmovementmode().data())));
+			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+			Value = uint8(uint8(*(Update.field_replicatedmovementmode().data())));
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_biscrouched().empty())
 	{
 		// field_biscrouched
 		uint32 Handle = 29;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		uint8 Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			uint8 Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_biscrouched().data());
+			Value = *(Update.field_biscrouched().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_jumpmaxholdtime().empty())
 	{
 		// field_jumpmaxholdtime
 		uint32 Handle = 30;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		float Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			float Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_jumpmaxholdtime().data());
+			Value = *(Update.field_jumpmaxholdtime().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_jumpmaxcount().empty())
 	{
 		// field_jumpmaxcount
 		uint32 Handle = 31;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		int32 Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			int32 Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_jumpmaxcount().data());
+			Value = *(Update.field_jumpmaxcount().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_reprootmotion_bisactive().empty())
 	{
 		// field_reprootmotion_bisactive
 		uint32 Handle = 32;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		bool Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			bool Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_reprootmotion_bisactive().data());
+			Value = *(Update.field_reprootmotion_bisactive().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_reprootmotion_animmontage().empty())
 	{
 		// field_reprootmotion_animmontage
 		uint32 Handle = 33;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		UAnimMontage* Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			UAnimMontage* Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		// UNSUPPORTED ObjectProperty - Value *(Update.field_reprootmotion_animmontage().data());
+			// UNSUPPORTED ObjectProperty - Value *(Update.field_reprootmotion_animmontage().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_reprootmotion_position().empty())
 	{
 		// field_reprootmotion_position
 		uint32 Handle = 34;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		float Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			float Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_reprootmotion_position().data());
+			Value = *(Update.field_reprootmotion_position().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_reprootmotion_location().empty())
 	{
 		// field_reprootmotion_location
 		uint32 Handle = 35;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		FVector_NetQuantize100 Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			FVector_NetQuantize100 Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		auto& Vector = *(Update.field_reprootmotion_location().data());
-		Value.X = Vector.x();
-		Value.Y = Vector.y();
-		Value.Z = Vector.z();
+			auto& Vector = *(Update.field_reprootmotion_location().data());
+			Value.X = Vector.x();
+			Value.Y = Vector.y();
+			Value.Z = Vector.z();
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_reprootmotion_rotation().empty())
 	{
 		// field_reprootmotion_rotation
 		uint32 Handle = 36;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		FRotator Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			FRotator Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		auto& Rotator = *(Update.field_reprootmotion_rotation().data());
-		Value.Yaw = Rotator.yaw();
-		Value.Pitch = Rotator.pitch();
-		Value.Roll = Rotator.roll();
+			auto& Rotator = *(Update.field_reprootmotion_rotation().data());
+			Value.Yaw = Rotator.yaw();
+			Value.Pitch = Rotator.pitch();
+			Value.Roll = Rotator.roll();
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_reprootmotion_movementbase().empty())
 	{
 		// field_reprootmotion_movementbase
 		uint32 Handle = 37;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		UPrimitiveComponent* Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			UPrimitiveComponent* Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		// UNSUPPORTED ObjectProperty - Value *(Update.field_reprootmotion_movementbase().data());
+			// UNSUPPORTED ObjectProperty - Value *(Update.field_reprootmotion_movementbase().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_reprootmotion_movementbasebonename().empty())
 	{
 		// field_reprootmotion_movementbasebonename
 		uint32 Handle = 38;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		FName Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			FName Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = FName((*(Update.field_reprootmotion_movementbasebonename().data())).data());
+			Value = FName((*(Update.field_reprootmotion_movementbasebonename().data())).data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_reprootmotion_brelativeposition().empty())
 	{
 		// field_reprootmotion_brelativeposition
 		uint32 Handle = 39;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		bool Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			bool Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_reprootmotion_brelativeposition().data());
+			Value = *(Update.field_reprootmotion_brelativeposition().data());
 
-		//Data.Propert
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_reprootmotion_brelativerotation().empty())
 	{
 		// field_reprootmotion_brelativerotation
 		uint32 Handle = 40;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		bool Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			bool Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		Value = *(Update.field_reprootmotion_brelativerotation().data());
+			Value = *(Update.field_reprootmotion_brelativerotation().data());
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().empty())
 	{
 		// field_reprootmotion_authoritativerootmotion
 		uint32 Handle = 41;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		FRootMotionSourceGroup Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			FRootMotionSourceGroup Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		{
-			Value.bHasAdditiveSources = *(Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().data());
-		}
-		{
-			Value.bHasOverrideSources = *(Update.field_reprootmotion_authoritativerootmotion_bhasoverridesources().data());
-		}
-		{
-			auto& Vector = *(Update.field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity().data());
-			Value.LastPreAdditiveVelocity.X = Vector.x();
-			Value.LastPreAdditiveVelocity.Y = Vector.y();
-			Value.LastPreAdditiveVelocity.Z = Vector.z();
-		}
-		{
-			Value.bIsAdditiveVelocityApplied = *(Update.field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied().data());
-		}
-		{
 			{
-				// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-				// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-				// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-				// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-				Value.LastAccumulatedSettings.Flags = uint8(uint8(*(Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
+				Value.bHasAdditiveSources = *(Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().data());
 			}
-		}
+			{
+				Value.bHasOverrideSources = *(Update.field_reprootmotion_authoritativerootmotion_bhasoverridesources().data());
+			}
+			{
+				auto& Vector = *(Update.field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity().data());
+				Value.LastPreAdditiveVelocity.X = Vector.x();
+				Value.LastPreAdditiveVelocity.Y = Vector.y();
+				Value.LastPreAdditiveVelocity.Z = Vector.z();
+			}
+			{
+				Value.bIsAdditiveVelocityApplied = *(Update.field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied().data());
+			}
+			{
+				{
+					// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+					// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+					// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+					// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+					Value.LastAccumulatedSettings.Flags = uint8(uint8(*(Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
+				}
+			}
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_reprootmotion_acceleration().empty())
 	{
 		// field_reprootmotion_acceleration
 		uint32 Handle = 42;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		FVector_NetQuantize10 Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			FVector_NetQuantize10 Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		auto& Vector = *(Update.field_reprootmotion_acceleration().data());
-		Value.X = Vector.x();
-		Value.Y = Vector.y();
-		Value.Z = Vector.z();
+			auto& Vector = *(Update.field_reprootmotion_acceleration().data());
+			Value.X = Vector.x();
+			Value.Y = Vector.y();
+			Value.Z = Vector.z();
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	if (!Update.field_reprootmotion_linearvelocity().empty())
 	{
 		// field_reprootmotion_linearvelocity
 		uint32 Handle = 43;
-		OutputWriter.SerializeIntPacked(Handle);
-		const RepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+			const RepHandleData& Data = HandleToPropertyMap[Handle];
 
-		FVector_NetQuantize10 Value;
-		check(Data.Property->ElementSize == sizeof(Value));
+			FVector_NetQuantize10 Value;
+			check(Data.Property->ElementSize == sizeof(Value));
 
-		auto& Vector = *(Update.field_reprootmotion_linearvelocity().data());
-		Value.X = Vector.x();
-		Value.Y = Vector.y();
-		Value.Z = Vector.z();
+			auto& Vector = *(Update.field_reprootmotion_linearvelocity().data());
+			Value.X = Vector.x();
+			Value.Y = Vector.y();
+			Value.Z = Vector.z();
 
-		Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
-		UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			Data.Property->NetSerializeItem(OutputWriter, nullptr, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
 	}
 	ActorChannel->SpatialReceivePropertyUpdate(OutputWriter);
 }
