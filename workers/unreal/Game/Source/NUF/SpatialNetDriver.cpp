@@ -125,95 +125,85 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 }
 
 void USpatialNetDriver::ProcessRemoteFunction(
-	AActor* Actor, 
-	UFunction* Function, 
-	void* Parameters, 
-	FOutParmRec* OutParms, 
-	FFrame* Stack, 
-	UObject* SubObject) 
+	AActor* Actor,
+	UFunction* Function,
+	void* Parameters,
+	FOutParmRec* OutParms,
+	FFrame* Stack,
+	UObject* SubObject)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Function: %s, actor: %s"), *Function->GetName(), *Actor->GetName())
-
 	auto* Connection = Actor->GetNetConnection();
-	bool CorrectActor = false;
-	if (Connection) 
+	if (!Connection)
 	{
-		FNetworkGUID NetGuid = Connection->PackageMap->GetNetGUIDFromObject(Actor).Value == 6;
-		CorrectActor = NetGuid == 6 || NetGuid == 12;
+		UIpNetDriver::ProcessRemoteFunction(Actor, Function, Parameters, OutParms, Stack, SubObject);
+		return;
 	}
 
-	if (Function->FunctionFlags & FUNC_Net && CorrectActor) 
+	FNetworkGUID NetGuid = Connection->PackageMap->GetNetGUIDFromObject(Actor).Value;
+	bool CorrectActor = NetGuid == 6 || NetGuid == 12;
+	if (Function->FunctionFlags & FUNC_Net && CorrectActor)
 	{
-		if (Function->GetName().Equals("ServerMove")) 
+		worker::EntityId entityId = NetGuid == 6 ? 2 : 3;
+		UObject* CallingObject = SubObject ? Actor : SubObject;
+		FFrame TempRpcFrameForReading{ CallingObject, Function, Parameters, nullptr, Function->Children };
+		if (Function->GetName().Equals("ServerMove"))
 		{
-			ProcessServerMove(Function, Parameters);
+			ProcessServerMove(&TempRpcFrameForReading, entityId);
 			return;
 		}
 		else if (Function->GetName().Equals("ClientAckGoodMove"))
 		{
-			ProcessClientAckGoodMove(Function, Parameters);
+			ProcessClientAckGoodMove(&TempRpcFrameForReading, entityId);
 			return;
 		}
 	}
 	UIpNetDriver::ProcessRemoteFunction(Actor, Function, Parameters, OutParms, Stack, SubObject);
 }
 
-void USpatialNetDriver::ProcessServerMove(UFunction* Function, void* Parameters) 
+void USpatialNetDriver::ProcessServerMove(FFrame* TempRpcFrameForReading, worker::EntityId entityId) 
 {
+	// The FFrame being read has to be called "Stack" for the macros to work.
+	FFrame& Stack = *TempRpcFrameForReading;
+	P_GET_PROPERTY(UFloatProperty, Timestamp);
+	P_GET_STRUCT(FVector_NetQuantize10, InAccel);
+	P_GET_STRUCT(FVector_NetQuantize100, ClientLoc);
+	P_GET_PROPERTY(UByteProperty, CompressedMoveFlags);
+	P_GET_PROPERTY(UByteProperty, ClientRoll);
+	P_GET_PROPERTY(UUInt32Property, View);
+	P_GET_OBJECT(UPrimitiveComponent, ClientMovementBase);
+	P_GET_PROPERTY(UNameProperty, ClientBaseBoneName);
+	P_GET_PROPERTY(UByteProperty, ClientMovementMode);
+
 	test::rpc::ServerMoveRequest Request;
-	uint32 BytesRead = 0;
-	float Timestamp = *static_cast<float*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
 	Request.set_field_time_stamp(Timestamp);
-	BytesRead += sizeof(float);
-
-	FVector Accel = *static_cast<FVector*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
-	Request.set_field_in_accel(improbable::Vector3f{ Accel.X, Accel.Y, Accel.Z });
-	BytesRead += sizeof(FVector);
-
-	FVector Loc = *static_cast<FVector*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
-	Request.set_field_client_loc(improbable::Vector3f{ Loc.X, Loc.Y, Loc.Z });
-	BytesRead += sizeof(FVector);
-
-	uint8 MoveFlags = *static_cast<uint8*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
-	Request.set_field_compressed_move_flags(MoveFlags);
-	BytesRead += sizeof(uint8);
-
-	uint8 Roll = *static_cast<uint8*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
-	Request.set_field_client_roll(Roll);
-	BytesRead += sizeof(uint8);
-
-	uint32 View = *static_cast<uint32*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
+	Request.set_field_in_accel(improbable::Vector3f{ InAccel.X, InAccel.Y, InAccel.Z });
+	Request.set_field_client_loc(improbable::Vector3f{ ClientLoc.X, ClientLoc.Y, ClientLoc.Z });
+	Request.set_field_compressed_move_flags(CompressedMoveFlags);
+	Request.set_field_client_roll(ClientRoll);
 	Request.set_field_view(View);
-	BytesRead += sizeof(uint32);
-
-	// This is the odd one. Given 14 bytes instead of 8. The first two are usually set, the next 4 aren't. The last 8 are the pointer in question.
-	UPrimitiveComponent* MovementBase = *static_cast<UPrimitiveComponent**>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead + 6));
-	if (MovementBase) 
+	if (ClientMovementBase) 
 	{
-		Request.set_field_client_movement_base(TCHAR_TO_UTF8(*MovementBase->GetOwner()->GetName()));
+		Request.set_field_client_movement_base(TCHAR_TO_UTF8(*ClientMovementBase->GetOwner()->GetName()));
 	}
 	else 
 	{
 		Request.set_field_client_movement_base(std::string{ "" });
 	}
-	BytesRead += sizeof(UPrimitiveComponent*) + 6;
+	Request.set_field_client_base_bone_name(TCHAR_TO_UTF8(*ClientBaseBoneName.ToString()));
+	Request.set_field_client_movement_mode(ClientMovementMode);
 
-	FName BoneName = *static_cast<FName*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
-	Request.set_field_client_base_bone_name(TCHAR_TO_UTF8(*BoneName.ToString()));
-	BytesRead += sizeof(FName);
-
-	uint8 MovementMode = *static_cast<uint8*>(static_cast<void*>(static_cast<char*>(Parameters) + BytesRead));
-	Request.set_field_client_movement_mode(MovementMode);
-	BytesRead += sizeof(uint8);
-
-	GetSpatialOS()->GetConnection().Pin()->SendCommandRequest<test::rpc::ServerRpcs::Commands::ServerMove>(2, Request, 0);
+	GetSpatialOS()->GetConnection().Pin()->SendCommandRequest<test::rpc::ServerRpcs::Commands::ServerMove>(entityId, Request, 0);
 }
 
-void USpatialNetDriver::ProcessClientAckGoodMove(UFunction* Function, void* Parameters) 
+void USpatialNetDriver::ProcessClientAckGoodMove(FFrame* TempRpcFrameForReading, worker::EntityId entityId) 
 {
+	// The FFrame being read has to be called "Stack" for the macros to work.
+	FFrame& Stack = *TempRpcFrameForReading;
+	P_GET_PROPERTY(UFloatProperty, Timestamp);
+
 	test::rpc::ClientAckGoodMoveRequest Request;
-	float Timestamp = *static_cast<float*>(Parameters);
 	Request.set_field_time_stamp(Timestamp);
 
-	GetSpatialOS()->GetConnection().Pin()->SendCommandRequest<test::rpc::ClientRpcs::Commands::ClientAckGoodMove>(2, Request, 0);
+	GetSpatialOS()->GetConnection().Pin()->SendCommandRequest<test::rpc::ClientRpcs::Commands::ClientAckGoodMove>(entityId, Request, 0);
 }

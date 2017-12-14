@@ -22,7 +22,7 @@ public:
 	virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error) override;
 	virtual int32 ServerReplicateActors(float DeltaSeconds) override;
 	virtual void TickDispatch(float DeltaTime) override;
-	virtual void ProcessRemoteFunction(class AActor* Actor, class UFunction* Function, void* Parameters, struct FOutParmRec* OutParms, struct FFrame* Stack, class UObject* SubObject = NULL ) override;
+	virtual void ProcessRemoteFunction(class AActor* Actor, class UFunction* Function, void* Parameters, struct FOutParmRec* OutParms, struct FFrame* NotStack, class UObject* SubObject = NULL ) override;
 
 	USpatialOS* GetSpatialOS() const
 	{
@@ -52,6 +52,6 @@ private:
 	UFUNCTION()
 	void OnSpatialOSDisconnected();
 
-	void ProcessServerMove(class UFunction* Function, void* Parameters);
-	void ProcessClientAckGoodMove(class UFunction* Function, void* Parameters);
+	void ProcessServerMove(struct FFrame* TempRpcFrameForReading, worker::EntityId entityId);
+	void ProcessClientAckGoodMove(struct FFrame* TempRpcFrameForReading, worker::EntityId entityId);
 };
