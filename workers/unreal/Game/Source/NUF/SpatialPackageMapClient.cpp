@@ -55,6 +55,22 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	check(EntityId.ToSpatialEntityId() >= 0)	
 
 	FNetworkGUID NetGUID = GetOrAssignNetGUID(Actor);
+	//One major difference between how Unreal does NetGUIDs vs us is, we don't attempt to make them consistent across workers and client.
+	// The function above might have returned without assigning new GUID, because we are the client.
+	// Let's directly call the client function in that case.
+	if (NetGUID == FNetworkGUID::GetDefault() && !IsNetGUIDAuthority() && IsDynamicObject(Actor)) //todo-giray: Support static objects
+	{
+		// Here we have to borrow from FNetGuidCache::AssignNewNetGUID_Server to avoid source change
+#define COMPOSE_NET_GUID( Index, IsStatic )	( ( ( Index ) << 1 ) | ( IsStatic ) )
+#define ALLOC_NEW_NET_GUID( IsStatic )		( COMPOSE_NET_GUID( ++UniqueNetIDs[ IsStatic ], IsStatic ) )
+
+		// Generate new NetGUID and assign it
+		const int32 IsStatic = IsDynamicObject(Actor) ? 0 : 1;
+
+		const FNetworkGUID NewNetGuid(ALLOC_NEW_NET_GUID(IsStatic));
+		RegisterNetGUID_Client(NewNetGuid, Actor);
+	}
+
 	check(NetGUID.IsValid());
 	NetGUIDToEntityIdMap.Emplace(NetGUID, EntityId);
 	EntityIdToNetGUIDMap.Emplace(EntityId, NetGUID);

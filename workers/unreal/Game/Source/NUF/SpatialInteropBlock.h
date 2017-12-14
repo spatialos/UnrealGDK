@@ -20,6 +20,7 @@ class UCallbackDispatcher;
 class UEntityRegistry;
 class UEntityPipeline;
 class USpatialOsComponent;
+class USpatialActorChannel;
 
 UCLASS(BlueprintType)
 class NUF_API USpatialInteropBlock : public UEntityPipelineBlock
@@ -52,6 +53,9 @@ private:
 		TMap<FComponentIdentifier, UAddComponentOpWrapperBase*> ComponentsToAdd;
 	UPROPERTY()
 		TMap<FComponentIdentifier, USpatialOsComponent*> PendingUComponents;
+	UPROPERTY()
+	TMap<FEntityId, USpatialActorChannel*> EntityToClientActorChannel;
+
 	TSet<FComponentIdentifier> ComponentsToRemove;
 	TMap<FComponentIdentifier, worker::AuthorityChangeOp> ComponentAuthorities;
 
@@ -66,8 +70,11 @@ private:
 	void RemoveComponents(UCallbackDispatcher* InCallbackDispatcher);
 	void RemoveEntities(UWorld* World);
 
-	AActor* SpawnNewEntity(UMetadataAddComponentOp* MetadataComponent,
-		UPositionAddComponentOp* PositionComponent, UWorld* World);
+	AActor* SpawnNewEntity(UPositionAddComponentOp* PositionComponent, UWorld* World, UClass* ClassToSpawn);
+	
+	UClass* GetNativeEntityClass(UMetadataAddComponentOp * MetadataComponent);
+	UClass* GetRegisteredEntityClass(UMetadataAddComponentOp * MetadataComponent);
+	
 	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId,
 		const TWeakPtr<worker::Connection>& Connection);
 };
