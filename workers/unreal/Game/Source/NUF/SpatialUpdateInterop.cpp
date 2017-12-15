@@ -53,30 +53,27 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 
 	using ServerMoveCommand = test::rpc::ServerRpcs::Commands::ServerMove;
 	View->OnCommandRequest<ServerMoveCommand>([this, Connection](const worker::CommandRequestOp<ServerMoveCommand>& Op) {
-		UCharacterMovementComponent* Component = nullptr;
+		TSharedPtr<FNetGUIDCache> GuidCache = NetDriver->GuidCache;
+		UCharacterMovementComponent* MovementComponent = nullptr;
+
+		// Hard coded actors for the moment.
 		AActor* Actor = Op.EntityId == 2
-			? Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false))
-			: Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(12), false));
+			? Cast<AActor>(GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false))
+			: Cast<AActor>(GuidCache->GetObjectFromNetGUID(FNetworkGUID(12), false));
 		if (Actor) {
-			Component = Actor->FindComponentByClass<UCharacterMovementComponent>();
+			MovementComponent = Actor->FindComponentByClass<UCharacterMovementComponent>();
 		}
 
-		if (Component && Actor->GetWorld()) {
+		if (MovementComponent && Actor->GetWorld()) {
 			const improbable::Vector3f& Accel = Op.Request.field_in_accel();
 			const improbable::Vector3f& Loc = Op.Request.field_client_loc();
 
-			UPrimitiveComponent* Primitive = nullptr;
-			if (Op.Request.field_client_movement_mode() == 1) {
+			FNetworkGUID PrimitiveComponentGuid = Op.Request.field_client_movement_base();
+			UPrimitiveComponent* Primitive = Op.Request.field_client_movement_base() > 0
+				? static_cast<UPrimitiveComponent*>(GuidCache->GetObjectFromNetGUID(PrimitiveComponentGuid, false))
+				: nullptr;
 
-				for (TActorIterator<AStaticMeshActor> ActorItr(Actor->GetWorld()); ActorItr; ++ActorItr) {
-					if (ActorItr->GetName().Equals(Op.Request.field_client_movement_base().c_str())) {
-						Primitive = ActorItr->FindComponentByClass<UPrimitiveComponent>();
-						break;
-					}
-				}
-			}
-
-			Component->ServerMove_Implementation(
+			MovementComponent->ServerMove_Implementation(
 				Op.Request.field_time_stamp(), 
 				FVector{ Accel.x(), Accel.y(), Accel.z() },
 				FVector{ Loc.x(), Loc.y(), Loc.z() },
@@ -84,7 +81,7 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 				static_cast<uint8>(Op.Request.field_client_roll()),
 				Op.Request.field_view(),
 				Primitive,
-				FName{},
+				FName{}, /*This seems to be "None" in all cases tested, so just using this for the prototype.*/
 				static_cast<uint8>(Op.Request.field_client_movement_mode())
 				);
 		}
@@ -93,15 +90,16 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 
 	using ClientAckGoodMoveCommand = test::rpc::ClientRpcs::Commands::ClientAckGoodMove;
 	View->OnCommandRequest<ClientAckGoodMoveCommand>([this, Connection](const worker::CommandRequestOp<ClientAckGoodMoveCommand>& Op) {
-		UCharacterMovementComponent* Component = nullptr;
+		UCharacterMovementComponent* MovementComponent = nullptr;
+		// Hard coded actors for the moment.
 		AActor* Actor = Op.EntityId == 2
 			? Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false))
 			: Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(12), false));
 		if (Actor) {
-			Component = Actor->FindComponentByClass<UCharacterMovementComponent>();
+			MovementComponent = Actor->FindComponentByClass<UCharacterMovementComponent>();
 		}
-		if (Component && Actor->GetWorld()) {
-			Component->ClientAckGoodMove_Implementation(Op.Request.field_time_stamp());
+		if (MovementComponent && Actor->GetWorld()) {
+			MovementComponent->ClientAckGoodMove_Implementation(Op.Request.field_time_stamp());
 		}
 		Connection->SendCommandResponse<ClientAckGoodMoveCommand>(Op.RequestId, typename ClientAckGoodMoveCommand::Response{});
 	});

@@ -141,15 +141,19 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	}
 
 	FNetworkGUID NetGuid = Connection->PackageMap->GetNetGUIDFromObject(Actor).Value;
+	// Hard coded to up to two actors. The first actor will have NetGuid 6 and entitiy ID 2. The second will be 12 and 3.
+	// Only send a command if it was one of these actors which sent the rpc.
 	bool CorrectActor = NetGuid == 6 || NetGuid == 12;
 	if (Function->FunctionFlags & FUNC_Net && CorrectActor)
 	{
 		worker::EntityId entityId = NetGuid == 6 ? 2 : 3;
+		// The rpc might have been called by an actor directly, or by a subobject on that actor (e.g. UCharacterMovementComponent)
 		UObject* CallingObject = SubObject ? Actor : SubObject;
+		// Reading properties from an FFrame changes the FFrame (internal pointer to the last property read). So we need to make a new one.
 		FFrame TempRpcFrameForReading{ CallingObject, Function, Parameters, nullptr, Function->Children };
 		if (Function->GetName().Equals("ServerMove"))
 		{
-			ProcessServerMove(&TempRpcFrameForReading, entityId);
+			ProcessServerMove(&TempRpcFrameForReading, entityId, Connection->PackageMap);
 			return;
 		}
 		else if (Function->GetName().Equals("ClientAckGoodMove"))
@@ -161,7 +165,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	UIpNetDriver::ProcessRemoteFunction(Actor, Function, Parameters, OutParms, Stack, SubObject);
 }
 
-void USpatialNetDriver::ProcessServerMove(FFrame* TempRpcFrameForReading, worker::EntityId entityId) 
+void USpatialNetDriver::ProcessServerMove(FFrame* TempRpcFrameForReading, worker::EntityId entityId, UPackageMap* PackageMap) 
 {
 	// The FFrame being read has to be called "Stack" for the macros to work.
 	FFrame& Stack = *TempRpcFrameForReading;
@@ -182,13 +186,12 @@ void USpatialNetDriver::ProcessServerMove(FFrame* TempRpcFrameForReading, worker
 	Request.set_field_compressed_move_flags(CompressedMoveFlags);
 	Request.set_field_client_roll(ClientRoll);
 	Request.set_field_view(View);
+
+	// This argument is a pointer to the UPrimitiveComponent the actor is standing on.
+	// Normally this would be serialised as a NetGuid, but note this will not work in general here.
 	if (ClientMovementBase) 
 	{
-		Request.set_field_client_movement_base(TCHAR_TO_UTF8(*ClientMovementBase->GetOwner()->GetName()));
-	}
-	else 
-	{
-		Request.set_field_client_movement_base(std::string{ "" });
+		Request.set_field_client_movement_base(PackageMap->GetNetGUIDFromObject(ClientMovementBase).Value);
 	}
 	Request.set_field_client_base_bone_name(TCHAR_TO_UTF8(*ClientBaseBoneName.ToString()));
 	Request.set_field_client_movement_mode(ClientMovementMode);

@@ -8,7 +8,7 @@ type ServerMoveRequest {
   uint32 field_compressed_move_flags = 4;
   uint32 field_client_roll = 5;
   uint32 field_view = 6;
-  string field_client_movement_base = 7;
+  uint32 field_client_movement_base = 7;
   string field_client_base_bone_name = 8;
   uint32 field_client_movement_mode = 9;
 }
