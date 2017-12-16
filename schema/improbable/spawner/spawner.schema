@@ -13,8 +13,15 @@ type SpawnPlayerResponse
     EntityId created_entity_id = 3;
 }
 
-component Spawner
+component SpawnerClient
 {
-    id = 21010;
-    command SpawnPlayerResponse spawn_player(SpawnPlayerRequest);
+    id = 21010;    
 }
+
+component SpawnerServer
+{
+	id = 21011;
+	bool ready = 1;
+	command SpawnPlayerResponse spawn_player(SpawnPlayerRequest);
+}
+

@@ -6,7 +6,8 @@
 #include "SpatialOSComponent.h"
 #include "SpatialSpawner.generated.h"
 
-class USpawnerComponent;
+class USpawnerServerComponent;
+class USpawnerClientComponent;
 class USpawnPlayerCommandResponder;
 class SpawnPlayerResponse;
 
@@ -36,5 +37,8 @@ protected:
 	virtual void SendSpawnRequest();
 
 	UPROPERTY()
-	USpawnerComponent* SpawnerComponent;
+	USpawnerServerComponent* SpawnerServerComponent;
+
+	UPROPERTY()
+	USpawnerClientComponent* SpawnerClientComponent;
 };

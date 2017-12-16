@@ -6,7 +6,8 @@
 #include "SpatialNetDriver.h"
 #include "SpatialConstants.h"
 #include "SpawnPlayerRequest.h"
-#include "SpawnerComponent.h"
+#include "SpawnerServerComponent.h"
+#include "SpawnerClientComponent.h"
 #include "Engine/NetDriver.h"
 #include "SpatialNetConnection.h"
 
@@ -14,7 +15,8 @@ ASpatialSpawner::ASpatialSpawner()
 {
  	PrimaryActorTick.bCanEverTick = false;
 
-	SpawnerComponent = CreateDefaultSubobject<USpawnerComponent>(TEXT("SpawnerComponent"));
+	SpawnerClientComponent = CreateDefaultSubobject<USpawnerClientComponent>(TEXT("SpawnerClientComponent"));
+	SpawnerServerComponent = CreateDefaultSubobject<USpawnerServerComponent>(TEXT("SpawnerServerComponent"));
 }
 
 void ASpatialSpawner::PostInitializeComponents()
@@ -22,25 +24,34 @@ void ASpatialSpawner::PostInitializeComponents()
 	Super::PostInitializeComponents();
 	UE_LOG(LogTemp, Warning, TEXT("Initializing Spatial Spawner with netmode %d"), (int)GetNetMode());
 
-	SpawnerComponent->OnSpawnPlayerCommandRequest.AddDynamic(this, &ASpatialSpawner::HandleSpawnRequest);
-
-	SpawnerComponent->OnAuthorityChange.AddDynamic(this, &ASpatialSpawner::HandleAuthorityChange);
+	
+	SpawnerServerComponent->OnAuthorityChange.AddDynamic(this, &ASpatialSpawner::HandleAuthorityChange);
+	SpawnerClientComponent->OnAuthorityChange.AddDynamic(this, &ASpatialSpawner::HandleAuthorityChange);
 		
 	if (GetNetMode() == NM_Client)
 	{
-		if (SpawnerComponent->IsComponentReady())
+		if (SpawnerClientComponent->IsComponentReady())
 		{
 			SendSpawnRequest();
 		}
 		else
 		{
-			SpawnerComponent->OnComponentReady.AddDynamic(this, &ASpatialSpawner::SendSpawnRequest);
+			SpawnerClientComponent->OnComponentReady.AddDynamic(this, &ASpatialSpawner::SendSpawnRequest);
 		}		
 	}
-
-	if (SpawnerComponent->GetAuthority() == EAuthority::Authoritative)
+	else
 	{
-		SpawnerComponent->Ready = true;
+		SpawnerServerComponent->OnSpawnPlayerCommandRequest.AddDynamic(this, &ASpatialSpawner::HandleSpawnRequest);
+	}
+
+	if (SpawnerServerComponent->GetAuthority() == EAuthority::Authoritative)
+	{
+		SpawnerServerComponent->Ready = true;
+	}
+
+	if (SpawnerClientComponent->GetAuthority() == EAuthority::Authoritative)
+	{
+		SendSpawnRequest();
 	}
 }
 
@@ -51,9 +62,9 @@ void ASpatialSpawner::BeginPlay()
 
 void ASpatialSpawner::BeginDestroy()
 {
-	if (SpawnerComponent)
+	if (SpawnerServerComponent)
 	{
-		SpawnerComponent->OnSpawnPlayerCommandRequest.RemoveDynamic(this, &ASpatialSpawner::HandleSpawnRequest);
+		SpawnerServerComponent->OnSpawnPlayerCommandRequest.RemoveDynamic(this, &ASpatialSpawner::HandleSpawnRequest);
 	}	
 	
 	Super::BeginDestroy();	
@@ -77,9 +88,14 @@ void ASpatialSpawner::HandleSpawnRequest(USpawnPlayerCommandResponder * Responde
 
 void ASpatialSpawner::HandleAuthorityChange(EAuthority NewAuthority)
 {
-	if (NewAuthority == EAuthority::Authoritative)
+	if (SpawnerServerComponent->GetAuthority() == EAuthority::Authoritative)
 	{
-		SpawnerComponent->Ready = true;
+		SpawnerServerComponent->Ready = true;
+	}
+
+	if (SpawnerClientComponent->GetAuthority() == EAuthority::Authoritative)
+	{
+		SendSpawnRequest();
 	}
 }
 
@@ -99,6 +115,6 @@ void ASpatialSpawner::SendSpawnRequest()
 	FSpawnPlayerCommandResultDelegate Callback;
 	Callback.BindUFunction(this, "OnSpawnPlayerResponse");	
 	
-	SpawnerComponent->SendCommand()->SpawnPlayer(SpatialConstants::SPAWNER_ENTITY_ID, NewRequest, Callback, 0);
+	SpawnerClientComponent->SendCommand()->SpawnPlayer(SpatialConstants::SPAWNER_ENTITY_ID, NewRequest, Callback, 0);
 }
 

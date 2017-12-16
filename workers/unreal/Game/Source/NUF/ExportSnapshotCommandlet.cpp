@@ -70,6 +70,7 @@ worker::Entity UExportSnapshotCommandlet::CreateSpawnerEntity() const
 	WorkerAttributeSet unrealClientAttributeSet{ worker::List<std::string>{"UnrealClient"} };
 
 	WorkerRequirementSet unrealWorkerWritePermission{ { unrealWorkerAttributeSet } };
+	WorkerRequirementSet unrealClientWritePermission{ { unrealClientAttributeSet } };
 	WorkerRequirementSet anyWorkerReadPermission{
 		{ unrealClientAttributeSet, unrealWorkerAttributeSet } };
 
@@ -79,7 +80,8 @@ worker::Entity UExportSnapshotCommandlet::CreateSpawnerEntity() const
 		.AddMetadataComponent(Metadata::Data("Spawner"))
 		.SetPersistence(true)
 		.SetReadAcl(anyWorkerReadPermission)
-		.AddComponent<spawner::Spawner>(spawner::Spawner::Data{}, unrealWorkerWritePermission)
+		.AddComponent<spawner::SpawnerClient>(spawner::SpawnerClient::Data{}, unrealClientWritePermission)
+		.AddComponent<spawner::SpawnerServer>(spawner::SpawnerServer::Data{false}, unrealWorkerWritePermission)
 		.Build();
 
 	return snapshotEntity;
