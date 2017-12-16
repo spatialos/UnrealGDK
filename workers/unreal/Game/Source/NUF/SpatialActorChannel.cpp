@@ -24,6 +24,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer & objectInit
 {
 	ChannelClasses[CHTYPE_Actor] = GetClass();
 	ChType = CHTYPE_Actor;
+	bCoreActor = true;
 }
 
 void USpatialActorChannel::Init(UNetConnection* connection, int32 channelIndex, bool bOpenedLocally)
@@ -273,7 +274,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 {
 	Super::SetChannelActor(InActor);
 
-	if (Connection->Driver->IsServer())
+	if (Connection->Driver->IsServer() && bCoreActor)
 	{
 		// Create a Spatial entity that corresponds to this actor.
 		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();

@@ -113,16 +113,6 @@ void USpatialNetDriver::OnSpatialOSConnected()
 
 	if (ServerConnection)
 	{
-		auto LockedConnection = SpatialOSInstance->GetConnection().Pin();
-
-		if (LockedConnection.IsValid())
-		{
-			LockedConnection->SendCommandRequest<improbable::spawner::Spawner::Commands::SpawnPlayer>(SpatialConstants::SPAWNER_ENTITY_ID,
-				improbable::spawner::SpawnPlayerRequest(TCHAR_TO_UTF8(*ServerConnection->URL.ToString())),
-				worker::Option<std::uint32_t>(0),
-				worker::CommandParameters());
-		}
-
 		FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this);
 
 		// Here we need to fake a few things to start ticking the level travel on client.
@@ -470,7 +460,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 #endif
 
 		// Normal actor replication
-		UActorChannel* Channel = PriorityActors[j]->Channel;
+		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(PriorityActors[j]->Channel);
 		UE_LOG(LogNetTraffic, Log, TEXT(" Maybe Replicate %s"), *PriorityActors[j]->ActorInfo->Actor->GetName());
 		if (!Channel || Channel->Actor) //make sure didn't just close this channel
 		{
@@ -512,9 +502,14 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				if (Channel == NULL && GuidCache->SupportsObject(Actor->GetClass()) && GuidCache->SupportsObject(Actor->IsNetStartupActor() ? Actor : Actor->GetArchetype()))
 				{
 					// Create a new channel for this actor.
-					Channel = (UActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
+					Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
 					if (Channel)
 					{
+						if (GetEntityRegistry()->GetEntityIdFromActor(Actor) != 0)
+						{
+							Channel->bCoreActor = false;
+						}
+						
 						Channel->SetChannelActor(Actor);
 					}
 					// if we couldn't replicate it for a reason that should be temporary, and this Actor is updated very infrequently, make sure we update it again soon
@@ -874,6 +869,22 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 		{
 			GameName = GameMode->GetClass()->GetPathName();
 			GameMode->GameWelcomePlayer(Connection, RedirectURL);
+		}
+	}
+
+	if (bOk)
+	{
+		Connection->PlayerController = World->SpawnPlayActor(Connection, ROLE_AutonomousProxy, InUrl, Connection->PlayerId, ErrorMsg);
+		if (Connection->PlayerController == NULL)
+		{
+			// Failed to connect.
+			UE_LOG(LogNet, Log, TEXT("Join failure: %s"), *ErrorMsg);
+			Connection->FlushNet(true);
+			bOk = false;
+		}
+		else
+		{
+			//todo-giray: Client travel needs to be handled here.
 		}
 	}
 

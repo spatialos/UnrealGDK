@@ -107,8 +107,6 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 
 			if (EntityActor)
 			{
-				EntityRegistry->AddToRegistry(EntityToSpawn, EntityActor);
-				SpawnedEntities.Add(EntityToSpawn);
 				SetupComponentInterests(EntityActor, EntityToSpawn, InConnection);
 
 				// register this entity with the PackageMap so that it has a GUID allocated				
@@ -125,13 +123,15 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 
 				if (ClassToSpawn)
 				{
-					// This means that we had registered this class. We treat this as a "standard" Spatial entity. No actor channel etc.
+					// This means that we had registered this class. We treat this as a "standard" Spatial entity. No actor channel etc.					
 					//(This assumption might change in the future)
+					UE_LOG(LogTemp, Warning, TEXT("Attempting to spawn a registered %s"), *ClassToSpawn->GetName());
 					EntityActor = SpawnNewEntity(PositionAddComponentOp, World, ClassToSpawn);
 				}
 				else
 				{
 					ClassToSpawn = GetNativeEntityClass(MetadataAddComponentOp);
+					UE_LOG(LogTemp, Warning, TEXT("Attempting to spawn a native %s"), *ClassToSpawn->GetName());
 					// We are either on a client, or a worker that is not the original spawner of this entity.
 					EntityActor = SpawnNewEntity(PositionAddComponentOp, World, ClassToSpawn);
 					check(EntityActor);
@@ -161,7 +161,7 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 				}				
 				EntityActor->PostNetInit();
 			}
-
+			EntityRegistry->AddToRegistry(EntityToSpawn, EntityActor);
 			SpawnedEntities.Add(EntityToSpawn);
 		}
 	}

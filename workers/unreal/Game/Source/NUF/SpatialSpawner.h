@@ -2,10 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "SpatialOSCommandResult.h"
+#include "SpatialOSComponent.h"
 #include "SpatialSpawner.generated.h"
 
 class USpawnerComponent;
 class USpawnPlayerCommandResponder;
+class SpawnPlayerResponse;
 
 UCLASS()
 class NUF_API ASpatialSpawner : public AActor
@@ -17,10 +20,20 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void PostInitializeComponents() override;
 	virtual void BeginDestroy() override;
 	
 	UFUNCTION()
 	virtual void HandleSpawnRequest(USpawnPlayerCommandResponder* Responder);
+	
+	UFUNCTION()
+	virtual void HandleAuthorityChange(EAuthority NewAuthority);
+	
+	UFUNCTION()
+	virtual void OnSpawnPlayerResponse(const FSpatialOSCommandResult& result, USpawnPlayerResponse* response);
+
+	UFUNCTION()
+	virtual void SendSpawnRequest();
 
 	UPROPERTY()
 	USpawnerComponent* SpawnerComponent;
