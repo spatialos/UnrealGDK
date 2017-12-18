@@ -686,7 +686,7 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 			PropertyChain = {Property};
 		}
 
-		int32 Handle = CmdIndex + 1;
+		int32 Handle = Cmd.RelativeHandle;
 		RepLayoutProperties.Add(MakeTuple(Handle, RepLayoutEntry{
 			Property,
 			ParentProperty,
