@@ -134,7 +134,7 @@ FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge
 	}
 
 	// Build SpatialOS update.
-	improbable::unreal::UnrealCharacterReplicatedData::Update SpatialUpdate;
+	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update SpatialUpdate;
 	auto& PropertyMap = GetHandlePropertyMap_Character();
 	FBunchReader BunchReader(BunchPtr->GetData(), BunchPtr->GetNumBits());
 	FBunchReader::RepDataHandler RepDataHandler = [&SpatialUpdate](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
@@ -152,7 +152,7 @@ FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge
 		}
 
 		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
-		ApplyUpdateToSpatial_Character(Reader, Handle, Property, SpatialUpdate);
+		ApplyUpdateToSpatial_MultiClient_Character(Reader, Handle, Property, SpatialUpdate);
 
 		return true;
 	};
@@ -187,7 +187,7 @@ FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge
 	// Send SpatialOS update.
 	if (!BunchReader.HasError() && BunchReader.HasRepLayout())
 	{
-		WorkerConnection->SendComponentUpdate<improbable::unreal::UnrealCharacterReplicatedData>(EntityId, SpatialUpdate);
+		WorkerConnection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(EntityId, SpatialUpdate);
 	}
 	else
 	{

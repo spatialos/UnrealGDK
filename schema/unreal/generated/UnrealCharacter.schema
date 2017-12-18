@@ -1,58 +1,65 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Note that this file has been generated automatically
 package improbable.unreal;
+
 import "improbable/vector3.schema";
-type UnrealFRotator { float pitch = 1; float yaw = 2; float roll = 3; }
-type UnrealFPlane { float x = 1; float y = 2; float z = 3; float w = 4; }
-type UnrealObjectRef { EntityId entity = 1; uint32 offset = 2; }
-type UnrealCharacterReplicated {
-	bool field_bhidden = 1;
-	bool field_breplicatemovement = 2;
-	bool field_btearoff = 3;
-	uint32 field_remoterole = 4;
-	UnrealObjectRef field_owner = 5;
-	bytes field_replicatedmovement = 6;
-	UnrealObjectRef field_attachmentreplication_attachparent = 7;
-	improbable.Vector3f field_attachmentreplication_locationoffset = 8;
-	improbable.Vector3f field_attachmentreplication_relativescale3d = 9;
-	UnrealFRotator field_attachmentreplication_rotationoffset = 10;
-	string field_attachmentreplication_attachsocket = 11;
-	UnrealObjectRef field_attachmentreplication_attachcomponent = 12;
-	uint32 field_role = 13;
-	bool field_bcanbedamaged = 14;
-	UnrealObjectRef field_instigator = 15;
-	UnrealObjectRef field_playerstate = 16;
-	uint32 field_remoteviewpitch = 17;
-	UnrealObjectRef field_controller = 18;
-	UnrealObjectRef field_replicatedbasedmovement_movementbase = 19;
-	string field_replicatedbasedmovement_bonename = 20;
-	improbable.Vector3f field_replicatedbasedmovement_location = 21;
-	UnrealFRotator field_replicatedbasedmovement_rotation = 22;
-	bool field_replicatedbasedmovement_bserverhasbasecomponent = 23;
-	bool field_replicatedbasedmovement_brelativerotation = 24;
-	bool field_replicatedbasedmovement_bserverhasvelocity = 25;
-	float field_animrootmotiontranslationscale = 26;
-	float field_replicatedserverlasttransformupdatetimestamp = 27;
-	uint32 field_replicatedmovementmode = 28;
-	bool field_biscrouched = 29;
-	float field_jumpmaxholdtime = 30;
-	int32 field_jumpmaxcount = 31;
-	bool field_reprootmotion_bisactive = 32;
-	UnrealObjectRef field_reprootmotion_animmontage = 33;
-	float field_reprootmotion_position = 34;
-	improbable.Vector3f field_reprootmotion_location = 35;
-	UnrealFRotator field_reprootmotion_rotation = 36;
-	UnrealObjectRef field_reprootmotion_movementbase = 37;
-	string field_reprootmotion_movementbasebonename = 38;
-	bool field_reprootmotion_brelativeposition = 39;
-	bool field_reprootmotion_brelativerotation = 40;
-	bool field_reprootmotion_authoritativerootmotion_bhasadditivesources = 41;
-	bool field_reprootmotion_authoritativerootmotion_bhasoverridesources = 42;
-	improbable.Vector3f field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity = 43;
-	bool field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied = 44;
-	uint32 field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags = 45;
-	improbable.Vector3f field_reprootmotion_acceleration = 46;
-	improbable.Vector3f field_reprootmotion_linearvelocity = 47;
+import "unreal/core_types.schema";
+
+component UnrealCharacterSingleClientReplicatedData {
+	id = 100001;
 }
-type UnrealCharacterComplete {
+component UnrealCharacterMultiClientReplicatedData {
+	id = 100002;
+	bool field_bhidden = 1; // COND_None
+	bool field_breplicatemovement = 2; // COND_None
+	bool field_btearoff = 3; // COND_None
+	uint32 field_remoterole = 4; // COND_None
+	UnrealObjectRef field_owner = 5; // COND_None
+	bytes field_replicatedmovement = 6; // COND_SimulatedOrPhysicsNoReplay
+	UnrealObjectRef field_attachmentreplication_attachparent = 7; // COND_Custom
+	improbable.Vector3f field_attachmentreplication_locationoffset = 8; // COND_Custom
+	improbable.Vector3f field_attachmentreplication_relativescale3d = 9; // COND_Custom
+	UnrealFRotator field_attachmentreplication_rotationoffset = 10; // COND_Custom
+	string field_attachmentreplication_attachsocket = 11; // COND_Custom
+	UnrealObjectRef field_attachmentreplication_attachcomponent = 12; // COND_Custom
+	uint32 field_role = 13; // COND_None
+	bool field_bcanbedamaged = 14; // COND_None
+	UnrealObjectRef field_instigator = 15; // COND_None
+	UnrealObjectRef field_playerstate = 16; // COND_None
+	uint32 field_remoteviewpitch = 17; // COND_SkipOwner
+	UnrealObjectRef field_controller = 18; // COND_None
+	UnrealObjectRef field_replicatedbasedmovement_movementbase = 19; // COND_SimulatedOnly
+	string field_replicatedbasedmovement_bonename = 20; // COND_SimulatedOnly
+	improbable.Vector3f field_replicatedbasedmovement_location = 21; // COND_SimulatedOnly
+	UnrealFRotator field_replicatedbasedmovement_rotation = 22; // COND_SimulatedOnly
+	bool field_replicatedbasedmovement_bserverhasbasecomponent = 23; // COND_SimulatedOnly
+	bool field_replicatedbasedmovement_brelativerotation = 24; // COND_SimulatedOnly
+	bool field_replicatedbasedmovement_bserverhasvelocity = 25; // COND_SimulatedOnly
+	float field_animrootmotiontranslationscale = 26; // COND_SimulatedOnly
+	float field_replicatedserverlasttransformupdatetimestamp = 27; // COND_SimulatedOnlyNoReplay
+	uint32 field_replicatedmovementmode = 28; // COND_SimulatedOnly
+	bool field_biscrouched = 29; // COND_SimulatedOnly
+	float field_jumpmaxholdtime = 30; // COND_None
+	int32 field_jumpmaxcount = 31; // COND_None
+	bool field_reprootmotion_bisactive = 32; // COND_SimulatedOnlyNoReplay
+	UnrealObjectRef field_reprootmotion_animmontage = 33; // COND_SimulatedOnlyNoReplay
+	float field_reprootmotion_position = 34; // COND_SimulatedOnlyNoReplay
+	improbable.Vector3f field_reprootmotion_location = 35; // COND_SimulatedOnlyNoReplay
+	UnrealFRotator field_reprootmotion_rotation = 36; // COND_SimulatedOnlyNoReplay
+	UnrealObjectRef field_reprootmotion_movementbase = 37; // COND_SimulatedOnlyNoReplay
+	string field_reprootmotion_movementbasebonename = 38; // COND_SimulatedOnlyNoReplay
+	bool field_reprootmotion_brelativeposition = 39; // COND_SimulatedOnlyNoReplay
+	bool field_reprootmotion_brelativerotation = 40; // COND_SimulatedOnlyNoReplay
+	bool field_reprootmotion_authoritativerootmotion_bhasadditivesources = 41; // COND_SimulatedOnlyNoReplay
+	bool field_reprootmotion_authoritativerootmotion_bhasoverridesources = 42; // COND_SimulatedOnlyNoReplay
+	improbable.Vector3f field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity = 43; // COND_SimulatedOnlyNoReplay
+	bool field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied = 44; // COND_SimulatedOnlyNoReplay
+	uint32 field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags = 45; // COND_SimulatedOnlyNoReplay
+	improbable.Vector3f field_reprootmotion_acceleration = 46; // COND_SimulatedOnlyNoReplay
+	improbable.Vector3f field_reprootmotion_linearvelocity = 47; // COND_SimulatedOnlyNoReplay
+}
+component UnrealCharacterCompleteData {
+	id = 100000;
 	uint32 field_mesh_animationmode = 1;
 	UnrealObjectRef field_mesh_animationblueprint = 2;
 	UnrealObjectRef field_mesh_animblueprintgeneratedclass = 3;
@@ -1076,12 +1083,4 @@ type UnrealCharacterComplete {
 	bytes field_tags = 1021;
 	bytes field_blueprintcreatedcomponents = 1022;
 	bytes field_instancecomponents = 1023;
-}
-component UnrealCharacterReplicatedData {
-	id = 100000;
-	data UnrealCharacterReplicated;
-}
-component UnrealCharacterCompleteData {
-	id = 100001;
-	data UnrealCharacterComplete;
 }

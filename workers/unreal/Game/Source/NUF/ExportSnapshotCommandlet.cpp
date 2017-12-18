@@ -9,7 +9,7 @@
 #include <improbable/spawner/spawner.h>
 #include <improbable/player/player.h>
 #include <improbable/worker.h>
-#include <generated/UnrealCharacter.h>
+#include <unreal/generated/UnrealCharacter.h>
 #include <array>
 
 using namespace improbable;
@@ -107,7 +107,8 @@ worker::Entity UExportSnapshotCommandlet::CreatePlayerEntity() const
 		.SetReadAcl(anyWorkerReadPermission)
 		.AddComponent<player::PlayerControlClient>(player::PlayerControlClient::Data{}, unrealClientWritePermission)
 		.AddComponent<player::PlayerControlServer>(player::PlayerControlServer::Data{}, unrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterReplicatedData>(improbable::unreal::UnrealCharacterReplicatedData::Data{}, unrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data{}, unrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data{}, unrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, unrealWorkerWritePermission)
 		.Build();
 

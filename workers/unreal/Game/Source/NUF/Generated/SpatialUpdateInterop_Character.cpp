@@ -2,15 +2,12 @@
 // Note that this file has been generated automatically
 
 #include "SpatialUpdateInterop_Character.h"
-#include "CoreMinimal.h"
-#include "GameFramework/Character.h"
-#include "Serialization/MemoryReader.h"
-#include "Serialization/MemoryWriter.h"
+#include "Engine.h"
 #include "SpatialActorChannel.h"
 
 const RepHandlePropertyMap& GetHandlePropertyMap_Character()
 {
-	UClass* Class = ACharacter::StaticClass();
+	UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("Character"));
 	static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;
 	if (HandleToPropertyMapData == nullptr)
 	{
@@ -88,7 +85,19 @@ const RepHandlePropertyMap& GetHandlePropertyMap_Character()
 	return *HandleToPropertyMapData;
 }
 
-void ApplyUpdateToSpatial_Character(FArchive& Reader, int32 Handle, UProperty* Property, improbable::unreal::UnrealCharacterReplicatedData::Update& Update)
+void ApplyUpdateToSpatial_SingleClient_Character(FArchive& Reader, int32 Handle, UProperty* Property, improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update)
+{
+}
+
+void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update)
+{
+	FNetBitWriter OutputWriter(nullptr, 0); 
+	auto& HandleToPropertyMap = GetHandlePropertyMap_Character();
+	ConditionMapFilter ConditionMap(ActorChannel);
+	ActorChannel->SpatialReceivePropertyUpdate(OutputWriter);
+}
+
+void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, UProperty* Property, improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update)
 {
 	switch (Handle)
 	{
@@ -427,10 +436,12 @@ void ApplyUpdateToSpatial_Character(FArchive& Reader, int32 Handle, UProperty* P
 			Update.set_field_reprootmotion_linearvelocity(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
+	default:
+		break;
 	}
 }
 
-void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealCharacterReplicatedData::Update& Update)
+void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update)
 {
 	FNetBitWriter OutputWriter(nullptr, 0); 
 	auto& HandleToPropertyMap = GetHandlePropertyMap_Character();
@@ -439,7 +450,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_bhidden
 		uint32 Handle = 1;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		if (ConditionMap.IsRelevant(COND_None))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -457,7 +468,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_breplicatemovement
 		uint32 Handle = 2;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		if (ConditionMap.IsRelevant(COND_None))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -475,7 +486,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_btearoff
 		uint32 Handle = 3;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		if (ConditionMap.IsRelevant(COND_None))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -493,7 +504,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_remoterole
 		uint32 Handle = 4;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		if (ConditionMap.IsRelevant(COND_None))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -515,7 +526,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_owner
 		uint32 Handle = 5;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		if (ConditionMap.IsRelevant(COND_None))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -533,7 +544,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_replicatedmovement
 		uint32 Handle = 6;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)12))
+		if (ConditionMap.IsRelevant(COND_SimulatedOrPhysicsNoReplay))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -556,7 +567,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_attachmentreplication_attachparent
 		uint32 Handle = 7;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)8))
+		if (ConditionMap.IsRelevant(COND_Custom))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -574,7 +585,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_attachmentreplication_locationoffset
 		uint32 Handle = 8;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)8))
+		if (ConditionMap.IsRelevant(COND_Custom))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -595,7 +606,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_attachmentreplication_relativescale3d
 		uint32 Handle = 9;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)8))
+		if (ConditionMap.IsRelevant(COND_Custom))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -616,7 +627,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_attachmentreplication_rotationoffset
 		uint32 Handle = 10;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)8))
+		if (ConditionMap.IsRelevant(COND_Custom))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -637,7 +648,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_attachmentreplication_attachsocket
 		uint32 Handle = 11;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)8))
+		if (ConditionMap.IsRelevant(COND_Custom))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -655,7 +666,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_attachmentreplication_attachcomponent
 		uint32 Handle = 12;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)8))
+		if (ConditionMap.IsRelevant(COND_Custom))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -673,7 +684,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_role
 		uint32 Handle = 13;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		if (ConditionMap.IsRelevant(COND_None))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -695,7 +706,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_bcanbedamaged
 		uint32 Handle = 14;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		if (ConditionMap.IsRelevant(COND_None))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -713,7 +724,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_instigator
 		uint32 Handle = 15;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		if (ConditionMap.IsRelevant(COND_None))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -731,7 +742,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_playerstate
 		uint32 Handle = 16;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		if (ConditionMap.IsRelevant(COND_None))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -749,7 +760,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_remoteviewpitch
 		uint32 Handle = 17;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)3))
+		if (ConditionMap.IsRelevant(COND_SkipOwner))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -771,7 +782,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_controller
 		uint32 Handle = 18;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		if (ConditionMap.IsRelevant(COND_None))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -789,7 +800,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_replicatedbasedmovement_movementbase
 		uint32 Handle = 19;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnly))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -807,7 +818,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_replicatedbasedmovement_bonename
 		uint32 Handle = 20;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnly))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -825,7 +836,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_replicatedbasedmovement_location
 		uint32 Handle = 21;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnly))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -846,7 +857,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_replicatedbasedmovement_rotation
 		uint32 Handle = 22;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnly))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -867,7 +878,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_replicatedbasedmovement_bserverhasbasecomponent
 		uint32 Handle = 23;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnly))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -885,7 +896,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_replicatedbasedmovement_brelativerotation
 		uint32 Handle = 24;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnly))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -903,7 +914,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_replicatedbasedmovement_bserverhasvelocity
 		uint32 Handle = 25;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnly))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -921,7 +932,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_animrootmotiontranslationscale
 		uint32 Handle = 26;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnly))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -939,7 +950,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_replicatedserverlasttransformupdatetimestamp
 		uint32 Handle = 27;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnlyNoReplay))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -957,7 +968,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_replicatedmovementmode
 		uint32 Handle = 28;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnly))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -979,7 +990,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_biscrouched
 		uint32 Handle = 29;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)4))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnly))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -997,7 +1008,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_jumpmaxholdtime
 		uint32 Handle = 30;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		if (ConditionMap.IsRelevant(COND_None))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -1015,7 +1026,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_jumpmaxcount
 		uint32 Handle = 31;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)0))
+		if (ConditionMap.IsRelevant(COND_None))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -1033,7 +1044,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_reprootmotion_bisactive
 		uint32 Handle = 32;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnlyNoReplay))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -1051,7 +1062,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_reprootmotion_animmontage
 		uint32 Handle = 33;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnlyNoReplay))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -1069,7 +1080,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_reprootmotion_position
 		uint32 Handle = 34;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnlyNoReplay))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -1087,7 +1098,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_reprootmotion_location
 		uint32 Handle = 35;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnlyNoReplay))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -1108,7 +1119,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_reprootmotion_rotation
 		uint32 Handle = 36;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnlyNoReplay))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -1129,7 +1140,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_reprootmotion_movementbase
 		uint32 Handle = 37;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnlyNoReplay))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -1147,7 +1158,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_reprootmotion_movementbasebonename
 		uint32 Handle = 38;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnlyNoReplay))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -1165,7 +1176,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_reprootmotion_brelativeposition
 		uint32 Handle = 39;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnlyNoReplay))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -1183,7 +1194,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_reprootmotion_brelativerotation
 		uint32 Handle = 40;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnlyNoReplay))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -1201,7 +1212,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_reprootmotion_authoritativerootmotion
 		uint32 Handle = 41;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnlyNoReplay))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -1242,7 +1253,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_reprootmotion_acceleration
 		uint32 Handle = 42;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnlyNoReplay))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];
@@ -1263,7 +1274,7 @@ void ReceiveUpdateFromSpatial_Character(USpatialActorChannel* ActorChannel, cons
 	{
 		// field_reprootmotion_linearvelocity
 		uint32 Handle = 43;
-		if (ConditionMap.PropertyIsRelevant((ELifetimeCondition)11))
+		if (ConditionMap.IsRelevant(COND_SimulatedOnlyNoReplay))
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 			const RepHandleData& Data = HandleToPropertyMap[Handle];

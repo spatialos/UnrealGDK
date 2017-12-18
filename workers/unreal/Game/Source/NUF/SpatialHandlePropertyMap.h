@@ -65,7 +65,7 @@ public:
 		ConditionMap[COND_Custom] = true;
 	}
 
-	bool PropertyIsRelevant(ELifetimeCondition Condition) const
+	bool IsRelevant(ELifetimeCondition Condition) const
 	{
 		return ConditionMap[Condition];
 	}

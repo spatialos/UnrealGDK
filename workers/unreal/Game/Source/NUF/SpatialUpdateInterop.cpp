@@ -9,7 +9,7 @@
 
 #include "Generated/SpatialUpdateInterop_Character.h"
 
-using improbable::unreal::UnrealCharacterReplicatedData;
+using improbable::unreal::UnrealCharacterMultiClientReplicatedData;
 using improbable::unreal::UnrealCharacterCompleteData;
 
 USpatialUpdateInterop::USpatialUpdateInterop()
@@ -23,7 +23,7 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 	NetDriver = Driver;
 
 	TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
-	ComponentUpdateCallback = View->OnComponentUpdate<UnrealCharacterReplicatedData>([this](const worker::ComponentUpdateOp<UnrealCharacterReplicatedData>& Op)
+	ComponentUpdateCallback = View->OnComponentUpdate<UnrealCharacterMultiClientReplicatedData>([this](const worker::ComponentUpdateOp<UnrealCharacterMultiClientReplicatedData>& Op)
 	{
 		// Get actor channel.
 		USpatialActorChannel** ActorChannelIt = EntityToClientActorChannel.Find(Op.EntityId);
@@ -42,7 +42,7 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 		}
 
 		// Received replicated data from SpatialOS, pipe to Unreal.
-		ReceiveUpdateFromSpatial_Character(ActorChannel, Op.Update);
+		ReceiveUpdateFromSpatial_MultiClient_Character(ActorChannel, Op.Update);
 	});
 }
 
