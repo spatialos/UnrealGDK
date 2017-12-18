@@ -10,6 +10,8 @@
 #include <improbable/player/player.h>
 #include <improbable/worker.h>
 #include <generated/UnrealCharacter.h>
+#include <test/rpc/server_rpcs.h>
+#include <test/rpc/client_rpcs.h>
 #include <array>
 
 using namespace improbable;
@@ -101,14 +103,16 @@ worker::Entity UExportSnapshotCommandlet::CreatePlayerEntity() const
 		{ unrealClientAttributeSet, unrealWorkerAttributeSet } };
 
 	auto snapshotEntity = improbable::unreal::FEntityBuilder::Begin()
-		.AddPositionComponent(Position::Data{initialPosition}, unrealWorkerWritePermission)
-		.AddMetadataComponent(Metadata::Data{"NUFCharacter_BP"})
+		.AddPositionComponent(Position::Data{ initialPosition }, unrealWorkerWritePermission)
+		.AddMetadataComponent(Metadata::Data{ "NUFCharacter_BP" })
 		.SetPersistence(true)
 		.SetReadAcl(anyWorkerReadPermission)
 		.AddComponent<player::PlayerControlClient>(player::PlayerControlClient::Data{}, unrealClientWritePermission)
 		.AddComponent<player::PlayerControlServer>(player::PlayerControlServer::Data{}, unrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealCharacterReplicatedData>(improbable::unreal::UnrealCharacterReplicatedData::Data{}, unrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, unrealWorkerWritePermission)
+		.AddComponent<test::rpc::ServerRpcs>(test::rpc::ServerRpcs::Data{}, unrealWorkerWritePermission)
+		.AddComponent<test::rpc::ServerRpcs>(test::rpc::ServerRpcs::Data{}, unrealClientWritePermission)
 		.Build();
 
 	return snapshotEntity;

@@ -6,8 +6,12 @@
 #include "SpatialActorChannel.h"
 
 #include "Engine/PackageMapClient.h"
+#include "Engine/StaticMeshActor.h"
+#include "EngineUtils.h"
 
 #include "Generated/SpatialUpdateInterop_Character.h"
+#include "Generated/Usr/test/rpc/server_rpcs.h"
+#include "Generated/Usr/test/rpc/client_rpcs.h"
 
 using improbable::unreal::UnrealCharacterReplicatedData;
 using improbable::unreal::UnrealCharacterCompleteData;
@@ -43,6 +47,61 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 
 		// Received replicated data from SpatialOS, pipe to Unreal.
 		ReceiveUpdateFromSpatial_Character(ActorChannel, Op.Update);
+	});
+
+	TSharedPtr<worker::Connection> Connection = Instance->GetConnection().Pin();
+
+	using ServerMoveCommand = test::rpc::ServerRpcs::Commands::ServerMove;
+	View->OnCommandRequest<ServerMoveCommand>([this, Connection](const worker::CommandRequestOp<ServerMoveCommand>& Op) {
+		TSharedPtr<FNetGUIDCache> GuidCache = NetDriver->GuidCache;
+		UCharacterMovementComponent* MovementComponent = nullptr;
+
+		// Hard coded actors for the moment.
+		AActor* Actor = Op.EntityId == 2
+			? Cast<AActor>(GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false))
+			: Cast<AActor>(GuidCache->GetObjectFromNetGUID(FNetworkGUID(12), false));
+		if (Actor) {
+			MovementComponent = Actor->FindComponentByClass<UCharacterMovementComponent>();
+		}
+
+		if (MovementComponent && Actor->GetWorld()) {
+			const improbable::Vector3f& Accel = Op.Request.field_in_accel();
+			const improbable::Vector3f& Loc = Op.Request.field_client_loc();
+
+			FNetworkGUID PrimitiveComponentGuid = Op.Request.field_client_movement_base();
+			UPrimitiveComponent* Primitive = Op.Request.field_client_movement_base() > 0
+				? static_cast<UPrimitiveComponent*>(GuidCache->GetObjectFromNetGUID(PrimitiveComponentGuid, false))
+				: nullptr;
+
+			MovementComponent->ServerMove_Implementation(
+				Op.Request.field_time_stamp(), 
+				FVector{ Accel.x(), Accel.y(), Accel.z() },
+				FVector{ Loc.x(), Loc.y(), Loc.z() },
+				static_cast<uint8>(Op.Request.field_compressed_move_flags()),
+				static_cast<uint8>(Op.Request.field_client_roll()),
+				Op.Request.field_view(),
+				Primitive,
+				FName{}, /*This seems to be "None" in all cases tested, so just using this for the prototype.*/
+				static_cast<uint8>(Op.Request.field_client_movement_mode())
+				);
+		}
+		Connection->SendCommandResponse<ServerMoveCommand>(Op.RequestId, typename ServerMoveCommand::Response{});
+	});
+
+	using ClientAckGoodMoveCommand = test::rpc::ClientRpcs::Commands::ClientAckGoodMove;
+	View->OnCommandRequest<ClientAckGoodMoveCommand>([this, Connection](const worker::CommandRequestOp<ClientAckGoodMoveCommand>& Op) {
+		UCharacterMovementComponent* MovementComponent = nullptr;
+		// Hard coded actors for the moment.
+		AActor* Actor = Op.EntityId == 2
+			? Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false))
+			: Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(12), false));
+		if (Actor) {
+			MovementComponent = Actor->FindComponentByClass<UCharacterMovementComponent>();
+		}
+		if (MovementComponent && Actor->GetWorld()) {
+			MovementComponent->ClientAckGoodMove_Implementation(Op.Request.field_time_stamp());
+		}
+		Connection->SendCommandResponse<ClientAckGoodMoveCommand>(Op.RequestId, typename ClientAckGoodMoveCommand::Response{});
 	});
 }
 

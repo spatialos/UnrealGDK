@@ -1,0 +1,12 @@
+package test.rpc;
+
+type ClientAckGoodMoveRequest { 
+  float field_time_stamp = 1;
+}
+
+type ClientAckGoodMoveResponse { }
+
+component ClientRpcs {
+  id = 3051;
+  command ClientAckGoodMoveResponse client_ack_good_move(ClientAckGoodMoveRequest);
+}
