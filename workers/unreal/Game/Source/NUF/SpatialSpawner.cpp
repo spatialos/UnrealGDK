@@ -30,13 +30,15 @@ void ASpatialSpawner::PostInitializeComponents()
 		
 	if (GetNetMode() == NM_Client)
 	{
-		if (SpawnerClientComponent->IsComponentReady())
+		// This logic is quite rudimentary, but it should work for now.
+		// We are checking whether the worker has checked out the spawner yet (if so, it's ready to process our command).
+		if (SpawnerServerComponent->IsComponentReady() && SpawnerServerComponent->Ready == true)
 		{
 			SendSpawnRequest();
 		}
 		else
 		{
-			SpawnerClientComponent->OnComponentReady.AddDynamic(this, &ASpatialSpawner::SendSpawnRequest);
+			SpawnerServerComponent->OnComponentUpdate.AddDynamic(this, &ASpatialSpawner::SendSpawnRequest);
 		}		
 	}
 	else
@@ -109,6 +111,12 @@ void ASpatialSpawner::OnSpawnPlayerResponse(const FSpatialOSCommandResult& resul
 
 void ASpatialSpawner::SendSpawnRequest()
 {
+	if (SpawnerServerComponent->Ready == false)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Server hasn't checked out the spawner yet."));
+		return;
+	}
+
 	USpawnPlayerRequest* NewRequest = NewObject<USpawnPlayerRequest>(this);
 	NewRequest->SetUrl(GetNetDriver()->ServerConnection->URL.ToString());
 
@@ -117,4 +125,3 @@ void ASpatialSpawner::SendSpawnRequest()
 	
 	SpawnerClientComponent->SendCommand()->SpawnPlayer(SpatialConstants::SPAWNER_ENTITY_ID, NewRequest, Callback, 0);
 }
-
