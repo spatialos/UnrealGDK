@@ -78,7 +78,7 @@ TMap<int, TPair<UProperty*, UProperty*>> CreateCmdIndexToPropertyMap_Character()
 	return Properties;
 }
 
-void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* ParentProperty, UProperty* Property, UUnrealACharacterReplicatedDataComponent* ReplicatedData, UPackageMapClient* PackageMap)
+void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* ParentProperty, UProperty* Property, UUnrealCharacterReplicatedDataComponent* ReplicatedData, UPackageMapClient* PackageMap)
 {
 	UObject* Container = Actor;
 	switch (CmdIndex)
@@ -383,7 +383,7 @@ void ApplyUpdateToSpatial_Character(AActor* Actor, int CmdIndex, UProperty* Pare
 		}
 	}
 }
-void ReceiveUpdateFromSpatial_Character(AActor* Actor, TMap<int, TPair<UProperty*, UProperty*>>& CmdIndexToPropertyMap, UUnrealACharacterReplicatedDataComponentUpdate* Update)
+void ReceiveUpdateFromSpatial_Character(AActor* Actor, TMap<int, TPair<UProperty*, UProperty*>>& CmdIndexToPropertyMap, UUnrealCharacterReplicatedDataComponentUpdate* Update)
 {
 	UObject* Container = Actor;
 	if (Update->HasFieldBhidden())
@@ -624,12 +624,6 @@ void ReceiveUpdateFromSpatial_Character(AActor* Actor, TMap<int, TPair<UProperty
 	{
 		UProperty* ParentProperty = CmdIndexToPropertyMap[39].Key;
 		UProperty* Property = CmdIndexToPropertyMap[39].Value;
-		auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
-	}
-	if (Update->HasFieldReprootmotionAuthoritativerootmotion())
-	{
-		UProperty* ParentProperty = CmdIndexToPropertyMap[40].Key;
-		UProperty* Property = CmdIndexToPropertyMap[40].Value;
 		auto& Value = *ParentProperty->ContainerPtrToValuePtr<FRepRootMotionMontage>(Container);
 	}
 	if (Update->HasFieldReprootmotionAcceleration())

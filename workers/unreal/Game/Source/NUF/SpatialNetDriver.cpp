@@ -18,8 +18,9 @@
 #include "SpatialPendingNetGame.h"
 #include "SpatialActorChannel.h"
 #include "improbable/spawner/spawner.h"
+#include "EntityBuilder.h"
 
-//#include "Generated/SpatialInteropCharacter.h"
+using namespace improbable;
 
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
 
@@ -54,6 +55,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	SpatialOSComponentUpdater = NewObject<USpatialOSComponentUpdater>(this);
 
 	EntityRegistry = NewObject<UEntityRegistry>(this);
+
+	UpdateInterop = NewObject<USpatialUpdateInterop>(this);
 
 	return true;
 }
@@ -96,11 +99,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	SpatialInteropBlock = NewObject<USpatialInteropBlock>();
 	SpatialInteropBlock->Init(EntityRegistry);
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(SpatialInteropBlock);
-
-	ShadowActorPipelineBlock = NewObject<USpatialShadowActorPipelineBlock>();
-	ShadowActorPipelineBlock->Init(EntityRegistry);
-	SpatialOSInstance->GetEntityPipeline()->AddBlock(ShadowActorPipelineBlock);
-
+	
 	TArray<FString> BlueprintPaths;
 	BlueprintPaths.Add(TEXT(ENTITY_BLUEPRINTS_FOLDER));
 
@@ -135,6 +134,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		Notify->NotifyAcceptedConnection(Connection);
 		Connection->bFakeSpatialClient = true;
 		AddClientConnection(Connection);
+		UpdateInterop->Init(GetNetMode() == NM_Client, SpatialOSInstance, this);
 	}
 }
 
@@ -813,10 +813,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		SpatialOSInstance->ProcessOps();
 		SpatialOSInstance->GetEntityPipeline()->ProcessOps(SpatialOSInstance->GetView(), SpatialOSInstance->GetConnection(), GetWorld());
 		SpatialOSComponentUpdater->UpdateComponents(EntityRegistry, DeltaTime);
-		if (ShadowActorPipelineBlock)
-		{
-			ShadowActorPipelineBlock->ReplicateShadowActorChanges(DeltaTime);
-		}
+		UpdateInterop->Tick(DeltaTime);
 	}
 }
 

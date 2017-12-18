@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "IpNetDriver.h"
-#include "SpatialShadowActorPipelineBlock.h"
 #include "SpatialInteropBlock.h"
+#include "SpatialUpdateInterop.h"
 #include "SpatialNetDriver.generated.h"
 
 class UEntityPipeline;
@@ -30,9 +30,10 @@ public:
 	virtual bool InitListen(FNetworkNotify* InNotify, FURL& LocalURL, bool bReuseAddressAndPort, FString& Error) override;
 	// End UNetDriver interface.
 
-	// TOOD: Provide accessor to get shadow actors.
-	UPROPERTY()
-	USpatialShadowActorPipelineBlock* ShadowActorPipelineBlock;
+	USpatialOS* GetSpatialOS() const
+	{
+		return SpatialOSInstance;
+	}
 
 	UPROPERTY()
 	USpatialInteropBlock* SpatialInteropBlock;
@@ -52,6 +53,10 @@ protected:
 
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
+
+	// Update interop.
+	UPROPERTY()
+	USpatialUpdateInterop* UpdateInterop;
 
 	UFUNCTION()
 	void OnSpatialOSConnected();
