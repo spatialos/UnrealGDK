@@ -824,20 +824,19 @@ void GenerateForwardingCodeFromLayout(
 	HeaderWriter.Print(FString::Printf(TEXT("#include <unreal/generated/%s.h>"), *SchemaFilename));
 	HeaderWriter.Print(TEXT("#include <unreal/core_types.h>"));
 	HeaderWriter.Print(TEXT("#include \"SpatialHandlePropertyMap.h\""));
-	HeaderWriter.Print();
-	HeaderWriter.Print(TEXT("class USpatialActorChannel;"));
+	HeaderWriter.Print(TEXT("#include \"SpatialUpdateInterop.h\""));
 	HeaderWriter.Print();
 	HeaderWriter.Print(FString::Printf(TEXT("%s;"), *HandlePropertyMapSignature));
 
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
 		UnrealToSpatialSignatureByGroup.Add(Group, FString::Printf(
-			TEXT("void ApplyUpdateToSpatial_%s_%s(FArchive& Reader, int32 Handle, UProperty* Property, improbable::unreal::%s::Update& Update)"),
+			TEXT("void ApplyUpdateToSpatial_%s_%s(FArchive& Reader, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::%s::Update& Update)"),
 			*GetReplicatedPropertyGroupName(Group),
 			*Class->GetName(),
 			*GetSchemaReplicatedDataName(Group, Class)));
 		SpatialToUnrealSignatureByGroup.Add(Group, FString::Printf(
-			TEXT("void ReceiveUpdateFromSpatial_%s_%s(USpatialActorChannel* ActorChannel, const improbable::unreal::%s::Update& Update)"),
+			TEXT("void ReceiveUpdateFromSpatial_%s_%s(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::%s>& Op)"),
 			*GetReplicatedPropertyGroupName(Group),
 			*Class->GetName(),
 			*GetSchemaReplicatedDataName(Group, Class)));
@@ -858,10 +857,10 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Print(FString::Printf(TEXT("%s"), *HandlePropertyMapSignature));
 	SourceWriter.Print(TEXT("{"));
 	SourceWriter.Indent();
-	SourceWriter.Print(FString::Printf(TEXT("UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));"), *Class->GetName()));
 	SourceWriter.Print(TEXT("static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;"));
 	SourceWriter.Print(TEXT("if (HandleToPropertyMapData == nullptr)"));
 	SourceWriter.Print(TEXT("{")).Indent();
+	SourceWriter.Print(FString::Printf(TEXT("UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));"), *Class->GetName()));
 	SourceWriter.Print(TEXT("HandleToPropertyMapData = new RepHandlePropertyMap();"));
 	SourceWriter.Print(TEXT("auto& HandleToPropertyMap = *HandleToPropertyMapData;"));
 
@@ -877,15 +876,15 @@ void GenerateForwardingCodeFromLayout(
 		auto Handle = RepProp.Entry.Handle;
 		if (RepProp.Entry.Parent)
 		{
-			SourceWriter.Print(FString::Printf(TEXT("HandleToPropertyMap.Add(%d, RepHandleData{Class->FindPropertyByName(\"%s\"), nullptr, %d});"),
-				Handle, *RepProp.Entry.Parent->GetName(), RepProp.Entry.Offset));
+			SourceWriter.Print(FString::Printf(TEXT("HandleToPropertyMap.Add(%d, FRepHandleData{Class->FindPropertyByName(\"%s\"), nullptr, %s});"),
+				Handle, *RepProp.Entry.Parent->GetName(), *GetLifetimeConditionAsString(RepProp.Entry.Condition)));
 			SourceWriter.Print(FString::Printf(TEXT("HandleToPropertyMap[%d].Property = Cast<UStructProperty>(HandleToPropertyMap[%d].Parent)->Struct->FindPropertyByName(\"%s\");"),
 				Handle, Handle, *RepProp.Entry.Property->GetName()));
 		}
 		else
 		{
-			SourceWriter.Print(FString::Printf(TEXT("HandleToPropertyMap.Add(%d, RepHandleData{nullptr, Class->FindPropertyByName(\"%s\"), %d});"),
-				Handle, *RepProp.Entry.Property->GetName(), RepProp.Entry.Offset));
+			SourceWriter.Print(FString::Printf(TEXT("HandleToPropertyMap.Add(%d, FRepHandleData{nullptr, Class->FindPropertyByName(\"%s\"), %s});"),
+				Handle, *RepProp.Entry.Property->GetName(), *GetLifetimeConditionAsString(RepProp.Entry.Condition)));
 		}
 	}
 	SourceWriter.Outdent().Print(TEXT("}"));
@@ -926,7 +925,7 @@ void GenerateForwardingCodeFromLayout(
 				FString PropertyName = TEXT("Property");
 				SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
 				SourceWriter.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
-				SourceWriter.Print(FString::Printf(TEXT("%s->NetSerializeItem(Reader, nullptr, &%s);"), *PropertyName, *PropertyValueName));
+				SourceWriter.Print(FString::Printf(TEXT("%s->NetSerializeItem(Reader, PackageMap, &%s);"), *PropertyName, *PropertyValueName));
 				SourceWriter.Print();
 				GenerateUnrealToSchemaConversion(SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName);
 				SourceWriter.Print(TEXT("break;"));
@@ -948,6 +947,12 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Indent();
 		SourceWriter.Print(TEXT("FNetBitWriter OutputWriter(nullptr, 0); "));
 		SourceWriter.Print(FString::Printf(TEXT("auto& HandleToPropertyMap = GetHandlePropertyMap_%s();"), *Class->GetName()));
+		SourceWriter.Print(TEXT("USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);"));
+		SourceWriter.Print(TEXT("if (!ActorChannel)\n{"));
+		SourceWriter.Indent();
+		SourceWriter.Print(TEXT("return;"));
+		SourceWriter.Outdent();
+		SourceWriter.Print(TEXT("}"));
 		SourceWriter.Print(TEXT("ConditionMapFilter ConditionMap(ActorChannel);"));
 		for (auto& RepProp : Layout.ReplicatedProperties[Group])
 		{
@@ -956,18 +961,18 @@ void GenerateForwardingCodeFromLayout(
 
 			// Check if only the first property is in the property list. This implies that the rest is also in the update, as
 			// they are sent together atomically.
-			SourceWriter.Print(FString::Printf(TEXT("if (!Update.%s().empty())\n{"), *GetFullyQualifiedName(RepProp.PropertyList[0].Chain)));
+			SourceWriter.Print(FString::Printf(TEXT("if (!Op.Update.%s().empty())\n{"), *GetFullyQualifiedName(RepProp.PropertyList[0].Chain)));
 			SourceWriter.Indent();
 
 			// Check if the property is relevant.
 			SourceWriter.Print(FString::Printf(TEXT("// %s"), *GetFullyQualifiedName(RepProp.Entry.Chain)));
 			SourceWriter.Print(FString::Printf(TEXT("uint32 Handle = %d;"), Handle));
-			SourceWriter.Print(FString::Printf(TEXT("if (ConditionMap.IsRelevant(%s))\n{"), *GetLifetimeConditionAsString(RepProp.Entry.Condition)));
+			SourceWriter.Print(TEXT("const FRepHandleData& Data = HandleToPropertyMap[Handle];"));
+			SourceWriter.Print(TEXT("if (ConditionMap.IsRelevant(Data.Condition))\n{"));
 			SourceWriter.Indent();
 
 			// Write handle.
 			SourceWriter.Print(TEXT("OutputWriter.SerializeIntPacked(Handle);"));
-			SourceWriter.Print(TEXT("const RepHandleData& Data = HandleToPropertyMap[Handle];"));
 			SourceWriter.Print();
 
 			// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
@@ -977,9 +982,9 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
 			SourceWriter.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
 			SourceWriter.Print();
-			GenerateSchemaToUnrealConversion(SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName, PropertyValueCppType);
+			GenerateSchemaToUnrealConversion(SourceWriter, TEXT("Op.Update"), RepProp.Entry.Chain, PropertyValueName, PropertyValueCppType);
 			SourceWriter.Print();
-			SourceWriter.Print(FString::Printf(TEXT("%s->NetSerializeItem(OutputWriter, nullptr, &%s);"), *PropertyName, *PropertyValueName));
+			SourceWriter.Print(FString::Printf(TEXT("%s->NetSerializeItem(OutputWriter, PackageMap, &%s);"), *PropertyName, *PropertyValueName));
 			SourceWriter.Print(TEXT("UE_LOG(LogTemp, Log, TEXT(\"<- Handle: %d Property %s\"), Handle, *Data.Property->GetName());"));
 
 			// End condition map check block.
@@ -990,7 +995,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Outdent();
 			SourceWriter.Print(TEXT("}"));
 		}
-		SourceWriter.Print(TEXT("ActorChannel->SpatialReceivePropertyUpdate(OutputWriter);"));
+		SourceWriter.Print(TEXT("UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);"));
 		SourceWriter.Outdent();
 		SourceWriter.Print(TEXT("}"));
 	}
