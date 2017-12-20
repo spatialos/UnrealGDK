@@ -111,7 +111,7 @@ void FBunchReader::ReadHeader(bool bIsServer)
 	ReadHeaderSubobject(Bunch, 0); // UE4.16 DataChannel.cpp:2881
 }
 
-bool FBunchReader::Parse(bool bIsServer, UPackageMap* PackageMap, const TMap<int32, RepHandleData>& PropertyMap, RepDataHandler RepDataHandlerFunc)
+bool FBunchReader::Parse(bool bIsServer, UPackageMap* PackageMap, const TMap<int32, FRepHandleData>& PropertyMap, RepDataHandler RepDataHandlerFunc)
 {
 	// Parse header.
 	ReadHeader(bIsServer);
@@ -120,7 +120,7 @@ bool FBunchReader::Parse(bool bIsServer, UPackageMap* PackageMap, const TMap<int
 		return false;
 	}
 
-	//UE_LOG(LogTemp, Log, TEXT("Header: HasRepLayout %d IsActor %d"), (int)bHasRepLayout, (int)bIsActor);
+	//UE_LOG(LogTemp, Warning, TEXT("Header: HasRepLayout %d IsActor %d"), (int)bHasRepLayout, (int)bIsActor);
 
 	// If this bunch has subobject info, quit as we didn't parse the header properly yet.
 	if (!bIsActor)

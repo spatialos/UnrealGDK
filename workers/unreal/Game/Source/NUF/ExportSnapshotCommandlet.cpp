@@ -9,13 +9,14 @@
 #include <improbable/spawner/spawner.h>
 #include <improbable/player/player.h>
 #include <improbable/worker.h>
-#include <generated/UnrealCharacter.h>
+#include <unreal/generated/UnrealCharacter.h>
 #include <array>
 
 using namespace improbable;
 
 const int g_SpawnerEntityId = 1;
-const int g_playerEntityId = 2;
+const int Client1EntityId = 2;
+const int Client2EntityId = 3;
 
 UExportSnapshotCommandlet::UExportSnapshotCommandlet()
 {
@@ -47,8 +48,8 @@ void UExportSnapshotCommandlet::GenerateSnapshot(const FString& savePath) const
 	const FString fullPath = FPaths::Combine(*savePath, TEXT("default.snapshot"));
 
 	std::unordered_map<worker::EntityId, worker::Entity> snapshotEntities;
-	//snapshotEntities.emplace(std::make_pair(g_SpawnerEntityId, CreateSpawnerEntity()));
-	snapshotEntities.emplace(std::make_pair(g_playerEntityId, CreatePlayerEntity()));
+	snapshotEntities.emplace(std::make_pair(Client1EntityId, CreatePlayerEntity()));
+	snapshotEntities.emplace(std::make_pair(Client2EntityId, CreatePlayerEntity()));
 	worker::Option<std::string> Result =
 		worker::SaveSnapshot(improbable::unreal::Components{}, TCHAR_TO_UTF8(*fullPath), snapshotEntities);
 	if (!Result.empty())
@@ -106,7 +107,8 @@ worker::Entity UExportSnapshotCommandlet::CreatePlayerEntity() const
 		.SetReadAcl(anyWorkerReadPermission)
 		.AddComponent<player::PlayerControlClient>(player::PlayerControlClient::Data{}, unrealClientWritePermission)
 		.AddComponent<player::PlayerControlServer>(player::PlayerControlServer::Data{}, unrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterReplicatedData>(improbable::unreal::UnrealCharacterReplicatedData::Data{}, unrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data{}, unrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data{}, unrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, unrealWorkerWritePermission)
 		.Build();
 

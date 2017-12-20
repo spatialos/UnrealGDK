@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <improbable/worker.h>
+
 #include "Engine/ActorChannel.h"
 #include "SpatialActorChannel.generated.h"
 
@@ -12,10 +14,10 @@ class NUF_API USpatialActorChannel : public UActorChannel
 	GENERATED_BODY()
 
 public:
-	USpatialActorChannel(const FObjectInitializer & objectInitializer = FObjectInitializer::Get());
+	USpatialActorChannel(const FObjectInitializer & ObjectInitializer = FObjectInitializer::Get());
 
-	// Called when a SpatialOS update is received.
-	void SpatialReceivePropertyUpdate(FNetBitWriter& Payload);
+	// SpatialOS Entity ID.
+	worker::EntityId GetEntityId() const;
 
 	// UChannel interface
 	virtual void Init(UNetConnection * connection, int32 channelIndex, bool bOpenedLocally) override;
@@ -34,4 +36,5 @@ protected:
 	// UChannel interface
 	virtual void BecomeDormant() override;
 	virtual bool CleanUp(const bool bForDestroy) override;
+
 };

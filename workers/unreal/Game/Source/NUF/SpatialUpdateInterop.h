@@ -22,6 +22,11 @@ public:
 
 	void Tick(float DeltaTime);
 
+	USpatialActorChannel* GetClientActorChannel(const worker::EntityId& EntityId) const;
+
+	void SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* BunchPtr);
+	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& Payload);
+
 private:
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
@@ -32,12 +37,11 @@ private:
 	UPROPERTY()
 	bool bIsClient;
 
-	// TODO: Remove this once Girays stuff is merged. See the implementation of Tick(...)
-	UPROPERTY()
-	bool WaitingForGuid;
-
 	// On clients, there is a 1 to 1 mapping between an actor and an actor channel (as there's just one NetConnection).
 	TMap<worker::EntityId, USpatialActorChannel*> EntityToClientActorChannel;
 
 	worker::Dispatcher::CallbackKey ComponentUpdateCallback;
+
+private:
+	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
 };

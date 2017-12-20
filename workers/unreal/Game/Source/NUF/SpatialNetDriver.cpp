@@ -40,7 +40,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	auto workerConfig = FSOSWorkerConfigurationData();
 
-	workerConfig.Networking.UseExternalIp = false;
+	workerConfig.Networking.UseExternalIp = true;
 	workerConfig.SpatialOSApplication.WorkerPlatform =
 		bInitAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
 

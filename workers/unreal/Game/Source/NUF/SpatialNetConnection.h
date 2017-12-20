@@ -13,4 +13,7 @@ UCLASS(transient, config = Engine)
 class NUF_API USpatialNetConnection : public UIpConnection
 {
 	GENERATED_BODY()
+
+public:
+	USpatialNetConnection(const FObjectInitializer& ObjectInitializer);
 };
