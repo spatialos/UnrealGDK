@@ -33,7 +33,7 @@ inline EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Conditi
 
 class USpatialUpdateInterop;
 
-class FTypeBinding
+class FSpatialTypeBinding
 {
 public:
 	void Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap);
@@ -60,9 +60,9 @@ public:
 
 	USpatialActorChannel* GetClientActorChannel(const worker::EntityId& EntityId) const;
 
-	void RegisterInteropType(UClass* Class, TSharedPtr<FTypeBinding> Binding);
+	void RegisterInteropType(UClass* Class, TSharedPtr<FSpatialTypeBinding> Binding);
 	void UnregisterInteropType(UClass* Class);
-	const FTypeBinding* GetTypeBindingByClass(UClass* Class) const;
+	const FSpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
 	void SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* OutgoingBunch);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
@@ -83,7 +83,7 @@ private:
 	bool bIsClient;
 
 	// Type interop bindings.
-	TMap<UClass*, TSharedPtr<FTypeBinding>> TypeBinding;
+	TMap<UClass*, TSharedPtr<FSpatialTypeBinding>> TypeBinding;
 
 	// On clients, there is a 1 to 1 mapping between an actor and an actor channel (as there's just one NetConnection).
 	TMap<worker::EntityId, USpatialActorChannel*> EntityToClientActorChannel;
