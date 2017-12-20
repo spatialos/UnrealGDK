@@ -13,15 +13,40 @@ class USpatialNetDriver;
 
 class FOutBunch;
 
-struct FTypeBinding
+enum EReplicatedPropertyGroup
 {
-	worker::Dispatcher::CallbackKey SingleClientUpdateCallback;
-	worker::Dispatcher::CallbackKey MultiClientUpdateCallback;
-	worker::ComponentId SingleClientComponentId;
-	TFunction<void(FOutBunch*, worker::Connection*, const worker::EntityId)> SendSpatialUpdateFunction;
+	GROUP_SingleClient,
+	GROUP_MultiClient
 };
 
-using TypeBindingMap = TMap<UClass*, FTypeBinding>;
+inline EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Condition)
+{
+	switch (Condition)
+	{
+	case COND_AutonomousOnly:
+	case COND_OwnerOnly:
+		return GROUP_SingleClient;
+	default:
+		return GROUP_MultiClient;
+	}
+}
+
+class USpatialUpdateInterop;
+
+class FTypeBinding
+{
+public:
+	void Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap);
+
+	virtual void BindToView() = 0;
+	virtual void UnbindFromView() = 0;
+	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const = 0;
+	virtual void SendComponentUpdates(FOutBunch* OutgoingBunch, const worker::EntityId& EntityId) const = 0;
+
+protected:
+	USpatialUpdateInterop* UpdateInterop;
+	UPackageMap* PackageMap;
+};
 
 UCLASS()
 class NUF_API USpatialUpdateInterop : public UObject
@@ -35,12 +60,17 @@ public:
 
 	USpatialActorChannel* GetClientActorChannel(const worker::EntityId& EntityId) const;
 
-	void RegisterInteropType(UClass* Class, FTypeBinding Binding);
+	void RegisterInteropType(UClass* Class, TSharedPtr<FTypeBinding> Binding);
 	void UnregisterInteropType(UClass* Class);
 	const FTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
-	void SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* BunchPtr);
-	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& Payload);
+	void SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* OutgoingBunch);
+	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
+
+	USpatialOS* GetSpatialOS() const
+	{
+		return SpatialOSInstance;
+	}
 
 private:
 	UPROPERTY()
@@ -52,13 +82,11 @@ private:
 	UPROPERTY()
 	bool bIsClient;
 
+	// Type interop bindings.
+	TMap<UClass*, TSharedPtr<FTypeBinding>> TypeBinding;
+
 	// On clients, there is a 1 to 1 mapping between an actor and an actor channel (as there's just one NetConnection).
 	TMap<worker::EntityId, USpatialActorChannel*> EntityToClientActorChannel;
-
-	// Type interop registration.
-	TypeBindingMap TypeBinding;
-
-	worker::Dispatcher::CallbackKey ComponentUpdateCallback;
 
 private:
 	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);

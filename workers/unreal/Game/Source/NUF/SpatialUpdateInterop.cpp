@@ -16,81 +16,116 @@
 #define ENABLE_PROPERTY_CHECKSUMS
 
 namespace {
-void RegisterInterop_Character(worker::View* View, UPackageMap* PackageMap, USpatialUpdateInterop* UpdateInterop)
+class FTypeBinding_Character : public FTypeBinding
 {
-	FTypeBinding Binding;
+public:
+	void BindToView() override;
+	void UnbindFromView() override;
+	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
+	void SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const override;
 
-	Binding.SingleClientComponentId = improbable::unreal::UnrealCharacterSingleClientReplicatedData::ComponentId;
+private:
+	worker::Dispatcher::CallbackKey SingleClientCallback;
+	worker::Dispatcher::CallbackKey MultiClientCallback;
+};
 
-	// Register update callbacks.
-	Binding.SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([PackageMap, UpdateInterop](
+void FTypeBinding_Character::BindToView()
+{
+	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
+	SingleClientCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
 		const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
 	{
 		ReceiveUpdateFromSpatial_SingleClient_Character(UpdateInterop, PackageMap, Op);
 	});
-	Binding.MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([PackageMap, UpdateInterop](
+	MultiClientCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
 		const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
 	{
 		ReceiveUpdateFromSpatial_MultiClient_Character(UpdateInterop, PackageMap, Op);
 	});
-
-	// Set spatial update function.
-	Binding.SendSpatialUpdateFunction = [PackageMap](FOutBunch* BunchPtr, worker::Connection* Connection, const worker::EntityId& EntityId)
-	{
-		// Build SpatialOS updates.
-		improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
-		bool SingleClientUpdateChanged = false;
-		improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
-		bool MultiClientUpdateChanged = false;
-
-		// Read bunch and build up SpatialOS component updates.
-		auto& PropertyMap = GetHandlePropertyMap_Character();
-		FBunchReader BunchReader(BunchPtr->GetData(), BunchPtr->GetNumBits());
-		FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
-		{
-			// TODO: We can't parse UObjects or FNames here as we have no package map.
-			if (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass()))
-			{
-				return false;
-			}
-
-			// Filter Role (13) and RemoteRole (4)
-			if (Handle == 13 || Handle == 4)
-			{
-				return false;
-			}
-
-			auto& Data = PropertyMap[Handle];
-			UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s (group: %s)"), Handle, *Property->GetName(),
-				GetGroupFromCondition(Data.Condition) == GROUP_SingleClient ? TEXT("Single") : TEXT("Multi"));
-			if (GetGroupFromCondition(Data.Condition) == GROUP_SingleClient)
-			{
-				ApplyUpdateToSpatial_SingleClient_Character(Reader, Handle, Property, PackageMap, SingleClientUpdate);
-				SingleClientUpdateChanged = true;
-			}
-			else
-			{
-				ApplyUpdateToSpatial_MultiClient_Character(Reader, Handle, Property, PackageMap, MultiClientUpdate);
-				MultiClientUpdateChanged = true;
-			}
-
-			return true;
-		};
-		BunchReader.Parse(true, PackageMap, PropertyMap, RepDataHandler);
-
-		// Send SpatialOS update.
-		if (SingleClientUpdateChanged)
-		{
-			Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(EntityId, SingleClientUpdate);
-		}
-		if (MultiClientUpdateChanged)
-		{
-			Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(EntityId, MultiClientUpdate);
-		}
-	};
-
-	UpdateInterop->RegisterInteropType(ACharacter::StaticClass(), Binding);
 }
+
+void FTypeBinding_Character::UnbindFromView()
+{
+	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
+	View->Remove(SingleClientCallback);
+	View->Remove(MultiClientCallback);
+}
+
+worker::ComponentId FTypeBinding_Character::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
+{
+	switch (Group)
+	{
+	case GROUP_SingleClient:
+		return improbable::unreal::UnrealCharacterSingleClientReplicatedData::ComponentId;
+	case GROUP_MultiClient:
+		return improbable::unreal::UnrealCharacterMultiClientReplicatedData::ComponentId;
+	default:
+		checkNoEntry();
+		return 0;
+	}
+}
+
+void FTypeBinding_Character::SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const
+{
+	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
+
+	// Build SpatialOS updates.
+	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
+	bool SingleClientUpdateChanged = false;
+	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
+	bool MultiClientUpdateChanged = false;
+
+	// Read bunch and build up SpatialOS component updates.
+	auto& PropertyMap = GetHandlePropertyMap_Character();
+	FBunchReader BunchReader(BunchPtr->GetData(), BunchPtr->GetNumBits());
+	FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
+	{
+		// TODO: We can't parse UObjects or FNames here as we have no package map.
+		if (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass()))
+		{
+			return false;
+		}
+
+		// Filter Role (13) and RemoteRole (4)
+		if (Handle == 13 || Handle == 4)
+		{
+			return false;
+		}
+
+		auto& Data = PropertyMap[Handle];
+		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s (group: %s)"), Handle, *Property->GetName(),
+			GetGroupFromCondition(Data.Condition) == GROUP_SingleClient ? TEXT("Single") : TEXT("Multi"));
+		if (GetGroupFromCondition(Data.Condition) == GROUP_SingleClient)
+		{
+			ApplyUpdateToSpatial_SingleClient_Character(Reader, Handle, Property, PackageMap, SingleClientUpdate);
+			SingleClientUpdateChanged = true;
+		}
+		else
+		{
+			ApplyUpdateToSpatial_MultiClient_Character(Reader, Handle, Property, PackageMap, MultiClientUpdate);
+			MultiClientUpdateChanged = true;
+		}
+
+		return true;
+	};
+	BunchReader.Parse(true, PackageMap, PropertyMap, RepDataHandler);
+
+	// Send SpatialOS update.
+	if (SingleClientUpdateChanged)
+	{
+		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(EntityId, SingleClientUpdate);
+	}
+	if (MultiClientUpdateChanged)
+	{
+		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(EntityId, MultiClientUpdate);
+	}
+}
+}
+
+void FTypeBinding::Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap)
+{
+	this->PackageMap = PackageMap;
+	this->UpdateInterop = UpdateInterop;
 }
 
 USpatialUpdateInterop::USpatialUpdateInterop()
@@ -103,8 +138,7 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 	SpatialOSInstance = Instance;
 	NetDriver = Driver;
 
-	TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
-	RegisterInterop_Character(View.Get(), nullptr, this);
+	RegisterInteropType(ACharacter::StaticClass(), TSharedPtr<FTypeBinding>(new FTypeBinding_Character()));
 }
 
 void USpatialUpdateInterop::Tick(float DeltaTime)
@@ -157,19 +191,20 @@ USpatialActorChannel* USpatialUpdateInterop::GetClientActorChannel(const worker:
 	return *ActorChannelIt;
 }
 
-void USpatialUpdateInterop::RegisterInteropType(UClass* Class, FTypeBinding Binding)
+void USpatialUpdateInterop::RegisterInteropType(UClass* Class, TSharedPtr<FTypeBinding> Binding)
 {
+	Binding->Init(this, nullptr);
+	Binding->BindToView();
 	TypeBinding.Add(Class, Binding);
 }
 
 void USpatialUpdateInterop::UnregisterInteropType(UClass* Class)
 {
-	FTypeBinding* BindingIterator = TypeBinding.Find(Class);
+	TSharedPtr<FTypeBinding>* BindingIterator = TypeBinding.Find(Class);
 	if (BindingIterator != nullptr)
 	{
-		TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
-		View->Remove(BindingIterator->SingleClientUpdateCallback);
-		View->Remove(BindingIterator->MultiClientUpdateCallback);
+		TSharedPtr<FTypeBinding> Binding = *BindingIterator;
+		Binding->UnbindFromView();
 		TypeBinding.Remove(Class);
 	}
 }
@@ -178,16 +213,16 @@ const FTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class) 
 {
 	for (const UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
 	{
-		const FTypeBinding* Binding = TypeBinding.Find(CurrentClass);
-		if (Binding)
+		const TSharedPtr<FTypeBinding>* BindingIterator = TypeBinding.Find(CurrentClass);
+		if (BindingIterator)
 		{
-			return Binding;
+			return BindingIterator->Get();
 		}
 	}
 	return nullptr;
 }
 
-void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* BunchPtr)
+void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* OutgoingBunch)
 {
 	const FTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
@@ -199,36 +234,37 @@ void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, FOu
 
 	// Check that SpatialOS is connected.
 	// TODO(David): This function should never get called until SpatialOS _is_ connected.
-	TSharedPtr<worker::Connection> WorkerConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
+	TSharedPtr<worker::Connection> WorkerConnection = SpatialOSInstance->GetConnection().Pin();
 	if (!WorkerConnection.Get() || !WorkerConnection->IsConnected())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("SpatialOS is not connected yet."));
 		return;
 	}
 
-	Binding->SendSpatialUpdateFunction(BunchPtr, WorkerConnection.Get(), Channel->GetEntityId());
+	Binding->SendComponentUpdates(OutgoingBunch, Channel->GetEntityId());
 }
 
-void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& Payload)
+void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)
 {
-	// Build bunch data to send to the actor channel.
-	FNetBitWriter OutBunchData(nullptr, 0);
-	// Write header.
-	OutBunchData.WriteBit(1); // bHasRepLayout
-	OutBunchData.WriteBit(1); // bIsActor
 	// Add null terminator to payload.
 	uint32 Terminator = 0;
-	Payload.SerializeIntPacked(Terminator);
+	IncomingPayload.SerializeIntPacked(Terminator);
+
+	// Build bunch data to send to the actor channel.
+	FNetBitWriter BunchData(nullptr, 0);
+	// Write header.
+	BunchData.WriteBit(1); // bHasRepLayout
+	BunchData.WriteBit(1); // bIsActor
 	// Write property info.
-	uint32 PayloadSize = Payload.GetNumBits() + 1; // extra bit for bDoChecksum
-	OutBunchData.SerializeIntPacked(PayloadSize);
-	#ifdef ENABLE_PROPERTY_CHECKSUMS
-	OutBunchData.WriteBit(0); // bDoChecksum
-	#endif
-	OutBunchData.SerializeBits(Payload.GetData(), Payload.GetNumBits());
+	uint32 PayloadSize = IncomingPayload.GetNumBits() + 1; // extra bit for bDoChecksum
+	BunchData.SerializeIntPacked(PayloadSize);
+#ifdef ENABLE_PROPERTY_CHECKSUMS
+	BunchData.WriteBit(0); // bDoChecksum
+#endif
+	BunchData.SerializeBits(IncomingPayload.GetData(), IncomingPayload.GetNumBits());
 
 	// Create bunch and send to actor channel.
-	FInBunch Bunch(Channel->Connection, OutBunchData.GetData(), OutBunchData.GetNumBits());
+	FInBunch Bunch(Channel->Connection, BunchData.GetData(), BunchData.GetNumBits());
 	Bunch.ChIndex = Channel->ChIndex;
 	Bunch.bHasMustBeMappedGUIDs = false;
 	Bunch.bIsReplicationPaused = false;
@@ -246,7 +282,7 @@ void USpatialUpdateInterop::SetComponentInterests(USpatialActorChannel* ActorCha
 		if (Binding)
 		{
 			worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
-			Interest.emplace(Binding->SingleClientComponentId, worker::InterestOverride{true});
+			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{true});
 			SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId, Interest);
 			UE_LOG(LogTemp, Warning, TEXT("We are the owning client, therefore we want single client updates. Client ID: %s"),
 				*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId());
