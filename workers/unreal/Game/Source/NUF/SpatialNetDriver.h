@@ -29,6 +29,11 @@ public:
 		return SpatialOSInstance;
 	}
 
+	USpatialUpdateInterop* GetSpatialUpdateInterop() const
+	{
+		return UpdateInterop;
+	}
+
 private:	
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;

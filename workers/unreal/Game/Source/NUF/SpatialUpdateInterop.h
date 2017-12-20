@@ -22,6 +22,11 @@ public:
 
 	void Tick(float DeltaTime);
 
+	USpatialActorChannel* GetClientActorChannel(const worker::EntityId& EntityId) const;
+
+	void SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* BunchPtr);
+	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& Payload);
+
 private:
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
@@ -36,4 +41,7 @@ private:
 	TMap<worker::EntityId, USpatialActorChannel*> EntityToClientActorChannel;
 
 	worker::Dispatcher::CallbackKey ComponentUpdateCallback;
+
+private:
+	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
 };
