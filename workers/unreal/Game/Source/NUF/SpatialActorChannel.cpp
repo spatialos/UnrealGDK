@@ -138,33 +138,6 @@ FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge
 	// if we don't break up bunches, which in our case we wont as there's no need to at this layer.
 	auto ReturnValue = UActorChannel::SendBunch(BunchPtr, bMerge);
 
-	// Read bunch and build up SpatialOS component updates.
-	auto& PropertyMap = GetHandlePropertyMap_Character();
-	FBunchReader BunchReader(BunchPtr->GetData(), BunchPtr->GetNumBits());
-	FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
-	{
-		// TODO: We can't parse UObjects or FNames here as we have no package map.
-		if (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass()))
-		{
-			return false;
-		}
-
-		// Filter Role (13) and RemoteRole (4)
-		if (Handle == 13 || Handle == 4)
-		{
-			return false;
-		}
-
-		// Skip bytes.
-		// Property data size: RepLayout.cpp:237
-		TArray<uint8> PropertyData;
-		PropertyData.AddZeroed(Property->ElementSize);
-		Property->InitializeValue(PropertyData.GetData());
-		Property->NetSerializeItem(Reader, PackageMap, PropertyData.GetData());
-		return true;
-	};
-	BunchReader.Parse(true, nullptr, PropertyMap, RepDataHandler);
-
 	// Pass bunch to update interop.
 	USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Connection->Driver)->GetSpatialUpdateInterop();
 	if (!UpdateInterop)
