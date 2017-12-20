@@ -248,6 +248,17 @@ void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, 
 	Channel->UActorChannel::ReceivedBunch(Bunch);
 }
 
+void USpatialUpdateInterop::HandleRPCInvocation(AActor* TargetActor, UFunction* Function, FFrame* DuplicateFrame, worker::EntityId Target)
+{
+	TargetActor->StaticClass();
+
+	if (TargetActor->IsA(ACharacter::StaticClass()))
+	{
+		
+		//ApplyUpdateToSpatial_MultiClient_Character
+	}
+}
+
 void USpatialUpdateInterop::SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId)
 {
 	UClass* ActorClass = ActorChannel->Actor->GetClass();

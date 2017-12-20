@@ -143,6 +143,15 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FNetworkGUID NetGuid = Connection->PackageMap->GetNetGUIDFromObject(Actor).Value;
 	// Hard coded to up to two actors. The first actor will have NetGuid 6 and entitiy ID 2. The second will be 12 and 3.
 	// Only send a command if it was one of these actors which sent the rpc.
+
+	// The rpc might have been called by an actor directly, or by a subobject on that actor (e.g. UCharacterMovementComponent)
+	UObject* CallingObject = SubObject ? Actor : SubObject;
+	// Reading properties from an FFrame changes the FFrame (internal pointer to the last property read). So we need to make a new one.
+	FFrame TempRpcFrameForReading{ CallingObject, Function, Parameters, nullptr, Function->Children };
+
+	UpdateInterop->HandleRPCInvocation(Actor, Function, &TempRpcFrameForReading, 2);//Target)
+
+
 	bool CorrectActor = NetGuid == 6 || NetGuid == 12;
 	if (Function->FunctionFlags & FUNC_Net && CorrectActor)
 	{
@@ -151,6 +160,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		UObject* CallingObject = SubObject ? Actor : SubObject;
 		// Reading properties from an FFrame changes the FFrame (internal pointer to the last property read). So we need to make a new one.
 		FFrame TempRpcFrameForReading{ CallingObject, Function, Parameters, nullptr, Function->Children };
+
 		if (Function->GetName().Equals("ServerMove"))
 		{
 			ProcessServerMove(&TempRpcFrameForReading, entityId, Connection->PackageMap);

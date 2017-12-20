@@ -11,6 +11,8 @@ class USpatialOS;
 class USpatialActorChannel;
 class USpatialNetDriver;
 
+typedef const std::function<void(struct FFrame*, worker::EntityId, UPackageMap*)> RPCHandlerFunctionsMap;
+
 UCLASS()
 class NUF_API USpatialUpdateInterop : public UObject
 {
@@ -26,6 +28,7 @@ public:
 
 	void SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* BunchPtr);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& Payload);
+	void HandleRPCInvocation(AActor* TargetActor, UFunction* Function, FFrame* DuplicateFrame, worker::EntityId Target);
 
 private:
 	UPROPERTY()

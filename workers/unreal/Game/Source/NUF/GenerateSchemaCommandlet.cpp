@@ -918,15 +918,15 @@ void GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 	for (auto& Func : Layout.ClientRPCs)
 	{
-		Writer.Writer(FString::Printf(TEXT("type %s {"), *GetSchemaClientRPCRequestTypeFromUnreal(Func)));
-		OutputSchema.Indent();
+		Writer.Print(FString::Printf(TEXT("type %s {"), *GetSchemaClientRPCRequestTypeFromUnreal(Func)));
+		Writer.Indent();
 		FieldCounter = 0;
 		for (TFieldIterator<UProperty> Param(Func); Param; ++Param)
 		{
 			FieldCounter++;
 			Writer.Print(
 				FString::Printf(
-					TEXT("%s param_%s = %d"),
+					TEXT("%s param_%s = %d;"),
 					*PropertyTypeToSchemaType(*Param),
 					// TODO - add underscores to RPC names 
 					*PropertyNameToSchemaName(*Param->GetName()),
@@ -939,7 +939,6 @@ void GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		// no RPCs have responses with params
 		Writer.Print(FString::Printf(TEXT("type %s {}"), *GetSchemaClientRPCResponseTypeFromUnreal(Func)));
 	}
-	Writer.Outdent().Print(TEXT("}"));
 }
 
 void GenerateForwardingCodeFromLayout(
@@ -987,6 +986,7 @@ void GenerateForwardingCodeFromLayout(
 		HeaderWriter.Print(FString::Printf(TEXT("%s;"), *UnrealToSpatialSignatureByGroup[Group]));
 		HeaderWriter.Print(FString::Printf(TEXT("%s;"), *SpatialToUnrealSignatureByGroup[Group]));
 	}
+	HeaderWriter.Print(FString::Printf(TEXT("SendRPCCommand_%s(UFunction* Function, worker::EntityId EntityId);"), *Class->GetName()));
 
 	// Forwarding code source file.
 	SourceWriter.Print(TEXT("// Copyright (c) Improbable Worlds Ltd, All Rights Reserved"));
@@ -1173,7 +1173,7 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Params)
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 
-	TArray<FString> Classes = {TEXT("Character"), TEXT("PlayerController")};
+	TArray<FString> Classes = {TEXT("Character")};
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
 		int ComponentId = 100000;
