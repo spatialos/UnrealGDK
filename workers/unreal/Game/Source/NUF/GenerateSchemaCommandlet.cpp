@@ -933,7 +933,9 @@ void GenerateForwardingCodeFromLayout(
 				SourceWriter.Print(TEXT("}"));
 			}
 			SourceWriter.Outdent().Print(TEXT("default:"));
-			SourceWriter.Indent().Print(TEXT("break;"));
+			SourceWriter.Indent();
+			SourceWriter.Print(TEXT("checkf(false, TEXT(\"Unknown replication handle %d encountered when creating a SpatialOS update.\"));"));
+			SourceWriter.Print(TEXT("break;"));
 			SourceWriter.Outdent();
 			SourceWriter.Print(TEXT("}"));
 		}

@@ -442,6 +442,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			break;
 		}
 	default:
+		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
 		break;
 	}
 }

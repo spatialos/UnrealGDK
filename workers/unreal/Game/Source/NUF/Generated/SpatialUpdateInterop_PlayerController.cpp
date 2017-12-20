@@ -65,6 +65,7 @@ void ApplyUpdateToSpatial_SingleClient_PlayerController(FArchive& Reader, int32 
 			break;
 		}
 	default:
+		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
 		break;
 	}
 }
@@ -238,6 +239,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		// case 16: - Pawn is an object reference, skipping.
 		// case 17: - PlayerState is an object reference, skipping.
 	default:
+		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
 		break;
 	}
 }
