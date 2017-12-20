@@ -11,6 +11,7 @@
 // Hack to access private members of FRepLayout.
 #define private public
 #include "Net/RepLayout.h"
+#include "UObject/Class.h"
 #undef private
 
 namespace
@@ -47,18 +48,17 @@ struct RepLayoutPropertyInfo
 	TArray<PropertyInfo> PropertyList;
 };
 
-FString PropertySchemaName(UProperty* Property)
+FString PropertyNameToSchemaName(FString Name)
 {
-	FString FullPath = Property->GetFullGroupName(false);
-	FullPath.ReplaceInline(TEXT("."), TEXT("_"));
-	FullPath.ReplaceInline(SUBOBJECT_DELIMITER, TEXT("_"));
-	FullPath.ToLowerInline();
-	return FullPath;
+	Name.ReplaceInline(TEXT("."), TEXT("_"));
+	Name.ReplaceInline(SUBOBJECT_DELIMITER, TEXT("_"));
+	Name.ToLowerInline();
+	return Name;
 }
 
 FString PropertyGeneratedName(UProperty* Property)
 {
-	FString SchemaName = PropertySchemaName(Property);
+	FString SchemaName = PropertyNameToSchemaName(Property->GetFullGroupName(false));
 	SchemaName[0] = FChar::ToUpper(SchemaName[0]);
 	return SchemaName;
 }
@@ -232,6 +232,92 @@ FString RepLayoutTypeToSchemaType(ERepLayoutCmdType Type)
 	return DataType;
 }
 
+FString PropertyTypeToSchemaType(UProperty* Property)
+{
+	if (Property->IsA(UBoolProperty::StaticClass()))
+	{
+		return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyBool);
+	}
+	else if (Property->IsA(UFloatProperty::StaticClass()))
+	{
+		return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyFloat);
+	}
+	else if (Property->IsA(UIntProperty::StaticClass()))
+	{
+		return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyInt);
+	}
+	else if (Property->IsA(UByteProperty::StaticClass()))
+	{
+		return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyByte);
+	}
+	else if (Property->IsA(UNameProperty::StaticClass()))
+	{
+		return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyName);
+	}
+	else if (Property->IsA(UUInt32Property::StaticClass()))
+	{
+		return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyUInt32);
+	}
+	else if (Property->IsA(UObjectProperty::StaticClass()))
+	{
+		return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyObject);
+	}
+	 //TODO - add string support
+	else if (Property->IsA(UStrProperty::StaticClass()))
+	{
+		return TEXT("string");//RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyString);
+	}
+	else if (Property->IsA(UStructProperty::StaticClass()))
+	{
+		UStructProperty * StructProp = Cast< UStructProperty >(Property);
+		UScriptStruct * Struct = StructProp->Struct;
+		if (Struct->GetFName() == NAME_Vector)
+		{
+			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyVector);
+		}
+		else if (Struct->GetFName() == NAME_Rotator)
+		{
+			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyRotator);
+		}
+		else if (Struct->GetFName() == NAME_Plane)
+		{
+			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyPlane);
+		}
+		else if (Struct->GetName() == TEXT("Vector_NetQuantize100"))
+		{
+			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyVector100);
+		}
+		else if (Struct->GetName() == TEXT("Vector_NetQuantize10"))
+		{
+			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyVector10);
+		}
+		else if (Struct->GetName() == TEXT("Vector_NetQuantizeNormal"))
+		{
+			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyVectorNormal);
+		}
+		else if (Struct->GetName() == TEXT("Vector_NetQuantize"))
+		{
+			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyVectorQ);
+		}
+		else if (Struct->GetName() == TEXT("UniqueNetIdRepl"))
+		{
+			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyNetId);
+		}
+		else if (Struct->GetName() == TEXT("RepMovement"))
+		{
+			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_RepMovement);
+		}
+		else
+		{
+			return FString::Printf(TEXT("/    /Unsupported param type: %s"), *Struct->GetStructCPPName());
+		}
+	}
+	else
+	{
+		return FString::Printf(TEXT("// Unsupported param type: %s"), *Property->GetCPPType());
+	}
+}
+
 FString SchemaHeader(const FString& PackageName)
 {
 	return FString::Printf(TEXT(R"""(package %s;
@@ -280,6 +366,26 @@ FString GetSchemaReplicatedComponentFromUnreal(UStruct* Type)
 FString GetSchemaCompleteDataComponentFromUnreal(UStruct* Type)
 {
 	return GetSchemaCompleteTypeFromUnreal(Type) + TEXT("Data");
+}
+
+FString GetSchemaClientRPCsComponentFromUnreal(UStruct* Type)
+{
+	return TEXT("Unreal") + Type->GetName() + TEXT("ClientRPCs");
+}
+
+FString GetSchemaServerRPCsComponentFromUnreal(UStruct* Type)
+{
+	return TEXT("Unreal") + Type->GetName() + TEXT("ServerRPCs");
+}
+
+FString GetSchemaClientRPCRequestTypeFromUnreal(UFunction* Func)
+{
+	return Func->GetName() + TEXT("Request");
+}
+
+FString GetSchemaClientRPCResponseTypeFromUnreal(UFunction* Func)
+{
+	return Func->GetName() + TEXT("Response");
 }
 
 FString GetFullyQualifiedName(TArray<UProperty*> Chain)
@@ -415,7 +521,7 @@ void VisitProperty(TArray<PropertyInfo>& PropertyInfo, UObject* CDO, TArray<UPro
 			NewStack.Add(Property);
 			for (TFieldIterator<UProperty> It(PropertyValueStruct); It; ++It)
 			{
-				VisitProperty(PropertyInfo, PropertyValueClassCDO, NewStack, *It);
+				VisitProperty(PropertyInfo, PropertyValueClassCDO, NewStack, *It); 
 			}
 			return;
 		}
@@ -736,6 +842,22 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 		CompleteProperties.Remove(PropertyToRemove);
 	}
 
+	// Create a list of each RPC type
+	// TODO - might be able to reserve correct size if we can get to UClass::FuncMap
+	TArray<UFunction*> ClientRPCs;
+	TArray<UFunction*> ServerRPCs;
+	for (TFieldIterator<UFunction> RemoteFunction(Class); RemoteFunction; ++RemoteFunction)
+	{
+		if (RemoteFunction->FunctionFlags & FUNC_NetClient)
+		{
+			ClientRPCs.Emplace(*RemoteFunction);	
+		}
+		if (RemoteFunction->FunctionFlags & FUNC_NetServer)
+		{
+			ServerRPCs.Emplace(*RemoteFunction);
+		}
+	}
+
 	// Schema.
 	OutputSchema.Print(SchemaHeader(TEXT("improbable.unreal")));
 	OutputSchema.Print(FString::Printf(TEXT("type %s {"), *GetSchemaReplicatedTypeFromUnreal(Class)));
@@ -774,10 +896,34 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	}
 	OutputSchema.Outdent().Print(TEXT("}"));
 
+	for (auto& Func : ClientRPCs)
+	{
+		OutputSchema.Print(FString::Printf(TEXT("type %s {"), *GetSchemaClientRPCRequestTypeFromUnreal(Func)));
+		OutputSchema.Indent();
+		FieldCounter = 0;
+		for (TFieldIterator<UProperty> Param(Func); Param; ++Param)
+		{
+			FieldCounter++;
+			OutputSchema.Print(
+				FString::Printf(
+					TEXT("%s param_%s = %d"),
+					*PropertyTypeToSchemaType(*Param),
+					// TODO - add underscores to RPC names 
+					*PropertyNameToSchemaName(*Param->GetName()),
+					FieldCounter
+				)
+			);
+		}
+		OutputSchema.Outdent().Print(TEXT("}"));
+		
+		// no RPCs have responses with params
+		OutputSchema.Print(FString::Printf(TEXT("type %s {}"), *GetSchemaClientRPCResponseTypeFromUnreal(Func)));
+	}
+
 	FString SchemaFile = FString::Printf(TEXT("Unreal%s"), *Class->GetName());
 	FString UpdateInteropFile = FString::Printf(TEXT("SpatialUpdateInterop_%s"), *Class->GetName());
 
-	// Components.
+	// Data Components.
 	OutputSchema.Print(FString::Printf(TEXT("component %s {"), *GetSchemaReplicatedComponentFromUnreal(Class)));
 	OutputSchema.Indent();
 	OutputSchema.Print(TEXT("id = 100000;"));
@@ -788,6 +934,24 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	OutputSchema.Print(TEXT("id = 100001;"));
 	OutputSchema.Print(FString::Printf(TEXT("data %s;"), *GetSchemaCompleteTypeFromUnreal(Class)));
 	OutputSchema.Outdent().Print(TEXT("}"));
+
+	// RPC components
+	OutputSchema.Print(FString::Printf(TEXT("component %s {"), *GetSchemaClientRPCsComponentFromUnreal(Class)));
+	OutputSchema.Indent();
+	OutputSchema.Print(TEXT("id = 100002;"));
+	for (auto& RPC : ClientRPCs)
+	{
+		OutputSchema.Print(
+			FString::Printf(
+				TEXT("command %s %s(%s);"),
+				*GetSchemaClientRPCResponseTypeFromUnreal(RPC),
+				*PropertyNameToSchemaName(RPC->GetName()),
+				*GetSchemaClientRPCRequestTypeFromUnreal(RPC)
+			)
+		);
+	}
+	OutputSchema.Outdent().Print(TEXT("}"));
+
 	OutputSchema.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFile));
 
 	// Forwarding code function signatures.
@@ -980,7 +1144,7 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Params)
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("================================================================================="));
-		GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ACharacter::StaticClass());
+		GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, APlayerController::StaticClass());
 		UE_LOG(LogTemp, Warning, TEXT("================================================================================="));
 	}
 	else
