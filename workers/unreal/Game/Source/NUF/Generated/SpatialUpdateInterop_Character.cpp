@@ -5,6 +5,15 @@
 #include "Engine.h"
 #include "SpatialActorChannel.h"
 
+const RPCHandlerFunctionsMap& GetRPCHandlerFunctionMap_Character()
+{
+	static RPCHandlerFunctionsMap* RPCHandlers = nullptr;
+	if (RPCHandlers == nullptr)
+	{
+		RPCHandlers->emplace(std::bind(&SomeRPCHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	}
+}
+
 const RepHandlePropertyMap& GetHandlePropertyMap_Character()
 {
 	static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;
@@ -1302,4 +1311,9 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 		}
 	}
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
+}
+
+void SomeRPCHandler(struct FFrame* TempFrame, worker::EntityId Target, UPackageMap* PackageMap)
+{
+
 }
