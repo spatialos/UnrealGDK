@@ -7,15 +7,6 @@
 #include "SpatialActorChannel.h"
 #include "Utils/BunchReader.h"
 
-const RPCHandlerFunctionsMap& GetRPCHandlerFunctionMap_Character()
-{
-	static RPCHandlerFunctionsMap* RPCHandlers = nullptr;
-	if (RPCHandlers == nullptr)
-	{
-		RPCHandlers->emplace(std::bind(&SomeRPCHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	}
-}
-
 namespace {
 
 void ApplyUpdateToSpatial_SingleClient_Character(FArchive& Reader, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update)
@@ -1237,20 +1228,36 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 	}
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
+
+// RPC handler functions
+void ClientCheatWalkHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+{
+	FFrame& Stack = *RPCFrame;
+}
+void ClientCheatGhostHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+{
+	FFrame& Stack = *RPCFrame;
+}
+void ClientCheatFlyHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+{
+	FFrame& Stack = *RPCFrame;
+}
 } // ::
 
-
-void SomeRPCHandler(struct FFrame* TempFrame, worker::EntityId Target, UPackageMap* PackageMap)
+void FSpatialTypeBinding_Character::Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap)
 {
+	RPCToHandlerMap.Emplace("ClientCheatWalk", &ClientCheatWalkHandler);
+	RPCToHandlerMap.Emplace("ClientCheatGhost", &ClientCheatGhostHandler);
+	RPCToHandlerMap.Emplace("ClientCheatFly", &ClientCheatFlyHandler);
 }
 
-const RepHandlePropertyMap& GetHandlePropertyMap_Character()
+const FRepHandlePropertyMap& GetHandlePropertyMap_Character()
 {
-	static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;
+	static FRepHandlePropertyMap* HandleToPropertyMapData = nullptr;
 	if (HandleToPropertyMapData == nullptr)
 	{
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("Character"));
-		HandleToPropertyMapData = new RepHandlePropertyMap();
+		HandleToPropertyMapData = new FRepHandlePropertyMap();
 		auto& HandleToPropertyMap = *HandleToPropertyMapData;
 		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None});
 		HandleToPropertyMap.Add(2, FRepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), COND_None});
@@ -1413,4 +1420,10 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(FOutBunch* BunchPtr, co
 	{
 		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(EntityId, MultiClientUpdate);
 	}
+}
+
+void FSpatialTypeBinding_Character::SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const
+{
+	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
+	RPCToHandlerMap[Function->GetName()](Connection.Get(), RPCFrame, Target);
 }

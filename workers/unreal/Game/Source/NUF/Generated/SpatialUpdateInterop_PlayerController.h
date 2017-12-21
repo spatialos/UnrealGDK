@@ -10,16 +10,19 @@
 #include "SpatialHandlePropertyMap.h"
 #include "SpatialUpdateInterop.h"
 
-const RepHandlePropertyMap& GetHandlePropertyMap_PlayerController();
+const FRepHandlePropertyMap& GetHandlePropertyMap_PlayerController();
 
 class FSpatialTypeBinding_PlayerController : public FSpatialTypeBinding
 {
 public:
+	void Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap) override;
 	void BindToView() override;
 	void UnbindFromView() override;
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
 	void SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const override;
+	void SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const override;
 private:
+	TMap<FString, FRPCHandler> RPCToHandlerMap;
 	worker::Dispatcher::CallbackKey SingleClientCallback;
 	worker::Dispatcher::CallbackKey MultiClientCallback;
 };

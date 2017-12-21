@@ -174,7 +174,7 @@ void USpatialUpdateInterop::HandleRPCInvocation(AActor* TargetActor, UFunction* 
 	const FSpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
 	if (Binding)
 	{
-		//Binding->
+		Binding->SendRPCCommand(Function, DuplicateFrame, Target);
 	}	
 	else
 	{

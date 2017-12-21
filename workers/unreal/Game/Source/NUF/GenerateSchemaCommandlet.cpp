@@ -104,19 +104,15 @@ FString PropertyGeneratedName(const FString& SchemaName)
 	return GeneratedName;
 }
 
-FString GetFullCPPName(UObject* Object)
+FString GetFullCPPName(UClass* Class)
 {
-	if (Object->IsA(UStructProperty::StaticClass()))
+	if (Class->IsChildOf(AActor::StaticClass()))
 	{
-		return FString::Printf(TEXT("F%s"), *Object->GetName());
-	}
-	else if (Object->IsA(AActor::StaticClass()))
-	{
-		return FString::Printf(TEXT("A%s"), *Object->GetName());
+		return FString::Printf(TEXT("A%s"), *Class->GetName());
 	}
 	else
 	{
-		return FString::Printf(TEXT("U%s"), *Object->GetName());
+		return FString::Printf(TEXT("U%s"), *Class->GetName());
 	}
 }
 
@@ -759,33 +755,8 @@ void GenerateSchemaToUnrealConversion(FCodeWriter& Writer, const FString& Update
 	}
 }
 
-FString PropertyTypeToReaderMacro(UProperty* Property)
-{
-	if (Property->IsA(UStructProperty::StaticClass()))
-	{
-		return TEXT("P_GET_STRUCT");
-	}
-	else if (Property->IsA(UEnumProperty::StaticClass()))
-	{
-		return TEXT("P_GET_ENUM");
-	}
-	else if (Property->IsA(UObjectProperty::StaticClass()))
-	{
-		return TEXT("P_GET_OBJECT");
-	}
-	else if (Property->IsA(UBoolProperty::StaticClass()))
-	{
-		return TEXT("P_GET_UBOOL");
-	}
-	else
-	{
-		return TEXT("P_GET_PROPERTY");
-	}
-}
-
 FString GeneratePropertyReader(UProperty* Property)
 {
-	// Special case bools because they're accessed differently 
 	if (Property->IsA(UBoolProperty::StaticClass()))
 	{
 		return FString::Printf(TEXT("P_GET_UBOOL(%s);"),
@@ -800,11 +771,10 @@ FString GeneratePropertyReader(UProperty* Property)
 	else if (Property->IsA(UStructProperty::StaticClass()))
 	{
 		return FString::Printf(TEXT("P_GET_STRUCT(%s, %s)"),
-			*GetFullCPPName(Cast<UStructProperty>(Property)->Struct),
+			*Cast<UStructProperty>(Property)->Struct->GetStructCPPName(),
 			*Property->GetName());
 	}
-	return FString::Printf(TEXT("%s(%s, %s);"),
-		*PropertyTypeToReaderMacro(Property),
+	return FString::Printf(TEXT("P_GET_PROPERTY(%s, %s);"),
 		*GetFullCPPName(Property->GetClass()),
 		*Property->GetName());
 }
@@ -1068,7 +1038,7 @@ void GenerateForwardingCodeFromLayout(
 		void SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const override;
 		void SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const override;)"""));
 	HeaderWriter.Outdent().Print(TEXT("private:")).Indent();
-	HeaderWriter.Print(TEXT("TMap<UFunction*, FRPCHandler> UFunctionToHandlerMap;"));
+	HeaderWriter.Print(TEXT("TMap<FString, FRPCHandler> RPCToHandlerMap;"));
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
 		HeaderWriter.Print(FString::Printf(TEXT("worker::Dispatcher::CallbackKey %sCallback;"), *GetReplicatedPropertyGroupName(Group)));
@@ -1199,6 +1169,7 @@ void GenerateForwardingCodeFromLayout(
 	}
 
 	// RPC/Command interop
+	SourceWriter.Print();
 	SourceWriter.Print(TEXT("// RPC handler functions"));
 	for (auto& ClientRPC : Layout.ClientRPCs)
 	{
@@ -1218,7 +1189,14 @@ void GenerateForwardingCodeFromLayout(
 
 	SourceWriter.Print();
 	SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap)"), *Class->GetName()));
-	SourceWriter.Print(TEXT("{}"));
+	SourceWriter.Print(TEXT("{"));
+	SourceWriter.Indent();
+	for (auto& ClientRPC : Layout.ClientRPCs)
+	{
+		SourceWriter.Print(FString::Printf(TEXT("RPCToHandlerMap.Emplace(\"%s\", &%sHandler);"), *ClientRPC->GetName(), *ClientRPC->GetName()));
+	}
+	SourceWriter.Outdent();
+	SourceWriter.Print(TEXT("}"));
 
 	SourceWriter.Print();
 	SourceWriter.Print(FString::Printf(TEXT("%s"), *HandlePropertyMapSignature));
@@ -1403,7 +1381,11 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Print();
 
 	SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const"), *Class->GetName()));
-	SourceWriter.Print(TEXT("{}"));
+	SourceWriter.Print(TEXT("{"));
+	SourceWriter.Indent();
+	SourceWriter.Print(TEXT("TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();"));
+	SourceWriter.Print(TEXT("RPCToHandlerMap[Function->GetName()](Connection.Get(), RPCFrame, Target);"));
+	SourceWriter.Outdent().Print(TEXT("}"));
 }	
 
 void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class)

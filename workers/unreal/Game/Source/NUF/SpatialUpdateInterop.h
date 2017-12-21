@@ -13,7 +13,7 @@ class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialUpdateInterop, Log, All);
 
-using FRPCHandler = const std::function<void(struct FFrame*, const worker::Entity, UPackageMap*)>;
+using FRPCHandler = const std::function<void(worker::Connection*, struct FFrame*, const worker::EntityId)>;
 class FOutBunch;
 
 enum EReplicatedPropertyGroup
