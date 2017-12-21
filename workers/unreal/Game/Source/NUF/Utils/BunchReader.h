@@ -17,7 +17,7 @@ public:
 
 	FBunchReader(uint8* Data, int NumBits);
 
-	bool Parse(bool bIsServer, UPackageMap* PackageMap, const RepHandlePropertyMap& PropertyMap, RepDataHandler RepDataHandlerFunc);
+	bool Parse(bool bIsServer, UPackageMap* PackageMap, const FRepHandlePropertyMap& PropertyMap, RepDataHandler RepDataHandlerFunc);
 
 	// Access properties.
 	bool HasError() const;

@@ -11,8 +11,9 @@ class USpatialOS;
 class USpatialActorChannel;
 class USpatialNetDriver;
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialUpdateInterop, Log, All);
 
-typedef const std::function<void(struct FFrame*, worker::EntityId, UPackageMap*)> RPCHandlerFunctionsMap;
+using FRPCHandler = const std::function<void(struct FFrame*, const worker::Entity, UPackageMap*)>;
 class FOutBunch;
 
 enum EReplicatedPropertyGroup
@@ -38,12 +39,13 @@ class USpatialUpdateInterop;
 class FSpatialTypeBinding
 {
 public:
-	void Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap);
+	virtual void Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap);
 
 	virtual void BindToView() = 0;
 	virtual void UnbindFromView() = 0;
 	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const = 0;
 	virtual void SendComponentUpdates(FOutBunch* OutgoingBunch, const worker::EntityId& EntityId) const = 0;
+	virtual void SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const = 0;
 
 protected:
 	USpatialUpdateInterop* UpdateInterop;

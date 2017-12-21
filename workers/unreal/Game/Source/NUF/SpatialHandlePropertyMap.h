@@ -9,7 +9,7 @@ struct FRepHandleData
 	ELifetimeCondition Condition;
 };
 
-using RepHandlePropertyMap = TMap<int32, FRepHandleData>;
+using FRepHandlePropertyMap = TMap<int32, FRepHandleData>;
 
 
 // TODO(david): Move the below class to the right location.

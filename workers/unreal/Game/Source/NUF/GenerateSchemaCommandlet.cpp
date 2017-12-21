@@ -104,6 +104,22 @@ FString PropertyGeneratedName(const FString& SchemaName)
 	return GeneratedName;
 }
 
+FString GetFullCPPName(UObject* Object)
+{
+	if (Object->IsA(UStructProperty::StaticClass()))
+	{
+		return FString::Printf(TEXT("F%s"), *Object->GetName());
+	}
+	else if (Object->IsA(AActor::StaticClass()))
+	{
+		return FString::Printf(TEXT("A%s"), *Object->GetName());
+	}
+	else
+	{
+		return FString::Printf(TEXT("U%s"), *Object->GetName());
+	}
+}
+
 ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property)
 {
 	UProperty * UnderlyingProperty = Property;
@@ -743,6 +759,56 @@ void GenerateSchemaToUnrealConversion(FCodeWriter& Writer, const FString& Update
 	}
 }
 
+FString PropertyTypeToReaderMacro(UProperty* Property)
+{
+	if (Property->IsA(UStructProperty::StaticClass()))
+	{
+		return TEXT("P_GET_STRUCT");
+	}
+	else if (Property->IsA(UEnumProperty::StaticClass()))
+	{
+		return TEXT("P_GET_ENUM");
+	}
+	else if (Property->IsA(UObjectProperty::StaticClass()))
+	{
+		return TEXT("P_GET_OBJECT");
+	}
+	else if (Property->IsA(UBoolProperty::StaticClass()))
+	{
+		return TEXT("P_GET_UBOOL");
+	}
+	else
+	{
+		return TEXT("P_GET_PROPERTY");
+	}
+}
+
+FString GeneratePropertyReader(UProperty* Property)
+{
+	// Special case bools because they're accessed differently 
+	if (Property->IsA(UBoolProperty::StaticClass()))
+	{
+		return FString::Printf(TEXT("P_GET_UBOOL(%s);"),
+			*Property->GetName());
+	}
+	else if (Property->IsA(UObjectProperty::StaticClass()))
+	{
+		return FString::Printf(TEXT("P_GET_OBJECT(%s, %s);"),
+			*GetFullCPPName(Cast<UObjectProperty>(Property)->PropertyClass),
+			*Property->GetName());
+	}
+	else if (Property->IsA(UStructProperty::StaticClass()))
+	{
+		return FString::Printf(TEXT("P_GET_STRUCT(%s, %s)"),
+			*GetFullCPPName(Cast<UStructProperty>(Property)->Struct),
+			*Property->GetName());
+	}
+	return FString::Printf(TEXT("%s(%s, %s);"),
+		*PropertyTypeToReaderMacro(Property),
+		*GetFullCPPName(Property->GetClass()),
+		*Property->GetName());
+}
+
 FPropertyLayout CreatePropertyLayout(UClass* Class)
 {
 	FPropertyLayout Layout;
@@ -950,7 +1016,7 @@ void GenerateForwardingCodeFromLayout(
 	const FPropertyLayout& Layout)
 {
 	FString HandlePropertyMapSignature = FString::Printf(
-		TEXT("const RepHandlePropertyMap& GetHandlePropertyMap_%s()"),
+		TEXT("const FRepHandlePropertyMap& GetHandlePropertyMap_%s()"),
 		*Class->GetName());
 	TMap<EReplicatedPropertyGroup, FString> UnrealToSpatialSignatureByGroup;
 	TMap<EReplicatedPropertyGroup, FString> SpatialToUnrealSignatureByGroup;
@@ -988,7 +1054,6 @@ void GenerateForwardingCodeFromLayout(
 		//HeaderWriter.Print(FString::Printf(TEXT("%s;"), *UnrealToSpatialSignatureByGroup[Group]));
 		//HeaderWriter.Print(FString::Printf(TEXT("%s;"), *SpatialToUnrealSignatureByGroup[Group]));
 	}
-	HeaderWriter.Print(FString::Printf(TEXT("SendRPCCommand_%s(UFunction* Function, worker::EntityId EntityId);"), *Class->GetName()));
 
 	// Type binding class.
 	HeaderWriter.Print();
@@ -996,11 +1061,14 @@ void GenerateForwardingCodeFromLayout(
 	HeaderWriter.Print(TEXT("{"));
 	HeaderWriter.Indent();
 	HeaderWriter.Outdent().Print(TEXT("public:")).Indent();
-	HeaderWriter.Print(TEXT(R"""(void BindToView() override;
+	HeaderWriter.Print(TEXT(R"""(void Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap) override;
+		void BindToView() override;
 		void UnbindFromView() override;
 		worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
-		void SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const override;)"""));
+		void SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const override;
+		void SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const override;)"""));
 	HeaderWriter.Outdent().Print(TEXT("private:")).Indent();
+	HeaderWriter.Print(TEXT("TMap<UFunction*, FRPCHandler> UFunctionToHandlerMap;"));
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
 		HeaderWriter.Print(FString::Printf(TEXT("worker::Dispatcher::CallbackKey %sCallback;"), *GetReplicatedPropertyGroupName(Group)));
@@ -1129,18 +1197,38 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Outdent();
 		SourceWriter.Print(TEXT("}"));
 	}
+
+	// RPC/Command interop
+	SourceWriter.Print(TEXT("// RPC handler functions"));
+	for (auto& ClientRPC : Layout.ClientRPCs)
+	{
+		SourceWriter.Print(FString::Printf(TEXT("void %sHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)"), *ClientRPC->GetName()));
+		SourceWriter.Print(TEXT("{"));
+		SourceWriter.Indent();
+		SourceWriter.Print(TEXT("FFrame& Stack = *RPCFrame;"));
+		for (TFieldIterator<UProperty> Param(ClientRPC); Param; ++Param)
+		{
+			SourceWriter.Print(*GeneratePropertyReader(*Param));
+		}
+		SourceWriter.Outdent();
+		SourceWriter.Print(TEXT("}"));
+	}
+
 	SourceWriter.Print(TEXT("} // ::"));
 
-	// Handle to Property map.
+	SourceWriter.Print();
+	SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap)"), *Class->GetName()));
+	SourceWriter.Print(TEXT("{}"));
+
 	SourceWriter.Print();
 	SourceWriter.Print(FString::Printf(TEXT("%s"), *HandlePropertyMapSignature));
 	SourceWriter.Print(TEXT("{"));
 	SourceWriter.Indent();
-	SourceWriter.Print(TEXT("static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;"));
+	SourceWriter.Print(TEXT("static FRepHandlePropertyMap* HandleToPropertyMapData = nullptr;"));
 	SourceWriter.Print(TEXT("if (HandleToPropertyMapData == nullptr)"));
 	SourceWriter.Print(TEXT("{")).Indent();
 	SourceWriter.Print(FString::Printf(TEXT("UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));"), *Class->GetName()));
-	SourceWriter.Print(TEXT("HandleToPropertyMapData = new RepHandlePropertyMap();"));
+	SourceWriter.Print(TEXT("HandleToPropertyMapData = new FRepHandlePropertyMap();"));
 	SourceWriter.Print(TEXT("auto& HandleToPropertyMap = *HandleToPropertyMapData;"));
 	// Reduce into single list of properties.
 	TArray<FReplicatedPropertyInfo> ReplicatedProperties;
@@ -1312,7 +1400,11 @@ void GenerateForwardingCodeFromLayout(
 
 	SourceWriter.Outdent();
 	SourceWriter.Print(TEXT("}"));
-}
+	SourceWriter.Print();
+
+	SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const"), *Class->GetName()));
+	SourceWriter.Print(TEXT("{}"));
+}	
 
 void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class)
 {
@@ -1342,7 +1434,7 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Params)
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 
-	TArray<FString> Classes = {TEXT("Character")};
+	TArray<FString> Classes = { TEXT("PlayerController"), TEXT("Character")};
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
 		int ComponentId = 100000;

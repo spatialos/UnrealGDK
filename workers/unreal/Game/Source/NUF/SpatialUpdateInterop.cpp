@@ -12,10 +12,12 @@
 #include "EngineUtils.h"
 
 #include "Generated/SpatialUpdateInterop_Character.h"
-#include "Generated/SpatialUpdateInterop_PlayerController.h"
+
 
 // We assume that #define ENABLE_PROPERTY_CHECKSUMS exists in RepLayout.cpp:88 here.
 #define ENABLE_PROPERTY_CHECKSUMS
+DEFINE_LOG_CATEGORY(LogSpatialUpdateInterop);
+
 
 void FSpatialTypeBinding::Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap)
 {
@@ -52,7 +54,7 @@ void USpatialUpdateInterop::Tick(float DeltaTime)
 			auto& Entities = SpatialOSInstance->GetView().Pin()->Entities;
 			if (Client1->Role != ROLE_Authority && Entities.find({2}) != Entities.end() && ActorChannel)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Actor with NetGUID 6 and EntityID 2 created. Actor Role: %d"), (int)Client1->Role.GetValue());
+				UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Actor with NetGUID 6 and EntityID 2 created. Actor Role: %d"), (int)Client1->Role.GetValue());
 				EntityToClientActorChannel.Add({2}, ActorChannel);
 				SetComponentInterests(ActorChannel, {2});
 			}
@@ -67,7 +69,7 @@ void USpatialUpdateInterop::Tick(float DeltaTime)
 			auto& Entities = SpatialOSInstance->GetView().Pin()->Entities;
 			if (Client2->Role != ROLE_Authority && Entities.find({3}) != Entities.end() && ActorChannel)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Actor with NetGUID 12 and EntityID 3 created. Actor Role: %d"), (int)Client2->Role.GetValue());
+				UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Actor with NetGUID 12 and EntityID 3 created. Actor Role: %d"), (int)Client2->Role.GetValue());
 				EntityToClientActorChannel.Add({3}, ActorChannel);
 				SetComponentInterests(ActorChannel, {3});
 			}
@@ -123,7 +125,7 @@ void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, FOu
 	const FSpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
+		//UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
 		//	*Channel->Actor->GetClass()->GetName());
 		return;
 	}
@@ -133,7 +135,7 @@ void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, FOu
 	TSharedPtr<worker::Connection> WorkerConnection = SpatialOSInstance->GetConnection().Pin();
 	if (!WorkerConnection.Get() || !WorkerConnection->IsConnected())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SpatialOS is not connected yet."));
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("SpatialOS is not connected yet."));
 		return;
 	}
 
@@ -169,12 +171,14 @@ void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, 
 
 void USpatialUpdateInterop::HandleRPCInvocation(AActor* TargetActor, UFunction* Function, FFrame* DuplicateFrame, worker::EntityId Target)
 {
-	TargetActor->StaticClass();
-
-	if (TargetActor->IsA(ACharacter::StaticClass()))
+	const FSpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
+	if (Binding)
 	{
-		
-		//ApplyUpdateToSpatial_MultiClient_Character
+		//Binding->
+	}	
+	else
+	{
+		UE_LOG(LogSpatialUpdateInterop, Log, TEXT("No TypeBinding registered for class %s"), *TargetActor->GetClass()->GetName());
 	}
 }
 
@@ -191,7 +195,7 @@ void USpatialUpdateInterop::SetComponentInterests(USpatialActorChannel* ActorCha
 			worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
 			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{true});
 			SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId, Interest);
-			UE_LOG(LogTemp, Warning, TEXT("We are the owning client, therefore we want single client updates. Client ID: %s"),
+			UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("We are the owning client, therefore we want single client updates. Client ID: %s"),
 				*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId());
 		}
 	}

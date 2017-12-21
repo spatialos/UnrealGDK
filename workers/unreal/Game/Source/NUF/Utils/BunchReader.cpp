@@ -111,7 +111,7 @@ void FBunchReader::ReadHeader(bool bIsServer)
 	ReadHeaderSubobject(Bunch, 0); // UE4.16 DataChannel.cpp:2881
 }
 
-bool FBunchReader::Parse(bool bIsServer, UPackageMap* PackageMap, const TMap<int32, FRepHandleData>& PropertyMap, RepDataHandler RepDataHandlerFunc)
+bool FBunchReader::Parse(bool bIsServer, UPackageMap* PackageMap, const FRepHandlePropertyMap& PropertyMap, RepDataHandler RepDataHandlerFunc)
 {
 	// Parse header.
 	ReadHeader(bIsServer);
