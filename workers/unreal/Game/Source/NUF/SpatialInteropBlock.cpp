@@ -78,6 +78,12 @@ void USpatialInteropBlock::ChangeAuthority(const worker::ComponentId ComponentId
 void USpatialInteropBlock::AddEntities(UWorld* World,
 	const TWeakPtr<worker::Connection>& InConnection)
 {
+	if (World == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Not adding entities because the world is NULL"));
+		return;
+	}
+
 	TArray<FEntityId> SpawnedEntities;
 
 	for (auto& EntityToSpawn : EntitiesToSpawn)
@@ -137,8 +143,18 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 					check(EntityActor);
 
 					//NUF-todo: When we have multiple servers, this won't work. On which connection would we create the channel?
-					PMC = Cast<USpatialPackageMapClient>(Driver->ServerConnection->PackageMap);
-					USpatialActorChannel* Ch = Cast<USpatialActorChannel>(Driver->ServerConnection->CreateChannel(CHTYPE_Actor, false));
+					USpatialActorChannel* Ch = nullptr;
+					if (Driver->ServerConnection)
+					{
+						PMC = Cast<USpatialPackageMapClient>(Driver->ServerConnection->PackageMap);
+						Ch = Cast<USpatialActorChannel>(Driver->ServerConnection->CreateChannel(CHTYPE_Actor, false));
+					}
+					else
+					{
+						PMC = Cast<USpatialPackageMapClient>(Driver->ClientConnections[0]->PackageMap);
+						Ch = Cast<USpatialActorChannel>(Driver->ClientConnections[0]->CreateChannel(CHTYPE_Actor, false));
+					}
+					
 					check(Ch);
 					EntityToClientActorChannel.Add(EntityToSpawn, Ch);
 
@@ -147,17 +163,20 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 
 					//This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 					// a player index. For now we don't support split screen, so the number is always 0.
-					if (EntityActor->IsA(APlayerController::StaticClass()))
+					if (Driver->ServerConnection)
 					{
-						uint8 PlayerIndex = 0;
-						FInBunch Bunch(Driver->ServerConnection, &PlayerIndex, sizeof(PlayerIndex));
-						EntityActor->OnActorChannelOpen(Bunch, Driver->ServerConnection);
-					}
-					else
-					{
-						FInBunch Bunch(Driver->ServerConnection);
-						EntityActor->OnActorChannelOpen(Bunch, Driver->ServerConnection);
-					}
+						if (EntityActor->IsA(APlayerController::StaticClass()))
+						{
+							uint8 PlayerIndex = 0;
+							FInBunch Bunch(Driver->ServerConnection, &PlayerIndex, sizeof(PlayerIndex));
+							EntityActor->OnActorChannelOpen(Bunch, Driver->ServerConnection);
+						}
+						else
+						{
+							FInBunch Bunch(Driver->ServerConnection);
+							EntityActor->OnActorChannelOpen(Bunch, Driver->ServerConnection);
+						}
+					}					
 				}				
 				EntityActor->PostNetInit();
 			}
@@ -244,6 +263,11 @@ void USpatialInteropBlock::RemoveComponents(UCallbackDispatcher* InCallbackDispa
 
 void USpatialInteropBlock::RemoveEntities(UWorld* World)
 {
+	if (World == nullptr)
+	{
+		return;
+	}
+
 	for (auto& EntityToRemove : EntitiesToRemove)
 	{
 		auto ActorToRemove = EntityRegistry->GetActorFromEntityId(EntityToRemove);
@@ -320,6 +344,16 @@ UClass* USpatialInteropBlock::GetRegisteredEntityClass(UMetadataAddComponentOp* 
 
 	// Initially, attempt to find the class that has been registered to the EntityType string
 	UClass** RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString);
+
+	// Try without the full path. This should not be necessary, but for now the pawn class needs it.
+	if (!RegisteredClass)
+	{
+		int32 LastSlash = -1;
+		if (EntityTypeString.FindLastChar('/', LastSlash))
+		{
+			RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString.RightChop(LastSlash));
+		}		
+	}
 	UClass* ClassToSpawn = RegisteredClass ? *RegisteredClass : nullptr;
 
 	return ClassToSpawn;
