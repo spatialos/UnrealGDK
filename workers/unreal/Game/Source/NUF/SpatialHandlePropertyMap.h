@@ -2,30 +2,12 @@
 
 #pragma once
 
-enum EReplicatedPropertyGroup
-{
-	GROUP_SingleClient,
-	GROUP_MultiClient
-};
-
 struct FRepHandleData
 {
 	UProperty* Parent;
 	UProperty* Property;
 	ELifetimeCondition Condition;
 };
-
-inline EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Condition)
-{
-	switch (Condition)
-	{
-	case COND_AutonomousOnly:
-	case COND_OwnerOnly:
-		return GROUP_SingleClient;
-	default:
-		return GROUP_MultiClient;
-	}
-}
 
 using RepHandlePropertyMap = TMap<int32, FRepHandleData>;
 

@@ -3,13 +3,23 @@
 
 #pragma once
 
+#include <improbable/worker.h>
+#include <improbable/view.h>
 #include <unreal/generated/UnrealCharacter.h>
 #include <unreal/core_types.h>
 #include "SpatialHandlePropertyMap.h"
 #include "SpatialUpdateInterop.h"
 
 const RepHandlePropertyMap& GetHandlePropertyMap_Character();
-void ApplyUpdateToSpatial_SingleClient_Character(FArchive& Reader, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update);
-void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op);
-void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update);
-void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op);
+
+class FSpatialTypeBinding_Character : public FSpatialTypeBinding
+{
+public:
+	void BindToView() override;
+	void UnbindFromView() override;
+	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
+	void SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const override;
+private:
+	worker::Dispatcher::CallbackKey SingleClientCallback;
+	worker::Dispatcher::CallbackKey MultiClientCallback;
+};
