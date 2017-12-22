@@ -7,6 +7,8 @@
 #include "SpatialActorChannel.h"
 #include "Utils/BunchReader.h"
 
+#include <unreal/generated/UnrealPlayerController.h>
+
 namespace {
 
 void ApplyUpdateToSpatial_SingleClient_PlayerController(FArchive& Reader, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update)
@@ -557,15 +559,26 @@ void OnServerStartedVisualLoggerHandler(worker::Connection* Connection, struct F
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bIsLogging);
+
+	using RequestType = improbable::unreal::OnServerStartedVisualLoggerRequest;
+	RequestType Request;
+	Request.set_field_bislogging(bIsLogging != 0);
 }
 void ClientWasKickedHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UTextProperty, KickReason);
+
+	using RequestType = improbable::unreal::ClientWasKickedRequest;
+	RequestType Request;
+	// UNSUPPORTED
 }
 void ClientVoiceHandshakeCompleteHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
+
+	using RequestType = improbable::unreal::ClientVoiceHandshakeCompleteRequest;
+	RequestType Request;
 }
 void ClientUpdateLevelStreamingStatusHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -575,11 +588,23 @@ void ClientUpdateLevelStreamingStatusHandler(worker::Connection* Connection, str
 	P_GET_UBOOL(bNewShouldBeVisible);
 	P_GET_UBOOL(bNewShouldBlockOnLoad);
 	P_GET_PROPERTY(UIntProperty, LODIndex);
+
+	using RequestType = improbable::unreal::ClientUpdateLevelStreamingStatusRequest;
+	RequestType Request;
+	Request.set_field_packagename(TCHAR_TO_UTF8(*PackageName.ToString()));
+	Request.set_field_bnewshouldbeloaded(bNewShouldBeLoaded != 0);
+	Request.set_field_bnewshouldbevisible(bNewShouldBeVisible != 0);
+	Request.set_field_bnewshouldblockonload(bNewShouldBlockOnLoad != 0);
+	Request.set_field_lodindex(LODIndex);
 }
 void ClientUnmutePlayerHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
+
+	using RequestType = improbable::unreal::ClientUnmutePlayerRequest;
+	RequestType Request;
+	// UNSUPPORTED UniqueNetIdRepl - Request.set_field_playerid = PlayerId;
 }
 void ClientTravelInternalHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -588,6 +613,13 @@ void ClientTravelInternalHandler(worker::Connection* Connection, struct FFrame* 
 	P_GET_PROPERTY(UByteProperty, TravelType);
 	P_GET_UBOOL(bSeamless);
 	P_GET_STRUCT(FGuid, MapPackageGuid)
+
+	using RequestType = improbable::unreal::ClientTravelInternalRequest;
+	RequestType Request;
+	Request.set_field_url(TCHAR_TO_UTF8(*URL));
+	Request.set_field_traveltype(uint32_t(TravelType));
+	Request.set_field_bseamless(bSeamless != 0);
+	// UNSUPPORTED FGuid
 }
 void ClientTeamMessageHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -596,48 +628,90 @@ void ClientTeamMessageHandler(worker::Connection* Connection, struct FFrame* RPC
 	P_GET_PROPERTY(UStrProperty, S);
 	P_GET_PROPERTY(UNameProperty, Type);
 	P_GET_PROPERTY(UFloatProperty, MsgLifeTime);
+
+	using RequestType = improbable::unreal::ClientTeamMessageRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_senderplayerstate = SenderPlayerState;
+	Request.set_field_s(TCHAR_TO_UTF8(*S));
+	Request.set_field_type(TCHAR_TO_UTF8(*Type.ToString()));
+	Request.set_field_msglifetime(MsgLifeTime);
 }
 void ClientStopForceFeedbackHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UForceFeedbackEffect, ForceFeedbackEffect);
 	P_GET_PROPERTY(UNameProperty, Tag);
+
+	using RequestType = improbable::unreal::ClientStopForceFeedbackRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_forcefeedbackeffect = ForceFeedbackEffect;
+	Request.set_field_tag(TCHAR_TO_UTF8(*Tag.ToString()));
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRpcs::ClientStopForceFeedback>(Target, Request, 0);
 }
 void ClientStopCameraShakeHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, Shake);
 	P_GET_UBOOL(bImmediately);
+
+	using RequestType = improbable::unreal::ClientStopCameraShakeRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_shake = Shake;
+	Request.set_field_bimmediately(bImmediately != 0);
 }
 void ClientStopCameraAnimHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UCameraAnim, AnimToStop);
+
+	using RequestType = improbable::unreal::ClientStopCameraAnimRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_animtostop = AnimToStop;
 }
 void ClientStartOnlineSessionHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
+
+	using RequestType = improbable::unreal::ClientStartOnlineSessionRequest;
+	RequestType Request;
 }
 void ClientSpawnCameraLensEffectHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, LensEffectEmitterClass);
+
+	using RequestType = improbable::unreal::ClientSpawnCameraLensEffectRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_lenseffectemitterclass = LensEffectEmitterClass;
 }
 void ClientSetViewTargetHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(AActor, A);
 	P_GET_STRUCT(FViewTargetTransitionParams, TransitionParams)
+
+	using RequestType = improbable::unreal::ClientSetViewTargetRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_a = A;
+	// UNSUPPORTED FViewTargetTransitionParams
 }
 void ClientSetSpectatorWaitingHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bWaiting);
+
+	using RequestType = improbable::unreal::ClientSetSpectatorWaitingRequest;
+	RequestType Request;
+	Request.set_field_bwaiting(bWaiting != 0);
 }
 void ClientSetHUDHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, NewHUDClass);
+
+	using RequestType = improbable::unreal::ClientSetHUDRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_newhudclass = NewHUDClass;
 }
 void ClientSetForceMipLevelsToBeResidentHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -645,6 +719,12 @@ void ClientSetForceMipLevelsToBeResidentHandler(worker::Connection* Connection, 
 	P_GET_OBJECT(UMaterialInterface, Material);
 	P_GET_PROPERTY(UFloatProperty, ForceDuration);
 	P_GET_PROPERTY(UIntProperty, CinematicTextureGroups);
+
+	using RequestType = improbable::unreal::ClientSetForceMipLevelsToBeResidentRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_material = Material;
+	Request.set_field_forceduration(ForceDuration);
+	Request.set_field_cinematictexturegroups(CinematicTextureGroups);
 }
 void ClientSetCinematicModeHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -653,11 +733,22 @@ void ClientSetCinematicModeHandler(worker::Connection* Connection, struct FFrame
 	P_GET_UBOOL(bAffectsMovement);
 	P_GET_UBOOL(bAffectsTurning);
 	P_GET_UBOOL(bAffectsHUD);
+
+	using RequestType = improbable::unreal::ClientSetCinematicModeRequest;
+	RequestType Request;
+	Request.set_field_bincinematicmode(bInCinematicMode != 0);
+	Request.set_field_baffectsmovement(bAffectsMovement != 0);
+	Request.set_field_baffectsturning(bAffectsTurning != 0);
+	Request.set_field_baffectshud(bAffectsHUD != 0);
 }
 void ClientSetCameraModeHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, NewCamMode);
+
+	using RequestType = improbable::unreal::ClientSetCameraModeRequest;
+	RequestType Request;
+	Request.set_field_newcammode(TCHAR_TO_UTF8(*NewCamMode.ToString()));
 }
 void ClientSetCameraFadeHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -667,34 +758,64 @@ void ClientSetCameraFadeHandler(worker::Connection* Connection, struct FFrame* R
 	P_GET_STRUCT(FVector2D, FadeAlpha)
 	P_GET_PROPERTY(UFloatProperty, FadeTime);
 	P_GET_UBOOL(bFadeAudio);
+
+	using RequestType = improbable::unreal::ClientSetCameraFadeRequest;
+	RequestType Request;
+	Request.set_field_benablefading(bEnableFading != 0);
+	// UNSUPPORTED FColor
+	// UNSUPPORTED FVector2D
+	Request.set_field_fadetime(FadeTime);
+	Request.set_field_bfadeaudio(bFadeAudio != 0);
 }
 void ClientSetBlockOnAsyncLoadingHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
+
+	using RequestType = improbable::unreal::ClientSetBlockOnAsyncLoadingRequest;
+	RequestType Request;
 }
 void ClientReturnToMainMenuHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UStrProperty, ReturnReason);
+
+	using RequestType = improbable::unreal::ClientReturnToMainMenuRequest;
+	RequestType Request;
+	Request.set_field_returnreason(TCHAR_TO_UTF8(*ReturnReason));
 }
 void ClientRetryClientRestartHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(APawn, NewPawn);
+
+	using RequestType = improbable::unreal::ClientRetryClientRestartRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_newpawn = NewPawn;
 }
 void ClientRestartHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(APawn, NewPawn);
+
+	using RequestType = improbable::unreal::ClientRestartRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_newpawn = NewPawn;
 }
 void ClientResetHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
+
+	using RequestType = improbable::unreal::ClientResetRequest;
+	RequestType Request;
 }
 void ClientRepObjRefHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UObject, Object);
+
+	using RequestType = improbable::unreal::ClientRepObjRefRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_object = Object;
 }
 void ClientReceiveLocalizedMessageHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -704,6 +825,14 @@ void ClientReceiveLocalizedMessageHandler(worker::Connection* Connection, struct
 	P_GET_OBJECT(APlayerState, RelatedPlayerState_1);
 	P_GET_OBJECT(APlayerState, RelatedPlayerState_2);
 	P_GET_OBJECT(UObject, OptionalObject);
+
+	using RequestType = improbable::unreal::ClientReceiveLocalizedMessageRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_message = Message;
+	Request.set_field_switch(Switch);
+	// WEAK OBJECT REPLICATION - Request.set_field_relatedplayerstate_1 = RelatedPlayerState_1;
+	// WEAK OBJECT REPLICATION - Request.set_field_relatedplayerstate_2 = RelatedPlayerState_2;
+	// WEAK OBJECT REPLICATION - Request.set_field_optionalobject = OptionalObject;
 }
 void ClientPrestreamTexturesHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -712,6 +841,13 @@ void ClientPrestreamTexturesHandler(worker::Connection* Connection, struct FFram
 	P_GET_PROPERTY(UFloatProperty, ForceDuration);
 	P_GET_UBOOL(bEnableStreaming);
 	P_GET_PROPERTY(UIntProperty, CinematicTextureGroups);
+
+	using RequestType = improbable::unreal::ClientPrestreamTexturesRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_forcedactor = ForcedActor;
+	Request.set_field_forceduration(ForceDuration);
+	Request.set_field_benablestreaming(bEnableStreaming != 0);
+	Request.set_field_cinematictexturegroups(CinematicTextureGroups);
 }
 void ClientPrepareMapChangeHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -719,6 +855,12 @@ void ClientPrepareMapChangeHandler(worker::Connection* Connection, struct FFrame
 	P_GET_PROPERTY(UNameProperty, LevelName);
 	P_GET_UBOOL(bFirst);
 	P_GET_UBOOL(bLast);
+
+	using RequestType = improbable::unreal::ClientPrepareMapChangeRequest;
+	RequestType Request;
+	Request.set_field_levelname(TCHAR_TO_UTF8(*LevelName.ToString()));
+	Request.set_field_bfirst(bFirst != 0);
+	Request.set_field_blast(bLast != 0);
 }
 void ClientPlaySoundAtLocationHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -727,6 +869,13 @@ void ClientPlaySoundAtLocationHandler(worker::Connection* Connection, struct FFr
 	P_GET_STRUCT(FVector, Location)
 	P_GET_PROPERTY(UFloatProperty, VolumeMultiplier);
 	P_GET_PROPERTY(UFloatProperty, PitchMultiplier);
+
+	using RequestType = improbable::unreal::ClientPlaySoundAtLocationRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_sound = Sound;
+	Request.set_field_location(improbable::Vector3f(Location.X, Location.Y, Location.Z));
+	Request.set_field_volumemultiplier(VolumeMultiplier);
+	Request.set_field_pitchmultiplier(PitchMultiplier);
 }
 void ClientPlaySoundHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -734,6 +883,12 @@ void ClientPlaySoundHandler(worker::Connection* Connection, struct FFrame* RPCFr
 	P_GET_OBJECT(USoundBase, Sound);
 	P_GET_PROPERTY(UFloatProperty, VolumeMultiplier);
 	P_GET_PROPERTY(UFloatProperty, PitchMultiplier);
+
+	using RequestType = improbable::unreal::ClientPlaySoundRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_sound = Sound;
+	Request.set_field_volumemultiplier(VolumeMultiplier);
+	Request.set_field_pitchmultiplier(PitchMultiplier);
 }
 void ClientPlayForceFeedbackHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -741,6 +896,12 @@ void ClientPlayForceFeedbackHandler(worker::Connection* Connection, struct FFram
 	P_GET_OBJECT(UForceFeedbackEffect, ForceFeedbackEffect);
 	P_GET_UBOOL(bLooping);
 	P_GET_PROPERTY(UNameProperty, Tag);
+
+	using RequestType = improbable::unreal::ClientPlayForceFeedbackRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_forcefeedbackeffect = ForceFeedbackEffect;
+	Request.set_field_blooping(bLooping != 0);
+	Request.set_field_tag(TCHAR_TO_UTF8(*Tag.ToString()));
 }
 void ClientPlayCameraShakeHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -749,6 +910,13 @@ void ClientPlayCameraShakeHandler(worker::Connection* Connection, struct FFrame*
 	P_GET_PROPERTY(UFloatProperty, Scale);
 	P_GET_PROPERTY(UByteProperty, PlaySpace);
 	P_GET_STRUCT(FRotator, UserPlaySpaceRot)
+
+	using RequestType = improbable::unreal::ClientPlayCameraShakeRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_shake = Shake;
+	Request.set_field_scale(Scale);
+	Request.set_field_playspace(uint32_t(PlaySpace));
+	Request.set_field_userplayspacerot(improbable::unreal::UnrealFRotator(UserPlaySpaceRot.Yaw, UserPlaySpaceRot.Pitch, UserPlaySpaceRot.Roll));
 }
 void ClientPlayCameraAnimHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -762,11 +930,27 @@ void ClientPlayCameraAnimHandler(worker::Connection* Connection, struct FFrame* 
 	P_GET_UBOOL(bRandomStartTime);
 	P_GET_PROPERTY(UByteProperty, Space);
 	P_GET_STRUCT(FRotator, CustomPlaySpace)
+
+	using RequestType = improbable::unreal::ClientPlayCameraAnimRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_animtoplay = AnimToPlay;
+	Request.set_field_scale(Scale);
+	Request.set_field_rate(Rate);
+	Request.set_field_blendintime(BlendInTime);
+	Request.set_field_blendouttime(BlendOutTime);
+	Request.set_field_bloop(bLoop != 0);
+	Request.set_field_brandomstarttime(bRandomStartTime != 0);
+	Request.set_field_space(uint32_t(Space));
+	Request.set_field_customplayspace(improbable::unreal::UnrealFRotator(CustomPlaySpace.Yaw, CustomPlaySpace.Pitch, CustomPlaySpace.Roll));
 }
 void ClientMutePlayerHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
+
+	using RequestType = improbable::unreal::ClientMutePlayerRequest;
+	RequestType Request;
+	// UNSUPPORTED UniqueNetIdRepl - Request.set_field_playerid = PlayerId;
 }
 void ClientMessageHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -774,61 +958,110 @@ void ClientMessageHandler(worker::Connection* Connection, struct FFrame* RPCFram
 	P_GET_PROPERTY(UStrProperty, S);
 	P_GET_PROPERTY(UNameProperty, Type);
 	P_GET_PROPERTY(UFloatProperty, MsgLifeTime);
+
+	using RequestType = improbable::unreal::ClientMessageRequest;
+	RequestType Request;
+	Request.set_field_s(TCHAR_TO_UTF8(*S));
+	Request.set_field_type(TCHAR_TO_UTF8(*Type.ToString()));
+	Request.set_field_msglifetime(MsgLifeTime);
 }
 void ClientIgnoreMoveInputHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bIgnore);
+
+	using RequestType = improbable::unreal::ClientIgnoreMoveInputRequest;
+	RequestType Request;
+	Request.set_field_bignore(bIgnore != 0);
 }
 void ClientIgnoreLookInputHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bIgnore);
+
+	using RequestType = improbable::unreal::ClientIgnoreLookInputRequest;
+	RequestType Request;
+	Request.set_field_bignore(bIgnore != 0);
 }
 void ClientGotoStateHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, NewState);
+
+	using RequestType = improbable::unreal::ClientGotoStateRequest;
+	RequestType Request;
+	Request.set_field_newstate(TCHAR_TO_UTF8(*NewState.ToString()));
 }
 void ClientGameEndedHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(AActor, EndGameFocus);
 	P_GET_UBOOL(bIsWinner);
+
+	using RequestType = improbable::unreal::ClientGameEndedRequest;
+	RequestType Request;
+	// WEAK OBJECT REPLICATION - Request.set_field_endgamefocus = EndGameFocus;
+	Request.set_field_biswinner(bIsWinner != 0);
 }
 void ClientForceGarbageCollectionHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
+
+	using RequestType = improbable::unreal::ClientForceGarbageCollectionRequest;
+	RequestType Request;
 }
 void ClientFlushLevelStreamingHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
+
+	using RequestType = improbable::unreal::ClientFlushLevelStreamingRequest;
+	RequestType Request;
 }
 void ClientEndOnlineSessionHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
+
+	using RequestType = improbable::unreal::ClientEndOnlineSessionRequest;
+	RequestType Request;
 }
 void ClientEnableNetworkVoiceHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bEnable);
+
+	using RequestType = improbable::unreal::ClientEnableNetworkVoiceRequest;
+	RequestType Request;
+	Request.set_field_benable(bEnable != 0);
 }
 void ClientCommitMapChangeHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
+
+	using RequestType = improbable::unreal::ClientCommitMapChangeRequest;
+	RequestType Request;
 }
 void ClientClearCameraLensEffectsHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
+
+	using RequestType = improbable::unreal::ClientClearCameraLensEffectsRequest;
+	RequestType Request;
 }
 void ClientCapBandwidthHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UIntProperty, Cap);
+
+	using RequestType = improbable::unreal::ClientCapBandwidthRequest;
+	RequestType Request;
+	Request.set_field_cap(Cap);
 }
 void ClientCancelPendingMapChangeHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
+
+	using RequestType = improbable::unreal::ClientCancelPendingMapChangeRequest;
+	RequestType Request;
 }
 void ClientAddTextureStreamingLocHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
@@ -836,18 +1069,34 @@ void ClientAddTextureStreamingLocHandler(worker::Connection* Connection, struct 
 	P_GET_STRUCT(FVector, InLoc)
 	P_GET_PROPERTY(UFloatProperty, Duration);
 	P_GET_UBOOL(bOverrideLocation);
+
+	using RequestType = improbable::unreal::ClientAddTextureStreamingLocRequest;
+	RequestType Request;
+	Request.set_field_inloc(improbable::Vector3f(InLoc.X, InLoc.Y, InLoc.Z));
+	Request.set_field_duration(Duration);
+	Request.set_field_boverridelocation(bOverrideLocation != 0);
 }
 void ClientSetRotationHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FRotator, NewRotation)
 	P_GET_UBOOL(bResetCamera);
+
+	using RequestType = improbable::unreal::ClientSetRotationRequest;
+	RequestType Request;
+	Request.set_field_newrotation(improbable::unreal::UnrealFRotator(NewRotation.Yaw, NewRotation.Pitch, NewRotation.Roll));
+	Request.set_field_bresetcamera(bResetCamera != 0);
 }
 void ClientSetLocationHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FVector, NewLocation)
 	P_GET_STRUCT(FRotator, NewRotation)
+
+	using RequestType = improbable::unreal::ClientSetLocationRequest;
+	RequestType Request;
+	Request.set_field_newlocation(improbable::Vector3f(NewLocation.X, NewLocation.Y, NewLocation.Z));
+	Request.set_field_newrotation(improbable::unreal::UnrealFRotator(NewRotation.Yaw, NewRotation.Pitch, NewRotation.Roll));
 }
 } // ::
 

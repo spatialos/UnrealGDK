@@ -349,7 +349,7 @@ FString PropertyTypeToSchemaType(UProperty* Property)
 		}
 		else
 		{
-			return FString::Printf(TEXT("/    /Unsupported param type: %s"), *Struct->GetStructCPPName());
+			return FString::Printf(TEXT("// Unsupported param type: %s"), *Struct->GetStructCPPName());
 		}
 	}
 	else
@@ -576,6 +576,22 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		else if (Struct->GetName() == TEXT("UniqueNetIdRepl"))
 		{
 			Writer.Print(FString::Printf(TEXT("// UNSUPPORTED UniqueNetIdRepl - %s = %s;"), *SpatialValueSetter, *PropertyValue));
+		}
+		else if (Struct->GetName() == TEXT("Guid"))
+		{
+			Writer.Print(FString::Printf(TEXT("// UNSUPPORTED FGuid")));
+		}
+		else if (Struct->GetName() == TEXT("ViewTargetTransitionParams"))
+		{
+			Writer.Print(FString::Printf(TEXT("// UNSUPPORTED FViewTargetTransitionParams")));
+		}
+		else if (Struct->GetName() == TEXT("Color"))
+		{
+			Writer.Print(FString::Printf(TEXT("// UNSUPPORTED FColor")));
+		}
+		else if (Struct->GetName() == TEXT("Vector2D"))
+		{
+			Writer.Print(FString::Printf(TEXT("// UNSUPPORTED FVector2D")));
 		}
 		else if (Struct->GetName() == TEXT("RepMovement"))
 		{
@@ -894,8 +910,24 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 	return Layout;
 }
 
-void GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class, const FPropertyLayout& Layout)
+struct FComponentIdGenerator
 {
+	FComponentIdGenerator(int StartId) : InitialId(StartId), NumIds(0) {};
+	int GetNextAvailableId() {
+		return InitialId + (NumIds++);
+	}
+	int GetNumUsedIds() {
+		return NumIds;
+	}
+private:
+	int InitialId;
+	int NumIds;
+};
+
+int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class, const FPropertyLayout& Layout)
+{
+	FComponentIdGenerator IdGenerator(ComponentId);
+
 	Writer.Print(TEXT("// Copyright (c) Improbable Worlds Ltd, All Rights Reserved"));
 	Writer.Print(TEXT("// Note that this file has been generated automatically"));
 	Writer.Print(TEXT("package improbable.unreal;"));
@@ -912,7 +944,7 @@ void GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	{
 		Writer.Print(FString::Printf(TEXT("component %s {"), *GetSchemaReplicatedDataName(Group, Class)));
 		Writer.Indent();
-		Writer.Print(FString::Printf(TEXT("id = %d;"), ComponentId + (int)Group + 1));
+		Writer.Print(FString::Printf(TEXT("id = %d;"), IdGenerator.GetNextAvailableId()));
 		int FieldCounter = 0;
 		for (auto& RepProp : Layout.ReplicatedProperties[Group])
 		{
@@ -936,7 +968,7 @@ void GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	// Complete properties.
 	Writer.Print(FString::Printf(TEXT("component %s {"), *GetSchemaCompleteDataName(Class)));
 	Writer.Indent();
-	Writer.Print(FString::Printf(TEXT("id = %d;"), ComponentId));
+	Writer.Print(FString::Printf(TEXT("id = %d;"), IdGenerator.GetNextAvailableId()));
 	int FieldCounter = 0;
 	for (auto& Prop : Layout.CompleteProperties)
 	{
@@ -954,27 +986,48 @@ void GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 	for (auto& Func : Layout.ClientRPCs)
 	{
-		Writer.Print(FString::Printf(TEXT("type %s {"), *GetSchemaClientRPCRequestTypeFromUnreal(Func)));
-		Writer.Indent();
-		FieldCounter = 0;
-		for (TFieldIterator<UProperty> Param(Func); Param; ++Param)
+		FString TypeStr = GetSchemaClientRPCRequestTypeFromUnreal(Func);
+		bool HasParams = Func->NumParms > 0; 
+
+		if (!HasParams)
 		{
-			FieldCounter++;
-			Writer.Print(
-				FString::Printf(
-					TEXT("%s param_%s = %d;"),
-					*PropertyTypeToSchemaType(*Param),
-					// TODO - add underscores to RPC names 
-					*PropertyNameToSchemaName(*Param->GetName()),
-					FieldCounter
-				)
-			);
+			Writer.Print(FString::Printf(TEXT("type %s {}"), *TypeStr));
 		}
-		Writer.Outdent().Print(TEXT("}"));
+		else
+		{
+			Writer.Print(FString::Printf(TEXT("type %s {"), *TypeStr));
+			Writer.Indent();
+			FieldCounter = 0;
+			for (TFieldIterator<UProperty> Param(Func); Param; ++Param)
+			{
+				FieldCounter++;
+				Writer.Print(
+					FString::Printf(
+						TEXT("%s %s = %d;"),
+						*PropertyTypeToSchemaType(*Param),
+						*PropertyNameToSchemaName(*Param->GetName()),
+						FieldCounter
+					)
+				);
+			}
+			Writer.Outdent().Print(TEXT("}"));
+		}
 		
 		// no RPCs have responses with params
 		Writer.Print(FString::Printf(TEXT("type %s {}"), *GetSchemaClientRPCResponseTypeFromUnreal(Func)));
 	}
+
+	Writer.Print();
+	Writer.Print(FString::Printf(TEXT("component Unreal%sRPCs {"), *Class->GetName()));
+	Writer.Indent();
+	Writer.Print(FString::Printf(TEXT("id = %i;"), IdGenerator.GetNextAvailableId()));
+	for (auto& Func : Layout.ClientRPCs)
+	{
+		Writer.Print(FString::Printf(TEXT("command %sResponse %s(%sRequest);"), *Func->GetName(), *PropertyNameToSchemaName(Func->GetName()), *Func->GetName()));
+	}
+	Writer.Outdent().Print(TEXT("}"));
+
+	return IdGenerator.GetNumUsedIds();
 }
 
 void GenerateForwardingCodeFromLayout(
@@ -1181,6 +1234,15 @@ void GenerateForwardingCodeFromLayout(
 		{
 			SourceWriter.Print(*GeneratePropertyReader(*Param));
 		}
+		SourceWriter.Print();
+		SourceWriter.Print(FString::Printf(TEXT("using RequestType = improbable::unreal::%sRequest;"), *ClientRPC->GetName()));
+		SourceWriter.Print(TEXT("RequestType Request;"));
+		for (TFieldIterator<UProperty> Param(ClientRPC); Param; ++Param)
+		{
+			TArray<UProperty*> NewChain = { *Param };
+			GenerateUnrealToSchemaConversion(SourceWriter, "Request", NewChain, *Param->GetNameCPP());// + TEXT(".") + (*It)->GetNameCPP());
+		}
+
 		SourceWriter.Outdent();
 		SourceWriter.Print(TEXT("}"));
 	}
@@ -1388,7 +1450,7 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Outdent().Print(TEXT("}"));
 }	
 
-void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class)
+int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class)
 {
 	FCodeWriter OutputSchema;
 	FCodeWriter OutputHeader;
@@ -1400,13 +1462,14 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 	FPropertyLayout Layout = CreatePropertyLayout(Class);
 
 	// Generate schema.
-	GenerateSchemaFromLayout(OutputSchema, ComponentId, Class, Layout);
+	int NumComponents = GenerateSchemaFromLayout(OutputSchema, ComponentId, Class, Layout);
 	OutputSchema.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFilename));
 
 	// Generate forwarding code.
 	GenerateForwardingCodeFromLayout(OutputHeader, OutputSource, SchemaFilename, InteropFilename, Class, Layout);
 	OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *InteropFilename));
 	OutputSource.WriteToFile(FString::Printf(TEXT("%s%s.cpp"), *ForwardingCodePath, *InteropFilename));
+	return NumComponents;
 }
 } // ::
 
@@ -1423,8 +1486,7 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Params)
 		for (auto& ClassName : Classes)
 		{
 			UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassName);
-			GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class);
-			ComponentId += 3;
+			ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class);
 		}
 	}
 	else

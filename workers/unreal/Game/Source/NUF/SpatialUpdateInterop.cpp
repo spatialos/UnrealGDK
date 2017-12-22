@@ -12,6 +12,7 @@
 #include "EngineUtils.h"
 
 #include "Generated/SpatialUpdateInterop_Character.h"
+#include "Generated/SpatialUpdateInterop_PlayerController.h"
 
 
 // We assume that #define ENABLE_PROPERTY_CHECKSUMS exists in RepLayout.cpp:88 here.
