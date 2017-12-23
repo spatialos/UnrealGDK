@@ -156,6 +156,16 @@ void USpatialActorChannel::BecomeDormant()
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
+	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
+	if (SpatialConnection && SpatialConnection->Driver->IsServer()
+		&& SpatialConnection->bFakeSpatialClient)
+	{
+		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
+		if (PinnedConnection.IsValid())
+		{
+			PinnedConnection->SendDeleteEntityRequest(ActorEntityId, 0);
+		}
+	}
 	return UActorChannel::CleanUp(bForDestroy);
 }
 
