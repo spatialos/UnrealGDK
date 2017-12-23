@@ -17,7 +17,6 @@ public:
 
 	FBunchReader(uint8* Data, int NumBits);
 
-	// The lifetime of BunchData must be <= the lifetime of Bunch.
 	bool Parse(bool bIsServer, UPackageMap* PackageMap, const RepHandlePropertyMap& PropertyMap, RepDataHandler RepDataHandlerFunc);
 
 	// Access properties.

@@ -44,6 +44,11 @@ public:
 	
 	bool AcceptNewPlayer(const FURL& InUrl);
 
+	USpatialUpdateInterop* GetSpatialUpdateInterop() const
+	{
+		return UpdateInterop;
+	}
+
 protected:
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;

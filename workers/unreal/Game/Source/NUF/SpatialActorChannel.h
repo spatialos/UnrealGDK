@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <improbable/worker.h>
+
 #include "Engine/ActorChannel.h"
 #include "EntityId.h"
 #include "SpatialOSCommandResult.h"
@@ -19,10 +21,13 @@ class NUF_API USpatialActorChannel : public UActorChannel
 	GENERATED_BODY()
 
 public:
-	USpatialActorChannel(const FObjectInitializer & objectInitializer = FObjectInitializer::Get());
+	USpatialActorChannel(const FObjectInitializer & ObjectInitializer = FObjectInitializer::Get());
 
-	// Called when a SpatialOS update is received.
-	void SpatialReceivePropertyUpdate(FNetBitWriter& Payload);
+	// SpatialOS Entity ID.
+	FORCEINLINE worker::EntityId GetEntityId() const
+	{
+		return ActorEntityId;
+	}
 
 	// UChannel interface
 	virtual void Init(UNetConnection * connection, int32 channelIndex, bool bOpenedLocally) override;
@@ -59,6 +64,7 @@ private:
 	
 	TWeakPtr<worker::Connection> WorkerConnection;
 	TWeakPtr<worker::View> WorkerView;	
+	worker::EntityId ActorEntityId;
 
 	TUniquePtr<improbable::unreal::callbacks::FScopedViewCallbacks> Callbacks;
 

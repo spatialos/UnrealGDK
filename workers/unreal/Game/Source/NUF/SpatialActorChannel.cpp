@@ -13,19 +13,22 @@
 #include "EntityTemplate.h"
 #include "SpatialNetConnection.h"
 #include "SpatialOS.h"
+#include "SpatialUpdateInterop.h"
+
 #include "Utils/BunchReader.h"
+#include "Generated/SpatialUpdateInterop_Character.h"
+
+// TODO(David): Required until we sever the unreal connection.
 #include "Generated/SpatialUpdateInterop_Character.h"
 
 using namespace improbable;
 
-// We assume that #define ENABLE_PROPERTY_CHECKSUMS exists in RepLayout.cpp:88 here.
-#define ENABLE_PROPERTY_CHECKSUMS
-
-USpatialActorChannel::USpatialActorChannel(const FObjectInitializer & objectInitializer /*= FObjectInitializer::Get()*/)
-	: Super(objectInitializer)
+USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
+	: Super(ObjectInitializer)
 {
 	ChType = CHTYPE_Actor;
 	bCoreActor = true;
+	ActorEntityId = worker::EntityId{};
 }
 
 void USpatialActorChannel::Init(UNetConnection* connection, int32 channelIndex, bool bOpenedLocally)
@@ -66,6 +69,7 @@ void USpatialActorChannel::ReceivedBunch(FInBunch &Bunch)
 	}
 
 	// Parse the bunch, and let through all non-replicated stuff, and replicated stuff that matches a few properties.
+	// TODO(david): Remove this when we sever the Unreal connection.
 	auto& PropertyMap = GetHandlePropertyMap_Character();
 	FBunchReader BunchReader(Bunch.GetData(), Bunch.GetNumBits());
 	FBunchReader::RepDataHandler RepDataHandler = [](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
@@ -74,13 +78,6 @@ void USpatialActorChannel::ReceivedBunch(FInBunch &Bunch)
 		if (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass()))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("<- Allowing through UObject/FName update."));
-			return false;
-		}
-
-		// Filter Role (13) and RemoteRole (4)
-		if (Handle == 13 || Handle == 4)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("<- Allowing through Role/RemoteRole update."));
 			return false;
 		}
 
@@ -133,46 +130,17 @@ void USpatialActorChannel::AppendMustBeMappedGuids(FOutBunch * bunch)
 FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge)
 {
 	// Run default actor channel code.
+	// TODO(David) I believe that ReturnValue will always contain a PacketId which has the same First and Last value
+	// if we don't break up bunches, which in our case we wont as there's no need to at this layer.
 	auto ReturnValue = UActorChannel::SendBunch(BunchPtr, bMerge);
 
-	// Get SpatialNetDriver.
-	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
-	TSharedPtr<worker::Connection> Connection = Driver->GetSpatialOS()->GetConnection().Pin();
-	if (!Connection.Get() || !Connection->IsConnected())
+	// Pass bunch to update interop.
+	USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Connection->Driver)->GetSpatialUpdateInterop();
+	if (!UpdateInterop)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SpatialOS is not connected yet."));
-		return ReturnValue;
+		UE_LOG(LogTemp, Error, TEXT("Update Interop object not set up. This should never happen"));
 	}
-	// Build SpatialOS update.
-	improbable::unreal::UnrealCharacterReplicatedData::Update SpatialUpdate;
-
-	auto& PropertyMap = GetHandlePropertyMap_Character();
-	FBunchReader BunchReader(BunchPtr->GetData(), BunchPtr->GetNumBits());
-	FBunchReader::RepDataHandler RepDataHandler = [&SpatialUpdate](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
-	{
-		// TODO: We can't parse UObjects or FNames here as we have no package map.
-		if (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass()))
-		{
-			return false;
-		}
-
-		// Filter Role (13) and RemoteRole (4)
-		if (Handle == 13 || Handle == 4)
-		{
-			return false;
-		}
-
-		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
-		ApplyUpdateToSpatial_Character(Reader, Handle, Property, SpatialUpdate);
-		return true;
-	};
-	BunchReader.Parse(Driver->IsServer(), nullptr, PropertyMap, RepDataHandler);
-
-	// Send SpatialOS update.
-	if (BunchReader.HasRepLayout())
-	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterReplicatedData>(worker::EntityId(2), SpatialUpdate);
-	}
+	UpdateInterop->SendSpatialUpdate(this, BunchPtr);
 	return ReturnValue;
 }
 
@@ -211,7 +179,14 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		{
 			ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
 		}
-	}	
+	}
+	else
+	{
+		USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
+		check(Driver);
+		check(Driver->GetEntityRegistry());
+		ActorEntityId = Driver->GetEntityRegistry()->GetEntityIdFromActor(InActor).ToSpatialEntityId();
+	}
 }
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op)
@@ -284,40 +259,16 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(Driver->ClientConnections[0]->PackageMap);
 		if (PMC)
 		{
-			FEntityId EntityId(Op.EntityId.value_or(0));
+			worker::EntityId SpatialEntityId = Op.EntityId.value_or(0);
+			FEntityId EntityId(SpatialEntityId);
 
 			UE_LOG(LogTemp, Warning, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
 			// once we know the entity was successfully spawned, add the local actor 
 			// to the package map and to the EntityRegistry
 			PMC->ResolveEntityActor(GetActor(), EntityId);
 			Driver->GetEntityRegistry()->AddToRegistry(EntityId, GetActor());
+			ActorEntityId = SpatialEntityId;
 		}
 	}
 }	
 
-void USpatialActorChannel::SpatialReceivePropertyUpdate(FNetBitWriter& Payload)
-{
-	FNetBitWriter OutBunchData(nullptr, 0);
-	
-	// Write header.
-	OutBunchData.WriteBit(1); // bHasRepLayout
-	OutBunchData.WriteBit(1); // bIsActor
-
-	// Add null terminator to payload.
-	uint32 Terminator = 0;
-	Payload.SerializeIntPacked(Terminator);
-
-	// Write property info.
-	uint32 PayloadSize = Payload.GetNumBits() + 1; // extra bit for bDoChecksum
-	OutBunchData.SerializeIntPacked(PayloadSize);
-#ifdef ENABLE_PROPERTY_CHECKSUMS
-	OutBunchData.WriteBit(0); // bDoChecksum
-#endif
-	OutBunchData.SerializeBits(Payload.GetData(), Payload.GetNumBits());
-
-	FInBunch Bunch(Connection, OutBunchData.GetData(), OutBunchData.GetNumBits());
-	Bunch.ChIndex = ChIndex;
-	Bunch.bHasMustBeMappedGUIDs = false;
-	Bunch.bIsReplicationPaused = false;
-	UActorChannel::ReceivedBunch(Bunch);
-}

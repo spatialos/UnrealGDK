@@ -3,6 +3,11 @@
 #include "SpatialNetConnection.h"
 #include "SpatialPackageMapClient.h"
 
+USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+{
+	InternalAck = 1;
+}
+
 void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket /*= 0*/, int32 InPacketOverhead /*= 0*/)
 {
 	Super::InitBase(InDriver, InSocket, InURL, InState, InMaxPacket, InPacketOverhead);
