@@ -35,45 +35,12 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 	NetDriver = Driver;
 
 	RegisterInteropType(ACharacter::StaticClass(), TSharedPtr<FSpatialTypeBinding>(new FSpatialTypeBinding_Character()));
-	//RegisterInteropType(PlayerController::StaticClass(), TSharedPtr<FSpatialTypeBinding>(new FSpatialTypeBinding_PlayerController()));
+	RegisterInteropType(APlayerController::StaticClass(), TSharedPtr<FSpatialTypeBinding>(new FSpatialTypeBinding_PlayerController()));
 }
 
 void USpatialUpdateInterop::Tick(float DeltaTime)
 {
-	// TODO: Remove the WaitingForGuid variable and all this logic once we actually integrate with Unreals actor system properly.
-	// i.e. When Girays stuff is done.
-	if (NetDriver && bIsClient)
-	{
-		// Actor representing the player in editor.
-		AActor* Client1 = Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false));
-		if (Client1 && EntityToClientActorChannel.Find({2}) == nullptr)
-		{
-			USpatialActorChannel* ActorChannel = Cast<USpatialActorChannel>(NetDriver->ServerConnection->ActorChannels[Client1]);
-			// We have the actor, wait for the Entity and role assignment.
-			auto& Entities = SpatialOSInstance->GetView().Pin()->Entities;
-			if (Client1->Role != ROLE_Authority && Entities.find({2}) != Entities.end() && ActorChannel)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Actor with NetGUID 6 and EntityID 2 created. Actor Role: %d"), (int)Client1->Role.GetValue());
-				EntityToClientActorChannel.Add({2}, ActorChannel);
-				SetComponentInterests(ActorChannel, {2});
-			}
-		}
-
-		// Actor representing the player in the floating window.
-		AActor* Client2 = Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(12), false));
-		if (Client2 && EntityToClientActorChannel.Find({3}) == nullptr)
-		{
-			USpatialActorChannel* ActorChannel = Cast<USpatialActorChannel>(NetDriver->ServerConnection->ActorChannels[Client2]);
-			// We have the actor, wait for the Entity.
-			auto& Entities = SpatialOSInstance->GetView().Pin()->Entities;
-			if (Client2->Role != ROLE_Authority && Entities.find({3}) != Entities.end() && ActorChannel)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Actor with NetGUID 12 and EntityID 3 created. Actor Role: %d"), (int)Client2->Role.GetValue());
-				EntityToClientActorChannel.Add({3}, ActorChannel);
-				SetComponentInterests(ActorChannel, {3});
-			}
-		}
-	}
+	//Leaving it here for now, we'll remove if it ends up unused.
 }
 
 USpatialActorChannel* USpatialUpdateInterop::GetClientActorChannel(const worker::EntityId & EntityId) const

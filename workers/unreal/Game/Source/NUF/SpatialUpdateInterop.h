@@ -90,4 +90,6 @@ private:
 
 private:
 	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
+
+	friend class USpatialInteropBlock;
 };

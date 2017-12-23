@@ -168,10 +168,13 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 {
 	Super::SetChannelActor(InActor);
 
+	if (!bCoreActor)
+		return;
+
 	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
 
 	if (SpatialConnection && SpatialConnection->Driver->IsServer()
-		&& bCoreActor && SpatialConnection->bFakeSpatialClient)
+		&& SpatialConnection->bFakeSpatialClient)
 	{
 		// Create a Spatial entity that corresponds to this actor.
 		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();

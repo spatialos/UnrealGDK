@@ -160,6 +160,7 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 
 					PMC->ResolveEntityActor(EntityActor, EntityToSpawn);
 					Ch->SetChannelActor(EntityActor);
+					Driver->GetSpatialUpdateInterop()->SetComponentInterests(Ch, EntityToSpawn.ToSpatialEntityId());
 
 					//This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 					// a player index. For now we don't support split screen, so the number is always 0.
