@@ -817,6 +817,42 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	}
 }
 
+void USpatialNetDriver::TickFlush(float DeltaTime)
+{
+	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
+	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
+
+#if USE_SERVER_PERF_COUNTERS
+	double ServerReplicateActorsTimeMs = 0.0f;
+#endif // USE_SERVER_PERF_COUNTERS
+	if (IsServer() && ClientConnections.Num() > 0)
+	{
+		// Update all clients.
+#if WITH_SERVER_CODE
+
+#if USE_SERVER_PERF_COUNTERS
+		double ServerReplicateActorsTimeStart = FPlatformTime::Seconds();
+#endif // USE_SERVER_PERF_COUNTERS
+
+		int32 Updated = ServerReplicateActors(DeltaTime);
+
+#if USE_SERVER_PERF_COUNTERS
+		ServerReplicateActorsTimeMs = (FPlatformTime::Seconds() - ServerReplicateActorsTimeStart) * 1000.0;
+#endif // USE_SERVER_PERF_COUNTERS
+
+		static int32 LastUpdateCount = 0;
+		// Only log the zero replicated actors once after replicating an actor
+		if ((LastUpdateCount && !Updated) || Updated)
+		{
+			UE_LOG(LogNetTraffic, Verbose, TEXT("%s replicated %d actors"), *GetDescription(), Updated);
+		}
+		LastUpdateCount = Updated;
+#endif // WITH_SERVER_CODE
+	}
+
+	Super::TickFlush(DeltaTime);
+}
+
 bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 {
 	check(GetNetMode() != NM_Client);
