@@ -13,6 +13,7 @@ class UEntityRegistry;
 class UCallbackDispatcher;
 class USpatialOSComponentUpdater;
 class USpatialOS;
+class USpatialNetConnection;
 
 UCLASS()
 class NUF_API USpatialNetDriver : public UIpNetDriver
@@ -29,12 +30,18 @@ public:
 	virtual void TickFlush(float DeltaTime) override;
 	virtual bool InitConnect(FNetworkNotify* InNotify, const FURL& ConnectURL, FString& Error) override;
 	virtual bool InitListen(FNetworkNotify* InNotify, FURL& LocalURL, bool bReuseAddressAndPort, FString& Error) override;
+	virtual void ProcessRemoteFunction(class AActor* Actor, class UFunction* Function, void* Parameters, struct FOutParmRec* OutParms, struct FFrame* Stack, class UObject* SubObject = NULL) override;
 	// End UNetDriver interface.
 
 	USpatialOS* GetSpatialOS() const
 	{
 		return SpatialOSInstance;
 	}
+
+	// Returns the "100% reliable" connection to SpatialOS.
+	// On the server, it is designated to be the first client connection.
+	// On the client, this function is not meaningful (as we use ServerConnection)
+	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
 	UPROPERTY()
 	USpatialInteropBlock* SpatialInteropBlock;

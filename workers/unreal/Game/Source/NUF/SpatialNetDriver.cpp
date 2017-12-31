@@ -481,12 +481,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					LastNonRelevantActors.Add(Actor);
 				}
 			}
-			else
-			{
-				// Actor is no longer relevant because the world it is/was in is not loaded by client
-				// exception: player controllers should never show up here
-				UE_LOG(LogNetTraffic, Log, TEXT("- Level not initialized for actor %s"), *Actor->GetName());
-			}
 
 			// if the actor is now relevant or was recently relevant
 			const bool bIsRecentlyRelevant = bIsRelevant || (Channel && Time - Channel->RelevantTime < RelevantTimeout);
@@ -853,6 +847,16 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	Super::TickFlush(DeltaTime);
 }
 
+USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
+{
+	if (ServerConnection)
+	{
+		return nullptr;
+	}
+	
+	return Cast<USpatialNetConnection>(ClientConnections[0]);
+}
+
 bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 {
 	check(GetNetMode() != NM_Client);
@@ -924,6 +928,34 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 	// Go all the way to creating the player controller here.
 
 	return bOk;
+}
+
+void USpatialNetDriver::ProcessRemoteFunction(class AActor* Actor, UFunction* Function, void* Parameters, FOutParmRec* OutParms, FFrame* Stack, class UObject* SubObject)
+{
+	// The Super:: will attempt to create an actor channel for this actor, if it does not exist.
+	// In order to make sure it creates a Spatial actor channel, we do it here (instead of modifying UE4 source)
+
+	Super::ProcessRemoteFunction(Actor, Function, Parameters, OutParms, Stack, SubObject);
+	return;
+	/*
+	USpatialNetConnection* Connection = GetSpatialOSNetConnection();
+	check(Connection);
+
+	UActorChannel* Ch = Connection->ActorChannels.FindRef(Actor);
+	if (!Ch)
+	{
+		Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
+		if (Channel)
+		{
+			if (GetEntityRegistry()->GetEntityIdFromActor(Actor) != 0)
+			{
+				Channel->bCoreActor = false;
+			}
+
+			Channel->SetChannelActor(Actor);
+
+	}
+	Super::ProcessRemoteFunction(Actor, Function, Parameters, OutParms, Stack, SubObject);*/
 }
 
 USpatialPendingNetGame::USpatialPendingNetGame(const FObjectInitializer& ObjectInitializer)
