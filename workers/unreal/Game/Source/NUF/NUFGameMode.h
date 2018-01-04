@@ -14,9 +14,6 @@ class ANUFGameMode : public AGameModeBase
 
 public:
 	ANUFGameMode();
-
-	//UFUNCTION(BlueprintPure, Category = "NUFGameMode")
-	//UEntityTemplate* CreatePlayerEntityTemplate(FString clientWorkerId, const FVector& position);
 };
 
 
