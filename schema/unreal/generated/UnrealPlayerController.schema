@@ -6,12 +6,12 @@ import "improbable/vector3.schema";
 import "unreal/core_types.schema";
 
 component UnrealPlayerControllerSingleClientReplicatedData {
-	id = 100004;
+	id = 100000;
 	UnrealFRotator field_targetviewrotation = 1; // COND_OwnerOnly
 	improbable.Vector3f field_spawnlocation = 2; // COND_OwnerOnly
 }
 component UnrealPlayerControllerMultiClientReplicatedData {
-	id = 100005;
+	id = 100001;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
 	bool field_btearoff = 3; // COND_None
@@ -31,7 +31,7 @@ component UnrealPlayerControllerMultiClientReplicatedData {
 	UnrealObjectRef field_playerstate = 17; // COND_None
 }
 component UnrealPlayerControllerCompleteData {
-	id = 100003;
+	id = 100002;
 	UnrealObjectRef field_player = 1;
 	UnrealObjectRef field_acknowledgedpawn = 2;
 	UnrealObjectRef field_myhud = 3;
@@ -209,4 +209,379 @@ component UnrealPlayerControllerCompleteData {
 	bytes field_tags = 175;
 	bytes field_blueprintcreatedcomponents = 176;
 	bytes field_instancecomponents = 177;
+}
+type ServerViewSelfRequest {
+	// Unsupported param type: FViewTargetTransitionParams field_transitionparams = 1;
+}
+type ServerViewSelfResponse {}
+type ServerViewPrevPlayerRequest {}
+type ServerViewPrevPlayerResponse {}
+type ServerViewNextPlayerRequest {}
+type ServerViewNextPlayerResponse {}
+type ServerVerifyViewTargetRequest {}
+type ServerVerifyViewTargetResponse {}
+type ServerUpdateLevelVisibilityRequest {
+	string field_packagename = 1;
+	bool field_bisvisible = 2;
+}
+type ServerUpdateLevelVisibilityResponse {}
+type ServerUpdateCameraRequest {
+	improbable.Vector3f field_camloc = 1;
+	int32 field_campitchandyaw = 2;
+}
+type ServerUpdateCameraResponse {}
+type ServerUnmutePlayerRequest {
+	bytes field_playerid = 1;
+}
+type ServerUnmutePlayerResponse {}
+type ServerToggleAILoggingRequest {}
+type ServerToggleAILoggingResponse {}
+type ServerShortTimeoutRequest {}
+type ServerShortTimeoutResponse {}
+type ServerSetSpectatorWaitingRequest {
+	bool field_bwaiting = 1;
+}
+type ServerSetSpectatorWaitingResponse {}
+type ServerSetSpectatorLocationRequest {
+	improbable.Vector3f field_newloc = 1;
+	UnrealFRotator field_newrot = 2;
+}
+type ServerSetSpectatorLocationResponse {}
+type ServerRestartPlayerRequest {}
+type ServerRestartPlayerResponse {}
+type ServerPauseRequest {}
+type ServerPauseResponse {}
+type ServerNotifyLoadedWorldRequest {
+	string field_worldpackagename = 1;
+}
+type ServerNotifyLoadedWorldResponse {}
+type ServerMutePlayerRequest {
+	bytes field_playerid = 1;
+}
+type ServerMutePlayerResponse {}
+type ServerCheckClientPossessionReliableRequest {}
+type ServerCheckClientPossessionReliableResponse {}
+type ServerCheckClientPossessionRequest {}
+type ServerCheckClientPossessionResponse {}
+type ServerChangeNameRequest {
+	string field_s = 1;
+}
+type ServerChangeNameResponse {}
+type ServerCameraRequest {
+	string field_newmode = 1;
+}
+type ServerCameraResponse {}
+type ServerAcknowledgePossessionRequest {
+	UnrealObjectRef field_p = 1;
+}
+type ServerAcknowledgePossessionResponse {}
+type OnServerStartedVisualLoggerRequest {
+	bool field_bislogging = 1;
+}
+type OnServerStartedVisualLoggerResponse {}
+type ClientWasKickedRequest {
+	// Unsupported param type: FText field_kickreason = 1;
+}
+type ClientWasKickedResponse {}
+type ClientVoiceHandshakeCompleteRequest {}
+type ClientVoiceHandshakeCompleteResponse {}
+type ClientUpdateLevelStreamingStatusRequest {
+	string field_packagename = 1;
+	bool field_bnewshouldbeloaded = 2;
+	bool field_bnewshouldbevisible = 3;
+	bool field_bnewshouldblockonload = 4;
+	int32 field_lodindex = 5;
+}
+type ClientUpdateLevelStreamingStatusResponse {}
+type ClientUnmutePlayerRequest {
+	bytes field_playerid = 1;
+}
+type ClientUnmutePlayerResponse {}
+type ClientTravelInternalRequest {
+	string field_url = 1;
+	uint32 field_traveltype = 2;
+	bool field_bseamless = 3;
+	// Unsupported param type: FGuid field_mappackageguid = 4;
+}
+type ClientTravelInternalResponse {}
+type ClientTeamMessageRequest {
+	UnrealObjectRef field_senderplayerstate = 1;
+	string field_s = 2;
+	string field_type = 3;
+	float field_msglifetime = 4;
+}
+type ClientTeamMessageResponse {}
+type ClientStopForceFeedbackRequest {
+	UnrealObjectRef field_forcefeedbackeffect = 1;
+	string field_tag = 2;
+}
+type ClientStopForceFeedbackResponse {}
+type ClientStopCameraShakeRequest {
+	UnrealObjectRef field_shake = 1;
+	bool field_bimmediately = 2;
+}
+type ClientStopCameraShakeResponse {}
+type ClientStopCameraAnimRequest {
+	UnrealObjectRef field_animtostop = 1;
+}
+type ClientStopCameraAnimResponse {}
+type ClientStartOnlineSessionRequest {}
+type ClientStartOnlineSessionResponse {}
+type ClientSpawnCameraLensEffectRequest {
+	UnrealObjectRef field_lenseffectemitterclass = 1;
+}
+type ClientSpawnCameraLensEffectResponse {}
+type ClientSetViewTargetRequest {
+	UnrealObjectRef field_a = 1;
+	// Unsupported param type: FViewTargetTransitionParams field_transitionparams = 2;
+}
+type ClientSetViewTargetResponse {}
+type ClientSetSpectatorWaitingRequest {
+	bool field_bwaiting = 1;
+}
+type ClientSetSpectatorWaitingResponse {}
+type ClientSetHUDRequest {
+	UnrealObjectRef field_newhudclass = 1;
+}
+type ClientSetHUDResponse {}
+type ClientSetForceMipLevelsToBeResidentRequest {
+	UnrealObjectRef field_material = 1;
+	float field_forceduration = 2;
+	int32 field_cinematictexturegroups = 3;
+}
+type ClientSetForceMipLevelsToBeResidentResponse {}
+type ClientSetCinematicModeRequest {
+	bool field_bincinematicmode = 1;
+	bool field_baffectsmovement = 2;
+	bool field_baffectsturning = 3;
+	bool field_baffectshud = 4;
+}
+type ClientSetCinematicModeResponse {}
+type ClientSetCameraModeRequest {
+	string field_newcammode = 1;
+}
+type ClientSetCameraModeResponse {}
+type ClientSetCameraFadeRequest {
+	bool field_benablefading = 1;
+	// Unsupported param type: FColor field_fadecolor = 2;
+	// Unsupported param type: FVector2D field_fadealpha = 3;
+	float field_fadetime = 4;
+	bool field_bfadeaudio = 5;
+}
+type ClientSetCameraFadeResponse {}
+type ClientSetBlockOnAsyncLoadingRequest {}
+type ClientSetBlockOnAsyncLoadingResponse {}
+type ClientReturnToMainMenuRequest {
+	string field_returnreason = 1;
+}
+type ClientReturnToMainMenuResponse {}
+type ClientRetryClientRestartRequest {
+	UnrealObjectRef field_newpawn = 1;
+}
+type ClientRetryClientRestartResponse {}
+type ClientRestartRequest {
+	UnrealObjectRef field_newpawn = 1;
+}
+type ClientRestartResponse {}
+type ClientResetRequest {}
+type ClientResetResponse {}
+type ClientRepObjRefRequest {
+	UnrealObjectRef field_object = 1;
+}
+type ClientRepObjRefResponse {}
+type ClientReceiveLocalizedMessageRequest {
+	UnrealObjectRef field_message = 1;
+	int32 field_switch = 2;
+	UnrealObjectRef field_relatedplayerstate_1 = 3;
+	UnrealObjectRef field_relatedplayerstate_2 = 4;
+	UnrealObjectRef field_optionalobject = 5;
+}
+type ClientReceiveLocalizedMessageResponse {}
+type ClientPrestreamTexturesRequest {
+	UnrealObjectRef field_forcedactor = 1;
+	float field_forceduration = 2;
+	bool field_benablestreaming = 3;
+	int32 field_cinematictexturegroups = 4;
+}
+type ClientPrestreamTexturesResponse {}
+type ClientPrepareMapChangeRequest {
+	string field_levelname = 1;
+	bool field_bfirst = 2;
+	bool field_blast = 3;
+}
+type ClientPrepareMapChangeResponse {}
+type ClientPlaySoundAtLocationRequest {
+	UnrealObjectRef field_sound = 1;
+	improbable.Vector3f field_location = 2;
+	float field_volumemultiplier = 3;
+	float field_pitchmultiplier = 4;
+}
+type ClientPlaySoundAtLocationResponse {}
+type ClientPlaySoundRequest {
+	UnrealObjectRef field_sound = 1;
+	float field_volumemultiplier = 2;
+	float field_pitchmultiplier = 3;
+}
+type ClientPlaySoundResponse {}
+type ClientPlayForceFeedbackRequest {
+	UnrealObjectRef field_forcefeedbackeffect = 1;
+	bool field_blooping = 2;
+	string field_tag = 3;
+}
+type ClientPlayForceFeedbackResponse {}
+type ClientPlayCameraShakeRequest {
+	UnrealObjectRef field_shake = 1;
+	float field_scale = 2;
+	uint32 field_playspace = 3;
+	UnrealFRotator field_userplayspacerot = 4;
+}
+type ClientPlayCameraShakeResponse {}
+type ClientPlayCameraAnimRequest {
+	UnrealObjectRef field_animtoplay = 1;
+	float field_scale = 2;
+	float field_rate = 3;
+	float field_blendintime = 4;
+	float field_blendouttime = 5;
+	bool field_bloop = 6;
+	bool field_brandomstarttime = 7;
+	uint32 field_space = 8;
+	UnrealFRotator field_customplayspace = 9;
+}
+type ClientPlayCameraAnimResponse {}
+type ClientMutePlayerRequest {
+	bytes field_playerid = 1;
+}
+type ClientMutePlayerResponse {}
+type ClientMessageRequest {
+	string field_s = 1;
+	string field_type = 2;
+	float field_msglifetime = 3;
+}
+type ClientMessageResponse {}
+type ClientIgnoreMoveInputRequest {
+	bool field_bignore = 1;
+}
+type ClientIgnoreMoveInputResponse {}
+type ClientIgnoreLookInputRequest {
+	bool field_bignore = 1;
+}
+type ClientIgnoreLookInputResponse {}
+type ClientGotoStateRequest {
+	string field_newstate = 1;
+}
+type ClientGotoStateResponse {}
+type ClientGameEndedRequest {
+	UnrealObjectRef field_endgamefocus = 1;
+	bool field_biswinner = 2;
+}
+type ClientGameEndedResponse {}
+type ClientForceGarbageCollectionRequest {}
+type ClientForceGarbageCollectionResponse {}
+type ClientFlushLevelStreamingRequest {}
+type ClientFlushLevelStreamingResponse {}
+type ClientEndOnlineSessionRequest {}
+type ClientEndOnlineSessionResponse {}
+type ClientEnableNetworkVoiceRequest {
+	bool field_benable = 1;
+}
+type ClientEnableNetworkVoiceResponse {}
+type ClientCommitMapChangeRequest {}
+type ClientCommitMapChangeResponse {}
+type ClientClearCameraLensEffectsRequest {}
+type ClientClearCameraLensEffectsResponse {}
+type ClientCapBandwidthRequest {
+	int32 field_cap = 1;
+}
+type ClientCapBandwidthResponse {}
+type ClientCancelPendingMapChangeRequest {}
+type ClientCancelPendingMapChangeResponse {}
+type ClientAddTextureStreamingLocRequest {
+	improbable.Vector3f field_inloc = 1;
+	float field_duration = 2;
+	bool field_boverridelocation = 3;
+}
+type ClientAddTextureStreamingLocResponse {}
+type ClientSetRotationRequest {
+	UnrealFRotator field_newrotation = 1;
+	bool field_bresetcamera = 2;
+}
+type ClientSetRotationResponse {}
+type ClientSetLocationRequest {
+	improbable.Vector3f field_newlocation = 1;
+	UnrealFRotator field_newrotation = 2;
+}
+type ClientSetLocationResponse {}
+
+component UnrealPlayerControllerRPCs {
+	id = 100003;
+	command ServerViewSelfResponse serverviewself(ServerViewSelfRequest);
+	command ServerViewPrevPlayerResponse serverviewprevplayer(ServerViewPrevPlayerRequest);
+	command ServerViewNextPlayerResponse serverviewnextplayer(ServerViewNextPlayerRequest);
+	command ServerVerifyViewTargetResponse serververifyviewtarget(ServerVerifyViewTargetRequest);
+	command ServerUpdateLevelVisibilityResponse serverupdatelevelvisibility(ServerUpdateLevelVisibilityRequest);
+	command ServerUpdateCameraResponse serverupdatecamera(ServerUpdateCameraRequest);
+	command ServerUnmutePlayerResponse serverunmuteplayer(ServerUnmutePlayerRequest);
+	command ServerToggleAILoggingResponse servertoggleailogging(ServerToggleAILoggingRequest);
+	command ServerShortTimeoutResponse servershorttimeout(ServerShortTimeoutRequest);
+	command ServerSetSpectatorWaitingResponse serversetspectatorwaiting(ServerSetSpectatorWaitingRequest);
+	command ServerSetSpectatorLocationResponse serversetspectatorlocation(ServerSetSpectatorLocationRequest);
+	command ServerRestartPlayerResponse serverrestartplayer(ServerRestartPlayerRequest);
+	command ServerPauseResponse serverpause(ServerPauseRequest);
+	command ServerNotifyLoadedWorldResponse servernotifyloadedworld(ServerNotifyLoadedWorldRequest);
+	command ServerMutePlayerResponse servermuteplayer(ServerMutePlayerRequest);
+	command ServerCheckClientPossessionReliableResponse servercheckclientpossessionreliable(ServerCheckClientPossessionReliableRequest);
+	command ServerCheckClientPossessionResponse servercheckclientpossession(ServerCheckClientPossessionRequest);
+	command ServerChangeNameResponse serverchangename(ServerChangeNameRequest);
+	command ServerCameraResponse servercamera(ServerCameraRequest);
+	command ServerAcknowledgePossessionResponse serveracknowledgepossession(ServerAcknowledgePossessionRequest);
+	command OnServerStartedVisualLoggerResponse onserverstartedvisuallogger(OnServerStartedVisualLoggerRequest);
+	command ClientWasKickedResponse clientwaskicked(ClientWasKickedRequest);
+	command ClientVoiceHandshakeCompleteResponse clientvoicehandshakecomplete(ClientVoiceHandshakeCompleteRequest);
+	command ClientUpdateLevelStreamingStatusResponse clientupdatelevelstreamingstatus(ClientUpdateLevelStreamingStatusRequest);
+	command ClientUnmutePlayerResponse clientunmuteplayer(ClientUnmutePlayerRequest);
+	command ClientTravelInternalResponse clienttravelinternal(ClientTravelInternalRequest);
+	command ClientTeamMessageResponse clientteammessage(ClientTeamMessageRequest);
+	command ClientStopForceFeedbackResponse clientstopforcefeedback(ClientStopForceFeedbackRequest);
+	command ClientStopCameraShakeResponse clientstopcamerashake(ClientStopCameraShakeRequest);
+	command ClientStopCameraAnimResponse clientstopcameraanim(ClientStopCameraAnimRequest);
+	command ClientStartOnlineSessionResponse clientstartonlinesession(ClientStartOnlineSessionRequest);
+	command ClientSpawnCameraLensEffectResponse clientspawncameralenseffect(ClientSpawnCameraLensEffectRequest);
+	command ClientSetViewTargetResponse clientsetviewtarget(ClientSetViewTargetRequest);
+	command ClientSetSpectatorWaitingResponse clientsetspectatorwaiting(ClientSetSpectatorWaitingRequest);
+	command ClientSetHUDResponse clientsethud(ClientSetHUDRequest);
+	command ClientSetForceMipLevelsToBeResidentResponse clientsetforcemiplevelstoberesident(ClientSetForceMipLevelsToBeResidentRequest);
+	command ClientSetCinematicModeResponse clientsetcinematicmode(ClientSetCinematicModeRequest);
+	command ClientSetCameraModeResponse clientsetcameramode(ClientSetCameraModeRequest);
+	command ClientSetCameraFadeResponse clientsetcamerafade(ClientSetCameraFadeRequest);
+	command ClientSetBlockOnAsyncLoadingResponse clientsetblockonasyncloading(ClientSetBlockOnAsyncLoadingRequest);
+	command ClientReturnToMainMenuResponse clientreturntomainmenu(ClientReturnToMainMenuRequest);
+	command ClientRetryClientRestartResponse clientretryclientrestart(ClientRetryClientRestartRequest);
+	command ClientRestartResponse clientrestart(ClientRestartRequest);
+	command ClientResetResponse clientreset(ClientResetRequest);
+	command ClientRepObjRefResponse clientrepobjref(ClientRepObjRefRequest);
+	command ClientReceiveLocalizedMessageResponse clientreceivelocalizedmessage(ClientReceiveLocalizedMessageRequest);
+	command ClientPrestreamTexturesResponse clientprestreamtextures(ClientPrestreamTexturesRequest);
+	command ClientPrepareMapChangeResponse clientpreparemapchange(ClientPrepareMapChangeRequest);
+	command ClientPlaySoundAtLocationResponse clientplaysoundatlocation(ClientPlaySoundAtLocationRequest);
+	command ClientPlaySoundResponse clientplaysound(ClientPlaySoundRequest);
+	command ClientPlayForceFeedbackResponse clientplayforcefeedback(ClientPlayForceFeedbackRequest);
+	command ClientPlayCameraShakeResponse clientplaycamerashake(ClientPlayCameraShakeRequest);
+	command ClientPlayCameraAnimResponse clientplaycameraanim(ClientPlayCameraAnimRequest);
+	command ClientMutePlayerResponse clientmuteplayer(ClientMutePlayerRequest);
+	command ClientMessageResponse clientmessage(ClientMessageRequest);
+	command ClientIgnoreMoveInputResponse clientignoremoveinput(ClientIgnoreMoveInputRequest);
+	command ClientIgnoreLookInputResponse clientignorelookinput(ClientIgnoreLookInputRequest);
+	command ClientGotoStateResponse clientgotostate(ClientGotoStateRequest);
+	command ClientGameEndedResponse clientgameended(ClientGameEndedRequest);
+	command ClientForceGarbageCollectionResponse clientforcegarbagecollection(ClientForceGarbageCollectionRequest);
+	command ClientFlushLevelStreamingResponse clientflushlevelstreaming(ClientFlushLevelStreamingRequest);
+	command ClientEndOnlineSessionResponse clientendonlinesession(ClientEndOnlineSessionRequest);
+	command ClientEnableNetworkVoiceResponse clientenablenetworkvoice(ClientEnableNetworkVoiceRequest);
+	command ClientCommitMapChangeResponse clientcommitmapchange(ClientCommitMapChangeRequest);
+	command ClientClearCameraLensEffectsResponse clientclearcameralenseffects(ClientClearCameraLensEffectsRequest);
+	command ClientCapBandwidthResponse clientcapbandwidth(ClientCapBandwidthRequest);
+	command ClientCancelPendingMapChangeResponse clientcancelpendingmapchange(ClientCancelPendingMapChangeRequest);
+	command ClientAddTextureStreamingLocResponse clientaddtexturestreamingloc(ClientAddTextureStreamingLocRequest);
+	command ClientSetRotationResponse clientsetrotation(ClientSetRotationRequest);
+	command ClientSetLocationResponse clientsetlocation(ClientSetLocationRequest);
 }
