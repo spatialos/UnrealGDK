@@ -855,7 +855,7 @@ namespace
 		HeaderWriter.Print(TEXT(R"""(void BindToView() override;
 		void UnbindFromView() override;
 		worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
-		void SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const override;)"""));
+		void SendComponentUpdates(FInBunch* BunchPtr, const worker::EntityId& EntityId) const override;)"""));
 		HeaderWriter.Outdent().Print(TEXT("private:")).Indent();
 		for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 		{
@@ -1092,7 +1092,7 @@ namespace
 
 		// SendComponentUpdates
 		SourceWriter.Print();
-		SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const"),
+		SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendComponentUpdates(FInBunch* BunchPtr, const worker::EntityId& EntityId) const"),
 			*Class->GetName()));
 		SourceWriter.Print(TEXT("{"));
 		SourceWriter.Indent();
@@ -1109,7 +1109,7 @@ namespace
 		SourceWriter.Print();
 		SourceWriter.Print(FString::Printf(TEXT(R"""(// Read bunch and build up SpatialOS component updates.
 		auto& PropertyMap = GetHandlePropertyMap_%s();
-		FBunchReader BunchReader(BunchPtr->GetData(), BunchPtr->GetNumBits());
+		FBunchReader BunchReader(BunchPtr);
 		FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
 		{)"""), *Class->GetName()));
 		SourceWriter.Indent();
@@ -1149,7 +1149,7 @@ namespace
 		SourceWriter.Print(TEXT("return true;"));
 		SourceWriter.Outdent();
 		SourceWriter.Print(TEXT("};"));
-		SourceWriter.Print(TEXT("BunchReader.Parse(true, PackageMap, PropertyMap, RepDataHandler);"));
+		SourceWriter.Print(TEXT("BunchReader.Parse(true, PropertyMap, RepDataHandler);"));
 
 		SourceWriter.Print();
 		SourceWriter.Print(TEXT("// Send SpatialOS update."));

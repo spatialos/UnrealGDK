@@ -202,6 +202,11 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			Update.set_field_bcanbedamaged(Value != 0);
 			break;
 		}
+		case 16:
+		{
+			UE_LOG(LogTemp, Warning, TEXT("We are trying to replicate the pawn!!"));
+			break;
+		}
 		// case 15: - Instigator is an object reference, skipping.
 		// case 16: - Pawn is an object reference, skipping.
 		// case 17: - PlayerState is an object reference, skipping.
@@ -626,7 +631,7 @@ worker::ComponentId FSpatialTypeBinding_PlayerController::GetReplicatedGroupComp
 	}
 }
 
-void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const
+void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FInBunch* BunchPtr, const worker::EntityId& EntityId) const
 {
 	// Build SpatialOS updates.
 	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update SingleClientUpdate;
@@ -636,11 +641,11 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FOutBunch* Bunch
 
 	// Read bunch and build up SpatialOS component updates.
 	auto& PropertyMap = GetHandlePropertyMap_PlayerController();
-	FBunchReader BunchReader(BunchPtr->GetData(), BunchPtr->GetNumBits());
+	FBunchReader BunchReader(BunchPtr);
 	FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
 	{
 		// TODO: We can't parse UObjects or FNames here as we have no package map.
-		if (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass()))
+		if (Handle != 16 && (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass())))
 		{
 		return false;
 		}
@@ -667,7 +672,8 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FOutBunch* Bunch
 		}
 		return true;
 	};
-	BunchReader.Parse(true, PackageMap, PropertyMap, RepDataHandler);
+
+	BunchReader.Parse(true, PropertyMap, RepDataHandler);
 
 	// Send SpatialOS update.
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();

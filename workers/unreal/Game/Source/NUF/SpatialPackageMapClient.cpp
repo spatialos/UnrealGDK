@@ -3,6 +3,7 @@
 #include "SpatialPackageMapClient.h"
 #include "EntityRegistry.h"
 #include "SpatialNetDriver.h"
+#include "SpatialActorChannel.h"
 
 const uint32 StaticObjectOffset = 0x80000000; // 2^31
 
@@ -138,4 +139,11 @@ void USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntityId Entit
 	{
 		SpatialGuidCache->AssignNewEntityActorNetGUID(Actor);
 	}
+}
+
+bool USpatialPackageMapClient::SerializeNewActor(FArchive & Ar, UActorChannel * Channel, AActor *& Actor)
+{
+	bool bResult = Super::SerializeNewActor(Ar, Channel, Actor);
+
+	return bResult;
 }

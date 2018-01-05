@@ -105,7 +105,13 @@ void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, FOu
 		return;
 	}
 
-	Binding->SendComponentUpdates(OutgoingBunch, Channel->GetEntityId());
+	FInBunch InBunch(Channel->Connection, OutgoingBunch->GetData(), OutgoingBunch->GetNumBits());
+	if (Channel->bSendingInitialBunch)
+	{
+		Channel->Connection->PackageMap->SerializeNewActor(InBunch, Channel, Channel->Actor);
+	}
+
+	Binding->SendComponentUpdates(&InBunch, Channel->GetEntityId());
 }
 
 void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)

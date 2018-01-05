@@ -28,6 +28,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 {
 	ChType = CHTYPE_Actor;
 	bCoreActor = true;
+	bSendingInitialBunch = false;
 	ActorEntityId = worker::EntityId{};
 }
 
@@ -71,7 +72,7 @@ void USpatialActorChannel::ReceivedBunch(FInBunch &Bunch)
 	// Parse the bunch, and let through all non-replicated stuff, and replicated stuff that matches a few properties.
 	// TODO(david): Remove this when we sever the Unreal connection.
 	auto& PropertyMap = GetHandlePropertyMap_Character();
-	FBunchReader BunchReader(Bunch.GetData(), Bunch.GetNumBits());
+	FBunchReader BunchReader(&Bunch);
 	FBunchReader::RepDataHandler RepDataHandler = [](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
 	{
 		// TODO: We can't parse UObjects or FNames here as we have no package map.
@@ -89,7 +90,7 @@ void USpatialActorChannel::ReceivedBunch(FInBunch &Bunch)
 		Property->NetSerializeItem(Reader, PackageMap, PropertyData.GetData());
 		return true;
 	};
-	BunchReader.Parse(Connection->Driver->IsServer(), nullptr, PropertyMap, RepDataHandler);
+	BunchReader.Parse(Connection->Driver->IsServer(), PropertyMap, RepDataHandler);
 	if (BunchReader.HasError())
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("<- Allowing through non actor bunch."));
@@ -170,7 +171,13 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 }
 
 bool USpatialActorChannel::ReplicateActor()
-{	
+{
+	bSendingInitialBunch = false;
+	if ((OpenPacketId.First == INDEX_NONE || Connection->bResendAllDataSinceOpen) && OpenedLocally)
+	{
+		bSendingInitialBunch = true;
+	}
+	
 	return Super::ReplicateActor();
 }
 

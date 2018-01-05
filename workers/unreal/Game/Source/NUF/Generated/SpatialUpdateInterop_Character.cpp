@@ -1346,7 +1346,7 @@ worker::ComponentId FSpatialTypeBinding_Character::GetReplicatedGroupComponentId
 	}
 }
 
-void FSpatialTypeBinding_Character::SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const
+void FSpatialTypeBinding_Character::SendComponentUpdates(FInBunch* BunchPtr, const worker::EntityId& EntityId) const
 {
 	// Build SpatialOS updates.
 	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
@@ -1356,7 +1356,7 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(FOutBunch* BunchPtr, co
 
 	// Read bunch and build up SpatialOS component updates.
 	auto& PropertyMap = GetHandlePropertyMap_Character();
-	FBunchReader BunchReader(BunchPtr->GetData(), BunchPtr->GetNumBits());
+	FBunchReader BunchReader(BunchPtr);
 	FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
 	{
 		// TODO: We can't parse UObjects or FNames here as we have no package map.
@@ -1387,7 +1387,7 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(FOutBunch* BunchPtr, co
 		}
 		return true;
 	};
-	BunchReader.Parse(true, PackageMap, PropertyMap, RepDataHandler);
+	BunchReader.Parse(true, PropertyMap, RepDataHandler);
 
 	// Send SpatialOS update.
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();

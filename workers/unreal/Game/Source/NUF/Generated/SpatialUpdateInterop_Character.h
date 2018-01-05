@@ -18,7 +18,7 @@ public:
 	void BindToView() override;
 	void UnbindFromView() override;
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
-	void SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const override;
+	void SendComponentUpdates(FInBunch* BunchPtr, const worker::EntityId& EntityId) const override;
 private:
 	worker::Dispatcher::CallbackKey SingleClientCallback;
 	worker::Dispatcher::CallbackKey MultiClientCallback;

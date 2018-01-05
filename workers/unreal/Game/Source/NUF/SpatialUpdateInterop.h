@@ -33,6 +33,9 @@ inline EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Conditi
 
 class USpatialUpdateInterop;
 
+//todo: (cc: @david) This code is merged into master, but the UObjects held inside a 
+// non-uclass will not be ref counted properly and may be removed under us.
+// It will mostly "work" because it's only used under USpatialUpdateInterop's context, but I think we can do something more robust.
 class FSpatialTypeBinding
 {
 public:
@@ -41,7 +44,7 @@ public:
 	virtual void BindToView() = 0;
 	virtual void UnbindFromView() = 0;
 	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const = 0;
-	virtual void SendComponentUpdates(FOutBunch* OutgoingBunch, const worker::EntityId& EntityId) const = 0;
+	virtual void SendComponentUpdates(FInBunch* OutgoingBunch, const worker::EntityId& EntityId) const = 0;
 
 protected:
 	USpatialUpdateInterop* UpdateInterop;

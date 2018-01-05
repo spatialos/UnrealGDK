@@ -17,6 +17,7 @@ class NUF_API USpatialPackageMapClient : public UPackageMapClient
 public:
 	void ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FString& Path);
 	void ResolveEntityActor(AActor* Actor, FEntityId EntityId);
+	virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel *Channel, class AActor*& Actor) override;
 };
 
 class NUF_API FSpatialNetGUIDCache : public FNetGUIDCache
