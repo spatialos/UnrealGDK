@@ -909,6 +909,13 @@ namespace
 					FString PropertyName = TEXT("Property");
 					SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
 					SourceWriter.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
+					//todo-david: remove this hack that's happening due to different serialization when InternalAck = 1.
+					SourceWriter.Print(FString::Printf(TEXT("//HACK:")));
+					SourceWriter.Print(FString::Printf(TEXT("// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.")));
+					SourceWriter.Print(FString::Printf(TEXT("// This needs to be solved at a more fundamental level.")));
+					SourceWriter.Print(FString::Printf(TEXT("uint32 NumBits = 0;")));
+					SourceWriter.Print(FString::Printf(TEXT("Reader.SerializeIntPacked(NumBits);")));
+					SourceWriter.Print(FString::Printf(TEXT("//END-HACK:")));
 					SourceWriter.Print(FString::Printf(TEXT("%s->NetSerializeItem(Reader, PackageMap, &%s);"), *PropertyName, *PropertyValueName));
 					SourceWriter.Print();
 					GenerateUnrealToSchemaConversion(SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName);
@@ -1115,12 +1122,6 @@ namespace
 		SourceWriter.Indent();
 		SourceWriter.Print(TEXT(R"""(// TODO: We can't parse UObjects or FNames here as we have no package map.
 		if (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass()))
-		{
-			return false;
-		}
-
-		// Filter Role (13) and RemoteRole (4)
-		if (Handle == 13 || Handle == 4)
 		{
 			return false;
 		}

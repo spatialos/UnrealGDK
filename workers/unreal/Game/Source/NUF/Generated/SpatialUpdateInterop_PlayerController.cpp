@@ -109,6 +109,8 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
+
+
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_breplicatemovement(Value != 0);
@@ -127,6 +129,12 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			TEnumAsByte<ENetRole> Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_remoterole(uint32_t(Value));
@@ -646,12 +654,6 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FInBunch* BunchP
 	{
 		// TODO: We can't parse UObjects or FNames here as we have no package map.
 		if (Handle != 16 && (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass())))
-		{
-		return false;
-		}
-		
-		// Filter Role (13) and RemoteRole (4)
-		if (Handle == 13 || Handle == 4)
 		{
 		return false;
 		}
