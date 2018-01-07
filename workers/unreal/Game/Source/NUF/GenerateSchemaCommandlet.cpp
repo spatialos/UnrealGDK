@@ -496,7 +496,7 @@ namespace
 		}
 		else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 		{
-			Writer.Print(FString::Printf(TEXT("auto UObjectRef = NewObject<UUnrealObjectRef>();\nUObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(%s).Value))));\n%s(UObjectRef->GetUnderlying());"),
+			Writer.Print(FString::Printf(TEXT("improbable::unreal::UnrealObjectRef UObjectRef;\nUObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(%s).Value);\n%s(UObjectRef);"),
 				*PropertyValue, *SpatialValueSetter));
 		}
 		else if (Property->IsA(UNameProperty::StaticClass()))
@@ -904,13 +904,17 @@ namespace
 					FString PropertyName = TEXT("Property");
 					SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
 					SourceWriter.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
-					//todo-david: remove this hack that's happening due to different serialization when InternalAck = 1.
-					SourceWriter.Print(FString::Printf(TEXT("//HACK:")));
-					SourceWriter.Print(FString::Printf(TEXT("// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.")));
-					SourceWriter.Print(FString::Printf(TEXT("// This needs to be solved at a more fundamental level.")));
-					SourceWriter.Print(FString::Printf(TEXT("uint32 NumBits = 0;")));
-					SourceWriter.Print(FString::Printf(TEXT("Reader.SerializeIntPacked(NumBits);")));
-					SourceWriter.Print(FString::Printf(TEXT("//END-HACK")));
+					if (!Property->IsA(UObjectPropertyBase::StaticClass()) && !Property->IsA(UNameProperty::StaticClass()))
+					{
+						//todo-david: remove this hack that's happening due to different serialization when InternalAck = 1.
+						SourceWriter.Print(FString::Printf(TEXT("//HACK:")));
+						SourceWriter.Print(FString::Printf(TEXT("// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.")));
+						SourceWriter.Print(FString::Printf(TEXT("// This needs to be solved at a more fundamental level.")));
+						SourceWriter.Print(FString::Printf(TEXT("uint32 NumBits = 0;")));
+						SourceWriter.Print(FString::Printf(TEXT("Reader.SerializeIntPacked(NumBits);")));
+						SourceWriter.Print(FString::Printf(TEXT("//END-HACK")));
+
+					}
 					SourceWriter.Print(FString::Printf(TEXT("%s->NetSerializeItem(Reader, PackageMap, &%s);"), *PropertyName, *PropertyValueName));
 					SourceWriter.Print();
 					GenerateUnrealToSchemaConversion(SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName);
@@ -1116,11 +1120,7 @@ namespace
 		{)"""), *Class->GetName()));
 		SourceWriter.Indent();
 		SourceWriter.Print(TEXT(R"""(// TODO: We can't parse UObjects or FNames here as we have no package map.
-		if (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass()))
-		{
-			return false;
-		}
-
+		
 		auto& Data = PropertyMap[Handle];
 		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
 )"""));

@@ -172,17 +172,11 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			AActor* Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			auto UObjectRef = NewObject<UUnrealObjectRef>();
-			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_owner(UObjectRef->GetUnderlying());
+			improbable::unreal::UnrealObjectRef UObjectRef;
+			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
+			Update.set_field_owner(UObjectRef);
 			break;
 		}
 		case 6: // field_replicatedmovement
@@ -208,17 +202,11 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			AActor* Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			auto UObjectRef = NewObject<UUnrealObjectRef>();
-			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_attachmentreplication_attachparent(UObjectRef->GetUnderlying());
+			improbable::unreal::UnrealObjectRef UObjectRef;
+			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
+			Update.set_field_attachmentreplication_attachparent(UObjectRef);
 			break;
 		}
 		case 8: // field_attachmentreplication_locationoffset
@@ -270,12 +258,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			FName Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
@@ -285,17 +267,11 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			USceneComponent* Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			auto UObjectRef = NewObject<UUnrealObjectRef>();
-			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_attachmentreplication_attachcomponent(UObjectRef->GetUnderlying());
+			improbable::unreal::UnrealObjectRef UObjectRef;
+			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
+			Update.set_field_attachmentreplication_attachcomponent(UObjectRef);
 			break;
 		}
 		case 13: // field_role
@@ -332,51 +308,33 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			APawn* Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			auto UObjectRef = NewObject<UUnrealObjectRef>();
-			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_instigator(UObjectRef->GetUnderlying());
+			improbable::unreal::UnrealObjectRef UObjectRef;
+			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
+			Update.set_field_instigator(UObjectRef);
 			break;
 		}
 		case 16: // field_pawn
 		{
 			APawn* Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			auto UObjectRef = NewObject<UUnrealObjectRef>();
-			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_pawn(UObjectRef->GetUnderlying());
+			improbable::unreal::UnrealObjectRef UObjectRef;
+			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
+			Update.set_field_pawn(UObjectRef);
 			break;
 		}
 		case 17: // field_playerstate
 		{
 			APlayerState* Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			auto UObjectRef = NewObject<UUnrealObjectRef>();
-			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_playerstate(UObjectRef->GetUnderlying());
+			improbable::unreal::UnrealObjectRef UObjectRef;
+			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
+			Update.set_field_playerstate(UObjectRef);
 			break;
 		}
 	default:
@@ -814,10 +772,6 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FInBunch* BunchP
 	FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
 	{
 		// TODO: We can't parse UObjects or FNames here as we have no package map.
-		if (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass()))
-		{
-		return false;
-		}
 		
 		auto& Data = PropertyMap[Handle];
 		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
