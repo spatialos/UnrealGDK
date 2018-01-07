@@ -39,7 +39,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_bhidden(Value != 0);
@@ -54,7 +54,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_breplicatemovement(Value != 0);
@@ -69,7 +69,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_btearoff(Value != 0);
@@ -84,13 +84,29 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_remoterole(uint32_t(Value));
 			break;
 		}
-		// case 5: - Owner is an object reference, skipping.
+		case 5: // field_owner
+		{
+			AActor* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_owner = UObjectRef;
+			break;
+		}
 		case 6: // field_replicatedmovement
 		{
 			FRepMovement Value;
@@ -100,7 +116,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			TArray<uint8> ValueData;
@@ -110,7 +126,23 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			Update.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
 			break;
 		}
-		// case 7: - AttachParent is an object reference, skipping.
+		case 7: // field_attachmentreplication_attachparent
+		{
+			AActor* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_attachmentreplication_attachparent = UObjectRef;
+			break;
+		}
 		case 8: // field_attachmentreplication_locationoffset
 		{
 			FVector_NetQuantize100 Value;
@@ -120,7 +152,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -135,7 +167,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -150,7 +182,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -165,13 +197,29 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
 			break;
 		}
-		// case 12: - AttachComponent is an object reference, skipping.
+		case 12: // field_attachmentreplication_attachcomponent
+		{
+			USceneComponent* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_attachmentreplication_attachcomponent = UObjectRef;
+			break;
+		}
 		case 13: // field_role
 		{
 			TEnumAsByte<ENetRole> Value;
@@ -181,7 +229,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_role(uint32_t(Value));
@@ -196,14 +244,46 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_bcanbedamaged(Value != 0);
 			break;
 		}
-		// case 15: - Instigator is an object reference, skipping.
-		// case 16: - PlayerState is an object reference, skipping.
+		case 15: // field_instigator
+		{
+			APawn* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_instigator = UObjectRef;
+			break;
+		}
+		case 16: // field_playerstate
+		{
+			APlayerState* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_playerstate = UObjectRef;
+			break;
+		}
 		case 17: // field_remoteviewpitch
 		{
 			uint8 Value;
@@ -213,14 +293,46 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_remoteviewpitch(uint32_t(Value));
 			break;
 		}
-		// case 18: - Controller is an object reference, skipping.
-		// case 19: - MovementBase is an object reference, skipping.
+		case 18: // field_controller
+		{
+			AController* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_controller = UObjectRef;
+			break;
+		}
+		case 19: // field_replicatedbasedmovement_movementbase
+		{
+			UPrimitiveComponent* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_replicatedbasedmovement_movementbase = UObjectRef;
+			break;
+		}
 		case 20: // field_replicatedbasedmovement_bonename
 		{
 			FName Value;
@@ -230,7 +342,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedbasedmovement_bonename(TCHAR_TO_UTF8(*Value.ToString()));
@@ -245,7 +357,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedbasedmovement_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -260,7 +372,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedbasedmovement_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -275,7 +387,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedbasedmovement_bserverhasbasecomponent(Value != 0);
@@ -290,7 +402,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedbasedmovement_brelativerotation(Value != 0);
@@ -305,7 +417,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedbasedmovement_bserverhasvelocity(Value != 0);
@@ -320,7 +432,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_animrootmotiontranslationscale(Value);
@@ -335,7 +447,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedserverlasttransformupdatetimestamp(Value);
@@ -350,7 +462,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedmovementmode(uint32_t(Value));
@@ -365,7 +477,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_biscrouched(Value != 0);
@@ -380,7 +492,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_jumpmaxholdtime(Value);
@@ -395,7 +507,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_jumpmaxcount(Value);
@@ -410,13 +522,29 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_bisactive(Value != 0);
 			break;
 		}
-		// case 33: - AnimMontage is an object reference, skipping.
+		case 33: // field_reprootmotion_animmontage
+		{
+			UAnimMontage* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_reprootmotion_animmontage = UObjectRef;
+			break;
+		}
 		case 34: // field_reprootmotion_position
 		{
 			float Value;
@@ -426,7 +554,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_position(Value);
@@ -441,7 +569,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -456,13 +584,29 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
 			break;
 		}
-		// case 37: - MovementBase is an object reference, skipping.
+		case 37: // field_reprootmotion_movementbase
+		{
+			UPrimitiveComponent* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_reprootmotion_movementbase = UObjectRef;
+			break;
+		}
 		case 38: // field_reprootmotion_movementbasebonename
 		{
 			FName Value;
@@ -472,7 +616,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_movementbasebonename(TCHAR_TO_UTF8(*Value.ToString()));
@@ -487,7 +631,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_brelativeposition(Value != 0);
@@ -502,7 +646,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_brelativerotation(Value != 0);
@@ -517,7 +661,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			{
@@ -548,7 +692,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_acceleration(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -563,7 +707,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_linearvelocity(improbable::Vector3f(Value.X, Value.Y, Value.Z));

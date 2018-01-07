@@ -22,7 +22,7 @@ void ApplyUpdateToSpatial_SingleClient_PlayerController(FArchive& Reader, int32 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_targetviewrotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -37,7 +37,7 @@ void ApplyUpdateToSpatial_SingleClient_PlayerController(FArchive& Reader, int32 
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_spawnlocation(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -117,7 +117,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_bhidden(Value != 0);
@@ -132,7 +132,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_breplicatemovement(Value != 0);
@@ -147,7 +147,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_btearoff(Value != 0);
@@ -162,13 +162,29 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_remoterole(uint32_t(Value));
 			break;
 		}
-		// case 5: - Owner is an object reference, skipping.
+		case 5: // field_owner
+		{
+			AActor* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_owner = UObjectRef;
+			break;
+		}
 		case 6: // field_replicatedmovement
 		{
 			FRepMovement Value;
@@ -178,7 +194,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			TArray<uint8> ValueData;
@@ -188,7 +204,23 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			Update.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
 			break;
 		}
-		// case 7: - AttachParent is an object reference, skipping.
+		case 7: // field_attachmentreplication_attachparent
+		{
+			AActor* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_attachmentreplication_attachparent = UObjectRef;
+			break;
+		}
 		case 8: // field_attachmentreplication_locationoffset
 		{
 			FVector_NetQuantize100 Value;
@@ -198,7 +230,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -213,7 +245,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -228,7 +260,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -243,13 +275,29 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
 			break;
 		}
-		// case 12: - AttachComponent is an object reference, skipping.
+		case 12: // field_attachmentreplication_attachcomponent
+		{
+			USceneComponent* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_attachmentreplication_attachcomponent = UObjectRef;
+			break;
+		}
 		case 13: // field_role
 		{
 			TEnumAsByte<ENetRole> Value;
@@ -259,7 +307,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_role(uint32_t(Value));
@@ -274,15 +322,63 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK:
+			//END-HACK
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_bcanbedamaged(Value != 0);
 			break;
 		}
-		// case 15: - Instigator is an object reference, skipping.
-		// case 16: - Pawn is an object reference, skipping.
-		// case 17: - PlayerState is an object reference, skipping.
+		case 15: // field_instigator
+		{
+			APawn* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_instigator = UObjectRef;
+			break;
+		}
+		case 16: // field_pawn
+		{
+			APawn* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_pawn = UObjectRef;
+			break;
+		}
+		case 17: // field_playerstate
+		{
+			APlayerState* Value;
+			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK
+			Property->NetSerializeItem(Reader, PackageMap, &Value);
+
+			auto UObjectRef = NewObject<UUnrealObjectRef>();
+			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
+			Update.set_field_playerstate = UObjectRef;
+			break;
+		}
 	default:
 		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
 		break;
