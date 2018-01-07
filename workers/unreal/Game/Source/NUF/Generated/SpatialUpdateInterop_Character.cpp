@@ -34,6 +34,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_bhidden(Value != 0);
@@ -43,6 +49,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_breplicatemovement(Value != 0);
@@ -52,6 +64,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_btearoff(Value != 0);
@@ -61,6 +79,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			TEnumAsByte<ENetRole> Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_remoterole(uint32_t(Value));
@@ -71,6 +95,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			FRepMovement Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			TArray<uint8> ValueData;
@@ -85,6 +115,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			FVector_NetQuantize100 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -94,6 +130,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			FVector_NetQuantize100 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -103,6 +145,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			FRotator Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -112,6 +160,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			FName Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
@@ -122,6 +176,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			TEnumAsByte<ENetRole> Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_role(uint32_t(Value));
@@ -131,6 +191,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_bcanbedamaged(Value != 0);
@@ -142,6 +208,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_remoteviewpitch(uint32_t(Value));
@@ -153,6 +225,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			FName Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedbasedmovement_bonename(TCHAR_TO_UTF8(*Value.ToString()));
@@ -162,6 +240,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			FVector_NetQuantize100 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedbasedmovement_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -171,6 +255,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			FRotator Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedbasedmovement_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -180,6 +270,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			bool Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedbasedmovement_bserverhasbasecomponent(Value != 0);
@@ -189,6 +285,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			bool Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedbasedmovement_brelativerotation(Value != 0);
@@ -198,6 +300,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			bool Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedbasedmovement_bserverhasvelocity(Value != 0);
@@ -207,6 +315,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			float Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_animrootmotiontranslationscale(Value);
@@ -216,6 +330,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			float Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedserverlasttransformupdatetimestamp(Value);
@@ -225,6 +345,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_replicatedmovementmode(uint32_t(Value));
@@ -234,6 +360,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_biscrouched(Value != 0);
@@ -243,6 +375,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			float Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_jumpmaxholdtime(Value);
@@ -252,6 +390,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			int32 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_jumpmaxcount(Value);
@@ -261,6 +405,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			bool Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_bisactive(Value != 0);
@@ -271,6 +421,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			float Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_position(Value);
@@ -280,6 +436,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			FVector_NetQuantize100 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -289,6 +451,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			FRotator Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -299,6 +467,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			FName Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_movementbasebonename(TCHAR_TO_UTF8(*Value.ToString()));
@@ -308,6 +482,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			bool Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_brelativeposition(Value != 0);
@@ -317,6 +497,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			bool Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_brelativerotation(Value != 0);
@@ -326,6 +512,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			FRootMotionSourceGroup Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			{
@@ -351,6 +543,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			FVector_NetQuantize10 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_acceleration(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -360,6 +558,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		{
 			FVector_NetQuantize10 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_reprootmotion_linearvelocity(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -1361,12 +1565,6 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(FInBunch* BunchPtr, con
 	{
 		// TODO: We can't parse UObjects or FNames here as we have no package map.
 		if (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass()))
-		{
-		return false;
-		}
-		
-		// Filter Role (13) and RemoteRole (4)
-		if (Handle == 13 || Handle == 4)
 		{
 		return false;
 		}

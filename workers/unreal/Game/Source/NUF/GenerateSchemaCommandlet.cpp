@@ -496,7 +496,8 @@ namespace
 		}
 		else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 		{
-			Writer.Print(FString::Printf(TEXT("// WEAK OBJECT REPLICATION - %s = %s;"), *SpatialValueSetter, *PropertyValue));
+			Writer.Print(FString::Printf(TEXT("auto UObjectRef = NewObject<UUnrealObjectRef>();\nUObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(%s).Value))));\n%s = UObjectRef;"),
+				*PropertyValue, *SpatialValueSetter));
 		}
 		else if (Property->IsA(UNameProperty::StaticClass()))
 		{
@@ -893,12 +894,6 @@ namespace
 					auto Handle = RepProp.Entry.Handle;
 					UProperty* Property = RepProp.Entry.Property;
 
-					if (Property->IsA(UObjectPropertyBase::StaticClass()))
-					{
-						SourceWriter.Print(FString::Printf(TEXT("// case %d: - %s is an object reference, skipping."), Handle, *Property->GetName()));
-						continue;
-					}
-
 					SourceWriter.Print(FString::Printf(TEXT("case %d: // %s"), Handle, *GetFullyQualifiedName(RepProp.Entry.Chain)));
 					SourceWriter.Print(TEXT("{"));
 					SourceWriter.Indent();
@@ -915,7 +910,7 @@ namespace
 					SourceWriter.Print(FString::Printf(TEXT("// This needs to be solved at a more fundamental level.")));
 					SourceWriter.Print(FString::Printf(TEXT("uint32 NumBits = 0;")));
 					SourceWriter.Print(FString::Printf(TEXT("Reader.SerializeIntPacked(NumBits);")));
-					SourceWriter.Print(FString::Printf(TEXT("//END-HACK:")));
+					SourceWriter.Print(FString::Printf(TEXT("//END-HACK")));
 					SourceWriter.Print(FString::Printf(TEXT("%s->NetSerializeItem(Reader, PackageMap, &%s);"), *PropertyName, *PropertyValueName));
 					SourceWriter.Print();
 					GenerateUnrealToSchemaConversion(SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName);

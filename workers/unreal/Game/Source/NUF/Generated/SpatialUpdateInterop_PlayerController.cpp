@@ -17,6 +17,12 @@ void ApplyUpdateToSpatial_SingleClient_PlayerController(FArchive& Reader, int32 
 		{
 			FRotator Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_targetviewrotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -26,6 +32,12 @@ void ApplyUpdateToSpatial_SingleClient_PlayerController(FArchive& Reader, int32 
 		{
 			FVector Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_spawnlocation(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -100,6 +112,12 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_bhidden(Value != 0);
@@ -109,8 +127,12 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
-
-
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_breplicatemovement(Value != 0);
@@ -120,6 +142,12 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_btearoff(Value != 0);
@@ -134,7 +162,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			// This needs to be solved at a more fundamental level.
 			uint32 NumBits = 0;
 			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_remoterole(uint32_t(Value));
@@ -145,6 +173,12 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			FRepMovement Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			TArray<uint8> ValueData;
@@ -159,6 +193,12 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			FVector_NetQuantize100 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -168,6 +208,12 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			FVector_NetQuantize100 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -177,6 +223,12 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			FRotator Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -186,6 +238,12 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			FName Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
@@ -196,6 +254,12 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			TEnumAsByte<ENetRole> Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_role(uint32_t(Value));
@@ -205,14 +269,15 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
+			//HACK:
+			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
+			// This needs to be solved at a more fundamental level.
+			uint32 NumBits = 0;
+			Reader.SerializeIntPacked(NumBits);
+			//END-HACK:
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			Update.set_field_bcanbedamaged(Value != 0);
-			break;
-		}
-		case 16:
-		{
-			UE_LOG(LogTemp, Warning, TEXT("We are trying to replicate the pawn!!"));
 			break;
 		}
 		// case 15: - Instigator is an object reference, skipping.
@@ -653,7 +718,7 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FInBunch* BunchP
 	FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
 	{
 		// TODO: We can't parse UObjects or FNames here as we have no package map.
-		if (Handle != 16 && (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass())))
+		if (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass()))
 		{
 		return false;
 		}
@@ -674,7 +739,6 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FInBunch* BunchP
 		}
 		return true;
 	};
-
 	BunchReader.Parse(true, PropertyMap, RepDataHandler);
 
 	// Send SpatialOS update.
