@@ -182,7 +182,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_owner = UObjectRef;
+			Update.set_field_owner(UObjectRef->GetUnderlying());
 			break;
 		}
 		case 6: // field_replicatedmovement
@@ -218,7 +218,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_attachmentreplication_attachparent = UObjectRef;
+			Update.set_field_attachmentreplication_attachparent(UObjectRef->GetUnderlying());
 			break;
 		}
 		case 8: // field_attachmentreplication_locationoffset
@@ -295,7 +295,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_attachmentreplication_attachcomponent = UObjectRef;
+			Update.set_field_attachmentreplication_attachcomponent(UObjectRef->GetUnderlying());
 			break;
 		}
 		case 13: // field_role
@@ -342,7 +342,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_instigator = UObjectRef;
+			Update.set_field_instigator(UObjectRef->GetUnderlying());
 			break;
 		}
 		case 16: // field_pawn
@@ -359,7 +359,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_pawn = UObjectRef;
+			Update.set_field_pawn(UObjectRef->GetUnderlying());
 			break;
 		}
 		case 17: // field_playerstate
@@ -376,7 +376,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_playerstate = UObjectRef;
+			Update.set_field_playerstate(UObjectRef->GetUnderlying());
 			break;
 		}
 	default:

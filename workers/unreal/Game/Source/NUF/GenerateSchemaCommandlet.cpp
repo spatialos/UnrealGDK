@@ -496,7 +496,7 @@ namespace
 		}
 		else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 		{
-			Writer.Print(FString::Printf(TEXT("auto UObjectRef = NewObject<UUnrealObjectRef>();\nUObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(%s).Value))));\n%s = UObjectRef;"),
+			Writer.Print(FString::Printf(TEXT("auto UObjectRef = NewObject<UUnrealObjectRef>();\nUObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(%s).Value))));\n%s(UObjectRef->GetUnderlying());"),
 				*PropertyValue, *SpatialValueSetter));
 		}
 		else if (Property->IsA(UNameProperty::StaticClass()))

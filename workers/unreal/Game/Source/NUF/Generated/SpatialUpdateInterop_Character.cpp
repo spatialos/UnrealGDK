@@ -104,7 +104,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_owner = UObjectRef;
+			Update.set_field_owner(UObjectRef->GetUnderlying());
 			break;
 		}
 		case 6: // field_replicatedmovement
@@ -140,7 +140,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_attachmentreplication_attachparent = UObjectRef;
+			Update.set_field_attachmentreplication_attachparent(UObjectRef->GetUnderlying());
 			break;
 		}
 		case 8: // field_attachmentreplication_locationoffset
@@ -217,7 +217,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_attachmentreplication_attachcomponent = UObjectRef;
+			Update.set_field_attachmentreplication_attachcomponent(UObjectRef->GetUnderlying());
 			break;
 		}
 		case 13: // field_role
@@ -264,7 +264,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_instigator = UObjectRef;
+			Update.set_field_instigator(UObjectRef->GetUnderlying());
 			break;
 		}
 		case 16: // field_playerstate
@@ -281,7 +281,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_playerstate = UObjectRef;
+			Update.set_field_playerstate(UObjectRef->GetUnderlying());
 			break;
 		}
 		case 17: // field_remoteviewpitch
@@ -313,7 +313,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_controller = UObjectRef;
+			Update.set_field_controller(UObjectRef->GetUnderlying());
 			break;
 		}
 		case 19: // field_replicatedbasedmovement_movementbase
@@ -330,7 +330,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_replicatedbasedmovement_movementbase = UObjectRef;
+			Update.set_field_replicatedbasedmovement_movementbase(UObjectRef->GetUnderlying());
 			break;
 		}
 		case 20: // field_replicatedbasedmovement_bonename
@@ -542,7 +542,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_reprootmotion_animmontage = UObjectRef;
+			Update.set_field_reprootmotion_animmontage(UObjectRef->GetUnderlying());
 			break;
 		}
 		case 34: // field_reprootmotion_position
@@ -604,7 +604,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 
 			auto UObjectRef = NewObject<UUnrealObjectRef>();
 			UObjectRef->SetEntity(FEntityId((int64(PackageMap->GetNetGUIDFromObject(Value).Value))));
-			Update.set_field_reprootmotion_movementbase = UObjectRef;
+			Update.set_field_reprootmotion_movementbase(UObjectRef->GetUnderlying());
 			break;
 		}
 		case 38: // field_reprootmotion_movementbasebonename
