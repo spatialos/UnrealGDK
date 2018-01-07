@@ -148,6 +148,12 @@ void USpatialNetDriver::OnSpatialOSConnectFailed()
 	UE_LOG(LogTemp, Warning, TEXT("Could not connect to SpatialOS."));
 }
 
+bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const
+{
+	//In our case, the connection is not specific to a client. Thus, it's not relevant whether the level is initialized.
+	return true;
+}
+
 //NUF: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.
 #if WITH_SERVER_CODE
 
