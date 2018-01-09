@@ -172,13 +172,18 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 
 bool USpatialActorChannel::ReplicateActor()
 {
-	bSendingInitialBunch = false;
+// filter everything else temporarily to make it easier to debug for now
+	if (!Actor->IsA(APlayerController::StaticClass()))
+		return false;
 	if ((OpenPacketId.First == INDEX_NONE || Connection->bResendAllDataSinceOpen) && OpenedLocally)
 	{
 		bSendingInitialBunch = true;
 	}
 	
-	return Super::ReplicateActor();
+	bool bResult = Super::ReplicateActor();
+	bSendingInitialBunch = false;
+	
+	return bResult;
 }
 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
