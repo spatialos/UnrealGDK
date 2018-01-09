@@ -902,7 +902,15 @@ namespace
 					FString PropertyValueName = TEXT("Value");
 					FString PropertyValueCppType = Property->GetCPPType();
 					FString PropertyName = TEXT("Property");
-					SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
+					if (Property->IsA(UObjectPropertyBase::StaticClass()))
+					{
+						// If not null, the serialization code will try to de-reference this pointer. So we set it.
+						SourceWriter.Print(FString::Printf(TEXT("%s %s = nullptr;"), *PropertyValueCppType, *PropertyValueName));
+					}
+					else
+					{
+						SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
+					}
 					SourceWriter.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
 					if (!Property->IsA(UObjectPropertyBase::StaticClass()) && !Property->IsA(UNameProperty::StaticClass()))
 					{

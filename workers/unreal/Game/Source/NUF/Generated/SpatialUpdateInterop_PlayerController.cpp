@@ -170,7 +170,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		}
 		case 5: // field_owner
 		{
-			AActor* Value;
+			AActor* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
@@ -200,7 +200,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		}
 		case 7: // field_attachmentreplication_attachparent
 		{
-			AActor* Value;
+			AActor* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
@@ -265,7 +265,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		}
 		case 12: // field_attachmentreplication_attachcomponent
 		{
-			USceneComponent* Value;
+			USceneComponent* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
@@ -306,7 +306,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		}
 		case 15: // field_instigator
 		{
-			APawn* Value;
+			APawn* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
@@ -317,7 +317,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		}
 		case 16: // field_pawn
 		{
-			APawn* Value;
+			APawn* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
@@ -328,7 +328,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		}
 		case 17: // field_playerstate
 		{
-			APlayerState* Value;
+			APlayerState* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 

@@ -92,7 +92,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		}
 		case 5: // field_owner
 		{
-			AActor* Value;
+			AActor* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
@@ -122,7 +122,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		}
 		case 7: // field_attachmentreplication_attachparent
 		{
-			AActor* Value;
+			AActor* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
@@ -187,7 +187,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		}
 		case 12: // field_attachmentreplication_attachcomponent
 		{
-			USceneComponent* Value;
+			USceneComponent* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
@@ -228,7 +228,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		}
 		case 15: // field_instigator
 		{
-			APawn* Value;
+			APawn* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
@@ -239,7 +239,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		}
 		case 16: // field_playerstate
 		{
-			APlayerState* Value;
+			APlayerState* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
@@ -265,7 +265,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		}
 		case 18: // field_controller
 		{
-			AController* Value;
+			AController* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
@@ -276,7 +276,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		}
 		case 19: // field_replicatedbasedmovement_movementbase
 		{
-			UPrimitiveComponent* Value;
+			UPrimitiveComponent* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
@@ -476,7 +476,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		}
 		case 33: // field_reprootmotion_animmontage
 		{
-			UAnimMontage* Value;
+			UAnimMontage* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
@@ -532,7 +532,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 		}
 		case 37: // field_reprootmotion_movementbase
 		{
-			UPrimitiveComponent* Value;
+			UPrimitiveComponent* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
