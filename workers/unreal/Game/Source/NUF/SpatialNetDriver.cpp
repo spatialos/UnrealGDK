@@ -148,11 +148,8 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	bool CorrectActor = NetGuid == 6 || NetGuid == 12;
 	if (Function->FunctionFlags & FUNC_Net && CorrectActor)
 	{
+		// this can be removed once actors are spawning correctly 
 		worker::EntityId entityId = NetGuid == 6 ? 2 : 3;
-		// The rpc might have been called by an actor directly, or by a subobject on that actor (e.g. UCharacterMovementComponent)
-		UObject* CallingObject = SubObject ? Actor : SubObject;
-		// Reading properties from an FFrame changes the FFrame (internal pointer to the last property read). So we need to make a new one.
-		FFrame TempRpcFrameForReading{ CallingObject, Function, Parameters, nullptr, Function->Children };
 
 		UpdateInterop->HandleRPCInvocation(Actor, Function, &TempRpcFrameForReading, entityId);	
 	}
