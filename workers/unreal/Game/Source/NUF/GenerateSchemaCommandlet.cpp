@@ -315,93 +315,6 @@ FString RepLayoutTypeToSchemaType(ERepLayoutCmdType Type)
 	return DataType;
 }
 
-FString PropertyTypeToSchemaType(UProperty* Property)
-{
-	if (Property->IsA(UBoolProperty::StaticClass()))
-	{
-		return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyBool);
-	}
-	else if (Property->IsA(UFloatProperty::StaticClass()))
-	{
-		return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyFloat);
-	}
-	else if (Property->IsA(UIntProperty::StaticClass()))
-	{
-		return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyInt);
-	}
-	else if (Property->IsA(UByteProperty::StaticClass()))
-	{
-		return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyByte);
-	}
-	else if (Property->IsA(UNameProperty::StaticClass()))
-	{
-		return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyName);
-	}
-	else if (Property->IsA(UUInt32Property::StaticClass()))
-	{
-		return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyUInt32);
-	}
-	else if (Property->IsA(UObjectProperty::StaticClass()))
-	{
-		return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyObject);
-	}
-	 //TODO - add string support
-	else if (Property->IsA(UStrProperty::StaticClass()))
-	{
-		return TEXT("string");//RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyString);
-	}
-	else if (Property->IsA(UStructProperty::StaticClass()))
-	{
-		UStructProperty * StructProp = Cast< UStructProperty >(Property);
-		UScriptStruct * Struct = StructProp->Struct;
-		if (Struct->GetFName() == NAME_Vector)
-		{
-			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyVector);
-		}
-		else if (Struct->GetFName() == NAME_Rotator)
-		{
-			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyRotator);
-		}
-		else if (Struct->GetFName() == NAME_Plane)
-		{
-			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyPlane);
-		}
-		else if (Struct->GetName() == TEXT("Vector_NetQuantize100"))
-		{
-			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyVector100);
-		}
-		else if (Struct->GetName() == TEXT("Vector_NetQuantize10"))
-		{
-			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyVector10);
-		}
-		else if (Struct->GetName() == TEXT("Vector_NetQuantizeNormal"))
-		{
-			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyVectorNormal);
-		}
-		else if (Struct->GetName() == TEXT("Vector_NetQuantize"))
-		{
-			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyVectorQ);
-		}
-		else if (Struct->GetName() == TEXT("UniqueNetIdRepl"))
-		{
-			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_PropertyNetId);
-		}
-		else if (Struct->GetName() == TEXT("RepMovement"))
-		{
-			return RepLayoutTypeToSchemaType(ERepLayoutCmdType::REPCMD_RepMovement);
-		}
-		else
-		{
-			// return an empty string so that this can be identified as an unhandled struct type
-			return "";
-		}
-	}
-	else
-	{
-		return FString::Printf(TEXT("// Unsupported param type: %s"), *Property->GetCPPType());
-	}
-}
-
 FString GetSchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type)
 {
 	return FString::Printf(TEXT("Unreal%s%sReplicatedData"), *Type->GetName(), *GetReplicatedPropertyGroupName(Group));
@@ -1033,46 +946,21 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 				Writer.Print(FString::Printf(TEXT("type %s {"), *TypeStr));
 				Writer.Indent();
 
-				TArray<FString> PropertiesToWrite;
-				FieldCounter = 0;
-				for (TFieldIterator<UProperty> Param(Func); Param; ++Param)
+				// Recurse into class properties and build a complete property list.
+				TArray<FPropertyInfo> ParamList;
+				for (TFieldIterator<UProperty> It(Func); It; ++It)
 				{
-					// This will return any specific handling for Param's type
-					FString SchemaTypeString = PropertyTypeToSchemaType(*Param);
-					
-					// If SchemaTypeString is empty here, it means that this struct type has no specific handling in schema
-					// Instead, recurse in to its properties. 
-					// NOTE - this will currently not support nested struct parameters
-					if (Param->IsA(UStructProperty::StaticClass()) && SchemaTypeString == "")
-					{
-						UStructProperty* Prop = Cast<UStructProperty>(*Param);
-						UScriptStruct* Struct = Prop->Struct;
-						for (TFieldIterator<UProperty> It(Struct); It; ++It)
-						{
-							PropertiesToWrite.Emplace(FString::Printf(
-								TEXT("%s %s"),
-								*PropertyTypeToSchemaType(*It),
-								*GetFullyQualifiedName({ *Param, *It })
-							));
-						}
-					}
-					else
-					{
-						PropertiesToWrite.Emplace(FString::Printf(
-							TEXT("%s %s"),
-							*SchemaTypeString,
-							*GetFullyQualifiedName({ *Param })
-						));
-					}
+					VisitProperty(ParamList, nullptr, {}, *It);
 				}
 	
-				for (auto& Property : PropertiesToWrite)
+				for (auto& Param : ParamList)
 				{
 					FieldCounter++;
 					Writer.Print(
 						FString::Printf(
-							TEXT("%s = %d;"),
-							*Property,
+							TEXT("%s %s = %d;"),
+							*RepLayoutTypeToSchemaType(Param.Type),
+							*GetFullyQualifiedName(Param.Chain),
 							FieldCounter
 						)
 					);
