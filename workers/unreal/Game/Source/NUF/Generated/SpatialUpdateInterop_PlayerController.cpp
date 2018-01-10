@@ -605,7 +605,11 @@ void ClientUnmutePlayerSender(worker::Connection* Connection, struct FFrame* RPC
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
 
 	improbable::unreal::ClientUnmutePlayerRequest Request;
-	// UNSUPPORTED UniqueNetIdRepl - Request.set_field_playerid = PlayerId;
+	TArray<uint8> ValueData;
+	FMemoryWriter ValueDataWriter(ValueData);
+	bool Success;
+	PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
+	Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(Target, Request, 0);
 }
@@ -621,7 +625,18 @@ void ClientTravelInternalSender(worker::Connection* Connection, struct FFrame* R
 	Request.set_field_url(TCHAR_TO_UTF8(*URL));
 	Request.set_field_traveltype(uint32_t(TravelType));
 	Request.set_field_bseamless(bSeamless != 0);
-	// UNSUPPORTED FGuid
+	{
+		Request.set_field_mappackageguid_a(MapPackageGuid.A);
+	}
+	{
+		Request.set_field_mappackageguid_b(MapPackageGuid.B);
+	}
+	{
+		Request.set_field_mappackageguid_c(MapPackageGuid.C);
+	}
+	{
+		Request.set_field_mappackageguid_d(MapPackageGuid.D);
+	}
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(Target, Request, 0);
 }
@@ -699,7 +714,18 @@ void ClientSetViewTargetSender(worker::Connection* Connection, struct FFrame* RP
 
 	improbable::unreal::ClientSetViewTargetRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_a = A;
-	// UNSUPPORTED FViewTargetTransitionParams
+	{
+		Request.set_field_transitionparams_blendtime(TransitionParams.BlendTime);
+	}
+	{
+		Request.set_field_transitionparams_blendfunction(uint32_t(TransitionParams.BlendFunction));
+	}
+	{
+		Request.set_field_transitionparams_blendexp(TransitionParams.BlendExp);
+	}
+	{
+		Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing != 0);
+	}
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(Target, Request, 0);
 }
@@ -774,8 +800,24 @@ void ClientSetCameraFadeSender(worker::Connection* Connection, struct FFrame* RP
 
 	improbable::unreal::ClientSetCameraFadeRequest Request;
 	Request.set_field_benablefading(bEnableFading != 0);
-	// UNSUPPORTED FColor
-	// UNSUPPORTED FVector2D
+	{
+		Request.set_field_fadecolor_b(uint32_t(FadeColor.B));
+	}
+	{
+		Request.set_field_fadecolor_g(uint32_t(FadeColor.G));
+	}
+	{
+		Request.set_field_fadecolor_r(uint32_t(FadeColor.R));
+	}
+	{
+		Request.set_field_fadecolor_a(uint32_t(FadeColor.A));
+	}
+	{
+		Request.set_field_fadealpha_x(FadeAlpha.X);
+	}
+	{
+		Request.set_field_fadealpha_y(FadeAlpha.Y);
+	}
 	Request.set_field_fadetime(FadeTime);
 	Request.set_field_bfadeaudio(bFadeAudio != 0);
 
@@ -973,7 +1015,11 @@ void ClientMutePlayerSender(worker::Connection* Connection, struct FFrame* RPCFr
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
 
 	improbable::unreal::ClientMutePlayerRequest Request;
-	// UNSUPPORTED UniqueNetIdRepl - Request.set_field_playerid = PlayerId;
+	TArray<uint8> ValueData;
+	FMemoryWriter ValueDataWriter(ValueData);
+	bool Success;
+	PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
+	Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(Target, Request, 0);
 }
@@ -1133,7 +1179,18 @@ void ServerViewSelfSender(worker::Connection* Connection, struct FFrame* RPCFram
 	P_GET_STRUCT(FViewTargetTransitionParams, TransitionParams)
 
 	improbable::unreal::ServerViewSelfRequest Request;
-	// UNSUPPORTED FViewTargetTransitionParams
+	{
+		Request.set_field_transitionparams_blendtime(TransitionParams.BlendTime);
+	}
+	{
+		Request.set_field_transitionparams_blendfunction(uint32_t(TransitionParams.BlendFunction));
+	}
+	{
+		Request.set_field_transitionparams_blendexp(TransitionParams.BlendExp);
+	}
+	{
+		Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing != 0);
+	}
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(Target, Request, 0);
 }
@@ -1185,7 +1242,11 @@ void ServerUnmutePlayerSender(worker::Connection* Connection, struct FFrame* RPC
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
 
 	improbable::unreal::ServerUnmutePlayerRequest Request;
-	// UNSUPPORTED UniqueNetIdRepl - Request.set_field_playerid = PlayerId;
+	TArray<uint8> ValueData;
+	FMemoryWriter ValueDataWriter(ValueData);
+	bool Success;
+	PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
+	Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(Target, Request, 0);
 }
@@ -1251,7 +1312,11 @@ void ServerMutePlayerSender(worker::Connection* Connection, struct FFrame* RPCFr
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
 
 	improbable::unreal::ServerMutePlayerRequest Request;
-	// UNSUPPORTED UniqueNetIdRepl - Request.set_field_playerid = PlayerId;
+	TArray<uint8> ValueData;
+	FMemoryWriter ValueDataWriter(ValueData);
+	bool Success;
+	PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
+	Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(Target, Request, 0);
 }
@@ -1589,7 +1654,7 @@ void FSpatialTypeBinding_PlayerController::SendRPCCommand(UFunction* Function, F
 void FSpatialTypeBinding_PlayerController::OnServerStartedVisualLoggerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	bool bIsLogging;
 	bIsLogging = Op.Request.field_bislogging();
 
@@ -1600,7 +1665,7 @@ void FSpatialTypeBinding_PlayerController::OnServerStartedVisualLoggerReceiver(c
 void FSpatialTypeBinding_PlayerController::ClientWasKickedReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FText KickReason;
 	// UNSUPPORTED
 
@@ -1611,7 +1676,7 @@ void FSpatialTypeBinding_PlayerController::ClientWasKickedReceiver(const worker:
 void FSpatialTypeBinding_PlayerController::ClientVoiceHandshakeCompleteReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ClientVoiceHandshakeComplete_Implementation();
 
@@ -1620,7 +1685,7 @@ void FSpatialTypeBinding_PlayerController::ClientVoiceHandshakeCompleteReceiver(
 void FSpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatusReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FName PackageName;
 	PackageName = FName((Op.Request.field_packagename()).data());
 	bool bNewShouldBeLoaded;
@@ -1639,8 +1704,14 @@ void FSpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatusRecei
 void FSpatialTypeBinding_PlayerController::ClientUnmutePlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FUniqueNetIdRepl PlayerId;
+	auto& ValueDataStr = Op.Request.field_playerid();
+	TArray<uint8> ValueData;
+	ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+	FMemoryReader ValueDataReader(ValueData);
+	bool bSuccess;
+	PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
 
 	TargetObject->ClientUnmutePlayer_Implementation(PlayerId);
 
@@ -1649,7 +1720,7 @@ void FSpatialTypeBinding_PlayerController::ClientUnmutePlayerReceiver(const work
 void FSpatialTypeBinding_PlayerController::ClientTravelInternalReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FString URL;
 	URL = FString(UTF8_TO_TCHAR(Op.Request.field_url().c_str()));
 	TEnumAsByte<ETravelType> TravelType;
@@ -1681,7 +1752,7 @@ void FSpatialTypeBinding_PlayerController::ClientTravelInternalReceiver(const wo
 void FSpatialTypeBinding_PlayerController::ClientTeamMessageReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	APlayerState* SenderPlayerState = nullptr;
 	// UNSUPPORTED ObjectProperty - SenderPlayerState Op.Request.field_senderplayerstate();
 	FString S;
@@ -1698,7 +1769,7 @@ void FSpatialTypeBinding_PlayerController::ClientTeamMessageReceiver(const worke
 void FSpatialTypeBinding_PlayerController::ClientStopForceFeedbackReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	UForceFeedbackEffect* ForceFeedbackEffect = nullptr;
 	// UNSUPPORTED ObjectProperty - ForceFeedbackEffect Op.Request.field_forcefeedbackeffect();
 	FName Tag;
@@ -1711,7 +1782,7 @@ void FSpatialTypeBinding_PlayerController::ClientStopForceFeedbackReceiver(const
 void FSpatialTypeBinding_PlayerController::ClientStopCameraShakeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	TSubclassOf<UCameraShake>  Shake = nullptr;
 	// UNSUPPORTED ObjectProperty - Shake Op.Request.field_shake();
 	bool bImmediately;
@@ -1724,7 +1795,7 @@ void FSpatialTypeBinding_PlayerController::ClientStopCameraShakeReceiver(const w
 void FSpatialTypeBinding_PlayerController::ClientStopCameraAnimReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	UCameraAnim* AnimToStop = nullptr;
 	// UNSUPPORTED ObjectProperty - AnimToStop Op.Request.field_animtostop();
 
@@ -1735,7 +1806,7 @@ void FSpatialTypeBinding_PlayerController::ClientStopCameraAnimReceiver(const wo
 void FSpatialTypeBinding_PlayerController::ClientStartOnlineSessionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ClientStartOnlineSession_Implementation();
 
@@ -1744,7 +1815,7 @@ void FSpatialTypeBinding_PlayerController::ClientStartOnlineSessionReceiver(cons
 void FSpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffectReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	TSubclassOf<AEmitterCameraLensEffectBase>  LensEffectEmitterClass = nullptr;
 	// UNSUPPORTED ObjectProperty - LensEffectEmitterClass Op.Request.field_lenseffectemitterclass();
 
@@ -1755,7 +1826,7 @@ void FSpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffectReceiver(c
 void FSpatialTypeBinding_PlayerController::ClientSetViewTargetReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	AActor* A = nullptr;
 	// UNSUPPORTED ObjectProperty - A Op.Request.field_a();
 	FViewTargetTransitionParams TransitionParams;
@@ -1783,7 +1854,7 @@ void FSpatialTypeBinding_PlayerController::ClientSetViewTargetReceiver(const wor
 void FSpatialTypeBinding_PlayerController::ClientSetSpectatorWaitingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	bool bWaiting;
 	bWaiting = Op.Request.field_bwaiting();
 
@@ -1794,7 +1865,7 @@ void FSpatialTypeBinding_PlayerController::ClientSetSpectatorWaitingReceiver(con
 void FSpatialTypeBinding_PlayerController::ClientSetHUDReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	TSubclassOf<AHUD>  NewHUDClass = nullptr;
 	// UNSUPPORTED ObjectProperty - NewHUDClass Op.Request.field_newhudclass();
 
@@ -1805,7 +1876,7 @@ void FSpatialTypeBinding_PlayerController::ClientSetHUDReceiver(const worker::Co
 void FSpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResidentReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	UMaterialInterface* Material = nullptr;
 	// UNSUPPORTED ObjectProperty - Material Op.Request.field_material();
 	float ForceDuration;
@@ -1820,7 +1891,7 @@ void FSpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResidentRe
 void FSpatialTypeBinding_PlayerController::ClientSetCinematicModeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	bool bInCinematicMode;
 	bInCinematicMode = Op.Request.field_bincinematicmode();
 	bool bAffectsMovement;
@@ -1837,7 +1908,7 @@ void FSpatialTypeBinding_PlayerController::ClientSetCinematicModeReceiver(const 
 void FSpatialTypeBinding_PlayerController::ClientSetCameraModeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FName NewCamMode;
 	NewCamMode = FName((Op.Request.field_newcammode()).data());
 
@@ -1848,7 +1919,7 @@ void FSpatialTypeBinding_PlayerController::ClientSetCameraModeReceiver(const wor
 void FSpatialTypeBinding_PlayerController::ClientSetCameraFadeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	bool bEnableFading;
 	bEnableFading = Op.Request.field_benablefading();
 	FColor FadeColor;
@@ -1899,7 +1970,7 @@ void FSpatialTypeBinding_PlayerController::ClientSetCameraFadeReceiver(const wor
 void FSpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoadingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ClientSetBlockOnAsyncLoading_Implementation();
 
@@ -1908,7 +1979,7 @@ void FSpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoadingReceiver(
 void FSpatialTypeBinding_PlayerController::ClientReturnToMainMenuReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FString ReturnReason;
 	ReturnReason = FString(UTF8_TO_TCHAR(Op.Request.field_returnreason().c_str()));
 
@@ -1919,7 +1990,7 @@ void FSpatialTypeBinding_PlayerController::ClientReturnToMainMenuReceiver(const 
 void FSpatialTypeBinding_PlayerController::ClientRetryClientRestartReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	APawn* NewPawn = nullptr;
 	// UNSUPPORTED ObjectProperty - NewPawn Op.Request.field_newpawn();
 
@@ -1930,7 +2001,7 @@ void FSpatialTypeBinding_PlayerController::ClientRetryClientRestartReceiver(cons
 void FSpatialTypeBinding_PlayerController::ClientRestartReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	APawn* NewPawn = nullptr;
 	// UNSUPPORTED ObjectProperty - NewPawn Op.Request.field_newpawn();
 
@@ -1941,7 +2012,7 @@ void FSpatialTypeBinding_PlayerController::ClientRestartReceiver(const worker::C
 void FSpatialTypeBinding_PlayerController::ClientResetReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ClientReset_Implementation();
 
@@ -1950,7 +2021,7 @@ void FSpatialTypeBinding_PlayerController::ClientResetReceiver(const worker::Com
 void FSpatialTypeBinding_PlayerController::ClientRepObjRefReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	UObject* Object = nullptr;
 	// UNSUPPORTED ObjectProperty - Object Op.Request.field_object();
 
@@ -1961,7 +2032,7 @@ void FSpatialTypeBinding_PlayerController::ClientRepObjRefReceiver(const worker:
 void FSpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessageReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	TSubclassOf<ULocalMessage>  Message = nullptr;
 	// UNSUPPORTED ObjectProperty - Message Op.Request.field_message();
 	int32 Switch;
@@ -1980,7 +2051,7 @@ void FSpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessageReceiver
 void FSpatialTypeBinding_PlayerController::ClientPrestreamTexturesReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	AActor* ForcedActor = nullptr;
 	// UNSUPPORTED ObjectProperty - ForcedActor Op.Request.field_forcedactor();
 	float ForceDuration;
@@ -1997,7 +2068,7 @@ void FSpatialTypeBinding_PlayerController::ClientPrestreamTexturesReceiver(const
 void FSpatialTypeBinding_PlayerController::ClientPrepareMapChangeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FName LevelName;
 	LevelName = FName((Op.Request.field_levelname()).data());
 	bool bFirst;
@@ -2012,7 +2083,7 @@ void FSpatialTypeBinding_PlayerController::ClientPrepareMapChangeReceiver(const 
 void FSpatialTypeBinding_PlayerController::ClientPlaySoundAtLocationReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	USoundBase* Sound = nullptr;
 	// UNSUPPORTED ObjectProperty - Sound Op.Request.field_sound();
 	FVector Location;
@@ -2032,7 +2103,7 @@ void FSpatialTypeBinding_PlayerController::ClientPlaySoundAtLocationReceiver(con
 void FSpatialTypeBinding_PlayerController::ClientPlaySoundReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	USoundBase* Sound = nullptr;
 	// UNSUPPORTED ObjectProperty - Sound Op.Request.field_sound();
 	float VolumeMultiplier;
@@ -2047,7 +2118,7 @@ void FSpatialTypeBinding_PlayerController::ClientPlaySoundReceiver(const worker:
 void FSpatialTypeBinding_PlayerController::ClientPlayForceFeedbackReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	UForceFeedbackEffect* ForceFeedbackEffect = nullptr;
 	// UNSUPPORTED ObjectProperty - ForceFeedbackEffect Op.Request.field_forcefeedbackeffect();
 	bool bLooping;
@@ -2062,7 +2133,7 @@ void FSpatialTypeBinding_PlayerController::ClientPlayForceFeedbackReceiver(const
 void FSpatialTypeBinding_PlayerController::ClientPlayCameraShakeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	TSubclassOf<UCameraShake>  Shake = nullptr;
 	// UNSUPPORTED ObjectProperty - Shake Op.Request.field_shake();
 	float Scale;
@@ -2086,7 +2157,7 @@ void FSpatialTypeBinding_PlayerController::ClientPlayCameraShakeReceiver(const w
 void FSpatialTypeBinding_PlayerController::ClientPlayCameraAnimReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	UCameraAnim* AnimToPlay = nullptr;
 	// UNSUPPORTED ObjectProperty - AnimToPlay Op.Request.field_animtoplay();
 	float Scale;
@@ -2120,8 +2191,14 @@ void FSpatialTypeBinding_PlayerController::ClientPlayCameraAnimReceiver(const wo
 void FSpatialTypeBinding_PlayerController::ClientMutePlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FUniqueNetIdRepl PlayerId;
+	auto& ValueDataStr = Op.Request.field_playerid();
+	TArray<uint8> ValueData;
+	ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+	FMemoryReader ValueDataReader(ValueData);
+	bool bSuccess;
+	PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
 
 	TargetObject->ClientMutePlayer_Implementation(PlayerId);
 
@@ -2130,7 +2207,7 @@ void FSpatialTypeBinding_PlayerController::ClientMutePlayerReceiver(const worker
 void FSpatialTypeBinding_PlayerController::ClientMessageReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FString S;
 	S = FString(UTF8_TO_TCHAR(Op.Request.field_s().c_str()));
 	FName Type;
@@ -2145,7 +2222,7 @@ void FSpatialTypeBinding_PlayerController::ClientMessageReceiver(const worker::C
 void FSpatialTypeBinding_PlayerController::ClientIgnoreMoveInputReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	bool bIgnore;
 	bIgnore = Op.Request.field_bignore();
 
@@ -2156,7 +2233,7 @@ void FSpatialTypeBinding_PlayerController::ClientIgnoreMoveInputReceiver(const w
 void FSpatialTypeBinding_PlayerController::ClientIgnoreLookInputReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	bool bIgnore;
 	bIgnore = Op.Request.field_bignore();
 
@@ -2167,7 +2244,7 @@ void FSpatialTypeBinding_PlayerController::ClientIgnoreLookInputReceiver(const w
 void FSpatialTypeBinding_PlayerController::ClientGotoStateReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FName NewState;
 	NewState = FName((Op.Request.field_newstate()).data());
 
@@ -2178,7 +2255,7 @@ void FSpatialTypeBinding_PlayerController::ClientGotoStateReceiver(const worker:
 void FSpatialTypeBinding_PlayerController::ClientGameEndedReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	AActor* EndGameFocus = nullptr;
 	// UNSUPPORTED ObjectProperty - EndGameFocus Op.Request.field_endgamefocus();
 	bool bIsWinner;
@@ -2191,7 +2268,7 @@ void FSpatialTypeBinding_PlayerController::ClientGameEndedReceiver(const worker:
 void FSpatialTypeBinding_PlayerController::ClientForceGarbageCollectionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ClientForceGarbageCollection_Implementation();
 
@@ -2200,7 +2277,7 @@ void FSpatialTypeBinding_PlayerController::ClientForceGarbageCollectionReceiver(
 void FSpatialTypeBinding_PlayerController::ClientFlushLevelStreamingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ClientFlushLevelStreaming_Implementation();
 
@@ -2209,7 +2286,7 @@ void FSpatialTypeBinding_PlayerController::ClientFlushLevelStreamingReceiver(con
 void FSpatialTypeBinding_PlayerController::ClientEndOnlineSessionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ClientEndOnlineSession_Implementation();
 
@@ -2218,7 +2295,7 @@ void FSpatialTypeBinding_PlayerController::ClientEndOnlineSessionReceiver(const 
 void FSpatialTypeBinding_PlayerController::ClientEnableNetworkVoiceReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	bool bEnable;
 	bEnable = Op.Request.field_benable();
 
@@ -2229,7 +2306,7 @@ void FSpatialTypeBinding_PlayerController::ClientEnableNetworkVoiceReceiver(cons
 void FSpatialTypeBinding_PlayerController::ClientCommitMapChangeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ClientCommitMapChange_Implementation();
 
@@ -2238,7 +2315,7 @@ void FSpatialTypeBinding_PlayerController::ClientCommitMapChangeReceiver(const w
 void FSpatialTypeBinding_PlayerController::ClientClearCameraLensEffectsReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ClientClearCameraLensEffects_Implementation();
 
@@ -2247,7 +2324,7 @@ void FSpatialTypeBinding_PlayerController::ClientClearCameraLensEffectsReceiver(
 void FSpatialTypeBinding_PlayerController::ClientCapBandwidthReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	int32 Cap;
 	Cap = Op.Request.field_cap();
 
@@ -2258,7 +2335,7 @@ void FSpatialTypeBinding_PlayerController::ClientCapBandwidthReceiver(const work
 void FSpatialTypeBinding_PlayerController::ClientCancelPendingMapChangeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ClientCancelPendingMapChange_Implementation();
 
@@ -2267,7 +2344,7 @@ void FSpatialTypeBinding_PlayerController::ClientCancelPendingMapChangeReceiver(
 void FSpatialTypeBinding_PlayerController::ClientAddTextureStreamingLocReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FVector InLoc;
 	auto& Vector = Op.Request.field_inloc();
 	InLoc.X = Vector.x();
@@ -2285,7 +2362,7 @@ void FSpatialTypeBinding_PlayerController::ClientAddTextureStreamingLocReceiver(
 void FSpatialTypeBinding_PlayerController::ClientSetRotationReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FRotator NewRotation;
 	auto& Rotator = Op.Request.field_newrotation();
 	NewRotation.Yaw = Rotator.yaw();
@@ -2301,7 +2378,7 @@ void FSpatialTypeBinding_PlayerController::ClientSetRotationReceiver(const worke
 void FSpatialTypeBinding_PlayerController::ClientSetLocationReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FVector NewLocation;
 	auto& Vector = Op.Request.field_newlocation();
 	NewLocation.X = Vector.x();
@@ -2320,7 +2397,7 @@ void FSpatialTypeBinding_PlayerController::ClientSetLocationReceiver(const worke
 void FSpatialTypeBinding_PlayerController::ServerViewSelfReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FViewTargetTransitionParams TransitionParams;
 	{
 		TransitionParams.BlendTime = Op.Request.field_transitionparams_blendtime();
@@ -2346,7 +2423,7 @@ void FSpatialTypeBinding_PlayerController::ServerViewSelfReceiver(const worker::
 void FSpatialTypeBinding_PlayerController::ServerViewPrevPlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ServerViewPrevPlayer_Implementation();
 
@@ -2355,7 +2432,7 @@ void FSpatialTypeBinding_PlayerController::ServerViewPrevPlayerReceiver(const wo
 void FSpatialTypeBinding_PlayerController::ServerViewNextPlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ServerViewNextPlayer_Implementation();
 
@@ -2364,7 +2441,7 @@ void FSpatialTypeBinding_PlayerController::ServerViewNextPlayerReceiver(const wo
 void FSpatialTypeBinding_PlayerController::ServerVerifyViewTargetReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ServerVerifyViewTarget_Implementation();
 
@@ -2373,7 +2450,7 @@ void FSpatialTypeBinding_PlayerController::ServerVerifyViewTargetReceiver(const 
 void FSpatialTypeBinding_PlayerController::ServerUpdateLevelVisibilityReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FName PackageName;
 	PackageName = FName((Op.Request.field_packagename()).data());
 	bool bIsVisible;
@@ -2386,7 +2463,7 @@ void FSpatialTypeBinding_PlayerController::ServerUpdateLevelVisibilityReceiver(c
 void FSpatialTypeBinding_PlayerController::ServerUpdateCameraReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FVector_NetQuantize CamLoc;
 	auto& Vector = Op.Request.field_camloc();
 	CamLoc.X = Vector.x();
@@ -2402,8 +2479,14 @@ void FSpatialTypeBinding_PlayerController::ServerUpdateCameraReceiver(const work
 void FSpatialTypeBinding_PlayerController::ServerUnmutePlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FUniqueNetIdRepl PlayerId;
+	auto& ValueDataStr = Op.Request.field_playerid();
+	TArray<uint8> ValueData;
+	ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+	FMemoryReader ValueDataReader(ValueData);
+	bool bSuccess;
+	PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
 
 	TargetObject->ServerUnmutePlayer_Implementation(PlayerId);
 
@@ -2412,7 +2495,7 @@ void FSpatialTypeBinding_PlayerController::ServerUnmutePlayerReceiver(const work
 void FSpatialTypeBinding_PlayerController::ServerToggleAILoggingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ServerToggleAILogging_Implementation();
 
@@ -2421,7 +2504,7 @@ void FSpatialTypeBinding_PlayerController::ServerToggleAILoggingReceiver(const w
 void FSpatialTypeBinding_PlayerController::ServerShortTimeoutReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ServerShortTimeout_Implementation();
 
@@ -2430,7 +2513,7 @@ void FSpatialTypeBinding_PlayerController::ServerShortTimeoutReceiver(const work
 void FSpatialTypeBinding_PlayerController::ServerSetSpectatorWaitingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	bool bWaiting;
 	bWaiting = Op.Request.field_bwaiting();
 
@@ -2441,7 +2524,7 @@ void FSpatialTypeBinding_PlayerController::ServerSetSpectatorWaitingReceiver(con
 void FSpatialTypeBinding_PlayerController::ServerSetSpectatorLocationReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FVector NewLoc;
 	auto& Vector = Op.Request.field_newloc();
 	NewLoc.X = Vector.x();
@@ -2460,7 +2543,7 @@ void FSpatialTypeBinding_PlayerController::ServerSetSpectatorLocationReceiver(co
 void FSpatialTypeBinding_PlayerController::ServerRestartPlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ServerRestartPlayer_Implementation();
 
@@ -2469,7 +2552,7 @@ void FSpatialTypeBinding_PlayerController::ServerRestartPlayerReceiver(const wor
 void FSpatialTypeBinding_PlayerController::ServerPauseReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ServerPause_Implementation();
 
@@ -2478,7 +2561,7 @@ void FSpatialTypeBinding_PlayerController::ServerPauseReceiver(const worker::Com
 void FSpatialTypeBinding_PlayerController::ServerNotifyLoadedWorldReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FName WorldPackageName;
 	WorldPackageName = FName((Op.Request.field_worldpackagename()).data());
 
@@ -2489,8 +2572,14 @@ void FSpatialTypeBinding_PlayerController::ServerNotifyLoadedWorldReceiver(const
 void FSpatialTypeBinding_PlayerController::ServerMutePlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FUniqueNetIdRepl PlayerId;
+	auto& ValueDataStr = Op.Request.field_playerid();
+	TArray<uint8> ValueData;
+	ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+	FMemoryReader ValueDataReader(ValueData);
+	bool bSuccess;
+	PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
 
 	TargetObject->ServerMutePlayer_Implementation(PlayerId);
 
@@ -2499,7 +2588,7 @@ void FSpatialTypeBinding_PlayerController::ServerMutePlayerReceiver(const worker
 void FSpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliableReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ServerCheckClientPossessionReliable_Implementation();
 
@@ -2508,7 +2597,7 @@ void FSpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliableRe
 void FSpatialTypeBinding_PlayerController::ServerCheckClientPossessionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ServerCheckClientPossession_Implementation();
 
@@ -2517,7 +2606,7 @@ void FSpatialTypeBinding_PlayerController::ServerCheckClientPossessionReceiver(c
 void FSpatialTypeBinding_PlayerController::ServerChangeNameReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FString S;
 	S = FString(UTF8_TO_TCHAR(Op.Request.field_s().c_str()));
 
@@ -2528,7 +2617,7 @@ void FSpatialTypeBinding_PlayerController::ServerChangeNameReceiver(const worker
 void FSpatialTypeBinding_PlayerController::ServerCameraReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FName NewMode;
 	NewMode = FName((Op.Request.field_newmode()).data());
 
@@ -2539,7 +2628,7 @@ void FSpatialTypeBinding_PlayerController::ServerCameraReceiver(const worker::Co
 void FSpatialTypeBinding_PlayerController::ServerAcknowledgePossessionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	APawn* P = nullptr;
 	// UNSUPPORTED ObjectProperty - P Op.Request.field_p();
 

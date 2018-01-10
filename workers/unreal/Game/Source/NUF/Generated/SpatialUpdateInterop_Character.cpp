@@ -1450,7 +1450,7 @@ void FSpatialTypeBinding_Character::SendRPCCommand(UFunction* Function, FFrame* 
 void FSpatialTypeBinding_Character::ClientCheatWalkReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	ACharacter* TargetObject = Cast<ACharacter>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	ACharacter* TargetObject = Cast<ACharacter>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ClientCheatWalk_Implementation();
 
@@ -1459,7 +1459,7 @@ void FSpatialTypeBinding_Character::ClientCheatWalkReceiver(const worker::Comman
 void FSpatialTypeBinding_Character::ClientCheatGhostReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	ACharacter* TargetObject = Cast<ACharacter>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	ACharacter* TargetObject = Cast<ACharacter>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ClientCheatGhost_Implementation();
 
@@ -1468,7 +1468,7 @@ void FSpatialTypeBinding_Character::ClientCheatGhostReceiver(const worker::Comma
 void FSpatialTypeBinding_Character::ClientCheatFlyReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>& Op)
 {
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
-	ACharacter* TargetObject = Cast<ACharacter>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+	ACharacter* TargetObject = Cast<ACharacter>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 
 	TargetObject->ClientCheatFly_Implementation();
 

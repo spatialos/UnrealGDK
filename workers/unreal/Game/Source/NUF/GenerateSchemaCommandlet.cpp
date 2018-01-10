@@ -613,27 +613,8 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		{
 			Writer.Print(FString::Printf(TEXT("%s(improbable::unreal::UnrealFPlane(%s.X, %s.Y, %s.Z, %s.W));"), *SpatialValueSetter, *PropertyValue, *PropertyValue, *PropertyValue, *PropertyValue));
 		}
-		else if (Struct->GetName() == TEXT("UniqueNetIdRepl"))
-		{
-			Writer.Print(FString::Printf(TEXT("// UNSUPPORTED UniqueNetIdRepl - %s = %s;"), *SpatialValueSetter, *PropertyValue));
-		}
-		else if (Struct->GetName() == TEXT("Guid"))
-		{
-			Writer.Print(FString::Printf(TEXT("// UNSUPPORTED FGuid")));
-		}
-		else if (Struct->GetName() == TEXT("ViewTargetTransitionParams"))
-		{
-			Writer.Print(FString::Printf(TEXT("// UNSUPPORTED FViewTargetTransitionParams")));
-		}
-		else if (Struct->GetName() == TEXT("Color"))
-		{
-			Writer.Print(FString::Printf(TEXT("// UNSUPPORTED FColor")));
-		}
-		else if (Struct->GetName() == TEXT("Vector2D"))
-		{
-			Writer.Print(FString::Printf(TEXT("// UNSUPPORTED FVector2D")));
-		}
-		else if (Struct->GetName() == TEXT("RepMovement"))
+		else if (Struct->GetName() == TEXT("RepMovement") ||
+				 Struct->GetName() == TEXT("UniqueNetIdRepl"))
 		{
 			Writer.Print(FString::Printf(TEXT(R"""(TArray<uint8> ValueData;
 				FMemoryWriter ValueDataWriter(ValueData);
@@ -751,11 +732,8 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 			Writer.Print(FString::Printf(TEXT("%s.Z = Plane.z();"), *PropertyValue));
 			Writer.Print(FString::Printf(TEXT("%s.W = Plane.w();"), *PropertyValue));
 		}
-		/*else if (Struct->GetName() == TEXT("UniqueNetIdRepl"))
-		{
-			Writer.Print(FString::Printf(TEXT("// UNSUPPORTED UniqueNetIdRepl- %s %s;"), *PropertyValue, *SpatialValue));
-		}*/
-		else if (Struct->GetName() == TEXT("RepMovement"))
+		else if (Struct->GetName() == TEXT("RepMovement") ||
+				Struct->GetName() == TEXT("UniqueNetIdRepl"))
 		{
 			Writer.Print(FString::Printf(TEXT(R"""(auto& ValueDataStr = %s;
 				TArray<uint8> ValueData;
@@ -1607,7 +1585,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Indent();
 
 			SourceWriter.Print(TEXT("// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that"));
-			SourceWriter.Print(FString::Printf(TEXT("%s* TargetObject = Cast<%s>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));"), *GetFullCPPName(Class), *GetFullCPPName(Class)));
+			SourceWriter.Print(FString::Printf(TEXT("%s* TargetObject = Cast<%s>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));"), *GetFullCPPName(Class), *GetFullCPPName(Class)));
 
 			FString RPCParameterString;
 			for (TFieldIterator<UProperty> Param(RPC); Param; ++Param)
