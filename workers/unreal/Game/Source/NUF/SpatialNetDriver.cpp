@@ -12,10 +12,6 @@
 #include "Net/DataReplication.h"
 #include "SpatialActorChannel.h"
 #include "NoOpEntityPipelineBlock.h"
-
-#include <test/rpc/client_rpcs.h>
-#include <test/rpc/server_rpcs.h>
-
 #include "EntityBuilder.h"
 
 using namespace improbable;
