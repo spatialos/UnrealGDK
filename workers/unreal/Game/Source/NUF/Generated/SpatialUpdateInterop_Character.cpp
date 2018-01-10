@@ -1440,7 +1440,7 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(FOutBunch* BunchPtr, co
 	}
 }
 
-void FSpatialTypeBinding_Character::SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target)
+void FSpatialTypeBinding_Character::SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const
 {
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
 	auto Func = RPCToSenderMap.Find(FName(*Function->GetName()));

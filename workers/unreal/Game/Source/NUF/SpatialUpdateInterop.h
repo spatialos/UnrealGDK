@@ -47,11 +47,11 @@ public:
 	virtual void UnbindFromView() = 0;
 	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const = 0;
 	virtual void SendComponentUpdates(FOutBunch* OutgoingBunch, const worker::EntityId& EntityId) const = 0;
-	virtual void SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) = 0;
+	virtual void SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const = 0;
 
 protected:
 	template<class CommandType>
-	void SendRPCResponse(const worker::CommandRequestOp<CommandType>& Op)
+	void SendRPCResponse(const worker::CommandRequestOp<CommandType>& Op) const 
 	{
 		TSharedPtr<worker::Connection> PinnedConnection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
 		PinnedConnection.Get()->SendCommandResponse<CommandType>(Op.RequestId, {});
@@ -76,7 +76,7 @@ public:
 	void HandleRPCInvocation(AActor* TargetActor, UFunction* Function, FFrame* DuplicateFrame, worker::EntityId Target);
 	void RegisterInteropType(UClass* Class, TSharedPtr<FSpatialTypeBinding> Binding);
 	void UnregisterInteropType(UClass* Class);
-	FSpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
+	const FSpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
 	void SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* OutgoingBunch);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);

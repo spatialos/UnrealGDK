@@ -20,7 +20,7 @@ public:
 	void UnbindFromView() override;
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
 	void SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const override;
-	void SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) override;
+	void SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const override;
 private:
 	TMap<FName, FRPCSender> RPCToSenderMap;
 	worker::Dispatcher::CallbackKey SingleClientCallback;

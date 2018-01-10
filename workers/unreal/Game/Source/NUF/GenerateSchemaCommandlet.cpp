@@ -328,7 +328,8 @@ FString GetSchemaCompleteDataName(UStruct* Type)
 FString GetCommandNameFromFunction(UFunction* Function)
 {
 	FString Lower = Function->GetName().ToLower();
-	return Lower.Left(1).ToUpper() + Lower.RightChop(1);
+	Lower[0] = FChar::ToUpper(Lower[0]);
+	return Lower;
 }
 
 FString GetSchemaRPCRequestTypeFromUnreal(UFunction* Func)
@@ -935,9 +936,8 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 		for (auto& Func : (Layout.RPCs[Group]))
 		{
 			FString TypeStr = GetSchemaRPCRequestTypeFromUnreal(Func);
-			bool HasParams = Func->NumParms > 0;
 
-			if (!HasParams)
+			if (Func->NumParms == 0)
 			{
 				Writer.Print(FString::Printf(TEXT("type %s {}"), *TypeStr));
 			}
@@ -1050,7 +1050,7 @@ void GenerateForwardingCodeFromLayout(
 		void UnbindFromView() override;
 		worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
 		void SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const override;
-		void SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) override;)"""));
+		void SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const override;)"""));
 	HeaderWriter.Outdent().Print(TEXT("private:")).Indent();
 	HeaderWriter.Print(TEXT("TMap<FName, FRPCSender> RPCToSenderMap;"));
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
@@ -1220,7 +1220,7 @@ void GenerateForwardingCodeFromLayout(
 			for (TFieldIterator<UProperty> Param(RPC); Param; ++Param)
 			{
 				TArray<UProperty*> NewChain = { *Param };
-				GenerateUnrealToSchemaConversion(SourceWriter, "Request", NewChain, *Param->GetNameCPP());// + TEXT(".") + (*It)->GetNameCPP());
+				GenerateUnrealToSchemaConversion(SourceWriter, "Request", NewChain, *Param->GetNameCPP());
 			}
 			SourceWriter.Print();
 			SourceWriter.Print(FString::Printf(TEXT("Connection->SendCommandRequest<improbable::unreal::Unreal%s%sRPCs::Commands::%s>(Target, Request, 0);"), *Class->GetName(),*GetRPCTypeString(Group), *GetCommandNameFromFunction(RPC)));
@@ -1235,8 +1235,8 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::Init(USpatialUpdateInterop* InUpdateInterop, UPackageMap* InPackageMap)"), *Class->GetName()));
 	SourceWriter.Print(TEXT("{"));
 	SourceWriter.Indent();
-	SourceWriter.Print(TEXT(R"""(UpdateInterop = InUpdateInterop;
-		PackageMap = InPackageMap;)"""));
+	SourceWriter.Print(TEXT("UpdateInterop = InUpdateInterop;"));
+	SourceWriter.Print(TEXT("PackageMap = InPackageMap;"));
 
 	for (auto Group : GetRPCGroups())
 	{
@@ -1454,7 +1454,7 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Print(TEXT("}"));
 	SourceWriter.Print();
 
-	SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target)"), *Class->GetName()));
+	SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const"), *Class->GetName()));
 	SourceWriter.Print(TEXT("{"));
 	SourceWriter.Indent();
 	SourceWriter.Print(TEXT(R"""(TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
