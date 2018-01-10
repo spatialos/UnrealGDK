@@ -6,10 +6,10 @@ import "improbable/vector3.schema";
 import "unreal/core_types.schema";
 
 component UnrealCharacterSingleClientReplicatedData {
-	id = 100004;
+	id = 100005;
 }
 component UnrealCharacterMultiClientReplicatedData {
-	id = 100005;
+	id = 100006;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
 	bool field_btearoff = 3; // COND_None
@@ -59,7 +59,7 @@ component UnrealCharacterMultiClientReplicatedData {
 	improbable.Vector3f field_reprootmotion_linearvelocity = 47; // COND_SimulatedOnlyNoReplay
 }
 component UnrealCharacterCompleteData {
-	id = 100006;
+	id = 100007;
 	uint32 field_mesh_animationmode = 1;
 	UnrealObjectRef field_mesh_animationblueprint = 2;
 	UnrealObjectRef field_mesh_animblueprintgeneratedclass = 3;
@@ -1091,9 +1091,12 @@ type ClientCheatGhostResponse {}
 type ClientCheatFlyRequest {}
 type ClientCheatFlyResponse {}
 
-component UnrealCharacterRPCs {
-	id = 100007;
+component UnrealCharacterClientRPCs {
+	id = 100008;
 	command ClientCheatWalkResponse clientcheatwalk(ClientCheatWalkRequest);
 	command ClientCheatGhostResponse clientcheatghost(ClientCheatGhostRequest);
 	command ClientCheatFlyResponse clientcheatfly(ClientCheatFlyRequest);
+}
+component UnrealCharacterServerRPCs {
+	id = 100009;
 }

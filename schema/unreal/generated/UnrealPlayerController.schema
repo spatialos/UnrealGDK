@@ -210,71 +210,6 @@ component UnrealPlayerControllerCompleteData {
 	bytes field_blueprintcreatedcomponents = 176;
 	bytes field_instancecomponents = 177;
 }
-type ServerViewSelfRequest {
-	// Unsupported param type: FViewTargetTransitionParams field_transitionparams = 1;
-}
-type ServerViewSelfResponse {}
-type ServerViewPrevPlayerRequest {}
-type ServerViewPrevPlayerResponse {}
-type ServerViewNextPlayerRequest {}
-type ServerViewNextPlayerResponse {}
-type ServerVerifyViewTargetRequest {}
-type ServerVerifyViewTargetResponse {}
-type ServerUpdateLevelVisibilityRequest {
-	string field_packagename = 1;
-	bool field_bisvisible = 2;
-}
-type ServerUpdateLevelVisibilityResponse {}
-type ServerUpdateCameraRequest {
-	improbable.Vector3f field_camloc = 1;
-	int32 field_campitchandyaw = 2;
-}
-type ServerUpdateCameraResponse {}
-type ServerUnmutePlayerRequest {
-	bytes field_playerid = 1;
-}
-type ServerUnmutePlayerResponse {}
-type ServerToggleAILoggingRequest {}
-type ServerToggleAILoggingResponse {}
-type ServerShortTimeoutRequest {}
-type ServerShortTimeoutResponse {}
-type ServerSetSpectatorWaitingRequest {
-	bool field_bwaiting = 1;
-}
-type ServerSetSpectatorWaitingResponse {}
-type ServerSetSpectatorLocationRequest {
-	improbable.Vector3f field_newloc = 1;
-	UnrealFRotator field_newrot = 2;
-}
-type ServerSetSpectatorLocationResponse {}
-type ServerRestartPlayerRequest {}
-type ServerRestartPlayerResponse {}
-type ServerPauseRequest {}
-type ServerPauseResponse {}
-type ServerNotifyLoadedWorldRequest {
-	string field_worldpackagename = 1;
-}
-type ServerNotifyLoadedWorldResponse {}
-type ServerMutePlayerRequest {
-	bytes field_playerid = 1;
-}
-type ServerMutePlayerResponse {}
-type ServerCheckClientPossessionReliableRequest {}
-type ServerCheckClientPossessionReliableResponse {}
-type ServerCheckClientPossessionRequest {}
-type ServerCheckClientPossessionResponse {}
-type ServerChangeNameRequest {
-	string field_s = 1;
-}
-type ServerChangeNameResponse {}
-type ServerCameraRequest {
-	string field_newmode = 1;
-}
-type ServerCameraResponse {}
-type ServerAcknowledgePossessionRequest {
-	UnrealObjectRef field_p = 1;
-}
-type ServerAcknowledgePossessionResponse {}
 type OnServerStartedVisualLoggerRequest {
 	bool field_bislogging = 1;
 }
@@ -301,7 +236,10 @@ type ClientTravelInternalRequest {
 	string field_url = 1;
 	uint32 field_traveltype = 2;
 	bool field_bseamless = 3;
-	// Unsupported param type: FGuid field_mappackageguid = 4;
+	int32 field_mappackageguid_a = 4;
+	int32 field_mappackageguid_b = 5;
+	int32 field_mappackageguid_c = 6;
+	int32 field_mappackageguid_d = 7;
 }
 type ClientTravelInternalResponse {}
 type ClientTeamMessageRequest {
@@ -333,7 +271,10 @@ type ClientSpawnCameraLensEffectRequest {
 type ClientSpawnCameraLensEffectResponse {}
 type ClientSetViewTargetRequest {
 	UnrealObjectRef field_a = 1;
-	// Unsupported param type: FViewTargetTransitionParams field_transitionparams = 2;
+	float field_transitionparams_blendtime = 2;
+	uint32 field_transitionparams_blendfunction = 3;
+	float field_transitionparams_blendexp = 4;
+	bool field_transitionparams_blockoutgoing = 5;
 }
 type ClientSetViewTargetResponse {}
 type ClientSetSpectatorWaitingRequest {
@@ -363,10 +304,14 @@ type ClientSetCameraModeRequest {
 type ClientSetCameraModeResponse {}
 type ClientSetCameraFadeRequest {
 	bool field_benablefading = 1;
-	// Unsupported param type: FColor field_fadecolor = 2;
-	// Unsupported param type: FVector2D field_fadealpha = 3;
-	float field_fadetime = 4;
-	bool field_bfadeaudio = 5;
+	uint32 field_fadecolor_b = 2;
+	uint32 field_fadecolor_g = 3;
+	uint32 field_fadecolor_r = 4;
+	uint32 field_fadecolor_a = 5;
+	float field_fadealpha_x = 6;
+	float field_fadealpha_y = 7;
+	float field_fadetime = 8;
+	bool field_bfadeaudio = 9;
 }
 type ClientSetCameraFadeResponse {}
 type ClientSetBlockOnAsyncLoadingRequest {}
@@ -511,29 +456,77 @@ type ClientSetLocationRequest {
 	UnrealFRotator field_newrotation = 2;
 }
 type ClientSetLocationResponse {}
+type ServerViewSelfRequest {
+	float field_transitionparams_blendtime = 1;
+	uint32 field_transitionparams_blendfunction = 2;
+	float field_transitionparams_blendexp = 3;
+	bool field_transitionparams_blockoutgoing = 4;
+}
+type ServerViewSelfResponse {}
+type ServerViewPrevPlayerRequest {}
+type ServerViewPrevPlayerResponse {}
+type ServerViewNextPlayerRequest {}
+type ServerViewNextPlayerResponse {}
+type ServerVerifyViewTargetRequest {}
+type ServerVerifyViewTargetResponse {}
+type ServerUpdateLevelVisibilityRequest {
+	string field_packagename = 1;
+	bool field_bisvisible = 2;
+}
+type ServerUpdateLevelVisibilityResponse {}
+type ServerUpdateCameraRequest {
+	improbable.Vector3f field_camloc = 1;
+	int32 field_campitchandyaw = 2;
+}
+type ServerUpdateCameraResponse {}
+type ServerUnmutePlayerRequest {
+	bytes field_playerid = 1;
+}
+type ServerUnmutePlayerResponse {}
+type ServerToggleAILoggingRequest {}
+type ServerToggleAILoggingResponse {}
+type ServerShortTimeoutRequest {}
+type ServerShortTimeoutResponse {}
+type ServerSetSpectatorWaitingRequest {
+	bool field_bwaiting = 1;
+}
+type ServerSetSpectatorWaitingResponse {}
+type ServerSetSpectatorLocationRequest {
+	improbable.Vector3f field_newloc = 1;
+	UnrealFRotator field_newrot = 2;
+}
+type ServerSetSpectatorLocationResponse {}
+type ServerRestartPlayerRequest {}
+type ServerRestartPlayerResponse {}
+type ServerPauseRequest {}
+type ServerPauseResponse {}
+type ServerNotifyLoadedWorldRequest {
+	string field_worldpackagename = 1;
+}
+type ServerNotifyLoadedWorldResponse {}
+type ServerMutePlayerRequest {
+	bytes field_playerid = 1;
+}
+type ServerMutePlayerResponse {}
+type ServerCheckClientPossessionReliableRequest {}
+type ServerCheckClientPossessionReliableResponse {}
+type ServerCheckClientPossessionRequest {}
+type ServerCheckClientPossessionResponse {}
+type ServerChangeNameRequest {
+	string field_s = 1;
+}
+type ServerChangeNameResponse {}
+type ServerCameraRequest {
+	string field_newmode = 1;
+}
+type ServerCameraResponse {}
+type ServerAcknowledgePossessionRequest {
+	UnrealObjectRef field_p = 1;
+}
+type ServerAcknowledgePossessionResponse {}
 
-component UnrealPlayerControllerRPCs {
+component UnrealPlayerControllerClientRPCs {
 	id = 100003;
-	command ServerViewSelfResponse serverviewself(ServerViewSelfRequest);
-	command ServerViewPrevPlayerResponse serverviewprevplayer(ServerViewPrevPlayerRequest);
-	command ServerViewNextPlayerResponse serverviewnextplayer(ServerViewNextPlayerRequest);
-	command ServerVerifyViewTargetResponse serververifyviewtarget(ServerVerifyViewTargetRequest);
-	command ServerUpdateLevelVisibilityResponse serverupdatelevelvisibility(ServerUpdateLevelVisibilityRequest);
-	command ServerUpdateCameraResponse serverupdatecamera(ServerUpdateCameraRequest);
-	command ServerUnmutePlayerResponse serverunmuteplayer(ServerUnmutePlayerRequest);
-	command ServerToggleAILoggingResponse servertoggleailogging(ServerToggleAILoggingRequest);
-	command ServerShortTimeoutResponse servershorttimeout(ServerShortTimeoutRequest);
-	command ServerSetSpectatorWaitingResponse serversetspectatorwaiting(ServerSetSpectatorWaitingRequest);
-	command ServerSetSpectatorLocationResponse serversetspectatorlocation(ServerSetSpectatorLocationRequest);
-	command ServerRestartPlayerResponse serverrestartplayer(ServerRestartPlayerRequest);
-	command ServerPauseResponse serverpause(ServerPauseRequest);
-	command ServerNotifyLoadedWorldResponse servernotifyloadedworld(ServerNotifyLoadedWorldRequest);
-	command ServerMutePlayerResponse servermuteplayer(ServerMutePlayerRequest);
-	command ServerCheckClientPossessionReliableResponse servercheckclientpossessionreliable(ServerCheckClientPossessionReliableRequest);
-	command ServerCheckClientPossessionResponse servercheckclientpossession(ServerCheckClientPossessionRequest);
-	command ServerChangeNameResponse serverchangename(ServerChangeNameRequest);
-	command ServerCameraResponse servercamera(ServerCameraRequest);
-	command ServerAcknowledgePossessionResponse serveracknowledgepossession(ServerAcknowledgePossessionRequest);
 	command OnServerStartedVisualLoggerResponse onserverstartedvisuallogger(OnServerStartedVisualLoggerRequest);
 	command ClientWasKickedResponse clientwaskicked(ClientWasKickedRequest);
 	command ClientVoiceHandshakeCompleteResponse clientvoicehandshakecomplete(ClientVoiceHandshakeCompleteRequest);
@@ -584,4 +577,27 @@ component UnrealPlayerControllerRPCs {
 	command ClientAddTextureStreamingLocResponse clientaddtexturestreamingloc(ClientAddTextureStreamingLocRequest);
 	command ClientSetRotationResponse clientsetrotation(ClientSetRotationRequest);
 	command ClientSetLocationResponse clientsetlocation(ClientSetLocationRequest);
+}
+component UnrealPlayerControllerServerRPCs {
+	id = 100004;
+	command ServerViewSelfResponse serverviewself(ServerViewSelfRequest);
+	command ServerViewPrevPlayerResponse serverviewprevplayer(ServerViewPrevPlayerRequest);
+	command ServerViewNextPlayerResponse serverviewnextplayer(ServerViewNextPlayerRequest);
+	command ServerVerifyViewTargetResponse serververifyviewtarget(ServerVerifyViewTargetRequest);
+	command ServerUpdateLevelVisibilityResponse serverupdatelevelvisibility(ServerUpdateLevelVisibilityRequest);
+	command ServerUpdateCameraResponse serverupdatecamera(ServerUpdateCameraRequest);
+	command ServerUnmutePlayerResponse serverunmuteplayer(ServerUnmutePlayerRequest);
+	command ServerToggleAILoggingResponse servertoggleailogging(ServerToggleAILoggingRequest);
+	command ServerShortTimeoutResponse servershorttimeout(ServerShortTimeoutRequest);
+	command ServerSetSpectatorWaitingResponse serversetspectatorwaiting(ServerSetSpectatorWaitingRequest);
+	command ServerSetSpectatorLocationResponse serversetspectatorlocation(ServerSetSpectatorLocationRequest);
+	command ServerRestartPlayerResponse serverrestartplayer(ServerRestartPlayerRequest);
+	command ServerPauseResponse serverpause(ServerPauseRequest);
+	command ServerNotifyLoadedWorldResponse servernotifyloadedworld(ServerNotifyLoadedWorldRequest);
+	command ServerMutePlayerResponse servermuteplayer(ServerMutePlayerRequest);
+	command ServerCheckClientPossessionReliableResponse servercheckclientpossessionreliable(ServerCheckClientPossessionReliableRequest);
+	command ServerCheckClientPossessionResponse servercheckclientpossession(ServerCheckClientPossessionRequest);
+	command ServerChangeNameResponse serverchangename(ServerChangeNameRequest);
+	command ServerCameraResponse servercamera(ServerCameraRequest);
+	command ServerAcknowledgePossessionResponse serveracknowledgepossession(ServerAcknowledgePossessionRequest);
 }

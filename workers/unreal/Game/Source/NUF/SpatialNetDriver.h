@@ -56,7 +56,4 @@ private:
 
 	UFUNCTION()
 	void OnSpatialOSDisconnected();
-
-	void ProcessServerMove(struct FFrame* TempRpcFrameForReading, worker::EntityId entityId, UPackageMap* PackageMap);
-	void ProcessClientAckGoodMove(struct FFrame* TempRpcFrameForReading, worker::EntityId entityId);
 };

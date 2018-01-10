@@ -13,7 +13,7 @@ class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialUpdateInterop, Log, All);
 
-using FRPCHandler = const std::function<void(worker::Connection*, struct FFrame*, const worker::EntityId)>;
+using FRPCSender = TFunction<void(worker::Connection*, struct FFrame*, const worker::EntityId)>; 
 class FOutBunch;
 
 enum EReplicatedPropertyGroup
@@ -36,18 +36,27 @@ inline EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Conditi
 
 class USpatialUpdateInterop;
 
+// This is an abstract compatibility wrapper class that is implemented fully for each engine class.  
 class FSpatialTypeBinding
 {
 public:
 	virtual void Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap);
 
+	// Binds callbacks to the worker::View in order to intercept updates and RPCs
 	virtual void BindToView() = 0;
 	virtual void UnbindFromView() = 0;
 	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const = 0;
 	virtual void SendComponentUpdates(FOutBunch* OutgoingBunch, const worker::EntityId& EntityId) const = 0;
-	virtual void SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const = 0;
+	virtual void SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) = 0;
 
 protected:
+	template<class CommandType>
+	void SendRPCResponse(const worker::CommandRequestOp<CommandType>& Op)
+	{
+		TSharedPtr<worker::Connection> PinnedConnection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
+		PinnedConnection.Get()->SendCommandResponse<CommandType>(Op.RequestId, {});
+	}
+
 	USpatialUpdateInterop* UpdateInterop;
 	UPackageMap* PackageMap;
 };
@@ -64,11 +73,10 @@ public:
 
 	USpatialActorChannel* GetClientActorChannel(const worker::EntityId& EntityId) const;
 
-
 	void HandleRPCInvocation(AActor* TargetActor, UFunction* Function, FFrame* DuplicateFrame, worker::EntityId Target);
 	void RegisterInteropType(UClass* Class, TSharedPtr<FSpatialTypeBinding> Binding);
 	void UnregisterInteropType(UClass* Class);
-	const FSpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
+	FSpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
 	void SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* OutgoingBunch);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
@@ -76,6 +84,11 @@ public:
 	USpatialOS* GetSpatialOS() const
 	{
 		return SpatialOSInstance;
+	}
+
+	USpatialNetDriver* GetNetDriver() const 
+	{
+		return NetDriver;	
 	}
 
 private:

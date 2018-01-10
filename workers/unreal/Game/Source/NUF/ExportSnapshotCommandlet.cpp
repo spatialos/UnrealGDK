@@ -110,6 +110,8 @@ worker::Entity UExportSnapshotCommandlet::CreatePlayerEntity() const
 		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data{}, unrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data{}, unrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, unrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealPlayerControllerClientRPCs>(improbable::unreal::UnrealPlayerControllerClientRPCs::Data{}, unrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealPlayerControllerServerRPCs>(improbable::unreal::UnrealPlayerControllerServerRPCs::Data{}, unrealClientWritePermission)
 		//.AddComponent<test::rpc::ServerRpcs>(test::rpc::ServerRpcs::Data{}, unrealWorkerWritePermission)
 		//.AddComponent<test::rpc::ServerRpcs>(test::rpc::ServerRpcs::Data{}, unrealClientWritePermission)
 		.Build();

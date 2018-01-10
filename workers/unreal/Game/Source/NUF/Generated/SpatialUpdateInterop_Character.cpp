@@ -6,6 +6,8 @@
 #include "Engine.h"
 #include "SpatialActorChannel.h"
 #include "Utils/BunchReader.h"
+#include "SpatialNetDriver.h"
+#include "SpatialUpdateInterop.h"
 
 namespace {
 
@@ -1229,26 +1231,34 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
-// RPC handler functions
-void ClientCheatWalkHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+// RPC sender functions
+void ClientCheatWalkSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
-	FFrame& Stack = *RPCFrame;
+	improbable::unreal::ClientCheatWalkRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>(Target, Request, 0);
 }
-void ClientCheatGhostHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientCheatGhostSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
-	FFrame& Stack = *RPCFrame;
+	improbable::unreal::ClientCheatGhostRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>(Target, Request, 0);
 }
-void ClientCheatFlyHandler(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientCheatFlySender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
 {
-	FFrame& Stack = *RPCFrame;
+	improbable::unreal::ClientCheatFlyRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>(Target, Request, 0);
 }
 } // ::
 
-void FSpatialTypeBinding_Character::Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap)
+void FSpatialTypeBinding_Character::Init(USpatialUpdateInterop* InUpdateInterop, UPackageMap* InPackageMap)
 {
-	RPCToHandlerMap.Emplace("ClientCheatWalk", &ClientCheatWalkHandler);
-	RPCToHandlerMap.Emplace("ClientCheatGhost", &ClientCheatGhostHandler);
-	RPCToHandlerMap.Emplace("ClientCheatFly", &ClientCheatFlyHandler);
+	UpdateInterop = InUpdateInterop;
+	PackageMap = InPackageMap;
+	RPCToSenderMap.Emplace("ClientCheatWalk", &ClientCheatWalkSender);
+	RPCToSenderMap.Emplace("ClientCheatGhost", &ClientCheatGhostSender);
+	RPCToSenderMap.Emplace("ClientCheatFly", &ClientCheatFlySender);
 }
 
 const FRepHandlePropertyMap& GetHandlePropertyMap_Character()
@@ -1344,6 +1354,10 @@ void FSpatialTypeBinding_Character::BindToView()
 	{
 		ReceiveUpdateFromSpatial_MultiClient_Character(UpdateInterop, PackageMap, Op);
 	});
+	using ClientRPCCommandTypes = improbable::unreal::UnrealCharacterClientRPCs::Commands;
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatwalk>(std::bind(&FSpatialTypeBinding_Character::ClientCheatWalkReceiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatghost>(std::bind(&FSpatialTypeBinding_Character::ClientCheatGhostReceiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatfly>(std::bind(&FSpatialTypeBinding_Character::ClientCheatFlyReceiver, this, std::placeholders::_1)));
 }
 
 void FSpatialTypeBinding_Character::UnbindFromView()
@@ -1351,6 +1365,10 @@ void FSpatialTypeBinding_Character::UnbindFromView()
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
 	View->Remove(SingleClientCallback);
 	View->Remove(MultiClientCallback);
+	for (auto& Callback : RPCReceiverCallbacks)
+	{
+	View->Remove(Callback);
+	}
 }
 
 worker::ComponentId FSpatialTypeBinding_Character::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
@@ -1422,8 +1440,37 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(FOutBunch* BunchPtr, co
 	}
 }
 
-void FSpatialTypeBinding_Character::SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const
+void FSpatialTypeBinding_Character::SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target)
 {
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
-	RPCToHandlerMap[Function->GetName()](Connection.Get(), RPCFrame, Target);
+	auto Func = RPCToSenderMap.Find(FName(*Function->GetName()));
+	check(*Func)
+	(*Func)(Connection.Get(), RPCFrame, Target);
+}
+void FSpatialTypeBinding_Character::ClientCheatWalkReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op)
+{
+	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
+	ACharacter* TargetObject = Cast<ACharacter>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+
+	TargetObject->ClientCheatWalk_Implementation();
+
+	SendRPCResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>(Op);
+}
+void FSpatialTypeBinding_Character::ClientCheatGhostReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>& Op)
+{
+	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
+	ACharacter* TargetObject = Cast<ACharacter>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+
+	TargetObject->ClientCheatGhost_Implementation();
+
+	SendRPCResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>(Op);
+}
+void FSpatialTypeBinding_Character::ClientCheatFlyReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>& Op)
+{
+	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
+	ACharacter* TargetObject = Cast<ACharacter>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(6, false));
+
+	TargetObject->ClientCheatFly_Implementation();
+
+	SendRPCResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>(Op);
 }
