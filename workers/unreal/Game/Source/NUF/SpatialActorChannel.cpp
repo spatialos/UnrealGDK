@@ -4,7 +4,9 @@
 #include "SpatialNetDriver.h"
 #include "SpatialPackageMapClient.h"
 #include "EntityRegistry.h"
+#include "Engine/DemoNetDriver.h"
 #include "Net/DataBunch.h"
+#include "Net/NetworkProfiler.h"
 #include <improbable/worker.h>
 #include <improbable/standard_library.h>
 #include <improbable/player/player.h>
@@ -170,20 +172,263 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 	return UActorChannel::CleanUp(bForDestroy);
 }
 
+//Copy-pasted from DataChannel.cpp :(
+// Helper class to downgrade a non owner of an actor to simulated while replicating
+class FScopedRoleDowngrade
+{
+public:
+	FScopedRoleDowngrade(AActor* InActor, const FReplicationFlags RepFlags) : Actor(InActor), ActualRemoteRole(Actor->GetRemoteRole())
+	{
+		// If this is actor is autonomous, and this connection doesn't own it, we'll downgrade to simulated during the scope of replication
+		if (ActualRemoteRole == ROLE_AutonomousProxy)
+		{
+			if (!RepFlags.bNetOwner)
+			{
+				Actor->SetAutonomousProxy(false, false);
+			}
+		}
+	}
+
+	~FScopedRoleDowngrade()
+	{
+		// Upgrade role back to autonomous proxy if needed
+		if (Actor->GetRemoteRole() != ActualRemoteRole)
+		{
+			Actor->SetReplicates(ActualRemoteRole != ROLE_None);
+
+			if (ActualRemoteRole == ROLE_AutonomousProxy)
+			{
+				Actor->SetAutonomousProxy(true, false);
+			}
+		}
+	}
+
+private:
+	AActor*			Actor;
+	const ENetRole	ActualRemoteRole;
+};
+////
+
 bool USpatialActorChannel::ReplicateActor()
 {
 // filter everything else temporarily to make it easier to debug for now
 	if (!Actor->IsA(APlayerController::StaticClass()))
 		return false;
-	if ((OpenPacketId.First == INDEX_NONE || Connection->bResendAllDataSinceOpen) && OpenedLocally)
+
+	check(Actor);
+	check(!Closing);
+	check(Connection);
+	check(Connection->PackageMap);
+
+	const UWorld* const ActorWorld = Actor->GetWorld();
+
+	// The package map shouldn't have any carry over guids
+	if (CastChecked< UPackageMapClient >(Connection->PackageMap)->GetMustBeMappedGuidsInLastBunch().Num() != 0)
 	{
-		bSendingInitialBunch = true;
+		UE_LOG(LogNet, Warning, TEXT("ReplicateActor: PackageMap->GetMustBeMappedGuidsInLastBunch().Num() != 0: %i"), CastChecked< UPackageMapClient >(Connection->PackageMap)->GetMustBeMappedGuidsInLastBunch().Num());
 	}
-	
-	bool bResult = Super::ReplicateActor();
-	bSendingInitialBunch = false;
-	
-	return bResult;
+
+	// Time how long it takes to replicate this particular actor
+	STAT(FScopeCycleCounterUObject FunctionScope(Actor));
+
+	// Create an outgoing bunch, and skip this actor if the channel is saturated.
+	FOutBunch Bunch(this, 0);
+	if (Bunch.IsError())
+	{
+		return false;
+	}
+
+	bIsReplicatingActor = true;
+	FReplicationFlags RepFlags;
+
+	// Send initial stuff.
+	if (OpenPacketId.First != INDEX_NONE && !Connection->bResendAllDataSinceOpen)
+	{
+		if (!SpawnAcked && OpenAcked)
+		{
+			// After receiving ack to the spawn, force refresh of all subsequent unreliable packets, which could
+			// have been lost due to ordering problems. Note: We could avoid this by doing it in FActorChannel::ReceivedAck,
+			// and avoid dirtying properties whose acks were received *after* the spawn-ack (tricky ordering issues though).
+			SpawnAcked = 1;
+			for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
+			{
+				RepComp.Value()->ForceRefreshUnreliableProperties();
+			}
+		}
+	}
+	else
+	{
+		RepFlags.bNetInitial = true;
+		Bunch.bClose = Actor->bNetTemporary;
+		Bunch.bReliable = true; // Net temporary sends need to be reliable as well to force them to retry
+	}
+
+	// Owned by connection's player?
+	//todo-giray: We need to figure out how we're going to approach connection ownership.
+	UNetConnection* OwningConnection = Actor->GetNetConnection();
+	if (OwningConnection == Connection || (OwningConnection != NULL && OwningConnection->IsA(UChildConnection::StaticClass()) && ((UChildConnection*)OwningConnection)->Parent == Connection))
+	{
+		RepFlags.bNetOwner = true;
+	}
+	else
+	{
+		RepFlags.bNetOwner = false;
+	}
+
+	// ----------------------------------------------------------
+	// If initial, send init data.
+	// ----------------------------------------------------------
+	if (RepFlags.bNetInitial && OpenedLocally)
+	{
+		Connection->PackageMap->SerializeNewActor(Bunch, this, Actor);
+		
+		Actor->OnSerializeNewActor(Bunch);
+	}
+
+	// Possibly downgrade role of actor if this connection doesn't own it
+	FScopedRoleDowngrade ScopedRoleDowngrade(Actor, RepFlags);
+
+	RepFlags.bNetSimulated = (Actor->GetRemoteRole() == ROLE_SimulatedProxy);
+	RepFlags.bRepPhysics = Actor->ReplicatedMovement.bRepPhysics;
+	RepFlags.bReplay = ActorWorld && (ActorWorld->DemoNetDriver == Connection->GetDriver());
+	RepFlags.bNetInitial = RepFlags.bNetInitial;
+
+	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
+
+	FMemMark	MemMark(FMemStack::Get());	// The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in ::PostSendBunch. we free it below
+
+											// ----------------------------------------------------------
+											// Replicate Actor and Component properties and RPCs
+											// ----------------------------------------------------------
+
+	bool WroteSomethingImportant = false;
+
+	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame, ActorReplicator->RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
+
+	const int32 PossibleNewHistoryIndex = ActorReplicator->RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
+
+	FRepChangedHistory& PossibleNewHistoryItem = ActorReplicator->RepState->ChangeHistory[PossibleNewHistoryIndex];
+
+	TArray< uint16 >& Changed = PossibleNewHistoryItem.Changed;
+
+	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
+	// Gather all change lists that are new since we last looked, and merge them all together into a single CL
+	for (int32 i = ActorReplicator->RepState->LastChangelistIndex; i < ChangelistState->HistoryEnd; i++)
+	{
+		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
+
+		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
+
+		TArray< uint16 > Temp = Changed;
+		ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, Changed);
+	}
+
+	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+
+	//todo-giray: We currently don't take replication of custom delta properties into account here because it doesn't use changelists.
+	// see ActorReplicator->ReplicateCustomDeltaProperties().
+
+	if (Changed.Num() > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("We are going to replicate."));
+	}
+
+
+	/*
+	// The Actor
+	WroteSomethingImportant |= ActorReplicator->ReplicateProperties(Bunch, RepFlags);
+
+	// The SubObjects
+	WroteSomethingImportant |= Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
+*/
+	if (Connection->bResendAllDataSinceOpen)
+	{
+		if (WroteSomethingImportant)
+		{
+			SendBunch(&Bunch, 1);
+		}
+
+		MemMark.Pop();
+
+		bIsReplicatingActor = false;
+
+		return WroteSomethingImportant;
+	}
+
+	// Look for deleted subobjects
+	for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
+	{
+		if (!RepComp.Key().IsValid())
+		{
+			// Write a deletion content header:
+			WriteContentBlockForSubObjectDelete(Bunch, RepComp.Value()->ObjectNetGUID);
+
+			WroteSomethingImportant = true;
+			Bunch.bReliable = true;
+
+			RepComp.Value()->CleanUp();
+			RepComp.RemoveCurrent();
+		}
+	}
+
+	// -----------------------------
+	// Send if necessary
+	// -----------------------------
+	bool SentBunch = false;
+	if (WroteSomethingImportant)
+	{
+		FPacketIdRange PacketRange = SendBunch(&Bunch, 1);
+
+		for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
+		{
+			RepComp.Value()->PostSendBunch(PacketRange, Bunch.bReliable);
+		}
+
+		// If there were any subobject keys pending, add them to the NakMap
+		if (PendingObjKeys.Num() > 0)
+		{
+			// For the packet range we just sent over
+			for (int32 PacketId = PacketRange.First; PacketId <= PacketRange.Last; ++PacketId)
+			{
+				// Get the existing set (its possible we send multiple bunches back to back and they end up on the same packet)
+				FPacketRepKeyInfo &Info = SubobjectNakMap.FindOrAdd(PacketId % SubobjectRepKeyBufferSize);
+				if (Info.PacketID != PacketId)
+				{
+					UE_LOG(LogNetTraffic, Verbose, TEXT("ActorChannel[%d]: Clearing out PacketRepKeyInfo for new packet: %d"), ChIndex, PacketId);
+					Info.ObjKeys.Empty(Info.ObjKeys.Num());
+				}
+				Info.PacketID = PacketId;
+				Info.ObjKeys.Append(PendingObjKeys);
+
+				FString VerboseString;
+				for (auto KeyIt = PendingObjKeys.CreateIterator(); KeyIt; ++KeyIt)
+				{
+					VerboseString += FString::Printf(TEXT(" %d"), *KeyIt);
+				}
+
+				UE_LOG(LogNetTraffic, Verbose, TEXT("ActorChannel[%d]: Sending ObjKeys: %s"), ChIndex, *VerboseString);
+			}
+
+			if (Actor->bNetTemporary)
+			{
+				Connection->SentTemporaries.Add(Actor);
+			}
+		}
+		SentBunch = true;
+	}
+
+	PendingObjKeys.Empty();
+
+	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
+	LastUpdateTime = Connection->Driver->Time;
+
+	MemMark.Pop();
+
+	bIsReplicatingActor = false;
+
+	bForceCompareProperties = false;		// Only do this once per frame when set
+
+	return SentBunch;
 }
 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
