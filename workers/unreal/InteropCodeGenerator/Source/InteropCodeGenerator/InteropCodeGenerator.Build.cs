@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class CodeGenerator : ModuleRules
+public class InteropCodeGenerator : ModuleRules
 {
-	public CodeGenerator(ReadOnlyTargetRules Target) : base(Target)
+	public InteropCodeGenerator(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		PublicDependencyModuleNames.AddRange(

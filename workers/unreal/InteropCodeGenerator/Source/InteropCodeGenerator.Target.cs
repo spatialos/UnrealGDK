@@ -2,12 +2,12 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class CodeGeneratorTarget : TargetRules
+public class InteropCodeGeneratorTarget : TargetRules
 {
-	public CodeGeneratorTarget(TargetInfo Target) : base(Target)
+	public InteropCodeGeneratorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
-		ExtraModuleNames.Add("CodeGenerator");
+		ExtraModuleNames.Add("InteropCodeGenerator");
 	}
 
 	public override void SetupGlobalEnvironment(

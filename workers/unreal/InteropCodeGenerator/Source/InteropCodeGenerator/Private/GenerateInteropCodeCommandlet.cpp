@@ -1,4 +1,6 @@
-#include "GenerateCodeCommandlet.h"
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+#include "GenerateInteropCodeCommandlet.h"
 
 #include "CodeWriter.h"
 
@@ -1192,7 +1194,7 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& F
 }
 } // ::
 
-int32 UGenerateCodeCommandlet::Main(const FString& Params)
+int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 {
 	FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../schema/unreal/generated/"));
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/Generated/"));
