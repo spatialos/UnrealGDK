@@ -87,6 +87,7 @@ const FSpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* 
 
 void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* OutgoingBunch)
 {
+	// WILL DELETE THIS.
 	const FSpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
 	{
@@ -132,6 +133,34 @@ void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, FOu
 	FInBunch InBunch(Channel->Connection, Buffer.GetData(), NumBits);
 
 	Binding->SendComponentUpdates(&InBunch, Channel->GetEntityId());
+}
+
+void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed)
+{
+	const FSpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
+	if (!Binding)
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
+		//	*Channel->Actor->GetClass()->GetName());
+		return;
+	}
+
+	const uint8* SourceData = (uint8*)Channel->Actor;
+
+	// Check that SpatialOS is connected.
+	// TODO(David): This function should never get called until SpatialOS _is_ connected.
+	TSharedPtr<worker::Connection> WorkerConnection = SpatialOSInstance->GetConnection().Pin();
+	if (!WorkerConnection.Get() || !WorkerConnection->IsConnected())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SpatialOS is not connected yet."));
+		return;
+	}
+
+	Binding->SendComponentUpdates(Changed,
+		SourceData,
+		Channel->ActorReplicator->RepLayout->Cmds,
+		Channel->ActorReplicator->RepLayout->BaseHandleToCmdIndex,
+		Channel->GetEntityId());
 }
 
 void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)

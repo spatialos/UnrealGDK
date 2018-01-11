@@ -45,6 +45,11 @@ public:
 	virtual void UnbindFromView() = 0;
 	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const = 0;
 	virtual void SendComponentUpdates(FInBunch* OutgoingBunch, const worker::EntityId& EntityId) const = 0;
+	virtual void SendComponentUpdates(const TArray<uint16>& Changed,
+									  const uint8* RESTRICT SourceData,
+									  const TArray<FRepLayoutCmd>& Cmds,
+									  const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex,
+									  const worker::EntityId& EntityId) const = 0;
 
 protected:
 	USpatialUpdateInterop* UpdateInterop;
@@ -68,6 +73,7 @@ public:
 	const FSpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
 	void SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* OutgoingBunch);
+	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray< uint16 >& Changed);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
 
 	USpatialOS* GetSpatialOS() const

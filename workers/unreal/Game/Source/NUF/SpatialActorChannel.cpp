@@ -330,6 +330,9 @@ bool USpatialActorChannel::ReplicateActor()
 
 	if (Changed.Num() > 0)
 	{
+		USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Connection->Driver)->GetSpatialUpdateInterop();
+		check(UpdateInterop);
+		UpdateInterop->SendSpatialUpdate(this, Changed);
 		UE_LOG(LogTemp, Warning, TEXT("We are going to replicate."));
 	}
 

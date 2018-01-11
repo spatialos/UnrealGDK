@@ -1666,3 +1666,12 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(FInBunch* BunchPtr, con
 		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(EntityId, MultiClientUpdate);
 	}
 }
+
+void void FSpatialTypeBinding_Character::SendComponentUpdates(const TArray<uint16>& Changed,
+	const uint8* RESTRICT SourceData,
+	const TArray<FRepLayoutCmd>& Cmds,
+	const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex;
+const worker::EntityId& EntityId) const
+{
+	// Empty for now as I focus on player controller.
+}
