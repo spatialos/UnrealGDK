@@ -9,6 +9,22 @@
 
 #include "SpatialPackageMapClient.generated.h"
 
+//todo-giray: super hacky to inject GetTypeHash() into UnrealObjectRef. Will find a better way.
+class UnrealObjectRefWrapper
+{
+public:
+	improbable::unreal::UnrealObjectRef ObjectRef;
+	bool operator == (const UnrealObjectRefWrapper& Rhs) const
+	{
+		return ObjectRef == Rhs.ObjectRef;
+	}
+	friend uint32 GetTypeHash(const UnrealObjectRefWrapper& ObjectRefWrapper)
+	{
+		//todo-giray do a proper hash.
+		return (ObjectRefWrapper.ObjectRef.entity() << 8) + ObjectRefWrapper.ObjectRef.offset();
+	}
+};
+
 /**
  * 
  */
@@ -38,12 +54,7 @@ public:
 private:
 	FNetworkGUID AssignNewNetGUID(const UObject* Object);
 
-	TMap<FNetworkGUID, improbable::unreal::UnrealObjectRef> NetGUIDToUnrealObjectRef;
-	TMap<improbable::unreal::UnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
+	TMap<FNetworkGUID, UnrealObjectRefWrapper> NetGUIDToUnrealObjectRef;
+	TMap<UnrealObjectRefWrapper, FNetworkGUID> UnrealObjectRefToNetGUID;
 };
 
-uint32 GetTypeHash(const improbable::unreal::UnrealObjectRef& ObjectRef)
-{
-	//todo-giray do a proper hash.
-	return (ObjectRef.entity() << 8) + ObjectRef.offset();
-}
