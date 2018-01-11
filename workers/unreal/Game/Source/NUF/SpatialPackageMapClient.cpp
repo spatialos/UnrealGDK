@@ -33,7 +33,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID_Server(const UObject* Object
 	// Static objects' NetGUIDs are predetermined and registered in RegisterPreallocatedNetGUID
 	if (IsDynamicObject(Object))
 	{
-		return FNetGUIDCache::AssignNewNetGUID_Server(Object);
+	return FNetGUIDCache::AssignNewNetGUID_Server(Object);
 	}
 	
 	return FNetworkGUID(0);*/
@@ -53,9 +53,9 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID(const UObject* Object)
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 {
 	FEntityId EntityId = Cast<USpatialNetDriver>(Driver)->GetEntityRegistry()->GetEntityIdFromActor(Actor);
-	check(EntityId.ToSpatialEntityId() >= 0)	
+	check(EntityId.ToSpatialEntityId() >= 0)
 
-	FNetworkGUID NetGUID = GetOrAssignNetGUID(Actor);
+		FNetworkGUID NetGUID = GetOrAssignNetGUID(Actor);
 	//One major difference between how Unreal does NetGUIDs vs us is, we don't attempt to make them consistent across workers and client.
 	// The function above might have returned without assigning new GUID, because we are the client.
 	// Let's directly call the client function in that case.
@@ -73,8 +73,10 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	}
 
 	check(NetGUID.IsValid());
-	NetGUIDToEntityIdMap.Emplace(NetGUID, EntityId);
-	EntityIdToNetGUIDMap.Emplace(EntityId, NetGUID);
+	uint32 SubObjOffset = 0;
+	improbable::unreal::UnrealObjectRef ObjRef{ EntityId.ToSpatialEntityId(), SubObjOffset };
+	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjRef);
+	UnrealObjectRefToNetGUID.Emplace(ObjRef, NetGUID);
 
 	// Allocate GUIDs for each subobject too
 	TArray<UObject*> DefaultSubobjects;
@@ -85,22 +87,35 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 
 	for (UObject* Subobject : DefaultSubobjects)
 	{
+		SubObjOffset++;
 		FNetworkGUID SubObjectNetGUID = GetOrAssignNetGUID(Subobject);
-		check(SubObjectNetGUID.IsValid());		
+		ObjRef.set_offset(SubObjOffset);
+		NetGUIDToUnrealObjectRef.Emplace(SubObjectNetGUID, ObjRef);
+		UnrealObjectRefToNetGUID.Emplace(ObjRef, SubObjectNetGUID);
+		check(SubObjectNetGUID.IsValid());
 	}
 
 	return NetGUID;
 }
 
-FEntityId FSpatialNetGUIDCache::GetEntityIdFromNetGUID(const FNetworkGUID NetGUID)
+improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID)
 {
-	FEntityId* EntityId = NetGUIDToEntityIdMap.Find(NetGUID);
-	return (EntityId == nullptr ? FEntityId(0) : *EntityId);
+	improbable::unreal::UnrealObjectRef* ObjRef = NetGUIDToUnrealObjectRef.Find(NetGUID);
+
+	// If not found, return entity id 0 as it's not a valid entity id.
+	return ObjRef ? *ObjRef : improbable::unreal::UnrealObjectRef{ 0, 0 };
 }
 
-FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(const FEntityId EntityId)
+FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
-	FNetworkGUID* NetGUID = EntityIdToNetGUIDMap.Find(EntityId);
+	FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjectRef);
+	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
+}
+
+FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(const worker::EntityId& EntityId)
+{
+	improbable::unreal::UnrealObjectRef ObjRef{ EntityId, 0 };
+	FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRef);
 	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
 }
 
@@ -133,9 +148,9 @@ void USpatialPackageMapClient::ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FS
 void USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntityId EntityId)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	
+
 	// check we haven't already assigned a NetGUID to this object
-	if (!SpatialGuidCache->GetNetGUIDFromEntityId(EntityId).IsValid())
+	if (!SpatialGuidCache->GetNetGUIDFromEntityId(EntityId.ToSpatialEntityId()).IsValid())
 	{
 		SpatialGuidCache->AssignNewEntityActorNetGUID(Actor);
 	}

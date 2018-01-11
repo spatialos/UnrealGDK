@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Engine/PackageMapClient.h"
 #include "EntityId.h"
+#include <unreal/core_types.h>
+
 #include "SpatialPackageMapClient.generated.h"
 
 /**
@@ -29,13 +31,19 @@ public:
 	FNetworkGUID AssignNewNetGUID_Server(const UObject* Object) override;
 
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor);
-
-	FEntityId GetEntityIdFromNetGUID(const FNetworkGUID NetGUID);
-	FNetworkGUID GetNetGUIDFromEntityId(const FEntityId EntityId);
-
+	
+	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef);
+	improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID);
+	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId);
 private:
 	FNetworkGUID AssignNewNetGUID(const UObject* Object);
 
-	TMap<FNetworkGUID, FEntityId> NetGUIDToEntityIdMap;
-	TMap<FEntityId, FNetworkGUID> EntityIdToNetGUIDMap;
+	TMap<FNetworkGUID, improbable::unreal::UnrealObjectRef> NetGUIDToUnrealObjectRef;
+	TMap<improbable::unreal::UnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
 };
+
+uint32 GetTypeHash(const improbable::unreal::UnrealObjectRef& ObjectRef)
+{
+	//todo-giray do a proper hash.
+	return (ObjectRef.entity() << 8) + ObjectRef.offset();
+}
