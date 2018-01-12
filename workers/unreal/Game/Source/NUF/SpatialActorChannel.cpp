@@ -33,7 +33,9 @@ worker::EntityId USpatialActorChannel::GetEntityId() const
 	*/
 
 	// TODO(david): Hacks :(
-	if (NetGUID.Value == 6)
+
+	// NetGUID 2 is a NUFCharacter_BP with EntityId 2
+	if (NetGUID.Value == 2)
 	{
 		return {2};
 	}
@@ -43,7 +45,7 @@ worker::EntityId USpatialActorChannel::GetEntityId() const
 	}
 	else
 	{
-		check(false);
+		//check(false);
 		return {};
 	}
 }

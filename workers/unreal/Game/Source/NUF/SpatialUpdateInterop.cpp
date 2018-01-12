@@ -8,7 +8,6 @@
 #include "Utils/BunchReader.h"
 
 #include "Engine/PackageMapClient.h"
-#include "Engine/StaticMeshActor.h"
 #include "EngineUtils.h"
 
 #include "Generated/SpatialUpdateInterop_Character.h"
@@ -170,7 +169,7 @@ void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, 
 	Channel->UActorChannel::ReceivedBunch(Bunch);
 }
 
-void USpatialUpdateInterop::HandleRPCInvocation(AActor* TargetActor, UFunction* Function, FFrame* DuplicateFrame, worker::EntityId Target)
+void USpatialUpdateInterop::HandleRPCInvocation(const AActor* TargetActor, const UFunction* const Function, const FFrame* DuplicateFrame, const worker::EntityId Target)
 {
 	const FSpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
 	if (Binding)

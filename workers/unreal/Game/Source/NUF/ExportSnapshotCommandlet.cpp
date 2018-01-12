@@ -7,7 +7,6 @@
 #include "improbable/collections.h"
 #include "improbable/standard_library.h"
 #include <improbable/spawner/spawner.h>
-#include <improbable/player/player.h>
 #include <improbable/worker.h>
 #include <unreal/generated/UnrealCharacter.h>
 #include <array>
@@ -105,15 +104,11 @@ worker::Entity UExportSnapshotCommandlet::CreatePlayerEntity() const
 		.AddMetadataComponent(Metadata::Data{ "NUFCharacter_BP" })
 		.SetPersistence(true)
 		.SetReadAcl(anyWorkerReadPermission)
-		.AddComponent<player::PlayerControlClient>(player::PlayerControlClient::Data{}, unrealClientWritePermission)
-		.AddComponent<player::PlayerControlServer>(player::PlayerControlServer::Data{}, unrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data{}, unrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data{}, unrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, unrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealPlayerControllerClientRPCs>(improbable::unreal::UnrealPlayerControllerClientRPCs::Data{}, unrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealPlayerControllerServerRPCs>(improbable::unreal::UnrealPlayerControllerServerRPCs::Data{}, unrealClientWritePermission)
-		//.AddComponent<test::rpc::ServerRpcs>(test::rpc::ServerRpcs::Data{}, unrealWorkerWritePermission)
-		//.AddComponent<test::rpc::ServerRpcs>(test::rpc::ServerRpcs::Data{}, unrealClientWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterClientRPCs>(improbable::unreal::UnrealCharacterClientRPCs::Data{}, unrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterServerRPCs>(improbable::unreal::UnrealCharacterServerRPCs::Data{}, unrealClientWritePermission)
 		.Build();
 
 	return snapshotEntity;

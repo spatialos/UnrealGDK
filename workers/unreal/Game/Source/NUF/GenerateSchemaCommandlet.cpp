@@ -7,6 +7,7 @@
 #include "GameFramework/Character.h"
 #include "Misc/FileHelper.h"
 #include "Components/ArrowComponent.h"
+#include "Utils/ComponentIdGenerator.h"
 
 // Hack to access private members of FRepLayout.
 #define private public
@@ -53,17 +54,18 @@ enum EReplicatedPropertyGroup
 	REP_MultiClient
 };
 
-enum ERPCGroup
+enum ERPCType
 {
-	ERPCType_Client,
-	ERPCType_Server
+	RPC_Client,
+	RPC_Server,
+	RPC_Unknown
 };
 
 struct FPropertyLayout
 {
 	TMap<EReplicatedPropertyGroup, TArray<FReplicatedPropertyInfo>> ReplicatedProperties;
 	TArray<FPropertyInfo> CompleteProperties;
-	TMap<ERPCGroup, TArray<UFunction*>> RPCs;
+	TMap<ERPCType, TArray<UFunction*>> RPCs;
 };
 
 FString GetLifetimeConditionAsString(ELifetimeCondition Condition)
@@ -76,9 +78,9 @@ FString GetLifetimeConditionAsString(ELifetimeCondition Condition)
 	return EnumPtr->GetNameByValue((int64)Condition).ToString();
 }
 
-TArray<ERPCGroup> GetRPCGroups()
+TArray<ERPCType> GetRPCTypes()
 {
-	static TArray<ERPCGroup> Groups = {ERPCType_Client, ERPCType_Server};
+	static TArray<ERPCType> Groups = {RPC_Client, RPC_Server };
 	return Groups;
 }
 
@@ -87,34 +89,33 @@ FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 	return Group == REP_SingleClient ? TEXT("SingleClient") : TEXT("MultiClient");
 }
 
-ERPCGroup GetRPCGroupFromFunction(UFunction* Function)
+ERPCType GetRPCTypeFromFunction(UFunction* Function)
 {
 	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetClient)
 	{
-		return ERPCGroup::ERPCType_Client;
+		return ERPCType::RPC_Client;
 	}
 	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetServer)
 	{
-		return ERPCGroup::ERPCType_Server;
+		return ERPCType::RPC_Server;
 	}
 	else
 	{
-		check(false)
-		// Perhaps should add an ERPCType_Invalid
-		return ERPCType_Client;
+		checkNoEntry()
+		return ERPCType::RPC_Unknown;
 	}
 }
 
-FString GetRPCTypeString(ERPCGroup Group)
+FString GetRPCTypeString(ERPCType Group)
 {
 	switch (Group)
 	{
-		case ERPCType_Client:
+		case ERPCType::RPC_Client:
 			return "Client";
-		case ERPCType_Server:
+		case ERPCType::RPC_Server:
 			return "Server";
 		default:
-			check(false)
+			checkNoEntry()
 			return "";
 	}
 }
@@ -334,12 +335,12 @@ FString GetCommandNameFromFunction(UFunction* Function)
 
 FString GetSchemaRPCRequestTypeFromUnreal(UFunction* Func)
 {
-	return Func->GetName() + TEXT("Request");
+	return TEXT("Unreal") + Func->GetName() + TEXT("Request");
 }
 
 FString GetSchemaRPCResponseTypeFromUnreal(UFunction* Func)
 {
-	return Func->GetName() + TEXT("Response");
+	return TEXT("Unreal") + Func->GetName() + TEXT("Response");
 }
 
 FString GetFullyQualifiedName(TArray<UProperty*> Chain)
@@ -502,8 +503,6 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
 	{
 		Writer.Print(FString::Printf(TEXT("// UNSUPPORTED UEnumProperty - %s = %s;"), *SpatialValueSetter, *PropertyValue));
-		//Writer.Print(FString::Printf(TEXT("auto Underlying = %s.GetValue()"), *PropertyValue));
-		//return GenerateUnrealToSchemaConversion(Writer, EnumProperty->GetUnderlyingProperty(), TEXT("Underlying"), ResultName);
 	}
 
 	// Try to special case to custom types we know about
@@ -538,13 +537,12 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		}
 		else
 		{
+			// If this is not a struct that we handle explicitly, instead recurse in to its properties
 			for (TFieldIterator<UProperty> It(Struct); It; ++It)
 			{
-				Writer.Print(TEXT("{")).Indent();
 				TArray<UProperty*> NewChain = PropertyChain;
 				NewChain.Add(*It);
 				GenerateUnrealToSchemaConversion(Writer, Update, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP());
-				Writer.Outdent().Print(TEXT("}"));
 			}
 		}
 	}
@@ -596,7 +594,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	FString SpatialValue;
 
 	// This bool is used to differentiate between property updates and command arguments. Unlike command arguments, all property updates are optionals and must be accessed through .data()
-	if(bIsUpdate)
+	if (bIsUpdate)
 	{
 		SpatialValue = FString::Printf(TEXT("*(%s.%s().data())"), *Update, *GetFullyQualifiedName(PropertyChain));
 	}	
@@ -607,12 +605,9 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 
 	// Get result type.
 	UProperty* Property = PropertyChain[PropertyChain.Num() - 1];
-
 	if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
 	{
 		Writer.Print(FString::Printf(TEXT("// UNSUPPORTED (Enum) - %s %s;"), *PropertyValue, *SpatialValue));
-		//Writer.Print(FString::Printf(TEXT("auto Underlying = %s.GetValue()"), *PropertyValue));
-		//return GenerateUnrealToSchemaConversion(Writer, EnumProperty->GetUnderlyingProperty(), TEXT("Underlying"), ResultName);
 	}
 
 	// Try to special case to custom types we know about
@@ -626,45 +621,51 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 			Struct->GetName() == TEXT("Vector_NetQuantizeNormal") ||
 			Struct->GetName() == TEXT("Vector_NetQuantize"))
 		{
+			Writer.Print(TEXT("{")).Indent();
 			Writer.Print(FString::Printf(TEXT("auto& Vector = %s;"), *SpatialValue));
 			Writer.Print(FString::Printf(TEXT("%s.X = Vector.x();"), *PropertyValue));
 			Writer.Print(FString::Printf(TEXT("%s.Y = Vector.y();"), *PropertyValue));
 			Writer.Print(FString::Printf(TEXT("%s.Z = Vector.z();"), *PropertyValue));
+			Writer.Outdent().Print(TEXT("}"));
 		}
 		else if (Struct->GetFName() == NAME_Rotator)
 		{
+			Writer.Print(TEXT("{")).Indent();
 			Writer.Print(FString::Printf(TEXT("auto& Rotator = %s;"), *SpatialValue));
 			Writer.Print(FString::Printf(TEXT("%s.Yaw = Rotator.yaw();"), *PropertyValue));
 			Writer.Print(FString::Printf(TEXT("%s.Pitch = Rotator.pitch();"), *PropertyValue));
 			Writer.Print(FString::Printf(TEXT("%s.Roll = Rotator.roll();"), *PropertyValue));
+			Writer.Outdent().Print(TEXT("}"));
 		}
 		else if (Struct->GetFName() == NAME_Plane)
 		{
+			Writer.Print(TEXT("{")).Indent();
 			Writer.Print(FString::Printf(TEXT("auto& Plane = %s;"), *SpatialValue));
 			Writer.Print(FString::Printf(TEXT("%s.X = Plane.x();"), *PropertyValue));
 			Writer.Print(FString::Printf(TEXT("%s.Y = Plane.y();"), *PropertyValue));
 			Writer.Print(FString::Printf(TEXT("%s.Z = Plane.z();"), *PropertyValue));
 			Writer.Print(FString::Printf(TEXT("%s.W = Plane.w();"), *PropertyValue));
+			Writer.Outdent().Print(TEXT("}"));
 		}
 		else if (Struct->GetName() == TEXT("RepMovement") ||
 				Struct->GetName() == TEXT("UniqueNetIdRepl"))
 		{
+			Writer.Print(TEXT("{")).Indent();
 			Writer.Print(FString::Printf(TEXT(R"""(auto& ValueDataStr = %s;
 				TArray<uint8> ValueData;
 				ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
 				bool bSuccess;
 				%s.NetSerialize(ValueDataReader, nullptr, bSuccess);)"""), *SpatialValue, *PropertyValue));
+			Writer.Outdent().Print(TEXT("}"));
 		}
 		else
 		{
 			for (TFieldIterator<UProperty> It(Struct); It; ++It)
 			{
-				Writer.Print(TEXT("{")).Indent();
 				TArray<UProperty*> NewChain = PropertyChain;
 				NewChain.Add(*It);
 				GeneratePropertyToUnrealConversion(Writer, Update, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP(), bIsUpdate, (*It)->GetCPPType());
-				Writer.Outdent().Print(TEXT("}"));
 			}
 		}
 	}
@@ -716,10 +717,10 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 
 FString GeneratePropertyReader(UProperty* Property)
 {
+	// This generates the appropriate macro for Unreal to read values from an FFrame. This is the same method as Unreal uses in .generated.h files
 	if (Property->IsA(UBoolProperty::StaticClass()))
 	{
-		return FString::Printf(TEXT("P_GET_UBOOL(%s);"),
-			*Property->GetName());
+		return FString::Printf(TEXT("P_GET_UBOOL(%s);"), *Property->GetName());
 	}
 	else if (Property->IsA(UObjectProperty::StaticClass()))
 	{
@@ -821,7 +822,7 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 		Layout.CompleteProperties.Remove(PropertyToRemove);
 	}
 
-	for (auto Group : GetRPCGroups())
+	for (auto Group : GetRPCTypes())
 	{
 		Layout.RPCs.Add(Group);
 	}
@@ -831,7 +832,7 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
 			RemoteFunction->FunctionFlags & FUNC_NetServer)
 		{
-			Layout.RPCs[GetRPCGroupFromFunction(*RemoteFunction)].Emplace(*RemoteFunction);
+			Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(*RemoteFunction);
 		}
 	}
 
@@ -854,20 +855,6 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 
 	return Layout;
 }
-
-struct FComponentIdGenerator
-{
-	FComponentIdGenerator(int StartId) : InitialId(StartId), NumIds(0) {};
-	int GetNextAvailableId() {
-		return InitialId + (NumIds++);
-	}
-	int GetNumUsedIds() {
-		return NumIds;
-	}
-private:
-	int InitialId;
-	int NumIds;
-};
 
 int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class, const FPropertyLayout& Layout)
 {
@@ -930,7 +917,7 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 	}
 	Writer.Outdent().Print(TEXT("}"));
 
-	for (auto Group : GetRPCGroups())
+	for (auto Group : GetRPCTypes())
 	{
 		// Generate schema RPC command types
 		for (auto& Func : (Layout.RPCs[Group]))
@@ -975,7 +962,7 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 	}
 	Writer.Print();
 
-	for (auto Group : GetRPCGroups())
+	for (auto Group : GetRPCTypes())
 	{
 		// Generate ClientRPCs component
 		Writer.Print(FString::Printf(TEXT("component Unreal%s%sRPCs {"), *Class->GetName(), *GetRPCTypeString(Group)));
@@ -1035,8 +1022,6 @@ void GenerateForwardingCodeFromLayout(
 			*GetReplicatedPropertyGroupName(Group),
 			*Class->GetName(),
 			*GetSchemaReplicatedDataName(Group, Class)));
-		//HeaderWriter.Print(FString::Printf(TEXT("%s;"), *UnrealToSpatialSignatureByGroup[Group]));
-		//HeaderWriter.Print(FString::Printf(TEXT("%s;"), *SpatialToUnrealSignatureByGroup[Group]));
 	}
 
 	// Type binding class.
@@ -1060,7 +1045,7 @@ void GenerateForwardingCodeFromLayout(
 	HeaderWriter.Print(TEXT("TArray<worker::Dispatcher::CallbackKey> RPCReceiverCallbacks;"));
 	HeaderWriter.Print();
 	
-	for(auto Group : GetRPCGroups())
+	for(auto Group : GetRPCTypes())
 	{
 		// Command receiver function signatures
 		for (auto& RPC : Layout.RPCs[Group])
@@ -1198,7 +1183,7 @@ void GenerateForwardingCodeFromLayout(
 	// RPC/Command interop
 	SourceWriter.Print();
 	SourceWriter.Print(TEXT("// RPC sender functions"));
-	for (auto Group : GetRPCGroups())
+	for (auto Group : GetRPCTypes())
 	{
 		for (auto& RPC : Layout.RPCs[Group])
 		{
@@ -1209,6 +1194,7 @@ void GenerateForwardingCodeFromLayout(
 			// Check that this RPC contains arguments to avoid unnecessary code
 			if (RPC->NumParms > 0)
 			{
+				// Note that macros returned by GeneratePropertyReader require this FFrame variable to be named "Stack"
 				SourceWriter.Print(TEXT("FFrame& Stack = *RPCFrame;"));
 				for (TFieldIterator<UProperty> Param(RPC); Param; ++Param)
 				{
@@ -1238,7 +1224,7 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Print(TEXT("UpdateInterop = InUpdateInterop;"));
 	SourceWriter.Print(TEXT("PackageMap = InPackageMap;"));
 
-	for (auto Group : GetRPCGroups())
+	for (auto Group : GetRPCTypes())
 	{
 		for (auto& RPC : Layout.RPCs[Group])
 		{
@@ -1312,7 +1298,7 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Print(TEXT("});"));
 	}
 
-	for (auto Group : GetRPCGroups())
+	for (auto Group : GetRPCTypes())
 	{
 		// Ensure that this class contains RPCs of the type specified by Group (eg, Server or Client) so that we don't generate code for missing components
 		if (Layout.RPCs.Contains(Group) && Layout.RPCs[Group].Num() > 0)
@@ -1464,7 +1450,7 @@ void GenerateForwardingCodeFromLayout(
 
 	SourceWriter.Outdent().Print(TEXT("}"));
 
-	for (auto Group : GetRPCGroups())
+	for (auto Group : GetRPCTypes())
 	{
 		for (auto& RPC : Layout.RPCs[Group])
 		{
