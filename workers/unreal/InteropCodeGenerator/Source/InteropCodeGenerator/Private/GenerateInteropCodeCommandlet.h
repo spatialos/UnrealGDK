@@ -3,10 +3,10 @@
 #pragma once
 
 #include "Commandlets/Commandlet.h"
-#include "GenerateSchemaCommandlet.generated.h"
+#include "GenerateInteropCodeCommandlet.generated.h"
 
 UCLASS()
-class UGenerateSchemaCommandlet : public UCommandlet
+class UGenerateInteropCodeCommandlet : public UCommandlet
 {
 	GENERATED_BODY()
 
