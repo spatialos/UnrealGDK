@@ -5,12 +5,17 @@
 #include "SpatialOS.h"
 #include "Engine.h"
 #include "SpatialActorChannel.h"
+#include "SpatialPackageMapClient.h"
 #include "Utils/BunchReader.h"
 
 namespace {
 
 void ApplyUpdateToSpatial_SingleClient_PlayerController(const uint8* Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update)
 {
+	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
+	
+	check(SpatialPMC);
+	
 	switch (Handle)
 	{
 		case 18: // field_targetviewrotation
@@ -92,6 +97,10 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 
 void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update)
 {
+	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
+	
+	check(SpatialPMC);
+	
 	switch (Handle)
 	{
 		case 4: // field_remoterole
@@ -110,9 +119,10 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* Data, int32 
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef;
-			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
-			Update.set_field_pawn(UObjectRef);
+			FNetworkGUID NetGUID;
+			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Value(UObjectRef);
 			break;
 		}
 	default:

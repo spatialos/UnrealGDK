@@ -5,7 +5,25 @@
 #include "CoreMinimal.h"
 #include "Engine/PackageMapClient.h"
 #include "EntityId.h"
+#include <unreal/core_types.h>
+
 #include "SpatialPackageMapClient.generated.h"
+
+//todo-giray: super hacky to inject GetTypeHash() into UnrealObjectRef. Will find a better way.
+class UnrealObjectRefWrapper
+{
+public:
+	improbable::unreal::UnrealObjectRef ObjectRef;
+	bool operator == (const UnrealObjectRefWrapper& Rhs) const
+	{
+		return ObjectRef == Rhs.ObjectRef;
+	}
+	friend uint32 GetTypeHash(const UnrealObjectRefWrapper& ObjectRefWrapper)
+	{
+		//todo-giray do a proper hash.
+		return (ObjectRefWrapper.ObjectRef.entity() << 8) + ObjectRefWrapper.ObjectRef.offset();
+	}
+};
 
 /**
  * 
@@ -18,6 +36,8 @@ public:
 	void ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FString& Path);
 	void ResolveEntityActor(AActor* Actor, FEntityId EntityId);
 	virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel *Channel, class AActor*& Actor) override;
+
+	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID);
 };
 
 class NUF_API FSpatialNetGUIDCache : public FNetGUIDCache
@@ -29,13 +49,14 @@ public:
 	FNetworkGUID AssignNewNetGUID_Server(const UObject* Object) override;
 
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor);
-
-	FEntityId GetEntityIdFromNetGUID(const FNetworkGUID NetGUID);
-	FNetworkGUID GetNetGUIDFromEntityId(const FEntityId EntityId);
-
+	
+	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef);
+	improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID);
+	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId);
 private:
 	FNetworkGUID AssignNewNetGUID(const UObject* Object);
 
-	TMap<FNetworkGUID, FEntityId> NetGUIDToEntityIdMap;
-	TMap<FEntityId, FNetworkGUID> EntityIdToNetGUIDMap;
+	TMap<FNetworkGUID, UnrealObjectRefWrapper> NetGUIDToUnrealObjectRef;
+	TMap<UnrealObjectRefWrapper, FNetworkGUID> UnrealObjectRefToNetGUID;
 };
+

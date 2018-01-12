@@ -496,7 +496,7 @@ namespace
 		}
 		else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 		{
-			Writer.Print(FString::Printf(TEXT("improbable::unreal::UnrealObjectRef UObjectRef;\nUObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(%s).Value);\n%s(UObjectRef);"),
+			Writer.Print(FString::Printf(TEXT("FNetworkGUID NetGUID;\n// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.\nimprobable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);\n%s(UObjectRef);"),
 				*PropertyValue, *SpatialValueSetter));
 		}
 		else if (Property->IsA(UNameProperty::StaticClass()))
@@ -873,6 +873,7 @@ namespace
 		#include "SpatialOS.h"
 		#include "Engine.h"
 		#include "SpatialActorChannel.h"
+		#include "SpatialPackageMapClient.h"
 		#include "Utils/BunchReader.h")"""), *InteropFilename));
 
 		// Replicated property interop.
@@ -887,6 +888,8 @@ namespace
 			SourceWriter.Indent();
 			if (Layout.ReplicatedProperties[Group].Num() > 0)
 			{
+				SourceWriter.Print(TEXT("USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);\n"));
+				SourceWriter.Print(TEXT("check(SpatialPMC);\n"));
 				SourceWriter.Print(TEXT("switch (Handle)\n{"));
 				SourceWriter.Indent();
 				for (auto& RepProp : Layout.ReplicatedProperties[Group])
