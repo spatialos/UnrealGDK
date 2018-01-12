@@ -36,6 +36,8 @@ public:
 	void ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FString& Path);
 	void ResolveEntityActor(AActor* Actor, FEntityId EntityId);
 	virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel *Channel, class AActor*& Actor) override;
+
+	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID);
 };
 
 class NUF_API FSpatialNetGUIDCache : public FNetGUIDCache

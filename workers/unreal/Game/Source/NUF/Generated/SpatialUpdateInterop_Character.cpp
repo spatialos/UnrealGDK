@@ -5,6 +5,7 @@
 #include "SpatialOS.h"
 #include "Engine.h"
 #include "SpatialActorChannel.h"
+#include "SpatialPackageMapClient.h"
 #include "Utils/BunchReader.h"
 
 namespace {
@@ -28,6 +29,10 @@ void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* Upda
 
 void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update)
 {
+	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
+	
+	check(SpatialPMC);
+	
 	switch (Handle)
 	{
 		case 1: // field_bhidden
@@ -96,9 +101,10 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef;
-			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
-			Update.set_field_owner(UObjectRef);
+			FNetworkGUID NetGUID;
+			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Value(UObjectRef);
 			break;
 		}
 		case 6: // field_replicatedmovement
@@ -126,9 +132,10 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef;
-			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
-			Update.set_field_attachmentreplication_attachparent(UObjectRef);
+			FNetworkGUID NetGUID;
+			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Value(UObjectRef);
 			break;
 		}
 		case 8: // field_attachmentreplication_locationoffset
@@ -191,9 +198,10 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef;
-			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
-			Update.set_field_attachmentreplication_attachcomponent(UObjectRef);
+			FNetworkGUID NetGUID;
+			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Value(UObjectRef);
 			break;
 		}
 		case 13: // field_role
@@ -232,9 +240,10 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef;
-			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
-			Update.set_field_instigator(UObjectRef);
+			FNetworkGUID NetGUID;
+			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Value(UObjectRef);
 			break;
 		}
 		case 16: // field_playerstate
@@ -243,9 +252,10 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef;
-			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
-			Update.set_field_playerstate(UObjectRef);
+			FNetworkGUID NetGUID;
+			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Value(UObjectRef);
 			break;
 		}
 		case 17: // field_remoteviewpitch
@@ -269,9 +279,10 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef;
-			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
-			Update.set_field_controller(UObjectRef);
+			FNetworkGUID NetGUID;
+			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Value(UObjectRef);
 			break;
 		}
 		case 19: // field_replicatedbasedmovement_movementbase
@@ -280,9 +291,10 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef;
-			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
-			Update.set_field_replicatedbasedmovement_movementbase(UObjectRef);
+			FNetworkGUID NetGUID;
+			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Value(UObjectRef);
 			break;
 		}
 		case 20: // field_replicatedbasedmovement_bonename
@@ -480,9 +492,10 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef;
-			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
-			Update.set_field_reprootmotion_animmontage(UObjectRef);
+			FNetworkGUID NetGUID;
+			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Value(UObjectRef);
 			break;
 		}
 		case 34: // field_reprootmotion_position
@@ -536,9 +549,10 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef;
-			UObjectRef.set_entity(PackageMap->GetNetGUIDFromObject(Value).Value);
-			Update.set_field_reprootmotion_movementbase(UObjectRef);
+			FNetworkGUID NetGUID;
+			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Value(UObjectRef);
 			break;
 		}
 		case 38: // field_reprootmotion_movementbasebonename
