@@ -92,6 +92,9 @@ private:
 	UPROPERTY()
 	bool bIsClient;
 
+	UPROPERTY()
+	UPackageMap* PackageMap;
+
 	// Type interop bindings.
 	TMap<UClass*, TSharedPtr<FSpatialTypeBinding>> TypeBinding;
 

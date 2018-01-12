@@ -32,6 +32,7 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 	bIsClient = bClient;
 	SpatialOSInstance = Instance;
 	NetDriver = Driver;
+	PackageMap = Driver->GetSpatialOSNetConnection()->PackageMap;
 
 	RegisterInteropType(ACharacter::StaticClass(), TSharedPtr<FSpatialTypeBinding>(new FSpatialTypeBinding_Character()));
 	RegisterInteropType(APlayerController::StaticClass(), TSharedPtr<FSpatialTypeBinding>(new FSpatialTypeBinding_PlayerController()));
@@ -56,7 +57,7 @@ USpatialActorChannel* USpatialUpdateInterop::GetClientActorChannel(const worker:
 
 void USpatialUpdateInterop::RegisterInteropType(UClass* Class, TSharedPtr<FSpatialTypeBinding> Binding)
 {
-	Binding->Init(this, nullptr);
+	Binding->Init(this, PackageMap);
 	Binding->BindToView();
 	TypeBinding.Add(Class, Binding);
 }
