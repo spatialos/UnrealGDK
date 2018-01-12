@@ -186,7 +186,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
+			Update.set_field_owner(UObjectRef);
 			break;
 		}
 		case 6: // field_replicatedmovement
@@ -217,7 +217,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
+			Update.set_field_attachmentreplication_attachparent(UObjectRef);
 			break;
 		}
 		case 8: // field_attachmentreplication_locationoffset
@@ -283,7 +283,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
+			Update.set_field_attachmentreplication_attachcomponent(UObjectRef);
 			break;
 		}
 		case 13: // field_role
@@ -325,7 +325,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
+			Update.set_field_instigator(UObjectRef);
 			break;
 		}
 		case 16: // field_pawn
@@ -337,7 +337,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
+			Update.set_field_pawn(UObjectRef);
 			break;
 		}
 		case 17: // field_playerstate
@@ -349,7 +349,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
+			Update.set_field_playerstate(UObjectRef);
 			break;
 		}
 	default:

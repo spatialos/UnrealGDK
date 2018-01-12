@@ -497,7 +497,7 @@ namespace
 		else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 		{
 			Writer.Print(FString::Printf(TEXT("FNetworkGUID NetGUID;\n// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.\nimprobable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);\n%s(UObjectRef);"),
-				*PropertyValue, *SpatialValueSetter));
+				*SpatialValueSetter));
 		}
 		else if (Property->IsA(UNameProperty::StaticClass()))
 		{
