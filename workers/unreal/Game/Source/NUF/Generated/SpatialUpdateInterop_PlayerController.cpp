@@ -115,11 +115,10 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* Data, int32 
 		}
 		case 16: // field_pawn
 		{
-			APawn* Value = nullptr;
-			check(Property->ElementSize == sizeof(Value));
-
-			FNetworkGUID NetGUID;
-			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
+			const UObject* Value = nullptr;
+			UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(Property);
+			Value = ObjProperty->GetObjectPropertyValue(Data);
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
 			break;
 		}
