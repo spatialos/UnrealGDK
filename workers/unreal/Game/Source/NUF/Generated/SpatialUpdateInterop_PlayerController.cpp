@@ -117,12 +117,10 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* Data, int32 
 		{
 			APawn* Value = nullptr;
 			check(Property->ElementSize == sizeof(Value));
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
 			break;
 		}
 	default:
@@ -556,27 +554,7 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FInBunch* BunchP
 	// Read bunch and build up SpatialOS component updates.
 	auto& PropertyMap = GetHandlePropertyMap_PlayerController();
 	FBunchReader BunchReader(BunchPtr);
-	FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
-	{
-		// TODO: We can't parse UObjects or FNames here as we have no package map.
-		
-		auto& Data = PropertyMap[Handle];
-		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
-		
-		switch (GetGroupFromCondition(Data.Condition))
-		{
-		case GROUP_SingleClient:
-			ApplyUpdateToSpatial_SingleClient_PlayerController(Reader, Handle, Property, PackageMap, SingleClientUpdate);
-			SingleClientUpdateChanged = true;
-			break;
-		case GROUP_MultiClient:
-			ApplyUpdateToSpatial_MultiClient_PlayerController(Reader, Handle, Property, PackageMap, MultiClientUpdate);
-			MultiClientUpdateChanged = true;
-			break;
-		}
-		return true;
-	};
-	BunchReader.Parse(true, PropertyMap, RepDataHandler);
+
 
 	// Send SpatialOS update.
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
@@ -593,7 +571,7 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FInBunch* BunchP
 void FSpatialTypeBinding_PlayerController::SendComponentUpdates(const TArray<uint16>& Changed,
 	const uint8* RESTRICT SourceData,
 	const TArray<FRepLayoutCmd>& Cmds,
-	const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex;
+	const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex,
 	const worker::EntityId& EntityId) const
 {
 	// Build SpatialOS updates.
@@ -617,20 +595,20 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(const TArray<uin
 		TempWriter.Reset();
 		Cmd.Property->NetSerializeItem(TempWriter, PackageMap, (void*)Data);
 		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
-		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
+		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
 
 		switch (GetGroupFromCondition(PropertyMapData.Condition))
 		{
 		case GROUP_SingleClient:
-			ApplyUpdateToSpatial_SingleClient_PlayerController(Data, HandleIterator.Handle, Property, PackageMap, SingleClientUpdate);
+			ApplyUpdateToSpatial_SingleClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, SingleClientUpdate);
 			SingleClientUpdateChanged = true;
 			break;
 		case GROUP_MultiClient:
-			ApplyUpdateToSpatial_MultiClient_PlayerController(Data, HandleIterator.Handle, Property, PackageMap, MultiClientUpdate);
+			ApplyUpdateToSpatial_MultiClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, MultiClientUpdate);
 			MultiClientUpdateChanged = true;
 			break;
 		}
-		return true;
+	}
 
 	// Send SpatialOS update.
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();

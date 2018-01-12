@@ -104,7 +104,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
 			break;
 		}
 		case 6: // field_replicatedmovement
@@ -135,7 +134,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
 			break;
 		}
 		case 8: // field_attachmentreplication_locationoffset
@@ -201,7 +199,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
 			break;
 		}
 		case 13: // field_role
@@ -243,7 +240,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
 			break;
 		}
 		case 16: // field_playerstate
@@ -255,7 +251,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
 			break;
 		}
 		case 17: // field_remoteviewpitch
@@ -282,7 +277,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
 			break;
 		}
 		case 19: // field_replicatedbasedmovement_movementbase
@@ -294,7 +288,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
 			break;
 		}
 		case 20: // field_replicatedbasedmovement_bonename
@@ -495,7 +488,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
 			break;
 		}
 		case 34: // field_reprootmotion_position
@@ -552,7 +544,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			FNetworkGUID NetGUID;
 			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Value(UObjectRef);
 			break;
 		}
 		case 38: // field_reprootmotion_movementbasebonename
@@ -1681,11 +1672,11 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(FInBunch* BunchPtr, con
 	}
 }
 
-void void FSpatialTypeBinding_Character::SendComponentUpdates(const TArray<uint16>& Changed,
+void FSpatialTypeBinding_Character::SendComponentUpdates(const TArray<uint16>& Changed,
 	const uint8* RESTRICT SourceData,
 	const TArray<FRepLayoutCmd>& Cmds,
-	const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex;
-const worker::EntityId& EntityId) const
+	const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex,
+	const worker::EntityId& EntityId) const
 {
 	// Empty for now as I focus on player controller.
 }

@@ -5,6 +5,7 @@
 #include <improbable/worker.h>
 
 #include "CoreMinimal.h"
+#include "Net/RepLayout.h"
 #include "SpatialUpdateInterop.generated.h"
 
 class USpatialOS;
