@@ -1114,7 +1114,7 @@ namespace
 		}
 
 		SourceWriter.Print();
-		SourceWriter.Print(FString::Printf(TEXT(R"""(// Read bunch and build up SpatialOS component updates.
+		SourceWriter.Print(FString::Printf(TEXT(R"""(// Build up SpatialOS component updates.
 		auto& PropertyMap = GetHandlePropertyMap_%s();
 		FChangelistIterator ChangelistIterator(Changed, 0);
 		FRepHandleIterator HandleIterator(ChangelistIterator, Cmds, BaseHandleToCmdIndex, 0, 1, 0, Cmds.Num() - 1);

@@ -316,7 +316,14 @@ bool USpatialActorChannel::ReplicateActor()
 		ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, Changed);
 	}
 
-	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+	const bool bCompareIndexSame = ActorReplicator->RepState->LastCompareIndex == ChangelistState->CompareIndex;
+	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
+
+	// We can early out if we know for sure there are no new changelists to send
+	if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
+	{
+		return false;
+	}
 
 	//todo-giray: We currently don't take replication of custom delta properties into account here because it doesn't use changelists.
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
@@ -326,10 +333,9 @@ bool USpatialActorChannel::ReplicateActor()
 		USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Connection->Driver)->GetSpatialUpdateInterop();
 		check(UpdateInterop);
 		UpdateInterop->SendSpatialUpdate(this, Changed);
-		UE_LOG(LogTemp, Warning, TEXT("We are going to replicate."));
 	}
 
-
+	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
 	/*
 	// The Actor
 	WroteSomethingImportant |= ActorReplicator->ReplicateProperties(Bunch, RepFlags);
