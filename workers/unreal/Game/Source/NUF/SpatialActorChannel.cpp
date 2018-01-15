@@ -386,37 +386,6 @@ bool USpatialActorChannel::ReplicateActor()
 		{
 			RepComp.Value()->PostSendBunch(PacketRange, Bunch.bReliable);
 		}
-
-		// If there were any subobject keys pending, add them to the NakMap
-		if (PendingObjKeys.Num() > 0)
-		{
-			// For the packet range we just sent over
-			for (int32 PacketId = PacketRange.First; PacketId <= PacketRange.Last; ++PacketId)
-			{
-				// Get the existing set (its possible we send multiple bunches back to back and they end up on the same packet)
-				FPacketRepKeyInfo &Info = SubobjectNakMap.FindOrAdd(PacketId % SubobjectRepKeyBufferSize);
-				if (Info.PacketID != PacketId)
-				{
-					UE_LOG(LogNetTraffic, Verbose, TEXT("ActorChannel[%d]: Clearing out PacketRepKeyInfo for new packet: %d"), ChIndex, PacketId);
-					Info.ObjKeys.Empty(Info.ObjKeys.Num());
-				}
-				Info.PacketID = PacketId;
-				Info.ObjKeys.Append(PendingObjKeys);
-
-				FString VerboseString;
-				for (auto KeyIt = PendingObjKeys.CreateIterator(); KeyIt; ++KeyIt)
-				{
-					VerboseString += FString::Printf(TEXT(" %d"), *KeyIt);
-				}
-
-				UE_LOG(LogNetTraffic, Verbose, TEXT("ActorChannel[%d]: Sending ObjKeys: %s"), ChIndex, *VerboseString);
-			}
-
-			if (Actor->bNetTemporary)
-			{
-				Connection->SentTemporaries.Add(Actor);
-			}
-		}
 		SentBunch = true;
 	}
 
@@ -491,17 +460,37 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 				WorkerRequirementSet UnrealClientWritePermission{ { UnrealClientAttributeSet } };
 				WorkerRequirementSet AnyWorkerReadRequirement{ { UnrealWorkerAttributeSet, UnrealClientAttributeSet } };
 
-				auto Entity = unreal::FEntityBuilder::Begin()
-					.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Loc), UnrealWorkerWritePermission)
-					.AddMetadataComponent(Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
-					.SetPersistence(true)
-					.SetReadAcl(AnyWorkerReadRequirement)
-					// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
-					//todo-giray: Remove once we're using proper (generated) entity templates here.
-					.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, UnrealClientWritePermission)
-					.Build();
+				// Temporary special case hack for player controller. We should be auto-generating these types instead.
+				if (Actor->IsA(APlayerController::StaticClass()))
+				{
+					auto Entity = unreal::FEntityBuilder::Begin()
+						.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Loc), UnrealWorkerWritePermission)
+						.AddMetadataComponent(Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
+						.SetPersistence(true)
+						.SetReadAcl(AnyWorkerReadRequirement)
+						.AddComponent < improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>(improbable::unreal::UnrealPlayerControllerSingleClientReplicatedDataData{}, UnrealWorkerWritePermission)
+						.AddComponent < improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>(improbable::unreal::UnrealPlayerControllerMultiClientReplicatedDataData{}, UnrealWorkerWritePermission)
+						// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
+						//todo-giray: Remove once we're using proper (generated) entity templates here.
+						.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, UnrealClientWritePermission)
+						.Build();
 
-				CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Op.EntityId, 0);
+					CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Op.EntityId, 0);
+				}
+				else
+				{
+					auto Entity = unreal::FEntityBuilder::Begin()
+						.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Loc), UnrealWorkerWritePermission)
+						.AddMetadataComponent(Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
+						.SetPersistence(true)
+						.SetReadAcl(AnyWorkerReadRequirement)
+						// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
+						//todo-giray: Remove once we're using proper (generated) entity templates here.
+						.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, UnrealClientWritePermission)
+						.Build();
+
+					CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Op.EntityId, 0);
+				}
 			}
 			else
 			{
