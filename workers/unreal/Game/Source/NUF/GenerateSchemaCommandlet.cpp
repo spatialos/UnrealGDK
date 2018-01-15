@@ -907,15 +907,15 @@ namespace
 					FString PropertyName = TEXT("Property");
 					if (Property->IsA(UObjectPropertyBase::StaticClass()))
 					{
-						SourceWriter.Print(FString::Printf(TEXT("UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(%s)"), *PropertyName));
+						SourceWriter.Print(FString::Printf(TEXT("UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(%s);"), *PropertyName));
 						SourceWriter.Print(FString::Printf(TEXT("const UObject* %s = ObjProperty->GetObjectPropertyValue(Data);"), *PropertyValueName));
-						SourceWriter.Print(FString::Printf(TEXT("FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(%s)"), *PropertyValueName));
+						SourceWriter.Print(FString::Printf(TEXT("FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(%s);"), *PropertyValueName));
 					}
 					else
 					{
 						SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
 						SourceWriter.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
-						SourceWriter.Print(FString::Printf(TEXT("%s = *(reinterpret_cast<const %s>(Data));"), *PropertyValueName, *PropertyValueCppType));
+						SourceWriter.Print(FString::Printf(TEXT("%s = *(reinterpret_cast<const %s*>(Data));"), *PropertyValueName, *PropertyValueCppType));
 					}
 					SourceWriter.Print();
 					GenerateUnrealToSchemaConversion(SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName);
@@ -1099,7 +1099,7 @@ namespace
 
 		// SendComponentUpdates
 		SourceWriter.Print();
-		SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendComponentUpdates(FInBunch* BunchPtr, const worker::EntityId& EntityId) const"),
+		SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendComponentUpdates(const TArray<uint16>& Changed,const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const"),
 			*Class->GetName()));
 		SourceWriter.Print(TEXT("{"));
 		SourceWriter.Indent();
