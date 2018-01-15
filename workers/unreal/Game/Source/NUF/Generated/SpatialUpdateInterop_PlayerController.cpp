@@ -120,6 +120,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* Data, int32 
 			Value = ObjProperty->GetObjectPropertyValue(Data);
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Update.set_field_pawn(UObjectRef);
 			break;
 		}
 	default:
@@ -584,15 +585,12 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(const TArray<uin
 
 	FChangelistIterator ChangelistIterator(Changed, 0);
 	FRepHandleIterator HandleIterator(ChangelistIterator, Cmds, BaseHandleToCmdIndex, 0, 1, 0, Cmds.Num() - 1);
-	FNetBitWriter TempWriter;
-
+	
 	while (HandleIterator.NextHandle())
 	{
 		const FRepLayoutCmd& Cmd = Cmds[HandleIterator.CmdIndex];
 		const uint8* Data = SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 
-		TempWriter.Reset();
-		Cmd.Property->NetSerializeItem(TempWriter, PackageMap, (void*)Data);
 		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
 		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
 
