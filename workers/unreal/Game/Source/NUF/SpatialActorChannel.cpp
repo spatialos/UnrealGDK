@@ -137,13 +137,6 @@ FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge
 	// if we don't break up bunches, which in our case we wont as there's no need to at this layer.
 	auto ReturnValue = UActorChannel::SendBunch(BunchPtr, bMerge);
 
-	// Pass bunch to update interop.
-	USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Connection->Driver)->GetSpatialUpdateInterop();
-	if (!UpdateInterop)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Update Interop object not set up. This should never happen"));
-	}
-	UpdateInterop->SendSpatialUpdate(this, BunchPtr);
 	return ReturnValue;
 }
 

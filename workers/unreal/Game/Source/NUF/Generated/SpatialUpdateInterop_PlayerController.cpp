@@ -543,31 +543,6 @@ worker::ComponentId FSpatialTypeBinding_PlayerController::GetReplicatedGroupComp
 	}
 }
 
-void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FInBunch* BunchPtr, const worker::EntityId& EntityId) const
-{
-	// Build SpatialOS updates.
-	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update SingleClientUpdate;
-	bool SingleClientUpdateChanged = false;
-	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update MultiClientUpdate;
-	bool MultiClientUpdateChanged = false;
-
-	// Read bunch and build up SpatialOS component updates.
-	auto& PropertyMap = GetHandlePropertyMap_PlayerController();
-	FBunchReader BunchReader(BunchPtr);
-
-
-	// Send SpatialOS update.
-	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
-	if (SingleClientUpdateChanged)
-	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>(EntityId, SingleClientUpdate);
-	}
-	if (MultiClientUpdateChanged)
-	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>(EntityId, MultiClientUpdate);
-	}
-}
-
 void FSpatialTypeBinding_PlayerController::SendComponentUpdates(const TArray<uint16>& Changed,
 	const uint8* RESTRICT SourceData,
 	const TArray<FRepLayoutCmd>& Cmds,

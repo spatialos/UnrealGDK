@@ -86,56 +86,6 @@ const FSpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* 
 	return nullptr;
 }
 
-void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* OutgoingBunch)
-{
-	// WILL DELETE THIS.
-	const FSpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
-	if (!Binding)
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
-		//	*Channel->Actor->GetClass()->GetName());
-		return;
-	}
-
-	// Check that SpatialOS is connected.
-	// TODO(David): This function should never get called until SpatialOS _is_ connected.
-	TSharedPtr<worker::Connection> WorkerConnection = SpatialOSInstance->GetConnection().Pin();
-	if (!WorkerConnection.Get() || !WorkerConnection->IsConnected())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("SpatialOS is not connected yet."));
-		return;
-	}
-
-	TArray<uint8> Buffer;
-	int64 NumBits;
-
-	if (Channel->bSendingInitialBunch)
-	{
-		check(Channel->IncrementalUpdateMark.GetNumBits() > 0);
-		Channel->IncrementalUpdateMark.Copy(*OutgoingBunch, Buffer);
-		NumBits = OutgoingBunch->GetNumBits() - Channel->IncrementalUpdateMark.GetNumBits();
-		if (Channel->Actor->IsA(APlayerController::StaticClass()))
-		{
-			//This is a horrible looking hack, however it seems to be the best way to avoid copying 100+ lines of code.
-			//We want to seek to the beginning of actor replication in the bunch. Most of the time, we have the right number saved through
-			// USpatialPackageMapClient::SerializeNewActor(). However, only for player controllers, there is 1 byte of additional data saved in
-			// UPlayerController::OnSerializeNewActor(). After that point there is no virtual function to override on Spatial side to account for it cleanly.
-			// So we do this. The alternative would have been to copy-paste pretty much all of UActorChannel::ReplicateActor() into USpatialActorChannel.
-			Buffer.RemoveAt(0); //this is O(N), do it better.
-			NumBits -= 8;
-		}
-	}
-	else
-	{
-		Buffer = MoveTemp(*OutgoingBunch->GetBuffer());
-		NumBits = OutgoingBunch->GetNumBits();
-	}
-
-	FInBunch InBunch(Channel->Connection, Buffer.GetData(), NumBits);
-
-	Binding->SendComponentUpdates(&InBunch, Channel->GetEntityId());
-}
-
 void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed)
 {
 	const FSpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());

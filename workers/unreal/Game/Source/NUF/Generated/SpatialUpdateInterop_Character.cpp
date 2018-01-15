@@ -1627,51 +1627,6 @@ worker::ComponentId FSpatialTypeBinding_Character::GetReplicatedGroupComponentId
 	}
 }
 
-void FSpatialTypeBinding_Character::SendComponentUpdates(FInBunch* BunchPtr, const worker::EntityId& EntityId) const
-{
-	// Build SpatialOS updates.
-	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
-	bool SingleClientUpdateChanged = false;
-	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
-	bool MultiClientUpdateChanged = false;
-
-	// Read bunch and build up SpatialOS component updates.
-	auto& PropertyMap = GetHandlePropertyMap_Character();
-	FBunchReader BunchReader(BunchPtr);
-	FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
-	{
-		// TODO: We can't parse UObjects or FNames here as we have no package map.
-		
-		auto& Data = PropertyMap[Handle];
-		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
-		
-		switch (GetGroupFromCondition(Data.Condition))
-		{
-		case GROUP_SingleClient:
-			ApplyUpdateToSpatial_SingleClient_Character(Reader, Handle, Property, PackageMap, SingleClientUpdate);
-			SingleClientUpdateChanged = true;
-			break;
-		case GROUP_MultiClient:
-			ApplyUpdateToSpatial_MultiClient_Character(Reader, Handle, Property, PackageMap, MultiClientUpdate);
-			MultiClientUpdateChanged = true;
-			break;
-		}
-		return true;
-	};
-	BunchReader.Parse(true, PropertyMap, RepDataHandler);
-
-	// Send SpatialOS update.
-	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
-	if (SingleClientUpdateChanged)
-	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(EntityId, SingleClientUpdate);
-	}
-	if (MultiClientUpdateChanged)
-	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(EntityId, MultiClientUpdate);
-	}
-}
-
 void FSpatialTypeBinding_Character::SendComponentUpdates(const TArray<uint16>& Changed,
 	const uint8* RESTRICT SourceData,
 	const TArray<FRepLayoutCmd>& Cmds,
