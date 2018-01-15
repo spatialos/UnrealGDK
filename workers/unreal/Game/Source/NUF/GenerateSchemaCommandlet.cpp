@@ -1124,7 +1124,7 @@ namespace
 		SourceWriter.Print(FString::Printf(TEXT(R"""(const FRepLayoutCmd& Cmd = Cmds[HandleIterator.CmdIndex];
 		const uint8* Data = SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];)""")));
-		SourceWriter.Print(FString::Printf(TEXT("UE_LOG(LogTemp, Log, TEXT(\"-> Handle: \%d Property \%s\"), HandleIterator.Handle, *Cmd.Property->GetName());")));
+		SourceWriter.Print(FString::Printf(TEXT("UE_LOG(LogTemp, Log, TEXT(\"-> Handle: %%d Property %%s\"), HandleIterator.Handle, *Cmd.Property->GetName());")));
 
 		SourceWriter.Print(TEXT("switch (GetGroupFromCondition(PropertyMapData.Condition))"));
 		SourceWriter.Print(TEXT("{"));
