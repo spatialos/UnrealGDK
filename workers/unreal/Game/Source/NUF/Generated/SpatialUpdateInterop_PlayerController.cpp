@@ -20,7 +20,8 @@ void ApplyUpdateToSpatial_SingleClient_PlayerController(const uint8* Data, int32
 	{
 		case 18: // field_targetviewrotation
 		{
-			FRotator Value;			
+			FRotator Value;
+			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FRotator*>(Data));
 
 			Update.set_field_targetviewrotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -29,13 +30,14 @@ void ApplyUpdateToSpatial_SingleClient_PlayerController(const uint8* Data, int32
 		case 19: // field_spawnlocation
 		{
 			FVector Value;
+			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FVector*>(Data));
-			
+
 			Update.set_field_spawnlocation(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
 	default:
-		//checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
+		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
 		break;
 	}
 }
@@ -103,27 +105,171 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* Data, int32 
 	
 	switch (Handle)
 	{
+		case 1: // field_bhidden
+		{
+			uint8 Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			Update.set_field_bhidden(Value != 0);
+			break;
+		}
+		case 2: // field_breplicatemovement
+		{
+			uint8 Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			Update.set_field_breplicatemovement(Value != 0);
+			break;
+		}
+		case 3: // field_btearoff
+		{
+			uint8 Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			Update.set_field_btearoff(Value != 0);
+			break;
+		}
 		case 4: // field_remoterole
 		{
 			TEnumAsByte<ENetRole> Value;
 			check(Property->ElementSize == sizeof(Value));
-			
 			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
 
 			Update.set_field_remoterole(uint32_t(Value));
 			break;
 		}
+		case 5: // field_owner
+		{
+			UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(Property);
+			const UObject* Value = ObjProperty->GetObjectPropertyValue(Data);
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Update.set_field_owner(UObjectRef);
+			break;
+		}
+		case 6: // field_replicatedmovement
+		{
+			FRepMovement Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<const FRepMovement*>(Data));
+
+			TArray<uint8> ValueData;
+			FMemoryWriter ValueDataWriter(ValueData);
+			bool Success;
+			Value.NetSerialize(ValueDataWriter, nullptr, Success);
+			Update.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
+			break;
+		}
+		case 7: // field_attachmentreplication_attachparent
+		{
+			UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(Property);
+			const UObject* Value = ObjProperty->GetObjectPropertyValue(Data);
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Update.set_field_attachmentreplication_attachparent(UObjectRef);
+			break;
+		}
+		case 8: // field_attachmentreplication_locationoffset
+		{
+			FVector_NetQuantize100 Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
+
+			Update.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			break;
+		}
+		case 9: // field_attachmentreplication_relativescale3d
+		{
+			FVector_NetQuantize100 Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
+
+			Update.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			break;
+		}
+		case 10: // field_attachmentreplication_rotationoffset
+		{
+			FRotator Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<const FRotator*>(Data));
+
+			Update.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
+			break;
+		}
+		case 11: // field_attachmentreplication_attachsocket
+		{
+			FName Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<const FName*>(Data));
+
+			Update.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
+			break;
+		}
+		case 12: // field_attachmentreplication_attachcomponent
+		{
+			UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(Property);
+			const UObject* Value = ObjProperty->GetObjectPropertyValue(Data);
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Update.set_field_attachmentreplication_attachcomponent(UObjectRef);
+			break;
+		}
+		case 13: // field_role
+		{
+			TEnumAsByte<ENetRole> Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
+
+			Update.set_field_role(uint32_t(Value));
+			break;
+		}
+		case 14: // field_bcanbedamaged
+		{
+			uint8 Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			Update.set_field_bcanbedamaged(Value != 0);
+			break;
+		}
+		case 15: // field_instigator
+		{
+			UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(Property);
+			const UObject* Value = ObjProperty->GetObjectPropertyValue(Data);
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Update.set_field_instigator(UObjectRef);
+			break;
+		}
 		case 16: // field_pawn
 		{
-			const UObject* Value = nullptr;
 			UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(Property);
-			Value = ObjProperty->GetObjectPropertyValue(Data);
+			const UObject* Value = ObjProperty->GetObjectPropertyValue(Data);
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
 			Update.set_field_pawn(UObjectRef);
 			break;
 		}
+		case 17: // field_playerstate
+		{
+			UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(Property);
+			const UObject* Value = ObjProperty->GetObjectPropertyValue(Data);
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+
+			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			Update.set_field_playerstate(UObjectRef);
+			break;
+		}
 	default:
+		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
 		break;
 	}
 }
@@ -543,11 +689,7 @@ worker::ComponentId FSpatialTypeBinding_PlayerController::GetReplicatedGroupComp
 	}
 }
 
-void FSpatialTypeBinding_PlayerController::SendComponentUpdates(const TArray<uint16>& Changed,
-	const uint8* RESTRICT SourceData,
-	const TArray<FRepLayoutCmd>& Cmds,
-	const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex,
-	const worker::EntityId& EntityId) const
+void FSpatialTypeBinding_PlayerController::SendComponentUpdates(const TArray<uint16>& Changed,const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const
 {
 	// Build SpatialOS updates.
 	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update SingleClientUpdate;
@@ -557,18 +699,14 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(const TArray<uin
 
 	// Read bunch and build up SpatialOS component updates.
 	auto& PropertyMap = GetHandlePropertyMap_PlayerController();
-
 	FChangelistIterator ChangelistIterator(Changed, 0);
 	FRepHandleIterator HandleIterator(ChangelistIterator, Cmds, BaseHandleToCmdIndex, 0, 1, 0, Cmds.Num() - 1);
-	
 	while (HandleIterator.NextHandle())
 	{
 		const FRepLayoutCmd& Cmd = Cmds[HandleIterator.CmdIndex];
 		const uint8* Data = SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
-
 		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
 		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
-
 		switch (GetGroupFromCondition(PropertyMapData.Condition))
 		{
 		case GROUP_SingleClient:
