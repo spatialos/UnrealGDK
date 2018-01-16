@@ -202,6 +202,37 @@ private:
 };
 ////
 
+//This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
+// We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
+void UpdateChangelistHistory(FRepState * RepState)
+{
+	check(RepState->HistoryEnd >= RepState->HistoryStart);
+
+	const int32 HistoryCount = RepState->HistoryEnd - RepState->HistoryStart;
+	check(HistoryCount < FRepState::MAX_CHANGE_HISTORY);
+
+	for (int32 i = RepState->HistoryStart; i < RepState->HistoryEnd; i++)
+	{
+		const int32 HistoryIndex = i % FRepState::MAX_CHANGE_HISTORY;
+
+		FRepChangedHistory & HistoryItem = RepState->ChangeHistory[HistoryIndex];
+
+		check(HistoryItem.Changed.Num() > 0);		// All active history items should contain a change list
+
+		HistoryItem.Changed.Empty();
+		HistoryItem.OutPacketIdRange = FPacketIdRange();
+		RepState->HistoryStart++;
+	}
+
+	// Remove any tiling in the history markers to keep them from wrapping over time
+	const int32 NewHistoryCount = RepState->HistoryEnd - RepState->HistoryStart;
+
+	check(NewHistoryCount <= FRepState::MAX_CHANGE_HISTORY);
+
+	RepState->HistoryStart = RepState->HistoryStart % FRepState::MAX_CHANGE_HISTORY;
+	RepState->HistoryEnd = RepState->HistoryStart + NewHistoryCount;
+}
+
 bool USpatialActorChannel::ReplicateActor()
 {
 // filter everything else temporarily to make it easier to debug for now
@@ -322,6 +353,7 @@ bool USpatialActorChannel::ReplicateActor()
 	// We can early out if we know for sure there are no new changelists to send
 	if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
 	{
+		UpdateChangelistHistory(ActorReplicator->RepState);
 		return false;
 	}
 
@@ -333,6 +365,8 @@ bool USpatialActorChannel::ReplicateActor()
 		USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Connection->Driver)->GetSpatialUpdateInterop();
 		check(UpdateInterop);
 		UpdateInterop->SendSpatialUpdate(this, Changed);
+		ActorReplicator->RepState->HistoryEnd++;
+		UpdateChangelistHistory(ActorReplicator->RepState);
 	}
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
