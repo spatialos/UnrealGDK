@@ -873,8 +873,7 @@ namespace
 		#include "SpatialOS.h"
 		#include "Engine.h"
 		#include "SpatialActorChannel.h"
-		#include "SpatialPackageMapClient.h"
-		#include "Utils/BunchReader.h")"""), *InteropFilename));
+		#include "SpatialPackageMapClient.h")"""), *InteropFilename));
 
 		// Replicated property interop.
 		SourceWriter.Print();
