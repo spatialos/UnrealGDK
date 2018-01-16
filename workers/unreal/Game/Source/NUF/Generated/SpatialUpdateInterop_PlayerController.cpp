@@ -1633,8 +1633,8 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FOutBunch* Bunch
 void FSpatialTypeBinding_PlayerController::SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
-	auto Func = RPCToSenderMap.Find(FName(*Function->GetName()));
-	checkf(*Func, TEXT(""))
+	auto Func = RPCToSenderMap.Find(Function->GetFName());
+	checkf(*Func, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *(Function->GetFName().ToString()));
 	(*Func)(Connection.Get(), RPCFrame, Target);
 }
 void FSpatialTypeBinding_PlayerController::OnServerStartedVisualLoggerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op)

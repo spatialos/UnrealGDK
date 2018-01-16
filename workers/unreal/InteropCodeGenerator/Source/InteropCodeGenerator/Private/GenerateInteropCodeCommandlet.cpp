@@ -1448,8 +1448,8 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Print(TEXT("{"));
 	SourceWriter.Indent();
 	SourceWriter.Print(TEXT(R"""(TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
-		auto Func = RPCToSenderMap.Find(FName(*Function->GetName()));
-		checkf(*Func, TEXT(""))
+		auto Func = RPCToSenderMap.Find(Function->GetFName());
+		checkf(*Func, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *(Function->GetFName().ToString()));
 		(*Func)(Connection.Get(), RPCFrame, Target);)"""));
 
 	SourceWriter.Outdent().Print(TEXT("}"));

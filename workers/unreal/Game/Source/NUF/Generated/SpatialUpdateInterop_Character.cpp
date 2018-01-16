@@ -1443,8 +1443,8 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(FOutBunch* BunchPtr, co
 void FSpatialTypeBinding_Character::SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
-	auto Func = RPCToSenderMap.Find(FName(*Function->GetName()));
-	checkf(*Func, TEXT(""))
+	auto Func = RPCToSenderMap.Find(Function->GetFName());
+	checkf(*Func, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *(Function->GetFName().ToString()));
 	(*Func)(Connection.Get(), RPCFrame, Target);
 }
 void FSpatialTypeBinding_Character::ClientCheatWalkReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op)
