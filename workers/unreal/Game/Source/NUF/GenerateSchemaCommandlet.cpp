@@ -854,9 +854,10 @@ namespace
 		HeaderWriter.Indent();
 		HeaderWriter.Outdent().Print(TEXT("public:")).Indent();
 		HeaderWriter.Print(TEXT(R"""(void BindToView() override;
-		void UnbindFromView() override;
-		worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
-		void SendComponentUpdates(FInBunch* BunchPtr, const worker::EntityId& EntityId) const override;)"""));
+			void UnbindFromView() override;
+			worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
+			void SendComponentUpdates(FInBunch* BunchPtr, const worker::EntityId& EntityId) const override;
+			worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata) const override;)"""));
 		HeaderWriter.Outdent().Print(TEXT("private:")).Indent();
 		for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 		{
@@ -870,11 +871,14 @@ namespace
 		SourceWriter.Print(TEXT("// Note that this file has been generated automatically"));
 		SourceWriter.Print();
 		SourceWriter.Print(FString::Printf(TEXT(R"""(#include "%s.h"
-		#include "SpatialOS.h"
-		#include "Engine.h"
-		#include "SpatialActorChannel.h"
-		#include "SpatialPackageMapClient.h"
-		#include "Utils/BunchReader.h")"""), *InteropFilename));
+			#include "SpatialOS.h"
+			#include "Engine.h"
+			#include "SpatialActorChannel.h"
+			#include "SpatialPackageMapClient.h"
+			#include "Utils/BunchReader.h"
+			#include "EntityBuilder.h"
+			// TODO(David): Remove this once RPCs are merged, as we will no longer need a placeholder component.
+			#include "improbable/player/player.h")"""), *InteropFilename));
 
 		// Replicated property interop.
 		SourceWriter.Print();
@@ -1015,6 +1019,7 @@ namespace
 		SourceWriter.Print(FString::Printf(TEXT("UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));"), *Class->GetName()));
 		SourceWriter.Print(TEXT("HandleToPropertyMapData = new RepHandlePropertyMap();"));
 		SourceWriter.Print(TEXT("auto& HandleToPropertyMap = *HandleToPropertyMapData;"));
+
 		// Reduce into single list of properties.
 		TArray<FReplicatedPropertyInfo> ReplicatedProperties;
 		for (EReplicatedPropertyGroup Group : RepPropertyGroups)
@@ -1125,16 +1130,15 @@ namespace
 
 		SourceWriter.Print();
 		SourceWriter.Print(FString::Printf(TEXT(R"""(// Read bunch and build up SpatialOS component updates.
-		auto& PropertyMap = GetHandlePropertyMap_%s();
-		FBunchReader BunchReader(BunchPtr);
-		FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
-		{)"""), *Class->GetName()));
+			auto& PropertyMap = GetHandlePropertyMap_%s();
+			FBunchReader BunchReader(BunchPtr);
+			FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
+			{)"""), *Class->GetName()));
 		SourceWriter.Indent();
 		SourceWriter.Print(TEXT(R"""(// TODO: We can't parse UObjects or FNames here as we have no package map.
-		
-		auto& Data = PropertyMap[Handle];
-		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
-)"""));
+			auto& Data = PropertyMap[Handle];
+			UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
+		)"""));
 		SourceWriter.Print(TEXT("switch (GetGroupFromCondition(Data.Condition))"));
 		SourceWriter.Print(TEXT("{"));
 		SourceWriter.Indent();
@@ -1173,6 +1177,39 @@ namespace
 			SourceWriter.Print(TEXT("}"));
 		}
 
+		SourceWriter.Outdent();
+		SourceWriter.Print(TEXT("}"));
+
+		// CreateActorEntity
+		SourceWriter.Print();
+		SourceWriter.Print(FString::Printf(TEXT("worker::Entity FSpatialTypeBinding_%s::CreateActorEntity(const FVector& Position, const FString& Metadata) const {"), *Class->GetName()));
+		SourceWriter.Indent();
+		SourceWriter.Print(TEXT(R"""(
+			const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
+
+			improbable::WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
+			improbable::WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
+
+			improbable::WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet}};
+			improbable::WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
+			improbable::WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
+		)"""));
+		SourceWriter.Print(TEXT("return improbable::unreal::FEntityBuilder::Begin()"));
+		SourceWriter.Indent();
+		SourceWriter.Print(TEXT(R"""(.AddPositionComponent(improbable::Position::Data{SpatialPosition}, UnrealWorkerWritePermission)
+				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
+				.SetPersistence(true)
+				.SetReadAcl(AnyWorkerReadPermission)
+				.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClient::Data{}, UnrealClientWritePermission))"""));
+		for (EReplicatedPropertyGroup Group : RepPropertyGroups)
+		{
+			SourceWriter.Print(FString::Printf(TEXT(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, UnrealWorkerWritePermission)"),
+				*GetSchemaReplicatedDataName(Group, Class), *GetSchemaReplicatedDataName(Group, Class)));
+		}
+		SourceWriter.Print(FString::Printf(TEXT(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, UnrealWorkerWritePermission)"),
+			*GetSchemaCompleteDataName(Class), *GetSchemaCompleteDataName(Class)));
+		SourceWriter.Print(TEXT(".Build();"));
+		SourceWriter.Outdent();
 		SourceWriter.Outdent();
 		SourceWriter.Print(TEXT("}"));
 	}

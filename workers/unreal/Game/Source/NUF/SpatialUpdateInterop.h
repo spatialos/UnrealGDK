@@ -45,6 +45,7 @@ public:
 	virtual void UnbindFromView() = 0;
 	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const = 0;
 	virtual void SendComponentUpdates(FInBunch* OutgoingBunch, const worker::EntityId& EntityId) const = 0;
+	virtual worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata) const = 0;
 
 protected:
 	USpatialUpdateInterop* UpdateInterop;

@@ -138,32 +138,3 @@ worker::Entity UExportSnapshotCommandlet::CreatePackageMapEntity() const
 
 	return snapshotEntity;
 }
-
-// This entity is just a placeholder with absolutely no functionality.
-worker::Entity UExportSnapshotCommandlet::CreatePlayerEntity() const
-{
-	FVector UnrealPos = FVector(-1000, -100, 228);
-	const Coordinates initialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(UnrealPos);
-
-	WorkerAttributeSet unrealWorkerAttributeSet{ worker::List<std::string>{"UnrealWorker"} };
-	WorkerAttributeSet unrealClientAttributeSet{ worker::List<std::string>{"UnrealClient"} };
-
-	WorkerRequirementSet unrealWorkerWritePermission{ { unrealWorkerAttributeSet } };
-	WorkerRequirementSet unrealClientWritePermission{ { unrealClientAttributeSet } };
-	WorkerRequirementSet anyWorkerReadPermission{
-		{ unrealClientAttributeSet, unrealWorkerAttributeSet } };
-
-	auto snapshotEntity = improbable::unreal::FEntityBuilder::Begin()
-		.AddPositionComponent(Position::Data{initialPosition}, unrealWorkerWritePermission)
-		.AddMetadataComponent(Metadata::Data{"NUFCharacter_BP"})
-		.SetPersistence(true)
-		.SetReadAcl(anyWorkerReadPermission)
-		.AddComponent<player::PlayerControlClient>(player::PlayerControlClient::Data{}, unrealClientWritePermission)
-		.AddComponent<player::PlayerControlServer>(player::PlayerControlServer::Data{}, unrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data{}, unrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data{}, unrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, unrealWorkerWritePermission)
-		.Build();
-
-	return snapshotEntity;
-}
