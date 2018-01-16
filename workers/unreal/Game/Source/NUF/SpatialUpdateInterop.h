@@ -73,7 +73,7 @@ public:
 
 	USpatialActorChannel* GetClientActorChannel(const worker::EntityId& EntityId) const;
 
-	void HandleRPCInvocation(const AActor* const TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, const worker::EntityId& Target);
+	void HandleRPCInvocation(const AActor* const TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, const worker::EntityId& Target) const;
 	void RegisterInteropType(UClass* Class, TSharedPtr<FSpatialTypeBinding> Binding);
 	void UnregisterInteropType(UClass* Class);
 	const FSpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;

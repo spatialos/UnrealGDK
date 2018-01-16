@@ -169,7 +169,7 @@ void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, 
 	Channel->UActorChannel::ReceivedBunch(Bunch);
 }
 
-void USpatialUpdateInterop::HandleRPCInvocation(const AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, const worker::EntityId& Target)
+void USpatialUpdateInterop::HandleRPCInvocation(const AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, const worker::EntityId& Target) const
 {
 	const FSpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
 	if (Binding)
