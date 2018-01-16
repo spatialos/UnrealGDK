@@ -61,10 +61,12 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 			FRotator Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& Rotator = *(Op.Update.field_targetviewrotation().data());
-			Value.Yaw = Rotator.yaw();
-			Value.Pitch = Rotator.pitch();
-			Value.Roll = Rotator.roll();
+			{
+				auto& Rotator = *(Op.Update.field_targetviewrotation().data());
+				Value.Yaw = Rotator.yaw();
+				Value.Pitch = Rotator.pitch();
+				Value.Roll = Rotator.roll();
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -82,10 +84,12 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 			FVector Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& Vector = *(Op.Update.field_spawnlocation().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
+			{
+				auto& Vector = *(Op.Update.field_spawnlocation().data());
+				Value.X = Vector.x();
+				Value.Y = Vector.y();
+				Value.Z = Vector.z();
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -141,11 +145,13 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			TArray<uint8> ValueData;
-			FMemoryWriter ValueDataWriter(ValueData);
-			bool Success;
-			Value.NetSerialize(ValueDataWriter, nullptr, Success);
-			Update.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
+			{
+				TArray<uint8> ValueData;
+				FMemoryWriter ValueDataWriter(ValueData);
+				bool Success;
+				Value.NetSerialize(ValueDataWriter, nullptr, Success);
+				Update.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
+			}
 			break;
 		}
 		// case 7: - AttachParent is an object reference, skipping.
@@ -329,12 +335,14 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			FRepMovement Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& ValueDataStr = *(Op.Update.field_replicatedmovement().data());
-			TArray<uint8> ValueData;
-			ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
-			FMemoryReader ValueDataReader(ValueData);
-			bool bSuccess;
-			Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
+			{
+				auto& ValueDataStr = *(Op.Update.field_replicatedmovement().data());
+				TArray<uint8> ValueData;
+				ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+				FMemoryReader ValueDataReader(ValueData);
+				bool bSuccess;
+				Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -370,10 +378,12 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			FVector_NetQuantize100 Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& Vector = *(Op.Update.field_attachmentreplication_locationoffset().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
+			{
+				auto& Vector = *(Op.Update.field_attachmentreplication_locationoffset().data());
+				Value.X = Vector.x();
+				Value.Y = Vector.y();
+				Value.Z = Vector.z();
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -391,10 +401,12 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			FVector_NetQuantize100 Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& Vector = *(Op.Update.field_attachmentreplication_relativescale3d().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
+			{
+				auto& Vector = *(Op.Update.field_attachmentreplication_relativescale3d().data());
+				Value.X = Vector.x();
+				Value.Y = Vector.y();
+				Value.Z = Vector.z();
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -412,10 +424,12 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			FRotator Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& Rotator = *(Op.Update.field_attachmentreplication_rotationoffset().data());
-			Value.Yaw = Rotator.yaw();
-			Value.Pitch = Rotator.pitch();
-			Value.Roll = Rotator.roll();
+			{
+				auto& Rotator = *(Op.Update.field_attachmentreplication_rotationoffset().data());
+				Value.Yaw = Rotator.yaw();
+				Value.Pitch = Rotator.pitch();
+				Value.Roll = Rotator.roll();
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -555,33 +569,33 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 }
 
 // RPC sender functions
-void OnServerStartedVisualLoggerSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void OnServerStartedVisualLoggerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bIsLogging);
 
-	improbable::unreal::OnServerStartedVisualLoggerRequest Request;
+	improbable::unreal::UnrealOnServerStartedVisualLoggerRequest Request;
 	Request.set_field_bislogging(bIsLogging != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(Target, Request, 0);
 }
-void ClientWasKickedSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientWasKickedSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UTextProperty, KickReason);
 
-	improbable::unreal::ClientWasKickedRequest Request;
+	improbable::unreal::UnrealClientWasKickedRequest Request;
 	// UNSUPPORTED
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(Target, Request, 0);
 }
-void ClientVoiceHandshakeCompleteSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientVoiceHandshakeCompleteSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ClientVoiceHandshakeCompleteRequest Request;
+	improbable::unreal::UnrealClientVoiceHandshakeCompleteRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(Target, Request, 0);
 }
-void ClientUpdateLevelStreamingStatusSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientUpdateLevelStreamingStatusSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, PackageName);
@@ -590,7 +604,7 @@ void ClientUpdateLevelStreamingStatusSender(worker::Connection* Connection, stru
 	P_GET_UBOOL(bNewShouldBlockOnLoad);
 	P_GET_PROPERTY(UIntProperty, LODIndex);
 
-	improbable::unreal::ClientUpdateLevelStreamingStatusRequest Request;
+	improbable::unreal::UnrealClientUpdateLevelStreamingStatusRequest Request;
 	Request.set_field_packagename(TCHAR_TO_UTF8(*PackageName.ToString()));
 	Request.set_field_bnewshouldbeloaded(bNewShouldBeLoaded != 0);
 	Request.set_field_bnewshouldbevisible(bNewShouldBeVisible != 0);
@@ -599,21 +613,23 @@ void ClientUpdateLevelStreamingStatusSender(worker::Connection* Connection, stru
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(Target, Request, 0);
 }
-void ClientUnmutePlayerSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientUnmutePlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
 
-	improbable::unreal::ClientUnmutePlayerRequest Request;
-	TArray<uint8> ValueData;
-	FMemoryWriter ValueDataWriter(ValueData);
-	bool Success;
-	PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
-	Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+	improbable::unreal::UnrealClientUnmutePlayerRequest Request;
+	{
+		TArray<uint8> ValueData;
+		FMemoryWriter ValueDataWriter(ValueData);
+		bool Success;
+		PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
+		Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+	}
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(Target, Request, 0);
 }
-void ClientTravelInternalSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientTravelInternalSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UStrProperty, URL);
@@ -621,26 +637,18 @@ void ClientTravelInternalSender(worker::Connection* Connection, struct FFrame* R
 	P_GET_UBOOL(bSeamless);
 	P_GET_STRUCT(FGuid, MapPackageGuid)
 
-	improbable::unreal::ClientTravelInternalRequest Request;
+	improbable::unreal::UnrealClientTravelInternalRequest Request;
 	Request.set_field_url(TCHAR_TO_UTF8(*URL));
 	Request.set_field_traveltype(uint32_t(TravelType));
 	Request.set_field_bseamless(bSeamless != 0);
-	{
-		Request.set_field_mappackageguid_a(MapPackageGuid.A);
-	}
-	{
-		Request.set_field_mappackageguid_b(MapPackageGuid.B);
-	}
-	{
-		Request.set_field_mappackageguid_c(MapPackageGuid.C);
-	}
-	{
-		Request.set_field_mappackageguid_d(MapPackageGuid.D);
-	}
+	Request.set_field_mappackageguid_a(MapPackageGuid.A);
+	Request.set_field_mappackageguid_b(MapPackageGuid.B);
+	Request.set_field_mappackageguid_c(MapPackageGuid.C);
+	Request.set_field_mappackageguid_d(MapPackageGuid.D);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(Target, Request, 0);
 }
-void ClientTeamMessageSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientTeamMessageSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(APlayerState, SenderPlayerState);
@@ -648,7 +656,7 @@ void ClientTeamMessageSender(worker::Connection* Connection, struct FFrame* RPCF
 	P_GET_PROPERTY(UNameProperty, Type);
 	P_GET_PROPERTY(UFloatProperty, MsgLifeTime);
 
-	improbable::unreal::ClientTeamMessageRequest Request;
+	improbable::unreal::UnrealClientTeamMessageRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_senderplayerstate = SenderPlayerState;
 	Request.set_field_s(TCHAR_TO_UTF8(*S));
 	Request.set_field_type(TCHAR_TO_UTF8(*Type.ToString()));
@@ -656,114 +664,106 @@ void ClientTeamMessageSender(worker::Connection* Connection, struct FFrame* RPCF
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(Target, Request, 0);
 }
-void ClientStopForceFeedbackSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientStopForceFeedbackSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UForceFeedbackEffect, ForceFeedbackEffect);
 	P_GET_PROPERTY(UNameProperty, Tag);
 
-	improbable::unreal::ClientStopForceFeedbackRequest Request;
+	improbable::unreal::UnrealClientStopForceFeedbackRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_forcefeedbackeffect = ForceFeedbackEffect;
 	Request.set_field_tag(TCHAR_TO_UTF8(*Tag.ToString()));
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(Target, Request, 0);
 }
-void ClientStopCameraShakeSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientStopCameraShakeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, Shake);
 	P_GET_UBOOL(bImmediately);
 
-	improbable::unreal::ClientStopCameraShakeRequest Request;
+	improbable::unreal::UnrealClientStopCameraShakeRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_shake = Shake;
 	Request.set_field_bimmediately(bImmediately != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(Target, Request, 0);
 }
-void ClientStopCameraAnimSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientStopCameraAnimSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UCameraAnim, AnimToStop);
 
-	improbable::unreal::ClientStopCameraAnimRequest Request;
+	improbable::unreal::UnrealClientStopCameraAnimRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_animtostop = AnimToStop;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(Target, Request, 0);
 }
-void ClientStartOnlineSessionSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientStartOnlineSessionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ClientStartOnlineSessionRequest Request;
+	improbable::unreal::UnrealClientStartOnlineSessionRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(Target, Request, 0);
 }
-void ClientSpawnCameraLensEffectSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientSpawnCameraLensEffectSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, LensEffectEmitterClass);
 
-	improbable::unreal::ClientSpawnCameraLensEffectRequest Request;
+	improbable::unreal::UnrealClientSpawnCameraLensEffectRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_lenseffectemitterclass = LensEffectEmitterClass;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(Target, Request, 0);
 }
-void ClientSetViewTargetSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientSetViewTargetSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(AActor, A);
 	P_GET_STRUCT(FViewTargetTransitionParams, TransitionParams)
 
-	improbable::unreal::ClientSetViewTargetRequest Request;
+	improbable::unreal::UnrealClientSetViewTargetRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_a = A;
-	{
-		Request.set_field_transitionparams_blendtime(TransitionParams.BlendTime);
-	}
-	{
-		Request.set_field_transitionparams_blendfunction(uint32_t(TransitionParams.BlendFunction));
-	}
-	{
-		Request.set_field_transitionparams_blendexp(TransitionParams.BlendExp);
-	}
-	{
-		Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing != 0);
-	}
+	Request.set_field_transitionparams_blendtime(TransitionParams.BlendTime);
+	Request.set_field_transitionparams_blendfunction(uint32_t(TransitionParams.BlendFunction));
+	Request.set_field_transitionparams_blendexp(TransitionParams.BlendExp);
+	Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(Target, Request, 0);
 }
-void ClientSetSpectatorWaitingSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientSetSpectatorWaitingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bWaiting);
 
-	improbable::unreal::ClientSetSpectatorWaitingRequest Request;
+	improbable::unreal::UnrealClientSetSpectatorWaitingRequest Request;
 	Request.set_field_bwaiting(bWaiting != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(Target, Request, 0);
 }
-void ClientSetHUDSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientSetHUDSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, NewHUDClass);
 
-	improbable::unreal::ClientSetHUDRequest Request;
+	improbable::unreal::UnrealClientSetHUDRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_newhudclass = NewHUDClass;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(Target, Request, 0);
 }
-void ClientSetForceMipLevelsToBeResidentSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientSetForceMipLevelsToBeResidentSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UMaterialInterface, Material);
 	P_GET_PROPERTY(UFloatProperty, ForceDuration);
 	P_GET_PROPERTY(UIntProperty, CinematicTextureGroups);
 
-	improbable::unreal::ClientSetForceMipLevelsToBeResidentRequest Request;
+	improbable::unreal::UnrealClientSetForceMipLevelsToBeResidentRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_material = Material;
 	Request.set_field_forceduration(ForceDuration);
 	Request.set_field_cinematictexturegroups(CinematicTextureGroups);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(Target, Request, 0);
 }
-void ClientSetCinematicModeSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientSetCinematicModeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bInCinematicMode);
@@ -771,7 +771,7 @@ void ClientSetCinematicModeSender(worker::Connection* Connection, struct FFrame*
 	P_GET_UBOOL(bAffectsTurning);
 	P_GET_UBOOL(bAffectsHUD);
 
-	improbable::unreal::ClientSetCinematicModeRequest Request;
+	improbable::unreal::UnrealClientSetCinematicModeRequest Request;
 	Request.set_field_bincinematicmode(bInCinematicMode != 0);
 	Request.set_field_baffectsmovement(bAffectsMovement != 0);
 	Request.set_field_baffectsturning(bAffectsTurning != 0);
@@ -779,17 +779,17 @@ void ClientSetCinematicModeSender(worker::Connection* Connection, struct FFrame*
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(Target, Request, 0);
 }
-void ClientSetCameraModeSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientSetCameraModeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, NewCamMode);
 
-	improbable::unreal::ClientSetCameraModeRequest Request;
+	improbable::unreal::UnrealClientSetCameraModeRequest Request;
 	Request.set_field_newcammode(TCHAR_TO_UTF8(*NewCamMode.ToString()));
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(Target, Request, 0);
 }
-void ClientSetCameraFadeSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientSetCameraFadeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bEnableFading);
@@ -798,84 +798,72 @@ void ClientSetCameraFadeSender(worker::Connection* Connection, struct FFrame* RP
 	P_GET_PROPERTY(UFloatProperty, FadeTime);
 	P_GET_UBOOL(bFadeAudio);
 
-	improbable::unreal::ClientSetCameraFadeRequest Request;
+	improbable::unreal::UnrealClientSetCameraFadeRequest Request;
 	Request.set_field_benablefading(bEnableFading != 0);
-	{
-		Request.set_field_fadecolor_b(uint32_t(FadeColor.B));
-	}
-	{
-		Request.set_field_fadecolor_g(uint32_t(FadeColor.G));
-	}
-	{
-		Request.set_field_fadecolor_r(uint32_t(FadeColor.R));
-	}
-	{
-		Request.set_field_fadecolor_a(uint32_t(FadeColor.A));
-	}
-	{
-		Request.set_field_fadealpha_x(FadeAlpha.X);
-	}
-	{
-		Request.set_field_fadealpha_y(FadeAlpha.Y);
-	}
+	Request.set_field_fadecolor_b(uint32_t(FadeColor.B));
+	Request.set_field_fadecolor_g(uint32_t(FadeColor.G));
+	Request.set_field_fadecolor_r(uint32_t(FadeColor.R));
+	Request.set_field_fadecolor_a(uint32_t(FadeColor.A));
+	Request.set_field_fadealpha_x(FadeAlpha.X);
+	Request.set_field_fadealpha_y(FadeAlpha.Y);
 	Request.set_field_fadetime(FadeTime);
 	Request.set_field_bfadeaudio(bFadeAudio != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(Target, Request, 0);
 }
-void ClientSetBlockOnAsyncLoadingSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientSetBlockOnAsyncLoadingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ClientSetBlockOnAsyncLoadingRequest Request;
+	improbable::unreal::UnrealClientSetBlockOnAsyncLoadingRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(Target, Request, 0);
 }
-void ClientReturnToMainMenuSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientReturnToMainMenuSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UStrProperty, ReturnReason);
 
-	improbable::unreal::ClientReturnToMainMenuRequest Request;
+	improbable::unreal::UnrealClientReturnToMainMenuRequest Request;
 	Request.set_field_returnreason(TCHAR_TO_UTF8(*ReturnReason));
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(Target, Request, 0);
 }
-void ClientRetryClientRestartSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientRetryClientRestartSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(APawn, NewPawn);
 
-	improbable::unreal::ClientRetryClientRestartRequest Request;
+	improbable::unreal::UnrealClientRetryClientRestartRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_newpawn = NewPawn;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(Target, Request, 0);
 }
-void ClientRestartSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientRestartSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(APawn, NewPawn);
 
-	improbable::unreal::ClientRestartRequest Request;
+	improbable::unreal::UnrealClientRestartRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_newpawn = NewPawn;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(Target, Request, 0);
 }
-void ClientResetSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientResetSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ClientResetRequest Request;
+	improbable::unreal::UnrealClientResetRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(Target, Request, 0);
 }
-void ClientRepObjRefSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientRepObjRefSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UObject, Object);
 
-	improbable::unreal::ClientRepObjRefRequest Request;
+	improbable::unreal::UnrealClientRepObjRefRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_object = Object;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(Target, Request, 0);
 }
-void ClientReceiveLocalizedMessageSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientReceiveLocalizedMessageSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, Message);
@@ -884,7 +872,7 @@ void ClientReceiveLocalizedMessageSender(worker::Connection* Connection, struct 
 	P_GET_OBJECT(APlayerState, RelatedPlayerState_2);
 	P_GET_OBJECT(UObject, OptionalObject);
 
-	improbable::unreal::ClientReceiveLocalizedMessageRequest Request;
+	improbable::unreal::UnrealClientReceiveLocalizedMessageRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_message = Message;
 	Request.set_field_switch(Switch);
 	// WEAK OBJECT REPLICATION - Request.set_field_relatedplayerstate_1 = RelatedPlayerState_1;
@@ -893,7 +881,7 @@ void ClientReceiveLocalizedMessageSender(worker::Connection* Connection, struct 
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(Target, Request, 0);
 }
-void ClientPrestreamTexturesSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientPrestreamTexturesSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(AActor, ForcedActor);
@@ -901,7 +889,7 @@ void ClientPrestreamTexturesSender(worker::Connection* Connection, struct FFrame
 	P_GET_UBOOL(bEnableStreaming);
 	P_GET_PROPERTY(UIntProperty, CinematicTextureGroups);
 
-	improbable::unreal::ClientPrestreamTexturesRequest Request;
+	improbable::unreal::UnrealClientPrestreamTexturesRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_forcedactor = ForcedActor;
 	Request.set_field_forceduration(ForceDuration);
 	Request.set_field_benablestreaming(bEnableStreaming != 0);
@@ -909,21 +897,21 @@ void ClientPrestreamTexturesSender(worker::Connection* Connection, struct FFrame
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(Target, Request, 0);
 }
-void ClientPrepareMapChangeSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientPrepareMapChangeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, LevelName);
 	P_GET_UBOOL(bFirst);
 	P_GET_UBOOL(bLast);
 
-	improbable::unreal::ClientPrepareMapChangeRequest Request;
+	improbable::unreal::UnrealClientPrepareMapChangeRequest Request;
 	Request.set_field_levelname(TCHAR_TO_UTF8(*LevelName.ToString()));
 	Request.set_field_bfirst(bFirst != 0);
 	Request.set_field_blast(bLast != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(Target, Request, 0);
 }
-void ClientPlaySoundAtLocationSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientPlaySoundAtLocationSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(USoundBase, Sound);
@@ -931,7 +919,7 @@ void ClientPlaySoundAtLocationSender(worker::Connection* Connection, struct FFra
 	P_GET_PROPERTY(UFloatProperty, VolumeMultiplier);
 	P_GET_PROPERTY(UFloatProperty, PitchMultiplier);
 
-	improbable::unreal::ClientPlaySoundAtLocationRequest Request;
+	improbable::unreal::UnrealClientPlaySoundAtLocationRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_sound = Sound;
 	Request.set_field_location(improbable::Vector3f(Location.X, Location.Y, Location.Z));
 	Request.set_field_volumemultiplier(VolumeMultiplier);
@@ -939,35 +927,35 @@ void ClientPlaySoundAtLocationSender(worker::Connection* Connection, struct FFra
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(Target, Request, 0);
 }
-void ClientPlaySoundSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientPlaySoundSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(USoundBase, Sound);
 	P_GET_PROPERTY(UFloatProperty, VolumeMultiplier);
 	P_GET_PROPERTY(UFloatProperty, PitchMultiplier);
 
-	improbable::unreal::ClientPlaySoundRequest Request;
+	improbable::unreal::UnrealClientPlaySoundRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_sound = Sound;
 	Request.set_field_volumemultiplier(VolumeMultiplier);
 	Request.set_field_pitchmultiplier(PitchMultiplier);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(Target, Request, 0);
 }
-void ClientPlayForceFeedbackSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientPlayForceFeedbackSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UForceFeedbackEffect, ForceFeedbackEffect);
 	P_GET_UBOOL(bLooping);
 	P_GET_PROPERTY(UNameProperty, Tag);
 
-	improbable::unreal::ClientPlayForceFeedbackRequest Request;
+	improbable::unreal::UnrealClientPlayForceFeedbackRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_forcefeedbackeffect = ForceFeedbackEffect;
 	Request.set_field_blooping(bLooping != 0);
 	Request.set_field_tag(TCHAR_TO_UTF8(*Tag.ToString()));
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(Target, Request, 0);
 }
-void ClientPlayCameraShakeSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientPlayCameraShakeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, Shake);
@@ -975,7 +963,7 @@ void ClientPlayCameraShakeSender(worker::Connection* Connection, struct FFrame* 
 	P_GET_PROPERTY(UByteProperty, PlaySpace);
 	P_GET_STRUCT(FRotator, UserPlaySpaceRot)
 
-	improbable::unreal::ClientPlayCameraShakeRequest Request;
+	improbable::unreal::UnrealClientPlayCameraShakeRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_shake = Shake;
 	Request.set_field_scale(Scale);
 	Request.set_field_playspace(uint32_t(PlaySpace));
@@ -983,7 +971,7 @@ void ClientPlayCameraShakeSender(worker::Connection* Connection, struct FFrame* 
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(Target, Request, 0);
 }
-void ClientPlayCameraAnimSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientPlayCameraAnimSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UCameraAnim, AnimToPlay);
@@ -996,7 +984,7 @@ void ClientPlayCameraAnimSender(worker::Connection* Connection, struct FFrame* R
 	P_GET_PROPERTY(UByteProperty, Space);
 	P_GET_STRUCT(FRotator, CustomPlaySpace)
 
-	improbable::unreal::ClientPlayCameraAnimRequest Request;
+	improbable::unreal::UnrealClientPlayCameraAnimRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_animtoplay = AnimToPlay;
 	Request.set_field_scale(Scale);
 	Request.set_field_rate(Rate);
@@ -1009,355 +997,353 @@ void ClientPlayCameraAnimSender(worker::Connection* Connection, struct FFrame* R
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(Target, Request, 0);
 }
-void ClientMutePlayerSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientMutePlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
 
-	improbable::unreal::ClientMutePlayerRequest Request;
-	TArray<uint8> ValueData;
-	FMemoryWriter ValueDataWriter(ValueData);
-	bool Success;
-	PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
-	Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+	improbable::unreal::UnrealClientMutePlayerRequest Request;
+	{
+		TArray<uint8> ValueData;
+		FMemoryWriter ValueDataWriter(ValueData);
+		bool Success;
+		PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
+		Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+	}
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(Target, Request, 0);
 }
-void ClientMessageSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientMessageSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UStrProperty, S);
 	P_GET_PROPERTY(UNameProperty, Type);
 	P_GET_PROPERTY(UFloatProperty, MsgLifeTime);
 
-	improbable::unreal::ClientMessageRequest Request;
+	improbable::unreal::UnrealClientMessageRequest Request;
 	Request.set_field_s(TCHAR_TO_UTF8(*S));
 	Request.set_field_type(TCHAR_TO_UTF8(*Type.ToString()));
 	Request.set_field_msglifetime(MsgLifeTime);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(Target, Request, 0);
 }
-void ClientIgnoreMoveInputSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientIgnoreMoveInputSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bIgnore);
 
-	improbable::unreal::ClientIgnoreMoveInputRequest Request;
+	improbable::unreal::UnrealClientIgnoreMoveInputRequest Request;
 	Request.set_field_bignore(bIgnore != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(Target, Request, 0);
 }
-void ClientIgnoreLookInputSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientIgnoreLookInputSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bIgnore);
 
-	improbable::unreal::ClientIgnoreLookInputRequest Request;
+	improbable::unreal::UnrealClientIgnoreLookInputRequest Request;
 	Request.set_field_bignore(bIgnore != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(Target, Request, 0);
 }
-void ClientGotoStateSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientGotoStateSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, NewState);
 
-	improbable::unreal::ClientGotoStateRequest Request;
+	improbable::unreal::UnrealClientGotoStateRequest Request;
 	Request.set_field_newstate(TCHAR_TO_UTF8(*NewState.ToString()));
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(Target, Request, 0);
 }
-void ClientGameEndedSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientGameEndedSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(AActor, EndGameFocus);
 	P_GET_UBOOL(bIsWinner);
 
-	improbable::unreal::ClientGameEndedRequest Request;
+	improbable::unreal::UnrealClientGameEndedRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_endgamefocus = EndGameFocus;
 	Request.set_field_biswinner(bIsWinner != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(Target, Request, 0);
 }
-void ClientForceGarbageCollectionSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientForceGarbageCollectionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ClientForceGarbageCollectionRequest Request;
+	improbable::unreal::UnrealClientForceGarbageCollectionRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(Target, Request, 0);
 }
-void ClientFlushLevelStreamingSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientFlushLevelStreamingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ClientFlushLevelStreamingRequest Request;
+	improbable::unreal::UnrealClientFlushLevelStreamingRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(Target, Request, 0);
 }
-void ClientEndOnlineSessionSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientEndOnlineSessionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ClientEndOnlineSessionRequest Request;
+	improbable::unreal::UnrealClientEndOnlineSessionRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(Target, Request, 0);
 }
-void ClientEnableNetworkVoiceSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientEnableNetworkVoiceSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bEnable);
 
-	improbable::unreal::ClientEnableNetworkVoiceRequest Request;
+	improbable::unreal::UnrealClientEnableNetworkVoiceRequest Request;
 	Request.set_field_benable(bEnable != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(Target, Request, 0);
 }
-void ClientCommitMapChangeSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientCommitMapChangeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ClientCommitMapChangeRequest Request;
+	improbable::unreal::UnrealClientCommitMapChangeRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(Target, Request, 0);
 }
-void ClientClearCameraLensEffectsSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientClearCameraLensEffectsSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ClientClearCameraLensEffectsRequest Request;
+	improbable::unreal::UnrealClientClearCameraLensEffectsRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(Target, Request, 0);
 }
-void ClientCapBandwidthSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientCapBandwidthSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UIntProperty, Cap);
 
-	improbable::unreal::ClientCapBandwidthRequest Request;
+	improbable::unreal::UnrealClientCapBandwidthRequest Request;
 	Request.set_field_cap(Cap);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(Target, Request, 0);
 }
-void ClientCancelPendingMapChangeSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientCancelPendingMapChangeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ClientCancelPendingMapChangeRequest Request;
+	improbable::unreal::UnrealClientCancelPendingMapChangeRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(Target, Request, 0);
 }
-void ClientAddTextureStreamingLocSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientAddTextureStreamingLocSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FVector, InLoc)
 	P_GET_PROPERTY(UFloatProperty, Duration);
 	P_GET_UBOOL(bOverrideLocation);
 
-	improbable::unreal::ClientAddTextureStreamingLocRequest Request;
+	improbable::unreal::UnrealClientAddTextureStreamingLocRequest Request;
 	Request.set_field_inloc(improbable::Vector3f(InLoc.X, InLoc.Y, InLoc.Z));
 	Request.set_field_duration(Duration);
 	Request.set_field_boverridelocation(bOverrideLocation != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(Target, Request, 0);
 }
-void ClientSetRotationSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientSetRotationSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FRotator, NewRotation)
 	P_GET_UBOOL(bResetCamera);
 
-	improbable::unreal::ClientSetRotationRequest Request;
+	improbable::unreal::UnrealClientSetRotationRequest Request;
 	Request.set_field_newrotation(improbable::unreal::UnrealFRotator(NewRotation.Yaw, NewRotation.Pitch, NewRotation.Roll));
 	Request.set_field_bresetcamera(bResetCamera != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(Target, Request, 0);
 }
-void ClientSetLocationSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientSetLocationSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FVector, NewLocation)
 	P_GET_STRUCT(FRotator, NewRotation)
 
-	improbable::unreal::ClientSetLocationRequest Request;
+	improbable::unreal::UnrealClientSetLocationRequest Request;
 	Request.set_field_newlocation(improbable::Vector3f(NewLocation.X, NewLocation.Y, NewLocation.Z));
 	Request.set_field_newrotation(improbable::unreal::UnrealFRotator(NewRotation.Yaw, NewRotation.Pitch, NewRotation.Roll));
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(Target, Request, 0);
 }
-void ServerViewSelfSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerViewSelfSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FViewTargetTransitionParams, TransitionParams)
 
-	improbable::unreal::ServerViewSelfRequest Request;
-	{
-		Request.set_field_transitionparams_blendtime(TransitionParams.BlendTime);
-	}
-	{
-		Request.set_field_transitionparams_blendfunction(uint32_t(TransitionParams.BlendFunction));
-	}
-	{
-		Request.set_field_transitionparams_blendexp(TransitionParams.BlendExp);
-	}
-	{
-		Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing != 0);
-	}
+	improbable::unreal::UnrealServerViewSelfRequest Request;
+	Request.set_field_transitionparams_blendtime(TransitionParams.BlendTime);
+	Request.set_field_transitionparams_blendfunction(uint32_t(TransitionParams.BlendFunction));
+	Request.set_field_transitionparams_blendexp(TransitionParams.BlendExp);
+	Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(Target, Request, 0);
 }
-void ServerViewPrevPlayerSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerViewPrevPlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ServerViewPrevPlayerRequest Request;
+	improbable::unreal::UnrealServerViewPrevPlayerRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(Target, Request, 0);
 }
-void ServerViewNextPlayerSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerViewNextPlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ServerViewNextPlayerRequest Request;
+	improbable::unreal::UnrealServerViewNextPlayerRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(Target, Request, 0);
 }
-void ServerVerifyViewTargetSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerVerifyViewTargetSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ServerVerifyViewTargetRequest Request;
+	improbable::unreal::UnrealServerVerifyViewTargetRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(Target, Request, 0);
 }
-void ServerUpdateLevelVisibilitySender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerUpdateLevelVisibilitySender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, PackageName);
 	P_GET_UBOOL(bIsVisible);
 
-	improbable::unreal::ServerUpdateLevelVisibilityRequest Request;
+	improbable::unreal::UnrealServerUpdateLevelVisibilityRequest Request;
 	Request.set_field_packagename(TCHAR_TO_UTF8(*PackageName.ToString()));
 	Request.set_field_bisvisible(bIsVisible != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(Target, Request, 0);
 }
-void ServerUpdateCameraSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerUpdateCameraSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FVector_NetQuantize, CamLoc)
 	P_GET_PROPERTY(UIntProperty, CamPitchAndYaw);
 
-	improbable::unreal::ServerUpdateCameraRequest Request;
+	improbable::unreal::UnrealServerUpdateCameraRequest Request;
 	Request.set_field_camloc(improbable::Vector3f(CamLoc.X, CamLoc.Y, CamLoc.Z));
 	Request.set_field_campitchandyaw(CamPitchAndYaw);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(Target, Request, 0);
 }
-void ServerUnmutePlayerSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerUnmutePlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
 
-	improbable::unreal::ServerUnmutePlayerRequest Request;
-	TArray<uint8> ValueData;
-	FMemoryWriter ValueDataWriter(ValueData);
-	bool Success;
-	PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
-	Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+	improbable::unreal::UnrealServerUnmutePlayerRequest Request;
+	{
+		TArray<uint8> ValueData;
+		FMemoryWriter ValueDataWriter(ValueData);
+		bool Success;
+		PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
+		Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+	}
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(Target, Request, 0);
 }
-void ServerToggleAILoggingSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerToggleAILoggingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ServerToggleAILoggingRequest Request;
+	improbable::unreal::UnrealServerToggleAILoggingRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(Target, Request, 0);
 }
-void ServerShortTimeoutSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerShortTimeoutSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ServerShortTimeoutRequest Request;
+	improbable::unreal::UnrealServerShortTimeoutRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(Target, Request, 0);
 }
-void ServerSetSpectatorWaitingSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerSetSpectatorWaitingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bWaiting);
 
-	improbable::unreal::ServerSetSpectatorWaitingRequest Request;
+	improbable::unreal::UnrealServerSetSpectatorWaitingRequest Request;
 	Request.set_field_bwaiting(bWaiting != 0);
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(Target, Request, 0);
 }
-void ServerSetSpectatorLocationSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerSetSpectatorLocationSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FVector, NewLoc)
 	P_GET_STRUCT(FRotator, NewRot)
 
-	improbable::unreal::ServerSetSpectatorLocationRequest Request;
+	improbable::unreal::UnrealServerSetSpectatorLocationRequest Request;
 	Request.set_field_newloc(improbable::Vector3f(NewLoc.X, NewLoc.Y, NewLoc.Z));
 	Request.set_field_newrot(improbable::unreal::UnrealFRotator(NewRot.Yaw, NewRot.Pitch, NewRot.Roll));
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(Target, Request, 0);
 }
-void ServerRestartPlayerSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerRestartPlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ServerRestartPlayerRequest Request;
+	improbable::unreal::UnrealServerRestartPlayerRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(Target, Request, 0);
 }
-void ServerPauseSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerPauseSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ServerPauseRequest Request;
+	improbable::unreal::UnrealServerPauseRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(Target, Request, 0);
 }
-void ServerNotifyLoadedWorldSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerNotifyLoadedWorldSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, WorldPackageName);
 
-	improbable::unreal::ServerNotifyLoadedWorldRequest Request;
+	improbable::unreal::UnrealServerNotifyLoadedWorldRequest Request;
 	Request.set_field_worldpackagename(TCHAR_TO_UTF8(*WorldPackageName.ToString()));
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(Target, Request, 0);
 }
-void ServerMutePlayerSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerMutePlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
 
-	improbable::unreal::ServerMutePlayerRequest Request;
-	TArray<uint8> ValueData;
-	FMemoryWriter ValueDataWriter(ValueData);
-	bool Success;
-	PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
-	Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+	improbable::unreal::UnrealServerMutePlayerRequest Request;
+	{
+		TArray<uint8> ValueData;
+		FMemoryWriter ValueDataWriter(ValueData);
+		bool Success;
+		PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
+		Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+	}
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(Target, Request, 0);
 }
-void ServerCheckClientPossessionReliableSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerCheckClientPossessionReliableSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ServerCheckClientPossessionReliableRequest Request;
+	improbable::unreal::UnrealServerCheckClientPossessionReliableRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(Target, Request, 0);
 }
-void ServerCheckClientPossessionSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerCheckClientPossessionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ServerCheckClientPossessionRequest Request;
+	improbable::unreal::UnrealServerCheckClientPossessionRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(Target, Request, 0);
 }
-void ServerChangeNameSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerChangeNameSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UStrProperty, S);
 
-	improbable::unreal::ServerChangeNameRequest Request;
+	improbable::unreal::UnrealServerChangeNameRequest Request;
 	Request.set_field_s(TCHAR_TO_UTF8(*S));
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(Target, Request, 0);
 }
-void ServerCameraSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerCameraSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, NewMode);
 
-	improbable::unreal::ServerCameraRequest Request;
+	improbable::unreal::UnrealServerCameraRequest Request;
 	Request.set_field_newmode(TCHAR_TO_UTF8(*NewMode.ToString()));
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(Target, Request, 0);
 }
-void ServerAcknowledgePossessionSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ServerAcknowledgePossessionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(APawn, P);
 
-	improbable::unreal::ServerAcknowledgePossessionRequest Request;
+	improbable::unreal::UnrealServerAcknowledgePossessionRequest Request;
 	// WEAK OBJECT REPLICATION - Request.set_field_p = P;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>(Target, Request, 0);
@@ -1644,11 +1630,11 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FOutBunch* Bunch
 	}
 }
 
-void FSpatialTypeBinding_PlayerController::SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target)
+void FSpatialTypeBinding_PlayerController::SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
 	auto Func = RPCToSenderMap.Find(FName(*Function->GetName()));
-	check(*Func)
+	checkf(*Func, TEXT(""))
 	(*Func)(Connection.Get(), RPCFrame, Target);
 }
 void FSpatialTypeBinding_PlayerController::OnServerStartedVisualLoggerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op)
@@ -1706,12 +1692,14 @@ void FSpatialTypeBinding_PlayerController::ClientUnmutePlayerReceiver(const work
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FUniqueNetIdRepl PlayerId;
-	auto& ValueDataStr = Op.Request.field_playerid();
-	TArray<uint8> ValueData;
-	ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
-	FMemoryReader ValueDataReader(ValueData);
-	bool bSuccess;
-	PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
+	{
+		auto& ValueDataStr = Op.Request.field_playerid();
+		TArray<uint8> ValueData;
+		ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+		FMemoryReader ValueDataReader(ValueData);
+		bool bSuccess;
+		PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
+	}
 
 	TargetObject->ClientUnmutePlayer_Implementation(PlayerId);
 
@@ -1732,18 +1720,10 @@ void FSpatialTypeBinding_PlayerController::ClientTravelInternalReceiver(const wo
 	bool bSeamless;
 	bSeamless = Op.Request.field_bseamless();
 	FGuid MapPackageGuid;
-	{
-		MapPackageGuid.A = Op.Request.field_mappackageguid_a();
-	}
-	{
-		MapPackageGuid.B = Op.Request.field_mappackageguid_b();
-	}
-	{
-		MapPackageGuid.C = Op.Request.field_mappackageguid_c();
-	}
-	{
-		MapPackageGuid.D = Op.Request.field_mappackageguid_d();
-	}
+	MapPackageGuid.A = Op.Request.field_mappackageguid_a();
+	MapPackageGuid.B = Op.Request.field_mappackageguid_b();
+	MapPackageGuid.C = Op.Request.field_mappackageguid_c();
+	MapPackageGuid.D = Op.Request.field_mappackageguid_d();
 
 	TargetObject->ClientTravelInternal_Implementation(URL, TravelType, bSeamless, MapPackageGuid);
 
@@ -1830,22 +1810,14 @@ void FSpatialTypeBinding_PlayerController::ClientSetViewTargetReceiver(const wor
 	AActor* A = nullptr;
 	// UNSUPPORTED ObjectProperty - A Op.Request.field_a();
 	FViewTargetTransitionParams TransitionParams;
-	{
-		TransitionParams.BlendTime = Op.Request.field_transitionparams_blendtime();
-	}
-	{
-		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-		TransitionParams.BlendFunction = TEnumAsByte<EViewTargetBlendFunction>(uint8(Op.Request.field_transitionparams_blendfunction()));
-	}
-	{
-		TransitionParams.BlendExp = Op.Request.field_transitionparams_blendexp();
-	}
-	{
-		TransitionParams.bLockOutgoing = Op.Request.field_transitionparams_blockoutgoing();
-	}
+	TransitionParams.BlendTime = Op.Request.field_transitionparams_blendtime();
+	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+	TransitionParams.BlendFunction = TEnumAsByte<EViewTargetBlendFunction>(uint8(Op.Request.field_transitionparams_blendfunction()));
+	TransitionParams.BlendExp = Op.Request.field_transitionparams_blendexp();
+	TransitionParams.bLockOutgoing = Op.Request.field_transitionparams_blockoutgoing();
 
 	TargetObject->ClientSetViewTarget_Implementation(A, TransitionParams);
 
@@ -1923,41 +1895,29 @@ void FSpatialTypeBinding_PlayerController::ClientSetCameraFadeReceiver(const wor
 	bool bEnableFading;
 	bEnableFading = Op.Request.field_benablefading();
 	FColor FadeColor;
-	{
-		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-		FadeColor.B = uint8(uint8(Op.Request.field_fadecolor_b()));
-	}
-	{
-		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-		FadeColor.G = uint8(uint8(Op.Request.field_fadecolor_g()));
-	}
-	{
-		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-		FadeColor.R = uint8(uint8(Op.Request.field_fadecolor_r()));
-	}
-	{
-		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-		FadeColor.A = uint8(uint8(Op.Request.field_fadecolor_a()));
-	}
+	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+	FadeColor.B = uint8(uint8(Op.Request.field_fadecolor_b()));
+	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+	FadeColor.G = uint8(uint8(Op.Request.field_fadecolor_g()));
+	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+	FadeColor.R = uint8(uint8(Op.Request.field_fadecolor_r()));
+	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+	FadeColor.A = uint8(uint8(Op.Request.field_fadecolor_a()));
 	FVector2D FadeAlpha;
-	{
-		FadeAlpha.X = Op.Request.field_fadealpha_x();
-	}
-	{
-		FadeAlpha.Y = Op.Request.field_fadealpha_y();
-	}
+	FadeAlpha.X = Op.Request.field_fadealpha_x();
+	FadeAlpha.Y = Op.Request.field_fadealpha_y();
 	float FadeTime;
 	FadeTime = Op.Request.field_fadetime();
 	bool bFadeAudio;
@@ -2087,10 +2047,12 @@ void FSpatialTypeBinding_PlayerController::ClientPlaySoundAtLocationReceiver(con
 	USoundBase* Sound = nullptr;
 	// UNSUPPORTED ObjectProperty - Sound Op.Request.field_sound();
 	FVector Location;
-	auto& Vector = Op.Request.field_location();
-	Location.X = Vector.x();
-	Location.Y = Vector.y();
-	Location.Z = Vector.z();
+	{
+		auto& Vector = Op.Request.field_location();
+		Location.X = Vector.x();
+		Location.Y = Vector.y();
+		Location.Z = Vector.z();
+	}
 	float VolumeMultiplier;
 	VolumeMultiplier = Op.Request.field_volumemultiplier();
 	float PitchMultiplier;
@@ -2145,10 +2107,12 @@ void FSpatialTypeBinding_PlayerController::ClientPlayCameraShakeReceiver(const w
 	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 	PlaySpace = TEnumAsByte<ECameraAnimPlaySpace::Type>(uint8(Op.Request.field_playspace()));
 	FRotator UserPlaySpaceRot;
-	auto& Rotator = Op.Request.field_userplayspacerot();
-	UserPlaySpaceRot.Yaw = Rotator.yaw();
-	UserPlaySpaceRot.Pitch = Rotator.pitch();
-	UserPlaySpaceRot.Roll = Rotator.roll();
+	{
+		auto& Rotator = Op.Request.field_userplayspacerot();
+		UserPlaySpaceRot.Yaw = Rotator.yaw();
+		UserPlaySpaceRot.Pitch = Rotator.pitch();
+		UserPlaySpaceRot.Roll = Rotator.roll();
+	}
 
 	TargetObject->ClientPlayCameraShake_Implementation(Shake, Scale, PlaySpace, UserPlaySpaceRot);
 
@@ -2179,10 +2143,12 @@ void FSpatialTypeBinding_PlayerController::ClientPlayCameraAnimReceiver(const wo
 	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 	Space = TEnumAsByte<ECameraAnimPlaySpace::Type>(uint8(Op.Request.field_space()));
 	FRotator CustomPlaySpace;
-	auto& Rotator = Op.Request.field_customplayspace();
-	CustomPlaySpace.Yaw = Rotator.yaw();
-	CustomPlaySpace.Pitch = Rotator.pitch();
-	CustomPlaySpace.Roll = Rotator.roll();
+	{
+		auto& Rotator = Op.Request.field_customplayspace();
+		CustomPlaySpace.Yaw = Rotator.yaw();
+		CustomPlaySpace.Pitch = Rotator.pitch();
+		CustomPlaySpace.Roll = Rotator.roll();
+	}
 
 	TargetObject->ClientPlayCameraAnim_Implementation(AnimToPlay, Scale, Rate, BlendInTime, BlendOutTime, bLoop, bRandomStartTime, Space, CustomPlaySpace);
 
@@ -2193,12 +2159,14 @@ void FSpatialTypeBinding_PlayerController::ClientMutePlayerReceiver(const worker
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FUniqueNetIdRepl PlayerId;
-	auto& ValueDataStr = Op.Request.field_playerid();
-	TArray<uint8> ValueData;
-	ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
-	FMemoryReader ValueDataReader(ValueData);
-	bool bSuccess;
-	PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
+	{
+		auto& ValueDataStr = Op.Request.field_playerid();
+		TArray<uint8> ValueData;
+		ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+		FMemoryReader ValueDataReader(ValueData);
+		bool bSuccess;
+		PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
+	}
 
 	TargetObject->ClientMutePlayer_Implementation(PlayerId);
 
@@ -2346,10 +2314,12 @@ void FSpatialTypeBinding_PlayerController::ClientAddTextureStreamingLocReceiver(
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FVector InLoc;
-	auto& Vector = Op.Request.field_inloc();
-	InLoc.X = Vector.x();
-	InLoc.Y = Vector.y();
-	InLoc.Z = Vector.z();
+	{
+		auto& Vector = Op.Request.field_inloc();
+		InLoc.X = Vector.x();
+		InLoc.Y = Vector.y();
+		InLoc.Z = Vector.z();
+	}
 	float Duration;
 	Duration = Op.Request.field_duration();
 	bool bOverrideLocation;
@@ -2364,10 +2334,12 @@ void FSpatialTypeBinding_PlayerController::ClientSetRotationReceiver(const worke
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FRotator NewRotation;
-	auto& Rotator = Op.Request.field_newrotation();
-	NewRotation.Yaw = Rotator.yaw();
-	NewRotation.Pitch = Rotator.pitch();
-	NewRotation.Roll = Rotator.roll();
+	{
+		auto& Rotator = Op.Request.field_newrotation();
+		NewRotation.Yaw = Rotator.yaw();
+		NewRotation.Pitch = Rotator.pitch();
+		NewRotation.Roll = Rotator.roll();
+	}
 	bool bResetCamera;
 	bResetCamera = Op.Request.field_bresetcamera();
 
@@ -2380,15 +2352,19 @@ void FSpatialTypeBinding_PlayerController::ClientSetLocationReceiver(const worke
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FVector NewLocation;
-	auto& Vector = Op.Request.field_newlocation();
-	NewLocation.X = Vector.x();
-	NewLocation.Y = Vector.y();
-	NewLocation.Z = Vector.z();
+	{
+		auto& Vector = Op.Request.field_newlocation();
+		NewLocation.X = Vector.x();
+		NewLocation.Y = Vector.y();
+		NewLocation.Z = Vector.z();
+	}
 	FRotator NewRotation;
-	auto& Rotator = Op.Request.field_newrotation();
-	NewRotation.Yaw = Rotator.yaw();
-	NewRotation.Pitch = Rotator.pitch();
-	NewRotation.Roll = Rotator.roll();
+	{
+		auto& Rotator = Op.Request.field_newrotation();
+		NewRotation.Yaw = Rotator.yaw();
+		NewRotation.Pitch = Rotator.pitch();
+		NewRotation.Roll = Rotator.roll();
+	}
 
 	TargetObject->ClientSetLocation_Implementation(NewLocation, NewRotation);
 
@@ -2399,22 +2375,14 @@ void FSpatialTypeBinding_PlayerController::ServerViewSelfReceiver(const worker::
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FViewTargetTransitionParams TransitionParams;
-	{
-		TransitionParams.BlendTime = Op.Request.field_transitionparams_blendtime();
-	}
-	{
-		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-		TransitionParams.BlendFunction = TEnumAsByte<EViewTargetBlendFunction>(uint8(Op.Request.field_transitionparams_blendfunction()));
-	}
-	{
-		TransitionParams.BlendExp = Op.Request.field_transitionparams_blendexp();
-	}
-	{
-		TransitionParams.bLockOutgoing = Op.Request.field_transitionparams_blockoutgoing();
-	}
+	TransitionParams.BlendTime = Op.Request.field_transitionparams_blendtime();
+	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+	TransitionParams.BlendFunction = TEnumAsByte<EViewTargetBlendFunction>(uint8(Op.Request.field_transitionparams_blendfunction()));
+	TransitionParams.BlendExp = Op.Request.field_transitionparams_blendexp();
+	TransitionParams.bLockOutgoing = Op.Request.field_transitionparams_blockoutgoing();
 
 	TargetObject->ServerViewSelf_Implementation(TransitionParams);
 
@@ -2465,10 +2433,12 @@ void FSpatialTypeBinding_PlayerController::ServerUpdateCameraReceiver(const work
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FVector_NetQuantize CamLoc;
-	auto& Vector = Op.Request.field_camloc();
-	CamLoc.X = Vector.x();
-	CamLoc.Y = Vector.y();
-	CamLoc.Z = Vector.z();
+	{
+		auto& Vector = Op.Request.field_camloc();
+		CamLoc.X = Vector.x();
+		CamLoc.Y = Vector.y();
+		CamLoc.Z = Vector.z();
+	}
 	int32 CamPitchAndYaw;
 	CamPitchAndYaw = Op.Request.field_campitchandyaw();
 
@@ -2481,12 +2451,14 @@ void FSpatialTypeBinding_PlayerController::ServerUnmutePlayerReceiver(const work
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FUniqueNetIdRepl PlayerId;
-	auto& ValueDataStr = Op.Request.field_playerid();
-	TArray<uint8> ValueData;
-	ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
-	FMemoryReader ValueDataReader(ValueData);
-	bool bSuccess;
-	PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
+	{
+		auto& ValueDataStr = Op.Request.field_playerid();
+		TArray<uint8> ValueData;
+		ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+		FMemoryReader ValueDataReader(ValueData);
+		bool bSuccess;
+		PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
+	}
 
 	TargetObject->ServerUnmutePlayer_Implementation(PlayerId);
 
@@ -2526,15 +2498,19 @@ void FSpatialTypeBinding_PlayerController::ServerSetSpectatorLocationReceiver(co
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FVector NewLoc;
-	auto& Vector = Op.Request.field_newloc();
-	NewLoc.X = Vector.x();
-	NewLoc.Y = Vector.y();
-	NewLoc.Z = Vector.z();
+	{
+		auto& Vector = Op.Request.field_newloc();
+		NewLoc.X = Vector.x();
+		NewLoc.Y = Vector.y();
+		NewLoc.Z = Vector.z();
+	}
 	FRotator NewRot;
-	auto& Rotator = Op.Request.field_newrot();
-	NewRot.Yaw = Rotator.yaw();
-	NewRot.Pitch = Rotator.pitch();
-	NewRot.Roll = Rotator.roll();
+	{
+		auto& Rotator = Op.Request.field_newrot();
+		NewRot.Yaw = Rotator.yaw();
+		NewRot.Pitch = Rotator.pitch();
+		NewRot.Roll = Rotator.roll();
+	}
 
 	TargetObject->ServerSetSpectatorLocation_Implementation(NewLoc, NewRot);
 
@@ -2574,12 +2550,14 @@ void FSpatialTypeBinding_PlayerController::ServerMutePlayerReceiver(const worker
 	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
 	FUniqueNetIdRepl PlayerId;
-	auto& ValueDataStr = Op.Request.field_playerid();
-	TArray<uint8> ValueData;
-	ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
-	FMemoryReader ValueDataReader(ValueData);
-	bool bSuccess;
-	PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
+	{
+		auto& ValueDataStr = Op.Request.field_playerid();
+		TArray<uint8> ValueData;
+		ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+		FMemoryReader ValueDataReader(ValueData);
+		bool bSuccess;
+		PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
+	}
 
 	TargetObject->ServerMutePlayer_Implementation(PlayerId);
 

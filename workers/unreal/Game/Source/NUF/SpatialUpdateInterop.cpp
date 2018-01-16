@@ -107,7 +107,7 @@ void USpatialUpdateInterop::UnregisterInteropType(UClass* Class)
 	}
 }
 
-const FSpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class) const
+FSpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class) const
 {
 	for (const UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
 	{
@@ -169,9 +169,9 @@ void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, 
 	Channel->UActorChannel::ReceivedBunch(Bunch);
 }
 
-void USpatialUpdateInterop::HandleRPCInvocation(const AActor* TargetActor, const UFunction* const Function, const FFrame* DuplicateFrame, const worker::EntityId Target)
+void USpatialUpdateInterop::HandleRPCInvocation(const AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, const worker::EntityId& Target)
 {
-	const FSpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
+	FSpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
 	if (Binding)
 	{
 		Binding->SendRPCCommand(Function, DuplicateFrame, Target);

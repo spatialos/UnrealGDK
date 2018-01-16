@@ -9,7 +9,7 @@
 #include "GameFramework/Character.h"
 #include "Misc/FileHelper.h"
 #include "Components/ArrowComponent.h"
-#include "Utils/ComponentIdGenerator.h"
+#include "ComponentIdGenerator.h"
 
 // Hack to access private members of FRepLayout.
 #define private public
@@ -108,16 +108,16 @@ ERPCType GetRPCTypeFromFunction(UFunction* Function)
 	}
 }
 
-FString GetRPCTypeString(ERPCType Group)
+FString GetRPCTypeString(ERPCType RPCType)
 {
-	switch (Group)
+	switch (RPCType)
 	{
 		case ERPCType::RPC_Client:
 			return "Client";
 		case ERPCType::RPC_Server:
 			return "Server";
 		default:
-			checkNoEntry()
+			checkf(false, TEXT("RPCType is invalid!"))
 			return "";
 	}
 }
@@ -531,11 +531,13 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		else if (Struct->GetName() == TEXT("RepMovement") ||
 				 Struct->GetName() == TEXT("UniqueNetIdRepl"))
 		{
+			Writer.Print(TEXT("{")).Indent();
 			Writer.Print(FString::Printf(TEXT(R"""(TArray<uint8> ValueData;
 				FMemoryWriter ValueDataWriter(ValueData);
 				bool Success;
 				%s.NetSerialize(ValueDataWriter, nullptr, Success);
 				%s(std::string((char*)ValueData.GetData(), ValueData.Num()));)"""), *PropertyValue, *SpatialValueSetter));
+			Writer.Outdent().Print(TEXT("}"));
 		}
 		else
 		{
@@ -972,7 +974,7 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 		Writer.Print(FString::Printf(TEXT("id = %i;"), IdGenerator.GetNextAvailableId()));
 		for (auto& Func : Layout.RPCs[Group])
 		{		
-			Writer.Print(FString::Printf(TEXT("command %sResponse %s(%sRequest);"), *Func->GetName(), *PropertyNameToSchemaName(Func->GetName()), *Func->GetName()));
+			Writer.Print(FString::Printf(TEXT("command %s %s(%s);"), *GetSchemaRPCResponseTypeFromUnreal(Func), *PropertyNameToSchemaName(Func->GetName()), *GetSchemaRPCRequestTypeFromUnreal(Func)));
 		}
 		Writer.Outdent().Print(TEXT("}"));
 	}
@@ -1037,7 +1039,7 @@ void GenerateForwardingCodeFromLayout(
 		void UnbindFromView() override;
 		worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
 		void SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const override;
-		void SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const override;)"""));
+		void SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target) override;)"""));
 	HeaderWriter.Outdent().Print(TEXT("private:")).Indent();
 	HeaderWriter.Print(TEXT("TMap<FName, FRPCSender> RPCToSenderMap;"));
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
@@ -1189,7 +1191,7 @@ void GenerateForwardingCodeFromLayout(
 	{
 		for (auto& RPC : Layout.RPCs[Group])
 		{
-			SourceWriter.Print(FString::Printf(TEXT("void %sSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)"), *RPC->GetName()));
+			SourceWriter.Print(FString::Printf(TEXT("void %sSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)"), *RPC->GetName()));
 			SourceWriter.Print(TEXT("{"));
 			SourceWriter.Indent();
 
@@ -1204,7 +1206,7 @@ void GenerateForwardingCodeFromLayout(
 				}
 				SourceWriter.Print();
 			}
-			SourceWriter.Print(FString::Printf(TEXT("improbable::unreal::%sRequest Request;"), *RPC->GetName()));
+			SourceWriter.Print(FString::Printf(TEXT("improbable::unreal::%s Request;"), *GetSchemaRPCRequestTypeFromUnreal(RPC)));
 			for (TFieldIterator<UProperty> Param(RPC); Param; ++Param)
 			{
 				TArray<UProperty*> NewChain = { *Param };
@@ -1442,12 +1444,12 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Print(TEXT("}"));
 	SourceWriter.Print();
 
-	SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) const"), *Class->GetName()));
+	SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target)"), *Class->GetName()));
 	SourceWriter.Print(TEXT("{"));
 	SourceWriter.Indent();
 	SourceWriter.Print(TEXT(R"""(TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
 		auto Func = RPCToSenderMap.Find(FName(*Function->GetName()));
-		check(*Func)
+		checkf(*Func, TEXT(""))
 		(*Func)(Connection.Get(), RPCFrame, Target);)"""));
 
 	SourceWriter.Outdent().Print(TEXT("}"));

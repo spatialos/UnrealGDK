@@ -13,7 +13,7 @@ class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialUpdateInterop, Log, All);
 
-using FRPCSender = TFunction<void(worker::Connection*, struct FFrame*, worker::EntityId)>; 
+using FRPCSender = TFunction<void(worker::Connection* const, struct FFrame* const, const worker::EntityId&)>; 
 class FOutBunch;
 
 enum EReplicatedPropertyGroup
@@ -47,7 +47,7 @@ public:
 	virtual void UnbindFromView() = 0;
 	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const = 0;
 	virtual void SendComponentUpdates(FOutBunch* OutgoingBunch, const worker::EntityId& EntityId) const = 0;
-	virtual void SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) = 0;
+	virtual void SendRPCCommand( const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target) = 0;
 
 protected:
 	template<class CommandType>
@@ -73,10 +73,10 @@ public:
 
 	USpatialActorChannel* GetClientActorChannel(const worker::EntityId& EntityId) const;
 
-	void HandleRPCInvocation(const AActor* const TargetActor, const UFunction* const Function, const FFrame* const DuplicateFrame, const worker::EntityId Target);
+	void HandleRPCInvocation(const AActor* const TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, const worker::EntityId& Target);
 	void RegisterInteropType(UClass* Class, TSharedPtr<FSpatialTypeBinding> Binding);
 	void UnregisterInteropType(UClass* Class);
-	const FSpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
+	FSpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
 	void SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* OutgoingBunch);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);

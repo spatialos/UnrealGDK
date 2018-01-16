@@ -75,11 +75,13 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			TArray<uint8> ValueData;
-			FMemoryWriter ValueDataWriter(ValueData);
-			bool Success;
-			Value.NetSerialize(ValueDataWriter, nullptr, Success);
-			Update.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
+			{
+				TArray<uint8> ValueData;
+				FMemoryWriter ValueDataWriter(ValueData);
+				bool Success;
+				Value.NetSerialize(ValueDataWriter, nullptr, Success);
+				Update.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
+			}
 			break;
 		}
 		// case 7: - AttachParent is an object reference, skipping.
@@ -330,23 +332,11 @@ void ApplyUpdateToSpatial_MultiClient_Character(FArchive& Reader, int32 Handle, 
 			check(Property->ElementSize == sizeof(Value));
 			Property->NetSerializeItem(Reader, PackageMap, &Value);
 
-			{
-				Update.set_field_reprootmotion_authoritativerootmotion_bhasadditivesources(Value.bHasAdditiveSources != 0);
-			}
-			{
-				Update.set_field_reprootmotion_authoritativerootmotion_bhasoverridesources(Value.bHasOverrideSources != 0);
-			}
-			{
-				Update.set_field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity(improbable::Vector3f(Value.LastPreAdditiveVelocity.X, Value.LastPreAdditiveVelocity.Y, Value.LastPreAdditiveVelocity.Z));
-			}
-			{
-				Update.set_field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied(Value.bIsAdditiveVelocityApplied != 0);
-			}
-			{
-				{
-					Update.set_field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags(uint32_t(Value.LastAccumulatedSettings.Flags));
-				}
-			}
+			Update.set_field_reprootmotion_authoritativerootmotion_bhasadditivesources(Value.bHasAdditiveSources != 0);
+			Update.set_field_reprootmotion_authoritativerootmotion_bhasoverridesources(Value.bHasOverrideSources != 0);
+			Update.set_field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity(improbable::Vector3f(Value.LastPreAdditiveVelocity.X, Value.LastPreAdditiveVelocity.Y, Value.LastPreAdditiveVelocity.Z));
+			Update.set_field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied(Value.bIsAdditiveVelocityApplied != 0);
+			Update.set_field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags(uint32_t(Value.LastAccumulatedSettings.Flags));
 			break;
 		}
 		case 42: // field_reprootmotion_acceleration
@@ -489,12 +479,14 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			FRepMovement Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& ValueDataStr = *(Op.Update.field_replicatedmovement().data());
-			TArray<uint8> ValueData;
-			ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
-			FMemoryReader ValueDataReader(ValueData);
-			bool bSuccess;
-			Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
+			{
+				auto& ValueDataStr = *(Op.Update.field_replicatedmovement().data());
+				TArray<uint8> ValueData;
+				ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+				FMemoryReader ValueDataReader(ValueData);
+				bool bSuccess;
+				Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -530,10 +522,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			FVector_NetQuantize100 Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& Vector = *(Op.Update.field_attachmentreplication_locationoffset().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
+			{
+				auto& Vector = *(Op.Update.field_attachmentreplication_locationoffset().data());
+				Value.X = Vector.x();
+				Value.Y = Vector.y();
+				Value.Z = Vector.z();
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -551,10 +545,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			FVector_NetQuantize100 Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& Vector = *(Op.Update.field_attachmentreplication_relativescale3d().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
+			{
+				auto& Vector = *(Op.Update.field_attachmentreplication_relativescale3d().data());
+				Value.X = Vector.x();
+				Value.Y = Vector.y();
+				Value.Z = Vector.z();
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -572,10 +568,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			FRotator Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& Rotator = *(Op.Update.field_attachmentreplication_rotationoffset().data());
-			Value.Yaw = Rotator.yaw();
-			Value.Pitch = Rotator.pitch();
-			Value.Roll = Rotator.roll();
+			{
+				auto& Rotator = *(Op.Update.field_attachmentreplication_rotationoffset().data());
+				Value.Yaw = Rotator.yaw();
+				Value.Pitch = Rotator.pitch();
+				Value.Roll = Rotator.roll();
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -781,10 +779,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			FVector_NetQuantize100 Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& Vector = *(Op.Update.field_replicatedbasedmovement_location().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
+			{
+				auto& Vector = *(Op.Update.field_replicatedbasedmovement_location().data());
+				Value.X = Vector.x();
+				Value.Y = Vector.y();
+				Value.Z = Vector.z();
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -802,10 +802,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			FRotator Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& Rotator = *(Op.Update.field_replicatedbasedmovement_rotation().data());
-			Value.Yaw = Rotator.yaw();
-			Value.Pitch = Rotator.pitch();
-			Value.Roll = Rotator.roll();
+			{
+				auto& Rotator = *(Op.Update.field_replicatedbasedmovement_rotation().data());
+				Value.Yaw = Rotator.yaw();
+				Value.Pitch = Rotator.pitch();
+				Value.Roll = Rotator.roll();
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1043,10 +1045,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			FVector_NetQuantize100 Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& Vector = *(Op.Update.field_reprootmotion_location().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
+			{
+				auto& Vector = *(Op.Update.field_reprootmotion_location().data());
+				Value.X = Vector.x();
+				Value.Y = Vector.y();
+				Value.Z = Vector.z();
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1064,10 +1068,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			FRotator Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& Rotator = *(Op.Update.field_reprootmotion_rotation().data());
-			Value.Yaw = Rotator.yaw();
-			Value.Pitch = Rotator.pitch();
-			Value.Roll = Rotator.roll();
+			{
+				auto& Rotator = *(Op.Update.field_reprootmotion_rotation().data());
+				Value.Yaw = Rotator.yaw();
+				Value.Pitch = Rotator.pitch();
+				Value.Roll = Rotator.roll();
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1157,30 +1163,20 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			FRootMotionSourceGroup Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			{
-				Value.bHasAdditiveSources = *(Op.Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().data());
-			}
-			{
-				Value.bHasOverrideSources = *(Op.Update.field_reprootmotion_authoritativerootmotion_bhasoverridesources().data());
-			}
+			Value.bHasAdditiveSources = *(Op.Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().data());
+			Value.bHasOverrideSources = *(Op.Update.field_reprootmotion_authoritativerootmotion_bhasoverridesources().data());
 			{
 				auto& Vector = *(Op.Update.field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity().data());
 				Value.LastPreAdditiveVelocity.X = Vector.x();
 				Value.LastPreAdditiveVelocity.Y = Vector.y();
 				Value.LastPreAdditiveVelocity.Z = Vector.z();
 			}
-			{
-				Value.bIsAdditiveVelocityApplied = *(Op.Update.field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied().data());
-			}
-			{
-				{
-					// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-					// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-					// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-					// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-					Value.LastAccumulatedSettings.Flags = uint8(uint8(*(Op.Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
-				}
-			}
+			Value.bIsAdditiveVelocityApplied = *(Op.Update.field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied().data());
+			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+			Value.LastAccumulatedSettings.Flags = uint8(uint8(*(Op.Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1198,10 +1194,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			FVector_NetQuantize10 Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& Vector = *(Op.Update.field_reprootmotion_acceleration().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
+			{
+				auto& Vector = *(Op.Update.field_reprootmotion_acceleration().data());
+				Value.X = Vector.x();
+				Value.Y = Vector.y();
+				Value.Z = Vector.z();
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1219,10 +1217,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			FVector_NetQuantize10 Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			auto& Vector = *(Op.Update.field_reprootmotion_linearvelocity().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
+			{
+				auto& Vector = *(Op.Update.field_reprootmotion_linearvelocity().data());
+				Value.X = Vector.x();
+				Value.Y = Vector.y();
+				Value.Z = Vector.z();
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1232,21 +1232,21 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 }
 
 // RPC sender functions
-void ClientCheatWalkSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientCheatWalkSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ClientCheatWalkRequest Request;
+	improbable::unreal::UnrealClientCheatWalkRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>(Target, Request, 0);
 }
-void ClientCheatGhostSender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientCheatGhostSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ClientCheatGhostRequest Request;
+	improbable::unreal::UnrealClientCheatGhostRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>(Target, Request, 0);
 }
-void ClientCheatFlySender(worker::Connection* Connection, struct FFrame* RPCFrame, worker::EntityId Target)
+void ClientCheatFlySender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target)
 {
-	improbable::unreal::ClientCheatFlyRequest Request;
+	improbable::unreal::UnrealClientCheatFlyRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>(Target, Request, 0);
 }
@@ -1440,11 +1440,11 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(FOutBunch* BunchPtr, co
 	}
 }
 
-void FSpatialTypeBinding_Character::SendRPCCommand(UFunction* Function, FFrame* RPCFrame, worker::EntityId Target) 
+void FSpatialTypeBinding_Character::SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target)
 {
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
 	auto Func = RPCToSenderMap.Find(FName(*Function->GetName()));
-	check(*Func)
+	checkf(*Func, TEXT(""))
 	(*Func)(Connection.Get(), RPCFrame, Target);
 }
 void FSpatialTypeBinding_Character::ClientCheatWalkReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op)

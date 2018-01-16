@@ -1084,18 +1084,18 @@ component UnrealCharacterCompleteData {
 	bytes field_blueprintcreatedcomponents = 1022;
 	bytes field_instancecomponents = 1023;
 }
-type ClientCheatWalkRequest {}
-type ClientCheatWalkResponse {}
-type ClientCheatGhostRequest {}
-type ClientCheatGhostResponse {}
-type ClientCheatFlyRequest {}
-type ClientCheatFlyResponse {}
+type UnrealClientCheatWalkRequest {}
+type UnrealClientCheatWalkResponse {}
+type UnrealClientCheatGhostRequest {}
+type UnrealClientCheatGhostResponse {}
+type UnrealClientCheatFlyRequest {}
+type UnrealClientCheatFlyResponse {}
 
 component UnrealCharacterClientRPCs {
 	id = 100008;
-	command ClientCheatWalkResponse clientcheatwalk(ClientCheatWalkRequest);
-	command ClientCheatGhostResponse clientcheatghost(ClientCheatGhostRequest);
-	command ClientCheatFlyResponse clientcheatfly(ClientCheatFlyRequest);
+	command UnrealClientCheatWalkResponse clientcheatwalk(UnrealClientCheatWalkRequest);
+	command UnrealClientCheatGhostResponse clientcheatghost(UnrealClientCheatGhostRequest);
+	command UnrealClientCheatFlyResponse clientcheatfly(UnrealClientCheatFlyRequest);
 }
 component UnrealCharacterServerRPCs {
 	id = 100009;
