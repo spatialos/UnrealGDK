@@ -6,11 +6,10 @@
 #include "Engine.h"
 #include "SpatialActorChannel.h"
 #include "SpatialPackageMapClient.h"
-#include "Utils/BunchReader.h"
 
 namespace {
 
-void ApplyUpdateToSpatial_SingleClient_Character(const uint8* Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update)
+void ApplyUpdateToSpatial_SingleClient_Character(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update)
 {
 }
 
@@ -27,7 +26,7 @@ void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* Upda
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
-void ApplyUpdateToSpatial_MultiClient_Character(const uint8* Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update)
+void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update)
 {
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
 	
@@ -1440,7 +1439,7 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(const TArray<uint16>& C
 	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
 	bool MultiClientUpdateChanged = false;
 
-	// Read bunch and build up SpatialOS component updates.
+	// Build up SpatialOS component updates.
 	auto& PropertyMap = GetHandlePropertyMap_Character();
 	FChangelistIterator ChangelistIterator(Changed, 0);
 	FRepHandleIterator HandleIterator(ChangelistIterator, Cmds, BaseHandleToCmdIndex, 0, 1, 0, Cmds.Num() - 1);

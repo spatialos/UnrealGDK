@@ -834,7 +834,7 @@ namespace
 		for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 		{
 			UnrealToSpatialSignatureByGroup.Add(Group, FString::Printf(
-				TEXT("void ApplyUpdateToSpatial_%s_%s(const uint8* Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::%s::Update& Update)"),
+				TEXT("void ApplyUpdateToSpatial_%s_%s(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::%s::Update& Update)"),
 				*GetReplicatedPropertyGroupName(Group),
 				*Class->GetName(),
 				*GetSchemaReplicatedDataName(Group, Class)));
