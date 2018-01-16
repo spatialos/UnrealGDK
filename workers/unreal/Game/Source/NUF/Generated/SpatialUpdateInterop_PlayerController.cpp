@@ -1630,7 +1630,7 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FOutBunch* Bunch
 	}
 }
 
-void FSpatialTypeBinding_PlayerController::SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target)
+void FSpatialTypeBinding_PlayerController::SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target) const
 {
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
 	auto Func = RPCToSenderMap.Find(Function->GetFName());

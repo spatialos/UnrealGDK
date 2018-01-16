@@ -1039,7 +1039,7 @@ void GenerateForwardingCodeFromLayout(
 		void UnbindFromView() override;
 		worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
 		void SendComponentUpdates(FOutBunch* BunchPtr, const worker::EntityId& EntityId) const override;
-		void SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target) override;)"""));
+		void SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target) const override;)"""));
 	HeaderWriter.Outdent().Print(TEXT("private:")).Indent();
 	HeaderWriter.Print(TEXT("TMap<FName, FRPCSender> RPCToSenderMap;"));
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
@@ -1444,7 +1444,7 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Print(TEXT("}"));
 	SourceWriter.Print();
 
-	SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target)"), *Class->GetName()));
+	SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target) const"), *Class->GetName()));
 	SourceWriter.Print(TEXT("{"));
 	SourceWriter.Indent();
 	SourceWriter.Print(TEXT(R"""(TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();

@@ -47,7 +47,7 @@ public:
 	virtual void UnbindFromView() = 0;
 	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const = 0;
 	virtual void SendComponentUpdates(FOutBunch* OutgoingBunch, const worker::EntityId& EntityId) const = 0;
-	virtual void SendRPCCommand( const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target) = 0;
+	virtual void SendRPCCommand( const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target) const = 0;
 
 protected:
 	template<class CommandType>
@@ -76,7 +76,7 @@ public:
 	void HandleRPCInvocation(const AActor* const TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, const worker::EntityId& Target);
 	void RegisterInteropType(UClass* Class, TSharedPtr<FSpatialTypeBinding> Binding);
 	void UnregisterInteropType(UClass* Class);
-	FSpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
+	const FSpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
 	void SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* OutgoingBunch);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
