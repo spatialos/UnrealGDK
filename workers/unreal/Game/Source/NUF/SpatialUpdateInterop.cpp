@@ -98,15 +98,6 @@ void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, con
 
 	const uint8* SourceData = (uint8*)Channel->Actor;
 
-	// Check that SpatialOS is connected.
-	// TODO(David): This function should never get called until SpatialOS _is_ connected.
-	TSharedPtr<worker::Connection> WorkerConnection = SpatialOSInstance->GetConnection().Pin();
-	if (!WorkerConnection.Get() || !WorkerConnection->IsConnected())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("SpatialOS is not connected yet."));
-		return;
-	}
-
 	Binding->SendComponentUpdates(Changed,
 		SourceData,
 		Channel->ActorReplicator->RepLayout->Cmds,

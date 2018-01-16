@@ -39,7 +39,6 @@ public:
 	virtual bool CanStopTicking() const override;
 	virtual void AppendExportBunches(TArray<FOutBunch *> & outExportBunches) override;
 	virtual void AppendMustBeMappedGuids(FOutBunch * bunch) override;
-	virtual FPacketIdRange SendBunch(FOutBunch * bunch, bool bMerge) override;
 	virtual void StartBecomingDormant() override;
 	//NUF-sourcechange Requires virtual in ActorChannel.h
 	virtual bool ReplicateActor() override;

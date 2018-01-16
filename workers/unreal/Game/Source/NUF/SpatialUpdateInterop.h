@@ -73,7 +73,7 @@ public:
 	const FSpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
 	void SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* OutgoingBunch);
-	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray< uint16 >& Changed);
+	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
 
 	USpatialOS* GetSpatialOS() const

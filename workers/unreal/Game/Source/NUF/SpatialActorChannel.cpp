@@ -130,16 +130,6 @@ void USpatialActorChannel::AppendMustBeMappedGuids(FOutBunch * bunch)
 	Super::AppendMustBeMappedGuids(bunch);
 }
 
-FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge)
-{
-	// Run default actor channel code.
-	// TODO(David) I believe that ReturnValue will always contain a PacketId which has the same First and Last value
-	// if we don't break up bunches, which in our case we wont as there's no need to at this layer.
-	auto ReturnValue = UActorChannel::SendBunch(BunchPtr, bMerge);
-
-	return ReturnValue;
-}
-
 void USpatialActorChannel::StartBecomingDormant()
 {
 	UActorChannel::StartBecomingDormant();
@@ -247,9 +237,9 @@ bool USpatialActorChannel::ReplicateActor()
 	const UWorld* const ActorWorld = Actor->GetWorld();
 
 	// The package map shouldn't have any carry over guids
-	if (CastChecked< UPackageMapClient >(Connection->PackageMap)->GetMustBeMappedGuidsInLastBunch().Num() != 0)
+	if (CastChecked<UPackageMapClient>(Connection->PackageMap)->GetMustBeMappedGuidsInLastBunch().Num() != 0)
 	{
-		UE_LOG(LogNet, Warning, TEXT("ReplicateActor: PackageMap->GetMustBeMappedGuidsInLastBunch().Num() != 0: %i"), CastChecked< UPackageMapClient >(Connection->PackageMap)->GetMustBeMappedGuidsInLastBunch().Num());
+		UE_LOG(LogNet, Warning, TEXT("ReplicateActor: PackageMap->GetMustBeMappedGuidsInLastBunch().Num() != 0: %i"), CastChecked<UPackageMapClient>(Connection->PackageMap)->GetMustBeMappedGuidsInLastBunch().Num());
 	}
 
 	// Time how long it takes to replicate this particular actor
