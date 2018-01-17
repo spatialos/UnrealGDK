@@ -5,6 +5,7 @@
 #include <improbable/worker.h>
 
 #include "CoreMinimal.h"
+#include "Net/RepLayout.h"
 #include "SpatialUpdateInterop.generated.h"
 
 class USpatialOS;
@@ -44,7 +45,11 @@ public:
 	virtual void BindToView() = 0;
 	virtual void UnbindFromView() = 0;
 	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const = 0;
-	virtual void SendComponentUpdates(FInBunch* OutgoingBunch, const worker::EntityId& EntityId) const = 0;
+	virtual void SendComponentUpdates(const TArray<uint16>& Changed,
+									  const uint8* RESTRICT SourceData,
+									  const TArray<FRepLayoutCmd>& Cmds,
+									  const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex,
+									  const worker::EntityId& EntityId) const = 0;
 	virtual worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata) const = 0;
 
 protected:
@@ -69,6 +74,7 @@ public:
 	const FSpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
 	void SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* OutgoingBunch);
+	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
 
 	USpatialOS* GetSpatialOS() const
@@ -85,6 +91,9 @@ private:
 
 	UPROPERTY()
 	bool bIsClient;
+
+	UPROPERTY()
+	UPackageMap* PackageMap;
 
 	// Type interop bindings.
 	TMap<UClass*, TSharedPtr<FSpatialTypeBinding>> TypeBinding;

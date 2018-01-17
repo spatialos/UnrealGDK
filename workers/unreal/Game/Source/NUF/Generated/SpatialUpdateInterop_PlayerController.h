@@ -18,7 +18,7 @@ public:
 	void BindToView() override;
 	void UnbindFromView() override;
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
-	void SendComponentUpdates(FInBunch* BunchPtr, const worker::EntityId& EntityId) const override;
+	void SendComponentUpdates(const TArray<uint16>& Changed,const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const override;
 	worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata) const override;
 private:
 	worker::Dispatcher::CallbackKey SingleClientCallback;

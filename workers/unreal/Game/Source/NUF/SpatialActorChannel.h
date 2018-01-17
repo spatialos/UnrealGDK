@@ -39,7 +39,6 @@ public:
 	virtual bool CanStopTicking() const override;
 	virtual void AppendExportBunches(TArray<FOutBunch *> & outExportBunches) override;
 	virtual void AppendMustBeMappedGuids(FOutBunch * bunch) override;
-	virtual FPacketIdRange SendBunch(FOutBunch * bunch, bool bMerge) override;
 	virtual void StartBecomingDormant() override;
 	//NUF-sourcechange Requires virtual in ActorChannel.h
 	virtual bool ReplicateActor() override;
@@ -60,11 +59,6 @@ public:
 	// In the future, we probably want to parse that segment of data properly.
 	// For now though, we keep track of where it ends so that we can skip there in SpatialUpdateInterop::SendSpatialUpdate().
 	bool bSendingInitialBunch;
-	// Spatial update interop layer takes the outbunch created during ReplicateActor(), and parses it.
-	// The problem is, if it's an initial send the whole actor & archetype data are serialized into this bunch before the header is written.
-	// In the future, we probably want to parse that segment of data properly.
-	// For now though, we keep track of where it ends so that we can skip there in SpatialUpdateInterop::SendSpatialUpdate().
-	FBitWriterMark IncrementalUpdateMark;
 
 protected:
 	// UChannel interface

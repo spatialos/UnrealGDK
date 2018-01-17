@@ -496,7 +496,7 @@ namespace
 		}
 		else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 		{
-			Writer.Print(FString::Printf(TEXT("FNetworkGUID NetGUID;\n// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.\nimprobable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);\n%s(UObjectRef);"),
+			Writer.Print(FString::Printf(TEXT("improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);\n%s(UObjectRef);"),
 				*SpatialValueSetter));
 		}
 		else if (Property->IsA(UNameProperty::StaticClass()))
@@ -834,7 +834,7 @@ namespace
 		for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 		{
 			UnrealToSpatialSignatureByGroup.Add(Group, FString::Printf(
-				TEXT("void ApplyUpdateToSpatial_%s_%s(FArchive& Reader, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::%s::Update& Update)"),
+				TEXT("void ApplyUpdateToSpatial_%s_%s(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::%s::Update& Update)"),
 				*GetReplicatedPropertyGroupName(Group),
 				*Class->GetName(),
 				*GetSchemaReplicatedDataName(Group, Class)));
@@ -854,10 +854,10 @@ namespace
 		HeaderWriter.Indent();
 		HeaderWriter.Outdent().Print(TEXT("public:")).Indent();
 		HeaderWriter.Print(TEXT(R"""(void BindToView() override;
-			void UnbindFromView() override;
-			worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
-			void SendComponentUpdates(FInBunch* BunchPtr, const worker::EntityId& EntityId) const override;
-			worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata) const override;)"""));
+		void UnbindFromView() override;
+		worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
+		void SendComponentUpdates(const TArray<uint16>& Changed,const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const override;
+		worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata) const override;)"""));
 		HeaderWriter.Outdent().Print(TEXT("private:")).Indent();
 		for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 		{
@@ -871,14 +871,13 @@ namespace
 		SourceWriter.Print(TEXT("// Note that this file has been generated automatically"));
 		SourceWriter.Print();
 		SourceWriter.Print(FString::Printf(TEXT(R"""(#include "%s.h"
-			#include "SpatialOS.h"
-			#include "Engine.h"
-			#include "SpatialActorChannel.h"
-			#include "SpatialPackageMapClient.h"
-			#include "Utils/BunchReader.h"
-			#include "EntityBuilder.h"
-			// TODO(David): Remove this once RPCs are merged, as we will no longer need a placeholder component.
-			#include "improbable/player/player.h")"""), *InteropFilename));
+		#include "SpatialOS.h"
+		#include "Engine.h"
+		#include "SpatialActorChannel.h"
+		#include "EntityBuilder.h"
+		// TODO(David): Remove this once RPCs are merged, as we will no longer need a placeholder component.
+		#include "improbable/player/player.h"
+		#include "SpatialPackageMapClient.h")"""), *InteropFilename));
 
 		// Replicated property interop.
 		SourceWriter.Print();
@@ -909,28 +908,18 @@ namespace
 					FString PropertyValueName = TEXT("Value");
 					FString PropertyValueCppType = Property->GetCPPType();
 					FString PropertyName = TEXT("Property");
+					SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
+					SourceWriter.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
+					//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
 					if (Property->IsA(UObjectPropertyBase::StaticClass()))
 					{
-						// If not null, the serialization code will try to de-reference this pointer. So we set it.
-						SourceWriter.Print(FString::Printf(TEXT("%s %s = nullptr;"), *PropertyValueCppType, *PropertyValueName));
+						SourceWriter.Print(FString::Printf(TEXT("%s = *(reinterpret_cast<%s const*>(Data));"), *PropertyValueName, *PropertyValueCppType));
+						SourceWriter.Print(FString::Printf(TEXT("FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(%s);"), *PropertyValueName));
 					}
 					else
 					{
-						SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
+						SourceWriter.Print(FString::Printf(TEXT("%s = *(reinterpret_cast<const %s*>(Data));"), *PropertyValueName, *PropertyValueCppType));
 					}
-					SourceWriter.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
-					if (!Property->IsA(UObjectPropertyBase::StaticClass()) && !Property->IsA(UNameProperty::StaticClass()))
-					{
-						//todo-david: remove this hack that's happening due to different serialization when InternalAck = 1.
-						SourceWriter.Print(FString::Printf(TEXT("//HACK:")));
-						SourceWriter.Print(FString::Printf(TEXT("// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.")));
-						SourceWriter.Print(FString::Printf(TEXT("// This needs to be solved at a more fundamental level.")));
-						SourceWriter.Print(FString::Printf(TEXT("uint32 NumBits = 0;")));
-						SourceWriter.Print(FString::Printf(TEXT("Reader.SerializeIntPacked(NumBits);")));
-						SourceWriter.Print(FString::Printf(TEXT("//END-HACK")));
-
-					}
-					SourceWriter.Print(FString::Printf(TEXT("%s->NetSerializeItem(Reader, PackageMap, &%s);"), *PropertyName, *PropertyValueName));
 					SourceWriter.Print();
 					GenerateUnrealToSchemaConversion(SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName);
 					SourceWriter.Print(TEXT("break;"));
@@ -1114,7 +1103,7 @@ namespace
 
 		// SendComponentUpdates
 		SourceWriter.Print();
-		SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendComponentUpdates(FInBunch* BunchPtr, const worker::EntityId& EntityId) const"),
+		SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendComponentUpdates(const TArray<uint16>& Changed, const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const"),
 			*Class->GetName()));
 		SourceWriter.Print(TEXT("{"));
 		SourceWriter.Indent();
@@ -1129,17 +1118,19 @@ namespace
 		}
 
 		SourceWriter.Print();
-		SourceWriter.Print(FString::Printf(TEXT(R"""(// Read bunch and build up SpatialOS component updates.
-			auto& PropertyMap = GetHandlePropertyMap_%s();
-			FBunchReader BunchReader(BunchPtr);
-			FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
-			{)"""), *Class->GetName()));
+		SourceWriter.Print(FString::Printf(TEXT(R"""(// Build up SpatialOS component updates.
+		auto& PropertyMap = GetHandlePropertyMap_%s();
+		FChangelistIterator ChangelistIterator(Changed, 0);
+		FRepHandleIterator HandleIterator(ChangelistIterator, Cmds, BaseHandleToCmdIndex, 0, 1, 0, Cmds.Num() - 1);
+		while (HandleIterator.NextHandle())
+		{)"""), *Class->GetName()));
 		SourceWriter.Indent();
-		SourceWriter.Print(TEXT(R"""(// TODO: We can't parse UObjects or FNames here as we have no package map.
-			auto& Data = PropertyMap[Handle];
-			UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
-		)"""));
-		SourceWriter.Print(TEXT("switch (GetGroupFromCondition(Data.Condition))"));
+		SourceWriter.Print(FString::Printf(TEXT(R"""(const FRepLayoutCmd& Cmd = Cmds[HandleIterator.CmdIndex];
+		const uint8* Data = SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
+		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];)""")));
+		SourceWriter.Print(FString::Printf(TEXT("UE_LOG(LogTemp, Log, TEXT(\"-> Handle: %%d Property %%s\"), HandleIterator.Handle, *Cmd.Property->GetName());")));
+
+		SourceWriter.Print(TEXT("switch (GetGroupFromCondition(PropertyMapData.Condition))"));
 		SourceWriter.Print(TEXT("{"));
 		SourceWriter.Indent();
 		for (EReplicatedPropertyGroup Group : RepPropertyGroups)
@@ -1147,7 +1138,7 @@ namespace
 			SourceWriter.Outdent();
 			SourceWriter.Print(FString::Printf(TEXT("case GROUP_%s:"), *GetReplicatedPropertyGroupName(Group)));
 			SourceWriter.Indent();
-			SourceWriter.Print(FString::Printf(TEXT("ApplyUpdateToSpatial_%s_%s(Reader, Handle, Property, PackageMap, %sUpdate);"),
+			SourceWriter.Print(FString::Printf(TEXT("ApplyUpdateToSpatial_%s_%s(Data, HandleIterator.Handle, Cmd.Property, PackageMap, %sUpdate);"),
 				*GetReplicatedPropertyGroupName(Group),
 				*Class->GetName(),
 				*GetReplicatedPropertyGroupName(Group)));
@@ -1157,10 +1148,8 @@ namespace
 		}
 		SourceWriter.Outdent();
 		SourceWriter.Print(TEXT("}"));
-		SourceWriter.Print(TEXT("return true;"));
 		SourceWriter.Outdent();
-		SourceWriter.Print(TEXT("};"));
-		SourceWriter.Print(TEXT("BunchReader.Parse(true, PropertyMap, RepDataHandler);"));
+		SourceWriter.Print(TEXT("}"));
 
 		SourceWriter.Print();
 		SourceWriter.Print(TEXT("// Send SpatialOS update."));

@@ -5,15 +5,14 @@
 #include "SpatialOS.h"
 #include "Engine.h"
 #include "SpatialActorChannel.h"
-#include "SpatialPackageMapClient.h"
-#include "Utils/BunchReader.h"
 #include "EntityBuilder.h"
 // TODO(David): Remove this once RPCs are merged, as we will no longer need a placeholder component.
 #include "improbable/player/player.h"
+#include "SpatialPackageMapClient.h"
 
 namespace {
 
-void ApplyUpdateToSpatial_SingleClient_PlayerController(FArchive& Reader, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update)
+void ApplyUpdateToSpatial_SingleClient_PlayerController(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update)
 {
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
 	
@@ -25,13 +24,7 @@ void ApplyUpdateToSpatial_SingleClient_PlayerController(FArchive& Reader, int32 
 		{
 			FRotator Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<const FRotator*>(Data));
 
 			Update.set_field_targetviewrotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
 			break;
@@ -40,13 +33,7 @@ void ApplyUpdateToSpatial_SingleClient_PlayerController(FArchive& Reader, int32 
 		{
 			FVector Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<const FVector*>(Data));
 
 			Update.set_field_spawnlocation(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
@@ -112,7 +99,7 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
-void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update)
+void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update)
 {
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
 	
@@ -124,13 +111,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_bhidden(Value != 0);
 			break;
@@ -139,13 +120,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_breplicatemovement(Value != 0);
 			break;
@@ -154,13 +129,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_btearoff(Value != 0);
 			break;
@@ -169,25 +138,18 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			TEnumAsByte<ENetRole> Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
 
 			Update.set_field_remoterole(uint32_t(Value));
 			break;
 		}
 		case 5: // field_owner
 		{
-			AActor* Value = nullptr;
+			AActor* Value;
 			check(Property->ElementSize == sizeof(Value));
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<AActor* const*>(Data));
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
-			FNetworkGUID NetGUID;
-			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
 			Update.set_field_owner(UObjectRef);
 			break;
@@ -196,13 +158,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			FRepMovement Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<const FRepMovement*>(Data));
 
 			TArray<uint8> ValueData;
 			FMemoryWriter ValueDataWriter(ValueData);
@@ -213,12 +169,11 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		}
 		case 7: // field_attachmentreplication_attachparent
 		{
-			AActor* Value = nullptr;
+			AActor* Value;
 			check(Property->ElementSize == sizeof(Value));
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<AActor* const*>(Data));
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
-			FNetworkGUID NetGUID;
-			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
 			Update.set_field_attachmentreplication_attachparent(UObjectRef);
 			break;
@@ -227,13 +182,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			FVector_NetQuantize100 Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
 			Update.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
@@ -242,13 +191,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			FVector_NetQuantize100 Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
 			Update.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
@@ -257,13 +200,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			FRotator Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<const FRotator*>(Data));
 
 			Update.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
 			break;
@@ -272,19 +209,18 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			FName Value;
 			check(Property->ElementSize == sizeof(Value));
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<const FName*>(Data));
 
 			Update.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
 			break;
 		}
 		case 12: // field_attachmentreplication_attachcomponent
 		{
-			USceneComponent* Value = nullptr;
+			USceneComponent* Value;
 			check(Property->ElementSize == sizeof(Value));
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<USceneComponent* const*>(Data));
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
-			FNetworkGUID NetGUID;
-			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
 			Update.set_field_attachmentreplication_attachcomponent(UObjectRef);
 			break;
@@ -293,13 +229,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			TEnumAsByte<ENetRole> Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
 
 			Update.set_field_role(uint32_t(Value));
 			break;
@@ -308,49 +238,40 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(FArchive& Reader, int32 H
 		{
 			uint8 Value;
 			check(Property->ElementSize == sizeof(Value));
-			//HACK:
-			// Doing this temporarily just to get to properties after RemoteRole without corrupting the archive.
-			// This needs to be solved at a more fundamental level.
-			uint32 NumBits = 0;
-			Reader.SerializeIntPacked(NumBits);
-			//END-HACK
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_bcanbedamaged(Value != 0);
 			break;
 		}
 		case 15: // field_instigator
 		{
-			APawn* Value = nullptr;
+			APawn* Value;
 			check(Property->ElementSize == sizeof(Value));
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<APawn* const*>(Data));
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
-			FNetworkGUID NetGUID;
-			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
 			Update.set_field_instigator(UObjectRef);
 			break;
 		}
 		case 16: // field_pawn
 		{
-			APawn* Value = nullptr;
+			APawn* Value;
 			check(Property->ElementSize == sizeof(Value));
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<APawn* const*>(Data));
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
-			FNetworkGUID NetGUID;
-			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
 			Update.set_field_pawn(UObjectRef);
 			break;
 		}
 		case 17: // field_playerstate
 		{
-			APlayerState* Value = nullptr;
+			APlayerState* Value;
 			check(Property->ElementSize == sizeof(Value));
-			Property->NetSerializeItem(Reader, PackageMap, &Value);
+			Value = *(reinterpret_cast<APlayerState* const*>(Data));
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
-			FNetworkGUID NetGUID;
-			// Note that NetGUID is not connected to anything right now, so the serialization won't work. We'll connect in the non-bunch branch.
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
 			Update.set_field_playerstate(UObjectRef);
 			break;
@@ -776,7 +697,7 @@ worker::ComponentId FSpatialTypeBinding_PlayerController::GetReplicatedGroupComp
 	}
 }
 
-void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FInBunch* BunchPtr, const worker::EntityId& EntityId) const
+void FSpatialTypeBinding_PlayerController::SendComponentUpdates(const TArray<uint16>& Changed, const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const
 {
 	// Build SpatialOS updates.
 	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update SingleClientUpdate;
@@ -784,29 +705,28 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FInBunch* BunchP
 	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update MultiClientUpdate;
 	bool MultiClientUpdateChanged = false;
 
-	// Read bunch and build up SpatialOS component updates.
+	// Build up SpatialOS component updates.
 	auto& PropertyMap = GetHandlePropertyMap_PlayerController();
-	FBunchReader BunchReader(BunchPtr);
-	FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
+	FChangelistIterator ChangelistIterator(Changed, 0);
+	FRepHandleIterator HandleIterator(ChangelistIterator, Cmds, BaseHandleToCmdIndex, 0, 1, 0, Cmds.Num() - 1);
+	while (HandleIterator.NextHandle())
 	{
-		// TODO: We can't parse UObjects or FNames here as we have no package map.
-		auto& Data = PropertyMap[Handle];
-		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
-		
-		switch (GetGroupFromCondition(Data.Condition))
+		const FRepLayoutCmd& Cmd = Cmds[HandleIterator.CmdIndex];
+		const uint8* Data = SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
+		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
+		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
+		switch (GetGroupFromCondition(PropertyMapData.Condition))
 		{
 		case GROUP_SingleClient:
-			ApplyUpdateToSpatial_SingleClient_PlayerController(Reader, Handle, Property, PackageMap, SingleClientUpdate);
+			ApplyUpdateToSpatial_SingleClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, SingleClientUpdate);
 			SingleClientUpdateChanged = true;
 			break;
 		case GROUP_MultiClient:
-			ApplyUpdateToSpatial_MultiClient_PlayerController(Reader, Handle, Property, PackageMap, MultiClientUpdate);
+			ApplyUpdateToSpatial_MultiClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, MultiClientUpdate);
 			MultiClientUpdateChanged = true;
 			break;
 		}
-		return true;
-	};
-	BunchReader.Parse(true, PropertyMap, RepDataHandler);
+	}
 
 	// Send SpatialOS update.
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();

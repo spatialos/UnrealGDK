@@ -4,7 +4,9 @@
 #include "SpatialNetDriver.h"
 #include "SpatialPackageMapClient.h"
 #include "EntityRegistry.h"
+#include "Engine/DemoNetDriver.h"
 #include "Net/DataBunch.h"
+#include "Net/NetworkProfiler.h"
 #include <improbable/worker.h>
 #include <improbable/standard_library.h>
 #include <improbable/player/player.h>
@@ -128,23 +130,6 @@ void USpatialActorChannel::AppendMustBeMappedGuids(FOutBunch * bunch)
 	Super::AppendMustBeMappedGuids(bunch);
 }
 
-FPacketIdRange USpatialActorChannel::SendBunch(FOutBunch * BunchPtr, bool bMerge)
-{
-	// Run default actor channel code.
-	// TODO(David) I believe that ReturnValue will always contain a PacketId which has the same First and Last value
-	// if we don't break up bunches, which in our case we wont as there's no need to at this layer.
-	auto ReturnValue = UActorChannel::SendBunch(BunchPtr, bMerge);
-
-	// Pass bunch to update interop.
-	USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Connection->Driver)->GetSpatialUpdateInterop();
-	if (!UpdateInterop)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Update Interop object not set up. This should never happen"));
-	}
-	UpdateInterop->SendSpatialUpdate(this, BunchPtr);
-	return ReturnValue;
-}
-
 void USpatialActorChannel::StartBecomingDormant()
 {
 	UActorChannel::StartBecomingDormant();
@@ -170,20 +155,268 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 	return UActorChannel::CleanUp(bForDestroy);
 }
 
+//Copy-pasted from DataChannel.cpp :(
+//todo-giray: Ask Epic to move it to a header.
+// Helper class to downgrade a non owner of an actor to simulated while replicating
+class FScopedRoleDowngrade
+{
+public:
+	FScopedRoleDowngrade(AActor* InActor, const FReplicationFlags RepFlags) : Actor(InActor), ActualRemoteRole(Actor->GetRemoteRole())
+	{
+		// If this is actor is autonomous, and this connection doesn't own it, we'll downgrade to simulated during the scope of replication
+		if (ActualRemoteRole == ROLE_AutonomousProxy)
+		{
+			if (!RepFlags.bNetOwner)
+			{
+				Actor->SetAutonomousProxy(false, false);
+			}
+		}
+	}
+
+	~FScopedRoleDowngrade()
+	{
+		// Upgrade role back to autonomous proxy if needed
+		if (Actor->GetRemoteRole() != ActualRemoteRole)
+		{
+			Actor->SetReplicates(ActualRemoteRole != ROLE_None);
+
+			if (ActualRemoteRole == ROLE_AutonomousProxy)
+			{
+				Actor->SetAutonomousProxy(true, false);
+			}
+		}
+	}
+
+private:
+	AActor*			Actor;
+	const ENetRole	ActualRemoteRole;
+};
+////
+
+//This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
+// We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
+void UpdateChangelistHistory(FRepState * RepState)
+{
+	check(RepState->HistoryEnd >= RepState->HistoryStart);
+
+	const int32 HistoryCount = RepState->HistoryEnd - RepState->HistoryStart;
+	check(HistoryCount < FRepState::MAX_CHANGE_HISTORY);
+
+	for (int32 i = RepState->HistoryStart; i < RepState->HistoryEnd; i++)
+	{
+		const int32 HistoryIndex = i % FRepState::MAX_CHANGE_HISTORY;
+
+		FRepChangedHistory & HistoryItem = RepState->ChangeHistory[HistoryIndex];
+
+		check(HistoryItem.Changed.Num() > 0);		// All active history items should contain a change list
+
+		HistoryItem.Changed.Empty();
+		HistoryItem.OutPacketIdRange = FPacketIdRange();
+		RepState->HistoryStart++;
+	}
+
+	// Remove any tiling in the history markers to keep them from wrapping over time
+	const int32 NewHistoryCount = RepState->HistoryEnd - RepState->HistoryStart;
+
+	check(NewHistoryCount <= FRepState::MAX_CHANGE_HISTORY);
+
+	RepState->HistoryStart = RepState->HistoryStart % FRepState::MAX_CHANGE_HISTORY;
+	RepState->HistoryEnd = RepState->HistoryStart + NewHistoryCount;
+}
+
 bool USpatialActorChannel::ReplicateActor()
 {
 // filter everything else temporarily to make it easier to debug for now
 	if (!Actor->IsA(APlayerController::StaticClass()))
 		return false;
-	if ((OpenPacketId.First == INDEX_NONE || Connection->bResendAllDataSinceOpen) && OpenedLocally)
+
+	check(Actor);
+	check(!Closing);
+	check(Connection);
+	check(Connection->PackageMap);
+
+	const UWorld* const ActorWorld = Actor->GetWorld();
+
+	// The package map shouldn't have any carry over guids
+	if (CastChecked<UPackageMapClient>(Connection->PackageMap)->GetMustBeMappedGuidsInLastBunch().Num() != 0)
 	{
-		bSendingInitialBunch = true;
+		UE_LOG(LogNet, Warning, TEXT("ReplicateActor: PackageMap->GetMustBeMappedGuidsInLastBunch().Num() != 0: %i"), CastChecked<UPackageMapClient>(Connection->PackageMap)->GetMustBeMappedGuidsInLastBunch().Num());
 	}
+
+	// Time how long it takes to replicate this particular actor
+	STAT(FScopeCycleCounterUObject FunctionScope(Actor));
+
+	// Create an outgoing bunch, and skip this actor if the channel is saturated.
+	FOutBunch Bunch(this, 0);
+	if (Bunch.IsError())
+	{
+		return false;
+	}
+
+	bIsReplicatingActor = true;
+	FReplicationFlags RepFlags;
+
+	// Send initial stuff.
+	if (OpenPacketId.First != INDEX_NONE && !Connection->bResendAllDataSinceOpen)
+	{
+		if (!SpawnAcked && OpenAcked)
+		{
+			// After receiving ack to the spawn, force refresh of all subsequent unreliable packets, which could
+			// have been lost due to ordering problems. Note: We could avoid this by doing it in FActorChannel::ReceivedAck,
+			// and avoid dirtying properties whose acks were received *after* the spawn-ack (tricky ordering issues though).
+			SpawnAcked = 1;
+			for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
+			{
+				RepComp.Value()->ForceRefreshUnreliableProperties();
+			}
+		}
+	}
+	else
+	{
+		RepFlags.bNetInitial = true;
+		Bunch.bClose = Actor->bNetTemporary;
+		Bunch.bReliable = true; // Net temporary sends need to be reliable as well to force them to retry
+	}
+
+	// Owned by connection's player?
+	//todo-giray: We need to figure out how we're going to approach connection ownership.
+	UNetConnection* OwningConnection = Actor->GetNetConnection();
+	if (OwningConnection == Connection || (OwningConnection != NULL && OwningConnection->IsA(UChildConnection::StaticClass()) && ((UChildConnection*)OwningConnection)->Parent == Connection))
+	{
+		RepFlags.bNetOwner = true;
+	}
+	else
+	{
+		RepFlags.bNetOwner = false;
+	}
+
+	// ----------------------------------------------------------
+	// If initial, send init data.
+	// ----------------------------------------------------------
+	if (RepFlags.bNetInitial && OpenedLocally)
+	{
+		Connection->PackageMap->SerializeNewActor(Bunch, this, Actor);
 	
-	bool bResult = Super::ReplicateActor();
-	bSendingInitialBunch = false;
-	
-	return bResult;
+		Actor->OnSerializeNewActor(Bunch);
+	}
+
+	// Possibly downgrade role of actor if this connection doesn't own it
+	FScopedRoleDowngrade ScopedRoleDowngrade(Actor, RepFlags);
+
+	RepFlags.bNetSimulated = (Actor->GetRemoteRole() == ROLE_SimulatedProxy);
+	RepFlags.bRepPhysics = Actor->ReplicatedMovement.bRepPhysics;
+	RepFlags.bReplay = ActorWorld && (ActorWorld->DemoNetDriver == Connection->GetDriver());
+	RepFlags.bNetInitial = RepFlags.bNetInitial;
+
+	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
+
+	FMemMark	MemMark(FMemStack::Get());	// The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in ::PostSendBunch. we free it below
+
+											// ----------------------------------------------------------
+											// Replicate Actor and Component properties and RPCs
+											// ----------------------------------------------------------
+
+	bool WroteSomethingImportant = false;
+
+	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame, ActorReplicator->RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
+
+	const int32 PossibleNewHistoryIndex = ActorReplicator->RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
+
+	FRepChangedHistory& PossibleNewHistoryItem = ActorReplicator->RepState->ChangeHistory[PossibleNewHistoryIndex];
+
+	TArray<uint16>& Changed = PossibleNewHistoryItem.Changed;
+
+	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
+	// Gather all change lists that are new since we last looked, and merge them all together into a single CL
+	for (int32 i = ActorReplicator->RepState->LastChangelistIndex; i < ChangelistState->HistoryEnd; i++)
+	{
+		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
+
+		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
+
+		TArray<uint16> Temp = Changed;
+		ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, Changed);
+	}
+
+	const bool bCompareIndexSame = ActorReplicator->RepState->LastCompareIndex == ChangelistState->CompareIndex;
+	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
+
+	// We can early out if we know for sure there are no new changelists to send
+	if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
+	{
+		UpdateChangelistHistory(ActorReplicator->RepState);
+		return false;
+	}
+
+	//todo-giray: We currently don't take replication of custom delta properties into account here because it doesn't use changelists.
+	// see ActorReplicator->ReplicateCustomDeltaProperties().
+
+	if (Changed.Num() > 0)
+	{
+		USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Connection->Driver)->GetSpatialUpdateInterop();
+		check(UpdateInterop);
+		UpdateInterop->SendSpatialUpdate(this, Changed);
+		WroteSomethingImportant = true;
+		ActorReplicator->RepState->HistoryEnd++;
+		UpdateChangelistHistory(ActorReplicator->RepState);
+	}
+
+	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+	//todo-giray: The rest of this function is taken from Unreal's own implementation. It is mostly redundant in our case,
+	// but keeping it here for now to give us a chance to investigate if we need to write our own implementation for any of
+	// any code block below.
+
+	/*
+	// The Actor
+	WroteSomethingImportant |= ActorReplicator->ReplicateProperties(Bunch, RepFlags);
+
+	// The SubObjects
+	WroteSomethingImportant |= Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
+*/
+
+	// Look for deleted subobjects
+	for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
+	{
+		if (!RepComp.Key().IsValid())
+		{
+			// Write a deletion content header:
+			WriteContentBlockForSubObjectDelete(Bunch, RepComp.Value()->ObjectNetGUID);
+
+			WroteSomethingImportant = true;
+			Bunch.bReliable = true;
+
+			RepComp.Value()->CleanUp();
+			RepComp.RemoveCurrent();
+		}
+	}
+
+	// -----------------------------
+	// Send if necessary
+	// -----------------------------
+	bool SentBunch = false;
+	if (WroteSomethingImportant)
+	{
+		FPacketIdRange PacketRange = SendBunch(&Bunch, 1);
+
+		for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
+		{
+			RepComp.Value()->PostSendBunch(PacketRange, Bunch.bReliable);
+		}
+		SentBunch = true;
+	}
+
+	PendingObjKeys.Empty();
+
+	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
+	LastUpdateTime = Connection->Driver->Time;
+
+	MemMark.Pop();
+
+	bIsReplicatingActor = false;
+
+	bForceCompareProperties = false;		// Only do this once per frame when set
+
+	return WroteSomethingImportant;
 }
 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
@@ -255,9 +488,11 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 
 					auto Entity = unreal::FEntityBuilder::Begin()
 						.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Actor->GetActorLocation()), UnrealWorkerWritePermission)
-						.AddMetadataComponent(Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
+						.AddMetadataComponent(Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
 						.SetPersistence(true)
 						.SetReadAcl(AnyWorkerReadRequirement)
+						// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
+						//todo-giray: Remove once we're using proper (generated) entity templates here.
 						.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, UnrealClientWritePermission)
 						.Build();
 

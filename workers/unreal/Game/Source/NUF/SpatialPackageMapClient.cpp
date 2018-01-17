@@ -172,12 +172,6 @@ void USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntityId Entit
 bool USpatialPackageMapClient::SerializeNewActor(FArchive & Ar, UActorChannel * Channel, AActor *& Actor)
 {
 	bool bResult = Super::SerializeNewActor(Ar, Channel, Actor);
-	USpatialActorChannel* SpatialChannel = Cast<USpatialActorChannel>(Channel);
-	FOutBunch* OutBunch = static_cast<FOutBunch*>(&Ar);
-
-	if (Ar.IsSaving() && SpatialChannel)
-	{
-		SpatialChannel->IncrementalUpdateMark.Init(*OutBunch);
-	}
+	//will remove the override if remains unused.
 	return bResult;
 }
