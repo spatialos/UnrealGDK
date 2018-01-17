@@ -356,7 +356,7 @@ bool USpatialActorChannel::ReplicateActor()
 		USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Connection->Driver)->GetSpatialUpdateInterop();
 		check(UpdateInterop);
 		UpdateInterop->SendSpatialUpdate(this, Changed);
-		SentBunch = true;
+		WroteSomethingImportant = true;
 		ActorReplicator->RepState->HistoryEnd++;
 		UpdateChangelistHistory(ActorReplicator->RepState);
 	}
@@ -487,7 +487,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 					WorkerRequirementSet AnyWorkerReadRequirement{{UnrealWorkerAttributeSet, UnrealClientAttributeSet}};
 
 					auto Entity = unreal::FEntityBuilder::Begin()
-						.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Loc), UnrealWorkerWritePermission)
+						.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Actor->GetActorLocation()), UnrealWorkerWritePermission)
 						.AddMetadataComponent(Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
 						.SetPersistence(true)
 						.SetReadAcl(AnyWorkerReadRequirement)
