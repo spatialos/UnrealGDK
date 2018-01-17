@@ -50,6 +50,7 @@ public:
 									  const TArray<FRepLayoutCmd>& Cmds,
 									  const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex,
 									  const worker::EntityId& EntityId) const = 0;
+	virtual worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata) const = 0;
 
 protected:
 	USpatialUpdateInterop* UpdateInterop;

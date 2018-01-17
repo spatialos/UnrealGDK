@@ -296,7 +296,7 @@ bool USpatialActorChannel::ReplicateActor()
 	if (RepFlags.bNetInitial && OpenedLocally)
 	{
 		Connection->PackageMap->SerializeNewActor(Bunch, this, Actor);
-		
+	
 		Actor->OnSerializeNewActor(Bunch);
 	}
 
@@ -462,39 +462,30 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 			TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
 			if (PinnedConnection.IsValid())
 			{
-				FVector Loc = GetActor()->GetActorLocation();
-				FStringAssetReference ActorClassRef(GetActor()->GetClass());
+				USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
+				checkf(Driver->GetSpatialUpdateInterop(), TEXT("Spatial Update Interop is not initialised"));
+				const FSpatialTypeBinding* Binding = Driver->GetSpatialUpdateInterop()->GetTypeBindingByClass(Actor->GetClass());
+
+				FStringAssetReference ActorClassRef(Actor->GetClass());
 				FString PathStr = ActorClassRef.ToString();
 
 				UE_LOG(LogTemp, Log, TEXT("Creating entity for actor with path: %s on ActorChannel: %s"), *PathStr, *GetName());
 
-				WorkerAttributeSet UnrealWorkerAttributeSet{ { worker::List<std::string>{"UnrealWorker"} } };
-				WorkerAttributeSet UnrealClientAttributeSet{ { worker::List<std::string>{"UnrealClient"} } };
-
-				// UnrealWorker write authority, any worker read authority
-				WorkerRequirementSet UnrealWorkerWritePermission{ { UnrealWorkerAttributeSet } };
-				WorkerRequirementSet UnrealClientWritePermission{ { UnrealClientAttributeSet } };
-				WorkerRequirementSet AnyWorkerReadRequirement{ { UnrealWorkerAttributeSet, UnrealClientAttributeSet } };
-
-				// Temporary special case hack for player controller. We should be auto-generating these types instead.
-				if (Actor->IsA(APlayerController::StaticClass()))
+				if (Binding)
 				{
-					auto Entity = unreal::FEntityBuilder::Begin()
-						.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Loc), UnrealWorkerWritePermission)
-						.AddMetadataComponent(Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
-						.SetPersistence(true)
-						.SetReadAcl(AnyWorkerReadRequirement)
-						.AddComponent < improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>(improbable::unreal::UnrealPlayerControllerSingleClientReplicatedDataData{}, UnrealWorkerWritePermission)
-						.AddComponent < improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>(improbable::unreal::UnrealPlayerControllerMultiClientReplicatedDataData{}, UnrealWorkerWritePermission)
-						// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
-						//todo-giray: Remove once we're using proper (generated) entity templates here.
-						.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, UnrealClientWritePermission)
-						.Build();
-
+					auto Entity = Binding->CreateActorEntity(Actor->GetActorLocation(), PathStr);
 					CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Op.EntityId, 0);
 				}
 				else
 				{
+					WorkerAttributeSet UnrealWorkerAttributeSet{{worker::List<std::string>{"UnrealWorker"}}};
+					WorkerAttributeSet UnrealClientAttributeSet{{worker::List<std::string>{"UnrealClient"}}};
+
+					// UnrealWorker write authority, any worker read authority
+					WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet}};
+					WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
+					WorkerRequirementSet AnyWorkerReadRequirement{{UnrealWorkerAttributeSet, UnrealClientAttributeSet}};
+
 					auto Entity = unreal::FEntityBuilder::Begin()
 						.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Loc), UnrealWorkerWritePermission)
 						.AddMetadataComponent(Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
