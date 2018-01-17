@@ -156,6 +156,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 }
 
 //Copy-pasted from DataChannel.cpp :(
+//todo-giray: Ask Epic to move it to a header.
 // Helper class to downgrade a non owner of an actor to simulated while replicating
 class FScopedRoleDowngrade
 {
@@ -323,7 +324,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 	FRepChangedHistory& PossibleNewHistoryItem = ActorReplicator->RepState->ChangeHistory[PossibleNewHistoryIndex];
 
-	TArray< uint16 >& Changed = PossibleNewHistoryItem.Changed;
+	TArray<uint16>& Changed = PossibleNewHistoryItem.Changed;
 
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	// Gather all change lists that are new since we last looked, and merge them all together into a single CL
@@ -333,7 +334,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
 
-		TArray< uint16 > Temp = Changed;
+		TArray<uint16> Temp = Changed;
 		ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, Changed);
 	}
 
@@ -360,6 +361,10 @@ bool USpatialActorChannel::ReplicateActor()
 	}
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+	//todo-giray: The rest of this function is taken from Unreal's own implementation. It is mostly redundant in our case,
+	// but keeping it here for now to give us a chance to investigate if we need to write our own implementation for any of
+	// any code block below.
+
 	/*
 	// The Actor
 	WroteSomethingImportant |= ActorReplicator->ReplicateProperties(Bunch, RepFlags);
