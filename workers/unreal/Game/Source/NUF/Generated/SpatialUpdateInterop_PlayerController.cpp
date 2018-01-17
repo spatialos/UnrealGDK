@@ -142,8 +142,9 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		}
 		case 5: // field_owner
 		{
-			UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(Property);
-			const UObject* Value = ObjProperty->GetObjectPropertyValue(Data);
+			AActor* Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<AActor* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
@@ -165,8 +166,9 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		}
 		case 7: // field_attachmentreplication_attachparent
 		{
-			UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(Property);
-			const UObject* Value = ObjProperty->GetObjectPropertyValue(Data);
+			AActor* Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<AActor* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
@@ -211,8 +213,9 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		}
 		case 12: // field_attachmentreplication_attachcomponent
 		{
-			UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(Property);
-			const UObject* Value = ObjProperty->GetObjectPropertyValue(Data);
+			USceneComponent* Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<USceneComponent* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
@@ -239,8 +242,9 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		}
 		case 15: // field_instigator
 		{
-			UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(Property);
-			const UObject* Value = ObjProperty->GetObjectPropertyValue(Data);
+			APawn* Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<APawn* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
@@ -249,8 +253,9 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		}
 		case 16: // field_pawn
 		{
-			UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(Property);
-			const UObject* Value = ObjProperty->GetObjectPropertyValue(Data);
+			APawn* Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<APawn* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
@@ -259,8 +264,9 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		}
 		case 17: // field_playerstate
 		{
-			UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(Property);
-			const UObject* Value = ObjProperty->GetObjectPropertyValue(Data);
+			APlayerState* Value;
+			check(Property->ElementSize == sizeof(Value));
+			Value = *(reinterpret_cast<APlayerState* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);

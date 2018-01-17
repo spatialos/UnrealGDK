@@ -904,16 +904,16 @@ namespace
 					FString PropertyValueName = TEXT("Value");
 					FString PropertyValueCppType = Property->GetCPPType();
 					FString PropertyName = TEXT("Property");
+					SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
+					SourceWriter.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
+					//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
 					if (Property->IsA(UObjectPropertyBase::StaticClass()))
 					{
-						SourceWriter.Print(FString::Printf(TEXT("UObjectPropertyBase* ObjProperty = Cast<UObjectPropertyBase>(%s);"), *PropertyName));
-						SourceWriter.Print(FString::Printf(TEXT("const UObject* %s = ObjProperty->GetObjectPropertyValue(Data);"), *PropertyValueName));
+						SourceWriter.Print(FString::Printf(TEXT("%s = *(reinterpret_cast<%s const*>(Data));"), *PropertyValueName, *PropertyValueCppType));
 						SourceWriter.Print(FString::Printf(TEXT("FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(%s);"), *PropertyValueName));
 					}
 					else
 					{
-						SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
-					SourceWriter.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
 						SourceWriter.Print(FString::Printf(TEXT("%s = *(reinterpret_cast<const %s*>(Data));"), *PropertyValueName, *PropertyValueCppType));
 					}
 					SourceWriter.Print();
