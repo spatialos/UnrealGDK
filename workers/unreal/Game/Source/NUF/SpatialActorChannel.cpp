@@ -356,6 +356,7 @@ bool USpatialActorChannel::ReplicateActor()
 		USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Connection->Driver)->GetSpatialUpdateInterop();
 		check(UpdateInterop);
 		UpdateInterop->SendSpatialUpdate(this, Changed);
+		SentBunch = true;
 		ActorReplicator->RepState->HistoryEnd++;
 		UpdateChangelistHistory(ActorReplicator->RepState);
 	}
@@ -372,19 +373,6 @@ bool USpatialActorChannel::ReplicateActor()
 	// The SubObjects
 	WroteSomethingImportant |= Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 */
-	if (Connection->bResendAllDataSinceOpen)
-	{
-		if (WroteSomethingImportant)
-		{
-			SendBunch(&Bunch, 1);
-		}
-
-		MemMark.Pop();
-
-		bIsReplicatingActor = false;
-
-		return WroteSomethingImportant;
-	}
 
 	// Look for deleted subobjects
 	for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
@@ -428,7 +416,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 	bForceCompareProperties = false;		// Only do this once per frame when set
 
-	return SentBunch;
+	return WroteSomethingImportant;
 }
 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
