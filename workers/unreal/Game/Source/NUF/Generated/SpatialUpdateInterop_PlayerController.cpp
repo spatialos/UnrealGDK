@@ -7,6 +7,9 @@
 #include "SpatialActorChannel.h"
 #include "SpatialPackageMapClient.h"
 #include "Utils/BunchReader.h"
+#include "EntityBuilder.h"
+// TODO(David): Remove this once RPCs are merged, as we will no longer need a placeholder component.
+#include "improbable/player/player.h"
 
 namespace {
 
@@ -787,7 +790,6 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FInBunch* BunchP
 	FBunchReader::RepDataHandler RepDataHandler = [&](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
 	{
 		// TODO: We can't parse UObjects or FNames here as we have no package map.
-		
 		auto& Data = PropertyMap[Handle];
 		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), Handle, *Property->GetName());
 		
@@ -816,4 +818,27 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(FInBunch* BunchP
 	{
 		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>(EntityId, MultiClientUpdate);
 	}
+}
+
+worker::Entity FSpatialTypeBinding_PlayerController::CreateActorEntity(const FVector& Position, const FString& Metadata) const {
+	
+	const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
+	
+	improbable::WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
+	improbable::WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
+	
+	improbable::WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet}};
+	improbable::WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
+	improbable::WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
+	
+	return improbable::unreal::FEntityBuilder::Begin()
+		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, UnrealWorkerWritePermission)
+		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
+		.SetPersistence(true)
+		.SetReadAcl(AnyWorkerReadPermission)
+		.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClient::Data{}, UnrealClientWritePermission)
+		.AddComponent<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>(improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Data{}, UnrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>(improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Data{}, UnrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealPlayerControllerCompleteData>(improbable::unreal::UnrealPlayerControllerCompleteData::Data{}, UnrealWorkerWritePermission)
+		.Build();
 }
