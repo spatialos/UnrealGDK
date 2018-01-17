@@ -5,6 +5,9 @@
 #include "SpatialOS.h"
 #include "Engine.h"
 #include "SpatialActorChannel.h"
+#include "EntityBuilder.h"
+// TODO(David): Remove this once RPCs are merged, as we will no longer need a placeholder component.
+#include "improbable/player/player.h"
 #include "SpatialPackageMapClient.h"
 
 namespace {
@@ -1481,4 +1484,27 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(const TArray<uint16>& C
 	{
 		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(EntityId, MultiClientUpdate);
 	}
+}
+
+worker::Entity FSpatialTypeBinding_Character::CreateActorEntity(const FVector& Position, const FString& Metadata) const {
+	
+	const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
+	
+	improbable::WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
+	improbable::WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
+	
+	improbable::WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet}};
+	improbable::WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
+	improbable::WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
+	
+	return improbable::unreal::FEntityBuilder::Begin()
+		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, UnrealWorkerWritePermission)
+		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
+		.SetPersistence(true)
+		.SetReadAcl(AnyWorkerReadPermission)
+		.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClient::Data{}, UnrealClientWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data{}, UnrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data{}, UnrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, UnrealWorkerWritePermission)
+		.Build();
 }
