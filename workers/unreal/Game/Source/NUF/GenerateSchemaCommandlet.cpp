@@ -893,8 +893,8 @@ namespace
 			SourceWriter.Indent();
 			if (Layout.ReplicatedProperties[Group].Num() > 0)
 			{
-				SourceWriter.Print(TEXT("USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);\n"));
-				SourceWriter.Print(TEXT("check(SpatialPMC);\n"));
+				SourceWriter.Print(TEXT("USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);"));
+				SourceWriter.Print(TEXT("check(SpatialPMC);"));
 				SourceWriter.Print(TEXT("switch (Handle)\n{"));
 				SourceWriter.Indent();
 				for (auto& RepProp : Layout.ReplicatedProperties[Group])
@@ -951,8 +951,8 @@ namespace
 			SourceWriter.Print(TEXT("return;"));
 			SourceWriter.Outdent();
 			SourceWriter.Print(TEXT("}"));
-			SourceWriter.Print(TEXT("USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);\n"));
-			SourceWriter.Print(TEXT("check(SpatialPMC);\n"));
+			SourceWriter.Print(TEXT("USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);"));
+			SourceWriter.Print(TEXT("check(SpatialPMC);"));
 			SourceWriter.Print(TEXT("ConditionMapFilter ConditionMap(ActorChannel);"));
 			for (auto& RepProp : Layout.ReplicatedProperties[Group])
 			{

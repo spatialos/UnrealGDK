@@ -15,9 +15,7 @@ namespace {
 void ApplyUpdateToSpatial_SingleClient_PlayerController(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update)
 {
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	
 	check(SpatialPMC);
-	
 	switch (Handle)
 	{
 		case 18: // field_targetviewrotation
@@ -54,9 +52,7 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 		return;
 	}
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	
 	check(SpatialPMC);
-	
 	ConditionMapFilter ConditionMap(ActorChannel);
 	if (!Op.Update.field_targetviewrotation().empty())
 	{
@@ -106,9 +102,7 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update)
 {
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	
 	check(SpatialPMC);
-	
 	switch (Handle)
 	{
 		case 1: // field_bhidden
@@ -296,9 +290,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 		return;
 	}
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	
 	check(SpatialPMC);
-	
 	ConditionMapFilter ConditionMap(ActorChannel);
 	if (!Op.Update.field_bhidden().empty())
 	{

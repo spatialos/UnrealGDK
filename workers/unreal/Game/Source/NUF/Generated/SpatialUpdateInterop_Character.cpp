@@ -26,9 +26,7 @@ void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* Upda
 		return;
 	}
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	
 	check(SpatialPMC);
-	
 	ConditionMapFilter ConditionMap(ActorChannel);
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
@@ -36,9 +34,7 @@ void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* Upda
 void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update)
 {
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	
 	check(SpatialPMC);
-	
 	switch (Handle)
 	{
 		case 1: // field_bhidden
@@ -482,9 +478,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 		return;
 	}
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	
 	check(SpatialPMC);
-	
 	ConditionMapFilter ConditionMap(ActorChannel);
 	if (!Op.Update.field_bhidden().empty())
 	{
