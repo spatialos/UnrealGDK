@@ -68,6 +68,7 @@ public:
 	void Tick(float DeltaTime);
 
 	USpatialActorChannel* GetClientActorChannel(const worker::EntityId& EntityId) const;
+	void AddClientActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel);
 
 	void RegisterInteropType(UClass* Class, TSharedPtr<FSpatialTypeBinding> Binding);
 	void UnregisterInteropType(UClass* Class);

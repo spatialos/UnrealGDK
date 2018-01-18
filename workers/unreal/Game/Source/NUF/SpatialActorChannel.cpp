@@ -226,10 +226,6 @@ void UpdateChangelistHistory(FRepState * RepState)
 
 bool USpatialActorChannel::ReplicateActor()
 {
-// filter everything else temporarily to make it easier to debug for now
-	if (!Actor->IsA(APlayerController::StaticClass()))
-		return false;
-
 	check(Actor);
 	check(!Closing);
 	check(Connection);

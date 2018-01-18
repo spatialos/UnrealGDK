@@ -55,6 +55,11 @@ USpatialActorChannel* USpatialUpdateInterop::GetClientActorChannel(const worker:
 	return *ActorChannelIt;
 }
 
+void USpatialUpdateInterop::AddClientActorChannel(const worker::EntityId & EntityId, USpatialActorChannel * Channel)
+{
+	EntityToClientActorChannel.Add(EntityId, Channel);
+}
+
 void USpatialUpdateInterop::RegisterInteropType(UClass* Class, TSharedPtr<FSpatialTypeBinding> Binding)
 {
 	Binding->Init(this, PackageMap);

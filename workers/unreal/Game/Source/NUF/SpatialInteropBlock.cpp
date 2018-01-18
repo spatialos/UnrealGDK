@@ -156,8 +156,8 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 					}
 					
 					check(Ch);
-					EntityToClientActorChannel.Add(EntityToSpawn, Ch);
-
+					Driver->GetSpatialUpdateInterop()->AddClientActorChannel(EntityToSpawn.ToSpatialEntityId(), Ch);
+					
 					PMC->ResolveEntityActor(EntityActor, EntityToSpawn);
 					Ch->SetChannelActor(EntityActor);
 					Driver->GetSpatialUpdateInterop()->SetComponentInterests(Ch, EntityToSpawn.ToSpatialEntityId());

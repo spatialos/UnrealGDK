@@ -15,9 +15,7 @@ namespace {
 void ApplyUpdateToSpatial_SingleClient_PlayerController(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update)
 {
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	
 	check(SpatialPMC);
-	
 	switch (Handle)
 	{
 		case 18: // field_targetviewrotation
@@ -53,6 +51,8 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 	{
 		return;
 	}
+	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
+	check(SpatialPMC);
 	ConditionMapFilter ConditionMap(ActorChannel);
 	if (!Op.Update.field_targetviewrotation().empty())
 	{
@@ -102,9 +102,7 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update)
 {
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	
 	check(SpatialPMC);
-	
 	switch (Handle)
 	{
 		case 1: // field_bhidden
@@ -291,6 +289,8 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 	{
 		return;
 	}
+	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
+	check(SpatialPMC);
 	ConditionMapFilter ConditionMap(ActorChannel);
 	if (!Op.Update.field_bhidden().empty())
 	{
@@ -377,12 +377,14 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 
-			AActor* Value;
+			improbable::unreal::UnrealObjectRef Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			// UNSUPPORTED ObjectProperty - Value *(Op.Update.field_owner().data());
+			Value = *(Op.Update.field_owner().data());
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(Value);
+			UObject* TargetObject = SpatialPMC->GetObjectFromNetGUID(NetGUID, true);
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &TargetObject);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
@@ -418,12 +420,14 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 
-			AActor* Value;
+			improbable::unreal::UnrealObjectRef Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			// UNSUPPORTED ObjectProperty - Value *(Op.Update.field_attachmentreplication_attachparent().data());
+			Value = *(Op.Update.field_attachmentreplication_attachparent().data());
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(Value);
+			UObject* TargetObject = SpatialPMC->GetObjectFromNetGUID(NetGUID, true);
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &TargetObject);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
@@ -517,12 +521,14 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 
-			USceneComponent* Value;
+			improbable::unreal::UnrealObjectRef Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			// UNSUPPORTED ObjectProperty - Value *(Op.Update.field_attachmentreplication_attachcomponent().data());
+			Value = *(Op.Update.field_attachmentreplication_attachcomponent().data());
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(Value);
+			UObject* TargetObject = SpatialPMC->GetObjectFromNetGUID(NetGUID, true);
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &TargetObject);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
@@ -575,12 +581,14 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 
-			APawn* Value;
+			improbable::unreal::UnrealObjectRef Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			// UNSUPPORTED ObjectProperty - Value *(Op.Update.field_instigator().data());
+			Value = *(Op.Update.field_instigator().data());
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(Value);
+			UObject* TargetObject = SpatialPMC->GetObjectFromNetGUID(NetGUID, true);
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &TargetObject);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
@@ -593,12 +601,14 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 
-			APawn* Value;
+			improbable::unreal::UnrealObjectRef Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			// UNSUPPORTED ObjectProperty - Value *(Op.Update.field_pawn().data());
+			Value = *(Op.Update.field_pawn().data());
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(Value);
+			UObject* TargetObject = SpatialPMC->GetObjectFromNetGUID(NetGUID, true);
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &TargetObject);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
@@ -611,12 +621,14 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 
-			APlayerState* Value;
+			improbable::unreal::UnrealObjectRef Value;
 			check(Data.Property->ElementSize == sizeof(Value));
 
-			// UNSUPPORTED ObjectProperty - Value *(Op.Update.field_playerstate().data());
+			Value = *(Op.Update.field_playerstate().data());
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(Value);
+			UObject* TargetObject = SpatialPMC->GetObjectFromNetGUID(NetGUID, true);
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &TargetObject);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
