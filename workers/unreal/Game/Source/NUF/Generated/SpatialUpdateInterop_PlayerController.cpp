@@ -287,6 +287,8 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 	FNetBitWriter OutputWriter(nullptr, 0); 
 	auto& HandleToPropertyMap = GetHandlePropertyMap_PlayerController();
 	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
+	check(SpatialPMC);
 	if (!ActorChannel)
 	{
 		return;
@@ -593,12 +595,11 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 		{
 			OutputWriter.SerializeIntPacked(Handle);
 
-			APawn* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
-
-			// UNSUPPORTED ObjectProperty - Value *(Op.Update.field_pawn().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			improbable::unreal::UnrealObjectRef ObjectRef = *(Op.Update.field_pawn().data());
+			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			UObject* TargetObject = SpatialPMC->GetObjectFromNetGUID(NetGUID, true);
+			
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &TargetObject);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}

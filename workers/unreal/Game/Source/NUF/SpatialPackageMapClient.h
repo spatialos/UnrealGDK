@@ -37,7 +37,8 @@ public:
 	void ResolveEntityActor(AActor* Actor, FEntityId EntityId);
 	virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel *Channel, class AActor*& Actor) override;
 
-	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID);
+	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
+	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
 };
 
 class NUF_API FSpatialNetGUIDCache : public FNetGUIDCache
@@ -50,9 +51,9 @@ public:
 
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor);
 	
-	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef);
-	improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID);
-	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId);
+	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
+	improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
+	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 private:
 	FNetworkGUID AssignNewNetGUID(const UObject* Object);
 

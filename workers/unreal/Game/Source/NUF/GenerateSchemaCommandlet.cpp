@@ -613,7 +613,9 @@ namespace
 		}
 		else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 		{
-			Writer.Print(FString::Printf(TEXT("// UNSUPPORTED ObjectProperty - %s %s;"), *PropertyValue, *SpatialValue));
+			Writer.Print(FString::Printf(TEXT("%s = %s;"), *PropertyValue, *SpatialValue));
+			Writer.Print(FString::Printf(TEXT("FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(ObjectRef);")));
+			Writer.Print(FString::Printf(TEXT("UObject* TargetObject = SpatialPMC->GetObjectFromNetGUID(NetGUID, true);")));
 		}
 		else if (Property->IsA(UNameProperty::StaticClass()))
 		{
@@ -949,6 +951,8 @@ namespace
 			SourceWriter.Print(TEXT("return;"));
 			SourceWriter.Outdent();
 			SourceWriter.Print(TEXT("}"));
+			SourceWriter.Print(TEXT("USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);\n"));
+			SourceWriter.Print(TEXT("check(SpatialPMC);\n"));
 			SourceWriter.Print(TEXT("ConditionMapFilter ConditionMap(ActorChannel);"));
 			for (auto& RepProp : Layout.ReplicatedProperties[Group])
 			{
@@ -970,17 +974,26 @@ namespace
 				// Write handle.
 				SourceWriter.Print(TEXT("OutputWriter.SerializeIntPacked(Handle);"));
 				SourceWriter.Print();
-
+				
 				// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
 				FString PropertyValueName = TEXT("Value");
-				FString PropertyValueCppType = Property->GetCPPType();
+				FString PropertyValueCppType = Property->IsA(UObjectPropertyBase::StaticClass()) ? 
+					TEXT("improbable::unreal::UnrealObjectRef") : Property->GetCPPType();
 				FString PropertyName = TEXT("Data.Property");
 				SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
 				SourceWriter.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
 				SourceWriter.Print();
 				GenerateSchemaToUnrealConversion(SourceWriter, TEXT("Op.Update"), RepProp.Entry.Chain, PropertyValueName, PropertyValueCppType);
 				SourceWriter.Print();
-				SourceWriter.Print(FString::Printf(TEXT("%s->NetSerializeItem(OutputWriter, PackageMap, &%s);"), *PropertyName, *PropertyValueName));
+				if (Property->IsA(UObjectPropertyBase::StaticClass()))
+				{
+					// In this case, We are not directly serializing what we received from SpatialOS
+					SourceWriter.Print(FString::Printf(TEXT("%s->NetSerializeItem(OutputWriter, PackageMap, &TargetObject);"), *PropertyName));
+				}
+				else
+				{
+					SourceWriter.Print(FString::Printf(TEXT("%s->NetSerializeItem(OutputWriter, PackageMap, &%s);"), *PropertyName, *PropertyValueName));
+				}
 				SourceWriter.Print(TEXT("UE_LOG(LogTemp, Log, TEXT(\"<- Handle: %d Property %s\"), Handle, *Data.Property->GetName());"));
 
 				// End condition map check block.

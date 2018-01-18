@@ -16,11 +16,18 @@ struct FCompareComponentNames
 };
 
 
-improbable::unreal::UnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromNetGUID(const FNetworkGUID & NetGUID)
+improbable::unreal::UnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromNetGUID(const FNetworkGUID & NetGUID) const
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	check(SpatialGuidCache);
 	return SpatialGuidCache->GetUnrealObjectRefFromNetGUID(NetGUID);
+}
+
+FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef & ObjectRef) const
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	check(SpatialGuidCache);
+	return SpatialGuidCache->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 }
 
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
@@ -107,28 +114,28 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	return NetGUID;
 }
 
-improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID)
+improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
 {
-	UnrealObjectRefWrapper* ObjRefWrapper = NetGUIDToUnrealObjectRef.Find(NetGUID);
+	const UnrealObjectRefWrapper* ObjRefWrapper = NetGUIDToUnrealObjectRef.Find(NetGUID);
 
 	// If not found, return entity id 0 as it's not a valid entity id.
 	return ObjRefWrapper ? ObjRefWrapper->ObjectRef : improbable::unreal::UnrealObjectRef{ 0, 0 };
 }
 
-FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef)
+FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const
 {
 	UnrealObjectRefWrapper ObjRefWrapper;
 	ObjRefWrapper.ObjectRef = ObjectRef;
-	FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRefWrapper);
+	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRefWrapper);
 	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
 }
 
-FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(const worker::EntityId& EntityId)
+FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const
 {
 	UnrealObjectRefWrapper ObjRefWrapper;
 	improbable::unreal::UnrealObjectRef ObjRef{ EntityId, 0 };
 	ObjRefWrapper.ObjectRef = ObjRef;
-	FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRefWrapper);
+	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRefWrapper);
 	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
 }
 

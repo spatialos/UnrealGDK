@@ -53,8 +53,6 @@ private:
 		TMap<FComponentIdentifier, UAddComponentOpWrapperBase*> ComponentsToAdd;
 	UPROPERTY()
 		TMap<FComponentIdentifier, USpatialOsComponent*> PendingUComponents;
-	UPROPERTY()
-	TMap<FEntityId, USpatialActorChannel*> EntityToClientActorChannel;
 
 	TSet<FComponentIdentifier> ComponentsToRemove;
 	TMap<FComponentIdentifier, worker::AuthorityChangeOp> ComponentAuthorities;
