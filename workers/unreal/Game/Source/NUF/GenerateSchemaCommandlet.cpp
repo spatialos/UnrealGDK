@@ -614,7 +614,7 @@ namespace
 		else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 		{
 			Writer.Print(FString::Printf(TEXT("%s = %s;"), *PropertyValue, *SpatialValue));
-			Writer.Print(FString::Printf(TEXT("FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(ObjectRef);")));
+			Writer.Print(FString::Printf(TEXT("FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(%s);"), *PropertyValue));
 			Writer.Print(FString::Printf(TEXT("UObject* TargetObject = SpatialPMC->GetObjectFromNetGUID(NetGUID, true);")));
 		}
 		else if (Property->IsA(UNameProperty::StaticClass()))
