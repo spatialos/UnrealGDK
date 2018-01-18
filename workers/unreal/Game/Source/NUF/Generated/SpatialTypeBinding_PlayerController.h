@@ -5,16 +5,16 @@
 
 #include <improbable/worker.h>
 #include <improbable/view.h>
-#include <unreal/generated/UnrealCharacter.h>
+#include <unreal/generated/UnrealPlayerController.h>
 #include <unreal/core_types.h>
 #include "SpatialHandlePropertyMap.h"
 #include "SpatialUpdateInterop.h"
 
-const RepHandlePropertyMap& GetHandlePropertyMap_Character();
 
-class FSpatialTypeBinding_Character : public FSpatialTypeBinding
+class FSpatialTypeBinding_PlayerController : public FSpatialTypeBinding
 {
 public:
+	static const RepHandlePropertyMap& GetHandlePropertyMap();
 	void BindToView() override;
 	void UnbindFromView() override;
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;

@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // Note that this file has been generated automatically
 
-#include "SpatialUpdateInterop_PlayerController.h"
+#include "SpatialTypeBinding_PlayerController.h"
 #include "SpatialOS.h"
 #include "Engine.h"
 #include "SpatialActorChannel.h"
@@ -45,7 +45,7 @@ void ApplyUpdateToSpatial_SingleClient_PlayerController(const uint8* RESTRICT Da
 void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>& Op)
 {
 	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = GetHandlePropertyMap_PlayerController();
+	auto& HandleToPropertyMap = FSpatialTypeBinding_PlayerController::GetHandlePropertyMap();
 	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
 	if (!ActorChannel)
 	{
@@ -283,7 +283,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>& Op)
 {
 	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = GetHandlePropertyMap_PlayerController();
+	auto& HandleToPropertyMap = FSpatialTypeBinding_PlayerController::GetHandlePropertyMap();
 	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
 	if (!ActorChannel)
 	{
@@ -636,7 +636,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 }
 } // ::
 
-const RepHandlePropertyMap& GetHandlePropertyMap_PlayerController()
+const RepHandlePropertyMap& FSpatialTypeBinding_PlayerController::GetHandlePropertyMap()
 {
 	static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;
 	if (HandleToPropertyMapData == nullptr)
@@ -718,7 +718,7 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(const TArray<uin
 	bool MultiClientUpdateChanged = false;
 
 	// Build up SpatialOS component updates.
-	auto& PropertyMap = GetHandlePropertyMap_PlayerController();
+	auto& PropertyMap = GetHandlePropertyMap();
 	FChangelistIterator ChangelistIterator(Changed, 0);
 	FRepHandleIterator HandleIterator(ChangelistIterator, Cmds, BaseHandleToCmdIndex, 0, 1, 0, Cmds.Num() - 1);
 	while (HandleIterator.NextHandle())

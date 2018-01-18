@@ -809,9 +809,6 @@ namespace
 		UClass* Class,
 		const FPropertyLayout& Layout)
 	{
-		FString HandlePropertyMapSignature = FString::Printf(
-			TEXT("const RepHandlePropertyMap& GetHandlePropertyMap_%s()"),
-			*Class->GetName());
 		TMap<EReplicatedPropertyGroup, FString> UnrealToSpatialSignatureByGroup;
 		TMap<EReplicatedPropertyGroup, FString> SpatialToUnrealSignatureByGroup;
 
@@ -831,7 +828,6 @@ namespace
 		HeaderWriter.Print(TEXT("#include \"SpatialHandlePropertyMap.h\""));
 		HeaderWriter.Print(TEXT("#include \"SpatialUpdateInterop.h\""));
 		HeaderWriter.Print();
-		HeaderWriter.Print(FString::Printf(TEXT("%s;"), *HandlePropertyMapSignature));
 
 		for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 		{
@@ -855,7 +851,8 @@ namespace
 		HeaderWriter.Print(TEXT("{"));
 		HeaderWriter.Indent();
 		HeaderWriter.Outdent().Print(TEXT("public:")).Indent();
-		HeaderWriter.Print(TEXT(R"""(void BindToView() override;
+		HeaderWriter.Print(TEXT(R"""(static const RepHandlePropertyMap& GetHandlePropertyMap();
+		void BindToView() override;
 		void UnbindFromView() override;
 		worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
 		void SendComponentUpdates(const TArray<uint16>& Changed,const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const override;
@@ -944,7 +941,7 @@ namespace
 			SourceWriter.Print(TEXT("{"));
 			SourceWriter.Indent();
 			SourceWriter.Print(TEXT("FNetBitWriter OutputWriter(nullptr, 0); "));
-			SourceWriter.Print(FString::Printf(TEXT("auto& HandleToPropertyMap = GetHandlePropertyMap_%s();"), *Class->GetName()));
+			SourceWriter.Print(FString::Printf(TEXT("auto& HandleToPropertyMap = FSpatialTypeBinding_%s::GetHandlePropertyMap();"), *Class->GetName()));
 			SourceWriter.Print(TEXT("USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);"));
 			SourceWriter.Print(TEXT("if (!ActorChannel)\n{"));
 			SourceWriter.Indent();
@@ -1012,7 +1009,7 @@ namespace
 
 		// Handle to Property map.
 		SourceWriter.Print();
-		SourceWriter.Print(FString::Printf(TEXT("%s"), *HandlePropertyMapSignature));
+		SourceWriter.Print(FString::Printf(TEXT("const RepHandlePropertyMap& FSpatialTypeBinding_%s::GetHandlePropertyMap()"), *Class->GetName()));
 		SourceWriter.Print(TEXT("{"));
 		SourceWriter.Indent();
 		SourceWriter.Print(TEXT("static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;"));
@@ -1131,12 +1128,12 @@ namespace
 		}
 
 		SourceWriter.Print();
-		SourceWriter.Print(FString::Printf(TEXT(R"""(// Build up SpatialOS component updates.
-		auto& PropertyMap = GetHandlePropertyMap_%s();
+		SourceWriter.Print(TEXT(R"""(// Build up SpatialOS component updates.
+		auto& PropertyMap = GetHandlePropertyMap();
 		FChangelistIterator ChangelistIterator(Changed, 0);
 		FRepHandleIterator HandleIterator(ChangelistIterator, Cmds, BaseHandleToCmdIndex, 0, 1, 0, Cmds.Num() - 1);
 		while (HandleIterator.NextHandle())
-		{)"""), *Class->GetName()));
+		{)"""));
 		SourceWriter.Indent();
 		SourceWriter.Print(FString::Printf(TEXT(R"""(const FRepLayoutCmd& Cmd = Cmds[HandleIterator.CmdIndex];
 		const uint8* Data = SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
@@ -1223,7 +1220,7 @@ namespace
 		FCodeWriter OutputSource;
 
 		FString SchemaFilename = FString::Printf(TEXT("Unreal%s"), *Class->GetName());
-		FString InteropFilename = FString::Printf(TEXT("SpatialUpdateInterop_%s"), *Class->GetName());
+		FString TypeBindingFilename = FString::Printf(TEXT("SpatialTypeBinding_%s"), *Class->GetName());
 
 		FPropertyLayout Layout = CreatePropertyLayout(Class);
 
@@ -1232,9 +1229,9 @@ namespace
 		OutputSchema.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFilename));
 
 		// Generate forwarding code.
-		GenerateForwardingCodeFromLayout(OutputHeader, OutputSource, SchemaFilename, InteropFilename, Class, Layout);
-		OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *InteropFilename));
-		OutputSource.WriteToFile(FString::Printf(TEXT("%s%s.cpp"), *ForwardingCodePath, *InteropFilename));
+		GenerateForwardingCodeFromLayout(OutputHeader, OutputSource, SchemaFilename, TypeBindingFilename, Class, Layout);
+		OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *TypeBindingFilename));
+		OutputSource.WriteToFile(FString::Printf(TEXT("%s%s.cpp"), *ForwardingCodePath, *TypeBindingFilename));
 	}
 } // ::
 

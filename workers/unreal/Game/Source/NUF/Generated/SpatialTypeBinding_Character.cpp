@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // Note that this file has been generated automatically
 
-#include "SpatialUpdateInterop_Character.h"
+#include "SpatialTypeBinding_Character.h"
 #include "SpatialOS.h"
 #include "Engine.h"
 #include "SpatialActorChannel.h"
@@ -19,7 +19,7 @@ void ApplyUpdateToSpatial_SingleClient_Character(const uint8* RESTRICT Data, int
 void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
 {
 	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = GetHandlePropertyMap_Character();
+	auto& HandleToPropertyMap = FSpatialTypeBinding_Character::GetHandlePropertyMap();
 	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
 	if (!ActorChannel)
 	{
@@ -471,7 +471,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
 {
 	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = GetHandlePropertyMap_Character();
+	auto& HandleToPropertyMap = FSpatialTypeBinding_Character::GetHandlePropertyMap();
 	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
 	if (!ActorChannel)
 	{
@@ -1347,7 +1347,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 }
 } // ::
 
-const RepHandlePropertyMap& GetHandlePropertyMap_Character()
+const RepHandlePropertyMap& FSpatialTypeBinding_Character::GetHandlePropertyMap()
 {
 	static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;
 	if (HandleToPropertyMapData == nullptr)
@@ -1472,7 +1472,7 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(const TArray<uint16>& C
 	bool MultiClientUpdateChanged = false;
 
 	// Build up SpatialOS component updates.
-	auto& PropertyMap = GetHandlePropertyMap_Character();
+	auto& PropertyMap = GetHandlePropertyMap();
 	FChangelistIterator ChangelistIterator(Changed, 0);
 	FRepHandleIterator HandleIterator(ChangelistIterator, Cmds, BaseHandleToCmdIndex, 0, 1, 0, Cmds.Num() - 1);
 	while (HandleIterator.NextHandle())
