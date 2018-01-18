@@ -31,15 +31,7 @@ public:
 
 	// UChannel interface
 	virtual void Init(UNetConnection * connection, int32 channelIndex, bool bOpenedLocally) override;
-	virtual void SetClosingFlag() override;
-	virtual void Close() override;
 	virtual void ReceivedBunch(FInBunch & bunch) override;
-	virtual void ReceivedNak(int32 packetId) override;
-	virtual void Tick() override;
-	virtual bool CanStopTicking() const override;
-	virtual void AppendExportBunches(TArray<FOutBunch *> & outExportBunches) override;
-	virtual void AppendMustBeMappedGuids(FOutBunch * bunch) override;
-	virtual void StartBecomingDormant() override;
 	//NUF-sourcechange Requires virtual in ActorChannel.h
 	virtual bool ReplicateActor() override;
 	//NUF-sourcechange Requires virtual in ActorChannel.h
@@ -62,7 +54,6 @@ public:
 
 protected:
 	// UChannel interface
-	virtual void BecomeDormant() override;
 	virtual bool CleanUp(const bool bForDestroy) override;
 
 private:

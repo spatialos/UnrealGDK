@@ -132,7 +132,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 
 		Connection->InitRemoteConnection(this, nullptr, DummyURL, *FromAddr, USOCK_Open);
 		Notify->NotifyAcceptedConnection(Connection);
-		Connection->bFakeSpatialClient = true;
+		Connection->bReliableSpatialConnection = true;
 		AddClientConnection(Connection);
 		UpdateInterop->Init(GetNetMode() == NM_Client, SpatialOSInstance, this);
 	}
@@ -264,10 +264,10 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 		AActor* OwningActor = Connection->OwningActor;
 		
 		//NUF: We allow a connection without an owner to process if it's meant to be the connection to the fake SpatialOS client.
-		if (Connection->bFakeSpatialClient || 
+		if (Connection->bReliableSpatialConnection || 
 			(OwningActor != NULL && Connection->State == USOCK_Open && (Connection->Driver->Time - Connection->LastReceiveTime < 1.5f)))
 		{
-			check(Connection->bFakeSpatialClient || World == OwningActor->GetWorld());
+			check(Connection->bReliableSpatialConnection || World == OwningActor->GetWorld());
 
 			bFoundReadyConnection = true;
 
@@ -682,7 +682,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 			// clear the time sensitive flag to avoid sending an extra packet to this connection
 			Connection->TimeSensitive = false;
 		}
-		else if (Connection->bFakeSpatialClient || Connection->ViewTarget)
+		else if (Connection->bReliableSpatialConnection || Connection->ViewTarget)
 		{
 			// Make a list of viewers this connection should consider (this connection and children of this connection)
 			TArray<FNetViewer>& ConnectionViewers = WorldSettings->ReplicationViewers;

@@ -34,11 +34,13 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	ActorEntityId = worker::EntityId{};
 }
 
-void USpatialActorChannel::Init(UNetConnection* connection, int32 channelIndex, bool bOpenedLocally)
+void USpatialActorChannel::Init(UNetConnection* Connection, int32 ChannelIndex, bool bOpenedLocally)
 {
-	Super::Init(connection, channelIndex, bOpenedLocally);
+	Super::Init(Connection, ChannelIndex, bOpenedLocally);
 
-	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(connection->Driver);
+	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
+	check(Driver);
+
 	WorkerView = Driver->GetSpatialOS()->GetView();
 	WorkerConnection = Driver->GetSpatialOS()->GetConnection();
 
@@ -50,16 +52,6 @@ void USpatialActorChannel::Init(UNetConnection* connection, int32 channelIndex, 
 		Callbacks->Add(PinnedView->OnReserveEntityIdResponse(std::bind(&USpatialActorChannel::OnReserveEntityIdResponse, this, std::placeholders::_1)));
 		Callbacks->Add(PinnedView->OnCreateEntityResponse(std::bind(&USpatialActorChannel::OnCreateEntityResponse, this, std::placeholders::_1)));
 	}
-}
-
-void USpatialActorChannel::SetClosingFlag()
-{
-	Super::SetClosingFlag();
-}
-
-void USpatialActorChannel::Close()
-{
-	Super::Close();
 }
 
 void USpatialActorChannel::ReceivedBunch(FInBunch &Bunch)
@@ -95,56 +87,19 @@ void USpatialActorChannel::ReceivedBunch(FInBunch &Bunch)
 	BunchReader.Parse(Connection->Driver->IsServer(), PropertyMap, RepDataHandler);
 	if (BunchReader.HasError())
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("<- Allowing through non actor bunch."));
 		UActorChannel::ReceivedBunch(Bunch);
 	}
 	else if (!BunchReader.HasRepLayout() || !BunchReader.IsActor())
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("<- Allowing through non replicated bunch."));
 		UActorChannel::ReceivedBunch(Bunch);
 	}
-}
-
-void USpatialActorChannel::ReceivedNak(int32 PacketId)
-{
-	Super::ReceivedNak(PacketId);
-}
-
-void USpatialActorChannel::Tick()
-{
-	Super::Tick();
-}
-
-bool USpatialActorChannel::CanStopTicking() const
-{
-	return Super::CanStopTicking();
-}
-
-void USpatialActorChannel::AppendExportBunches(TArray<FOutBunch *> & outExportBunches)
-{
-	Super::AppendExportBunches(outExportBunches);
-}
-
-void USpatialActorChannel::AppendMustBeMappedGuids(FOutBunch * bunch)
-{
-	Super::AppendMustBeMappedGuids(bunch);
-}
-
-void USpatialActorChannel::StartBecomingDormant()
-{
-	UActorChannel::StartBecomingDormant();
-}
-
-void USpatialActorChannel::BecomeDormant()
-{
-	UActorChannel::BecomeDormant();
 }
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
 	if (SpatialConnection && SpatialConnection->Driver->IsServer()
-		&& SpatialConnection->bFakeSpatialClient)
+		&& SpatialConnection->bReliableSpatialConnection)
 	{
 		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
 		if (PinnedConnection.IsValid())
@@ -154,44 +109,6 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 	}
 	return UActorChannel::CleanUp(bForDestroy);
 }
-
-//Copy-pasted from DataChannel.cpp :(
-//todo-giray: Ask Epic to move it to a header.
-// Helper class to downgrade a non owner of an actor to simulated while replicating
-class FScopedRoleDowngrade
-{
-public:
-	FScopedRoleDowngrade(AActor* InActor, const FReplicationFlags RepFlags) : Actor(InActor), ActualRemoteRole(Actor->GetRemoteRole())
-	{
-		// If this is actor is autonomous, and this connection doesn't own it, we'll downgrade to simulated during the scope of replication
-		if (ActualRemoteRole == ROLE_AutonomousProxy)
-		{
-			if (!RepFlags.bNetOwner)
-			{
-				Actor->SetAutonomousProxy(false, false);
-			}
-		}
-	}
-
-	~FScopedRoleDowngrade()
-	{
-		// Upgrade role back to autonomous proxy if needed
-		if (Actor->GetRemoteRole() != ActualRemoteRole)
-		{
-			Actor->SetReplicates(ActualRemoteRole != ROLE_None);
-
-			if (ActualRemoteRole == ROLE_AutonomousProxy)
-			{
-				Actor->SetAutonomousProxy(true, false);
-			}
-		}
-	}
-
-private:
-	AActor*			Actor;
-	const ENetRole	ActualRemoteRole;
-};
-////
 
 //This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
 // We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
@@ -253,51 +170,25 @@ bool USpatialActorChannel::ReplicateActor()
 	FReplicationFlags RepFlags;
 
 	// Send initial stuff.
-	if (OpenPacketId.First != INDEX_NONE && !Connection->bResendAllDataSinceOpen)
-	{
-		if (!SpawnAcked && OpenAcked)
-		{
-			// After receiving ack to the spawn, force refresh of all subsequent unreliable packets, which could
-			// have been lost due to ordering problems. Note: We could avoid this by doing it in FActorChannel::ReceivedAck,
-			// and avoid dirtying properties whose acks were received *after* the spawn-ack (tricky ordering issues though).
-			SpawnAcked = 1;
-			for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
-			{
-				RepComp.Value()->ForceRefreshUnreliableProperties();
-			}
-		}
-	}
-	else
+	if (OpenPacketId.First == INDEX_NONE)
 	{
 		RepFlags.bNetInitial = true;
 		Bunch.bClose = Actor->bNetTemporary;
 		Bunch.bReliable = true; // Net temporary sends need to be reliable as well to force them to retry
 	}
 
-	// Owned by connection's player?
-	//todo-giray: We need to figure out how we're going to approach connection ownership.
-	UNetConnection* OwningConnection = Actor->GetNetConnection();
-	if (OwningConnection == Connection || (OwningConnection != NULL && OwningConnection->IsA(UChildConnection::StaticClass()) && ((UChildConnection*)OwningConnection)->Parent == Connection))
-	{
-		RepFlags.bNetOwner = true;
-	}
-	else
-	{
-		RepFlags.bNetOwner = false;
-	}
+	//Here, Unreal would have determined if this connection belongs to this actor's Outer.
+	//We don't have this concept when it comes to connections, our ownership-based logic is in the interop layer.
+	//Setting this to true, but should not matter in the end.
+	RepFlags.bNetOwner = true;
 
-	// ----------------------------------------------------------
 	// If initial, send init data.
-	// ----------------------------------------------------------
 	if (RepFlags.bNetInitial && OpenedLocally)
 	{
 		Connection->PackageMap->SerializeNewActor(Bunch, this, Actor);
 	
 		Actor->OnSerializeNewActor(Bunch);
 	}
-
-	// Possibly downgrade role of actor if this connection doesn't own it
-	FScopedRoleDowngrade ScopedRoleDowngrade(Actor, RepFlags);
 
 	RepFlags.bNetSimulated = (Actor->GetRemoteRole() == ROLE_SimulatedProxy);
 	RepFlags.bRepPhysics = Actor->ReplicatedMovement.bRepPhysics;
@@ -425,7 +316,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
 
 	if (SpatialConnection && SpatialConnection->Driver->IsServer()
-		&& SpatialConnection->bFakeSpatialClient)
+		&& SpatialConnection->bReliableSpatialConnection)
 	{
 		// Create a Spatial entity that corresponds to this actor.
 		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
