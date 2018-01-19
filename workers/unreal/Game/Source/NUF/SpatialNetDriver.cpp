@@ -17,12 +17,12 @@
 #include "SpatialPackageMapClient.h"
 #include "SpatialPendingNetGame.h"
 #include "SpatialActorChannel.h"
-#include "improbable/spawner/spawner.h"
-#include "EntityBuilder.h"
 
 using namespace improbable;
 
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
+
+DEFINE_LOG_CATEGORY(LogSpatialOSNUF);
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
 {
@@ -43,13 +43,15 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	SpatialOSInstance->OnDisconnectedDelegate.AddDynamic(
 		this, &USpatialNetDriver::OnSpatialOSDisconnected);
 
-	auto workerConfig = FSOSWorkerConfigurationData();
+	auto WorkerConfig = FSOSWorkerConfigurationData();
 
-	workerConfig.Networking.UseExternalIp = false;
-	workerConfig.SpatialOSApplication.WorkerPlatform =
+	//todo-giray: Give this the correct value
+	WorkerConfig.Networking.UseExternalIp = false;
+
+	WorkerConfig.SpatialOSApplication.WorkerPlatform =
 		bInitAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
 
-	SpatialOSInstance->ApplyConfiguration(workerConfig);
+	SpatialOSInstance->ApplyConfiguration(WorkerConfig);
 	SpatialOSInstance->Connect();
 
 	SpatialOSComponentUpdater = NewObject<USpatialOSComponentUpdater>(this);
@@ -57,26 +59,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	EntityRegistry = NewObject<UEntityRegistry>(this);
 
 	UpdateInterop = NewObject<USpatialUpdateInterop>(this);
-
-	return true;
-}
-
-bool USpatialNetDriver::InitConnect(FNetworkNotify* InNotify, const FURL& ConnectURL, FString& Error)
-{
-	if (!Super::InitConnect(InNotify, ConnectURL, Error))
-	{
-		return false;
-	}
-		
-	return true;
-}
-
-bool USpatialNetDriver::InitListen(FNetworkNotify* InNotify, FURL& LocalURL, bool bReuseAddressAndPort, FString& Error)
-{
-	if (!Super::InitListen(InNotify, LocalURL, bReuseAddressAndPort, Error))
-	{
-		return false;
-	}
 
 	return true;
 }
@@ -94,7 +76,7 @@ void USpatialNetDriver::PostInitProperties()
 
 void USpatialNetDriver::OnSpatialOSConnected()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Connected to SpatialOS."));
+	UE_LOG(LogSpatialOSNUF, Warning, TEXT("Connected to SpatialOS."));
 
 	SpatialInteropBlock = NewObject<USpatialInteropBlock>();
 	SpatialInteropBlock->Init(EntityRegistry);
@@ -119,7 +101,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		{
 			WorldContext->PendingNetGame->bSuccessfullyConnected = true;
 			WorldContext->PendingNetGame->bSentJoinRequest = false;
-		}		
+		}	
 	}
 	else
 	{
@@ -140,12 +122,12 @@ void USpatialNetDriver::OnSpatialOSConnected()
 
 void USpatialNetDriver::OnSpatialOSDisconnected()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Disconnected from SpatialOS."));
+	UE_LOG(LogSpatialOSNUF, Warning, TEXT("Disconnected from SpatialOS."));
 }
 
 void USpatialNetDriver::OnSpatialOSConnectFailed()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Could not connect to SpatialOS."));
+	UE_LOG(LogSpatialOSNUF, Error, TEXT("Could not connect to SpatialOS."));
 }
 
 bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const
@@ -163,33 +145,6 @@ static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Act
 	//NUF: Currently we're just returning true as a worker replicates all the known actors in our design.
 	// We might make some exceptions in the future, so keeping this function.
 	return true;
-}
-
-// Returns true if this actor is owned by, and should replicate to *any* of the passed in connections
-static FORCEINLINE_DEBUGGABLE UNetConnection* IsActorOwnedByAndRelevantToConnection(const AActor* Actor, const TArray<FNetViewer>& ConnectionViewers, bool& bOutHasNullViewTarget)
-{
-	const AActor* ActorOwner = Actor->GetNetOwner();
-
-	bOutHasNullViewTarget = false;
-
-	for (int i = 0; i < ConnectionViewers.Num(); i++)
-	{
-		UNetConnection* ViewerConnection = ConnectionViewers[i].Connection;
-
-		if (ViewerConnection->ViewTarget == nullptr)
-		{
-			bOutHasNullViewTarget = true;
-		}
-
-		if (ActorOwner == ViewerConnection->PlayerController ||
-			(ViewerConnection->PlayerController && ActorOwner == ViewerConnection->PlayerController->GetPawn()) ||
-			(ViewerConnection->ViewTarget && ViewerConnection->ViewTarget->IsRelevancyOwnerFor(Actor, ActorOwner, ViewerConnection->OwningActor)))
-		{
-			return ViewerConnection;
-		}
-	}
-
-	return nullptr;
 }
 
 // Returns true if this actor is considered dormant (and all properties caught up) to the current connection
