@@ -635,6 +635,37 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 	}
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
+
+void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,
+		improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& SingleClientUpdate,
+		bool& SingleClientUpdateChanged,
+		improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& MultiClientUpdate,
+		bool& MultiClientUpdateChanged,
+		UPackageMap* PackageMap)
+{
+	// Build up SpatialOS component updates.
+	auto& PropertyMap = USpatialTypeBinding_PlayerController::GetHandlePropertyMap();
+	FChangelistIterator ChangelistIterator(Changes.Changed, 0);
+	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.Cmds, Changes.BaseHandleToCmdIndex, 0, 1, 0, Changes.Cmds.Num() - 1);
+	while (HandleIterator.NextHandle())
+	{
+		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
+		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
+		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
+		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
+		switch (GetGroupFromCondition(PropertyMapData.Condition))
+		{
+		case GROUP_SingleClient:
+			ApplyUpdateToSpatial_SingleClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, SingleClientUpdate);
+			SingleClientUpdateChanged = true;
+			break;
+		case GROUP_MultiClient:
+			ApplyUpdateToSpatial_MultiClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, MultiClientUpdate);
+			MultiClientUpdateChanged = true;
+			break;
+		}
+	}
+}
 } // ::
 
 const RepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetHandlePropertyMap()
@@ -710,38 +741,19 @@ worker::ComponentId USpatialTypeBinding_PlayerController::GetReplicatedGroupComp
 	}
 }
 
-void USpatialTypeBinding_PlayerController::SendComponentUpdates(const TArray<uint16>& Changed, const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const
+void USpatialTypeBinding_PlayerController::SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const
 {
 	// Build SpatialOS updates.
 	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update SingleClientUpdate;
 	bool SingleClientUpdateChanged = false;
 	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update MultiClientUpdate;
 	bool MultiClientUpdateChanged = false;
+	BuildSpatialComponentUpdate(Changes,
+		SingleClientUpdate, SingleClientUpdateChanged,
+		MultiClientUpdate, MultiClientUpdateChanged,
+		PackageMap);
 
-	// Build up SpatialOS component updates.
-	auto& PropertyMap = GetHandlePropertyMap();
-	FChangelistIterator ChangelistIterator(Changed, 0);
-	FRepHandleIterator HandleIterator(ChangelistIterator, Cmds, BaseHandleToCmdIndex, 0, 1, 0, Cmds.Num() - 1);
-	while (HandleIterator.NextHandle())
-	{
-		const FRepLayoutCmd& Cmd = Cmds[HandleIterator.CmdIndex];
-		const uint8* Data = SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
-		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
-		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
-		switch (GetGroupFromCondition(PropertyMapData.Condition))
-		{
-		case GROUP_SingleClient:
-			ApplyUpdateToSpatial_SingleClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, SingleClientUpdate);
-			SingleClientUpdateChanged = true;
-			break;
-		case GROUP_MultiClient:
-			ApplyUpdateToSpatial_MultiClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, MultiClientUpdate);
-			MultiClientUpdateChanged = true;
-			break;
-		}
-	}
-
-	// Send SpatialOS update.
+	// Send SpatialOS updates if anything changed.
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
 	if (SingleClientUpdateChanged)
 	{
@@ -753,13 +765,26 @@ void USpatialTypeBinding_PlayerController::SendComponentUpdates(const TArray<uin
 	}
 }
 
-worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FVector& Position, const FString& Metadata) const {
+worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const
+{
+	// Setup initial data.
+	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Data SingleClientData;
+	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update SingleClientUpdate;
+	bool SingleClientUpdateChanged = false;
+	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Data MultiClientData;
+	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update MultiClientUpdate;
+	bool MultiClientUpdateChanged = false;
+	BuildSpatialComponentUpdate(InitialChanges,
+		SingleClientUpdate, SingleClientUpdateChanged,
+		MultiClientUpdate, MultiClientUpdateChanged,
+		PackageMap);
+	SingleClientUpdate.ApplyTo(SingleClientData);
+	MultiClientUpdate.ApplyTo(MultiClientData);
 	
+	// Create entity.
 	const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
-	
 	improbable::WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
 	improbable::WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
-	
 	improbable::WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet}};
 	improbable::WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
 	improbable::WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
@@ -770,8 +795,8 @@ worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FVe
 		.SetPersistence(true)
 		.SetReadAcl(AnyWorkerReadPermission)
 		.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClient::Data{}, UnrealClientWritePermission)
-		.AddComponent<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>(improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Data{}, UnrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>(improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Data{}, UnrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>(SingleClientData, UnrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>(MultiClientData, UnrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealPlayerControllerCompleteData>(improbable::unreal::UnrealPlayerControllerCompleteData::Data{}, UnrealWorkerWritePermission)
 		.Build();
 }

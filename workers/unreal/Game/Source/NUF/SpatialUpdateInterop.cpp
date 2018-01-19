@@ -94,14 +94,8 @@ void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, con
 		//	*Channel->Actor->GetClass()->GetName());
 		return;
 	}
-
-	const uint8* SourceData = (uint8*)Channel->Actor;
-
-	Binding->SendComponentUpdates(Changed,
-		SourceData,
-		Channel->ActorReplicator->RepLayout->Cmds,
-		Channel->ActorReplicator->RepLayout->BaseHandleToCmdIndex,
-		Channel->GetEntityId());
+	
+	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), Channel->GetEntityId());
 }
 
 void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)

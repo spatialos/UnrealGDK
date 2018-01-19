@@ -29,6 +29,15 @@ inline EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Conditi
 	}
 }
 
+// Storage for a changelist created by the replication system.
+struct FPropertyChangeState
+{
+	const TArray<uint16>& Changed;
+	const uint8* RESTRICT SourceData;
+	TArray<FRepLayoutCmd>& Cmds;
+	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex;
+};
+
 //todo: (cc: @david) This code is merged into master, but the UObjects held inside a 
 // non-uclass will not be ref counted properly and may be removed under us.
 // It will mostly "work" because it's only used under USpatialUpdateInterop's context, but I think we can do something more robust.
@@ -42,12 +51,8 @@ public:
 	virtual void BindToView() PURE_VIRTUAL(USpatialTypeBinding::BindToView, );
 	virtual void UnbindFromView() PURE_VIRTUAL(USpatialTypeBinding::UnbindFromView, );
 	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const PURE_VIRTUAL(USpatialTypeBinding::GetReplicatedGroupComponentId, return worker::ComponentId{}; );
-	virtual void SendComponentUpdates(const TArray<uint16>& Changed,
-									  const uint8* RESTRICT SourceData,
-									  const TArray<FRepLayoutCmd>& Cmds,
-									  const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex,
-									  const worker::EntityId& EntityId) const PURE_VIRTUAL(USpatialTypeBinding::SendComponentUpdates, );
-	virtual worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata) const PURE_VIRTUAL(USpatialTypeBinding::CreateActorEntity, return worker::Entity{}; );
+	virtual void SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const PURE_VIRTUAL(USpatialTypeBinding::SendComponentUpdates, );
+	virtual worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const PURE_VIRTUAL(USpatialTypeBinding::CreateActorEntity, return worker::Entity{}; );
 
 protected:
 	UPROPERTY()

@@ -11,8 +11,8 @@
 #include "improbable/worker.h"
 #include "improbable/standard_library.h"
 #include <map>
+#include "SpatialTypeBinding.h"
 #include "SpatialActorChannel.generated.h"
-
 
 // A replacement actor channel that plugs into the Engine's replication system and works with SpatialOS
 UCLASS(Transient)
@@ -27,6 +27,18 @@ public:
 	FORCEINLINE worker::EntityId GetEntityId() const
 	{
 		return ActorEntityId;
+	}
+
+	void SendCreateEntityRequest(const TArray<uint16>& Changed);
+
+	FPropertyChangeState GetChangeState(const TArray<uint16>& Changed) const
+	{
+		return {
+			Changed,
+			(uint8*)Actor,
+			ActorReplicator->RepLayout->Cmds,
+			ActorReplicator->RepLayout->BaseHandleToCmdIndex,
+		};
 	}
 
 	// UChannel interface
@@ -58,6 +70,7 @@ private:
 	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
 	TWeakPtr<worker::Connection> WorkerConnection;
 	TWeakPtr<worker::View> WorkerView;	
+	worker::EntityId ReservedEntityId;
 	worker::EntityId ActorEntityId;
 
 	worker::Dispatcher::CallbackKey ReserveEntityCallback;
