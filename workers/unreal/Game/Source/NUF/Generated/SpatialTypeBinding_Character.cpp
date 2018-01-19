@@ -9,6 +9,7 @@
 // TODO(David): Remove this once RPCs are merged, as we will no longer need a placeholder component.
 #include "improbable/player/player.h"
 #include "SpatialPackageMapClient.h"
+#include "SpatialUpdateInterop.h"
 
 namespace {
 
@@ -19,7 +20,7 @@ void ApplyUpdateToSpatial_SingleClient_Character(const uint8* RESTRICT Data, int
 void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
 {
 	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = FSpatialTypeBinding_Character::GetHandlePropertyMap();
+	auto& HandleToPropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
 	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
 	if (!ActorChannel)
 	{
@@ -471,7 +472,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
 {
 	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = FSpatialTypeBinding_Character::GetHandlePropertyMap();
+	auto& HandleToPropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
 	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
 	if (!ActorChannel)
 	{
@@ -1347,7 +1348,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 }
 } // ::
 
-const RepHandlePropertyMap& FSpatialTypeBinding_Character::GetHandlePropertyMap()
+const RepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
 {
 	static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;
 	if (HandleToPropertyMapData == nullptr)
@@ -1427,7 +1428,7 @@ const RepHandlePropertyMap& FSpatialTypeBinding_Character::GetHandlePropertyMap(
 	return *HandleToPropertyMapData;
 }
 
-void FSpatialTypeBinding_Character::BindToView()
+void USpatialTypeBinding_Character::BindToView()
 {
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
 	SingleClientCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
@@ -1442,14 +1443,14 @@ void FSpatialTypeBinding_Character::BindToView()
 	});
 }
 
-void FSpatialTypeBinding_Character::UnbindFromView()
+void USpatialTypeBinding_Character::UnbindFromView()
 {
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
 	View->Remove(SingleClientCallback);
 	View->Remove(MultiClientCallback);
 }
 
-worker::ComponentId FSpatialTypeBinding_Character::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
+worker::ComponentId USpatialTypeBinding_Character::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
 {
 	switch (Group)
 	{
@@ -1463,7 +1464,7 @@ worker::ComponentId FSpatialTypeBinding_Character::GetReplicatedGroupComponentId
 	}
 }
 
-void FSpatialTypeBinding_Character::SendComponentUpdates(const TArray<uint16>& Changed, const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const
+void USpatialTypeBinding_Character::SendComponentUpdates(const TArray<uint16>& Changed, const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const
 {
 	// Build SpatialOS updates.
 	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
@@ -1506,7 +1507,7 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(const TArray<uint16>& C
 	}
 }
 
-worker::Entity FSpatialTypeBinding_Character::CreateActorEntity(const FVector& Position, const FString& Metadata) const {
+worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& Position, const FString& Metadata) const {
 	
 	const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
 	

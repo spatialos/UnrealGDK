@@ -8,11 +8,13 @@
 #include <unreal/generated/UnrealCharacter.h>
 #include <unreal/core_types.h>
 #include "SpatialHandlePropertyMap.h"
-#include "SpatialUpdateInterop.h"
+#include "SpatialTypeBinding.h"
+#include "SpatialTypeBinding_Character.generated.h"
 
-
-class FSpatialTypeBinding_Character : public FSpatialTypeBinding
+UCLASS()
+class USpatialTypeBinding_Character : public USpatialTypeBinding
 {
+	GENERATED_BODY()
 public:
 	static const RepHandlePropertyMap& GetHandlePropertyMap();
 	void BindToView() override;

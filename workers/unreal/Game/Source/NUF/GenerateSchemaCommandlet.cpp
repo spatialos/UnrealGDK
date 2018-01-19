@@ -826,7 +826,8 @@ namespace
 		HeaderWriter.Print(FString::Printf(TEXT("#include <unreal/generated/%s.h>"), *SchemaFilename));
 		HeaderWriter.Print(TEXT("#include <unreal/core_types.h>"));
 		HeaderWriter.Print(TEXT("#include \"SpatialHandlePropertyMap.h\""));
-		HeaderWriter.Print(TEXT("#include \"SpatialUpdateInterop.h\""));
+		HeaderWriter.Print(TEXT("#include \"SpatialTypeBinding.h\""));
+		HeaderWriter.Print(FString::Printf(TEXT("#include \"SpatialTypeBinding_%s.generated.h\""), *Class->GetName()));
 		HeaderWriter.Print();
 
 		for (EReplicatedPropertyGroup Group : RepPropertyGroups)
@@ -846,10 +847,11 @@ namespace
 		}
 
 		// Type binding class.
-		HeaderWriter.Print();
-		HeaderWriter.Print(FString::Printf(TEXT("class FSpatialTypeBinding_%s : public FSpatialTypeBinding"), *Class->GetName()));
+		HeaderWriter.Print(TEXT("UCLASS()"));
+		HeaderWriter.Print(FString::Printf(TEXT("class USpatialTypeBinding_%s : public USpatialTypeBinding"), *Class->GetName()));
 		HeaderWriter.Print(TEXT("{"));
 		HeaderWriter.Indent();
+		HeaderWriter.Print(TEXT("GENERATED_BODY()"));
 		HeaderWriter.Outdent().Print(TEXT("public:")).Indent();
 		HeaderWriter.Print(TEXT(R"""(static const RepHandlePropertyMap& GetHandlePropertyMap();
 		void BindToView() override;
@@ -876,7 +878,8 @@ namespace
 		#include "EntityBuilder.h"
 		// TODO(David): Remove this once RPCs are merged, as we will no longer need a placeholder component.
 		#include "improbable/player/player.h"
-		#include "SpatialPackageMapClient.h")"""), *InteropFilename));
+		#include "SpatialPackageMapClient.h"
+		#include "SpatialUpdateInterop.h")"""), *InteropFilename));
 
 		// Replicated property interop.
 		SourceWriter.Print();
@@ -941,7 +944,7 @@ namespace
 			SourceWriter.Print(TEXT("{"));
 			SourceWriter.Indent();
 			SourceWriter.Print(TEXT("FNetBitWriter OutputWriter(nullptr, 0); "));
-			SourceWriter.Print(FString::Printf(TEXT("auto& HandleToPropertyMap = FSpatialTypeBinding_%s::GetHandlePropertyMap();"), *Class->GetName()));
+			SourceWriter.Print(FString::Printf(TEXT("auto& HandleToPropertyMap = USpatialTypeBinding_%s::GetHandlePropertyMap();"), *Class->GetName()));
 			SourceWriter.Print(TEXT("USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);"));
 			SourceWriter.Print(TEXT("if (!ActorChannel)\n{"));
 			SourceWriter.Indent();
@@ -1009,7 +1012,7 @@ namespace
 
 		// Handle to Property map.
 		SourceWriter.Print();
-		SourceWriter.Print(FString::Printf(TEXT("const RepHandlePropertyMap& FSpatialTypeBinding_%s::GetHandlePropertyMap()"), *Class->GetName()));
+		SourceWriter.Print(FString::Printf(TEXT("const RepHandlePropertyMap& USpatialTypeBinding_%s::GetHandlePropertyMap()"), *Class->GetName()));
 		SourceWriter.Print(TEXT("{"));
 		SourceWriter.Indent();
 		SourceWriter.Print(TEXT("static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;"));
@@ -1050,7 +1053,7 @@ namespace
 		// Class implementation.
 		// BindToView
 		SourceWriter.Print();
-		SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::BindToView()"), *Class->GetName()));
+		SourceWriter.Print(FString::Printf(TEXT("void USpatialTypeBinding_%s::BindToView()"), *Class->GetName()));
 		SourceWriter.Print(TEXT("{"));
 		SourceWriter.Indent();
 		SourceWriter.Print(TEXT("TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();"));
@@ -1076,7 +1079,7 @@ namespace
 
 		// UnbindFromView
 		SourceWriter.Print();
-		SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::UnbindFromView()"), *Class->GetName()));
+		SourceWriter.Print(FString::Printf(TEXT("void USpatialTypeBinding_%s::UnbindFromView()"), *Class->GetName()));
 		SourceWriter.Print(TEXT("{"));
 		SourceWriter.Indent();
 		SourceWriter.Print(TEXT("TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();"));
@@ -1089,7 +1092,7 @@ namespace
 
 		// GetReplicatedGroupComponentId
 		SourceWriter.Print();
-		SourceWriter.Print(FString::Printf(TEXT("worker::ComponentId FSpatialTypeBinding_%s::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const"),
+		SourceWriter.Print(FString::Printf(TEXT("worker::ComponentId USpatialTypeBinding_%s::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const"),
 			*Class->GetName()));
 		SourceWriter.Print(TEXT("{"));
 		SourceWriter.Indent();
@@ -1113,7 +1116,7 @@ namespace
 
 		// SendComponentUpdates
 		SourceWriter.Print();
-		SourceWriter.Print(FString::Printf(TEXT("void FSpatialTypeBinding_%s::SendComponentUpdates(const TArray<uint16>& Changed, const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const"),
+		SourceWriter.Print(FString::Printf(TEXT("void USpatialTypeBinding_%s::SendComponentUpdates(const TArray<uint16>& Changed, const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const"),
 			*Class->GetName()));
 		SourceWriter.Print(TEXT("{"));
 		SourceWriter.Indent();
@@ -1181,7 +1184,7 @@ namespace
 
 		// CreateActorEntity
 		SourceWriter.Print();
-		SourceWriter.Print(FString::Printf(TEXT("worker::Entity FSpatialTypeBinding_%s::CreateActorEntity(const FVector& Position, const FString& Metadata) const {"), *Class->GetName()));
+		SourceWriter.Print(FString::Printf(TEXT("worker::Entity USpatialTypeBinding_%s::CreateActorEntity(const FVector& Position, const FString& Metadata) const {"), *Class->GetName()));
 		SourceWriter.Indent();
 		SourceWriter.Print(TEXT(R"""(
 			const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);

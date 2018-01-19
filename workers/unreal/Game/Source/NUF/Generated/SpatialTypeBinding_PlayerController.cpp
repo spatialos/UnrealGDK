@@ -9,6 +9,7 @@
 // TODO(David): Remove this once RPCs are merged, as we will no longer need a placeholder component.
 #include "improbable/player/player.h"
 #include "SpatialPackageMapClient.h"
+#include "SpatialUpdateInterop.h"
 
 namespace {
 
@@ -45,7 +46,7 @@ void ApplyUpdateToSpatial_SingleClient_PlayerController(const uint8* RESTRICT Da
 void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>& Op)
 {
 	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = FSpatialTypeBinding_PlayerController::GetHandlePropertyMap();
+	auto& HandleToPropertyMap = USpatialTypeBinding_PlayerController::GetHandlePropertyMap();
 	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
 	if (!ActorChannel)
 	{
@@ -283,7 +284,7 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>& Op)
 {
 	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = FSpatialTypeBinding_PlayerController::GetHandlePropertyMap();
+	auto& HandleToPropertyMap = USpatialTypeBinding_PlayerController::GetHandlePropertyMap();
 	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
 	if (!ActorChannel)
 	{
@@ -636,7 +637,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 }
 } // ::
 
-const RepHandlePropertyMap& FSpatialTypeBinding_PlayerController::GetHandlePropertyMap()
+const RepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetHandlePropertyMap()
 {
 	static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;
 	if (HandleToPropertyMapData == nullptr)
@@ -673,7 +674,7 @@ const RepHandlePropertyMap& FSpatialTypeBinding_PlayerController::GetHandlePrope
 	return *HandleToPropertyMapData;
 }
 
-void FSpatialTypeBinding_PlayerController::BindToView()
+void USpatialTypeBinding_PlayerController::BindToView()
 {
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
 	SingleClientCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>([this](
@@ -688,14 +689,14 @@ void FSpatialTypeBinding_PlayerController::BindToView()
 	});
 }
 
-void FSpatialTypeBinding_PlayerController::UnbindFromView()
+void USpatialTypeBinding_PlayerController::UnbindFromView()
 {
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
 	View->Remove(SingleClientCallback);
 	View->Remove(MultiClientCallback);
 }
 
-worker::ComponentId FSpatialTypeBinding_PlayerController::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
+worker::ComponentId USpatialTypeBinding_PlayerController::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
 {
 	switch (Group)
 	{
@@ -709,7 +710,7 @@ worker::ComponentId FSpatialTypeBinding_PlayerController::GetReplicatedGroupComp
 	}
 }
 
-void FSpatialTypeBinding_PlayerController::SendComponentUpdates(const TArray<uint16>& Changed, const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const
+void USpatialTypeBinding_PlayerController::SendComponentUpdates(const TArray<uint16>& Changed, const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const
 {
 	// Build SpatialOS updates.
 	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update SingleClientUpdate;
@@ -752,7 +753,7 @@ void FSpatialTypeBinding_PlayerController::SendComponentUpdates(const TArray<uin
 	}
 }
 
-worker::Entity FSpatialTypeBinding_PlayerController::CreateActorEntity(const FVector& Position, const FString& Metadata) const {
+worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FVector& Position, const FString& Metadata) const {
 	
 	const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
 	
