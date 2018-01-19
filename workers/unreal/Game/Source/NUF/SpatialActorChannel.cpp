@@ -76,7 +76,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
 	if (SpatialConnection && SpatialConnection->Driver->IsServer()
-		&& SpatialConnection->InternalAck)
+		&& SpatialConnection->bReliableSpatialConnection)
 	{
 		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
 		if (PinnedConnection.IsValid())
@@ -314,7 +314,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op)
 {
-	if (!(Op.StatusCode == worker::StatusCode::kSuccess))
+	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to reserve entity id"));
 		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
@@ -378,7 +378,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
 {
-	if (!(Op.StatusCode == worker::StatusCode::kSuccess))
+	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Failed to create entity!"));
 		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
