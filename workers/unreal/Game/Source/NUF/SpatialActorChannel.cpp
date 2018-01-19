@@ -18,10 +18,6 @@
 #include "SpatialUpdateInterop.h"
 
 #include "Utils/BunchReader.h"
-#include "Generated/SpatialUpdateInterop_Character.h"
-
-// TODO(David): Required until we sever the unreal connection.
-#include "Generated/SpatialUpdateInterop_Character.h"
 
 using namespace improbable;
 
@@ -51,47 +47,6 @@ void USpatialActorChannel::Init(UNetConnection* Connection, int32 ChannelIndex, 
 	{
 		Callbacks->Add(PinnedView->OnReserveEntityIdResponse(std::bind(&USpatialActorChannel::OnReserveEntityIdResponse, this, std::placeholders::_1)));
 		Callbacks->Add(PinnedView->OnCreateEntityResponse(std::bind(&USpatialActorChannel::OnCreateEntityResponse, this, std::placeholders::_1)));
-	}
-}
-
-void USpatialActorChannel::ReceivedBunch(FInBunch &Bunch)
-{
-	// If not a client, just call normal behaviour.
-	if (!Connection->Driver->ServerConnection)
-	{
-		UActorChannel::ReceivedBunch(Bunch);
-		return;
-	}
-
-	// Parse the bunch, and let through all non-replicated stuff, and replicated stuff that matches a few properties.
-	// TODO(david): Remove this when we sever the Unreal connection.
-	auto& PropertyMap = GetHandlePropertyMap_Character();
-	FBunchReader BunchReader(&Bunch);
-	FBunchReader::RepDataHandler RepDataHandler = [](FNetBitReader& Reader, UPackageMap* PackageMap, int32 Handle, UProperty* Property) -> bool
-	{
-		// TODO: We can't parse UObjects or FNames here as we have no package map.
-		if (Property->IsA(UObjectPropertyBase::StaticClass()) || Property->IsA(UNameProperty::StaticClass()))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("<- Allowing through UObject/FName update."));
-			return false;
-		}
-
-		// Skip bytes.
-		// Property data size: RepLayout.cpp:237
-		TArray<uint8> PropertyData;
-		PropertyData.AddZeroed(Property->ElementSize);
-		Property->InitializeValue(PropertyData.GetData());
-		Property->NetSerializeItem(Reader, PackageMap, PropertyData.GetData());
-		return true;
-	};
-	BunchReader.Parse(Connection->Driver->IsServer(), PropertyMap, RepDataHandler);
-	if (BunchReader.HasError())
-	{
-		UActorChannel::ReceivedBunch(Bunch);
-	}
-	else if (!BunchReader.HasRepLayout() || !BunchReader.IsActor())
-	{
-		UActorChannel::ReceivedBunch(Bunch);
 	}
 }
 
@@ -257,6 +212,7 @@ bool USpatialActorChannel::ReplicateActor()
 	// The Actor
 	WroteSomethingImportant |= ActorReplicator->ReplicateProperties(Bunch, RepFlags);
 
+	//todo-giray: Implement subobject replication
 	// The SubObjects
 	WroteSomethingImportant |= Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 */
@@ -291,8 +247,6 @@ bool USpatialActorChannel::ReplicateActor()
 		}
 		SentBunch = true;
 	}
-
-	PendingObjKeys.Empty();
 
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
 	LastUpdateTime = Connection->Driver->Time;
@@ -339,6 +293,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	// just filter incorrect callbacks for now
 	if (Op.RequestId == ReserveEntityIdRequestId)
 	{
+		//Callbacks->Add(PinnedView->OnReserveEntityIdResponse(std::bind(&USpatialActorChannel::OnReserveEntityIdResponse, this, std::placeholders::_1)));
 		if (!(Op.StatusCode == worker::StatusCode::kSuccess))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Failed to reserve entity id"));
@@ -409,10 +364,11 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 	}	
 
 	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
-	if (Driver->ClientConnections.Num() > 0)
+	USpatialNetConnection* SpatialConnection = Driver->GetSpatialOSNetConnection();
+	// This can be true only on the server
+	if (SpatialConnection)
 	{
-		// should provide a better way of getting hold of the SpatialOS client connection 
-		USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(Driver->ClientConnections[0]->PackageMap);
+		USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(SpatialConnection->PackageMap);
 		if (PMC)
 		{
 			worker::EntityId SpatialEntityId = Op.EntityId.value_or(0);

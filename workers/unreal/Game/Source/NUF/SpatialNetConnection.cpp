@@ -35,3 +35,8 @@ bool USpatialNetConnection::ClientHasInitializedLevelFor(const UObject* TestObje
 
 	return Super::ClientHasInitializedLevelFor(TestObject);	
 }
+
+void USpatialNetConnection::LowLevelSend(void * Data, int32 CountBytes, int32 CountBits)
+{
+	//Intentionally does not call Super::
+}

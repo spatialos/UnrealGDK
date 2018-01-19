@@ -31,7 +31,6 @@ public:
 
 	// UChannel interface
 	virtual void Init(UNetConnection * connection, int32 channelIndex, bool bOpenedLocally) override;
-	virtual void ReceivedBunch(FInBunch & bunch) override;
 	//NUF-sourcechange Requires virtual in ActorChannel.h
 	virtual bool ReplicateActor() override;
 	//NUF-sourcechange Requires virtual in ActorChannel.h
