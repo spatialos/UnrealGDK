@@ -116,6 +116,8 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		Notify->NotifyAcceptedConnection(Connection);
 		Connection->bReliableSpatialConnection = true;
 		AddClientConnection(Connection);
+		//Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
+		Connection->SetClientLoginState(EClientLoginState::Welcomed);
 		UpdateInterop->Init(GetNetMode() == NM_Client, SpatialOSInstance, this);
 	}
 }
@@ -601,7 +603,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	ConsiderList.Reserve(GetNetworkObjectList().GetActiveObjects().Num());
 
 	// Build the consider list (actors that are ready to replicate)
-	//NUF-sourcechange: Add ENGINE_API to the function below in NetDriver.h
 	ServerReplicateActors_BuildConsiderList(ConsiderList, ServerTickTime);
 	FMemMark Mark(FMemStack::Get());
 
@@ -885,8 +886,6 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 			//todo-giray: Client travel needs to be handled here.
 		}
 	}
-
-	// Go all the way to creating the player controller here.
 
 	return bOk;
 }
