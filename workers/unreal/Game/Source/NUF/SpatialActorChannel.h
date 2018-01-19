@@ -36,10 +36,6 @@ public:
 	//NUF-sourcechange Requires virtual in ActorChannel.h
 	virtual void SetChannelActor(AActor* InActor) override;
 
-
-	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
-	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
-
 	// Distinguishes between channels created for actors that went through the "old" pipeline vs actors that are triggered through SpawnActor() calls.
 	//In the future we may not use an actor channel for non-core actors.
 	UPROPERTY(transient)
@@ -54,14 +50,19 @@ public:
 protected:
 	// UChannel interface
 	virtual bool CleanUp(const bool bForDestroy) override;
-
 private:
+	void BindToSpatialView();
+	void UnbindFromSpatialView() const;
+
+	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
+	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
 	TWeakPtr<worker::Connection> WorkerConnection;
 	TWeakPtr<worker::View> WorkerView;	
 	worker::EntityId ActorEntityId;
 
-	TUniquePtr<improbable::unreal::callbacks::FScopedViewCallbacks> Callbacks;
-
-	worker::RequestId<worker::ReserveEntityIdRequest> ReserveEntityIdRequestId;	
+	worker::Dispatcher::CallbackKey ReserveEntityCallback;
+	worker::Dispatcher::CallbackKey CreateEntityCallback;
+	
+	worker::RequestId<worker::ReserveEntityIdRequest> ReserveEntityIdRequestId;
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 };
