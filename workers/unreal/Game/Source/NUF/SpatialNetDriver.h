@@ -15,6 +15,9 @@ class USpatialOSComponentUpdater;
 class USpatialOS;
 class USpatialNetConnection;
 
+// SpatialNetDriver will not be in the NUF module in a final product, so we can merge this with LogSpatialOS.
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNUF, Log, All);
+
 UCLASS()
 class NUF_API USpatialNetDriver : public UIpNetDriver
 {
@@ -28,8 +31,6 @@ public:
 	virtual int32 ServerReplicateActors(float DeltaSeconds) override;
 	virtual void TickDispatch(float DeltaTime) override;
 	virtual void TickFlush(float DeltaTime) override;
-	virtual bool InitConnect(FNetworkNotify* InNotify, const FURL& ConnectURL, FString& Error) override;
-	virtual bool InitListen(FNetworkNotify* InNotify, FURL& LocalURL, bool bReuseAddressAndPort, FString& Error) override;
 	virtual void ProcessRemoteFunction(class AActor* Actor, class UFunction* Function, void* Parameters, struct FOutParmRec* OutParms, struct FFrame* Stack, class UObject* SubObject = NULL) override;
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	// End UNetDriver interface.
