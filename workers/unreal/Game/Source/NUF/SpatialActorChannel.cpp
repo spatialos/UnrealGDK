@@ -18,9 +18,9 @@
 #include "SpatialUpdateInterop.h"
 #include "SpatialNetDriver.h"
 
-#include "Utils/BunchReader.h"
-
 using namespace improbable;
+
+DEFINE_LOG_CATEGORY(LogSpatialOSActorChannel);
 
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
@@ -44,7 +44,7 @@ void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed
 		FStringAssetReference ActorClassRef(Actor->GetClass());
 		FString PathStr = ActorClassRef.ToString();
 
-		UE_LOG(LogTemp, Log, TEXT("Creating entity for actor with path: %s on ActorChannel: %s"), *PathStr, *GetName());
+		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Creating entity for actor with path: %s on ActorChannel: %s"), *PathStr, *GetName());
 
 		if (TypeBinding)
 		{
@@ -76,7 +76,7 @@ void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
+		UE_LOG(LogSpatialOSActorChannel, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
 		return;
 	}
 }
@@ -366,6 +366,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		{
 			ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
 		}
+		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Initiated reserve entity process for: %s. Request id: %d"), *InActor->GetName(), ReserveEntityIdRequestId.Id);
 	}
 	else
 	{
@@ -373,6 +374,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		check(Driver);
 		check(Driver->GetEntityRegistry());
 		ActorEntityId = Driver->GetEntityRegistry()->GetEntityIdFromActor(InActor).ToSpatialEntityId();
+		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Opened non-authoritative channel for actor %s."), *InActor->GetName());
 	}
 }
 
@@ -380,11 +382,12 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 {
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to reserve entity id"));
+		UE_LOG(LogSpatialOSActorChannel, Error, TEXT("Failed to reserve entity id: %s"), Op.Message.c_str());
 		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		UnbindFromSpatialView();
 		return;
 	}
+	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received entity id (%d) for: %s. Request id: %d"), Op.EntityId.value_or(0), *Actor->GetName(), ReserveEntityIdRequestId.Id);
 
 	auto PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
@@ -399,11 +402,12 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 {
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to create entity!"));
+		UE_LOG(LogSpatialOSActorChannel, Error, TEXT("Failed to create entity: %s"), Op.Message.c_str());
 		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		UnbindFromSpatialView();
 		return;
-	}	
+	}
+	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Created entity (%d) for: %s. Request id: %d"), Op.EntityId.value_or(0), *Actor->GetName(), ReserveEntityIdRequestId.Id);
 
 	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
 	USpatialNetConnection* SpatialConnection = Driver->GetSpatialOSNetConnection();
@@ -423,7 +427,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 			worker::EntityId SpatialEntityId = Op.EntityId.value_or(0);
 			FEntityId EntityId(SpatialEntityId);
 
-			UE_LOG(LogTemp, Warning, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
+			UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
 			// once we know the entity was successfully spawned, add the local actor 
 			// to the package map and to the EntityRegistry
 			PMC->ResolveEntityActor(GetActor(), EntityId);

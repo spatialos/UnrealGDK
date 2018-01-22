@@ -14,6 +14,8 @@
 #include "SpatialTypeBinding.h"
 #include "SpatialActorChannel.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSActorChannel, Log, All);
+
 // A replacement actor channel that plugs into the Engine's replication system and works with SpatialOS
 UCLASS(Transient)
 class NUF_API USpatialActorChannel : public UActorChannel
