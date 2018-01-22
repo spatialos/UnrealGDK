@@ -44,8 +44,6 @@ void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed
 		FStringAssetReference ActorClassRef(Actor->GetClass());
 		FString PathStr = ActorClassRef.ToString();
 
-		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Creating entity for actor with path: %s on ActorChannel: %s"), *PathStr, *GetName());
-
 		if (TypeBinding)
 		{
 			auto Entity = TypeBinding->CreateActorEntity(Actor->GetActorLocation(), PathStr, GetChangeState(Changed));
@@ -73,6 +71,7 @@ void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed
 
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ActorEntityId, 0);
 		}
+		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Creating entity for actor %s. Request id: %d. Entity id: %d"), *Actor->GetName(), CreateEntityRequestId.Id, ActorEntityId);
 	}
 	else
 	{
@@ -382,7 +381,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 {
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
-		UE_LOG(LogSpatialOSActorChannel, Error, TEXT("Failed to reserve entity id: %s"), Op.Message.c_str());
+		UE_LOG(LogSpatialOSActorChannel, Error, TEXT("Failed to reserve entity id: %s"), UTF8_TO_TCHAR(Op.Message.c_str()));
 		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		UnbindFromSpatialView();
 		return;
@@ -402,7 +401,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 {
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
-		UE_LOG(LogSpatialOSActorChannel, Error, TEXT("Failed to create entity: %s"), Op.Message.c_str());
+		UE_LOG(LogSpatialOSActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
 		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		UnbindFromSpatialView();
 		return;
