@@ -476,14 +476,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					}
 				}
 
-				// NUF: Do not start replicating data until the channel reports that it's ready. For example, it might not be ready yet because
-				// an entity ID hasn't been reserved yet.
-				USpatialActorChannel* SpatialChannel = Cast<USpatialActorChannel>(Channel);
-				if (SpatialChannel && !SpatialChannel->IsReadyForReplication())
-				{
-					continue;
-				}
-
 				if (Channel)
 				{
 					// if it is relevant then mark the channel as relevant for a short amount of time
@@ -521,12 +513,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 						ActorUpdatesThisConnection++;
 						OutUpdated++;
 					}
-					else
-					{
-						UE_LOG(LogNetTraffic, Log, TEXT("- Channel saturated, forcing pending update for %s"), *Actor->GetName());
-						// otherwise force this actor to be considered in the next tick again
-						Actor->ForceNetUpdate();
-					}
+					
 					// second check for channel saturation
 					if (!Connection->IsNetReady(0))
 					{

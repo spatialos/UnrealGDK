@@ -174,11 +174,16 @@ void UpdateChangelistHistory(FRepState * RepState)
 
 bool USpatialActorChannel::ReplicateActor()
 {
+	if (!IsReadyForReplication())
+	{
+		return false;
+	}
+	
 	check(Actor);
 	check(!Closing);
 	check(Connection);
 	check(Connection->PackageMap);
-
+	
 	const UWorld* const ActorWorld = Actor->GetWorld();
 
 	// The package map shouldn't have any carry over guids
