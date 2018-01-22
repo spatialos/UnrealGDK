@@ -16,7 +16,7 @@ class USpatialTypeBinding_PlayerController : public USpatialTypeBinding
 {
 	GENERATED_BODY()
 public:
-	static const RepHandlePropertyMap& GetHandlePropertyMap();
+	static const FRepHandlePropertyMap& GetHandlePropertyMap();
 	void BindToView() override;
 	void UnbindFromView() override;
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;

@@ -18,7 +18,7 @@ public:
 
 	FBunchReader(FNetBitReader* InBunch);
 
-	bool Parse(bool bIsServer, const RepHandlePropertyMap& PropertyMap, RepDataHandler RepDataHandlerFunc);
+	bool Parse(bool bIsServer, const FRepHandlePropertyMap& PropertyMap, RepDataHandler RepDataHandlerFunc);
 
 	// Access properties.
 	bool HasError() const;

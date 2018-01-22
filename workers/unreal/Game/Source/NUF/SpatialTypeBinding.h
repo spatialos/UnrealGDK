@@ -38,9 +38,6 @@ struct FPropertyChangeState
 	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex;
 };
 
-//todo: (cc: @david) This code is merged into master, but the UObjects held inside a 
-// non-uclass will not be ref counted properly and may be removed under us.
-// It will mostly "work" because it's only used under USpatialUpdateInterop's context, but I think we can do something more robust.
 UCLASS()
 class NUF_API USpatialTypeBinding : public UObject
 {

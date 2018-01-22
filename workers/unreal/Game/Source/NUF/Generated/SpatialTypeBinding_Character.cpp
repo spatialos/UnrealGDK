@@ -1349,9 +1349,9 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,
 		improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& SingleClientUpdate,
-		bool& SingleClientUpdateChanged,
+		bool& bSingleClientUpdateChanged,
 		improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& MultiClientUpdate,
-		bool& MultiClientUpdateChanged,
+		bool& bMultiClientUpdateChanged,
 		UPackageMap* PackageMap)
 {
 	// Build up SpatialOS component updates.
@@ -1368,24 +1368,24 @@ void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,
 		{
 		case GROUP_SingleClient:
 			ApplyUpdateToSpatial_SingleClient_Character(Data, HandleIterator.Handle, Cmd.Property, PackageMap, SingleClientUpdate);
-			SingleClientUpdateChanged = true;
+			bSingleClientUpdateChanged = true;
 			break;
 		case GROUP_MultiClient:
 			ApplyUpdateToSpatial_MultiClient_Character(Data, HandleIterator.Handle, Cmd.Property, PackageMap, MultiClientUpdate);
-			MultiClientUpdateChanged = true;
+			bMultiClientUpdateChanged = true;
 			break;
 		}
 	}
 }
 } // ::
 
-const RepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
+const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
 {
-	static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;
+	static FRepHandlePropertyMap* HandleToPropertyMapData = nullptr;
 	if (HandleToPropertyMapData == nullptr)
 	{
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("Character"));
-		HandleToPropertyMapData = new RepHandlePropertyMap();
+		HandleToPropertyMapData = new FRepHandlePropertyMap();
 		auto& HandleToPropertyMap = *HandleToPropertyMapData;
 		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None});
 		HandleToPropertyMap.Add(2, FRepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), COND_None});
@@ -1524,13 +1524,13 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& P
 	// Setup initial data.
 	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data SingleClientData;
 	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
-	bool SingleClientUpdateChanged = false;
+	bool bSingleClientUpdateChanged = false;
 	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data MultiClientData;
 	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
-	bool MultiClientUpdateChanged = false;
+	bool bMultiClientUpdateChanged = false;
 	BuildSpatialComponentUpdate(InitialChanges,
-		SingleClientUpdate, SingleClientUpdateChanged,
-		MultiClientUpdate, MultiClientUpdateChanged,
+		SingleClientUpdate, bSingleClientUpdateChanged,
+		MultiClientUpdate, bMultiClientUpdateChanged,
 		PackageMap);
 	SingleClientUpdate.ApplyTo(SingleClientData);
 	MultiClientUpdate.ApplyTo(MultiClientData);

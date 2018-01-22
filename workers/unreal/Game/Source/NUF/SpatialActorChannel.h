@@ -30,9 +30,23 @@ public:
 	}
 
 
-	bool IsReadyForReplication() const;
+	FORCEINLINE bool IsReadyForReplication() const
+	{
+		// Wait until we've reserved an entity ID.
+		return ActorEntityId != worker::EntityId{};
+	}
+
+	FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16>& Changed) const
+	{
+		return{
+			Changed,
+			(uint8*)Actor,
+			ActorReplicator->RepLayout->Cmds,
+			ActorReplicator->RepLayout->BaseHandleToCmdIndex,
+		};
+	}
+
 	void SendCreateEntityRequest(const TArray<uint16>& Changed);
-	FPropertyChangeState GetChangeState(const TArray<uint16>& Changed) const;
 
 	// UChannel interface
 	virtual void Init(UNetConnection * connection, int32 channelIndex, bool bOpenedLocally) override;
@@ -62,8 +76,7 @@ private:
 	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
 	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
 	TWeakPtr<worker::Connection> WorkerConnection;
-	TWeakPtr<worker::View> WorkerView;	
-	worker::EntityId ReservedEntityId;
+	TWeakPtr<worker::View> WorkerView;
 	worker::EntityId ActorEntityId;
 
 	worker::Dispatcher::CallbackKey ReserveEntityCallback;

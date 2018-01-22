@@ -853,7 +853,7 @@ void GenerateForwardingCodeFromLayout(
 	HeaderWriter.Indent();
 	HeaderWriter.Print(TEXT("GENERATED_BODY()"));
 	HeaderWriter.Outdent().Print(TEXT("public:")).Indent();
-	HeaderWriter.Print(TEXT(R"""(static const RepHandlePropertyMap& GetHandlePropertyMap();
+	HeaderWriter.Print(TEXT(R"""(static const FRepHandlePropertyMap& GetHandlePropertyMap();
 	void BindToView() override;
 	void UnbindFromView() override;
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
@@ -1022,7 +1022,7 @@ void GenerateForwardingCodeFromLayout(
 			*GetSchemaReplicatedDataName(Group, Class),
 			*GetReplicatedPropertyGroupName(Group),
 			*GetReplicatedPropertyGroupName(Group)));
-		SourceWriter.Print(FString::Printf(TEXT("bool& %sUpdateChanged,"),
+		SourceWriter.Print(FString::Printf(TEXT("bool& b%sUpdateChanged,"),
 			*GetReplicatedPropertyGroupName(Group)));
 	}
 	SourceWriter.Print(TEXT("UPackageMap* PackageMap)"));
@@ -1054,7 +1054,7 @@ void GenerateForwardingCodeFromLayout(
 			*GetReplicatedPropertyGroupName(Group),
 			*Class->GetName(),
 			*GetReplicatedPropertyGroupName(Group)));
-		SourceWriter.Print(FString::Printf(TEXT("%sUpdateChanged = true;"),
+		SourceWriter.Print(FString::Printf(TEXT("b%sUpdateChanged = true;"),
 			*GetReplicatedPropertyGroupName(Group)));
 		SourceWriter.Print(TEXT("break;"));
 	}
@@ -1074,14 +1074,14 @@ void GenerateForwardingCodeFromLayout(
 	// Handle to Property map.
 	// ===========================================
 	SourceWriter.Print();
-	SourceWriter.Print(FString::Printf(TEXT("const RepHandlePropertyMap& USpatialTypeBinding_%s::GetHandlePropertyMap()"), *Class->GetName()));
+	SourceWriter.Print(FString::Printf(TEXT("const FRepHandlePropertyMap& USpatialTypeBinding_%s::GetHandlePropertyMap()"), *Class->GetName()));
 	SourceWriter.Print(TEXT("{"));
 	SourceWriter.Indent();
-	SourceWriter.Print(TEXT("static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;"));
+	SourceWriter.Print(TEXT("static FRepHandlePropertyMap* HandleToPropertyMapData = nullptr;"));
 	SourceWriter.Print(TEXT("if (HandleToPropertyMapData == nullptr)"));
 	SourceWriter.Print(TEXT("{")).Indent();
 	SourceWriter.Print(FString::Printf(TEXT("UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));"), *Class->GetName()));
-	SourceWriter.Print(TEXT("HandleToPropertyMapData = new RepHandlePropertyMap();"));
+	SourceWriter.Print(TEXT("HandleToPropertyMapData = new FRepHandlePropertyMap();"));
 	SourceWriter.Print(TEXT("auto& HandleToPropertyMap = *HandleToPropertyMapData;"));
 
 	// Reduce into single list of properties.
@@ -1241,13 +1241,13 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Print(FString::Printf(TEXT("improbable::unreal::%s::Update %sUpdate;"),
 			*GetSchemaReplicatedDataName(Group, Class),
 			*GetReplicatedPropertyGroupName(Group)));
-		SourceWriter.Print(FString::Printf(TEXT("bool %sUpdateChanged = false;"), *GetReplicatedPropertyGroupName(Group)));
+		SourceWriter.Print(FString::Printf(TEXT("bool b%sUpdateChanged = false;"), *GetReplicatedPropertyGroupName(Group)));
 	}
 	SourceWriter.Print("BuildSpatialComponentUpdate(InitialChanges,");
 	SourceWriter.Indent();
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
-		SourceWriter.Print(FString::Printf(TEXT("%sUpdate, %sUpdateChanged,"),
+		SourceWriter.Print(FString::Printf(TEXT("%sUpdate, b%sUpdateChanged,"),
 			*GetReplicatedPropertyGroupName(Group),
 			*GetReplicatedPropertyGroupName(Group)));
 	}

@@ -638,9 +638,9 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 
 void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,
 		improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& SingleClientUpdate,
-		bool& SingleClientUpdateChanged,
+		bool& bSingleClientUpdateChanged,
 		improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& MultiClientUpdate,
-		bool& MultiClientUpdateChanged,
+		bool& bMultiClientUpdateChanged,
 		UPackageMap* PackageMap)
 {
 	// Build up SpatialOS component updates.
@@ -657,24 +657,24 @@ void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,
 		{
 		case GROUP_SingleClient:
 			ApplyUpdateToSpatial_SingleClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, SingleClientUpdate);
-			SingleClientUpdateChanged = true;
+			bSingleClientUpdateChanged = true;
 			break;
 		case GROUP_MultiClient:
 			ApplyUpdateToSpatial_MultiClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, MultiClientUpdate);
-			MultiClientUpdateChanged = true;
+			bMultiClientUpdateChanged = true;
 			break;
 		}
 	}
 }
 } // ::
 
-const RepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetHandlePropertyMap()
+const FRepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetHandlePropertyMap()
 {
-	static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;
+	static FRepHandlePropertyMap* HandleToPropertyMapData = nullptr;
 	if (HandleToPropertyMapData == nullptr)
 	{
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("PlayerController"));
-		HandleToPropertyMapData = new RepHandlePropertyMap();
+		HandleToPropertyMapData = new FRepHandlePropertyMap();
 		auto& HandleToPropertyMap = *HandleToPropertyMapData;
 		HandleToPropertyMap.Add(18, FRepHandleData{nullptr, Class->FindPropertyByName("TargetViewRotation"), COND_OwnerOnly});
 		HandleToPropertyMap.Add(19, FRepHandleData{nullptr, Class->FindPropertyByName("SpawnLocation"), COND_OwnerOnly});
@@ -770,13 +770,13 @@ worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FVe
 	// Setup initial data.
 	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Data SingleClientData;
 	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update SingleClientUpdate;
-	bool SingleClientUpdateChanged = false;
+	bool bSingleClientUpdateChanged = false;
 	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Data MultiClientData;
 	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update MultiClientUpdate;
-	bool MultiClientUpdateChanged = false;
+	bool bMultiClientUpdateChanged = false;
 	BuildSpatialComponentUpdate(InitialChanges,
-		SingleClientUpdate, SingleClientUpdateChanged,
-		MultiClientUpdate, MultiClientUpdateChanged,
+		SingleClientUpdate, bSingleClientUpdateChanged,
+		MultiClientUpdate, bMultiClientUpdateChanged,
 		PackageMap);
 	SingleClientUpdate.ApplyTo(SingleClientData);
 	MultiClientUpdate.ApplyTo(MultiClientData);

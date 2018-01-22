@@ -28,14 +28,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	ChType = CHTYPE_Actor;
 	bCoreActor = true;
 	bSendingInitialBunch = false;
-	ReservedEntityId = worker::EntityId{};
 	ActorEntityId = worker::EntityId{};
-}
-
-bool USpatialActorChannel::IsReadyForReplication() const
-{
-	// Wait until we've reserved an entity ID.
-	return ReservedEntityId != worker::EntityId{};
 }
 
 void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed)
@@ -56,7 +49,7 @@ void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed
 		if (TypeBinding)
 		{
 			auto Entity = TypeBinding->CreateActorEntity(Actor->GetActorLocation(), PathStr, GetChangeState(Changed));
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ReservedEntityId, 0);
+			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ActorEntityId, 0);
 		}
 		else
 		{
@@ -78,7 +71,7 @@ void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed
 				.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, UnrealClientWritePermission)
 				.Build();
 
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ReservedEntityId, 0);
+			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ActorEntityId, 0);
 		}
 	}
 	else
@@ -87,17 +80,6 @@ void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed
 		return;
 	}
 }
-
-FPropertyChangeState USpatialActorChannel::GetChangeState(const TArray<uint16>& Changed) const
-{
-	return{
-		Changed,
-		(uint8*)Actor,
-		ActorReplicator->RepLayout->Cmds,
-		ActorReplicator->RepLayout->BaseHandleToCmdIndex,
-	};
-}
-
 
 void USpatialActorChannel::Init(UNetConnection* Connection, int32 ChannelIndex, bool bOpenedLocally)
 {
@@ -410,7 +392,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 		PinnedView->Remove(ReserveEntityCallback);
 	}
 
-	ReservedEntityId = *Op.EntityId;
+	ActorEntityId = *Op.EntityId;
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
