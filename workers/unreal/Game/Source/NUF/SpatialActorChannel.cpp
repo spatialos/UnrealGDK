@@ -32,6 +32,73 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	ActorEntityId = worker::EntityId{};
 }
 
+bool USpatialActorChannel::IsReadyForReplication() const
+{
+	// Wait until we've reserved an entity ID.
+	return ReservedEntityId != worker::EntityId{};
+}
+
+void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed)
+{
+	TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
+	if (PinnedConnection.IsValid())
+	{
+		USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
+		checkf(Driver->GetSpatialUpdateInterop(), TEXT("Spatial Update Interop is not initialised"));
+
+		const USpatialTypeBinding* TypeBinding = Driver->GetSpatialUpdateInterop()->GetTypeBindingByClass(Actor->GetClass());
+
+		FStringAssetReference ActorClassRef(Actor->GetClass());
+		FString PathStr = ActorClassRef.ToString();
+
+		UE_LOG(LogTemp, Log, TEXT("Creating entity for actor with path: %s on ActorChannel: %s"), *PathStr, *GetName());
+
+		if (TypeBinding)
+		{
+			auto Entity = TypeBinding->CreateActorEntity(Actor->GetActorLocation(), PathStr, GetChangeState(Changed));
+			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ReservedEntityId, 0);
+		}
+		else
+		{
+			WorkerAttributeSet UnrealWorkerAttributeSet{ { worker::List<std::string>{"UnrealWorker"} } };
+			WorkerAttributeSet UnrealClientAttributeSet{ { worker::List<std::string>{"UnrealClient"} } };
+
+			// UnrealWorker write authority, any worker read authority
+			WorkerRequirementSet UnrealWorkerWritePermission{ { UnrealWorkerAttributeSet } };
+			WorkerRequirementSet UnrealClientWritePermission{ { UnrealClientAttributeSet } };
+			WorkerRequirementSet AnyWorkerReadRequirement{ { UnrealWorkerAttributeSet, UnrealClientAttributeSet } };
+
+			auto Entity = unreal::FEntityBuilder::Begin()
+				.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Actor->GetActorLocation()), UnrealWorkerWritePermission)
+				.AddMetadataComponent(Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
+				.SetPersistence(true)
+				.SetReadAcl(AnyWorkerReadRequirement)
+				// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
+				//todo-giray: Remove once we're using proper (generated) entity templates here.
+				.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, UnrealClientWritePermission)
+				.Build();
+
+			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ReservedEntityId, 0);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
+		return;
+	}
+}
+
+FPropertyChangeState USpatialActorChannel::GetChangeState(const TArray<uint16>& Changed) const
+{
+	return{
+		Changed,
+		(uint8*)Actor,
+		ActorReplicator->RepLayout->Cmds,
+		ActorReplicator->RepLayout->BaseHandleToCmdIndex,
+	};
+}
+
+
 void USpatialActorChannel::Init(UNetConnection* Connection, int32 ChannelIndex, bool bOpenedLocally)
 {
 	Super::Init(Connection, ChannelIndex, bOpenedLocally);
@@ -130,12 +197,6 @@ bool USpatialActorChannel::ReplicateActor()
 	check(!Closing);
 	check(Connection);
 	check(Connection->PackageMap);
-
-	if (ReservedEntityId == worker::EntityId{})
-	{
-		// Wait until we've reserved an entity ID.
-		return false;
-	}
 
 	const UWorld* const ActorWorld = Actor->GetWorld();
 
@@ -389,53 +450,3 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		}
 	}
 }	
-
-void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed)
-{
-	TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
-	if (PinnedConnection.IsValid())
-	{
-		USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
-		checkf(Driver->GetSpatialUpdateInterop(), TEXT("Spatial Update Interop is not initialised"));
-
-		const USpatialTypeBinding* TypeBinding = Driver->GetSpatialUpdateInterop()->GetTypeBindingByClass(Actor->GetClass());
-
-		FStringAssetReference ActorClassRef(Actor->GetClass());
-		FString PathStr = ActorClassRef.ToString();
-
-		UE_LOG(LogTemp, Log, TEXT("Creating entity for actor with path: %s on ActorChannel: %s"), *PathStr, *GetName());
-
-		if (TypeBinding)
-		{
-			auto Entity = TypeBinding->CreateActorEntity(Actor->GetActorLocation(), PathStr, GetChangeState(Changed));
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ReservedEntityId, 0);
-		}
-		else
-		{
-			WorkerAttributeSet UnrealWorkerAttributeSet{{worker::List<std::string>{"UnrealWorker"}}};
-			WorkerAttributeSet UnrealClientAttributeSet{{worker::List<std::string>{"UnrealClient"}}};
-
-			// UnrealWorker write authority, any worker read authority
-			WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet}};
-			WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
-			WorkerRequirementSet AnyWorkerReadRequirement{{UnrealWorkerAttributeSet, UnrealClientAttributeSet}};
-
-			auto Entity = unreal::FEntityBuilder::Begin()
-				.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Actor->GetActorLocation()), UnrealWorkerWritePermission)
-				.AddMetadataComponent(Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
-				.SetPersistence(true)
-				.SetReadAcl(AnyWorkerReadRequirement)
-				// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
-				//todo-giray: Remove once we're using proper (generated) entity templates here.
-				.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, UnrealClientWritePermission)
-				.Build();
-
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ReservedEntityId, 0);
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
-		return;
-	}
-}

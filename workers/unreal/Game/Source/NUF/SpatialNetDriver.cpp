@@ -476,11 +476,10 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					}
 				}
 
-				//NUF: Do not start replicating data until we have established that there is a corresponding entity.
-				// The call to SetChannelActor (above) should have started that process.
-				check(GetEntityRegistry())
-
-				if (GetEntityRegistry()->GetEntityIdFromActor(Actor) == 0)
+				// NUF: Do not start replicating data until the channel reports that it's ready. For example, it might not be ready yet because
+				// an entity ID hasn't been reserved yet.
+				USpatialActorChannel* SpatialChannel = Cast<USpatialActorChannel>(Channel);
+				if (SpatialChannel && !SpatialChannel->IsReadyForReplication())
 				{
 					continue;
 				}
