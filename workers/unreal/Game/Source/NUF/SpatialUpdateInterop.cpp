@@ -11,17 +11,11 @@
 
 #include "Engine/PackageMapClient.h"
 
-#include "Generated/SpatialUpdateInterop_Character.h"
-#include "Generated/SpatialUpdateInterop_PlayerController.h"
+#include "Generated/SpatialTypeBinding_Character.h"
+#include "Generated/SpatialTypeBinding_PlayerController.h"
 
 // We assume that #define ENABLE_PROPERTY_CHECKSUMS exists in RepLayout.cpp:88 here.
 #define ENABLE_PROPERTY_CHECKSUMS
-
-void FSpatialTypeBinding::Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap)
-{
-	this->PackageMap = PackageMap;
-	this->UpdateInterop = UpdateInterop;
-}
 
 USpatialUpdateInterop::USpatialUpdateInterop()
 {
@@ -34,8 +28,8 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 	NetDriver = Driver;
 	PackageMap = Driver->GetSpatialOSNetConnection()->PackageMap;
 
-	RegisterInteropType(ACharacter::StaticClass(), TSharedPtr<FSpatialTypeBinding>(new FSpatialTypeBinding_Character()));
-	RegisterInteropType(APlayerController::StaticClass(), TSharedPtr<FSpatialTypeBinding>(new FSpatialTypeBinding_PlayerController()));
+	RegisterInteropType(ACharacter::StaticClass(), NewObject<USpatialTypeBinding_Character>(this));
+	RegisterInteropType(APlayerController::StaticClass(), NewObject<USpatialTypeBinding_PlayerController>(this));
 }
 
 void USpatialUpdateInterop::Tick(float DeltaTime)
@@ -55,12 +49,12 @@ USpatialActorChannel* USpatialUpdateInterop::GetClientActorChannel(const worker:
 	return *ActorChannelIt;
 }
 
-void USpatialUpdateInterop::AddClientActorChannel(const worker::EntityId & EntityId, USpatialActorChannel * Channel)
+void USpatialUpdateInterop::AddClientActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel)
 {
 	EntityToClientActorChannel.Add(EntityId, Channel);
 }
 
-void USpatialUpdateInterop::RegisterInteropType(UClass* Class, TSharedPtr<FSpatialTypeBinding> Binding)
+void USpatialUpdateInterop::RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding)
 {
 	Binding->Init(this, PackageMap);
 	Binding->BindToView();
@@ -69,23 +63,23 @@ void USpatialUpdateInterop::RegisterInteropType(UClass* Class, TSharedPtr<FSpati
 
 void USpatialUpdateInterop::UnregisterInteropType(UClass* Class)
 {
-	TSharedPtr<FSpatialTypeBinding>* BindingIterator = TypeBinding.Find(Class);
+	USpatialTypeBinding** BindingIterator = TypeBinding.Find(Class);
 	if (BindingIterator != nullptr)
 	{
-		TSharedPtr<FSpatialTypeBinding> Binding = *BindingIterator;
+		USpatialTypeBinding* Binding = *BindingIterator;
 		Binding->UnbindFromView();
 		TypeBinding.Remove(Class);
 	}
 }
 
-const FSpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class) const
+const USpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class) const
 {
 	for (const UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
 	{
-		const TSharedPtr<FSpatialTypeBinding>* BindingIterator = TypeBinding.Find(CurrentClass);
+		USpatialTypeBinding* const* BindingIterator = TypeBinding.Find(CurrentClass);
 		if (BindingIterator)
 		{
-			return BindingIterator->Get();
+			return *BindingIterator;
 		}
 	}
 	return nullptr;
@@ -93,21 +87,15 @@ const FSpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* 
 
 void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed)
 {
-	const FSpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
+	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
 		//	*Channel->Actor->GetClass()->GetName());
 		return;
 	}
-
-	const uint8* SourceData = (uint8*)Channel->Actor;
-
-	Binding->SendComponentUpdates(Changed,
-		SourceData,
-		Channel->ActorReplicator->RepLayout->Cmds,
-		Channel->ActorReplicator->RepLayout->BaseHandleToCmdIndex,
-		Channel->GetEntityId());
+	
+	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), Channel->GetEntityId());
 }
 
 void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)
@@ -144,7 +132,7 @@ void USpatialUpdateInterop::SetComponentInterests(USpatialActorChannel* ActorCha
 	if (ActorChannel->Actor->Role == ROLE_AutonomousProxy)
 	{
 		// We want to receive single client updates.
-		const FSpatialTypeBinding* Binding = GetTypeBindingByClass(ActorClass);
+		const USpatialTypeBinding* Binding = GetTypeBindingByClass(ActorClass);
 		if (Binding)
 		{
 			worker::Map<worker::ComponentId, worker::InterestOverride> Interest;

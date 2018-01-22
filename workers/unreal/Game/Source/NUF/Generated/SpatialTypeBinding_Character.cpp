@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // Note that this file has been generated automatically
 
-#include "SpatialUpdateInterop_Character.h"
+#include "SpatialTypeBinding_Character.h"
 #include "SpatialOS.h"
 #include "Engine.h"
 #include "SpatialActorChannel.h"
@@ -9,6 +9,7 @@
 // TODO(David): Remove this once RPCs are merged, as we will no longer need a placeholder component.
 #include "improbable/player/player.h"
 #include "SpatialPackageMapClient.h"
+#include "SpatialUpdateInterop.h"
 
 namespace {
 
@@ -19,7 +20,7 @@ void ApplyUpdateToSpatial_SingleClient_Character(const uint8* RESTRICT Data, int
 void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
 {
 	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = GetHandlePropertyMap_Character();
+	auto& HandleToPropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
 	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
 	if (!ActorChannel)
 	{
@@ -471,7 +472,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
 {
 	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = GetHandlePropertyMap_Character();
+	auto& HandleToPropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
 	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
 	if (!ActorChannel)
 	{
@@ -1345,15 +1346,46 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 	}
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
+
+void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,
+		improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& SingleClientUpdate,
+		bool& bSingleClientUpdateChanged,
+		improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& MultiClientUpdate,
+		bool& bMultiClientUpdateChanged,
+		UPackageMap* PackageMap)
+{
+	// Build up SpatialOS component updates.
+	auto& PropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
+	FChangelistIterator ChangelistIterator(Changes.Changed, 0);
+	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.Cmds, Changes.BaseHandleToCmdIndex, 0, 1, 0, Changes.Cmds.Num() - 1);
+	while (HandleIterator.NextHandle())
+	{
+		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
+		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
+		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
+		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
+		switch (GetGroupFromCondition(PropertyMapData.Condition))
+		{
+		case GROUP_SingleClient:
+			ApplyUpdateToSpatial_SingleClient_Character(Data, HandleIterator.Handle, Cmd.Property, PackageMap, SingleClientUpdate);
+			bSingleClientUpdateChanged = true;
+			break;
+		case GROUP_MultiClient:
+			ApplyUpdateToSpatial_MultiClient_Character(Data, HandleIterator.Handle, Cmd.Property, PackageMap, MultiClientUpdate);
+			bMultiClientUpdateChanged = true;
+			break;
+		}
+	}
+}
 } // ::
 
-const RepHandlePropertyMap& GetHandlePropertyMap_Character()
+const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
 {
-	static RepHandlePropertyMap* HandleToPropertyMapData = nullptr;
+	static FRepHandlePropertyMap* HandleToPropertyMapData = nullptr;
 	if (HandleToPropertyMapData == nullptr)
 	{
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("Character"));
-		HandleToPropertyMapData = new RepHandlePropertyMap();
+		HandleToPropertyMapData = new FRepHandlePropertyMap();
 		auto& HandleToPropertyMap = *HandleToPropertyMapData;
 		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None});
 		HandleToPropertyMap.Add(2, FRepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), COND_None});
@@ -1427,7 +1459,7 @@ const RepHandlePropertyMap& GetHandlePropertyMap_Character()
 	return *HandleToPropertyMapData;
 }
 
-void FSpatialTypeBinding_Character::BindToView()
+void USpatialTypeBinding_Character::BindToView()
 {
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
 	SingleClientCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
@@ -1442,14 +1474,14 @@ void FSpatialTypeBinding_Character::BindToView()
 	});
 }
 
-void FSpatialTypeBinding_Character::UnbindFromView()
+void USpatialTypeBinding_Character::UnbindFromView()
 {
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
 	View->Remove(SingleClientCallback);
 	View->Remove(MultiClientCallback);
 }
 
-worker::ComponentId FSpatialTypeBinding_Character::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
+worker::ComponentId USpatialTypeBinding_Character::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
 {
 	switch (Group)
 	{
@@ -1463,38 +1495,19 @@ worker::ComponentId FSpatialTypeBinding_Character::GetReplicatedGroupComponentId
 	}
 }
 
-void FSpatialTypeBinding_Character::SendComponentUpdates(const TArray<uint16>& Changed, const uint8* RESTRICT SourceData, const TArray<FRepLayoutCmd>& Cmds, const TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex, const worker::EntityId& EntityId) const
+void USpatialTypeBinding_Character::SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const
 {
 	// Build SpatialOS updates.
 	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
 	bool SingleClientUpdateChanged = false;
 	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
 	bool MultiClientUpdateChanged = false;
+	BuildSpatialComponentUpdate(Changes,
+		SingleClientUpdate, SingleClientUpdateChanged,
+		MultiClientUpdate, MultiClientUpdateChanged,
+		PackageMap);
 
-	// Build up SpatialOS component updates.
-	auto& PropertyMap = GetHandlePropertyMap_Character();
-	FChangelistIterator ChangelistIterator(Changed, 0);
-	FRepHandleIterator HandleIterator(ChangelistIterator, Cmds, BaseHandleToCmdIndex, 0, 1, 0, Cmds.Num() - 1);
-	while (HandleIterator.NextHandle())
-	{
-		const FRepLayoutCmd& Cmd = Cmds[HandleIterator.CmdIndex];
-		const uint8* Data = SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
-		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
-		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
-		switch (GetGroupFromCondition(PropertyMapData.Condition))
-		{
-		case GROUP_SingleClient:
-			ApplyUpdateToSpatial_SingleClient_Character(Data, HandleIterator.Handle, Cmd.Property, PackageMap, SingleClientUpdate);
-			SingleClientUpdateChanged = true;
-			break;
-		case GROUP_MultiClient:
-			ApplyUpdateToSpatial_MultiClient_Character(Data, HandleIterator.Handle, Cmd.Property, PackageMap, MultiClientUpdate);
-			MultiClientUpdateChanged = true;
-			break;
-		}
-	}
-
-	// Send SpatialOS update.
+	// Send SpatialOS updates if anything changed.
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
 	if (SingleClientUpdateChanged)
 	{
@@ -1506,13 +1519,26 @@ void FSpatialTypeBinding_Character::SendComponentUpdates(const TArray<uint16>& C
 	}
 }
 
-worker::Entity FSpatialTypeBinding_Character::CreateActorEntity(const FVector& Position, const FString& Metadata) const {
+worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const
+{
+	// Setup initial data.
+	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data SingleClientData;
+	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
+	bool bSingleClientUpdateChanged = false;
+	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data MultiClientData;
+	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
+	bool bMultiClientUpdateChanged = false;
+	BuildSpatialComponentUpdate(InitialChanges,
+		SingleClientUpdate, bSingleClientUpdateChanged,
+		MultiClientUpdate, bMultiClientUpdateChanged,
+		PackageMap);
+	SingleClientUpdate.ApplyTo(SingleClientData);
+	MultiClientUpdate.ApplyTo(MultiClientData);
 	
+	// Create entity.
 	const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
-	
 	improbable::WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
 	improbable::WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
-	
 	improbable::WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet}};
 	improbable::WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
 	improbable::WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
@@ -1523,8 +1549,8 @@ worker::Entity FSpatialTypeBinding_Character::CreateActorEntity(const FVector& P
 		.SetPersistence(true)
 		.SetReadAcl(AnyWorkerReadPermission)
 		.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClient::Data{}, UnrealClientWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data{}, UnrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data{}, UnrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(SingleClientData, UnrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(MultiClientData, UnrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, UnrealWorkerWritePermission)
 		.Build();
 }
