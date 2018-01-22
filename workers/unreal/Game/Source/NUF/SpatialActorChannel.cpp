@@ -67,16 +67,18 @@ void USpatialActorChannel::BindToSpatialView()
 
 void USpatialActorChannel::UnbindFromSpatialView() const
 {
+	//todo-giray: Uncomment the rest when worker sdk finishes the FR that gracefully handles removing unbound callback keys.
+	return;
+	/*
 	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
 	PinnedView->Remove(ReserveEntityCallback);
-	PinnedView->Remove(CreateEntityCallback);
+	PinnedView->Remove(CreateEntityCallback);*/
 }
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
-	if (SpatialConnection && SpatialConnection->Driver->IsServer()
-		&& SpatialConnection->bReliableSpatialConnection)
+	if (SpatialConnection && SpatialConnection->Driver->IsServer())
 	{
 		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
 		if (PinnedConnection.IsValid())
@@ -293,8 +295,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 
 	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
 
-	if (SpatialConnection && SpatialConnection->Driver->IsServer()
-		&& SpatialConnection->bReliableSpatialConnection)
+	if (SpatialConnection && SpatialConnection->Driver->IsServer())
 	{
 		// Create a Spatial entity that corresponds to this actor.
 		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();

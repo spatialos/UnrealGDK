@@ -221,8 +221,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 		AActor* OwningActor = Connection->OwningActor;
 		
 		//NUF: We allow a connection without an owner to process if it's meant to be the connection to the fake SpatialOS client.
-		if (Connection->bReliableSpatialConnection || 
-			(OwningActor != NULL && Connection->State == USOCK_Open && (Connection->Driver->Time - Connection->LastReceiveTime < 1.5f)))
+		if (((Connection->bReliableSpatialConnection || OwningActor != NULL) && Connection->State == USOCK_Open && (Connection->Driver->Time - Connection->LastReceiveTime < 1.5f)))
 		{
 			check(Connection->bReliableSpatialConnection || World == OwningActor->GetWorld());
 
