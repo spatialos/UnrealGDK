@@ -30,10 +30,9 @@ void USpatialNetConnection::InitRemoteConnection(UNetDriver* InDriver, class FSo
 
 bool USpatialNetConnection::ClientHasInitializedLevelFor(const UObject* TestObject) const
 {
-	if (bReliableSpatialConnection)
-		return true;
-
-	return Super::ClientHasInitializedLevelFor(TestObject);	
+	check(Driver->IsServer());
+	return true;
+	//Intentionally does not call Super::
 }
 
 void USpatialNetConnection::LowLevelSend(void * Data, int32 CountBytes, int32 CountBits)
