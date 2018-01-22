@@ -889,34 +889,6 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 	return bOk;
 }
 
-void USpatialNetDriver::ProcessRemoteFunction(class AActor* Actor, UFunction* Function, void* Parameters, FOutParmRec* OutParms, FFrame* Stack, class UObject* SubObject)
-{
-	// The Super:: will attempt to create an actor channel for this actor, if it does not exist.
-	// In order to make sure it creates a Spatial actor channel, we do it here (instead of modifying UE4 source)
-
-	Super::ProcessRemoteFunction(Actor, Function, Parameters, OutParms, Stack, SubObject);
-	return;
-	/*
-	USpatialNetConnection* Connection = GetSpatialOSNetConnection();
-	check(Connection);
-
-	UActorChannel* Ch = Connection->ActorChannels.FindRef(Actor);
-	if (!Ch)
-	{
-		Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
-		if (Channel)
-		{
-			if (GetEntityRegistry()->GetEntityIdFromActor(Actor) != 0)
-			{
-				Channel->bCoreActor = false;
-			}
-
-			Channel->SetChannelActor(Actor);
-
-	}
-	Super::ProcessRemoteFunction(Actor, Function, Parameters, OutParms, Stack, SubObject);*/
-}
-
 USpatialPendingNetGame::USpatialPendingNetGame(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -936,16 +908,12 @@ void USpatialPendingNetGame::InitNetDriver()
 		}
 		check(NetDriver);
 
-		if (NetDriver->InitConnect(this, URL, ConnectionError))
-		{
-		
-		}
-		else 
+		if (!NetDriver->InitConnect(this, URL, ConnectionError))
 		{
 			// error initializing the network stack...
 			UE_LOG(LogNet, Warning, TEXT("error initializing the network stack"));
 			GEngine->DestroyNamedNetDriver(this, NetDriver->NetDriverName);
-			NetDriver = NULL;
+			NetDriver = nullptr;
 
 			// ConnectionError should be set by calling InitConnect...however, if we set NetDriver to NULL without setting a
 			// value for ConnectionError, we'll trigger the assertion at the top of UPendingNetGame::Tick() so make sure it's set
