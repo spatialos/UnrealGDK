@@ -30,6 +30,14 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromUnrealObjectRef(const impro
 	return SpatialGuidCache->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 }
 
+FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const worker::EntityId & EntityId) const
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	check(SpatialGuidCache);
+	improbable::unreal::UnrealObjectRef ObjectRef{ EntityId, 0 };
+	return GetNetGUIDFromUnrealObjectRef(ObjectRef);
+}
+
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 	: FNetGUIDCache(InDriver)
 {
@@ -69,7 +77,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	FEntityId EntityId = Cast<USpatialNetDriver>(Driver)->GetEntityRegistry()->GetEntityIdFromActor(Actor);
 	check(EntityId.ToSpatialEntityId() >= 0)
 
-		FNetworkGUID NetGUID = GetOrAssignNetGUID(Actor);
+	FNetworkGUID NetGUID = GetOrAssignNetGUID(Actor);
 	//One major difference between how Unreal does NetGUIDs vs us is, we don't attempt to make them consistent across workers and client.
 	// The function above might have returned without assigning new GUID, because we are the client.
 	// Let's directly call the client function in that case.

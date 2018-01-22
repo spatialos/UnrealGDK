@@ -39,6 +39,7 @@ public:
 
 	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
+	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 };
 
 class NUF_API FSpatialNetGUIDCache : public FNetGUIDCache
