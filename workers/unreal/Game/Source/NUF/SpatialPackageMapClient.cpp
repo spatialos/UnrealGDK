@@ -44,23 +44,6 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 
 }
 
-FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID_Server(const UObject* Object)
-{
-	//todo-giray: Making this return early for now as it causes SerializeNewActor to fail on clients.
-
-	return FNetGUIDCache::AssignNewNetGUID_Server(Object);
-	/*
-
-	// Should only be assigning GUIDs for dynamic objects 
-	// Static objects' NetGUIDs are predetermined and registered in RegisterPreallocatedNetGUID
-	if (IsDynamicObject(Object))
-	{
-	return FNetGUIDCache::AssignNewNetGUID_Server(Object);
-	}
-	
-	return FNetworkGUID(0);*/
-}
-
 FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID(const UObject* Object)
 {
 	
@@ -83,7 +66,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	// Let's directly call the client function in that case.
 	if (NetGUID == FNetworkGUID::GetDefault() && !IsNetGUIDAuthority() && IsDynamicObject(Actor)) //todo-giray: Support static objects
 	{
-		// Here we have to borrow from FNetGuidCache::AssignNewNetGUID_Server to avoid source change
+		// Here we have to borrow from FNetGuidCache::\\\\\\\GUID_Server to avoid source change
 #define COMPOSE_NET_GUID( Index, IsStatic )	( ( ( Index ) << 1 ) | ( IsStatic ) )
 #define ALLOC_NEW_NET_GUID( IsStatic )		( COMPOSE_NET_GUID( ++UniqueNetIDs[ IsStatic ], IsStatic ) )
 
