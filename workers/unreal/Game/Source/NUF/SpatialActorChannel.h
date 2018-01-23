@@ -60,12 +60,6 @@ public:
 	UPROPERTY(transient)
 	bool bCoreActor;
 
-	// Spatial update interop layer takes the outbunch created during ReplicateActor(), and parses it.
-	// The problem is, if it's an initial send the whole actor & archetype data are serialized into this bunch before the header is written.
-	// In the future, we probably want to parse that segment of data properly.
-	// For now though, we keep track of where it ends so that we can skip there in SpatialUpdateInterop::SendSpatialUpdate().
-	bool bSendingInitialBunch;
-
 protected:
 	// UChannel interface
 	virtual bool CleanUp(const bool bForDestroy) override;

@@ -27,7 +27,6 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 {
 	ChType = CHTYPE_Actor;
 	bCoreActor = true;
-	bSendingInitialBunch = false;
 	ActorEntityId = worker::EntityId{};
 }
 
