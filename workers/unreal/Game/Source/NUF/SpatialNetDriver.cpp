@@ -70,8 +70,8 @@ void USpatialNetDriver::PostInitProperties()
 	if (!HasAnyFlags(RF_ClassDefaultObject))
 	{
 		// GuidCache will be allocated as an FNetGUIDCache above. To avoid an engine code change, we re-do it with the Spatial equivalent.
-		GuidCache = TSharedPtr< FNetGUIDCache >(new FSpatialNetGUIDCache(this));
-	}	
+		GuidCache = MakeShareable(new FSpatialNetGUIDCache(this));
+	}
 }
 
 void USpatialNetDriver::OnSpatialOSConnected()
@@ -739,16 +739,9 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 void USpatialNetDriver::TickDispatch(float DeltaTime)
 {
-	if (GetNetMode() == NM_Client)
-	{
-		// On client I want to disable all Unreal socket based communication.
-		UNetDriver::TickDispatch(DeltaTime);
-	}
-	else
-	{
-		Super::TickDispatch(DeltaTime);
-	}
-
+	// Not calling Super:: on purpose.
+	UNetDriver::TickDispatch(DeltaTime);
+	
 	if (SpatialOSInstance != nullptr && SpatialOSInstance->GetEntityPipeline() != nullptr)
 	{
 		SpatialOSInstance->ProcessOps();
