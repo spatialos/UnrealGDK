@@ -31,6 +31,12 @@ public:
 		return ActorEntityId;
 	}
 
+	FORCEINLINE bool IsReadyForReplication() const
+	{
+		// Wait until we've reserved an entity ID.		
+		return ActorEntityId != worker::EntityId{};
+	}
+
 	FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16>& Changed) const
 	{
 		return{
@@ -40,8 +46,6 @@ public:
 			ActorReplicator->RepLayout->BaseHandleToCmdIndex,
 		};
 	}
-
-	bool IsReadyForReplication() const;
 	
 	void SendCreateEntityRequest(const TArray<uint16>& Changed);
 

@@ -114,14 +114,6 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 			if (EntityActor)
 			{
 				SetupComponentInterests(EntityActor, EntityToSpawn, InConnection);
-
-				// register this entity with the PackageMap so that it has a GUID allocated				
-				//if (Driver && Driver->ClientConnections.Num() > 0)
-				{
-					// should provide a better way of getting hold of the SpatialOS client connection 
-					PMC = Cast<USpatialPackageMapClient>(Driver->ClientConnections[0]->PackageMap);
-					PMC->ResolveEntityActor(EntityActor, EntityToSpawn);
-				}
 			}
 			else
 			{

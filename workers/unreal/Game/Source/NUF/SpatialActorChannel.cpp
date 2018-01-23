@@ -31,18 +31,6 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	ActorEntityId = worker::EntityId{};
 }
 
-bool USpatialActorChannel::IsReadyForReplication() const
-{
-	// Wait until we've reserved an entity ID.
-	// Also wait until worker "resolves" the entity id, which happens at add entity.
-	//todo-giray: We should instead be registering the GUID earlier so that we can reduce the busy wait.
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-	check(SpatialPMC);
-	return ActorEntityId != worker::EntityId{} &&
-		SpatialPMC->GetNetGUIDFromEntityId(ActorEntityId).IsValid();
-}
-
-
 void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed)
 {
 	TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
@@ -412,6 +400,10 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	}
 
 	ActorEntityId = *Op.EntityId;
+
+	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(Connection->PackageMap);
+	check(SpatialPMC);
+	SpatialPMC->ResolveEntityActor(Actor, ActorEntityId);
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
