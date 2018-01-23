@@ -3,6 +3,7 @@
 
 #include "SpatialActorChannel.h"
 #include "SpatialNetDriver.h"
+#include "SpatialNetConnection.h"
 #include "SpatialPackageMapClient.h"
 #include "AddComponentOpWrapperBase.h"
 #include "CallbackDispatcher.h"
@@ -80,7 +81,7 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 {
 	if (World == nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Not adding entities because the world is NULL"));
+		UE_LOG(LogSpatialOSNUF, Error, TEXT("Not adding entities because the world is NULL"));
 		return;
 	}
 
@@ -104,15 +105,20 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 				Cast<UPositionAddComponentOp>(*PositionBaseComponent);
 
 			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(World->GetNetDriver());
-			// We may already have an actor for this entity if it was spawned locally on the server.
-			// In this case, we still need to register 
 			AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityToSpawn);
 			USpatialPackageMapClient* PMC = nullptr;
 
-			UE_LOG(LogTemp, Warning, TEXT("Received add entity op for %d"), EntityToSpawn.ToSpatialEntityId());
+			UE_LOG(LogSpatialOSNUF, Warning, TEXT("Received add entity op for %d"), EntityToSpawn.ToSpatialEntityId());
+
+			// There are 3 main options when we get here with regards to how this entity was created:
+			// 1) A SpawnActor() call (through interop) on this worker, which means it already has an actor associated with it.
+			// 2) A "pure" Spatial create entity request, which means we need to spawn an actor that was manually registered to correspond to it.
+			// 3) A SpawnActor() call that was initiated from a different worker, which means we need to find and spawn the corresponding "native" actor that corresponds to it. 
 
 			if (EntityActor)
 			{
+				// Option 1
+				UE_LOG(LogSpatialOSNUF, Log, TEXT("Entity for core actor %s has been checked out on the originating worker."), *EntityActor->GetName());
 				SetupComponentInterests(EntityActor, EntityToSpawn, InConnection);
 			}
 			else
@@ -121,31 +127,29 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 
 				if (ClassToSpawn)
 				{
-					// This means that we had registered this class. We treat this as a "standard" Spatial entity. No actor channel etc.					
-					//(This assumption might change in the future)
-					UE_LOG(LogTemp, Warning, TEXT("Attempting to spawn a registered %s"), *ClassToSpawn->GetName());
+					// Option 2
+					UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to spawn a registered %s"), *ClassToSpawn->GetName());
 					EntityActor = SpawnNewEntity(PositionAddComponentOp, World, ClassToSpawn);
 				}
 				else
 				{
+					// Option 3
 					ClassToSpawn = GetNativeEntityClass(MetadataAddComponentOp);
-					UE_LOG(LogTemp, Warning, TEXT("Attempting to spawn a native %s"), *ClassToSpawn->GetName());
-					// We are either on a client, or a worker that is not the original spawner of this entity.
+					UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to spawn a native %s"), *ClassToSpawn->GetName());
 					EntityActor = SpawnNewEntity(PositionAddComponentOp, World, ClassToSpawn);
 					check(EntityActor);
 
 					//NUF-todo: When we have multiple servers, this won't work. On which connection would we create the channel?
 					USpatialActorChannel* Ch = nullptr;
-					if (Driver->ServerConnection)
+					UNetConnection* Connection = Driver->GetSpatialOSNetConnection();
+					if (Connection == nullptr)
 					{
-						PMC = Cast<USpatialPackageMapClient>(Driver->ServerConnection->PackageMap);
-						Ch = Cast<USpatialActorChannel>(Driver->ServerConnection->CreateChannel(CHTYPE_Actor, false));
+						check(Driver->GetNetMode() == NM_Client);
+						Connection = Driver->ServerConnection;
 					}
-					else
-					{
-						PMC = Cast<USpatialPackageMapClient>(Driver->ClientConnections[0]->PackageMap);
-						Ch = Cast<USpatialActorChannel>(Driver->ClientConnections[0]->CreateChannel(CHTYPE_Actor, false));
-					}
+
+					PMC = Cast<USpatialPackageMapClient>(Connection->PackageMap);
+					Ch = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, false));
 					
 					check(Ch);
 					Driver->GetSpatialUpdateInterop()->AddClientActorChannel(EntityToSpawn.ToSpatialEntityId(), Ch);
@@ -169,7 +173,7 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 							FInBunch Bunch(Driver->ServerConnection);
 							EntityActor->OnActorChannelOpen(Bunch, Driver->ServerConnection);
 						}
-					}					
+					}
 				}				
 				EntityActor->PostNetInit();
 			}
@@ -279,6 +283,8 @@ void USpatialInteropBlock::ProcessOps(const TWeakPtr<worker::View>& InView,
 	const TWeakPtr<worker::Connection>& InConnection,
 	UWorld* World, UCallbackDispatcher* InCallbackDispatcher)
 {
+	//todo-giray: This approach is known to cause reordering of ops which can lead to a memory leak.
+	// A fix will be included in a future version of UnrealSDK, which we should integrate.
 	AddEntities(World, InConnection);
 	AddComponents(InView, InConnection, InCallbackDispatcher);
 	RemoveComponents(InCallbackDispatcher);
@@ -294,7 +300,7 @@ AActor* USpatialInteropBlock::SpawnNewEntity(
 {
 	if (World == nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SpawnNewEntity() failed: invalid World context"));
+		UE_LOG(LogSpatialOSNUF, Warning, TEXT("SpawnNewEntity() failed: invalid World context"));
 
 		return nullptr;
 	}
