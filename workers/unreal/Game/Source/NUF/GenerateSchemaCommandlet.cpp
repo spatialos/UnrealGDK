@@ -976,7 +976,7 @@ void GenerateForwardingCodeFromLayout(
 			// Write handle.
 			SourceWriter.Print(TEXT("OutputWriter.SerializeIntPacked(Handle);"));
 			SourceWriter.Print();
-				
+
 			// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
 			FString PropertyValueName = TEXT("Value");
 			FString PropertyValueCppType = Property->IsA(UObjectPropertyBase::StaticClass()) ? 

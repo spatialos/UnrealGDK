@@ -10,7 +10,6 @@
 #include "Commander.h"
 #include "improbable/worker.h"
 #include "improbable/standard_library.h"
-#include <map>
 #include "SpatialTypeBinding.h"
 #include "SpatialActorChannel.generated.h"
 
