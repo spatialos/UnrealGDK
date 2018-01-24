@@ -174,10 +174,10 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 							EntityActor->OnActorChannelOpen(Bunch, Driver->ServerConnection);
 						}
 					}
-				}				
+				}
 				EntityActor->PostNetInit();
+				EntityRegistry->AddToRegistry(EntityToSpawn, EntityActor);
 			}
-			EntityRegistry->AddToRegistry(EntityToSpawn, EntityActor);
 			SpawnedEntities.Add(EntityToSpawn);
 		}
 	}
