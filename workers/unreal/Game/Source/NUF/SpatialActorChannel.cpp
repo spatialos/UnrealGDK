@@ -357,7 +357,9 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	Super::SetChannelActor(InActor);
 
 	if (!bCoreActor)
+	{
 		return;
+	}
 
 	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
 

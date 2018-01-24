@@ -130,6 +130,7 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 					// Option 2
 					UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to spawn a registered %s"), *ClassToSpawn->GetName());
 					EntityActor = SpawnNewEntity(PositionAddComponentOp, World, ClassToSpawn);
+					EntityRegistry->AddToRegistry(EntityToSpawn, EntityActor);
 				}
 				else
 				{
@@ -138,8 +139,9 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 					UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to spawn a native %s"), *ClassToSpawn->GetName());
 					EntityActor = SpawnNewEntity(PositionAddComponentOp, World, ClassToSpawn);
 					check(EntityActor);
+					EntityRegistry->AddToRegistry(EntityToSpawn, EntityActor);
 
-					//NUF-todo: When we have multiple servers, this won't work. On which connection would we create the channel?
+					//todo-giray: When we have multiple servers, this won't work. On which connection would we create the channel?
 					USpatialActorChannel* Ch = nullptr;
 					UNetConnection* Connection = Driver->GetSpatialOSNetConnection();
 					if (Connection == nullptr)
@@ -175,8 +177,7 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 						}
 					}
 				}
-				EntityActor->PostNetInit();
-				EntityRegistry->AddToRegistry(EntityToSpawn, EntityActor);
+				EntityActor->PostNetInit();				
 			}
 			SpawnedEntities.Add(EntityToSpawn);
 		}
