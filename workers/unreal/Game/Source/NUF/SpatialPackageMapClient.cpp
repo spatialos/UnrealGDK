@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialPackageMapClient.h"
 #include "EntityRegistry.h"
@@ -19,21 +19,18 @@ struct FCompareComponentNames
 improbable::unreal::UnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromNetGUID(const FNetworkGUID & NetGUID) const
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	check(SpatialGuidCache);
 	return SpatialGuidCache->GetUnrealObjectRefFromNetGUID(NetGUID);
 }
 
 FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef & ObjectRef) const
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	check(SpatialGuidCache);
 	return SpatialGuidCache->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 }
 
 FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const worker::EntityId & EntityId) const
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	check(SpatialGuidCache);
 	improbable::unreal::UnrealObjectRef ObjectRef{ EntityId, 0 };
 	return GetNetGUIDFromUnrealObjectRef(ObjectRef);
 }
@@ -41,7 +38,6 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const worker::Enti
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 	: FNetGUIDCache(InDriver)
 {
-
 }
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID(const UObject* Object)
@@ -80,7 +76,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	check(NetGUID.IsValid());
 	uint32 SubObjOffset = 0;
 	improbable::unreal::UnrealObjectRef ObjRef{ EntityId.ToSpatialEntityId(), SubObjOffset };
-	UnrealObjectRefWrapper ObjRefWrapper;
+	FUnrealObjectRefWrapper ObjRefWrapper;
 	ObjRefWrapper.ObjectRef = ObjRef;
 	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjRefWrapper);
 	UnrealObjectRefToNetGUID.Emplace(ObjRefWrapper, NetGUID);
@@ -107,7 +103,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 
 improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
 {
-	const UnrealObjectRefWrapper* ObjRefWrapper = NetGUIDToUnrealObjectRef.Find(NetGUID);
+	const FUnrealObjectRefWrapper* ObjRefWrapper = NetGUIDToUnrealObjectRef.Find(NetGUID);
 
 	// If not found, return entity id 0 as it's not a valid entity id.
 	return ObjRefWrapper ? ObjRefWrapper->ObjectRef : improbable::unreal::UnrealObjectRef{ 0, 0 };
@@ -115,7 +111,7 @@ improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFrom
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const
 {
-	UnrealObjectRefWrapper ObjRefWrapper;
+	FUnrealObjectRefWrapper ObjRefWrapper;
 	ObjRefWrapper.ObjectRef = ObjectRef;
 	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRefWrapper);
 	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
@@ -123,7 +119,7 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbabl
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const
 {
-	UnrealObjectRefWrapper ObjRefWrapper;
+	FUnrealObjectRefWrapper ObjRefWrapper;
 	improbable::unreal::UnrealObjectRef ObjRef{ EntityId, 0 };
 	ObjRefWrapper.ObjectRef = ObjRef;
 	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRefWrapper);

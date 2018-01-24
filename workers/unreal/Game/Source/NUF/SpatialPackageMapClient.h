@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -10,15 +10,15 @@
 #include "SpatialPackageMapClient.generated.h"
 
 //todo-giray: super hacky to inject GetTypeHash() into UnrealObjectRef. Will find a better way.
-class UnrealObjectRefWrapper
+class FUnrealObjectRefWrapper
 {
 public:
 	improbable::unreal::UnrealObjectRef ObjectRef;
-	bool operator == (const UnrealObjectRefWrapper& Rhs) const
+	bool operator == (const FUnrealObjectRefWrapper& Rhs) const
 	{
 		return ObjectRef == Rhs.ObjectRef;
 	}
-	friend uint32 GetTypeHash(const UnrealObjectRefWrapper& ObjectRefWrapper)
+	friend uint32 GetTypeHash(const FUnrealObjectRefWrapper& ObjectRefWrapper)
 	{
 		//todo-giray do a proper hash.
 		return (ObjectRefWrapper.ObjectRef.entity() << 8) + ObjectRefWrapper.ObjectRef.offset();
@@ -55,7 +55,7 @@ public:
 private:
 	FNetworkGUID AssignNewNetGUID(const UObject* Object);
 
-	TMap<FNetworkGUID, UnrealObjectRefWrapper> NetGUIDToUnrealObjectRef;
-	TMap<UnrealObjectRefWrapper, FNetworkGUID> UnrealObjectRefToNetGUID;
+	TMap<FNetworkGUID, FUnrealObjectRefWrapper> NetGUIDToUnrealObjectRef;
+	TMap<FUnrealObjectRefWrapper, FNetworkGUID> UnrealObjectRefToNetGUID;
 };
 

@@ -202,7 +202,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 		AActor* OwningActor = Connection->OwningActor;
 		
 		//NUF: We allow a connection without an owner to process if it's meant to be the connection to the fake SpatialOS client.
-		if (((Connection->bReliableSpatialConnection || OwningActor != NULL) && Connection->State == USOCK_Open && (Connection->Driver->Time - Connection->LastReceiveTime < 1.5f)))
+		if ((Connection->bReliableSpatialConnection || OwningActor != NULL) && Connection->State == USOCK_Open && (Connection->Driver->Time - Connection->LastReceiveTime < 1.5f))
 		{
 			check(Connection->bReliableSpatialConnection || World == OwningActor->GetWorld());
 
@@ -271,30 +271,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 
 			UNetConnection* PriorityConnection = Connection;
 
-			//todo-giray: We don't have ownership of individual connections, so commenting this part out.
-			// But we need to deal with routing it to the right entity regardless.
-			/*if (Actor->bOnlyRelevantToOwner)
-			{
-			// This actor should be owned by a particular connection, see if that connection is the one passed in
-			bool bHasNullViewTarget = false;
-
-			PriorityConnection = IsActorOwnedByAndRelevantToConnection(Actor, ConnectionViewers, bHasNullViewTarget);
-
-			if (PriorityConnection == nullptr)
-			{
-			// Not owned by this connection, if we have a channel, close it, and continue
-			// NOTE - We won't close the channel if any connection has a NULL view target.
-			//	This is to give all connections a chance to own it
-			if (!bHasNullViewTarget && Channel != NULL && Time - Channel->RelevantTime >= RelevantTimeout)
-			{
-			Channel->Close();
-			}
-
-			// This connection doesn't own this actor
-			continue;
-			}
-			}*/
-			/*else*/ // Skip Actor if dormant
+			// Skip Actor if dormant
 			if (IsActorDormant(ActorInfo, Connection))
 			{
 				continue;
@@ -681,10 +658,9 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 				}
 			}
 			RelevantActorMark.Pop();
-
 			ConnectionViewers.Reset();
-			}
 		}
+	}
 
 	// shuffle the list of connections if not all connections were ticked
 	if (NumClientsToTick < ClientConnections.Num())
