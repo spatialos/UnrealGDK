@@ -188,16 +188,10 @@ bool USpatialActorChannel::ReplicateActor()
 	
 	const UWorld* const ActorWorld = Actor->GetWorld();
 
-	// The package map shouldn't have any carry over guids
-	if (CastChecked<UPackageMapClient>(Connection->PackageMap)->GetMustBeMappedGuidsInLastBunch().Num() != 0)
-	{
-		UE_LOG(LogNet, Warning, TEXT("ReplicateActor: PackageMap->GetMustBeMappedGuidsInLastBunch().Num() != 0: %i"), CastChecked<UPackageMapClient>(Connection->PackageMap)->GetMustBeMappedGuidsInLastBunch().Num());
-	}
-
 	// Time how long it takes to replicate this particular actor
 	STAT(FScopeCycleCounterUObject FunctionScope(Actor));
 
-	// Create an outgoing bunch, and skip this actor if the channel is saturated.
+	// Create an outgoing bunch (to satisfy some of the functions below).
 	FOutBunch Bunch(this, 0);
 	if (Bunch.IsError())
 	{
@@ -238,20 +232,18 @@ bool USpatialActorChannel::ReplicateActor()
 
 	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
 
-	FMemMark	MemMark(FMemStack::Get());	// The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in ::PostSendBunch. we free it below
+	FMemMark MemMark(FMemStack::Get());	// The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in ::PostSendBunch. we free it below
 
-											// ----------------------------------------------------------
-											// Replicate Actor and Component properties and RPCs
-											// ----------------------------------------------------------
+	// ----------------------------------------------------------
+	// Replicate Actor and Component properties and RPCs
+	// ----------------------------------------------------------
 
-	bool WroteSomethingImportant = false;
+	bool bWroteSomethingImportant = false;
 
 	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame, ActorReplicator->RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
 
 	const int32 PossibleNewHistoryIndex = ActorReplicator->RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
-
 	FRepChangedHistory& PossibleNewHistoryItem = ActorReplicator->RepState->ChangeHistory[PossibleNewHistoryIndex];
-
 	TArray<uint16>& Changed = PossibleNewHistoryItem.Changed;
 
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
@@ -273,6 +265,7 @@ bool USpatialActorChannel::ReplicateActor()
 	if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
 	{
 		UpdateChangelistHistory(ActorReplicator->RepState);
+		MemMark.Pop();
 		return false;
 	}
 
@@ -291,7 +284,7 @@ bool USpatialActorChannel::ReplicateActor()
 		{
 			UpdateInterop->SendSpatialUpdate(this, Changed);
 		}
-		WroteSomethingImportant = true;
+		bWroteSomethingImportant = true;
 		ActorReplicator->RepState->HistoryEnd++;
 		UpdateChangelistHistory(ActorReplicator->RepState);
 
@@ -320,7 +313,7 @@ bool USpatialActorChannel::ReplicateActor()
 			// Write a deletion content header:
 			WriteContentBlockForSubObjectDelete(Bunch, RepComp.Value()->ObjectNetGUID);
 
-			WroteSomethingImportant = true;
+			bWroteSomethingImportant = true;
 			Bunch.bReliable = true;
 
 			RepComp.Value()->CleanUp();
@@ -332,7 +325,7 @@ bool USpatialActorChannel::ReplicateActor()
 	// Send if necessary
 	// -----------------------------
 	bool SentBunch = false;
-	if (WroteSomethingImportant)
+	if (bWroteSomethingImportant)
 	{
 		FPacketIdRange PacketRange = SendBunch(&Bunch, 1);
 
@@ -352,7 +345,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 	bForceCompareProperties = false;		// Only do this once per frame when set
 
-	return WroteSomethingImportant;
+	return bWroteSomethingImportant;
 }
 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
