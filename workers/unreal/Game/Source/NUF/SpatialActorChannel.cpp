@@ -16,18 +16,52 @@
 #include "SpatialNetConnection.h"
 #include "SpatialOS.h"
 #include "SpatialUpdateInterop.h"
-#include "SpatialNetDriver.h"
 
 using namespace improbable;
 
 DEFINE_LOG_CATEGORY(LogSpatialOSActorChannel);
 
+namespace
+{
+//This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
+// We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
+// In this function, we poll for any changes in Unreal properties compared to the last time we replicated this actor.
+void UpdateChangelistHistory(FRepState * RepState)
+{
+	check(RepState->HistoryEnd >= RepState->HistoryStart);
+
+	const int32 HistoryCount = RepState->HistoryEnd - RepState->HistoryStart;
+	check(HistoryCount < FRepState::MAX_CHANGE_HISTORY);
+
+	for (int32 i = RepState->HistoryStart; i < RepState->HistoryEnd; i++)
+	{
+		const int32 HistoryIndex = i % FRepState::MAX_CHANGE_HISTORY;
+
+		FRepChangedHistory & HistoryItem = RepState->ChangeHistory[HistoryIndex];
+
+		check(HistoryItem.Changed.Num() > 0);		// All active history items should contain a change list
+
+		HistoryItem.Changed.Empty();
+		HistoryItem.OutPacketIdRange = FPacketIdRange();
+		RepState->HistoryStart++;
+	}
+
+	// Remove any tiling in the history markers to keep them from wrapping over time
+	const int32 NewHistoryCount = RepState->HistoryEnd - RepState->HistoryStart;
+
+	check(NewHistoryCount <= FRepState::MAX_CHANGE_HISTORY);
+
+	RepState->HistoryStart = RepState->HistoryStart % FRepState::MAX_CHANGE_HISTORY;
+	RepState->HistoryEnd = RepState->HistoryStart + NewHistoryCount;
+}
+}
+
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
 {
-	ChType = CHTYPE_Actor;
 	bCoreActor = true;
 	ActorEntityId = worker::EntityId{};
+	SpatialNetDriver = nullptr;
 }
 
 void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed)
@@ -83,11 +117,11 @@ void USpatialActorChannel::Init(UNetConnection* Connection, int32 ChannelIndex, 
 {
 	Super::Init(Connection, ChannelIndex, bOpenedLocally);
 
-	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
-	check(Driver);
+	SpatialNetDriver = Cast<USpatialNetDriver>(Connection->Driver);
+	check(SpatialNetDriver);
 
-	WorkerView = Driver->GetSpatialOS()->GetView();
-	WorkerConnection = Driver->GetSpatialOS()->GetConnection();
+	WorkerView = SpatialNetDriver->GetSpatialOS()->GetView();
+	WorkerConnection = SpatialNetDriver->GetSpatialOS()->GetConnection();
 
 	BindToSpatialView();
 }
@@ -126,8 +160,8 @@ void USpatialActorChannel::UnbindFromSpatialView() const
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
-	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
-	if (SpatialConnection && SpatialConnection->Driver->IsServer())
+	//todo-giray: This logic will not hold up when we have worker migration, needs to be revisited.
+	if (Connection->Driver->IsServer())
 	{
 		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
 		if (PinnedConnection.IsValid())
@@ -138,37 +172,6 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 
 	UnbindFromSpatialView();
 	return UActorChannel::CleanUp(bForDestroy);
-}
-
-//This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
-// We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
-void UpdateChangelistHistory(FRepState * RepState)
-{
-	check(RepState->HistoryEnd >= RepState->HistoryStart);
-
-	const int32 HistoryCount = RepState->HistoryEnd - RepState->HistoryStart;
-	check(HistoryCount < FRepState::MAX_CHANGE_HISTORY);
-
-	for (int32 i = RepState->HistoryStart; i < RepState->HistoryEnd; i++)
-	{
-		const int32 HistoryIndex = i % FRepState::MAX_CHANGE_HISTORY;
-
-		FRepChangedHistory & HistoryItem = RepState->ChangeHistory[HistoryIndex];
-
-		check(HistoryItem.Changed.Num() > 0);		// All active history items should contain a change list
-
-		HistoryItem.Changed.Empty();
-		HistoryItem.OutPacketIdRange = FPacketIdRange();
-		RepState->HistoryStart++;
-	}
-
-	// Remove any tiling in the history markers to keep them from wrapping over time
-	const int32 NewHistoryCount = RepState->HistoryEnd - RepState->HistoryStart;
-
-	check(NewHistoryCount <= FRepState::MAX_CHANGE_HISTORY);
-
-	RepState->HistoryStart = RepState->HistoryStart % FRepState::MAX_CHANGE_HISTORY;
-	RepState->HistoryEnd = RepState->HistoryStart + NewHistoryCount;
 }
 
 bool USpatialActorChannel::ReplicateActor()
@@ -278,7 +281,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 	if (Changed.Num() > 0)
 	{
-		USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Connection->Driver)->GetSpatialUpdateInterop();
+		USpatialUpdateInterop* UpdateInterop = SpatialNetDriver->GetSpatialUpdateInterop();
 		check(UpdateInterop);
 		if (RepFlags.bNetInitial)
 		{
@@ -375,10 +378,8 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 	else
 	{
-		USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
-		check(Driver);
-		check(Driver->GetEntityRegistry());
-		ActorEntityId = Driver->GetEntityRegistry()->GetEntityIdFromActor(InActor).ToSpatialEntityId();
+		check(SpatialNetDriver->GetEntityRegistry());
+		ActorEntityId = SpatialNetDriver->GetEntityRegistry()->GetEntityIdFromActor(InActor).ToSpatialEntityId();
 		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Opened non-authoritative channel for actor %s."), *InActor->GetName());
 	}
 }
@@ -418,8 +419,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 	}
 	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Created entity (%d) for: %s. Request id: %d"), Op.EntityId.value_or(0), *Actor->GetName(), ReserveEntityIdRequestId.Id);
 
-	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
-	USpatialNetConnection* SpatialConnection = Driver->GetSpatialOSNetConnection();
+	USpatialNetConnection* SpatialConnection = SpatialNetDriver->GetSpatialOSNetConnection();
 
 	auto PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
@@ -440,7 +440,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 			// once we know the entity was successfully spawned, add the local actor 
 			// to the package map and to the EntityRegistry
 			PMC->ResolveEntityActor(GetActor(), EntityId);
-			Driver->GetEntityRegistry()->AddToRegistry(EntityId, GetActor());
+			SpatialNetDriver->GetEntityRegistry()->AddToRegistry(EntityId, GetActor());
 			ActorEntityId = SpatialEntityId;
 		}
 	}

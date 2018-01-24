@@ -34,14 +34,14 @@ FGameInstancePIEResult UNUFGameInstance::StartPlayInEditorGameInstance(ULocalPla
 	// Network URL.
 	if (WorldContext->PendingNetGame)
 	{
-		if (WorldContext->PendingNetGame && WorldContext->PendingNetGame->NetDriver && WorldContext->PendingNetGame->NetDriver->ServerConnection)
+		if (WorldContext->PendingNetGame->NetDriver && WorldContext->PendingNetGame->NetDriver->ServerConnection)
 		{
 			WorldContext->PendingNetGame->NetDriver->ServerConnection->Close();
 			EditorEngine->DestroyNamedNetDriver(WorldContext->PendingNetGame, WorldContext->PendingNetGame->NetDriver->NetDriverName);
-			WorldContext->PendingNetGame->NetDriver = NULL;
+			WorldContext->PendingNetGame->NetDriver = nullptr;
 		}
 
-		WorldContext->PendingNetGame = NULL;
+		WorldContext->PendingNetGame = nullptr;
 	}
 
 	// Clean up the netdriver/socket so that the pending level succeeds

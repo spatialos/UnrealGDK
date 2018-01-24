@@ -15,6 +15,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSActorChannel, Log, All);
 
+class USpatialNetDriver;
+
 // A replacement actor channel that plugs into the Engine's replication system and works with SpatialOS
 UCLASS(Transient)
 class NUF_API USpatialActorChannel : public UActorChannel
@@ -78,4 +80,7 @@ private:
 	
 	worker::RequestId<worker::ReserveEntityIdRequest> ReserveEntityIdRequestId;
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
+
+	UPROPERTY(transient)
+	USpatialNetDriver* SpatialNetDriver;
 };
