@@ -110,6 +110,10 @@ void USpatialNetDriver::OnSpatialOSConnected()
 
 		ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
 		TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
+		
+		// Each connection stores a URL with various optional settings (host, port, map, netspeed...)
+		// We currently don't make use of any of these as some are meaningless in a SpatialOS world, and some are less of a priority.
+		// So for now we just give the connection a dummy url, might change in the future.
 		FURL DummyURL;
 
 		Connection->InitRemoteConnection(this, nullptr, DummyURL, *FromAddr, USOCK_Open);
