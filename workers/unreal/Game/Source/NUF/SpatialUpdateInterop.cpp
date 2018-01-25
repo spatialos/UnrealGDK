@@ -1,25 +1,21 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialUpdateInterop.h"
+
+#include "SpatialActorChannel.h"
+#include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
 #include "SpatialOS.h"
-#include "SpatialActorChannel.h"
 
 #include "Utils/BunchReader.h"
 
 #include "Engine/PackageMapClient.h"
 
-#include "Generated/SpatialUpdateInterop_Character.h"
-#include "Generated/SpatialUpdateInterop_PlayerController.h"
+#include "Generated/SpatialTypeBinding_Character.h"
+#include "Generated/SpatialTypeBinding_PlayerController.h"
 
 // We assume that #define ENABLE_PROPERTY_CHECKSUMS exists in RepLayout.cpp:88 here.
 #define ENABLE_PROPERTY_CHECKSUMS
-
-void FSpatialTypeBinding::Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap)
-{
-	this->PackageMap = PackageMap;
-	this->UpdateInterop = UpdateInterop;
-}
 
 USpatialUpdateInterop::USpatialUpdateInterop()
 {
@@ -30,47 +26,15 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 	bIsClient = bClient;
 	SpatialOSInstance = Instance;
 	NetDriver = Driver;
+	PackageMap = Driver->GetSpatialOSNetConnection()->PackageMap;
 
-	RegisterInteropType(ACharacter::StaticClass(), TSharedPtr<FSpatialTypeBinding>(new FSpatialTypeBinding_Character()));
-	//RegisterInteropType(PlayerController::StaticClass(), TSharedPtr<FSpatialTypeBinding>(new FSpatialTypeBinding_PlayerController()));
+	RegisterInteropType(ACharacter::StaticClass(), NewObject<USpatialTypeBinding_Character>(this));
+	RegisterInteropType(APlayerController::StaticClass(), NewObject<USpatialTypeBinding_PlayerController>(this));
 }
 
 void USpatialUpdateInterop::Tick(float DeltaTime)
 {
-	// TODO: Remove the WaitingForGuid variable and all this logic once we actually integrate with Unreals actor system properly.
-	// i.e. When Girays stuff is done.
-	if (NetDriver && bIsClient)
-	{
-		// Actor representing the player in editor.
-		AActor* Client1 = Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(6), false));
-		if (Client1 && EntityToClientActorChannel.Find({2}) == nullptr)
-		{
-			USpatialActorChannel* ActorChannel = Cast<USpatialActorChannel>(NetDriver->ServerConnection->ActorChannels[Client1]);
-			// We have the actor, wait for the Entity and role assignment.
-			auto& Entities = SpatialOSInstance->GetView().Pin()->Entities;
-			if (Client1->Role != ROLE_Authority && Entities.find({2}) != Entities.end() && ActorChannel)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Actor with NetGUID 6 and EntityID 2 created. Actor Role: %d"), (int)Client1->Role.GetValue());
-				EntityToClientActorChannel.Add({2}, ActorChannel);
-				SetComponentInterests(ActorChannel, {2});
-			}
-		}
-
-		// Actor representing the player in the floating window.
-		AActor* Client2 = Cast<AActor>(NetDriver->GuidCache->GetObjectFromNetGUID(FNetworkGUID(12), false));
-		if (Client2 && EntityToClientActorChannel.Find({3}) == nullptr)
-		{
-			USpatialActorChannel* ActorChannel = Cast<USpatialActorChannel>(NetDriver->ServerConnection->ActorChannels[Client2]);
-			// We have the actor, wait for the Entity.
-			auto& Entities = SpatialOSInstance->GetView().Pin()->Entities;
-			if (Client2->Role != ROLE_Authority && Entities.find({3}) != Entities.end() && ActorChannel)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Actor with NetGUID 12 and EntityID 3 created. Actor Role: %d"), (int)Client2->Role.GetValue());
-				EntityToClientActorChannel.Add({3}, ActorChannel);
-				SetComponentInterests(ActorChannel, {3});
-			}
-		}
-	}
+	//Leaving it here for now, we'll remove if it ends up unused.
 }
 
 USpatialActorChannel* USpatialUpdateInterop::GetClientActorChannel(const worker::EntityId & EntityId) const
@@ -85,57 +49,53 @@ USpatialActorChannel* USpatialUpdateInterop::GetClientActorChannel(const worker:
 	return *ActorChannelIt;
 }
 
-void USpatialUpdateInterop::RegisterInteropType(UClass* Class, TSharedPtr<FSpatialTypeBinding> Binding)
+void USpatialUpdateInterop::AddClientActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel)
 {
-	Binding->Init(this, nullptr);
+	EntityToClientActorChannel.Add(EntityId, Channel);
+}
+
+void USpatialUpdateInterop::RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding)
+{
+	Binding->Init(this, PackageMap);
 	Binding->BindToView();
 	TypeBinding.Add(Class, Binding);
 }
 
 void USpatialUpdateInterop::UnregisterInteropType(UClass* Class)
 {
-	TSharedPtr<FSpatialTypeBinding>* BindingIterator = TypeBinding.Find(Class);
+	USpatialTypeBinding** BindingIterator = TypeBinding.Find(Class);
 	if (BindingIterator != nullptr)
 	{
-		TSharedPtr<FSpatialTypeBinding> Binding = *BindingIterator;
+		USpatialTypeBinding* Binding = *BindingIterator;
 		Binding->UnbindFromView();
 		TypeBinding.Remove(Class);
 	}
 }
 
-const FSpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class) const
+const USpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class) const
 {
 	for (const UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
 	{
-		const TSharedPtr<FSpatialTypeBinding>* BindingIterator = TypeBinding.Find(CurrentClass);
+		USpatialTypeBinding* const* BindingIterator = TypeBinding.Find(CurrentClass);
 		if (BindingIterator)
 		{
-			return BindingIterator->Get();
+			return *BindingIterator;
 		}
 	}
 	return nullptr;
 }
 
-void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, FOutBunch* OutgoingBunch)
+void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed)
 {
-	const FSpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
+	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
 		//	*Channel->Actor->GetClass()->GetName());
 		return;
 	}
-
-	// Check that SpatialOS is connected.
-	// TODO(David): This function should never get called until SpatialOS _is_ connected.
-	TSharedPtr<worker::Connection> WorkerConnection = SpatialOSInstance->GetConnection().Pin();
-	if (!WorkerConnection.Get() || !WorkerConnection->IsConnected())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("SpatialOS is not connected yet."));
-		return;
-	}
-
-	Binding->SendComponentUpdates(OutgoingBunch, Channel->GetEntityId());
+	
+	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), Channel->GetEntityId());
 }
 
 void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)
@@ -172,7 +132,7 @@ void USpatialUpdateInterop::SetComponentInterests(USpatialActorChannel* ActorCha
 	if (ActorChannel->Actor->Role == ROLE_AutonomousProxy)
 	{
 		// We want to receive single client updates.
-		const FSpatialTypeBinding* Binding = GetTypeBindingByClass(ActorClass);
+		const USpatialTypeBinding* Binding = GetTypeBindingByClass(ActorClass);
 		if (Binding)
 		{
 			worker::Map<worker::ComponentId, worker::InterestOverride> Interest;

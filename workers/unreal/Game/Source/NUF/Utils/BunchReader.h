@@ -3,6 +3,7 @@
 #pragma once
 
 #include "SpatialHandlePropertyMap.h"
+#include "Serialization/BitReader.h"
 
 class FBunchReader
 {
@@ -15,9 +16,9 @@ public:
 
 	using RepDataHandler = TFunction<bool(FNetBitReader&, UPackageMap*, int32, UProperty*)>;
 
-	FBunchReader(uint8* Data, int NumBits);
+	FBunchReader(FNetBitReader* InBunch);
 
-	bool Parse(bool bIsServer, UPackageMap* PackageMap, const RepHandlePropertyMap& PropertyMap, RepDataHandler RepDataHandlerFunc);
+	bool Parse(bool bIsServer, const FRepHandlePropertyMap& PropertyMap, RepDataHandler RepDataHandlerFunc);
 
 	// Access properties.
 	bool HasError() const;
@@ -29,7 +30,7 @@ private:
 	bool bHasRepLayout;
 	bool bIsActor;
 
-	FNetBitReader Bunch;
+	FNetBitReader* Bunch;
 
 	void ReadHeader(bool bIsServer);
 };

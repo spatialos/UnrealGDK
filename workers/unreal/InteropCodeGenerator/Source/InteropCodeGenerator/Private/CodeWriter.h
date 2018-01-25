@@ -13,6 +13,7 @@ public:
 	FCodeWriter& Outdent();
 
 	void WriteToFile(const FString& Filename);
+	void Dump();
 
 private:
 	FString OutputSource;
