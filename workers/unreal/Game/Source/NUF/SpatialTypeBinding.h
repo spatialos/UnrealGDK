@@ -9,7 +9,7 @@
 #include "SpatialTypeBinding.generated.h"
 
 class USpatialUpdateInterop;
-class UPackageMap;
+class USpatialPackageMapClient;
 
 enum EReplicatedPropertyGroup
 {
@@ -56,5 +56,5 @@ protected:
 	USpatialUpdateInterop* UpdateInterop;
 
 	UPROPERTY()
-	UPackageMap* PackageMap;
+	USpatialPackageMapClient* PackageMap;
 };

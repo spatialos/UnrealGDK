@@ -2,25 +2,250 @@
 // Note that this file has been generated automatically
 
 #include "SpatialTypeBinding_Character.h"
-#include "SpatialOS.h"
-#include "Engine.h"
-#include "SpatialActorChannel.h"
-#include "EntityBuilder.h"
-// TODO(David): Remove this once RPCs are merged, as we will no longer need a placeholder component.
-#include "improbable/player/player.h"
-#include "SpatialPackageMapClient.h"
-#include "SpatialUpdateInterop.h"
+		#include "SpatialOS.h"
+		#include "Engine.h"
+		#include "SpatialActorChannel.h"
+		#include "EntityBuilder.h"
+		// TODO(David): Remove this once RPCs are merged, as we will no longer need a placeholder component.
+		#include "improbable/player/player.h"
+		#include "SpatialPackageMapClient.h"
+		#include "SpatialUpdateInterop.h"
 
-namespace {
+const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
+{
+	static FRepHandlePropertyMap* HandleToPropertyMapData = nullptr;
+	if (HandleToPropertyMapData == nullptr)
+	{
+		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("Character"));
+		HandleToPropertyMapData = new FRepHandlePropertyMap();
+		auto& HandleToPropertyMap = *HandleToPropertyMapData;
+		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None});
+		HandleToPropertyMap.Add(2, FRepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), COND_None});
+		HandleToPropertyMap.Add(3, FRepHandleData{nullptr, Class->FindPropertyByName("bTearOff"), COND_None});
+		HandleToPropertyMap.Add(4, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteRole"), COND_None});
+		HandleToPropertyMap.Add(5, FRepHandleData{nullptr, Class->FindPropertyByName("Owner"), COND_None});
+		HandleToPropertyMap.Add(6, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovement"), COND_SimulatedOrPhysicsNoReplay});
+		HandleToPropertyMap.Add(7, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap[7].Property = Cast<UStructProperty>(HandleToPropertyMap[7].Parent)->Struct->FindPropertyByName("AttachParent");
+		HandleToPropertyMap.Add(8, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap[8].Property = Cast<UStructProperty>(HandleToPropertyMap[8].Parent)->Struct->FindPropertyByName("LocationOffset");
+		HandleToPropertyMap.Add(9, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap[9].Property = Cast<UStructProperty>(HandleToPropertyMap[9].Parent)->Struct->FindPropertyByName("RelativeScale3D");
+		HandleToPropertyMap.Add(10, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap[10].Property = Cast<UStructProperty>(HandleToPropertyMap[10].Parent)->Struct->FindPropertyByName("RotationOffset");
+		HandleToPropertyMap.Add(11, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap[11].Property = Cast<UStructProperty>(HandleToPropertyMap[11].Parent)->Struct->FindPropertyByName("AttachSocket");
+		HandleToPropertyMap.Add(12, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap[12].Property = Cast<UStructProperty>(HandleToPropertyMap[12].Parent)->Struct->FindPropertyByName("AttachComponent");
+		HandleToPropertyMap.Add(13, FRepHandleData{nullptr, Class->FindPropertyByName("Role"), COND_None});
+		HandleToPropertyMap.Add(14, FRepHandleData{nullptr, Class->FindPropertyByName("bCanBeDamaged"), COND_None});
+		HandleToPropertyMap.Add(15, FRepHandleData{nullptr, Class->FindPropertyByName("Instigator"), COND_None});
+		HandleToPropertyMap.Add(16, FRepHandleData{nullptr, Class->FindPropertyByName("PlayerState"), COND_None});
+		HandleToPropertyMap.Add(17, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteViewPitch"), COND_SkipOwner});
+		HandleToPropertyMap.Add(18, FRepHandleData{nullptr, Class->FindPropertyByName("Controller"), COND_None});
+		HandleToPropertyMap.Add(19, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
+		HandleToPropertyMap[19].Property = Cast<UStructProperty>(HandleToPropertyMap[19].Parent)->Struct->FindPropertyByName("MovementBase");
+		HandleToPropertyMap.Add(20, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
+		HandleToPropertyMap[20].Property = Cast<UStructProperty>(HandleToPropertyMap[20].Parent)->Struct->FindPropertyByName("BoneName");
+		HandleToPropertyMap.Add(21, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
+		HandleToPropertyMap[21].Property = Cast<UStructProperty>(HandleToPropertyMap[21].Parent)->Struct->FindPropertyByName("Location");
+		HandleToPropertyMap.Add(22, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
+		HandleToPropertyMap[22].Property = Cast<UStructProperty>(HandleToPropertyMap[22].Parent)->Struct->FindPropertyByName("Rotation");
+		HandleToPropertyMap.Add(23, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
+		HandleToPropertyMap[23].Property = Cast<UStructProperty>(HandleToPropertyMap[23].Parent)->Struct->FindPropertyByName("bServerHasBaseComponent");
+		HandleToPropertyMap.Add(24, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
+		HandleToPropertyMap[24].Property = Cast<UStructProperty>(HandleToPropertyMap[24].Parent)->Struct->FindPropertyByName("bRelativeRotation");
+		HandleToPropertyMap.Add(25, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
+		HandleToPropertyMap[25].Property = Cast<UStructProperty>(HandleToPropertyMap[25].Parent)->Struct->FindPropertyByName("bServerHasVelocity");
+		HandleToPropertyMap.Add(26, FRepHandleData{nullptr, Class->FindPropertyByName("AnimRootMotionTranslationScale"), COND_SimulatedOnly});
+		HandleToPropertyMap.Add(27, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedServerLastTransformUpdateTimeStamp"), COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap.Add(28, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovementMode"), COND_SimulatedOnly});
+		HandleToPropertyMap.Add(29, FRepHandleData{nullptr, Class->FindPropertyByName("bIsCrouched"), COND_SimulatedOnly});
+		HandleToPropertyMap.Add(30, FRepHandleData{nullptr, Class->FindPropertyByName("JumpMaxHoldTime"), COND_None});
+		HandleToPropertyMap.Add(31, FRepHandleData{nullptr, Class->FindPropertyByName("JumpMaxCount"), COND_None});
+		HandleToPropertyMap.Add(32, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap[32].Property = Cast<UStructProperty>(HandleToPropertyMap[32].Parent)->Struct->FindPropertyByName("bIsActive");
+		HandleToPropertyMap.Add(33, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap[33].Property = Cast<UStructProperty>(HandleToPropertyMap[33].Parent)->Struct->FindPropertyByName("AnimMontage");
+		HandleToPropertyMap.Add(34, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap[34].Property = Cast<UStructProperty>(HandleToPropertyMap[34].Parent)->Struct->FindPropertyByName("Position");
+		HandleToPropertyMap.Add(35, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap[35].Property = Cast<UStructProperty>(HandleToPropertyMap[35].Parent)->Struct->FindPropertyByName("Location");
+		HandleToPropertyMap.Add(36, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap[36].Property = Cast<UStructProperty>(HandleToPropertyMap[36].Parent)->Struct->FindPropertyByName("Rotation");
+		HandleToPropertyMap.Add(37, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap[37].Property = Cast<UStructProperty>(HandleToPropertyMap[37].Parent)->Struct->FindPropertyByName("MovementBase");
+		HandleToPropertyMap.Add(38, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap[38].Property = Cast<UStructProperty>(HandleToPropertyMap[38].Parent)->Struct->FindPropertyByName("MovementBaseBoneName");
+		HandleToPropertyMap.Add(39, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap[39].Property = Cast<UStructProperty>(HandleToPropertyMap[39].Parent)->Struct->FindPropertyByName("bRelativePosition");
+		HandleToPropertyMap.Add(40, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap[40].Property = Cast<UStructProperty>(HandleToPropertyMap[40].Parent)->Struct->FindPropertyByName("bRelativeRotation");
+		HandleToPropertyMap.Add(41, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap[41].Property = Cast<UStructProperty>(HandleToPropertyMap[41].Parent)->Struct->FindPropertyByName("AuthoritativeRootMotion");
+		HandleToPropertyMap.Add(42, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap[42].Property = Cast<UStructProperty>(HandleToPropertyMap[42].Parent)->Struct->FindPropertyByName("Acceleration");
+		HandleToPropertyMap.Add(43, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap[43].Property = Cast<UStructProperty>(HandleToPropertyMap[43].Parent)->Struct->FindPropertyByName("LinearVelocity");
+	}
+	return *HandleToPropertyMapData;
+}
 
-void ApplyUpdateToSpatial_SingleClient_Character(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update)
+void USpatialTypeBinding_Character::BindToView()
+{
+	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
+	SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
+		const worker::AddComponentOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
+	{
+		auto Update = improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update::FromInitialData(Op.Data);
+		ReceiveUpdateFromSpatial_SingleClient(Op.EntityId, Update);
+	});
+	SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
+		const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
+	{
+		ReceiveUpdateFromSpatial_SingleClient(Op.EntityId, Op.Update);
+	});
+	MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
+		const worker::AddComponentOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
+	{
+		auto Update = improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update::FromInitialData(Op.Data);
+		ReceiveUpdateFromSpatial_MultiClient(Op.EntityId, Update);
+	});
+	MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
+		const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
+	{
+		ReceiveUpdateFromSpatial_MultiClient(Op.EntityId, Op.Update);
+	});
+}
+
+void USpatialTypeBinding_Character::UnbindFromView()
+{
+	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
+	View->Remove(SingleClientAddCallback);
+	View->Remove(SingleClientUpdateCallback);
+	View->Remove(MultiClientAddCallback);
+	View->Remove(MultiClientUpdateCallback);
+}
+
+worker::ComponentId USpatialTypeBinding_Character::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
+{
+	switch (Group)
+	{
+	case GROUP_SingleClient:
+		return improbable::unreal::UnrealCharacterSingleClientReplicatedData::ComponentId;
+	case GROUP_MultiClient:
+		return improbable::unreal::UnrealCharacterMultiClientReplicatedData::ComponentId;
+	default:
+		checkNoEntry();
+		return 0;
+	}
+}
+
+worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const
+{
+	// Setup initial data.
+	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data SingleClientData;
+	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
+	bool bSingleClientUpdateChanged = false;
+	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data MultiClientData;
+	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
+	bool bMultiClientUpdateChanged = false;
+	BuildSpatialComponentUpdate(InitialChanges
+		, SingleClientUpdate, bSingleClientUpdateChanged
+		, MultiClientUpdate, bMultiClientUpdateChanged
+	);
+	SingleClientUpdate.ApplyTo(SingleClientData);
+	MultiClientUpdate.ApplyTo(MultiClientData);
+
+	// Create entity.
+	const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
+	improbable::WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
+	improbable::WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
+	improbable::WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet}};
+	improbable::WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
+	improbable::WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
+	
+	return improbable::unreal::FEntityBuilder::Begin()
+		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, UnrealWorkerWritePermission)
+		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
+		.SetPersistence(true)
+		.SetReadAcl(AnyWorkerReadPermission)
+		.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClient::Data{}, UnrealClientWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(SingleClientData, UnrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(MultiClientData, UnrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, UnrealWorkerWritePermission)
+		.Build();
+}
+
+void USpatialTypeBinding_Character::SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const
+{
+	// Build SpatialOS updates.
+	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
+	bool SingleClientUpdateChanged = false;
+	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
+	bool MultiClientUpdateChanged = false;
+	BuildSpatialComponentUpdate(Changes
+		, SingleClientUpdate, SingleClientUpdateChanged
+		, MultiClientUpdate, MultiClientUpdateChanged
+	);
+
+	// Send SpatialOS updates if anything changed.
+	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
+	if (SingleClientUpdateChanged)
+	{
+		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(EntityId, SingleClientUpdate);
+	}
+	if (MultiClientUpdateChanged)
+	{
+		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(EntityId, MultiClientUpdate);
+	}
+}
+
+void USpatialTypeBinding_Character::BuildSpatialComponentUpdate(
+	const FPropertyChangeState& Changes,
+	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& SingleClientUpdate,
+	bool& bSingleClientUpdateChanged,
+	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& MultiClientUpdate,
+	bool& bMultiClientUpdateChanged) const
+{
+	// Build up SpatialOS component updates.
+	auto& PropertyMap = GetHandlePropertyMap();
+	FChangelistIterator ChangelistIterator(Changes.Changed, 0);
+	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.Cmds, Changes.BaseHandleToCmdIndex, 0, 1, 0, Changes.Cmds.Num() - 1);
+	while (HandleIterator.NextHandle())
+	{
+		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
+		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
+		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
+		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
+		switch (GetGroupFromCondition(PropertyMapData.Condition))
+		{
+		case GROUP_SingleClient:
+			ApplyUpdateToSpatial_SingleClient(Data, HandleIterator.Handle, Cmd.Property, SingleClientUpdate);
+			bSingleClientUpdateChanged = true;
+			break;
+		case GROUP_MultiClient:
+			ApplyUpdateToSpatial_MultiClient(Data, HandleIterator.Handle, Cmd.Property, MultiClientUpdate);
+			bMultiClientUpdateChanged = true;
+			break;
+		}
+	}
+}
+
+void USpatialTypeBinding_Character::ApplyUpdateToSpatial_SingleClient(
+	const uint8* RESTRICT Data,
+	int32 Handle,
+	UProperty* Property,
+	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& OutUpdate) const
 {
 }
 
-void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update)
+void USpatialTypeBinding_Character::ApplyUpdateToSpatial_MultiClient(
+	const uint8* RESTRICT Data,
+	int32 Handle,
+	UProperty* Property,
+	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& OutUpdate) const
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	check(SpatialPMC);
 	switch (Handle)
 	{
 		case 1: // field_bhidden
@@ -28,7 +253,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			uint8 Value;
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
-			Update.set_field_bhidden(Value != 0);
+			OutUpdate.set_field_bhidden(Value != 0);
 			break;
 		}
 		case 2: // field_breplicatemovement
@@ -36,7 +261,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			uint8 Value;
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
-			Update.set_field_breplicatemovement(Value != 0);
+			OutUpdate.set_field_breplicatemovement(Value != 0);
 			break;
 		}
 		case 3: // field_btearoff
@@ -44,7 +269,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			uint8 Value;
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
-			Update.set_field_btearoff(Value != 0);
+			OutUpdate.set_field_btearoff(Value != 0);
 			break;
 		}
 		case 4: // field_remoterole
@@ -52,17 +277,17 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			TEnumAsByte<ENetRole> Value;
 			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
 
-			Update.set_field_remoterole(uint32_t(Value));
+			OutUpdate.set_field_remoterole(uint32_t(Value));
 			break;
 		}
 		case 5: // field_owner
 		{
 			AActor* Value;
 			Value = *(reinterpret_cast<AActor* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Update.set_field_owner(UObjectRef);
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			OutUpdate.set_field_owner(UObjectRef);
 			break;
 		}
 		case 6: // field_replicatedmovement
@@ -74,17 +299,17 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FMemoryWriter ValueDataWriter(ValueData);
 			bool Success;
 			Value.NetSerialize(ValueDataWriter, nullptr, Success);
-			Update.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
+			OutUpdate.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
 			break;
 		}
 		case 7: // field_attachmentreplication_attachparent
 		{
 			AActor* Value;
 			Value = *(reinterpret_cast<AActor* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Update.set_field_attachmentreplication_attachparent(UObjectRef);
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			OutUpdate.set_field_attachmentreplication_attachparent(UObjectRef);
 			break;
 		}
 		case 8: // field_attachmentreplication_locationoffset
@@ -92,7 +317,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FVector_NetQuantize100 Value;
 			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
-			Update.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			OutUpdate.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
 		case 9: // field_attachmentreplication_relativescale3d
@@ -100,7 +325,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FVector_NetQuantize100 Value;
 			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
-			Update.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			OutUpdate.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
 		case 10: // field_attachmentreplication_rotationoffset
@@ -108,7 +333,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FRotator Value;
 			Value = *(reinterpret_cast<const FRotator*>(Data));
 
-			Update.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
+			OutUpdate.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
 			break;
 		}
 		case 11: // field_attachmentreplication_attachsocket
@@ -116,17 +341,17 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FName Value;
 			Value = *(reinterpret_cast<const FName*>(Data));
 
-			Update.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
+			OutUpdate.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
 			break;
 		}
 		case 12: // field_attachmentreplication_attachcomponent
 		{
 			USceneComponent* Value;
 			Value = *(reinterpret_cast<USceneComponent* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Update.set_field_attachmentreplication_attachcomponent(UObjectRef);
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			OutUpdate.set_field_attachmentreplication_attachcomponent(UObjectRef);
 			break;
 		}
 		case 13: // field_role
@@ -134,7 +359,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			TEnumAsByte<ENetRole> Value;
 			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
 
-			Update.set_field_role(uint32_t(Value));
+			OutUpdate.set_field_role(uint32_t(Value));
 			break;
 		}
 		case 14: // field_bcanbedamaged
@@ -142,27 +367,27 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			uint8 Value;
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
-			Update.set_field_bcanbedamaged(Value != 0);
+			OutUpdate.set_field_bcanbedamaged(Value != 0);
 			break;
 		}
 		case 15: // field_instigator
 		{
 			APawn* Value;
 			Value = *(reinterpret_cast<APawn* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Update.set_field_instigator(UObjectRef);
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			OutUpdate.set_field_instigator(UObjectRef);
 			break;
 		}
 		case 16: // field_playerstate
 		{
 			APlayerState* Value;
 			Value = *(reinterpret_cast<APlayerState* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Update.set_field_playerstate(UObjectRef);
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			OutUpdate.set_field_playerstate(UObjectRef);
 			break;
 		}
 		case 17: // field_remoteviewpitch
@@ -170,27 +395,27 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			uint8 Value;
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
-			Update.set_field_remoteviewpitch(uint32_t(Value));
+			OutUpdate.set_field_remoteviewpitch(uint32_t(Value));
 			break;
 		}
 		case 18: // field_controller
 		{
 			AController* Value;
 			Value = *(reinterpret_cast<AController* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Update.set_field_controller(UObjectRef);
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			OutUpdate.set_field_controller(UObjectRef);
 			break;
 		}
 		case 19: // field_replicatedbasedmovement_movementbase
 		{
 			UPrimitiveComponent* Value;
 			Value = *(reinterpret_cast<UPrimitiveComponent* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Update.set_field_replicatedbasedmovement_movementbase(UObjectRef);
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			OutUpdate.set_field_replicatedbasedmovement_movementbase(UObjectRef);
 			break;
 		}
 		case 20: // field_replicatedbasedmovement_bonename
@@ -198,7 +423,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FName Value;
 			Value = *(reinterpret_cast<const FName*>(Data));
 
-			Update.set_field_replicatedbasedmovement_bonename(TCHAR_TO_UTF8(*Value.ToString()));
+			OutUpdate.set_field_replicatedbasedmovement_bonename(TCHAR_TO_UTF8(*Value.ToString()));
 			break;
 		}
 		case 21: // field_replicatedbasedmovement_location
@@ -206,7 +431,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FVector_NetQuantize100 Value;
 			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
-			Update.set_field_replicatedbasedmovement_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			OutUpdate.set_field_replicatedbasedmovement_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
 		case 22: // field_replicatedbasedmovement_rotation
@@ -214,7 +439,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FRotator Value;
 			Value = *(reinterpret_cast<const FRotator*>(Data));
 
-			Update.set_field_replicatedbasedmovement_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
+			OutUpdate.set_field_replicatedbasedmovement_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
 			break;
 		}
 		case 23: // field_replicatedbasedmovement_bserverhasbasecomponent
@@ -222,7 +447,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			bool Value;
 			Value = *(reinterpret_cast<const bool*>(Data));
 
-			Update.set_field_replicatedbasedmovement_bserverhasbasecomponent(Value != 0);
+			OutUpdate.set_field_replicatedbasedmovement_bserverhasbasecomponent(Value != 0);
 			break;
 		}
 		case 24: // field_replicatedbasedmovement_brelativerotation
@@ -230,7 +455,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			bool Value;
 			Value = *(reinterpret_cast<const bool*>(Data));
 
-			Update.set_field_replicatedbasedmovement_brelativerotation(Value != 0);
+			OutUpdate.set_field_replicatedbasedmovement_brelativerotation(Value != 0);
 			break;
 		}
 		case 25: // field_replicatedbasedmovement_bserverhasvelocity
@@ -238,7 +463,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			bool Value;
 			Value = *(reinterpret_cast<const bool*>(Data));
 
-			Update.set_field_replicatedbasedmovement_bserverhasvelocity(Value != 0);
+			OutUpdate.set_field_replicatedbasedmovement_bserverhasvelocity(Value != 0);
 			break;
 		}
 		case 26: // field_animrootmotiontranslationscale
@@ -246,7 +471,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			float Value;
 			Value = *(reinterpret_cast<const float*>(Data));
 
-			Update.set_field_animrootmotiontranslationscale(Value);
+			OutUpdate.set_field_animrootmotiontranslationscale(Value);
 			break;
 		}
 		case 27: // field_replicatedserverlasttransformupdatetimestamp
@@ -254,7 +479,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			float Value;
 			Value = *(reinterpret_cast<const float*>(Data));
 
-			Update.set_field_replicatedserverlasttransformupdatetimestamp(Value);
+			OutUpdate.set_field_replicatedserverlasttransformupdatetimestamp(Value);
 			break;
 		}
 		case 28: // field_replicatedmovementmode
@@ -262,7 +487,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			uint8 Value;
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
-			Update.set_field_replicatedmovementmode(uint32_t(Value));
+			OutUpdate.set_field_replicatedmovementmode(uint32_t(Value));
 			break;
 		}
 		case 29: // field_biscrouched
@@ -270,7 +495,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			uint8 Value;
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
-			Update.set_field_biscrouched(Value != 0);
+			OutUpdate.set_field_biscrouched(Value != 0);
 			break;
 		}
 		case 30: // field_jumpmaxholdtime
@@ -278,7 +503,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			float Value;
 			Value = *(reinterpret_cast<const float*>(Data));
 
-			Update.set_field_jumpmaxholdtime(Value);
+			OutUpdate.set_field_jumpmaxholdtime(Value);
 			break;
 		}
 		case 31: // field_jumpmaxcount
@@ -286,7 +511,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			int32 Value;
 			Value = *(reinterpret_cast<const int32*>(Data));
 
-			Update.set_field_jumpmaxcount(Value);
+			OutUpdate.set_field_jumpmaxcount(Value);
 			break;
 		}
 		case 32: // field_reprootmotion_bisactive
@@ -294,17 +519,17 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			bool Value;
 			Value = *(reinterpret_cast<const bool*>(Data));
 
-			Update.set_field_reprootmotion_bisactive(Value != 0);
+			OutUpdate.set_field_reprootmotion_bisactive(Value != 0);
 			break;
 		}
 		case 33: // field_reprootmotion_animmontage
 		{
 			UAnimMontage* Value;
 			Value = *(reinterpret_cast<UAnimMontage* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Update.set_field_reprootmotion_animmontage(UObjectRef);
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			OutUpdate.set_field_reprootmotion_animmontage(UObjectRef);
 			break;
 		}
 		case 34: // field_reprootmotion_position
@@ -312,7 +537,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			float Value;
 			Value = *(reinterpret_cast<const float*>(Data));
 
-			Update.set_field_reprootmotion_position(Value);
+			OutUpdate.set_field_reprootmotion_position(Value);
 			break;
 		}
 		case 35: // field_reprootmotion_location
@@ -320,7 +545,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FVector_NetQuantize100 Value;
 			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
-			Update.set_field_reprootmotion_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			OutUpdate.set_field_reprootmotion_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
 		case 36: // field_reprootmotion_rotation
@@ -328,17 +553,17 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FRotator Value;
 			Value = *(reinterpret_cast<const FRotator*>(Data));
 
-			Update.set_field_reprootmotion_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
+			OutUpdate.set_field_reprootmotion_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
 			break;
 		}
 		case 37: // field_reprootmotion_movementbase
 		{
 			UPrimitiveComponent* Value;
 			Value = *(reinterpret_cast<UPrimitiveComponent* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			Update.set_field_reprootmotion_movementbase(UObjectRef);
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			OutUpdate.set_field_reprootmotion_movementbase(UObjectRef);
 			break;
 		}
 		case 38: // field_reprootmotion_movementbasebonename
@@ -346,7 +571,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FName Value;
 			Value = *(reinterpret_cast<const FName*>(Data));
 
-			Update.set_field_reprootmotion_movementbasebonename(TCHAR_TO_UTF8(*Value.ToString()));
+			OutUpdate.set_field_reprootmotion_movementbasebonename(TCHAR_TO_UTF8(*Value.ToString()));
 			break;
 		}
 		case 39: // field_reprootmotion_brelativeposition
@@ -354,7 +579,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			bool Value;
 			Value = *(reinterpret_cast<const bool*>(Data));
 
-			Update.set_field_reprootmotion_brelativeposition(Value != 0);
+			OutUpdate.set_field_reprootmotion_brelativeposition(Value != 0);
 			break;
 		}
 		case 40: // field_reprootmotion_brelativerotation
@@ -362,7 +587,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			bool Value;
 			Value = *(reinterpret_cast<const bool*>(Data));
 
-			Update.set_field_reprootmotion_brelativerotation(Value != 0);
+			OutUpdate.set_field_reprootmotion_brelativerotation(Value != 0);
 			break;
 		}
 		case 41: // field_reprootmotion_authoritativerootmotion
@@ -371,20 +596,20 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const FRootMotionSourceGroup*>(Data));
 
 			{
-				Update.set_field_reprootmotion_authoritativerootmotion_bhasadditivesources(Value.bHasAdditiveSources != 0);
+				OutUpdate.set_field_reprootmotion_authoritativerootmotion_bhasadditivesources(Value.bHasAdditiveSources != 0);
 			}
 			{
-				Update.set_field_reprootmotion_authoritativerootmotion_bhasoverridesources(Value.bHasOverrideSources != 0);
+				OutUpdate.set_field_reprootmotion_authoritativerootmotion_bhasoverridesources(Value.bHasOverrideSources != 0);
 			}
 			{
-				Update.set_field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity(improbable::Vector3f(Value.LastPreAdditiveVelocity.X, Value.LastPreAdditiveVelocity.Y, Value.LastPreAdditiveVelocity.Z));
+				OutUpdate.set_field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity(improbable::Vector3f(Value.LastPreAdditiveVelocity.X, Value.LastPreAdditiveVelocity.Y, Value.LastPreAdditiveVelocity.Z));
 			}
 			{
-				Update.set_field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied(Value.bIsAdditiveVelocityApplied != 0);
+				OutUpdate.set_field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied(Value.bIsAdditiveVelocityApplied != 0);
 			}
 			{
 				{
-					Update.set_field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags(uint32_t(Value.LastAccumulatedSettings.Flags));
+					OutUpdate.set_field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags(uint32_t(Value.LastAccumulatedSettings.Flags));
 				}
 			}
 			break;
@@ -394,7 +619,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FVector_NetQuantize10 Value;
 			Value = *(reinterpret_cast<const FVector_NetQuantize10*>(Data));
 
-			Update.set_field_reprootmotion_acceleration(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			OutUpdate.set_field_reprootmotion_acceleration(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
 		case 43: // field_reprootmotion_linearvelocity
@@ -402,7 +627,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FVector_NetQuantize10 Value;
 			Value = *(reinterpret_cast<const FVector_NetQuantize10*>(Data));
 
-			Update.set_field_reprootmotion_linearvelocity(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			OutUpdate.set_field_reprootmotion_linearvelocity(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
 	default:
@@ -411,32 +636,32 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 	}
 }
 
-void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, worker::EntityId EntityId, const improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update)
+void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_SingleClient(
+	worker::EntityId EntityId,
+	const improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update) const
 {
 	FNetBitWriter OutputWriter(nullptr, 0);
-	auto& HandleToPropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
+	auto& HandleToPropertyMap = GetHandlePropertyMap();
 	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(EntityId);
 	if (!ActorChannel)
 	{
 		return;
 	}
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	check(SpatialPMC);
 	ConditionMapFilter ConditionMap(ActorChannel);
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
-void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, worker::EntityId EntityId, const improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update)
+void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
+	worker::EntityId EntityId,
+	const improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update) const
 {
 	FNetBitWriter OutputWriter(nullptr, 0);
-	auto& HandleToPropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
+	auto& HandleToPropertyMap = GetHandlePropertyMap();
 	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(EntityId);
 	if (!ActorChannel)
 	{
 		return;
 	}
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	check(SpatialPMC);
 	ConditionMapFilter ConditionMap(ActorChannel);
 	if (!Update.field_bhidden().empty())
 	{
@@ -523,8 +748,8 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_owner().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -566,8 +791,8 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachparent().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -664,8 +889,8 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachcomponent().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<USceneComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<USceneComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -723,8 +948,8 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_instigator().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -744,8 +969,8 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_playerstate().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -786,8 +1011,8 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_controller().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<AController*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<AController*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -807,8 +1032,8 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_replicatedbasedmovement_movementbase().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<UPrimitiveComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<UPrimitiveComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -1059,8 +1284,8 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_reprootmotion_animmontage().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<UAnimMontage*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<UAnimMontage*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -1137,8 +1362,8 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_reprootmotion_movementbase().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<UPrimitiveComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<UPrimitiveComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -1277,226 +1502,4 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 		}
 	}
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
-}
-
-void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,
-		improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& SingleClientUpdate,
-		bool& bSingleClientUpdateChanged,
-		improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& MultiClientUpdate,
-		bool& bMultiClientUpdateChanged,
-		UPackageMap* PackageMap)
-{
-	// Build up SpatialOS component updates.
-	auto& PropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
-	FChangelistIterator ChangelistIterator(Changes.Changed, 0);
-	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.Cmds, Changes.BaseHandleToCmdIndex, 0, 1, 0, Changes.Cmds.Num() - 1);
-	while (HandleIterator.NextHandle())
-	{
-		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
-		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
-		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
-		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
-		switch (GetGroupFromCondition(PropertyMapData.Condition))
-		{
-		case GROUP_SingleClient:
-			ApplyUpdateToSpatial_SingleClient_Character(Data, HandleIterator.Handle, Cmd.Property, PackageMap, SingleClientUpdate);
-			bSingleClientUpdateChanged = true;
-			break;
-		case GROUP_MultiClient:
-			ApplyUpdateToSpatial_MultiClient_Character(Data, HandleIterator.Handle, Cmd.Property, PackageMap, MultiClientUpdate);
-			bMultiClientUpdateChanged = true;
-			break;
-		}
-	}
-}
-} // ::
-
-const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
-{
-	static FRepHandlePropertyMap* HandleToPropertyMapData = nullptr;
-	if (HandleToPropertyMapData == nullptr)
-	{
-		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("Character"));
-		HandleToPropertyMapData = new FRepHandlePropertyMap();
-		auto& HandleToPropertyMap = *HandleToPropertyMapData;
-		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None});
-		HandleToPropertyMap.Add(2, FRepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), COND_None});
-		HandleToPropertyMap.Add(3, FRepHandleData{nullptr, Class->FindPropertyByName("bTearOff"), COND_None});
-		HandleToPropertyMap.Add(4, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteRole"), COND_None});
-		HandleToPropertyMap.Add(5, FRepHandleData{nullptr, Class->FindPropertyByName("Owner"), COND_None});
-		HandleToPropertyMap.Add(6, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovement"), COND_SimulatedOrPhysicsNoReplay});
-		HandleToPropertyMap.Add(7, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
-		HandleToPropertyMap[7].Property = Cast<UStructProperty>(HandleToPropertyMap[7].Parent)->Struct->FindPropertyByName("AttachParent");
-		HandleToPropertyMap.Add(8, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
-		HandleToPropertyMap[8].Property = Cast<UStructProperty>(HandleToPropertyMap[8].Parent)->Struct->FindPropertyByName("LocationOffset");
-		HandleToPropertyMap.Add(9, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
-		HandleToPropertyMap[9].Property = Cast<UStructProperty>(HandleToPropertyMap[9].Parent)->Struct->FindPropertyByName("RelativeScale3D");
-		HandleToPropertyMap.Add(10, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
-		HandleToPropertyMap[10].Property = Cast<UStructProperty>(HandleToPropertyMap[10].Parent)->Struct->FindPropertyByName("RotationOffset");
-		HandleToPropertyMap.Add(11, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
-		HandleToPropertyMap[11].Property = Cast<UStructProperty>(HandleToPropertyMap[11].Parent)->Struct->FindPropertyByName("AttachSocket");
-		HandleToPropertyMap.Add(12, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
-		HandleToPropertyMap[12].Property = Cast<UStructProperty>(HandleToPropertyMap[12].Parent)->Struct->FindPropertyByName("AttachComponent");
-		HandleToPropertyMap.Add(13, FRepHandleData{nullptr, Class->FindPropertyByName("Role"), COND_None});
-		HandleToPropertyMap.Add(14, FRepHandleData{nullptr, Class->FindPropertyByName("bCanBeDamaged"), COND_None});
-		HandleToPropertyMap.Add(15, FRepHandleData{nullptr, Class->FindPropertyByName("Instigator"), COND_None});
-		HandleToPropertyMap.Add(16, FRepHandleData{nullptr, Class->FindPropertyByName("PlayerState"), COND_None});
-		HandleToPropertyMap.Add(17, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteViewPitch"), COND_SkipOwner});
-		HandleToPropertyMap.Add(18, FRepHandleData{nullptr, Class->FindPropertyByName("Controller"), COND_None});
-		HandleToPropertyMap.Add(19, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
-		HandleToPropertyMap[19].Property = Cast<UStructProperty>(HandleToPropertyMap[19].Parent)->Struct->FindPropertyByName("MovementBase");
-		HandleToPropertyMap.Add(20, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
-		HandleToPropertyMap[20].Property = Cast<UStructProperty>(HandleToPropertyMap[20].Parent)->Struct->FindPropertyByName("BoneName");
-		HandleToPropertyMap.Add(21, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
-		HandleToPropertyMap[21].Property = Cast<UStructProperty>(HandleToPropertyMap[21].Parent)->Struct->FindPropertyByName("Location");
-		HandleToPropertyMap.Add(22, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
-		HandleToPropertyMap[22].Property = Cast<UStructProperty>(HandleToPropertyMap[22].Parent)->Struct->FindPropertyByName("Rotation");
-		HandleToPropertyMap.Add(23, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
-		HandleToPropertyMap[23].Property = Cast<UStructProperty>(HandleToPropertyMap[23].Parent)->Struct->FindPropertyByName("bServerHasBaseComponent");
-		HandleToPropertyMap.Add(24, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
-		HandleToPropertyMap[24].Property = Cast<UStructProperty>(HandleToPropertyMap[24].Parent)->Struct->FindPropertyByName("bRelativeRotation");
-		HandleToPropertyMap.Add(25, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
-		HandleToPropertyMap[25].Property = Cast<UStructProperty>(HandleToPropertyMap[25].Parent)->Struct->FindPropertyByName("bServerHasVelocity");
-		HandleToPropertyMap.Add(26, FRepHandleData{nullptr, Class->FindPropertyByName("AnimRootMotionTranslationScale"), COND_SimulatedOnly});
-		HandleToPropertyMap.Add(27, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedServerLastTransformUpdateTimeStamp"), COND_SimulatedOnlyNoReplay});
-		HandleToPropertyMap.Add(28, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovementMode"), COND_SimulatedOnly});
-		HandleToPropertyMap.Add(29, FRepHandleData{nullptr, Class->FindPropertyByName("bIsCrouched"), COND_SimulatedOnly});
-		HandleToPropertyMap.Add(30, FRepHandleData{nullptr, Class->FindPropertyByName("JumpMaxHoldTime"), COND_None});
-		HandleToPropertyMap.Add(31, FRepHandleData{nullptr, Class->FindPropertyByName("JumpMaxCount"), COND_None});
-		HandleToPropertyMap.Add(32, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
-		HandleToPropertyMap[32].Property = Cast<UStructProperty>(HandleToPropertyMap[32].Parent)->Struct->FindPropertyByName("bIsActive");
-		HandleToPropertyMap.Add(33, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
-		HandleToPropertyMap[33].Property = Cast<UStructProperty>(HandleToPropertyMap[33].Parent)->Struct->FindPropertyByName("AnimMontage");
-		HandleToPropertyMap.Add(34, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
-		HandleToPropertyMap[34].Property = Cast<UStructProperty>(HandleToPropertyMap[34].Parent)->Struct->FindPropertyByName("Position");
-		HandleToPropertyMap.Add(35, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
-		HandleToPropertyMap[35].Property = Cast<UStructProperty>(HandleToPropertyMap[35].Parent)->Struct->FindPropertyByName("Location");
-		HandleToPropertyMap.Add(36, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
-		HandleToPropertyMap[36].Property = Cast<UStructProperty>(HandleToPropertyMap[36].Parent)->Struct->FindPropertyByName("Rotation");
-		HandleToPropertyMap.Add(37, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
-		HandleToPropertyMap[37].Property = Cast<UStructProperty>(HandleToPropertyMap[37].Parent)->Struct->FindPropertyByName("MovementBase");
-		HandleToPropertyMap.Add(38, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
-		HandleToPropertyMap[38].Property = Cast<UStructProperty>(HandleToPropertyMap[38].Parent)->Struct->FindPropertyByName("MovementBaseBoneName");
-		HandleToPropertyMap.Add(39, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
-		HandleToPropertyMap[39].Property = Cast<UStructProperty>(HandleToPropertyMap[39].Parent)->Struct->FindPropertyByName("bRelativePosition");
-		HandleToPropertyMap.Add(40, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
-		HandleToPropertyMap[40].Property = Cast<UStructProperty>(HandleToPropertyMap[40].Parent)->Struct->FindPropertyByName("bRelativeRotation");
-		HandleToPropertyMap.Add(41, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
-		HandleToPropertyMap[41].Property = Cast<UStructProperty>(HandleToPropertyMap[41].Parent)->Struct->FindPropertyByName("AuthoritativeRootMotion");
-		HandleToPropertyMap.Add(42, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
-		HandleToPropertyMap[42].Property = Cast<UStructProperty>(HandleToPropertyMap[42].Parent)->Struct->FindPropertyByName("Acceleration");
-		HandleToPropertyMap.Add(43, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
-		HandleToPropertyMap[43].Property = Cast<UStructProperty>(HandleToPropertyMap[43].Parent)->Struct->FindPropertyByName("LinearVelocity");
-	}
-	return *HandleToPropertyMapData;
-}
-
-void USpatialTypeBinding_Character::BindToView()
-{
-	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
-	SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
-		const worker::AddComponentOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
-	{
-		auto Update = improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update::FromInitialData(Op.Data);
-		ReceiveUpdateFromSpatial_SingleClient_Character(UpdateInterop, PackageMap, Op.EntityId, Update);
-	});
-	SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
-		const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
-	{
-		ReceiveUpdateFromSpatial_SingleClient_Character(UpdateInterop, PackageMap, Op.EntityId, Op.Update);
-	});
-	MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
-		const worker::AddComponentOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
-	{
-		auto Update = improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update::FromInitialData(Op.Data);
-		ReceiveUpdateFromSpatial_MultiClient_Character(UpdateInterop, PackageMap, Op.EntityId, Update);
-	});
-	MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
-		const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
-	{
-		ReceiveUpdateFromSpatial_MultiClient_Character(UpdateInterop, PackageMap, Op.EntityId, Op.Update);
-	});
-}
-
-void USpatialTypeBinding_Character::UnbindFromView()
-{
-	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
-	View->Remove(SingleClientAddCallback);
-	View->Remove(SingleClientUpdateCallback);
-	View->Remove(MultiClientAddCallback);
-	View->Remove(MultiClientUpdateCallback);
-}
-
-worker::ComponentId USpatialTypeBinding_Character::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
-{
-	switch (Group)
-	{
-	case GROUP_SingleClient:
-		return improbable::unreal::UnrealCharacterSingleClientReplicatedData::ComponentId;
-	case GROUP_MultiClient:
-		return improbable::unreal::UnrealCharacterMultiClientReplicatedData::ComponentId;
-	default:
-		checkNoEntry();
-		return 0;
-	}
-}
-
-worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const
-{
-	// Setup initial data.
-	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data SingleClientData;
-	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
-	bool bSingleClientUpdateChanged = false;
-	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data MultiClientData;
-	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
-	bool bMultiClientUpdateChanged = false;
-	BuildSpatialComponentUpdate(InitialChanges,
-		SingleClientUpdate, bSingleClientUpdateChanged,
-		MultiClientUpdate, bMultiClientUpdateChanged,
-		PackageMap);
-	SingleClientUpdate.ApplyTo(SingleClientData);
-	MultiClientUpdate.ApplyTo(MultiClientData);
-	
-	// Create entity.
-	const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
-	improbable::WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
-	improbable::WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
-	improbable::WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet}};
-	improbable::WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
-	improbable::WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
-	
-	return improbable::unreal::FEntityBuilder::Begin()
-		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, UnrealWorkerWritePermission)
-		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
-		.SetPersistence(true)
-		.SetReadAcl(AnyWorkerReadPermission)
-		.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClient::Data{}, UnrealClientWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(SingleClientData, UnrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(MultiClientData, UnrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, UnrealWorkerWritePermission)
-		.Build();
-}
-
-void USpatialTypeBinding_Character::SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const
-{
-	// Build SpatialOS updates.
-	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
-	bool SingleClientUpdateChanged = false;
-	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
-	bool MultiClientUpdateChanged = false;
-	BuildSpatialComponentUpdate(Changes,
-		SingleClientUpdate, SingleClientUpdateChanged,
-		MultiClientUpdate, MultiClientUpdateChanged,
-		PackageMap);
-
-	// Send SpatialOS updates if anything changed.
-	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
-	if (SingleClientUpdateChanged)
-	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(EntityId, SingleClientUpdate);
-	}
-	if (MultiClientUpdateChanged)
-	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(EntityId, MultiClientUpdate);
-	}
 }

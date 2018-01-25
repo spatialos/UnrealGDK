@@ -20,11 +20,35 @@ public:
 	void BindToView() override;
 	void UnbindFromView() override;
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
-	void SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const override;
 	worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const override;
+	void SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const override;
 private:
 	worker::Dispatcher::CallbackKey SingleClientAddCallback;
 	worker::Dispatcher::CallbackKey SingleClientUpdateCallback;
 	worker::Dispatcher::CallbackKey MultiClientAddCallback;
 	worker::Dispatcher::CallbackKey MultiClientUpdateCallback;
+
+	// Helper functions.
+	void BuildSpatialComponentUpdate(
+		const FPropertyChangeState& Changes,
+		improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& SingleClientUpdate,
+		bool& bSingleClientUpdateChanged,
+		improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& MultiClientUpdate,
+		bool& bMultiClientUpdateChanged) const;
+	void ApplyUpdateToSpatial_SingleClient(
+		const uint8* RESTRICT Data,
+		int32 Handle,
+		UProperty* Property,
+		improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& OutUpdate) const;
+	void ApplyUpdateToSpatial_MultiClient(
+		const uint8* RESTRICT Data,
+		int32 Handle,
+		UProperty* Property,
+		improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& OutUpdate) const;
+	void ReceiveUpdateFromSpatial_SingleClient(
+		worker::EntityId EntityId,
+		const improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update) const;
+	void ReceiveUpdateFromSpatial_MultiClient(
+		worker::EntityId EntityId,
+		const improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update) const;
 };
