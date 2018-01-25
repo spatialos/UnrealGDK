@@ -17,21 +17,6 @@ void ApplyUpdateToSpatial_SingleClient_Character(const uint8* RESTRICT Data, int
 {
 }
 
-void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
-{
-	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
-	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
-	if (!ActorChannel)
-	{
-		return;
-	}
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	check(SpatialPMC);
-	ConditionMapFilter ConditionMap(ActorChannel);
-	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
-}
-
 void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update)
 {
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
@@ -426,9 +411,24 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 	}
 }
 
+void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
+{
+	FNetBitWriter OutputWriter(nullptr, 0);
+	auto& HandleToPropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
+	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+	if (!ActorChannel)
+	{
+		return;
+	}
+	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
+	check(SpatialPMC);
+	ConditionMapFilter ConditionMap(ActorChannel);
+	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
+}
+
 void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
 {
-	FNetBitWriter OutputWriter(nullptr, 0); 
+	FNetBitWriter OutputWriter(nullptr, 0);
 	auto& HandleToPropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
 	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
 	if (!ActorChannel)
@@ -1427,30 +1427,6 @@ worker::ComponentId USpatialTypeBinding_Character::GetReplicatedGroupComponentId
 	}
 }
 
-void USpatialTypeBinding_Character::SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const
-{
-	// Build SpatialOS updates.
-	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
-	bool SingleClientUpdateChanged = false;
-	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
-	bool MultiClientUpdateChanged = false;
-	BuildSpatialComponentUpdate(Changes,
-		SingleClientUpdate, SingleClientUpdateChanged,
-		MultiClientUpdate, MultiClientUpdateChanged,
-		PackageMap);
-
-	// Send SpatialOS updates if anything changed.
-	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
-	if (SingleClientUpdateChanged)
-	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(EntityId, SingleClientUpdate);
-	}
-	if (MultiClientUpdateChanged)
-	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(EntityId, MultiClientUpdate);
-	}
-}
-
 worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const
 {
 	// Setup initial data.
@@ -1485,4 +1461,28 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& P
 		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(MultiClientData, UnrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, UnrealWorkerWritePermission)
 		.Build();
+}
+
+void USpatialTypeBinding_Character::SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const
+{
+	// Build SpatialOS updates.
+	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
+	bool SingleClientUpdateChanged = false;
+	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
+	bool MultiClientUpdateChanged = false;
+	BuildSpatialComponentUpdate(Changes,
+		SingleClientUpdate, SingleClientUpdateChanged,
+		MultiClientUpdate, MultiClientUpdateChanged,
+		PackageMap);
+
+	// Send SpatialOS updates if anything changed.
+	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
+	if (SingleClientUpdateChanged)
+	{
+		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(EntityId, SingleClientUpdate);
+	}
+	if (MultiClientUpdateChanged)
+	{
+		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(EntityId, MultiClientUpdate);
+	}
 }
