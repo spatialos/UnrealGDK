@@ -6,6 +6,7 @@
 #include "IpNetDriver.h"
 #include "SpatialInteropBlock.h"
 #include "SpatialUpdateInterop.h"
+#include "PlayerSpawnRequestSender.h"
 #include "SpatialNetDriver.generated.h"
 
 class UEntityPipeline;
@@ -88,4 +89,7 @@ protected:
 	int32 ServerReplicateActors_PrioritizeActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors);
 	int32 ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated);
 #endif
+
+private:
+	FPlayerSpawnRequestSender PlayerSpawner;
 };

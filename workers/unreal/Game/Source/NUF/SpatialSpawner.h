@@ -6,8 +6,7 @@
 #include "SpatialOSComponent.h"
 #include "SpatialSpawner.generated.h"
 
-class USpawnerServerComponent;
-class USpawnerClientComponent;
+class UPlayerSpawnerComponent;
 class USpawnPlayerCommandResponder;
 class SpawnPlayerResponse;
 
@@ -26,19 +25,7 @@ protected:
 	
 	UFUNCTION()
 	virtual void HandleSpawnRequest(USpawnPlayerCommandResponder* Responder);
-	
-	UFUNCTION()
-	virtual void HandleAuthorityChange(EAuthority NewAuthority);
-	
-	UFUNCTION()
-	virtual void OnSpawnPlayerResponse(const FSpatialOSCommandResult& result, USpawnPlayerResponse* response);
-
-	UFUNCTION()
-	virtual void SendSpawnRequest();
 
 	UPROPERTY()
-	USpawnerServerComponent* SpawnerServerComponent;
-
-	UPROPERTY()
-	USpawnerClientComponent* SpawnerClientComponent;
+	UPlayerSpawnerComponent* PlayerSpawnerComponent;
 };
