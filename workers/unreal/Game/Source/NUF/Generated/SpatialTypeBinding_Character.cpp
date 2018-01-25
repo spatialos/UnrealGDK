@@ -411,11 +411,11 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 	}
 }
 
-void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
+void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, worker::EntityId EntityId, const improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update)
 {
 	FNetBitWriter OutputWriter(nullptr, 0);
 	auto& HandleToPropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
-	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(EntityId);
 	if (!ActorChannel)
 	{
 		return;
@@ -426,11 +426,11 @@ void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* Upda
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
-void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
+void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, worker::EntityId EntityId, const improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update)
 {
 	FNetBitWriter OutputWriter(nullptr, 0);
 	auto& HandleToPropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
-	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(EntityId);
 	if (!ActorChannel)
 	{
 		return;
@@ -438,7 +438,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
 	check(SpatialPMC);
 	ConditionMapFilter ConditionMap(ActorChannel);
-	if (!Op.Update.field_bhidden().empty())
+	if (!Update.field_bhidden().empty())
 	{
 		// field_bhidden
 		uint32 Handle = 1;
@@ -449,13 +449,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			uint8 Value;
 
-			Value = *(Op.Update.field_bhidden().data());
+			Value = *(Update.field_bhidden().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_breplicatemovement().empty())
+	if (!Update.field_breplicatemovement().empty())
 	{
 		// field_breplicatemovement
 		uint32 Handle = 2;
@@ -466,13 +466,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			uint8 Value;
 
-			Value = *(Op.Update.field_breplicatemovement().data());
+			Value = *(Update.field_breplicatemovement().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_btearoff().empty())
+	if (!Update.field_btearoff().empty())
 	{
 		// field_btearoff
 		uint32 Handle = 3;
@@ -483,13 +483,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			uint8 Value;
 
-			Value = *(Op.Update.field_btearoff().data());
+			Value = *(Update.field_btearoff().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_remoterole().empty())
+	if (!Update.field_remoterole().empty())
 	{
 		// field_remoterole
 		uint32 Handle = 4;
@@ -504,13 +504,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
 			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
 			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-			Value = TEnumAsByte<ENetRole>(uint8(*(Op.Update.field_remoterole().data())));
+			Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_remoterole().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_owner().empty())
+	if (!Update.field_owner().empty())
 	{
 		// field_owner
 		uint32 Handle = 5;
@@ -522,7 +522,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			AActor* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_owner().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_owner().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -531,7 +531,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_replicatedmovement().empty())
+	if (!Update.field_replicatedmovement().empty())
 	{
 		// field_replicatedmovement
 		uint32 Handle = 6;
@@ -542,7 +542,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			FRepMovement Value;
 
-			auto& ValueDataStr = *(Op.Update.field_replicatedmovement().data());
+			auto& ValueDataStr = *(Update.field_replicatedmovement().data());
 			TArray<uint8> ValueData;
 			ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
 			FMemoryReader ValueDataReader(ValueData);
@@ -553,7 +553,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_attachmentreplication_attachparent().empty())
+	if (!Update.field_attachmentreplication_attachparent().empty())
 	{
 		// field_attachmentreplication_attachparent
 		uint32 Handle = 7;
@@ -565,7 +565,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			AActor* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachparent().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachparent().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -574,7 +574,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_attachmentreplication_locationoffset().empty())
+	if (!Update.field_attachmentreplication_locationoffset().empty())
 	{
 		// field_attachmentreplication_locationoffset
 		uint32 Handle = 8;
@@ -585,7 +585,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			FVector_NetQuantize100 Value;
 
-			auto& Vector = *(Op.Update.field_attachmentreplication_locationoffset().data());
+			auto& Vector = *(Update.field_attachmentreplication_locationoffset().data());
 			Value.X = Vector.x();
 			Value.Y = Vector.y();
 			Value.Z = Vector.z();
@@ -594,7 +594,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_attachmentreplication_relativescale3d().empty())
+	if (!Update.field_attachmentreplication_relativescale3d().empty())
 	{
 		// field_attachmentreplication_relativescale3d
 		uint32 Handle = 9;
@@ -605,7 +605,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			FVector_NetQuantize100 Value;
 
-			auto& Vector = *(Op.Update.field_attachmentreplication_relativescale3d().data());
+			auto& Vector = *(Update.field_attachmentreplication_relativescale3d().data());
 			Value.X = Vector.x();
 			Value.Y = Vector.y();
 			Value.Z = Vector.z();
@@ -614,7 +614,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_attachmentreplication_rotationoffset().empty())
+	if (!Update.field_attachmentreplication_rotationoffset().empty())
 	{
 		// field_attachmentreplication_rotationoffset
 		uint32 Handle = 10;
@@ -625,7 +625,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			FRotator Value;
 
-			auto& Rotator = *(Op.Update.field_attachmentreplication_rotationoffset().data());
+			auto& Rotator = *(Update.field_attachmentreplication_rotationoffset().data());
 			Value.Yaw = Rotator.yaw();
 			Value.Pitch = Rotator.pitch();
 			Value.Roll = Rotator.roll();
@@ -634,7 +634,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_attachmentreplication_attachsocket().empty())
+	if (!Update.field_attachmentreplication_attachsocket().empty())
 	{
 		// field_attachmentreplication_attachsocket
 		uint32 Handle = 11;
@@ -645,13 +645,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			FName Value;
 
-			Value = FName((*(Op.Update.field_attachmentreplication_attachsocket().data())).data());
+			Value = FName((*(Update.field_attachmentreplication_attachsocket().data())).data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_attachmentreplication_attachcomponent().empty())
+	if (!Update.field_attachmentreplication_attachcomponent().empty())
 	{
 		// field_attachmentreplication_attachcomponent
 		uint32 Handle = 12;
@@ -663,7 +663,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			USceneComponent* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachcomponent().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachcomponent().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<USceneComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -672,7 +672,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_role().empty())
+	if (!Update.field_role().empty())
 	{
 		// field_role
 		uint32 Handle = 13;
@@ -687,13 +687,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
 			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
 			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-			Value = TEnumAsByte<ENetRole>(uint8(*(Op.Update.field_role().data())));
+			Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_role().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_bcanbedamaged().empty())
+	if (!Update.field_bcanbedamaged().empty())
 	{
 		// field_bcanbedamaged
 		uint32 Handle = 14;
@@ -704,13 +704,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			uint8 Value;
 
-			Value = *(Op.Update.field_bcanbedamaged().data());
+			Value = *(Update.field_bcanbedamaged().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_instigator().empty())
+	if (!Update.field_instigator().empty())
 	{
 		// field_instigator
 		uint32 Handle = 15;
@@ -722,7 +722,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			APawn* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_instigator().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_instigator().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -731,7 +731,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_playerstate().empty())
+	if (!Update.field_playerstate().empty())
 	{
 		// field_playerstate
 		uint32 Handle = 16;
@@ -743,7 +743,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			APlayerState* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_playerstate().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_playerstate().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -752,7 +752,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_remoteviewpitch().empty())
+	if (!Update.field_remoteviewpitch().empty())
 	{
 		// field_remoteviewpitch
 		uint32 Handle = 17;
@@ -767,13 +767,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
 			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
 			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-			Value = uint8(uint8(*(Op.Update.field_remoteviewpitch().data())));
+			Value = uint8(uint8(*(Update.field_remoteviewpitch().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_controller().empty())
+	if (!Update.field_controller().empty())
 	{
 		// field_controller
 		uint32 Handle = 18;
@@ -785,7 +785,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			AController* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_controller().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_controller().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<AController*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -794,7 +794,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_replicatedbasedmovement_movementbase().empty())
+	if (!Update.field_replicatedbasedmovement_movementbase().empty())
 	{
 		// field_replicatedbasedmovement_movementbase
 		uint32 Handle = 19;
@@ -806,7 +806,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UPrimitiveComponent* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_replicatedbasedmovement_movementbase().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_replicatedbasedmovement_movementbase().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<UPrimitiveComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -815,7 +815,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_replicatedbasedmovement_bonename().empty())
+	if (!Update.field_replicatedbasedmovement_bonename().empty())
 	{
 		// field_replicatedbasedmovement_bonename
 		uint32 Handle = 20;
@@ -826,13 +826,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			FName Value;
 
-			Value = FName((*(Op.Update.field_replicatedbasedmovement_bonename().data())).data());
+			Value = FName((*(Update.field_replicatedbasedmovement_bonename().data())).data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_replicatedbasedmovement_location().empty())
+	if (!Update.field_replicatedbasedmovement_location().empty())
 	{
 		// field_replicatedbasedmovement_location
 		uint32 Handle = 21;
@@ -843,7 +843,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			FVector_NetQuantize100 Value;
 
-			auto& Vector = *(Op.Update.field_replicatedbasedmovement_location().data());
+			auto& Vector = *(Update.field_replicatedbasedmovement_location().data());
 			Value.X = Vector.x();
 			Value.Y = Vector.y();
 			Value.Z = Vector.z();
@@ -852,7 +852,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_replicatedbasedmovement_rotation().empty())
+	if (!Update.field_replicatedbasedmovement_rotation().empty())
 	{
 		// field_replicatedbasedmovement_rotation
 		uint32 Handle = 22;
@@ -863,7 +863,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			FRotator Value;
 
-			auto& Rotator = *(Op.Update.field_replicatedbasedmovement_rotation().data());
+			auto& Rotator = *(Update.field_replicatedbasedmovement_rotation().data());
 			Value.Yaw = Rotator.yaw();
 			Value.Pitch = Rotator.pitch();
 			Value.Roll = Rotator.roll();
@@ -872,7 +872,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_replicatedbasedmovement_bserverhasbasecomponent().empty())
+	if (!Update.field_replicatedbasedmovement_bserverhasbasecomponent().empty())
 	{
 		// field_replicatedbasedmovement_bserverhasbasecomponent
 		uint32 Handle = 23;
@@ -883,13 +883,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			bool Value;
 
-			Value = *(Op.Update.field_replicatedbasedmovement_bserverhasbasecomponent().data());
+			Value = *(Update.field_replicatedbasedmovement_bserverhasbasecomponent().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_replicatedbasedmovement_brelativerotation().empty())
+	if (!Update.field_replicatedbasedmovement_brelativerotation().empty())
 	{
 		// field_replicatedbasedmovement_brelativerotation
 		uint32 Handle = 24;
@@ -900,13 +900,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			bool Value;
 
-			Value = *(Op.Update.field_replicatedbasedmovement_brelativerotation().data());
+			Value = *(Update.field_replicatedbasedmovement_brelativerotation().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_replicatedbasedmovement_bserverhasvelocity().empty())
+	if (!Update.field_replicatedbasedmovement_bserverhasvelocity().empty())
 	{
 		// field_replicatedbasedmovement_bserverhasvelocity
 		uint32 Handle = 25;
@@ -917,13 +917,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			bool Value;
 
-			Value = *(Op.Update.field_replicatedbasedmovement_bserverhasvelocity().data());
+			Value = *(Update.field_replicatedbasedmovement_bserverhasvelocity().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_animrootmotiontranslationscale().empty())
+	if (!Update.field_animrootmotiontranslationscale().empty())
 	{
 		// field_animrootmotiontranslationscale
 		uint32 Handle = 26;
@@ -934,13 +934,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			float Value;
 
-			Value = *(Op.Update.field_animrootmotiontranslationscale().data());
+			Value = *(Update.field_animrootmotiontranslationscale().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_replicatedserverlasttransformupdatetimestamp().empty())
+	if (!Update.field_replicatedserverlasttransformupdatetimestamp().empty())
 	{
 		// field_replicatedserverlasttransformupdatetimestamp
 		uint32 Handle = 27;
@@ -951,13 +951,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			float Value;
 
-			Value = *(Op.Update.field_replicatedserverlasttransformupdatetimestamp().data());
+			Value = *(Update.field_replicatedserverlasttransformupdatetimestamp().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_replicatedmovementmode().empty())
+	if (!Update.field_replicatedmovementmode().empty())
 	{
 		// field_replicatedmovementmode
 		uint32 Handle = 28;
@@ -972,13 +972,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
 			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
 			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-			Value = uint8(uint8(*(Op.Update.field_replicatedmovementmode().data())));
+			Value = uint8(uint8(*(Update.field_replicatedmovementmode().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_biscrouched().empty())
+	if (!Update.field_biscrouched().empty())
 	{
 		// field_biscrouched
 		uint32 Handle = 29;
@@ -989,13 +989,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			uint8 Value;
 
-			Value = *(Op.Update.field_biscrouched().data());
+			Value = *(Update.field_biscrouched().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_jumpmaxholdtime().empty())
+	if (!Update.field_jumpmaxholdtime().empty())
 	{
 		// field_jumpmaxholdtime
 		uint32 Handle = 30;
@@ -1006,13 +1006,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			float Value;
 
-			Value = *(Op.Update.field_jumpmaxholdtime().data());
+			Value = *(Update.field_jumpmaxholdtime().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_jumpmaxcount().empty())
+	if (!Update.field_jumpmaxcount().empty())
 	{
 		// field_jumpmaxcount
 		uint32 Handle = 31;
@@ -1023,13 +1023,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			int32 Value;
 
-			Value = *(Op.Update.field_jumpmaxcount().data());
+			Value = *(Update.field_jumpmaxcount().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_reprootmotion_bisactive().empty())
+	if (!Update.field_reprootmotion_bisactive().empty())
 	{
 		// field_reprootmotion_bisactive
 		uint32 Handle = 32;
@@ -1040,13 +1040,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			bool Value;
 
-			Value = *(Op.Update.field_reprootmotion_bisactive().data());
+			Value = *(Update.field_reprootmotion_bisactive().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_reprootmotion_animmontage().empty())
+	if (!Update.field_reprootmotion_animmontage().empty())
 	{
 		// field_reprootmotion_animmontage
 		uint32 Handle = 33;
@@ -1058,7 +1058,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UAnimMontage* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_reprootmotion_animmontage().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_reprootmotion_animmontage().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<UAnimMontage*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -1067,7 +1067,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_reprootmotion_position().empty())
+	if (!Update.field_reprootmotion_position().empty())
 	{
 		// field_reprootmotion_position
 		uint32 Handle = 34;
@@ -1078,13 +1078,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			float Value;
 
-			Value = *(Op.Update.field_reprootmotion_position().data());
+			Value = *(Update.field_reprootmotion_position().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_reprootmotion_location().empty())
+	if (!Update.field_reprootmotion_location().empty())
 	{
 		// field_reprootmotion_location
 		uint32 Handle = 35;
@@ -1095,7 +1095,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			FVector_NetQuantize100 Value;
 
-			auto& Vector = *(Op.Update.field_reprootmotion_location().data());
+			auto& Vector = *(Update.field_reprootmotion_location().data());
 			Value.X = Vector.x();
 			Value.Y = Vector.y();
 			Value.Z = Vector.z();
@@ -1104,7 +1104,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_reprootmotion_rotation().empty())
+	if (!Update.field_reprootmotion_rotation().empty())
 	{
 		// field_reprootmotion_rotation
 		uint32 Handle = 36;
@@ -1115,7 +1115,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			FRotator Value;
 
-			auto& Rotator = *(Op.Update.field_reprootmotion_rotation().data());
+			auto& Rotator = *(Update.field_reprootmotion_rotation().data());
 			Value.Yaw = Rotator.yaw();
 			Value.Pitch = Rotator.pitch();
 			Value.Roll = Rotator.roll();
@@ -1124,7 +1124,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_reprootmotion_movementbase().empty())
+	if (!Update.field_reprootmotion_movementbase().empty())
 	{
 		// field_reprootmotion_movementbase
 		uint32 Handle = 37;
@@ -1136,7 +1136,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UPrimitiveComponent* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_reprootmotion_movementbase().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_reprootmotion_movementbase().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<UPrimitiveComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -1145,7 +1145,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_reprootmotion_movementbasebonename().empty())
+	if (!Update.field_reprootmotion_movementbasebonename().empty())
 	{
 		// field_reprootmotion_movementbasebonename
 		uint32 Handle = 38;
@@ -1156,13 +1156,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			FName Value;
 
-			Value = FName((*(Op.Update.field_reprootmotion_movementbasebonename().data())).data());
+			Value = FName((*(Update.field_reprootmotion_movementbasebonename().data())).data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_reprootmotion_brelativeposition().empty())
+	if (!Update.field_reprootmotion_brelativeposition().empty())
 	{
 		// field_reprootmotion_brelativeposition
 		uint32 Handle = 39;
@@ -1173,13 +1173,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			bool Value;
 
-			Value = *(Op.Update.field_reprootmotion_brelativeposition().data());
+			Value = *(Update.field_reprootmotion_brelativeposition().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_reprootmotion_brelativerotation().empty())
+	if (!Update.field_reprootmotion_brelativerotation().empty())
 	{
 		// field_reprootmotion_brelativerotation
 		uint32 Handle = 40;
@@ -1190,13 +1190,13 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			bool Value;
 
-			Value = *(Op.Update.field_reprootmotion_brelativerotation().data());
+			Value = *(Update.field_reprootmotion_brelativerotation().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().empty())
+	if (!Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().empty())
 	{
 		// field_reprootmotion_authoritativerootmotion
 		uint32 Handle = 41;
@@ -1208,19 +1208,19 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			FRootMotionSourceGroup Value;
 
 			{
-				Value.bHasAdditiveSources = *(Op.Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().data());
+				Value.bHasAdditiveSources = *(Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().data());
 			}
 			{
-				Value.bHasOverrideSources = *(Op.Update.field_reprootmotion_authoritativerootmotion_bhasoverridesources().data());
+				Value.bHasOverrideSources = *(Update.field_reprootmotion_authoritativerootmotion_bhasoverridesources().data());
 			}
 			{
-				auto& Vector = *(Op.Update.field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity().data());
+				auto& Vector = *(Update.field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity().data());
 				Value.LastPreAdditiveVelocity.X = Vector.x();
 				Value.LastPreAdditiveVelocity.Y = Vector.y();
 				Value.LastPreAdditiveVelocity.Z = Vector.z();
 			}
 			{
-				Value.bIsAdditiveVelocityApplied = *(Op.Update.field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied().data());
+				Value.bIsAdditiveVelocityApplied = *(Update.field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied().data());
 			}
 			{
 				{
@@ -1228,7 +1228,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 					// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
 					// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
 					// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-					Value.LastAccumulatedSettings.Flags = uint8(uint8(*(Op.Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
+					Value.LastAccumulatedSettings.Flags = uint8(uint8(*(Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
 				}
 			}
 
@@ -1236,7 +1236,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_reprootmotion_acceleration().empty())
+	if (!Update.field_reprootmotion_acceleration().empty())
 	{
 		// field_reprootmotion_acceleration
 		uint32 Handle = 42;
@@ -1247,7 +1247,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			FVector_NetQuantize10 Value;
 
-			auto& Vector = *(Op.Update.field_reprootmotion_acceleration().data());
+			auto& Vector = *(Update.field_reprootmotion_acceleration().data());
 			Value.X = Vector.x();
 			Value.Y = Vector.y();
 			Value.Z = Vector.z();
@@ -1256,7 +1256,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_reprootmotion_linearvelocity().empty())
+	if (!Update.field_reprootmotion_linearvelocity().empty())
 	{
 		// field_reprootmotion_linearvelocity
 		uint32 Handle = 43;
@@ -1267,7 +1267,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			FVector_NetQuantize10 Value;
 
-			auto& Vector = *(Op.Update.field_reprootmotion_linearvelocity().data());
+			auto& Vector = *(Update.field_reprootmotion_linearvelocity().data());
 			Value.X = Vector.x();
 			Value.Y = Vector.y();
 			Value.Z = Vector.z();
@@ -1394,23 +1394,37 @@ const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap
 void USpatialTypeBinding_Character::BindToView()
 {
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
-	SingleClientCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
+	SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
+		const worker::AddComponentOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
+	{
+		auto Update = improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update::FromInitialData(Op.Data);
+		ReceiveUpdateFromSpatial_SingleClient_Character(UpdateInterop, PackageMap, Op.EntityId, Update);
+	});
+	SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
 		const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
 	{
-		ReceiveUpdateFromSpatial_SingleClient_Character(UpdateInterop, PackageMap, Op);
+		ReceiveUpdateFromSpatial_SingleClient_Character(UpdateInterop, PackageMap, Op.EntityId, Op.Update);
 	});
-	MultiClientCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
+	MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
+		const worker::AddComponentOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
+	{
+		auto Update = improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update::FromInitialData(Op.Data);
+		ReceiveUpdateFromSpatial_MultiClient_Character(UpdateInterop, PackageMap, Op.EntityId, Update);
+	});
+	MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
 		const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
 	{
-		ReceiveUpdateFromSpatial_MultiClient_Character(UpdateInterop, PackageMap, Op);
+		ReceiveUpdateFromSpatial_MultiClient_Character(UpdateInterop, PackageMap, Op.EntityId, Op.Update);
 	});
 }
 
 void USpatialTypeBinding_Character::UnbindFromView()
 {
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
-	View->Remove(SingleClientCallback);
-	View->Remove(MultiClientCallback);
+	View->Remove(SingleClientAddCallback);
+	View->Remove(SingleClientUpdateCallback);
+	View->Remove(MultiClientAddCallback);
+	View->Remove(MultiClientUpdateCallback);
 }
 
 worker::ComponentId USpatialTypeBinding_Character::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const

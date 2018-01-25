@@ -23,6 +23,8 @@ public:
 	void SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const override;
 	worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const override;
 private:
-	worker::Dispatcher::CallbackKey SingleClientCallback;
-	worker::Dispatcher::CallbackKey MultiClientCallback;
+	worker::Dispatcher::CallbackKey SingleClientAddCallback;
+	worker::Dispatcher::CallbackKey SingleClientUpdateCallback;
+	worker::Dispatcher::CallbackKey MultiClientAddCallback;
+	worker::Dispatcher::CallbackKey MultiClientUpdateCallback;
 };

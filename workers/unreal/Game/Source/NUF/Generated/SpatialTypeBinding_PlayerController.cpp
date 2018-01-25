@@ -205,11 +205,11 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 	}
 }
 
-void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>& Op)
+void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, worker::EntityId EntityId, const improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update)
 {
 	FNetBitWriter OutputWriter(nullptr, 0);
 	auto& HandleToPropertyMap = USpatialTypeBinding_PlayerController::GetHandlePropertyMap();
-	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(EntityId);
 	if (!ActorChannel)
 	{
 		return;
@@ -217,7 +217,7 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
 	check(SpatialPMC);
 	ConditionMapFilter ConditionMap(ActorChannel);
-	if (!Op.Update.field_targetviewrotation().empty())
+	if (!Update.field_targetviewrotation().empty())
 	{
 		// field_targetviewrotation
 		uint32 Handle = 18;
@@ -228,7 +228,7 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 
 			FRotator Value;
 
-			auto& Rotator = *(Op.Update.field_targetviewrotation().data());
+			auto& Rotator = *(Update.field_targetviewrotation().data());
 			Value.Yaw = Rotator.yaw();
 			Value.Pitch = Rotator.pitch();
 			Value.Roll = Rotator.roll();
@@ -237,7 +237,7 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_spawnlocation().empty())
+	if (!Update.field_spawnlocation().empty())
 	{
 		// field_spawnlocation
 		uint32 Handle = 19;
@@ -248,7 +248,7 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 
 			FVector Value;
 
-			auto& Vector = *(Op.Update.field_spawnlocation().data());
+			auto& Vector = *(Update.field_spawnlocation().data());
 			Value.X = Vector.x();
 			Value.Y = Vector.y();
 			Value.Z = Vector.z();
@@ -260,11 +260,11 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
-void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>& Op)
+void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, worker::EntityId EntityId, const improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update)
 {
 	FNetBitWriter OutputWriter(nullptr, 0);
 	auto& HandleToPropertyMap = USpatialTypeBinding_PlayerController::GetHandlePropertyMap();
-	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(EntityId);
 	if (!ActorChannel)
 	{
 		return;
@@ -272,7 +272,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
 	check(SpatialPMC);
 	ConditionMapFilter ConditionMap(ActorChannel);
-	if (!Op.Update.field_bhidden().empty())
+	if (!Update.field_bhidden().empty())
 	{
 		// field_bhidden
 		uint32 Handle = 1;
@@ -283,13 +283,13 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 
 			uint8 Value;
 
-			Value = *(Op.Update.field_bhidden().data());
+			Value = *(Update.field_bhidden().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_breplicatemovement().empty())
+	if (!Update.field_breplicatemovement().empty())
 	{
 		// field_breplicatemovement
 		uint32 Handle = 2;
@@ -300,13 +300,13 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 
 			uint8 Value;
 
-			Value = *(Op.Update.field_breplicatemovement().data());
+			Value = *(Update.field_breplicatemovement().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_btearoff().empty())
+	if (!Update.field_btearoff().empty())
 	{
 		// field_btearoff
 		uint32 Handle = 3;
@@ -317,13 +317,13 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 
 			uint8 Value;
 
-			Value = *(Op.Update.field_btearoff().data());
+			Value = *(Update.field_btearoff().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_remoterole().empty())
+	if (!Update.field_remoterole().empty())
 	{
 		// field_remoterole
 		uint32 Handle = 4;
@@ -338,13 +338,13 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
 			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
 			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-			Value = TEnumAsByte<ENetRole>(uint8(*(Op.Update.field_remoterole().data())));
+			Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_remoterole().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_owner().empty())
+	if (!Update.field_owner().empty())
 	{
 		// field_owner
 		uint32 Handle = 5;
@@ -356,7 +356,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			AActor* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_owner().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_owner().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -365,7 +365,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_replicatedmovement().empty())
+	if (!Update.field_replicatedmovement().empty())
 	{
 		// field_replicatedmovement
 		uint32 Handle = 6;
@@ -376,7 +376,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 
 			FRepMovement Value;
 
-			auto& ValueDataStr = *(Op.Update.field_replicatedmovement().data());
+			auto& ValueDataStr = *(Update.field_replicatedmovement().data());
 			TArray<uint8> ValueData;
 			ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
 			FMemoryReader ValueDataReader(ValueData);
@@ -387,7 +387,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_attachmentreplication_attachparent().empty())
+	if (!Update.field_attachmentreplication_attachparent().empty())
 	{
 		// field_attachmentreplication_attachparent
 		uint32 Handle = 7;
@@ -399,7 +399,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			AActor* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachparent().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachparent().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -408,7 +408,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_attachmentreplication_locationoffset().empty())
+	if (!Update.field_attachmentreplication_locationoffset().empty())
 	{
 		// field_attachmentreplication_locationoffset
 		uint32 Handle = 8;
@@ -419,7 +419,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 
 			FVector_NetQuantize100 Value;
 
-			auto& Vector = *(Op.Update.field_attachmentreplication_locationoffset().data());
+			auto& Vector = *(Update.field_attachmentreplication_locationoffset().data());
 			Value.X = Vector.x();
 			Value.Y = Vector.y();
 			Value.Z = Vector.z();
@@ -428,7 +428,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_attachmentreplication_relativescale3d().empty())
+	if (!Update.field_attachmentreplication_relativescale3d().empty())
 	{
 		// field_attachmentreplication_relativescale3d
 		uint32 Handle = 9;
@@ -439,7 +439,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 
 			FVector_NetQuantize100 Value;
 
-			auto& Vector = *(Op.Update.field_attachmentreplication_relativescale3d().data());
+			auto& Vector = *(Update.field_attachmentreplication_relativescale3d().data());
 			Value.X = Vector.x();
 			Value.Y = Vector.y();
 			Value.Z = Vector.z();
@@ -448,7 +448,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_attachmentreplication_rotationoffset().empty())
+	if (!Update.field_attachmentreplication_rotationoffset().empty())
 	{
 		// field_attachmentreplication_rotationoffset
 		uint32 Handle = 10;
@@ -459,7 +459,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 
 			FRotator Value;
 
-			auto& Rotator = *(Op.Update.field_attachmentreplication_rotationoffset().data());
+			auto& Rotator = *(Update.field_attachmentreplication_rotationoffset().data());
 			Value.Yaw = Rotator.yaw();
 			Value.Pitch = Rotator.pitch();
 			Value.Roll = Rotator.roll();
@@ -468,7 +468,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_attachmentreplication_attachsocket().empty())
+	if (!Update.field_attachmentreplication_attachsocket().empty())
 	{
 		// field_attachmentreplication_attachsocket
 		uint32 Handle = 11;
@@ -479,13 +479,13 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 
 			FName Value;
 
-			Value = FName((*(Op.Update.field_attachmentreplication_attachsocket().data())).data());
+			Value = FName((*(Update.field_attachmentreplication_attachsocket().data())).data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_attachmentreplication_attachcomponent().empty())
+	if (!Update.field_attachmentreplication_attachcomponent().empty())
 	{
 		// field_attachmentreplication_attachcomponent
 		uint32 Handle = 12;
@@ -497,7 +497,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			USceneComponent* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachcomponent().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachcomponent().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<USceneComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -506,7 +506,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_role().empty())
+	if (!Update.field_role().empty())
 	{
 		// field_role
 		uint32 Handle = 13;
@@ -521,13 +521,13 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
 			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
 			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-			Value = TEnumAsByte<ENetRole>(uint8(*(Op.Update.field_role().data())));
+			Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_role().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_bcanbedamaged().empty())
+	if (!Update.field_bcanbedamaged().empty())
 	{
 		// field_bcanbedamaged
 		uint32 Handle = 14;
@@ -538,13 +538,13 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 
 			uint8 Value;
 
-			Value = *(Op.Update.field_bcanbedamaged().data());
+			Value = *(Update.field_bcanbedamaged().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_instigator().empty())
+	if (!Update.field_instigator().empty())
 	{
 		// field_instigator
 		uint32 Handle = 15;
@@ -556,7 +556,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			APawn* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_instigator().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_instigator().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -565,7 +565,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_pawn().empty())
+	if (!Update.field_pawn().empty())
 	{
 		// field_pawn
 		uint32 Handle = 16;
@@ -577,7 +577,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			APawn* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_pawn().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_pawn().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -586,7 +586,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	if (!Op.Update.field_playerstate().empty())
+	if (!Update.field_playerstate().empty())
 	{
 		// field_playerstate
 		uint32 Handle = 17;
@@ -598,7 +598,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			APlayerState* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_playerstate().data());
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_playerstate().data());
 				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				Value = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 			}
@@ -682,23 +682,37 @@ const FRepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetHandleProp
 void USpatialTypeBinding_PlayerController::BindToView()
 {
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
-	SingleClientCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>([this](
+	SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>([this](
+		const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>& Op)
+	{
+		auto Update = improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update::FromInitialData(Op.Data);
+		ReceiveUpdateFromSpatial_SingleClient_PlayerController(UpdateInterop, PackageMap, Op.EntityId, Update);
+	});
+	SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>([this](
 		const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>& Op)
 	{
-		ReceiveUpdateFromSpatial_SingleClient_PlayerController(UpdateInterop, PackageMap, Op);
+		ReceiveUpdateFromSpatial_SingleClient_PlayerController(UpdateInterop, PackageMap, Op.EntityId, Op.Update);
 	});
-	MultiClientCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>([this](
+	MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>([this](
+		const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>& Op)
+	{
+		auto Update = improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update::FromInitialData(Op.Data);
+		ReceiveUpdateFromSpatial_MultiClient_PlayerController(UpdateInterop, PackageMap, Op.EntityId, Update);
+	});
+	MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>([this](
 		const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>& Op)
 	{
-		ReceiveUpdateFromSpatial_MultiClient_PlayerController(UpdateInterop, PackageMap, Op);
+		ReceiveUpdateFromSpatial_MultiClient_PlayerController(UpdateInterop, PackageMap, Op.EntityId, Op.Update);
 	});
 }
 
 void USpatialTypeBinding_PlayerController::UnbindFromView()
 {
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
-	View->Remove(SingleClientCallback);
-	View->Remove(MultiClientCallback);
+	View->Remove(SingleClientAddCallback);
+	View->Remove(SingleClientUpdateCallback);
+	View->Remove(MultiClientAddCallback);
+	View->Remove(MultiClientUpdateCallback);
 }
 
 worker::ComponentId USpatialTypeBinding_PlayerController::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
