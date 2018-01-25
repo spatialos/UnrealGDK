@@ -7,15 +7,12 @@
 #include "Engine/PendingNetGame.h"
 #include "SpatialPendingNetGame.generated.h"
 
-class UEngine;
-struct FWorldContext;
-
-//NUF-sourcechange UPendingNetGame needs to have its dllexport defined: "class ENGINE_API UPendingNetGame". This can count as a bug, we can submit a PR.
+//UPendingNetGame needs to have its dllexport defined: "class ENGINE_API UPendingNetGame". This can count as a bug, we can submit a PR.
 UCLASS(transient)
 class USpatialPendingNetGame : public UPendingNetGame
 {
 	GENERATED_UCLASS_BODY()
 		
-	//NUF-sourcechange Made virtual in PendingNetGame.h
+	//Made virtual in PendingNetGame.h
 	virtual void InitNetDriver() override;
 };

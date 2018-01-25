@@ -518,7 +518,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	// Bump the ReplicationFrame value to invalidate any properties marked as "unchanged" for this frame.
 	ReplicationFrame++;
 
-	//NUF-sourcechange: Add ENGINE_API to the function below in NetDriver.h
 	const int32 NumClientsToTick = ServerReplicateActors_PrepConnections(DeltaSeconds);
 
 	//NUF: This is a formality as there is at least one "perfect" Spatial connection in our design.
@@ -617,7 +616,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 			FMemMark RelevantActorMark(FMemStack::Get());
 
-			//NUF-sourcechange: FActorPriority needed ENGINE_API declspec.
 			FActorPriority* PriorityList = NULL;
 			FActorPriority** PriorityActors = NULL;
 

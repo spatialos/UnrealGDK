@@ -52,9 +52,8 @@ public:
 
 	// UChannel interface
 	virtual void Init(UNetConnection * connection, int32 channelIndex, bool bOpenedLocally) override;
-	//NUF-sourcechange Requires virtual in ActorChannel.h
+	//Requires source changes to be virtual in base class.
 	virtual bool ReplicateActor() override;
-	//NUF-sourcechange Requires virtual in ActorChannel.h
 	virtual void SetChannelActor(AActor* InActor) override;
 
 	// Distinguishes between channels created for actors that went through the "old" pipeline vs actors that are triggered through SpawnActor() calls.

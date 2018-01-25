@@ -313,7 +313,7 @@ AActor* USpatialInteropBlock::SpawnNewEntity(
 	AActor* NewActor = nullptr;
 	if (ClassToSpawn)
 	{
-		//NUF-sourcechange: bRemoteOwned needs to be public. This might be a controversial change.
+		//bRemoteOwned needs to be public in source code. This might be a controversial change.
 		FActorSpawnParameters SpawnInfo;
 		SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		SpawnInfo.bRemoteOwned = true;
