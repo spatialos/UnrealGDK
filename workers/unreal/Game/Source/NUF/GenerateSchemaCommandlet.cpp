@@ -613,9 +613,12 @@ void GenerateSchemaToUnrealConversion(FCodeWriter& Writer, const FString& Update
 	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
+		Writer.Print(TEXT("{"));
+		Writer.Indent();
 		Writer.Print(FString::Printf(TEXT("improbable::unreal::UnrealObjectRef TargetObject = %s;"), *SpatialValue));
 		Writer.Print(FString::Printf(TEXT("FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);")));
-		Writer.Print(FString::Printf(TEXT("%s = static_cast<%s>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));"), *PropertyValue, *PropertyType));		
+		Writer.Print(FString::Printf(TEXT("%s = static_cast<%s>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));"), *PropertyValue, *PropertyType));
+		Writer.Outdent().Print(TEXT("}"));
 	}
 	else if (Property->IsA(UNameProperty::StaticClass()))
 	{
@@ -912,7 +915,6 @@ void GenerateForwardingCodeFromLayout(
 				FString PropertyValueCppType = Property->GetCPPType();
 				FString PropertyName = TEXT("Property");
 				SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
-				SourceWriter.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
 				//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
 				if (Property->IsA(UObjectPropertyBase::StaticClass()))
 				{
@@ -982,7 +984,6 @@ void GenerateForwardingCodeFromLayout(
 			FString PropertyValueCppType = Property->GetCPPType();
 			FString PropertyName = TEXT("Data.Property");
 			SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
-			SourceWriter.Print(FString::Printf(TEXT("check(%s->ElementSize == sizeof(%s));"), *PropertyName, *PropertyValueName));
 			SourceWriter.Print();
 			GenerateSchemaToUnrealConversion(SourceWriter, TEXT("Op.Update"), RepProp.Entry.Chain, PropertyValueName, PropertyValueCppType);
 			SourceWriter.Print();

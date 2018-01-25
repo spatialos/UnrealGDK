@@ -22,7 +22,6 @@ void ApplyUpdateToSpatial_SingleClient_PlayerController(const uint8* RESTRICT Da
 		case 18: // field_targetviewrotation
 		{
 			FRotator Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FRotator*>(Data));
 
 			Update.set_field_targetviewrotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -31,7 +30,6 @@ void ApplyUpdateToSpatial_SingleClient_PlayerController(const uint8* RESTRICT Da
 		case 19: // field_spawnlocation
 		{
 			FVector Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FVector*>(Data));
 
 			Update.set_field_spawnlocation(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -65,7 +63,6 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FRotator Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& Rotator = *(Op.Update.field_targetviewrotation().data());
 			Value.Yaw = Rotator.yaw();
@@ -86,7 +83,6 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FVector Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& Vector = *(Op.Update.field_spawnlocation().data());
 			Value.X = Vector.x();
@@ -109,7 +105,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 1: // field_bhidden
 		{
 			uint8 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_bhidden(Value != 0);
@@ -118,7 +113,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 2: // field_breplicatemovement
 		{
 			uint8 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_breplicatemovement(Value != 0);
@@ -127,7 +121,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 3: // field_btearoff
 		{
 			uint8 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_btearoff(Value != 0);
@@ -136,7 +129,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 4: // field_remoterole
 		{
 			TEnumAsByte<ENetRole> Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
 
 			Update.set_field_remoterole(uint32_t(Value));
@@ -145,7 +137,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 5: // field_owner
 		{
 			AActor* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<AActor* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -156,7 +147,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 6: // field_replicatedmovement
 		{
 			FRepMovement Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FRepMovement*>(Data));
 
 			TArray<uint8> ValueData;
@@ -169,7 +159,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 7: // field_attachmentreplication_attachparent
 		{
 			AActor* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<AActor* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -180,7 +169,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 8: // field_attachmentreplication_locationoffset
 		{
 			FVector_NetQuantize100 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
 			Update.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -189,7 +177,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 9: // field_attachmentreplication_relativescale3d
 		{
 			FVector_NetQuantize100 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
 			Update.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -198,7 +185,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 10: // field_attachmentreplication_rotationoffset
 		{
 			FRotator Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FRotator*>(Data));
 
 			Update.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -207,7 +193,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 11: // field_attachmentreplication_attachsocket
 		{
 			FName Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FName*>(Data));
 
 			Update.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
@@ -216,7 +201,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 12: // field_attachmentreplication_attachcomponent
 		{
 			USceneComponent* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<USceneComponent* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -227,7 +211,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 13: // field_role
 		{
 			TEnumAsByte<ENetRole> Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
 
 			Update.set_field_role(uint32_t(Value));
@@ -236,7 +219,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 14: // field_bcanbedamaged
 		{
 			uint8 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_bcanbedamaged(Value != 0);
@@ -245,7 +227,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 15: // field_instigator
 		{
 			APawn* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<APawn* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -256,7 +237,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 16: // field_pawn
 		{
 			APawn* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<APawn* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -267,7 +247,6 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 		case 17: // field_playerstate
 		{
 			APlayerState* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<APlayerState* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -303,7 +282,6 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			uint8 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_bhidden().data());
 
@@ -321,7 +299,6 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			uint8 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_breplicatemovement().data());
 
@@ -339,7 +316,6 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			uint8 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_btearoff().data());
 
@@ -357,7 +333,6 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			TEnumAsByte<ENetRole> Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
 			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
@@ -379,11 +354,12 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			AActor* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_owner().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_owner().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -399,7 +375,6 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FRepMovement Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& ValueDataStr = *(Op.Update.field_replicatedmovement().data());
 			TArray<uint8> ValueData;
@@ -422,11 +397,12 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			AActor* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachparent().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachparent().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -442,7 +418,6 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FVector_NetQuantize100 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& Vector = *(Op.Update.field_attachmentreplication_locationoffset().data());
 			Value.X = Vector.x();
@@ -463,7 +438,6 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FVector_NetQuantize100 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& Vector = *(Op.Update.field_attachmentreplication_relativescale3d().data());
 			Value.X = Vector.x();
@@ -484,7 +458,6 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FRotator Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& Rotator = *(Op.Update.field_attachmentreplication_rotationoffset().data());
 			Value.Yaw = Rotator.yaw();
@@ -505,7 +478,6 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FName Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = FName((*(Op.Update.field_attachmentreplication_attachsocket().data())).data());
 
@@ -523,11 +495,12 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			USceneComponent* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachcomponent().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<USceneComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachcomponent().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<USceneComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -543,7 +516,6 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			TEnumAsByte<ENetRole> Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
 			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
@@ -565,7 +537,6 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			uint8 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_bcanbedamaged().data());
 
@@ -583,11 +554,12 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			APawn* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_instigator().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_instigator().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -603,11 +575,12 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			APawn* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_pawn().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_pawn().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -623,11 +596,12 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 			OutputWriter.SerializeIntPacked(Handle);
 
 			APlayerState* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_playerstate().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_playerstate().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());

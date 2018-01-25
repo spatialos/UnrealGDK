@@ -41,7 +41,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 1: // field_bhidden
 		{
 			uint8 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_bhidden(Value != 0);
@@ -50,7 +49,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 2: // field_breplicatemovement
 		{
 			uint8 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_breplicatemovement(Value != 0);
@@ -59,7 +57,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 3: // field_btearoff
 		{
 			uint8 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_btearoff(Value != 0);
@@ -68,7 +65,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 4: // field_remoterole
 		{
 			TEnumAsByte<ENetRole> Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
 
 			Update.set_field_remoterole(uint32_t(Value));
@@ -77,7 +73,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 5: // field_owner
 		{
 			AActor* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<AActor* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -88,7 +83,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 6: // field_replicatedmovement
 		{
 			FRepMovement Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FRepMovement*>(Data));
 
 			TArray<uint8> ValueData;
@@ -101,7 +95,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 7: // field_attachmentreplication_attachparent
 		{
 			AActor* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<AActor* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -112,7 +105,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 8: // field_attachmentreplication_locationoffset
 		{
 			FVector_NetQuantize100 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
 			Update.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -121,7 +113,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 9: // field_attachmentreplication_relativescale3d
 		{
 			FVector_NetQuantize100 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
 			Update.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -130,7 +121,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 10: // field_attachmentreplication_rotationoffset
 		{
 			FRotator Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FRotator*>(Data));
 
 			Update.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -139,7 +129,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 11: // field_attachmentreplication_attachsocket
 		{
 			FName Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FName*>(Data));
 
 			Update.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
@@ -148,7 +137,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 12: // field_attachmentreplication_attachcomponent
 		{
 			USceneComponent* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<USceneComponent* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -159,7 +147,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 13: // field_role
 		{
 			TEnumAsByte<ENetRole> Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
 
 			Update.set_field_role(uint32_t(Value));
@@ -168,7 +155,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 14: // field_bcanbedamaged
 		{
 			uint8 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_bcanbedamaged(Value != 0);
@@ -177,7 +163,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 15: // field_instigator
 		{
 			APawn* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<APawn* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -188,7 +173,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 16: // field_playerstate
 		{
 			APlayerState* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<APlayerState* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -199,7 +183,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 17: // field_remoteviewpitch
 		{
 			uint8 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_remoteviewpitch(uint32_t(Value));
@@ -208,7 +191,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 18: // field_controller
 		{
 			AController* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<AController* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -219,7 +201,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 19: // field_replicatedbasedmovement_movementbase
 		{
 			UPrimitiveComponent* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<UPrimitiveComponent* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -230,7 +211,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 20: // field_replicatedbasedmovement_bonename
 		{
 			FName Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FName*>(Data));
 
 			Update.set_field_replicatedbasedmovement_bonename(TCHAR_TO_UTF8(*Value.ToString()));
@@ -239,7 +219,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 21: // field_replicatedbasedmovement_location
 		{
 			FVector_NetQuantize100 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
 			Update.set_field_replicatedbasedmovement_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -248,7 +227,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 22: // field_replicatedbasedmovement_rotation
 		{
 			FRotator Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FRotator*>(Data));
 
 			Update.set_field_replicatedbasedmovement_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -257,7 +235,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 23: // field_replicatedbasedmovement_bserverhasbasecomponent
 		{
 			bool Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const bool*>(Data));
 
 			Update.set_field_replicatedbasedmovement_bserverhasbasecomponent(Value != 0);
@@ -266,7 +243,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 24: // field_replicatedbasedmovement_brelativerotation
 		{
 			bool Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const bool*>(Data));
 
 			Update.set_field_replicatedbasedmovement_brelativerotation(Value != 0);
@@ -275,7 +251,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 25: // field_replicatedbasedmovement_bserverhasvelocity
 		{
 			bool Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const bool*>(Data));
 
 			Update.set_field_replicatedbasedmovement_bserverhasvelocity(Value != 0);
@@ -284,7 +259,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 26: // field_animrootmotiontranslationscale
 		{
 			float Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const float*>(Data));
 
 			Update.set_field_animrootmotiontranslationscale(Value);
@@ -293,7 +267,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 27: // field_replicatedserverlasttransformupdatetimestamp
 		{
 			float Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const float*>(Data));
 
 			Update.set_field_replicatedserverlasttransformupdatetimestamp(Value);
@@ -302,7 +275,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 28: // field_replicatedmovementmode
 		{
 			uint8 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_replicatedmovementmode(uint32_t(Value));
@@ -311,7 +283,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 29: // field_biscrouched
 		{
 			uint8 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_biscrouched(Value != 0);
@@ -320,7 +291,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 30: // field_jumpmaxholdtime
 		{
 			float Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const float*>(Data));
 
 			Update.set_field_jumpmaxholdtime(Value);
@@ -329,7 +299,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 31: // field_jumpmaxcount
 		{
 			int32 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const int32*>(Data));
 
 			Update.set_field_jumpmaxcount(Value);
@@ -338,7 +307,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 32: // field_reprootmotion_bisactive
 		{
 			bool Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const bool*>(Data));
 
 			Update.set_field_reprootmotion_bisactive(Value != 0);
@@ -347,7 +315,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 33: // field_reprootmotion_animmontage
 		{
 			UAnimMontage* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<UAnimMontage* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -358,7 +325,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 34: // field_reprootmotion_position
 		{
 			float Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const float*>(Data));
 
 			Update.set_field_reprootmotion_position(Value);
@@ -367,7 +333,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 35: // field_reprootmotion_location
 		{
 			FVector_NetQuantize100 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
 			Update.set_field_reprootmotion_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -376,7 +341,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 36: // field_reprootmotion_rotation
 		{
 			FRotator Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FRotator*>(Data));
 
 			Update.set_field_reprootmotion_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
@@ -385,7 +349,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 37: // field_reprootmotion_movementbase
 		{
 			UPrimitiveComponent* Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<UPrimitiveComponent* const*>(Data));
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
@@ -396,7 +359,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 38: // field_reprootmotion_movementbasebonename
 		{
 			FName Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FName*>(Data));
 
 			Update.set_field_reprootmotion_movementbasebonename(TCHAR_TO_UTF8(*Value.ToString()));
@@ -405,7 +367,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 39: // field_reprootmotion_brelativeposition
 		{
 			bool Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const bool*>(Data));
 
 			Update.set_field_reprootmotion_brelativeposition(Value != 0);
@@ -414,7 +375,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 40: // field_reprootmotion_brelativerotation
 		{
 			bool Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const bool*>(Data));
 
 			Update.set_field_reprootmotion_brelativerotation(Value != 0);
@@ -423,7 +383,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 41: // field_reprootmotion_authoritativerootmotion
 		{
 			FRootMotionSourceGroup Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FRootMotionSourceGroup*>(Data));
 
 			{
@@ -448,7 +407,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 42: // field_reprootmotion_acceleration
 		{
 			FVector_NetQuantize10 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FVector_NetQuantize10*>(Data));
 
 			Update.set_field_reprootmotion_acceleration(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -457,7 +415,6 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 		case 43: // field_reprootmotion_linearvelocity
 		{
 			FVector_NetQuantize10 Value;
-			check(Property->ElementSize == sizeof(Value));
 			Value = *(reinterpret_cast<const FVector_NetQuantize10*>(Data));
 
 			Update.set_field_reprootmotion_linearvelocity(improbable::Vector3f(Value.X, Value.Y, Value.Z));
@@ -491,7 +448,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			uint8 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_bhidden().data());
 
@@ -509,7 +465,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			uint8 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_breplicatemovement().data());
 
@@ -527,7 +482,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			uint8 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_btearoff().data());
 
@@ -545,7 +499,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			TEnumAsByte<ENetRole> Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
 			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
@@ -567,11 +520,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			AActor* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_owner().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_owner().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -587,7 +541,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FRepMovement Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& ValueDataStr = *(Op.Update.field_replicatedmovement().data());
 			TArray<uint8> ValueData;
@@ -610,11 +563,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			AActor* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachparent().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachparent().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -630,7 +584,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FVector_NetQuantize100 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& Vector = *(Op.Update.field_attachmentreplication_locationoffset().data());
 			Value.X = Vector.x();
@@ -651,7 +604,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FVector_NetQuantize100 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& Vector = *(Op.Update.field_attachmentreplication_relativescale3d().data());
 			Value.X = Vector.x();
@@ -672,7 +624,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FRotator Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& Rotator = *(Op.Update.field_attachmentreplication_rotationoffset().data());
 			Value.Yaw = Rotator.yaw();
@@ -693,7 +644,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FName Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = FName((*(Op.Update.field_attachmentreplication_attachsocket().data())).data());
 
@@ -711,11 +661,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			USceneComponent* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachcomponent().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<USceneComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachcomponent().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<USceneComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -731,7 +682,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			TEnumAsByte<ENetRole> Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
 			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
@@ -753,7 +703,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			uint8 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_bcanbedamaged().data());
 
@@ -771,11 +720,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			APawn* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_instigator().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_instigator().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -791,11 +741,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			APlayerState* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_playerstate().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_playerstate().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -811,7 +762,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			uint8 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
 			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
@@ -833,11 +783,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			AController* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_controller().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<AController*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_controller().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<AController*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -853,11 +804,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			UPrimitiveComponent* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_replicatedbasedmovement_movementbase().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<UPrimitiveComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_replicatedbasedmovement_movementbase().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<UPrimitiveComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -873,7 +825,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FName Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = FName((*(Op.Update.field_replicatedbasedmovement_bonename().data())).data());
 
@@ -891,7 +842,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FVector_NetQuantize100 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& Vector = *(Op.Update.field_replicatedbasedmovement_location().data());
 			Value.X = Vector.x();
@@ -912,7 +862,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FRotator Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& Rotator = *(Op.Update.field_replicatedbasedmovement_rotation().data());
 			Value.Yaw = Rotator.yaw();
@@ -933,7 +882,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			bool Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_replicatedbasedmovement_bserverhasbasecomponent().data());
 
@@ -951,7 +899,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			bool Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_replicatedbasedmovement_brelativerotation().data());
 
@@ -969,7 +916,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			bool Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_replicatedbasedmovement_bserverhasvelocity().data());
 
@@ -987,7 +933,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			float Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_animrootmotiontranslationscale().data());
 
@@ -1005,7 +950,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			float Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_replicatedserverlasttransformupdatetimestamp().data());
 
@@ -1023,7 +967,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			uint8 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
 			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
@@ -1045,7 +988,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			uint8 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_biscrouched().data());
 
@@ -1063,7 +1005,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			float Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_jumpmaxholdtime().data());
 
@@ -1081,7 +1022,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			int32 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_jumpmaxcount().data());
 
@@ -1099,7 +1039,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			bool Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_reprootmotion_bisactive().data());
 
@@ -1117,11 +1056,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			UAnimMontage* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_reprootmotion_animmontage().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<UAnimMontage*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_reprootmotion_animmontage().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<UAnimMontage*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1137,7 +1077,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			float Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_reprootmotion_position().data());
 
@@ -1155,7 +1094,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FVector_NetQuantize100 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& Vector = *(Op.Update.field_reprootmotion_location().data());
 			Value.X = Vector.x();
@@ -1176,7 +1114,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FRotator Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& Rotator = *(Op.Update.field_reprootmotion_rotation().data());
 			Value.Yaw = Rotator.yaw();
@@ -1197,11 +1134,12 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			UPrimitiveComponent* Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
-			improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_reprootmotion_movementbase().data());
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-			Value = static_cast<UPrimitiveComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_reprootmotion_movementbase().data());
+				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<UPrimitiveComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1217,7 +1155,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FName Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = FName((*(Op.Update.field_reprootmotion_movementbasebonename().data())).data());
 
@@ -1235,7 +1172,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			bool Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_reprootmotion_brelativeposition().data());
 
@@ -1253,7 +1189,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			bool Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			Value = *(Op.Update.field_reprootmotion_brelativerotation().data());
 
@@ -1271,7 +1206,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FRootMotionSourceGroup Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			{
 				Value.bHasAdditiveSources = *(Op.Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().data());
@@ -1312,7 +1246,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FVector_NetQuantize10 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& Vector = *(Op.Update.field_reprootmotion_acceleration().data());
 			Value.X = Vector.x();
@@ -1333,7 +1266,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 			OutputWriter.SerializeIntPacked(Handle);
 
 			FVector_NetQuantize10 Value;
-			check(Data.Property->ElementSize == sizeof(Value));
 
 			auto& Vector = *(Op.Update.field_reprootmotion_linearvelocity().data());
 			Value.X = Vector.x();
