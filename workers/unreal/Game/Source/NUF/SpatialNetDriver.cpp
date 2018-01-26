@@ -123,6 +123,9 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		//Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
 		Connection->SetClientLoginState(EClientLoginState::Welcomed);
 		UpdateInterop->Init(GetNetMode() == NM_Client, SpatialOSInstance, this);
+
+		// Send the player spawn commands with retries
+		PlayerSpawner.RequestPlayer(SpatialOSInstance, &GetWorld()->GetGameInstance()->GetTimerManager(), DummyURL);
 	}
 }
 

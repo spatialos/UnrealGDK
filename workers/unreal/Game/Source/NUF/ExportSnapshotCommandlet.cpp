@@ -79,8 +79,7 @@ worker::Entity UExportSnapshotCommandlet::CreateSpawnerEntity() const
 		.AddMetadataComponent(Metadata::Data("Spawner"))
 		.SetPersistence(true)
 		.SetReadAcl(anyWorkerReadPermission)
-		.AddComponent<spawner::SpawnerClient>(spawner::SpawnerClient::Data{}, unrealClientWritePermission)
-		.AddComponent<spawner::SpawnerServer>(spawner::SpawnerServer::Data{false}, unrealWorkerWritePermission)
+		.AddComponent<spawner::PlayerSpawner>(spawner::PlayerSpawner::Data{}, unrealWorkerWritePermission)
 		.Build();
 
 	return snapshotEntity;
