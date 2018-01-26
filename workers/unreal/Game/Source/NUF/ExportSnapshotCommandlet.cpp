@@ -2,20 +2,18 @@
 
 #include "EntityBuilder.h"
 #include "ExportSnapshotCommandlet.h"
+#include "SpatialConstants.h"
 #include "SpatialOSCommon.h"
 #include "SpatialOSConversionFunctionLibrary.h"
 #include "improbable/collections.h"
 #include "improbable/standard_library.h"
 #include <improbable/spawner/spawner.h>
+#include <improbable/package_map/package_map.h>
 #include <improbable/worker.h>
 #include <unreal/generated/UnrealCharacter.h>
 #include <array>
 
 using namespace improbable;
-
-const int g_SpawnerEntityId = 1;
-const int Client1EntityId = 2;
-const int Client2EntityId = 3;
 
 UExportSnapshotCommandlet::UExportSnapshotCommandlet()
 {
@@ -47,8 +45,8 @@ void UExportSnapshotCommandlet::GenerateSnapshot(const FString& savePath) const
 	const FString fullPath = FPaths::Combine(*savePath, TEXT("default.snapshot"));
 
 	std::unordered_map<worker::EntityId, worker::Entity> snapshotEntities;
-	snapshotEntities.emplace(std::make_pair(Client1EntityId, CreatePlayerEntity()));
-	snapshotEntities.emplace(std::make_pair(Client2EntityId, CreatePlayerEntity()));
+	snapshotEntities.emplace(std::make_pair(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity()));
+	snapshotEntities.emplace(std::make_pair(SpatialConstants::PACKAGE_MAP_ENTITY_ID, CreatePackageMapEntity()));
 	worker::Option<std::string> Result =
 		worker::SaveSnapshot(improbable::unreal::Components{}, TCHAR_TO_UTF8(*fullPath), snapshotEntities);
 	if (!Result.empty())
@@ -70,6 +68,7 @@ worker::Entity UExportSnapshotCommandlet::CreateSpawnerEntity() const
 	WorkerAttributeSet unrealClientAttributeSet{ worker::List<std::string>{"UnrealClient"} };
 
 	WorkerRequirementSet unrealWorkerWritePermission{ { unrealWorkerAttributeSet } };
+	WorkerRequirementSet unrealClientWritePermission{ { unrealClientAttributeSet } };
 	WorkerRequirementSet anyWorkerReadPermission{
 		{ unrealClientAttributeSet, unrealWorkerAttributeSet } };
 
@@ -79,36 +78,60 @@ worker::Entity UExportSnapshotCommandlet::CreateSpawnerEntity() const
 		.AddMetadataComponent(Metadata::Data("Spawner"))
 		.SetPersistence(true)
 		.SetReadAcl(anyWorkerReadPermission)
-		.AddComponent<spawner::Spawner>(spawner::Spawner::Data{}, unrealWorkerWritePermission)
+		.AddComponent<spawner::PlayerSpawner>(spawner::PlayerSpawner::Data{}, unrealWorkerWritePermission)
 		.Build();
 
 	return snapshotEntity;
 }
 
-// This entity is just a placeholder with absolutely no functionality.
-worker::Entity UExportSnapshotCommandlet::CreatePlayerEntity() const
+worker::Entity UExportSnapshotCommandlet::CreatePackageMapEntity() const
 {
-	FVector UnrealPos = FVector(-1000, -100, 228);
-	const Coordinates initialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(UnrealPos);
+	const Coordinates initialPosition{ 0, 0, 0 };
 
 	WorkerAttributeSet unrealWorkerAttributeSet{ worker::List<std::string>{"UnrealWorker"} };
 	WorkerAttributeSet unrealClientAttributeSet{ worker::List<std::string>{"UnrealClient"} };
 
 	WorkerRequirementSet unrealWorkerWritePermission{ { unrealWorkerAttributeSet } };
-	WorkerRequirementSet unrealClientWritePermission{ { unrealClientAttributeSet } };
 	WorkerRequirementSet anyWorkerReadPermission{
 		{ unrealClientAttributeSet, unrealWorkerAttributeSet } };
 
-	auto snapshotEntity = improbable::unreal::FEntityBuilder::Begin()
+	worker::Map<uint32_t, std::string> ObjectMap;
+	ObjectMap.emplace(2578920789, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.Brush_0");
+	ObjectMap.emplace(2392680313, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.LightmassImportanceVolume_0");
+	ObjectMap.emplace(2692449513, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.DefaultPhysicsVolume_0");
+	ObjectMap.emplace(4084350780, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.PostProcessVolume_0");
+	ObjectMap.emplace(2266511128, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.1M_Cube_Chamfer_2");
+	ObjectMap.emplace(3176504740, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.Bump_StaticMesh");
+	ObjectMap.emplace(3778779084, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.Floor");
+	ObjectMap.emplace(2755552271, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.LeftArm_StaticMesh");
+	ObjectMap.emplace(3397426473, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.Linear_Stair_StaticMesh");
+	ObjectMap.emplace(3250948416, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.Ramp_StaticMesh");
+	ObjectMap.emplace(4044673420, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.RightArm_StaticMesh");
+	ObjectMap.emplace(3741580260, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.Wall6");
+	ObjectMap.emplace(3174833489, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.Wall7_3");
+	ObjectMap.emplace(3741575910, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.Wall8");
+	ObjectMap.emplace(3741576345, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.Wall9");
+	ObjectMap.emplace(2407730340, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.DocumentationActor1");
+	ObjectMap.emplace(3157154445, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.AtmosphericFog_1");
+	ObjectMap.emplace(2630414082, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.SkyLight_0");
+	ObjectMap.emplace(3648063513, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.WorldInfo_0");
+	ObjectMap.emplace(2903090501, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.ThirdPersonExampleMap_C_2");
+	ObjectMap.emplace(4208844388, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.LightSource_0");
+	ObjectMap.emplace(3818225277, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.AbstractNavData-Default");
+	ObjectMap.emplace(3116900111, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.NetworkPlayerStart");
+	ObjectMap.emplace(2618737432, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.SphereReflectionCapture");
+	ObjectMap.emplace(2534501830, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.TextRenderActor_1");
+	ObjectMap.emplace(2408470588, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.PackageMapperUtil_48");
+	ObjectMap.emplace(4041226225, "/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap.ThirdPersonExampleMap:PersistentLevel.SkySphereBlueprint");
+
+
+	auto snapshotEntity =
+		improbable::unreal::FEntityBuilder::Begin()
 		.AddPositionComponent(Position::Data{ initialPosition }, unrealWorkerWritePermission)
-		.AddMetadataComponent(Metadata::Data{ "NUFCharacter_BP" })
+		.AddMetadataComponent(Metadata::Data("PackageMap"))
 		.SetPersistence(true)
 		.SetReadAcl(anyWorkerReadPermission)
-		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data{}, unrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data{}, unrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, unrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterClientRPCs>(improbable::unreal::UnrealCharacterClientRPCs::Data{}, unrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterServerRPCs>(improbable::unreal::UnrealCharacterServerRPCs::Data{}, unrealClientWritePermission)
+		.AddComponent<package_map::PackageMap>(package_map::PackageMap::Data{ObjectMap}, unrealWorkerWritePermission)
 		.Build();
 
 	return snapshotEntity;

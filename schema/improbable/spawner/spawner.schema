@@ -3,7 +3,7 @@ import "improbable/standard_library.schema";
 
 type SpawnPlayerRequest
 {
-     Coordinates position = 1;
+    string url = 1;
 }
 
 type SpawnPlayerResponse
@@ -13,9 +13,9 @@ type SpawnPlayerResponse
     EntityId created_entity_id = 3;
 }
 
-component Spawner
+component PlayerSpawner
 {
     id = 21010;
-
     command SpawnPlayerResponse spawn_player(SpawnPlayerRequest);
 }
+

@@ -79,39 +79,40 @@ static void ReadHeaderSubobject(FNetBitReader& Bunch, int RecursionCount)
 }
 } // ::
 
-FBunchReader::FBunchReader(uint8* Data, int NumBits) :
+FBunchReader::FBunchReader(FNetBitReader* InBunch) :
 	bError(false),
 	bHasRepLayout(false),
 	bIsActor(false),
-	Bunch(nullptr, Data, NumBits)
+	Bunch(InBunch)
 {
+	check(InBunch);
 }
 
 void FBunchReader::ReadHeader(bool bIsServer)
 {
 	// This function heavily mirrors UActorChannel::ReadContentBlockHeader.
-	bHasRepLayout = Bunch.ReadBit() != 0; // UE4.16 DataChannel.cpp:2765
-	bIsActor = Bunch.ReadBit() != 0; // UE4.16 DataChannel.cpp:2773
+	bHasRepLayout = Bunch->ReadBit() != 0; // UE4.16 DataChannel.cpp:2765
+	bIsActor = Bunch->ReadBit() != 0; // UE4.16 DataChannel.cpp:2773
 	if (bIsActor) // UE4.16 DataChannel.cpp:2781
 	{
 		return;
 	}
 
-	ReadHeaderSubobject(Bunch, 0); // UE4.16 DataChannel.cpp:2796
+	ReadHeaderSubobject(*Bunch, 0); // UE4.16 DataChannel.cpp:2796
 	if (bIsServer) // UE4.16 DataChannel.cpp:2838
 	{
 		return;
 	}
 
-	const bool bStablyNamed = Bunch.ReadBit() != 0; // UE4.16 DataChannel.cpp:2851
+	const bool bStablyNamed = Bunch->ReadBit() != 0; // UE4.16 DataChannel.cpp:2851
 	if (bStablyNamed) // UE4.16 DataChannel.cpp:2859
 	{
 		return;
 	}
-	ReadHeaderSubobject(Bunch, 0); // UE4.16 DataChannel.cpp:2881
+	ReadHeaderSubobject(*Bunch, 0); // UE4.16 DataChannel.cpp:2881
 }
 
-bool FBunchReader::Parse(bool bIsServer, UPackageMap* PackageMap, const FRepHandlePropertyMap& PropertyMap, RepDataHandler RepDataHandlerFunc)
+bool FBunchReader::Parse(bool bIsServer, const FRepHandlePropertyMap& PropertyMap, RepDataHandler RepDataHandlerFunc)
 {
 	// Parse header.
 	ReadHeader(bIsServer);
@@ -136,9 +137,9 @@ bool FBunchReader::Parse(bool bIsServer, UPackageMap* PackageMap, const FRepHand
 
 	// Get payload data.
 	uint32 PayloadBitCount;
-	Bunch.SerializeIntPacked(PayloadBitCount);
+	Bunch->SerializeIntPacked(PayloadBitCount);
 	FNetBitReader Payload;
-	Payload.SetData(Bunch, PayloadBitCount);
+	Payload.SetData(*Bunch, PayloadBitCount);
 
 	// Read replicated properties.
 #ifdef ENABLE_PROPERTY_CHECKSUMS
@@ -171,7 +172,7 @@ bool FBunchReader::Parse(bool bIsServer, UPackageMap* PackageMap, const FRepHand
 		}
 		UProperty* Property = PropertyMap[Handle].Property;
 		int32 BitsBeforeRead = Payload.GetPosBits();
-		if (!RepDataHandlerFunc(Payload, PackageMap, Handle, Property))
+		if (!RepDataHandlerFunc(Payload, Bunch->PackageMap, Handle, Property))
 		{
 			bError = true;
 			return false;

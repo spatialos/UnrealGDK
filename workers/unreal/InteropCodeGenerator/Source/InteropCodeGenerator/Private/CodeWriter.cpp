@@ -47,3 +47,7 @@ void FCodeWriter::WriteToFile(const FString& Filename)
 	check(Scope == 0);
 	FFileHelper::SaveStringToFile(OutputSource, *Filename);
 }
+
+void FCodeWriter::Dump() {
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *OutputSource);
+}

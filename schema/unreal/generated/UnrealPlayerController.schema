@@ -6,12 +6,12 @@ import "improbable/vector3.schema";
 import "unreal/core_types.schema";
 
 component UnrealPlayerControllerSingleClientReplicatedData {
-	id = 100000;
+	id = 100005;
 	UnrealFRotator field_targetviewrotation = 1; // COND_OwnerOnly
 	improbable.Vector3f field_spawnlocation = 2; // COND_OwnerOnly
 }
 component UnrealPlayerControllerMultiClientReplicatedData {
-	id = 100001;
+	id = 100006;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
 	bool field_btearoff = 3; // COND_None
@@ -31,7 +31,7 @@ component UnrealPlayerControllerMultiClientReplicatedData {
 	UnrealObjectRef field_playerstate = 17; // COND_None
 }
 component UnrealPlayerControllerCompleteData {
-	id = 100002;
+	id = 100007;
 	UnrealObjectRef field_player = 1;
 	UnrealObjectRef field_acknowledgedpawn = 2;
 	UnrealObjectRef field_myhud = 3;
@@ -526,7 +526,7 @@ type UnrealServerAcknowledgePossessionRequest {
 type UnrealServerAcknowledgePossessionResponse {}
 
 component UnrealPlayerControllerClientRPCs {
-	id = 100003;
+	id = 100008;
 	command UnrealOnServerStartedVisualLoggerResponse onserverstartedvisuallogger(UnrealOnServerStartedVisualLoggerRequest);
 	command UnrealClientWasKickedResponse clientwaskicked(UnrealClientWasKickedRequest);
 	command UnrealClientVoiceHandshakeCompleteResponse clientvoicehandshakecomplete(UnrealClientVoiceHandshakeCompleteRequest);
@@ -579,7 +579,7 @@ component UnrealPlayerControllerClientRPCs {
 	command UnrealClientSetLocationResponse clientsetlocation(UnrealClientSetLocationRequest);
 }
 component UnrealPlayerControllerServerRPCs {
-	id = 100004;
+	id = 100009;
 	command UnrealServerViewSelfResponse serverviewself(UnrealServerViewSelfRequest);
 	command UnrealServerViewPrevPlayerResponse serverviewprevplayer(UnrealServerViewPrevPlayerRequest);
 	command UnrealServerViewNextPlayerResponse serverviewnextplayer(UnrealServerViewNextPlayerRequest);
