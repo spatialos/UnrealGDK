@@ -3,6 +3,7 @@
 #include "SpatialPackageMapClient.h"
 #include "EntityRegistry.h"
 #include "SpatialNetDriver.h"
+#include "SpatialUpdateInterop.h"
 #include "SpatialActorChannel.h"
 
 const uint32 StaticObjectOffset = 0x80000000; // 2^31
@@ -33,6 +34,60 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const worker::Enti
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	improbable::unreal::UnrealObjectRef ObjectRef{ EntityId, 0 };
 	return GetNetGUIDFromUnrealObjectRef(ObjectRef);
+}
+
+void USpatialPackageMapClient::AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle)
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	SpatialGuidCache->AddPendingObjRef(Object, DependentChannel, Handle);
+}
+
+void FSpatialNetGUIDCache::AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle)
+{
+	if (Object == nullptr)
+	{
+		return;
+	}
+
+	TArray<USpatialActorChannel*>& Channels = ChannelsAwaitingObjRefResolve.FindOrAdd(Object);
+	Channels.AddUnique(DependentChannel);
+
+	TArray<uint16>* Handles = PendingObjRefHandles.Find(DependentChannel);
+	if (Handles == nullptr)
+	{
+		Handles = &PendingObjRefHandles.Add(DependentChannel);
+	}
+	Handles->AddUnique(Handle);
+}
+
+void FSpatialNetGUIDCache::ResolvePendingObjRefs(const UObject* Object)
+{
+	TArray<USpatialActorChannel*>* DependentChannels = ChannelsAwaitingObjRefResolve.Find(Object);
+	if (DependentChannels == nullptr)
+	{
+		return;
+	}
+
+	USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Driver)->GetSpatialUpdateInterop();
+	check(UpdateInterop);
+
+	for (auto DependentChannel : *DependentChannels)
+	{
+		TArray<uint16>* Handles = PendingObjRefHandles.Find(DependentChannel);
+		if (Handles->Num())
+		{
+			//Changelists always have a 0 at the end.
+			Handles->Add(0);
+
+			// This is to satisfy the SendSpatialUpdate() interface.
+			TArray<uint16> Unused;
+
+			UpdateInterop->SendSpatialUpdate(DependentChannel, *Handles, Unused);
+			PendingObjRefHandles.Remove(DependentChannel);
+		}
+	}
+	DependentChannels->Reset();
+	ChannelsAwaitingObjRefResolve.Remove(Object);
 }
 
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
@@ -81,6 +136,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjRefWrapper);
 	UnrealObjectRefToNetGUID.Emplace(ObjRefWrapper, NetGUID);
 
+	ResolvePendingObjRefs(Actor);
+
 	// Allocate GUIDs for each subobject too
 	TArray<UObject*> DefaultSubobjects;
 	Actor->GetDefaultSubobjects(DefaultSubobjects);
@@ -95,6 +152,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 		ObjRefWrapper.ObjectRef.set_offset(SubObjOffset);
 		NetGUIDToUnrealObjectRef.Emplace(SubObjectNetGUID, ObjRefWrapper);
 		UnrealObjectRefToNetGUID.Emplace(ObjRefWrapper, SubObjectNetGUID);
+		ResolvePendingObjRefs(Subobject);
 		check(SubObjectNetGUID.IsValid());
 	}
 
@@ -152,15 +210,17 @@ void USpatialPackageMapClient::ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FS
 	}
 }
 
-void USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntityId EntityId)
+FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntityId EntityId)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	FNetworkGUID NetGUID = SpatialGuidCache->GetNetGUIDFromEntityId(EntityId.ToSpatialEntityId());
 
 	// check we haven't already assigned a NetGUID to this object
-	if (!SpatialGuidCache->GetNetGUIDFromEntityId(EntityId.ToSpatialEntityId()).IsValid())
+	if (!NetGUID.IsValid())
 	{
-		SpatialGuidCache->AssignNewEntityActorNetGUID(Actor);
+		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor);
 	}
+	return NetGUID;
 }
 
 bool USpatialPackageMapClient::SerializeNewActor(FArchive & Ar, UActorChannel * Channel, AActor *& Actor)

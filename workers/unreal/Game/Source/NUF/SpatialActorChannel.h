@@ -48,7 +48,7 @@ public:
 		};
 	}
 	
-	void SendCreateEntityRequest(const TArray<uint16>& Changed);
+	void SendCreateEntityRequest(const TArray<uint16>& Changed, TArray<uint16>& OutPendingObjUpdates);
 
 	// UChannel interface
 	virtual void Init(UNetConnection * connection, int32 channelIndex, bool bOpenedLocally) override;

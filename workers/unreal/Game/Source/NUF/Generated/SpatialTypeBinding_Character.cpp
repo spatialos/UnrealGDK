@@ -13,8 +13,9 @@
 
 namespace {
 
-void ApplyUpdateToSpatial_SingleClient_Character(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update)
+bool ApplyUpdateToSpatial_SingleClient_Character(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update)
 {
+	return true;
 }
 
 void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
@@ -32,7 +33,7 @@ void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* Upda
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
-void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update)
+bool ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update)
 {
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
 	check(SpatialPMC);
@@ -44,7 +45,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_bhidden(Value != 0);
-			break;
+			return true;
 		}
 		case 2: // field_breplicatemovement
 		{
@@ -52,7 +53,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_breplicatemovement(Value != 0);
-			break;
+			return true;
 		}
 		case 3: // field_btearoff
 		{
@@ -60,7 +61,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_btearoff(Value != 0);
-			break;
+			return true;
 		}
 		case 4: // field_remoterole
 		{
@@ -68,7 +69,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
 
 			Update.set_field_remoterole(uint32_t(Value));
-			break;
+			return true;
 		}
 		case 5: // field_owner
 		{
@@ -77,8 +78,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				return false;
+			}
 			Update.set_field_owner(UObjectRef);
-			break;
+			return true;
 		}
 		case 6: // field_replicatedmovement
 		{
@@ -90,7 +95,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			bool Success;
 			Value.NetSerialize(ValueDataWriter, nullptr, Success);
 			Update.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
-			break;
+			return true;
 		}
 		case 7: // field_attachmentreplication_attachparent
 		{
@@ -99,8 +104,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				return false;
+			}
 			Update.set_field_attachmentreplication_attachparent(UObjectRef);
-			break;
+			return true;
 		}
 		case 8: // field_attachmentreplication_locationoffset
 		{
@@ -108,7 +117,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
 			Update.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
+			return true;
 		}
 		case 9: // field_attachmentreplication_relativescale3d
 		{
@@ -116,7 +125,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
 			Update.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
+			return true;
 		}
 		case 10: // field_attachmentreplication_rotationoffset
 		{
@@ -124,7 +133,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const FRotator*>(Data));
 
 			Update.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
-			break;
+			return true;
 		}
 		case 11: // field_attachmentreplication_attachsocket
 		{
@@ -132,7 +141,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const FName*>(Data));
 
 			Update.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
-			break;
+			return true;
 		}
 		case 12: // field_attachmentreplication_attachcomponent
 		{
@@ -141,8 +150,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				return false;
+			}
 			Update.set_field_attachmentreplication_attachcomponent(UObjectRef);
-			break;
+			return true;
 		}
 		case 13: // field_role
 		{
@@ -150,7 +163,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
 
 			Update.set_field_role(uint32_t(Value));
-			break;
+			return true;
 		}
 		case 14: // field_bcanbedamaged
 		{
@@ -158,7 +171,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_bcanbedamaged(Value != 0);
-			break;
+			return true;
 		}
 		case 15: // field_instigator
 		{
@@ -167,8 +180,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				return false;
+			}
 			Update.set_field_instigator(UObjectRef);
-			break;
+			return true;
 		}
 		case 16: // field_playerstate
 		{
@@ -177,8 +194,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				return false;
+			}
 			Update.set_field_playerstate(UObjectRef);
-			break;
+			return true;
 		}
 		case 17: // field_remoteviewpitch
 		{
@@ -186,7 +207,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_remoteviewpitch(uint32_t(Value));
-			break;
+			return true;
 		}
 		case 18: // field_controller
 		{
@@ -195,8 +216,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				return false;
+			}
 			Update.set_field_controller(UObjectRef);
-			break;
+			return true;
 		}
 		case 19: // field_replicatedbasedmovement_movementbase
 		{
@@ -205,8 +230,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				return false;
+			}
 			Update.set_field_replicatedbasedmovement_movementbase(UObjectRef);
-			break;
+			return true;
 		}
 		case 20: // field_replicatedbasedmovement_bonename
 		{
@@ -214,7 +243,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const FName*>(Data));
 
 			Update.set_field_replicatedbasedmovement_bonename(TCHAR_TO_UTF8(*Value.ToString()));
-			break;
+			return true;
 		}
 		case 21: // field_replicatedbasedmovement_location
 		{
@@ -222,7 +251,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
 			Update.set_field_replicatedbasedmovement_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
+			return true;
 		}
 		case 22: // field_replicatedbasedmovement_rotation
 		{
@@ -230,7 +259,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const FRotator*>(Data));
 
 			Update.set_field_replicatedbasedmovement_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
-			break;
+			return true;
 		}
 		case 23: // field_replicatedbasedmovement_bserverhasbasecomponent
 		{
@@ -238,7 +267,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const bool*>(Data));
 
 			Update.set_field_replicatedbasedmovement_bserverhasbasecomponent(Value != 0);
-			break;
+			return true;
 		}
 		case 24: // field_replicatedbasedmovement_brelativerotation
 		{
@@ -246,7 +275,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const bool*>(Data));
 
 			Update.set_field_replicatedbasedmovement_brelativerotation(Value != 0);
-			break;
+			return true;
 		}
 		case 25: // field_replicatedbasedmovement_bserverhasvelocity
 		{
@@ -254,7 +283,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const bool*>(Data));
 
 			Update.set_field_replicatedbasedmovement_bserverhasvelocity(Value != 0);
-			break;
+			return true;
 		}
 		case 26: // field_animrootmotiontranslationscale
 		{
@@ -262,7 +291,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const float*>(Data));
 
 			Update.set_field_animrootmotiontranslationscale(Value);
-			break;
+			return true;
 		}
 		case 27: // field_replicatedserverlasttransformupdatetimestamp
 		{
@@ -270,7 +299,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const float*>(Data));
 
 			Update.set_field_replicatedserverlasttransformupdatetimestamp(Value);
-			break;
+			return true;
 		}
 		case 28: // field_replicatedmovementmode
 		{
@@ -278,7 +307,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_replicatedmovementmode(uint32_t(Value));
-			break;
+			return true;
 		}
 		case 29: // field_biscrouched
 		{
@@ -286,7 +315,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const uint8*>(Data));
 
 			Update.set_field_biscrouched(Value != 0);
-			break;
+			return true;
 		}
 		case 30: // field_jumpmaxholdtime
 		{
@@ -294,7 +323,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const float*>(Data));
 
 			Update.set_field_jumpmaxholdtime(Value);
-			break;
+			return true;
 		}
 		case 31: // field_jumpmaxcount
 		{
@@ -302,7 +331,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const int32*>(Data));
 
 			Update.set_field_jumpmaxcount(Value);
-			break;
+			return true;
 		}
 		case 32: // field_reprootmotion_bisactive
 		{
@@ -310,7 +339,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const bool*>(Data));
 
 			Update.set_field_reprootmotion_bisactive(Value != 0);
-			break;
+			return true;
 		}
 		case 33: // field_reprootmotion_animmontage
 		{
@@ -319,8 +348,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				return false;
+			}
 			Update.set_field_reprootmotion_animmontage(UObjectRef);
-			break;
+			return true;
 		}
 		case 34: // field_reprootmotion_position
 		{
@@ -328,7 +361,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const float*>(Data));
 
 			Update.set_field_reprootmotion_position(Value);
-			break;
+			return true;
 		}
 		case 35: // field_reprootmotion_location
 		{
@@ -336,7 +369,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
 
 			Update.set_field_reprootmotion_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
+			return true;
 		}
 		case 36: // field_reprootmotion_rotation
 		{
@@ -344,7 +377,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const FRotator*>(Data));
 
 			Update.set_field_reprootmotion_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
-			break;
+			return true;
 		}
 		case 37: // field_reprootmotion_movementbase
 		{
@@ -353,8 +386,12 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				return false;
+			}
 			Update.set_field_reprootmotion_movementbase(UObjectRef);
-			break;
+			return true;
 		}
 		case 38: // field_reprootmotion_movementbasebonename
 		{
@@ -362,7 +399,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const FName*>(Data));
 
 			Update.set_field_reprootmotion_movementbasebonename(TCHAR_TO_UTF8(*Value.ToString()));
-			break;
+			return true;
 		}
 		case 39: // field_reprootmotion_brelativeposition
 		{
@@ -370,7 +407,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const bool*>(Data));
 
 			Update.set_field_reprootmotion_brelativeposition(Value != 0);
-			break;
+			return true;
 		}
 		case 40: // field_reprootmotion_brelativerotation
 		{
@@ -378,7 +415,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const bool*>(Data));
 
 			Update.set_field_reprootmotion_brelativerotation(Value != 0);
-			break;
+			return true;
 		}
 		case 41: // field_reprootmotion_authoritativerootmotion
 		{
@@ -402,7 +439,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 					Update.set_field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags(uint32_t(Value.LastAccumulatedSettings.Flags));
 				}
 			}
-			break;
+			return true;
 		}
 		case 42: // field_reprootmotion_acceleration
 		{
@@ -410,7 +447,7 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const FVector_NetQuantize10*>(Data));
 
 			Update.set_field_reprootmotion_acceleration(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
+			return true;
 		}
 		case 43: // field_reprootmotion_linearvelocity
 		{
@@ -418,12 +455,13 @@ void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int3
 			Value = *(reinterpret_cast<const FVector_NetQuantize10*>(Data));
 
 			Update.set_field_reprootmotion_linearvelocity(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
+			return true;
 		}
 	default:
 		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
-		break;
+		return false;
 	}
+	return true;
 }
 
 void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
@@ -1280,6 +1318,7 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 }
 
 void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,
+		TArray<uint16>& OutPendingObjUpdates,
 		improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& SingleClientUpdate,
 		bool& bSingleClientUpdateChanged,
 		improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& MultiClientUpdate,
@@ -1292,6 +1331,7 @@ void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,
 	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.Cmds, Changes.BaseHandleToCmdIndex, 0, 1, 0, Changes.Cmds.Num() - 1);
 	while (HandleIterator.NextHandle())
 	{
+		bool bOk = false;
 		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
 		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
@@ -1299,13 +1339,25 @@ void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,
 		switch (GetGroupFromCondition(PropertyMapData.Condition))
 		{
 		case GROUP_SingleClient:
-			ApplyUpdateToSpatial_SingleClient_Character(Data, HandleIterator.Handle, Cmd.Property, PackageMap, SingleClientUpdate);
-			bSingleClientUpdateChanged = true;
+			if (ApplyUpdateToSpatial_SingleClient_Character(Data, HandleIterator.Handle, Cmd.Property, PackageMap, SingleClientUpdate))
+			{
+				bSingleClientUpdateChanged = true;
+				bOk = true;
+			}
 			break;
 		case GROUP_MultiClient:
-			ApplyUpdateToSpatial_MultiClient_Character(Data, HandleIterator.Handle, Cmd.Property, PackageMap, MultiClientUpdate);
-			bMultiClientUpdateChanged = true;
+			if (ApplyUpdateToSpatial_MultiClient_Character(Data, HandleIterator.Handle, Cmd.Property, PackageMap, MultiClientUpdate))
+			{
+				bMultiClientUpdateChanged = true;
+				bOk = true;
+			}
 			break;
+		}
+		if (!bOk)
+		{
+			// Currently the only valid case is being unable to serialize an object reference due to not yet receiving entity id from SpatialOS.
+			check(Cmd.Property->IsA(UObjectPropertyBase::StaticClass()));
+			OutPendingObjUpdates.Add(HandleIterator.Handle);
 		}
 	}
 }
@@ -1427,14 +1479,14 @@ worker::ComponentId USpatialTypeBinding_Character::GetReplicatedGroupComponentId
 	}
 }
 
-void USpatialTypeBinding_Character::SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const
+void USpatialTypeBinding_Character::SendComponentUpdates(const FPropertyChangeState& Changes, TArray<uint16>& OutPendingObjUpdates, const worker::EntityId& EntityId) const
 {
 	// Build SpatialOS updates.
 	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
 	bool SingleClientUpdateChanged = false;
 	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
 	bool MultiClientUpdateChanged = false;
-	BuildSpatialComponentUpdate(Changes,
+	BuildSpatialComponentUpdate(Changes, OutPendingObjUpdates,
 		SingleClientUpdate, SingleClientUpdateChanged,
 		MultiClientUpdate, MultiClientUpdateChanged,
 		PackageMap);
@@ -1451,7 +1503,7 @@ void USpatialTypeBinding_Character::SendComponentUpdates(const FPropertyChangeSt
 	}
 }
 
-worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const
+worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, TArray<uint16>& OutPendingObjUpdates) const
 {
 	// Setup initial data.
 	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data SingleClientData;
@@ -1460,7 +1512,7 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& P
 	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data MultiClientData;
 	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
 	bool bMultiClientUpdateChanged = false;
-	BuildSpatialComponentUpdate(InitialChanges,
+	BuildSpatialComponentUpdate(InitialChanges, OutPendingObjUpdates,
 		SingleClientUpdate, bSingleClientUpdateChanged,
 		MultiClientUpdate, bMultiClientUpdateChanged,
 		PackageMap);

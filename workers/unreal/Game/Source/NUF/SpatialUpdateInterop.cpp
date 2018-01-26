@@ -6,10 +6,7 @@
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
 #include "SpatialOS.h"
-
-#include "Utils/BunchReader.h"
-
-#include "Engine/PackageMapClient.h"
+#include "SpatialPackageMapClient.h"
 
 #include "Generated/SpatialTypeBinding_Character.h"
 #include "Generated/SpatialTypeBinding_PlayerController.h"
@@ -26,7 +23,7 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 	bIsClient = bClient;
 	SpatialOSInstance = Instance;
 	NetDriver = Driver;
-	PackageMap = Driver->GetSpatialOSNetConnection()->PackageMap;
+	PackageMap = Cast<USpatialPackageMapClient>(Driver->GetSpatialOSNetConnection()->PackageMap);
 
 	RegisterInteropType(ACharacter::StaticClass(), NewObject<USpatialTypeBinding_Character>(this));
 	RegisterInteropType(APlayerController::StaticClass(), NewObject<USpatialTypeBinding_PlayerController>(this));
@@ -85,7 +82,7 @@ const USpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* 
 	return nullptr;
 }
 
-void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed)
+void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed, TArray<uint16>& OutPendingObjUpdates)
 {
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
@@ -94,8 +91,8 @@ void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, con
 		//	*Channel->Actor->GetClass()->GetName());
 		return;
 	}
-	
-	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), Channel->GetEntityId());
+
+	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), OutPendingObjUpdates, Channel->GetEntityId());
 }
 
 void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)
