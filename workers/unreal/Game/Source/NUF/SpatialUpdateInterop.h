@@ -17,8 +17,7 @@ class NUF_API USpatialUpdateInterop : public UObject
 {
 	GENERATED_BODY()
 public:
-	USpatialUpdateInterop() = default;
-	~USpatialUpdateInterop() = default;
+	USpatialUpdateInterop();
 
 	void Init(bool bClient, USpatialOS* Instance, USpatialNetDriver* Driver);
 	void Tick(float DeltaTime);

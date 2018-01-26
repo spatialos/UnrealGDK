@@ -19,6 +19,9 @@
 #define ENABLE_PROPERTY_CHECKSUMS
 DEFINE_LOG_CATEGORY(LogSpatialUpdateInterop);
 
+USpatialUpdateInterop::USpatialUpdateInterop() 
+{
+}
 
 void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNetDriver* Driver)
 {
