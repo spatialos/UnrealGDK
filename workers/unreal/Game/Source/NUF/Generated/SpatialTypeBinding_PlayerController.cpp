@@ -2,14 +2,14 @@
 // Note that this file has been generated automatically
 
 #include "SpatialTypeBinding_PlayerController.h"
-		#include "SpatialOS.h"
-		#include "Engine.h"
-		#include "SpatialActorChannel.h"
-		#include "EntityBuilder.h"
-		// TODO(David): Remove this once RPCs are merged, as we will no longer need a placeholder component.
-		#include "improbable/player/player.h"
-		#include "SpatialPackageMapClient.h"
-		#include "SpatialUpdateInterop.h"
+#include "SpatialOS.h"
+#include "Engine.h"
+#include "SpatialActorChannel.h"
+#include "EntityBuilder.h"
+// TODO(David): Remove this once RPCs are merged, as we will no longer need a placeholder component.
+#include "improbable/player/player.h"
+#include "SpatialPackageMapClient.h"
+#include "SpatialUpdateInterop.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetHandlePropertyMap()
 {
@@ -55,23 +55,55 @@ void USpatialTypeBinding_PlayerController::BindToView()
 		const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>& Op)
 	{
 		auto Update = improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update::FromInitialData(Op.Data);
-		ReceiveUpdateFromSpatial_SingleClient(Op.EntityId, Update);
+		USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+		if (ActorChannel)
+		{
+			ReceiveUpdateFromSpatial_SingleClient(ActorChannel, Update);
+		}
+		else
+		{
+			PendingSingleClientData.Add(Op.EntityId, Op.Data);
+		}
 	});
 	SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>([this](
 		const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>& Op)
 	{
-		ReceiveUpdateFromSpatial_SingleClient(Op.EntityId, Op.Update);
+		USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+		if (ActorChannel)
+		{
+			ReceiveUpdateFromSpatial_SingleClient(ActorChannel, Op.Update);
+		}
+		else
+		{
+			Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
+		}
 	});
 	MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>([this](
 		const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>& Op)
 	{
 		auto Update = improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update::FromInitialData(Op.Data);
-		ReceiveUpdateFromSpatial_MultiClient(Op.EntityId, Update);
+		USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+		if (ActorChannel)
+		{
+			ReceiveUpdateFromSpatial_MultiClient(ActorChannel, Update);
+		}
+		else
+		{
+			PendingMultiClientData.Add(Op.EntityId, Op.Data);
+		}
 	});
 	MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>([this](
 		const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>& Op)
 	{
-		ReceiveUpdateFromSpatial_MultiClient(Op.EntityId, Op.Update);
+		USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+		if (ActorChannel)
+		{
+			ReceiveUpdateFromSpatial_MultiClient(ActorChannel, Op.Update);
+		}
+		else
+		{
+			Op.Update.ApplyTo(PendingMultiClientData.FindOrAdd(Op.EntityId));
+		}
 	});
 }
 
@@ -386,16 +418,11 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 }
 
 void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_SingleClient(
-	worker::EntityId EntityId,
+	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update) const
 {
 	FNetBitWriter OutputWriter(nullptr, 0);
 	auto& HandleToPropertyMap = GetHandlePropertyMap();
-	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(EntityId);
-	if (!ActorChannel)
-	{
-		return;
-	}
 	ConditionMapFilter ConditionMap(ActorChannel);
 	if (!Update.field_targetviewrotation().empty())
 	{
@@ -441,16 +468,11 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_SingleClient
 }
 
 void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
-	worker::EntityId EntityId,
+	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update) const
 {
 	FNetBitWriter OutputWriter(nullptr, 0);
 	auto& HandleToPropertyMap = GetHandlePropertyMap();
-	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(EntityId);
-	if (!ActorChannel)
-	{
-		return;
-	}
 	ConditionMapFilter ConditionMap(ActorChannel);
 	if (!Update.field_bhidden().empty())
 	{
@@ -788,4 +810,24 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 		}
 	}
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
+}
+
+void USpatialTypeBinding_PlayerController::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)
+{
+	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Data* SingleClientData = PendingSingleClientData.Find(ActorChannel->GetEntityId());
+	if (SingleClientData)
+	{
+		improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update Update;
+		Update.FromInitialData(*SingleClientData);
+		PendingSingleClientData.Remove(ActorChannel->GetEntityId());
+		ReceiveUpdateFromSpatial_SingleClient(ActorChannel, Update);
+	}
+	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
+	if (MultiClientData)
+	{
+		improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update Update;
+		Update.FromInitialData(*MultiClientData);
+		PendingMultiClientData.Remove(ActorChannel->GetEntityId());
+		ReceiveUpdateFromSpatial_MultiClient(ActorChannel, Update);
+	}
 }

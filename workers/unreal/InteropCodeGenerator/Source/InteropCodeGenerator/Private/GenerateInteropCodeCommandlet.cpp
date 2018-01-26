@@ -863,7 +863,7 @@ void GenerateForwardingCodeFromLayout(
 		SpatialToUnrealSignatureByGroup.Add(Group, {
 			TEXT("void"),
 			FString::Printf(TEXT("ReceiveUpdateFromSpatial_%s"), *GetReplicatedPropertyGroupName(Group)),
-			FString::Printf(TEXT("(\n\tworker::EntityId EntityId,\n\tconst improbable::unreal::%s::Update& Update) const"),
+			FString::Printf(TEXT("(\n\tUSpatialActorChannel* ActorChannel,\n\tconst improbable::unreal::%s::Update& Update) const"),
 				*GetSchemaReplicatedDataName(Group, Class))
 		});
 	}
@@ -896,12 +896,22 @@ void GenerateForwardingCodeFromLayout(
 		void UnbindFromView() override;
 		worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
 		worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const override;
-		void SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const override;)"""));
+		void SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const override;
+		void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;)"""));
+	HeaderWriter.Print();
 	HeaderWriter.Outdent().Print(TEXT("private:")).Indent();
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
 		HeaderWriter.Print(FString::Printf(TEXT("worker::Dispatcher::CallbackKey %sAddCallback;"), *GetReplicatedPropertyGroupName(Group)));
 		HeaderWriter.Print(FString::Printf(TEXT("worker::Dispatcher::CallbackKey %sUpdateCallback;"), *GetReplicatedPropertyGroupName(Group)));
+	}
+	HeaderWriter.Print();
+	HeaderWriter.Print(TEXT("// Pending updates."));
+	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
+	{
+		HeaderWriter.Print(FString::Printf(TEXT("TMap<worker::EntityId, improbable::unreal::%s::Data> Pending%sData;"),
+			*GetSchemaReplicatedDataName(Group, Class),
+			*GetReplicatedPropertyGroupName(Group)));
 	}
 	HeaderWriter.Print();
 	HeaderWriter.Print(TEXT("// Helper functions."));
@@ -918,10 +928,11 @@ void GenerateForwardingCodeFromLayout(
 	HeaderWriter.Print(TEXT("};"));
 
 	// Forwarding code source file.
-	SourceWriter.Print(TEXT("// Copyright (c) Improbable Worlds Ltd, All Rights Reserved"));
-	SourceWriter.Print(TEXT("// Note that this file has been generated automatically"));
-	SourceWriter.Print();
-	SourceWriter.Print(FString::Printf(TEXT(R"""(#include "%s.h"
+	SourceWriter.Print(FString::Printf(TEXT(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+
+		#include "%s.h"
 		#include "SpatialOS.h"
 		#include "Engine.h"
 		#include "SpatialActorChannel.h"
@@ -996,7 +1007,17 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Indent();
 		SourceWriter.Print(FString::Printf(TEXT("auto Update = improbable::unreal::%s::Update::FromInitialData(Op.Data);"),
 			*GetSchemaReplicatedDataName(Group, Class)));
-		SourceWriter.Print(FString::Printf(TEXT("ReceiveUpdateFromSpatial_%s(Op.EntityId, Update);"),
+		SourceWriter.Print(FString::Printf(TEXT(R"""(
+			USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+			if (ActorChannel)
+			{
+				ReceiveUpdateFromSpatial_%s(ActorChannel, Update);
+			}
+			else
+			{
+				Pending%sData.Add(Op.EntityId, Op.Data);
+			})"""),
+			*GetReplicatedPropertyGroupName(Group),
 			*GetReplicatedPropertyGroupName(Group)));
 		SourceWriter.Outdent();
 		SourceWriter.Print(TEXT("});"));
@@ -1011,7 +1032,17 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Outdent();
 		SourceWriter.Print(TEXT("{"));
 		SourceWriter.Indent();
-		SourceWriter.Print(FString::Printf(TEXT("ReceiveUpdateFromSpatial_%s(Op.EntityId, Op.Update);"),
+		SourceWriter.Print(FString::Printf(TEXT(R"""(
+			USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+			if (ActorChannel)
+			{
+				ReceiveUpdateFromSpatial_%s(ActorChannel, Op.Update);
+			}
+			else
+			{
+				Op.Update.ApplyTo(Pending%sData.FindOrAdd(Op.EntityId));
+			})"""),
+			*GetReplicatedPropertyGroupName(Group),
 			*GetReplicatedPropertyGroupName(Group)));
 		SourceWriter.Outdent();
 		SourceWriter.Print(TEXT("});"));
@@ -1191,7 +1222,7 @@ void GenerateForwardingCodeFromLayout(
 		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
 		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];)""")));
-	SourceWriter.Print(FString::Printf(TEXT("UE_LOG(LogTemp, Log, TEXT(\"-> Handle: %%d Property %%s\"), HandleIterator.Handle, *Cmd.Property->GetName());")));
+	SourceWriter.Print(TEXT("UE_LOG(LogTemp, Log, TEXT(\"-> Handle: %d Property %s\"), HandleIterator.Handle, *Cmd.Property->GetName());"));
 
 	SourceWriter.Print(TEXT("switch (GetGroupFromCondition(PropertyMapData.Condition))"));
 	SourceWriter.Print(TEXT("{"));
@@ -1279,11 +1310,6 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Print(TEXT(R"""(
 			FNetBitWriter OutputWriter(nullptr, 0);
 			auto& HandleToPropertyMap = GetHandlePropertyMap();
-			USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(EntityId);
-			if (!ActorChannel)
-			{
-				return;
-			}
 			ConditionMapFilter ConditionMap(ActorChannel);)"""));
 		for (auto& RepProp : Layout.ReplicatedProperties[Group])
 		{
@@ -1329,6 +1355,35 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Outdent();
 		SourceWriter.Print(TEXT("}"));
 	}
+
+	// ApplyQueuedStateToChannel
+	// ==================================
+	SourceWriter.Print();
+	SourceWriter.Printf(TEXT("void %s::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)"), *TypeBindingName);
+	SourceWriter.Print(TEXT("{"));
+	SourceWriter.Indent();
+	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
+	{
+		SourceWriter.Printf(TEXT(R"""(
+			improbable::unreal::%s::Data* %sData = Pending%sData.Find(ActorChannel->GetEntityId());
+			if (%sData)
+			{
+				improbable::unreal::%s::Update Update;
+				Update.FromInitialData(*%sData);
+				Pending%sData.Remove(ActorChannel->GetEntityId());
+				ReceiveUpdateFromSpatial_%s(ActorChannel, Update);
+			})"""),
+			*GetSchemaReplicatedDataName(Group, Class),
+			*GetReplicatedPropertyGroupName(Group),
+			*GetReplicatedPropertyGroupName(Group),
+			*GetReplicatedPropertyGroupName(Group),
+			*GetSchemaReplicatedDataName(Group, Class),
+			*GetReplicatedPropertyGroupName(Group),
+			*GetReplicatedPropertyGroupName(Group),
+			*GetReplicatedPropertyGroupName(Group));
+	}
+	SourceWriter.Outdent();
+	SourceWriter.Print(TEXT("}"));
 }
 
 void GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class)

@@ -72,7 +72,7 @@ void USpatialUpdateInterop::UnregisterInteropType(UClass* Class)
 	}
 }
 
-const USpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class) const
+USpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class)
 {
 	for (const UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
 	{
