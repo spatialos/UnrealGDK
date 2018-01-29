@@ -26,7 +26,14 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 	bIsClient = bClient;
 	SpatialOSInstance = Instance;
 	NetDriver = Driver;
-	PackageMap = Driver->GetSpatialOSNetConnection()->PackageMap;
+	if (NetDriver->ServerConnection)
+	{
+		PackageMap = Driver->ServerConnection->PackageMap;
+	}
+	else
+	{
+		PackageMap = Driver->GetSpatialOSNetConnection()->PackageMap;
+	}
 
 	RegisterInteropType(ACharacter::StaticClass(), NewObject<USpatialTypeBinding_Character>(this));
 	RegisterInteropType(APlayerController::StaticClass(), NewObject<USpatialTypeBinding_PlayerController>(this));
