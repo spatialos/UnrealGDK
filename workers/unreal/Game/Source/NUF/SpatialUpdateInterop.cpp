@@ -82,7 +82,7 @@ const USpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* 
 	return nullptr;
 }
 
-void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed, TArray<uint16>& OutPendingObjUpdates)
+void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed)
 {
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
@@ -92,7 +92,7 @@ void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, con
 		return;
 	}
 
-	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), OutPendingObjUpdates, Channel->GetEntityId());
+	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), Channel, Channel->GetEntityId());
 }
 
 void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)

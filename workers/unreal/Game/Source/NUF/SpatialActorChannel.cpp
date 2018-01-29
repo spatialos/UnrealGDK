@@ -64,7 +64,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	SpatialNetDriver = nullptr;
 }
 
-void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed, TArray<uint16>& OutPendingObjUpdates)
+void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed)
 {
 	TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
 	if (PinnedConnection.IsValid())
@@ -79,7 +79,7 @@ void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed
 
 		if (TypeBinding)
 		{
-			auto Entity = TypeBinding->CreateActorEntity(Actor->GetActorLocation(), PathStr, GetChangeState(Changed), OutPendingObjUpdates);
+			auto Entity = TypeBinding->CreateActorEntity(Actor->GetActorLocation(), PathStr, GetChangeState(Changed), this);
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ActorEntityId, 0);
 		}
 		else
@@ -281,26 +281,16 @@ bool USpatialActorChannel::ReplicateActor()
 		PendingObjUpdates.Reset();
 		if (RepFlags.bNetInitial)
 		{
-			SendCreateEntityRequest(Changed, PendingObjUpdates);
+			SendCreateEntityRequest(Changed);
 		}
 		else
 		{
-			UpdateInterop->SendSpatialUpdate(this, Changed, PendingObjUpdates);
+			UpdateInterop->SendSpatialUpdate(this, Changed);
 		}
 
 		bWroteSomethingImportant = true;
 		ActorReplicator->RepState->HistoryEnd++;
 		UpdateChangelistHistory(ActorReplicator->RepState);
-
-		for (uint16 Handle : PendingObjUpdates)
-		{
-			uint16 CmdIndex = ActorReplicator->RepLayout->BaseHandleToCmdIndex[Handle].CmdIndex;
-			const FRepLayoutCmd& Cmd = ActorReplicator->RepLayout->Cmds[CmdIndex];
-			uint8* Data = (uint8*)Actor + Cmd.Offset;
-			UObject* ReferencedObject = *(reinterpret_cast<UObject* const*>(Data));
-			USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-			SpatialPMC->AddPendingObjRef(ReferencedObject, this, Handle);
-		}
 	}
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
@@ -407,10 +397,6 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	}
 
 	ActorEntityId = *Op.EntityId;
-
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-	check(SpatialPMC);
-	FNetworkGUID NetGUID = SpatialPMC->ResolveEntityActor(Actor, ActorEntityId);	
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
@@ -440,13 +426,9 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		{
 			worker::EntityId SpatialEntityId = Op.EntityId.value_or(0);
 			FEntityId EntityId(SpatialEntityId);
-
+			SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
+			FNetworkGUID NetGUID = PMC->ResolveEntityActor(Actor, ActorEntityId);
 			UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
-			// once we know the entity was successfully spawned, add the local actor 
-			// to the package map and to the EntityRegistry
-			PMC->ResolveEntityActor(GetActor(), EntityId);
-			SpatialNetDriver->GetEntityRegistry()->AddToRegistry(EntityId, GetActor());
-			ActorEntityId = SpatialEntityId;
 		}
 	}
 }	

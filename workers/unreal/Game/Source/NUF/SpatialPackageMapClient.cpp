@@ -82,10 +82,7 @@ void FSpatialNetGUIDCache::ResolvePendingObjRefs(const UObject* Object)
 			//Changelists always have a 0 at the end.
 			Handles->Add(0);
 
-			// This is to satisfy the SendSpatialUpdate() interface.
-			TArray<uint16> Unused;
-
-			UpdateInterop->SendSpatialUpdate(DependentChannel, *Handles, Unused);
+			UpdateInterop->SendSpatialUpdate(DependentChannel, *Handles);
 			PendingObjRefHandles.Remove(DependentChannel);
 		}
 	}
