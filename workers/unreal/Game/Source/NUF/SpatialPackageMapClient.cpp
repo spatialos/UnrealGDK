@@ -6,6 +6,8 @@
 #include "SpatialUpdateInterop.h"
 #include "SpatialActorChannel.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialOSPackageMap);
+
 const uint32 StaticObjectOffset = 0x80000000; // 2^31
 
 struct FCompareComponentNames
@@ -15,7 +17,6 @@ struct FCompareComponentNames
 		return A.GetName() < B.GetName();
 	}
 };
-
 
 improbable::unreal::UnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromNetGUID(const FNetworkGUID & NetGUID) const
 {
@@ -38,6 +39,8 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const worker::Enti
 
 void USpatialPackageMapClient::AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle)
 {
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending obj ref for object: %s, channel: %s, handle: %d."), 
+		*Object->GetName(), *DependentChannel->GetName(), Handle);
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	SpatialGuidCache->AddPendingObjRef(Object, DependentChannel, Handle);
 }
@@ -109,8 +112,9 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID(const UObject* Object)
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 {
 	FEntityId EntityId = Cast<USpatialNetDriver>(Driver)->GetEntityRegistry()->GetEntityIdFromActor(Actor);
-	check(EntityId.ToSpatialEntityId() >= 0)
+	check(EntityId.ToSpatialEntityId() > 0)
 
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Assigning a NetGUID to entityid %d, actor: %s"), EntityId.ToSpatialEntityId(), *Actor->GetName());
 	FNetworkGUID NetGUID = GetOrAssignNetGUID(Actor);
 	//One major difference between how Unreal does NetGUIDs vs us is, we don't attempt to make them consistent across workers and client.
 	// The function above might have returned without assigning new GUID, because we are the client.
@@ -126,6 +130,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 
 		const FNetworkGUID NewNetGuid(ALLOC_NEW_NET_GUID(IsStatic));
 		RegisterNetGUID_Client(NewNetGuid, Actor);
+		
+		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("NetGUID for %s was not found in the cache. Generated new NetGUID."), *Actor->GetName());
 	}
 
 	check(NetGUID.IsValid());
@@ -135,6 +141,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	ObjRefWrapper.ObjectRef = ObjRef;
 	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjRefWrapper);
 	UnrealObjectRefToNetGUID.Emplace(ObjRefWrapper, NetGUID);
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new objref for actor: %s, entityid: %d"), *Actor->GetName(), EntityId.ToSpatialEntityId());
 
 	ResolvePendingObjRefs(Actor);
 
@@ -205,7 +212,7 @@ void USpatialPackageMapClient::ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FS
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed to resolve object with path: %s"), *Path);
+			UE_LOG(LogSpatialOSPackageMap, Warning, TEXT("Failed to resolve object with path: %s"), *Path);
 		}
 	}
 }

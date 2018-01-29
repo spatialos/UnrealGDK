@@ -11,6 +11,8 @@
 
 class USpatialActorChannel;
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSPackageMap, Log, All);
+
 //todo-giray: super hacky to inject GetTypeHash() into UnrealObjectRef. Will find a better way.
 class FUnrealObjectRefWrapper
 {
