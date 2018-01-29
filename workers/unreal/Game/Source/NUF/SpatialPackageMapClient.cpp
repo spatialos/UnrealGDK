@@ -77,7 +77,7 @@ void FSpatialNetGUIDCache::ResolvePendingObjRefs(const UObject* Object)
 	for (auto DependentChannel : *DependentChannels)
 	{
 		TArray<uint16>* Handles = PendingObjRefHandles.Find(DependentChannel);
-		if (Handles->Num())
+		if (Handles && Handles->Num())
 		{
 			//Changelists always have a 0 at the end.
 			Handles->Add(0);
