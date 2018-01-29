@@ -101,7 +101,8 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		{
 			WorldContext->PendingNetGame->bSuccessfullyConnected = true;
 			WorldContext->PendingNetGame->bSentJoinRequest = false;
-		}	
+		}
+		UpdateInterop->Init(true, SpatialOSInstance, this);
 	}
 	else
 	{
@@ -122,7 +123,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		AddClientConnection(Connection);
 		//Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
 		Connection->SetClientLoginState(EClientLoginState::Welcomed);
-		UpdateInterop->Init(GetNetMode() == NM_Client, SpatialOSInstance, this);
+		UpdateInterop->Init(false, SpatialOSInstance, this);
 
 		// Send the player spawn commands with retries
 		PlayerSpawner.RequestPlayer(SpatialOSInstance, &GetWorld()->GetGameInstance()->GetTimerManager(), DummyURL);
@@ -717,30 +718,30 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame* Stack,
 	UObject* SubObject)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Function: %s, actor: %s"), *Function->GetName(), *Actor->GetName())
-	auto* Connection = Actor->GetNetConnection();
+	UE_LOG(LogTemp, Warning, TEXT("Function: %s, actor: %s"), *Function->GetName(), *Actor->GetName());
+	USpatialNetConnection* Connection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
 	if (!Connection)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
 		return;
 	}
 
-	FNetworkGUID NetGuid = Connection->PackageMap->GetNetGUIDFromObject(Actor).Value;
-	// Hard coded to up to two actors for now. The first actor will have NetGuid 6 and EntityID 2. The second will be 12 and 3.
-	// Only send a command if it was one of these actors which sent the rpc.
-
-	// The rpc might have been called by an actor directly, or by a subobject on that actor (e.g. UCharacterMovementComponent)
-	UObject* CallingObject = SubObject ? Actor : SubObject;
-	// Reading properties from an FFrame changes the FFrame (internal pointer to the last property read). So we need to make a new one.
-	FFrame TempRpcFrameForReading{ CallingObject, Function, Parameters, nullptr, Function->Children };
-
-	bool CorrectActor = NetGuid == 6 || NetGuid == 12;
-	if (Function->FunctionFlags & FUNC_Net && CorrectActor)
+	// Get target EntityId.
+	FEntityId TargetEntityId = EntityRegistry->GetEntityIdFromActor(Actor);
+	if (TargetEntityId == FEntityId())
 	{
-		// this can be removed once actors are spawning correctly 
-		worker::EntityId entityId = NetGuid == 6 ? 2 : 3;
+		UE_LOG(LogTemp, Error, TEXT("Attempted to send RPC from an actor with no entity ID. TODO: Add queuing."))
+		return;
+	}
 
-		UpdateInterop->HandleRPCInvocation(Actor, Function, &TempRpcFrameForReading, entityId);	
+	// The RPC might have been called by an actor directly, or by a subobject on that actor (e.g. UCharacterMovementComponent).
+	UObject* CallingObject = SubObject ? Actor : SubObject;
+
+	// Reading properties from an FFrame changes the FFrame (internal pointer to the last property read). So we need to make a new one.
+	FFrame TempRpcFrameForReading{CallingObject, Function, Parameters, nullptr, Function->Children};
+	if (Function->FunctionFlags & FUNC_Net)
+	{
+		UpdateInterop->HandleRPCInvocation(Actor, Function, &TempRpcFrameForReading, TargetEntityId.ToSpatialEntityId());
 	}
 
 	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver

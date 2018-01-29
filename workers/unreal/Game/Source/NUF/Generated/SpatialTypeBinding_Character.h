@@ -15,6 +15,7 @@ UCLASS()
 class USpatialTypeBinding_Character : public USpatialTypeBinding
 {
 	GENERATED_BODY()
+
 public:
 	static const FRepHandlePropertyMap& GetHandlePropertyMap();
 	void Init(USpatialUpdateInterop* InUpdateInterop, UPackageMap* InPackageMap) override;
@@ -24,10 +25,12 @@ public:
 	void SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const override;
 	worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const override;
 	void SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target) const override;
+
 private:
-	TMap<FName, FRPCSender> RPCToSenderMap;
 	worker::Dispatcher::CallbackKey SingleClientCallback;
 	worker::Dispatcher::CallbackKey MultiClientCallback;
+
+	TMap<FName, FRPCSender> RPCToSenderMap;
 	TArray<worker::Dispatcher::CallbackKey> RPCReceiverCallbacks;
 
 	void ClientCheatWalkReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op);

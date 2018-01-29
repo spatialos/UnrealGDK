@@ -352,10 +352,6 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 
 			TEnumAsByte<ENetRole> Value;
 
-			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 			Value = TEnumAsByte<ENetRole>(uint8(*(Op.Update.field_remoterole().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -543,10 +539,6 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 
 			TEnumAsByte<ENetRole> Value;
 
-			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 			Value = TEnumAsByte<ENetRole>(uint8(*(Op.Update.field_role().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -637,6 +629,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 }
 
 // RPC sender functions
+
 void OnServerStartedVisualLoggerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -647,6 +640,7 @@ void OnServerStartedVisualLoggerSender(worker::Connection* const Connection, str
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(Target, Request, 0);
 }
+
 void ClientWasKickedSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -657,12 +651,14 @@ void ClientWasKickedSender(worker::Connection* const Connection, struct FFrame* 
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(Target, Request, 0);
 }
+
 void ClientVoiceHandshakeCompleteSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealClientVoiceHandshakeCompleteRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(Target, Request, 0);
 }
+
 void ClientUpdateLevelStreamingStatusSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -681,6 +677,7 @@ void ClientUpdateLevelStreamingStatusSender(worker::Connection* const Connection
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(Target, Request, 0);
 }
+
 void ClientUnmutePlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -697,6 +694,7 @@ void ClientUnmutePlayerSender(worker::Connection* const Connection, struct FFram
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(Target, Request, 0);
 }
+
 void ClientTravelInternalSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -716,6 +714,7 @@ void ClientTravelInternalSender(worker::Connection* const Connection, struct FFr
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(Target, Request, 0);
 }
+
 void ClientTeamMessageSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -736,6 +735,7 @@ void ClientTeamMessageSender(worker::Connection* const Connection, struct FFrame
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(Target, Request, 0);
 }
+
 void ClientStopForceFeedbackSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -752,6 +752,7 @@ void ClientStopForceFeedbackSender(worker::Connection* const Connection, struct 
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(Target, Request, 0);
 }
+
 void ClientStopCameraShakeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -764,6 +765,7 @@ void ClientStopCameraShakeSender(worker::Connection* const Connection, struct FF
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(Target, Request, 0);
 }
+
 void ClientStopCameraAnimSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -778,12 +780,14 @@ void ClientStopCameraAnimSender(worker::Connection* const Connection, struct FFr
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(Target, Request, 0);
 }
+
 void ClientStartOnlineSessionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealClientStartOnlineSessionRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(Target, Request, 0);
 }
+
 void ClientSpawnCameraLensEffectSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -794,6 +798,7 @@ void ClientSpawnCameraLensEffectSender(worker::Connection* const Connection, str
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(Target, Request, 0);
 }
+
 void ClientSetViewTargetSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -813,6 +818,7 @@ void ClientSetViewTargetSender(worker::Connection* const Connection, struct FFra
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(Target, Request, 0);
 }
+
 void ClientSetSpectatorWaitingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -823,6 +829,7 @@ void ClientSetSpectatorWaitingSender(worker::Connection* const Connection, struc
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(Target, Request, 0);
 }
+
 void ClientSetHUDSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -833,6 +840,7 @@ void ClientSetHUDSender(worker::Connection* const Connection, struct FFrame* con
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(Target, Request, 0);
 }
+
 void ClientSetForceMipLevelsToBeResidentSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -851,6 +859,7 @@ void ClientSetForceMipLevelsToBeResidentSender(worker::Connection* const Connect
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(Target, Request, 0);
 }
+
 void ClientSetCinematicModeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -867,6 +876,7 @@ void ClientSetCinematicModeSender(worker::Connection* const Connection, struct F
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(Target, Request, 0);
 }
+
 void ClientSetCameraModeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -877,6 +887,7 @@ void ClientSetCameraModeSender(worker::Connection* const Connection, struct FFra
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(Target, Request, 0);
 }
+
 void ClientSetCameraFadeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -899,12 +910,14 @@ void ClientSetCameraFadeSender(worker::Connection* const Connection, struct FFra
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(Target, Request, 0);
 }
+
 void ClientSetBlockOnAsyncLoadingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealClientSetBlockOnAsyncLoadingRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(Target, Request, 0);
 }
+
 void ClientReturnToMainMenuSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -915,6 +928,7 @@ void ClientReturnToMainMenuSender(worker::Connection* const Connection, struct F
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(Target, Request, 0);
 }
+
 void ClientRetryClientRestartSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -929,6 +943,7 @@ void ClientRetryClientRestartSender(worker::Connection* const Connection, struct
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(Target, Request, 0);
 }
+
 void ClientRestartSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -943,12 +958,14 @@ void ClientRestartSender(worker::Connection* const Connection, struct FFrame* co
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(Target, Request, 0);
 }
+
 void ClientResetSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealClientResetRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(Target, Request, 0);
 }
+
 void ClientRepObjRefSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -963,6 +980,7 @@ void ClientRepObjRefSender(worker::Connection* const Connection, struct FFrame* 
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(Target, Request, 0);
 }
+
 void ClientReceiveLocalizedMessageSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -993,6 +1011,7 @@ void ClientReceiveLocalizedMessageSender(worker::Connection* const Connection, s
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(Target, Request, 0);
 }
+
 void ClientPrestreamTexturesSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1013,6 +1032,7 @@ void ClientPrestreamTexturesSender(worker::Connection* const Connection, struct 
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(Target, Request, 0);
 }
+
 void ClientPrepareMapChangeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1027,6 +1047,7 @@ void ClientPrepareMapChangeSender(worker::Connection* const Connection, struct F
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(Target, Request, 0);
 }
+
 void ClientPlaySoundAtLocationSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1047,6 +1068,7 @@ void ClientPlaySoundAtLocationSender(worker::Connection* const Connection, struc
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(Target, Request, 0);
 }
+
 void ClientPlaySoundSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1065,6 +1087,7 @@ void ClientPlaySoundSender(worker::Connection* const Connection, struct FFrame* 
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(Target, Request, 0);
 }
+
 void ClientPlayForceFeedbackSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1083,6 +1106,7 @@ void ClientPlayForceFeedbackSender(worker::Connection* const Connection, struct 
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(Target, Request, 0);
 }
+
 void ClientPlayCameraShakeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1099,6 +1123,7 @@ void ClientPlayCameraShakeSender(worker::Connection* const Connection, struct FF
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(Target, Request, 0);
 }
+
 void ClientPlayCameraAnimSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1129,6 +1154,7 @@ void ClientPlayCameraAnimSender(worker::Connection* const Connection, struct FFr
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(Target, Request, 0);
 }
+
 void ClientMutePlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1145,6 +1171,7 @@ void ClientMutePlayerSender(worker::Connection* const Connection, struct FFrame*
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(Target, Request, 0);
 }
+
 void ClientMessageSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1159,6 +1186,7 @@ void ClientMessageSender(worker::Connection* const Connection, struct FFrame* co
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(Target, Request, 0);
 }
+
 void ClientIgnoreMoveInputSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1169,6 +1197,7 @@ void ClientIgnoreMoveInputSender(worker::Connection* const Connection, struct FF
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(Target, Request, 0);
 }
+
 void ClientIgnoreLookInputSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1179,6 +1208,7 @@ void ClientIgnoreLookInputSender(worker::Connection* const Connection, struct FF
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(Target, Request, 0);
 }
+
 void ClientGotoStateSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1189,6 +1219,7 @@ void ClientGotoStateSender(worker::Connection* const Connection, struct FFrame* 
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(Target, Request, 0);
 }
+
 void ClientGameEndedSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1205,24 +1236,28 @@ void ClientGameEndedSender(worker::Connection* const Connection, struct FFrame* 
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(Target, Request, 0);
 }
+
 void ClientForceGarbageCollectionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealClientForceGarbageCollectionRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(Target, Request, 0);
 }
+
 void ClientFlushLevelStreamingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealClientFlushLevelStreamingRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(Target, Request, 0);
 }
+
 void ClientEndOnlineSessionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealClientEndOnlineSessionRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(Target, Request, 0);
 }
+
 void ClientEnableNetworkVoiceSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1233,18 +1268,21 @@ void ClientEnableNetworkVoiceSender(worker::Connection* const Connection, struct
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(Target, Request, 0);
 }
+
 void ClientCommitMapChangeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealClientCommitMapChangeRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(Target, Request, 0);
 }
+
 void ClientClearCameraLensEffectsSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealClientClearCameraLensEffectsRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(Target, Request, 0);
 }
+
 void ClientCapBandwidthSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1255,12 +1293,14 @@ void ClientCapBandwidthSender(worker::Connection* const Connection, struct FFram
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(Target, Request, 0);
 }
+
 void ClientCancelPendingMapChangeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealClientCancelPendingMapChangeRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(Target, Request, 0);
 }
+
 void ClientAddTextureStreamingLocSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1275,6 +1315,7 @@ void ClientAddTextureStreamingLocSender(worker::Connection* const Connection, st
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(Target, Request, 0);
 }
+
 void ClientSetRotationSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1287,6 +1328,7 @@ void ClientSetRotationSender(worker::Connection* const Connection, struct FFrame
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(Target, Request, 0);
 }
+
 void ClientSetLocationSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1299,6 +1341,7 @@ void ClientSetLocationSender(worker::Connection* const Connection, struct FFrame
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(Target, Request, 0);
 }
+
 void ServerViewSelfSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1312,24 +1355,28 @@ void ServerViewSelfSender(worker::Connection* const Connection, struct FFrame* c
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(Target, Request, 0);
 }
+
 void ServerViewPrevPlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealServerViewPrevPlayerRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(Target, Request, 0);
 }
+
 void ServerViewNextPlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealServerViewNextPlayerRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(Target, Request, 0);
 }
+
 void ServerVerifyViewTargetSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealServerVerifyViewTargetRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(Target, Request, 0);
 }
+
 void ServerUpdateLevelVisibilitySender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1342,6 +1389,7 @@ void ServerUpdateLevelVisibilitySender(worker::Connection* const Connection, str
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(Target, Request, 0);
 }
+
 void ServerUpdateCameraSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1354,6 +1402,7 @@ void ServerUpdateCameraSender(worker::Connection* const Connection, struct FFram
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(Target, Request, 0);
 }
+
 void ServerUnmutePlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1370,18 +1419,21 @@ void ServerUnmutePlayerSender(worker::Connection* const Connection, struct FFram
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(Target, Request, 0);
 }
+
 void ServerToggleAILoggingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealServerToggleAILoggingRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(Target, Request, 0);
 }
+
 void ServerShortTimeoutSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealServerShortTimeoutRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(Target, Request, 0);
 }
+
 void ServerSetSpectatorWaitingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1392,6 +1444,7 @@ void ServerSetSpectatorWaitingSender(worker::Connection* const Connection, struc
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(Target, Request, 0);
 }
+
 void ServerSetSpectatorLocationSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1404,18 +1457,21 @@ void ServerSetSpectatorLocationSender(worker::Connection* const Connection, stru
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(Target, Request, 0);
 }
+
 void ServerRestartPlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealServerRestartPlayerRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(Target, Request, 0);
 }
+
 void ServerPauseSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealServerPauseRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(Target, Request, 0);
 }
+
 void ServerNotifyLoadedWorldSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1426,6 +1482,7 @@ void ServerNotifyLoadedWorldSender(worker::Connection* const Connection, struct 
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(Target, Request, 0);
 }
+
 void ServerMutePlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1442,18 +1499,21 @@ void ServerMutePlayerSender(worker::Connection* const Connection, struct FFrame*
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(Target, Request, 0);
 }
+
 void ServerCheckClientPossessionReliableSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealServerCheckClientPossessionReliableRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(Target, Request, 0);
 }
+
 void ServerCheckClientPossessionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealServerCheckClientPossessionRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(Target, Request, 0);
 }
+
 void ServerChangeNameSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1464,6 +1524,7 @@ void ServerChangeNameSender(worker::Connection* const Connection, struct FFrame*
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(Target, Request, 0);
 }
+
 void ServerCameraSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1474,6 +1535,7 @@ void ServerCameraSender(worker::Connection* const Connection, struct FFrame* con
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(Target, Request, 0);
 }
+
 void ServerAcknowledgePossessionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	FFrame& Stack = *RPCFrame;
@@ -1814,65 +1876,116 @@ void USpatialTypeBinding_PlayerController::SendRPCCommand(const UFunction* const
 	checkf(*Func, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *(Function->GetFName().ToString()));
 	(*Func)(Connection.Get(), RPCFrame, Target, Cast<USpatialPackageMapClient>(PackageMap));
 }
+
 void USpatialTypeBinding_PlayerController::OnServerStartedVisualLoggerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("OnServerStartedVisualLoggerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("OnServerStartedVisualLoggerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract bIsLogging
 	bool bIsLogging;
 	bIsLogging = Op.Request.field_bislogging();
 
+	// Call implementation and send command response.
 	TargetObject->OnServerStartedVisualLogger_Implementation(bIsLogging);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientWasKickedReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientWasKickedReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientWasKickedReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract KickReason
 	FText KickReason;
 	// UNSUPPORTED
 
+	// Call implementation and send command response.
 	TargetObject->ClientWasKicked_Implementation(KickReason);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeCompleteReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientVoiceHandshakeCompleteReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientVoiceHandshakeCompleteReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ClientVoiceHandshakeComplete_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatusReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientUpdateLevelStreamingStatusReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientUpdateLevelStreamingStatusReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract PackageName
 	FName PackageName;
 	PackageName = FName((Op.Request.field_packagename()).data());
+
+	// Extract bNewShouldBeLoaded
 	bool bNewShouldBeLoaded;
 	bNewShouldBeLoaded = Op.Request.field_bnewshouldbeloaded();
+
+	// Extract bNewShouldBeVisible
 	bool bNewShouldBeVisible;
 	bNewShouldBeVisible = Op.Request.field_bnewshouldbevisible();
+
+	// Extract bNewShouldBlockOnLoad
 	bool bNewShouldBlockOnLoad;
 	bNewShouldBlockOnLoad = Op.Request.field_bnewshouldblockonload();
+
+	// Extract LODIndex
 	int32 LODIndex;
 	LODIndex = Op.Request.field_lodindex();
 
+	// Call implementation and send command response.
 	TargetObject->ClientUpdateLevelStreamingStatus_Implementation(PackageName, bNewShouldBeLoaded, bNewShouldBeVisible, bNewShouldBlockOnLoad, LODIndex);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientUnmutePlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientUnmutePlayerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientUnmutePlayerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract PlayerId
 	FUniqueNetIdRepl PlayerId;
 	{
 		auto& ValueDataStr = Op.Request.field_playerid();
@@ -1883,427 +1996,669 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayerReceiver(const work
 		PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
 	}
 
+	// Call implementation and send command response.
 	TargetObject->ClientUnmutePlayer_Implementation(PlayerId);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientTravelInternalReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientTravelInternalReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientTravelInternalReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract URL
 	FString URL;
 	URL = FString(UTF8_TO_TCHAR(Op.Request.field_url().c_str()));
+
+	// Extract TravelType
 	TEnumAsByte<ETravelType> TravelType;
-	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 	TravelType = TEnumAsByte<ETravelType>(uint8(Op.Request.field_traveltype()));
+
+	// Extract bSeamless
 	bool bSeamless;
 	bSeamless = Op.Request.field_bseamless();
+
+	// Extract MapPackageGuid
 	FGuid MapPackageGuid;
 	MapPackageGuid.A = Op.Request.field_mappackageguid_a();
 	MapPackageGuid.B = Op.Request.field_mappackageguid_b();
 	MapPackageGuid.C = Op.Request.field_mappackageguid_c();
 	MapPackageGuid.D = Op.Request.field_mappackageguid_d();
 
+	// Call implementation and send command response.
 	TargetObject->ClientTravelInternal_Implementation(URL, TravelType, bSeamless, MapPackageGuid);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientTeamMessageReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	APlayerState* SenderPlayerState = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientTeamMessageReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientTeamMessageReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract SenderPlayerState
+	APlayerState* SenderPlayerState;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_senderplayerstate();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		SenderPlayerState = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
+
+	// Extract S
 	FString S;
 	S = FString(UTF8_TO_TCHAR(Op.Request.field_s().c_str()));
+
+	// Extract Type
 	FName Type;
 	Type = FName((Op.Request.field_type()).data());
+
+	// Extract MsgLifeTime
 	float MsgLifeTime;
 	MsgLifeTime = Op.Request.field_msglifetime();
 
+	// Call implementation and send command response.
 	TargetObject->ClientTeamMessage_Implementation(SenderPlayerState, S, Type, MsgLifeTime);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientStopForceFeedbackReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	UForceFeedbackEffect* ForceFeedbackEffect = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientStopForceFeedbackReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientStopForceFeedbackReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract ForceFeedbackEffect
+	UForceFeedbackEffect* ForceFeedbackEffect;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_forcefeedbackeffect();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		ForceFeedbackEffect = static_cast<UForceFeedbackEffect*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
+
+	// Extract Tag
 	FName Tag;
 	Tag = FName((Op.Request.field_tag()).data());
 
+	// Call implementation and send command response.
 	TargetObject->ClientStopForceFeedback_Implementation(ForceFeedbackEffect, Tag);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientStopCameraShakeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	TSubclassOf<UCameraShake>  Shake = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientStopCameraShakeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientStopCameraShakeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract Shake
+	TSubclassOf<UCameraShake>  Shake;
 	//Not yet implemented UClass properties
+
+	// Extract bImmediately
 	bool bImmediately;
 	bImmediately = Op.Request.field_bimmediately();
 
+	// Call implementation and send command response.
 	TargetObject->ClientStopCameraShake_Implementation(Shake, bImmediately);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientStopCameraAnimReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	UCameraAnim* AnimToStop = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientStopCameraAnimReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientStopCameraAnimReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract AnimToStop
+	UCameraAnim* AnimToStop;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_animtostop();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		AnimToStop = static_cast<UCameraAnim*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
 
+	// Call implementation and send command response.
 	TargetObject->ClientStopCameraAnim_Implementation(AnimToStop);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientStartOnlineSessionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientStartOnlineSessionReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientStartOnlineSessionReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ClientStartOnlineSession_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffectReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	TSubclassOf<AEmitterCameraLensEffectBase>  LensEffectEmitterClass = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSpawnCameraLensEffectReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSpawnCameraLensEffectReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract LensEffectEmitterClass
+	TSubclassOf<AEmitterCameraLensEffectBase>  LensEffectEmitterClass;
 	//Not yet implemented UClass properties
 
+	// Call implementation and send command response.
 	TargetObject->ClientSpawnCameraLensEffect_Implementation(LensEffectEmitterClass);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientSetViewTargetReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	AActor* A = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetViewTargetReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetViewTargetReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract A
+	AActor* A;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_a();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		A = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
+
+	// Extract TransitionParams
 	FViewTargetTransitionParams TransitionParams;
 	TransitionParams.BlendTime = Op.Request.field_transitionparams_blendtime();
-	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 	TransitionParams.BlendFunction = TEnumAsByte<EViewTargetBlendFunction>(uint8(Op.Request.field_transitionparams_blendfunction()));
 	TransitionParams.BlendExp = Op.Request.field_transitionparams_blendexp();
 	TransitionParams.bLockOutgoing = Op.Request.field_transitionparams_blockoutgoing();
 
+	// Call implementation and send command response.
 	TargetObject->ClientSetViewTarget_Implementation(A, TransitionParams);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaitingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetSpectatorWaitingReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetSpectatorWaitingReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract bWaiting
 	bool bWaiting;
 	bWaiting = Op.Request.field_bwaiting();
 
+	// Call implementation and send command response.
 	TargetObject->ClientSetSpectatorWaiting_Implementation(bWaiting);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientSetHUDReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	TSubclassOf<AHUD>  NewHUDClass = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetHUDReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetHUDReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract NewHUDClass
+	TSubclassOf<AHUD>  NewHUDClass;
 	//Not yet implemented UClass properties
 
+	// Call implementation and send command response.
 	TargetObject->ClientSetHUD_Implementation(NewHUDClass);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResidentReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	UMaterialInterface* Material = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetForceMipLevelsToBeResidentReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetForceMipLevelsToBeResidentReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract Material
+	UMaterialInterface* Material;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_material();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		Material = static_cast<UMaterialInterface*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
+
+	// Extract ForceDuration
 	float ForceDuration;
 	ForceDuration = Op.Request.field_forceduration();
+
+	// Extract CinematicTextureGroups
 	int32 CinematicTextureGroups;
 	CinematicTextureGroups = Op.Request.field_cinematictexturegroups();
 
+	// Call implementation and send command response.
 	TargetObject->ClientSetForceMipLevelsToBeResident_Implementation(Material, ForceDuration, CinematicTextureGroups);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientSetCinematicModeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetCinematicModeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetCinematicModeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract bInCinematicMode
 	bool bInCinematicMode;
 	bInCinematicMode = Op.Request.field_bincinematicmode();
+
+	// Extract bAffectsMovement
 	bool bAffectsMovement;
 	bAffectsMovement = Op.Request.field_baffectsmovement();
+
+	// Extract bAffectsTurning
 	bool bAffectsTurning;
 	bAffectsTurning = Op.Request.field_baffectsturning();
+
+	// Extract bAffectsHUD
 	bool bAffectsHUD;
 	bAffectsHUD = Op.Request.field_baffectshud();
 
+	// Call implementation and send command response.
 	TargetObject->ClientSetCinematicMode_Implementation(bInCinematicMode, bAffectsMovement, bAffectsTurning, bAffectsHUD);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientSetCameraModeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetCameraModeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetCameraModeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract NewCamMode
 	FName NewCamMode;
 	NewCamMode = FName((Op.Request.field_newcammode()).data());
 
+	// Call implementation and send command response.
 	TargetObject->ClientSetCameraMode_Implementation(NewCamMode);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientSetCameraFadeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetCameraFadeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetCameraFadeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract bEnableFading
 	bool bEnableFading;
 	bEnableFading = Op.Request.field_benablefading();
+
+	// Extract FadeColor
 	FColor FadeColor;
-	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 	FadeColor.B = uint8(uint8(Op.Request.field_fadecolor_b()));
-	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 	FadeColor.G = uint8(uint8(Op.Request.field_fadecolor_g()));
-	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 	FadeColor.R = uint8(uint8(Op.Request.field_fadecolor_r()));
-	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 	FadeColor.A = uint8(uint8(Op.Request.field_fadecolor_a()));
+
+	// Extract FadeAlpha
 	FVector2D FadeAlpha;
 	FadeAlpha.X = Op.Request.field_fadealpha_x();
 	FadeAlpha.Y = Op.Request.field_fadealpha_y();
+
+	// Extract FadeTime
 	float FadeTime;
 	FadeTime = Op.Request.field_fadetime();
+
+	// Extract bFadeAudio
 	bool bFadeAudio;
 	bFadeAudio = Op.Request.field_bfadeaudio();
 
+	// Call implementation and send command response.
 	TargetObject->ClientSetCameraFade_Implementation(bEnableFading, FadeColor, FadeAlpha, FadeTime, bFadeAudio);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoadingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetBlockOnAsyncLoadingReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetBlockOnAsyncLoadingReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ClientSetBlockOnAsyncLoading_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientReturnToMainMenuReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientReturnToMainMenuReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientReturnToMainMenuReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract ReturnReason
 	FString ReturnReason;
 	ReturnReason = FString(UTF8_TO_TCHAR(Op.Request.field_returnreason().c_str()));
 
+	// Call implementation and send command response.
 	TargetObject->ClientReturnToMainMenu_Implementation(ReturnReason);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientRetryClientRestartReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	APawn* NewPawn = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientRetryClientRestartReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientRetryClientRestartReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract NewPawn
+	APawn* NewPawn;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_newpawn();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		NewPawn = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
 
+	// Call implementation and send command response.
 	TargetObject->ClientRetryClientRestart_Implementation(NewPawn);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientRestartReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	APawn* NewPawn = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientRestartReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientRestartReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract NewPawn
+	APawn* NewPawn;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_newpawn();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		NewPawn = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
 
+	// Call implementation and send command response.
 	TargetObject->ClientRestart_Implementation(NewPawn);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientResetReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientResetReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientResetReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ClientReset_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientRepObjRefReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	UObject* Object = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientRepObjRefReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientRepObjRefReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract Object
+	UObject* Object;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_object();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		Object = static_cast<UObject*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
 
+	// Call implementation and send command response.
 	TargetObject->ClientRepObjRef_Implementation(Object);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessageReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	TSubclassOf<ULocalMessage>  Message = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientReceiveLocalizedMessageReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientReceiveLocalizedMessageReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract Message
+	TSubclassOf<ULocalMessage>  Message;
 	//Not yet implemented UClass properties
+
+	// Extract Switch
 	int32 Switch;
 	Switch = Op.Request.field_switch();
-	APlayerState* RelatedPlayerState_1 = nullptr;
+
+	// Extract RelatedPlayerState_1
+	APlayerState* RelatedPlayerState_1;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_relatedplayerstate_1();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		RelatedPlayerState_1 = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
-	APlayerState* RelatedPlayerState_2 = nullptr;
+
+	// Extract RelatedPlayerState_2
+	APlayerState* RelatedPlayerState_2;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_relatedplayerstate_2();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		RelatedPlayerState_2 = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
-	UObject* OptionalObject = nullptr;
+
+	// Extract OptionalObject
+	UObject* OptionalObject;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_optionalobject();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		OptionalObject = static_cast<UObject*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
 
+	// Call implementation and send command response.
 	TargetObject->ClientReceiveLocalizedMessage_Implementation(Message, Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientPrestreamTexturesReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	AActor* ForcedActor = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPrestreamTexturesReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientPrestreamTexturesReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract ForcedActor
+	AActor* ForcedActor;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_forcedactor();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		ForcedActor = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
+
+	// Extract ForceDuration
 	float ForceDuration;
 	ForceDuration = Op.Request.field_forceduration();
+
+	// Extract bEnableStreaming
 	bool bEnableStreaming;
 	bEnableStreaming = Op.Request.field_benablestreaming();
+
+	// Extract CinematicTextureGroups
 	int32 CinematicTextureGroups;
 	CinematicTextureGroups = Op.Request.field_cinematictexturegroups();
 
+	// Call implementation and send command response.
 	TargetObject->ClientPrestreamTextures_Implementation(ForcedActor, ForceDuration, bEnableStreaming, CinematicTextureGroups);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientPrepareMapChangeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPrepareMapChangeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientPrepareMapChangeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract LevelName
 	FName LevelName;
 	LevelName = FName((Op.Request.field_levelname()).data());
+
+	// Extract bFirst
 	bool bFirst;
 	bFirst = Op.Request.field_bfirst();
+
+	// Extract bLast
 	bool bLast;
 	bLast = Op.Request.field_blast();
 
+	// Call implementation and send command response.
 	TargetObject->ClientPrepareMapChange_Implementation(LevelName, bFirst, bLast);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocationReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	USoundBase* Sound = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlaySoundAtLocationReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientPlaySoundAtLocationReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract Sound
+	USoundBase* Sound;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_sound();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		Sound = static_cast<USoundBase*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
+
+	// Extract Location
 	FVector Location;
 	{
 		auto& Vector = Op.Request.field_location();
@@ -2311,70 +2666,111 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocationReceiver(con
 		Location.Y = Vector.y();
 		Location.Z = Vector.z();
 	}
+
+	// Extract VolumeMultiplier
 	float VolumeMultiplier;
 	VolumeMultiplier = Op.Request.field_volumemultiplier();
+
+	// Extract PitchMultiplier
 	float PitchMultiplier;
 	PitchMultiplier = Op.Request.field_pitchmultiplier();
 
+	// Call implementation and send command response.
 	TargetObject->ClientPlaySoundAtLocation_Implementation(Sound, Location, VolumeMultiplier, PitchMultiplier);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientPlaySoundReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	USoundBase* Sound = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlaySoundReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientPlaySoundReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract Sound
+	USoundBase* Sound;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_sound();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		Sound = static_cast<USoundBase*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
+
+	// Extract VolumeMultiplier
 	float VolumeMultiplier;
 	VolumeMultiplier = Op.Request.field_volumemultiplier();
+
+	// Extract PitchMultiplier
 	float PitchMultiplier;
 	PitchMultiplier = Op.Request.field_pitchmultiplier();
 
+	// Call implementation and send command response.
 	TargetObject->ClientPlaySound_Implementation(Sound, VolumeMultiplier, PitchMultiplier);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientPlayForceFeedbackReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	UForceFeedbackEffect* ForceFeedbackEffect = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlayForceFeedbackReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientPlayForceFeedbackReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract ForceFeedbackEffect
+	UForceFeedbackEffect* ForceFeedbackEffect;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_forcefeedbackeffect();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		ForceFeedbackEffect = static_cast<UForceFeedbackEffect*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
+
+	// Extract bLooping
 	bool bLooping;
 	bLooping = Op.Request.field_blooping();
+
+	// Extract Tag
 	FName Tag;
 	Tag = FName((Op.Request.field_tag()).data());
 
+	// Call implementation and send command response.
 	TargetObject->ClientPlayForceFeedback_Implementation(ForceFeedbackEffect, bLooping, Tag);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientPlayCameraShakeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	TSubclassOf<UCameraShake>  Shake = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlayCameraShakeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientPlayCameraShakeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract Shake
+	TSubclassOf<UCameraShake>  Shake;
 	//Not yet implemented UClass properties
+
+	// Extract Scale
 	float Scale;
 	Scale = Op.Request.field_scale();
+
+	// Extract PlaySpace
 	TEnumAsByte<ECameraAnimPlaySpace::Type> PlaySpace;
-	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 	PlaySpace = TEnumAsByte<ECameraAnimPlaySpace::Type>(uint8(Op.Request.field_playspace()));
+
+	// Extract UserPlaySpaceRot
 	FRotator UserPlaySpaceRot;
 	{
 		auto& Rotator = Op.Request.field_userplayspacerot();
@@ -2383,39 +2779,60 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShakeReceiver(const w
 		UserPlaySpaceRot.Roll = Rotator.roll();
 	}
 
+	// Call implementation and send command response.
 	TargetObject->ClientPlayCameraShake_Implementation(Shake, Scale, PlaySpace, UserPlaySpaceRot);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientPlayCameraAnimReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	UCameraAnim* AnimToPlay = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlayCameraAnimReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientPlayCameraAnimReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract AnimToPlay
+	UCameraAnim* AnimToPlay;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_animtoplay();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		AnimToPlay = static_cast<UCameraAnim*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
+
+	// Extract Scale
 	float Scale;
 	Scale = Op.Request.field_scale();
+
+	// Extract Rate
 	float Rate;
 	Rate = Op.Request.field_rate();
+
+	// Extract BlendInTime
 	float BlendInTime;
 	BlendInTime = Op.Request.field_blendintime();
+
+	// Extract BlendOutTime
 	float BlendOutTime;
 	BlendOutTime = Op.Request.field_blendouttime();
+
+	// Extract bLoop
 	bool bLoop;
 	bLoop = Op.Request.field_bloop();
+
+	// Extract bRandomStartTime
 	bool bRandomStartTime;
 	bRandomStartTime = Op.Request.field_brandomstarttime();
+
+	// Extract Space
 	TEnumAsByte<ECameraAnimPlaySpace::Type> Space;
-	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 	Space = TEnumAsByte<ECameraAnimPlaySpace::Type>(uint8(Op.Request.field_space()));
+
+	// Extract CustomPlaySpace
 	FRotator CustomPlaySpace;
 	{
 		auto& Rotator = Op.Request.field_customplayspace();
@@ -2424,15 +2841,24 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnimReceiver(const wo
 		CustomPlaySpace.Roll = Rotator.roll();
 	}
 
+	// Call implementation and send command response.
 	TargetObject->ClientPlayCameraAnim_Implementation(AnimToPlay, Scale, Rate, BlendInTime, BlendOutTime, bLoop, bRandomStartTime, Space, CustomPlaySpace);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientMutePlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientMutePlayerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientMutePlayerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract PlayerId
 	FUniqueNetIdRepl PlayerId;
 	{
 		auto& ValueDataStr = Op.Request.field_playerid();
@@ -2443,169 +2869,289 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayerReceiver(const worker
 		PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
 	}
 
+	// Call implementation and send command response.
 	TargetObject->ClientMutePlayer_Implementation(PlayerId);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientMessageReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientMessageReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientMessageReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract S
 	FString S;
 	S = FString(UTF8_TO_TCHAR(Op.Request.field_s().c_str()));
+
+	// Extract Type
 	FName Type;
 	Type = FName((Op.Request.field_type()).data());
+
+	// Extract MsgLifeTime
 	float MsgLifeTime;
 	MsgLifeTime = Op.Request.field_msglifetime();
 
+	// Call implementation and send command response.
 	TargetObject->ClientMessage_Implementation(S, Type, MsgLifeTime);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInputReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientIgnoreMoveInputReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientIgnoreMoveInputReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract bIgnore
 	bool bIgnore;
 	bIgnore = Op.Request.field_bignore();
 
+	// Call implementation and send command response.
 	TargetObject->ClientIgnoreMoveInput_Implementation(bIgnore);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientIgnoreLookInputReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientIgnoreLookInputReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientIgnoreLookInputReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract bIgnore
 	bool bIgnore;
 	bIgnore = Op.Request.field_bignore();
 
+	// Call implementation and send command response.
 	TargetObject->ClientIgnoreLookInput_Implementation(bIgnore);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientGotoStateReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientGotoStateReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientGotoStateReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract NewState
 	FName NewState;
 	NewState = FName((Op.Request.field_newstate()).data());
 
+	// Call implementation and send command response.
 	TargetObject->ClientGotoState_Implementation(NewState);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientGameEndedReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	AActor* EndGameFocus = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientGameEndedReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientGameEndedReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract EndGameFocus
+	AActor* EndGameFocus;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_endgamefocus();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		EndGameFocus = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
+
+	// Extract bIsWinner
 	bool bIsWinner;
 	bIsWinner = Op.Request.field_biswinner();
 
+	// Call implementation and send command response.
 	TargetObject->ClientGameEnded_Implementation(EndGameFocus, bIsWinner);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientForceGarbageCollectionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientForceGarbageCollectionReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientForceGarbageCollectionReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ClientForceGarbageCollection_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientFlushLevelStreamingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientFlushLevelStreamingReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientFlushLevelStreamingReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ClientFlushLevelStreaming_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientEndOnlineSessionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientEndOnlineSessionReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientEndOnlineSessionReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ClientEndOnlineSession_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoiceReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientEnableNetworkVoiceReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientEnableNetworkVoiceReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract bEnable
 	bool bEnable;
 	bEnable = Op.Request.field_benable();
 
+	// Call implementation and send command response.
 	TargetObject->ClientEnableNetworkVoice_Implementation(bEnable);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientCommitMapChangeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientCommitMapChangeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientCommitMapChangeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ClientCommitMapChange_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffectsReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientClearCameraLensEffectsReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientClearCameraLensEffectsReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ClientClearCameraLensEffects_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientCapBandwidthReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientCapBandwidthReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientCapBandwidthReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract Cap
 	int32 Cap;
 	Cap = Op.Request.field_cap();
 
+	// Call implementation and send command response.
 	TargetObject->ClientCapBandwidth_Implementation(Cap);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChangeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientCancelPendingMapChangeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientCancelPendingMapChangeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ClientCancelPendingMapChange_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLocReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientAddTextureStreamingLocReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientAddTextureStreamingLocReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract InLoc
 	FVector InLoc;
 	{
 		auto& Vector = Op.Request.field_inloc();
@@ -2613,20 +3159,33 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLocReceiver(
 		InLoc.Y = Vector.y();
 		InLoc.Z = Vector.z();
 	}
+
+	// Extract Duration
 	float Duration;
 	Duration = Op.Request.field_duration();
+
+	// Extract bOverrideLocation
 	bool bOverrideLocation;
 	bOverrideLocation = Op.Request.field_boverridelocation();
 
+	// Call implementation and send command response.
 	TargetObject->ClientAddTextureStreamingLoc_Implementation(InLoc, Duration, bOverrideLocation);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientSetRotationReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetRotationReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetRotationReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract NewRotation
 	FRotator NewRotation;
 	{
 		auto& Rotator = Op.Request.field_newrotation();
@@ -2634,18 +3193,29 @@ void USpatialTypeBinding_PlayerController::ClientSetRotationReceiver(const worke
 		NewRotation.Pitch = Rotator.pitch();
 		NewRotation.Roll = Rotator.roll();
 	}
+
+	// Extract bResetCamera
 	bool bResetCamera;
 	bResetCamera = Op.Request.field_bresetcamera();
 
+	// Call implementation and send command response.
 	TargetObject->ClientSetRotation_Implementation(NewRotation, bResetCamera);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ClientSetLocationReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetLocationReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetLocationReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract NewLocation
 	FVector NewLocation;
 	{
 		auto& Vector = Op.Request.field_newlocation();
@@ -2653,6 +3223,8 @@ void USpatialTypeBinding_PlayerController::ClientSetLocationReceiver(const worke
 		NewLocation.Y = Vector.y();
 		NewLocation.Z = Vector.z();
 	}
+
+	// Extract NewRotation
 	FRotator NewRotation;
 	{
 		auto& Rotator = Op.Request.field_newrotation();
@@ -2661,78 +3233,124 @@ void USpatialTypeBinding_PlayerController::ClientSetLocationReceiver(const worke
 		NewRotation.Roll = Rotator.roll();
 	}
 
+	// Call implementation and send command response.
 	TargetObject->ClientSetLocation_Implementation(NewLocation, NewRotation);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerViewSelfReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerViewSelfReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerViewSelfReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract TransitionParams
 	FViewTargetTransitionParams TransitionParams;
 	TransitionParams.BlendTime = Op.Request.field_transitionparams_blendtime();
-	// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-	// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-	// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-	// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 	TransitionParams.BlendFunction = TEnumAsByte<EViewTargetBlendFunction>(uint8(Op.Request.field_transitionparams_blendfunction()));
 	TransitionParams.BlendExp = Op.Request.field_transitionparams_blendexp();
 	TransitionParams.bLockOutgoing = Op.Request.field_transitionparams_blockoutgoing();
 
+	// Call implementation and send command response.
 	TargetObject->ServerViewSelf_Implementation(TransitionParams);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerViewPrevPlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerViewPrevPlayerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerViewPrevPlayerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ServerViewPrevPlayer_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerViewNextPlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerViewNextPlayerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerViewNextPlayerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ServerViewNextPlayer_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerVerifyViewTargetReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerVerifyViewTargetReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerVerifyViewTargetReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ServerVerifyViewTarget_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibilityReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerUpdateLevelVisibilityReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerUpdateLevelVisibilityReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract PackageName
 	FName PackageName;
 	PackageName = FName((Op.Request.field_packagename()).data());
+
+	// Extract bIsVisible
 	bool bIsVisible;
 	bIsVisible = Op.Request.field_bisvisible();
 
+	// Call implementation and send command response.
 	TargetObject->ServerUpdateLevelVisibility_Implementation(PackageName, bIsVisible);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerUpdateCameraReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerUpdateCameraReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerUpdateCameraReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract CamLoc
 	FVector_NetQuantize CamLoc;
 	{
 		auto& Vector = Op.Request.field_camloc();
@@ -2740,18 +3358,29 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCameraReceiver(const work
 		CamLoc.Y = Vector.y();
 		CamLoc.Z = Vector.z();
 	}
+
+	// Extract CamPitchAndYaw
 	int32 CamPitchAndYaw;
 	CamPitchAndYaw = Op.Request.field_campitchandyaw();
 
+	// Call implementation and send command response.
 	TargetObject->ServerUpdateCamera_Implementation(CamLoc, CamPitchAndYaw);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerUnmutePlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerUnmutePlayerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerUnmutePlayerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract PlayerId
 	FUniqueNetIdRepl PlayerId;
 	{
 		auto& ValueDataStr = Op.Request.field_playerid();
@@ -2762,47 +3391,79 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayerReceiver(const work
 		PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
 	}
 
+	// Call implementation and send command response.
 	TargetObject->ServerUnmutePlayer_Implementation(PlayerId);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerToggleAILoggingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerToggleAILoggingReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerToggleAILoggingReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ServerToggleAILogging_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerShortTimeoutReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerShortTimeoutReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerShortTimeoutReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ServerShortTimeout_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaitingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerSetSpectatorWaitingReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerSetSpectatorWaitingReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract bWaiting
 	bool bWaiting;
 	bWaiting = Op.Request.field_bwaiting();
 
+	// Call implementation and send command response.
 	TargetObject->ServerSetSpectatorWaiting_Implementation(bWaiting);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocationReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerSetSpectatorLocationReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerSetSpectatorLocationReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract NewLoc
 	FVector NewLoc;
 	{
 		auto& Vector = Op.Request.field_newloc();
@@ -2810,6 +3471,8 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocationReceiver(co
 		NewLoc.Y = Vector.y();
 		NewLoc.Z = Vector.z();
 	}
+
+	// Extract NewRot
 	FRotator NewRot;
 	{
 		auto& Rotator = Op.Request.field_newrot();
@@ -2818,47 +3481,79 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocationReceiver(co
 		NewRot.Roll = Rotator.roll();
 	}
 
+	// Call implementation and send command response.
 	TargetObject->ServerSetSpectatorLocation_Implementation(NewLoc, NewRot);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerRestartPlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerRestartPlayerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerRestartPlayerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ServerRestartPlayer_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerPauseReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerPauseReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerPauseReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ServerPause_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorldReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerNotifyLoadedWorldReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerNotifyLoadedWorldReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract WorldPackageName
 	FName WorldPackageName;
 	WorldPackageName = FName((Op.Request.field_worldpackagename()).data());
 
+	// Call implementation and send command response.
 	TargetObject->ServerNotifyLoadedWorld_Implementation(WorldPackageName);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerMutePlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerMutePlayerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerMutePlayerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract PlayerId
 	FUniqueNetIdRepl PlayerId;
 	{
 		auto& ValueDataStr = Op.Request.field_playerid();
@@ -2869,67 +3564,108 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayerReceiver(const worker
 		PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
 	}
 
+	// Call implementation and send command response.
 	TargetObject->ServerMutePlayer_Implementation(PlayerId);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliableReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerCheckClientPossessionReliableReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerCheckClientPossessionReliableReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ServerCheckClientPossessionReliable_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerCheckClientPossessionReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerCheckClientPossessionReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ServerCheckClientPossession_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerChangeNameReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerChangeNameReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerChangeNameReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract S
 	FString S;
 	S = FString(UTF8_TO_TCHAR(Op.Request.field_s().c_str()));
 
+	// Call implementation and send command response.
 	TargetObject->ServerChangeName_Implementation(S);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerCameraReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerCameraReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerCameraReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract NewMode
 	FName NewMode;
 	NewMode = FName((Op.Request.field_newmode()).data());
 
+	// Call implementation and send command response.
 	TargetObject->ServerCamera_Implementation(NewMode);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(Op);
 }
+
 void USpatialTypeBinding_PlayerController::ServerAcknowledgePossessionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	APlayerController* TargetObject = Cast<APlayerController>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
-	APawn* P = nullptr;
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerAcknowledgePossessionReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerAcknowledgePossessionReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+
+	// Extract P
+	APawn* P;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_p();
 		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		P = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
 	}
 
+	// Call implementation and send command response.
 	TargetObject->ServerAcknowledgePossession_Implementation(P);
-
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>(Op);
 }

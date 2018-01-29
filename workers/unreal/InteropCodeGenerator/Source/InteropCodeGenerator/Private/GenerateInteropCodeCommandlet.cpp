@@ -686,7 +686,6 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 			{
 				TArray<UProperty*> NewChain = PropertyChain;
 				NewChain.Add(*It);
-				Writer.Print();
 				GeneratePropertyToUnrealConversion(Writer, Update, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP(), bIsUpdate, (*It)->GetCPPType());
 			}
 		}
@@ -705,10 +704,9 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	}
 	else if (Property->IsA(UByteProperty::StaticClass()))
 	{
-		Writer.Print(TEXT(R"""(// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-		// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-		// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-		// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.)"""));
+		// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>. Therefore, the code generator needs to cast to either
+		// TEnumAsByte<...> or uint8. However, as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into uint8 first
+		// which causes "uint8(uint8(...))" to be generated for non enum bytes.
 		Writer.Print(FString::Printf(TEXT("%s = %s(uint8(%s));"), *PropertyValue, *PropertyType, *SpatialValue));
 	}
 	else if (Property->IsA(UClassProperty::StaticClass()))
@@ -1060,6 +1058,7 @@ void GenerateForwardingCodeFromLayout(
 	HeaderWriter.Print(TEXT("{"));
 	HeaderWriter.Indent();
 	HeaderWriter.Print(TEXT("GENERATED_BODY()"));
+	HeaderWriter.Print();
 	HeaderWriter.Outdent().Print(TEXT("public:")).Indent();
 	HeaderWriter.Print(TEXT(R"""(static const FRepHandlePropertyMap& GetHandlePropertyMap();
 		void Init(USpatialUpdateInterop* InUpdateInterop, UPackageMap* InPackageMap) override;
@@ -1069,12 +1068,14 @@ void GenerateForwardingCodeFromLayout(
 		void SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const override;
 		worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const override;
 		void SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target) const override;)"""));
+	HeaderWriter.Print();
 	HeaderWriter.Outdent().Print(TEXT("private:")).Indent();
-	HeaderWriter.Print(TEXT("TMap<FName, FRPCSender> RPCToSenderMap;"));
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
 		HeaderWriter.Print(FString::Printf(TEXT("worker::Dispatcher::CallbackKey %sCallback;"), *GetReplicatedPropertyGroupName(Group)));
 	}
+	HeaderWriter.Print();
+	HeaderWriter.Print(TEXT("TMap<FName, FRPCSender> RPCToSenderMap;"));
 	HeaderWriter.Print(TEXT("TArray<worker::Dispatcher::CallbackKey> RPCReceiverCallbacks;"));
 	HeaderWriter.Print();
 	
@@ -1228,6 +1229,7 @@ void GenerateForwardingCodeFromLayout(
 	{
 		for (auto& RPC : Layout.RPCs[Group])
 		{
+			SourceWriter.Print();
 			SourceWriter.Print(FString::Printf(TEXT("void %sSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)"), *RPC->GetName()));
 			SourceWriter.Print(TEXT("{"));
 			SourceWriter.Indent();
@@ -1583,7 +1585,6 @@ void GenerateForwardingCodeFromLayout(
 	// SendRPCCommand
 	// ===========================================
 	SourceWriter.Print();
-
 	SourceWriter.Print(FString::Printf(TEXT("void USpatialTypeBinding_%s::SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target) const"), *Class->GetName()));
 	SourceWriter.Print(TEXT("{"));
 	SourceWriter.Indent();
@@ -1594,46 +1595,58 @@ void GenerateForwardingCodeFromLayout(
 
 	SourceWriter.Outdent().Print(TEXT("}"));
 
+	// RPC receiver functions
+	// ===========================================
 	for (auto Group : GetRPCTypes())
 	{
 		for (auto& RPC : Layout.RPCs[Group])
 		{
-			SourceWriter.Print(FString::Printf(TEXT("void USpatialTypeBinding_%s::%sReceiver(const worker::CommandRequestOp<improbable::unreal::Unreal%s%sRPCs::Commands::%s>& Op)"), *Class->GetName(), *RPC->GetName(), *Class->GetName(), *GetRPCTypeString(Group), *GetCommandNameFromFunction(RPC)));
+			SourceWriter.Print();
+			SourceWriter.Print(FString::Printf(TEXT("void USpatialTypeBinding_%s::%sReceiver(const worker::CommandRequestOp<improbable::unreal::Unreal%s%sRPCs::Commands::%s>& Op)"),
+				*Class->GetName(),
+				*RPC->GetName(),
+				*Class->GetName(),
+				*GetRPCTypeString(Group),
+				*GetCommandNameFromFunction(RPC)));
 			SourceWriter.Print(TEXT("{"));
 			SourceWriter.Indent();
 
-			SourceWriter.Print(TEXT("// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that"));
-			SourceWriter.Print(FString::Printf(TEXT("USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);")));
-			SourceWriter.Print(FString::Printf(TEXT("%s* TargetObject = Cast<%s>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));"), *GetFullCPPName(Class), *GetFullCPPName(Class)));
+			// Get the target object.
+			SourceWriter.Print(TEXT("USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);"));
+			SourceWriter.Print(TEXT("FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);"));
+			SourceWriter.Print(TEXT("if (!TargetNetGUID.IsValid())"));
+			SourceWriter.Print(TEXT("{"));
+			SourceWriter.Indent();
+			SourceWriter.Print(FString::Printf(TEXT("UE_LOG(LogSpatialUpdateInterop, Warning, TEXT(\"%sReceiver: Entity ID %%lld does not have a valid NetGUID.\"), Op.EntityId);"),
+				*RPC->GetName()));
+			SourceWriter.Print(TEXT("return;"));
+			SourceWriter.Outdent();
+			SourceWriter.Print(TEXT("}"));
+			SourceWriter.Print(FString::Printf(TEXT("%s* TargetObject = Cast<%s>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));"), *GetFullCPPName(Class), *GetFullCPPName(Class)));
+			SourceWriter.Print(FString::Printf(TEXT("checkf(TargetObject, TEXT(\"%sReceiver: Entity ID %%lld (NetGUID %%s) does not correspond to a UObject.\"), Op.EntityId, *TargetNetGUID.ToString());"),
+				*RPC->GetName()));
 
-			FString RPCParameterString;
+			// Grab RPC arguments.
+			TArray<FString> RPCParameters;
 			for (TFieldIterator<UProperty> Param(RPC); Param; ++Param)
 			{
 				FString PropertyValueName = Param->GetNameCPP();
 				FString PropertyValueCppType = Param->GetCPPType();
 				FString PropertyName = TEXT("Data.Property");
 
-				// Initialise any UProperty pointers to null for now
-				if (Param->IsA(UObjectProperty::StaticClass()))
-				{
-					SourceWriter.Print(FString::Printf(TEXT("%s %s = nullptr;"), *PropertyValueCppType, *PropertyValueName));
-				}
-				else
-				{
-					SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
-				}
+				// Extract parameter.
+				SourceWriter.Print();
+				SourceWriter.Print(FString::Printf(TEXT("// Extract %s"), *Param->GetName()));
+				SourceWriter.Print(FString::Printf(TEXT("%s %s;"), *PropertyValueCppType, *PropertyValueName));
+				GeneratePropertyToUnrealConversion(SourceWriter, TEXT("Op.Request"), {*Param}, PropertyValueName, false, PropertyValueCppType);
 
-
-				RPCParameterString.Append(FString::Printf(TEXT("%s, "), *Param->GetNameCPP()));
-	
-				GeneratePropertyToUnrealConversion(SourceWriter, TEXT("Op.Request"), {*Param}, PropertyValueName, false, PropertyValueCppType);		
+				// Append to parameter list.
+				RPCParameters.Add(Param->GetNameCPP());
 			}
 			SourceWriter.Print();
-			RPCParameterString.RemoveFromEnd(", ");
-			SourceWriter.Print(FString::Printf(TEXT("TargetObject->%s_Implementation(%s);"), *RPC->GetName(), *RPCParameterString));
-			SourceWriter.Print();
+			SourceWriter.Print(TEXT("// Call implementation and send command response."));
+			SourceWriter.Print(FString::Printf(TEXT("TargetObject->%s_Implementation(%s);"), *RPC->GetName(), *FString::Join(RPCParameters, TEXT(", "))));
 			SourceWriter.Print(FString::Printf(TEXT("SendRPCResponse<improbable::unreal::Unreal%s%sRPCs::Commands::%s>(Op);"), *Class->GetName(), *GetRPCTypeString(Group), *GetCommandNameFromFunction(RPC)));
-
 			SourceWriter.Outdent().Print(TEXT("}"));
 		}
 	}

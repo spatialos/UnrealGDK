@@ -12,5 +12,5 @@
 UCLASS()
 class NUF_API ANUFPlayerController : public APlayerController
 {
-	GENERATED_BODY()	
+	GENERATED_BODY()
 };

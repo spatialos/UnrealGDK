@@ -25,6 +25,7 @@ FPlayerSpawnRequestSender::~FPlayerSpawnRequestSender()
 	if (ResponseCallbackKey.IsSet()) 
 	{
 		View->Remove(ResponseCallbackKey.GetValue());
+		ResponseCallbackKey.Reset();
 	}
 }
 

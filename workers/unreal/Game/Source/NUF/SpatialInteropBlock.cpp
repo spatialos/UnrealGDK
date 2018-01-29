@@ -120,6 +120,10 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 				// Option 1
 				UE_LOG(LogSpatialOSNUF, Log, TEXT("Entity for core actor %s has been checked out on the originating worker."), *EntityActor->GetName());
 				SetupComponentInterests(EntityActor, EntityToSpawn, InConnection);
+				if (EntityActor->IsA<APlayerController>())
+				{
+					Cast<APlayerController>(EntityActor)->ServerToggleAILogging();
+				}
 			}
 			else
 			{

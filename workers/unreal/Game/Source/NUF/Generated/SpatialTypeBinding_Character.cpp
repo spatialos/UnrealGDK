@@ -508,10 +508,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			TEnumAsByte<ENetRole> Value;
 
-			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 			Value = TEnumAsByte<ENetRole>(uint8(*(Op.Update.field_remoterole().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -699,10 +695,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			TEnumAsByte<ENetRole> Value;
 
-			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 			Value = TEnumAsByte<ENetRole>(uint8(*(Op.Update.field_role().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -779,10 +771,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			uint8 Value;
 
-			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 			Value = uint8(uint8(*(Op.Update.field_remoteviewpitch().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -988,10 +976,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 
 			uint8 Value;
 
-			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 			Value = uint8(uint8(*(Op.Update.field_replicatedmovementmode().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -1240,10 +1224,6 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 				Value.LastPreAdditiveVelocity.Z = Vector.z();
 			}
 			Value.bIsAdditiveVelocityApplied = *(Op.Update.field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied().data());
-			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
 			Value.LastAccumulatedSettings.Flags = uint8(uint8(*(Op.Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -1298,18 +1278,21 @@ void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* Updat
 }
 
 // RPC sender functions
+
 void ClientCheatWalkSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealClientCheatWalkRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>(Target, Request, 0);
 }
+
 void ClientCheatGhostSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealClientCheatGhostRequest Request;
 
 	Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>(Target, Request, 0);
 }
+
 void ClientCheatFlySender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
 {
 	improbable::unreal::UnrealClientCheatFlyRequest Request;
@@ -1550,33 +1533,54 @@ void USpatialTypeBinding_Character::SendRPCCommand(const UFunction* const Functi
 	checkf(*Func, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *(Function->GetFName().ToString()));
 	(*Func)(Connection.Get(), RPCFrame, Target, Cast<USpatialPackageMapClient>(PackageMap));
 }
+
 void USpatialTypeBinding_Character::ClientCheatWalkReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	ACharacter* TargetObject = Cast<ACharacter>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientCheatWalkReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	ACharacter* TargetObject = Cast<ACharacter>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientCheatWalkReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ClientCheatWalk_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>(Op);
 }
+
 void USpatialTypeBinding_Character::ClientCheatGhostReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	ACharacter* TargetObject = Cast<ACharacter>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientCheatGhostReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	ACharacter* TargetObject = Cast<ACharacter>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientCheatGhostReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ClientCheatGhost_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>(Op);
 }
+
 void USpatialTypeBinding_Character::ClientCheatFlyReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>& Op)
 {
-	// This is just hardcoded to a known entity for now. Once the PackageMap stuff is in, we need to get the correct object from that
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	ACharacter* TargetObject = Cast<ACharacter>(UpdateInterop->GetNetDriver()->GuidCache.Get()->GetObjectFromNetGUID(Op.EntityId, false));
+	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	if (!TargetNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientCheatFlyReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		return;
+	}
+	ACharacter* TargetObject = Cast<ACharacter>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientCheatFlyReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
+	// Call implementation and send command response.
 	TargetObject->ClientCheatFly_Implementation();
-
 	SendRPCResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>(Op);
 }
