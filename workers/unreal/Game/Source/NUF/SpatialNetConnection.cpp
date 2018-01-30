@@ -5,7 +5,6 @@
 
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-	InternalAck = 1;
 }
 
 void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket /*= 0*/, int32 InPacketOverhead /*= 0*/)
@@ -25,6 +24,9 @@ void USpatialNetConnection::InitLocalConnection(UNetDriver* InDriver, class FSoc
 
 void USpatialNetConnection::InitRemoteConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, const class FInternetAddr& InRemoteAddr, EConnectionState InState, int32 InMaxPacket, int32 InPacketOverhead)
 {
+	// TODO(David): InternalAck=1 was moved to here from the constructor, to ensure that clients receiving SpatialOS updates have
+	// InternalAck set to 0. This avoids a crash. Once we remove bunch handling, we can move InternalAck = 1 back to the constructor.
+	InternalAck = 1;
 	Super::InitRemoteConnection(InDriver, InSocket, InURL, InRemoteAddr, InState, InMaxPacket, InPacketOverhead);
 }
 

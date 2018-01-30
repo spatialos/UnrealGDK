@@ -18,16 +18,20 @@ FCodeWriter& FCodeWriter::Print(const FString& String)
 	TArray<FString> Lines;
 	String.ParseIntoArray(Lines, TEXT("\n"), false);
 
-	// Remove first line if empty.
-	if (Lines[0].IsEmpty())
-	{
-		Lines.RemoveAt(0);
-	}
-
-	// Early exit if we have no more text.
 	if (Lines.Num() == 0)
 	{
 		return *this;
+	}
+
+	// Remove first line if empty.
+	if (Lines[0].IsEmpty())
+	{
+		// Early exit if we have no other.
+		if (Lines.Num() == 1)
+		{
+			return *this;
+		}
+		Lines.RemoveAt(0);
 	}
 
 	// Replace 4 spaces with tabs.
@@ -57,6 +61,7 @@ FCodeWriter& FCodeWriter::Print(const FString& String)
 		}
 		OutputSource += ScopeIdent + Line.Mid(TrimScope) + TEXT("\n");
 	}
+
 	return *this;
 }
 

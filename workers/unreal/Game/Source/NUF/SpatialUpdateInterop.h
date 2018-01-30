@@ -28,7 +28,7 @@ public:
 
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
 	void UnregisterInteropType(UClass* Class);
-	const USpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
+	USpatialTypeBinding* GetTypeBindingByClass(UClass* Class);
 
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);

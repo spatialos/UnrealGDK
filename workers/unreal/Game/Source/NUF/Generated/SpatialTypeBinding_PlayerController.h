@@ -22,11 +22,17 @@ public:
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
 	worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 	void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
+	void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;
+
 private:
 	worker::Dispatcher::CallbackKey SingleClientAddCallback;
 	worker::Dispatcher::CallbackKey SingleClientUpdateCallback;
 	worker::Dispatcher::CallbackKey MultiClientAddCallback;
 	worker::Dispatcher::CallbackKey MultiClientUpdateCallback;
+
+	// Pending updates.
+	TMap<worker::EntityId, improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Data> PendingSingleClientData;
+	TMap<worker::EntityId, improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Data> PendingMultiClientData;
 
 	// Helper functions.
 	void BuildSpatialComponentUpdate(
@@ -49,9 +55,9 @@ private:
 		USpatialActorChannel* Channel,
 		improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& OutUpdate) const;
 	void ReceiveUpdateFromSpatial_SingleClient(
-		worker::EntityId EntityId,
+		USpatialActorChannel* ActorChannel,
 		const improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update) const;
 	void ReceiveUpdateFromSpatial_MultiClient(
-		worker::EntityId EntityId,
+		USpatialActorChannel* ActorChannel,
 		const improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update) const;
 };
