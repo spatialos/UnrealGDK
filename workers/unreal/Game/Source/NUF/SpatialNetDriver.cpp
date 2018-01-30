@@ -761,6 +761,7 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 	check(GetNetMode() != NM_Client);
 
 	bool bOk = true;
+	/*
 	USpatialNetConnection* Connection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(Connection);
 	
@@ -771,7 +772,8 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 
 	Connection->InitRemoteConnection(this, nullptr, InUrl, *FromAddr, USOCK_Open);
 	Notify->NotifyAcceptedConnection(Connection);
-	AddClientConnection(Connection);
+	AddClientConnection(Connection);*/
+	USpatialNetConnection* Connection = GetSpatialOSNetConnection();
 
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
 	// Note that in the initial implementation, we carry over no data about the user here (such as a unique player id, or the real IP)
