@@ -46,7 +46,7 @@ void APackageMapperUtility::GeneratePackageMap(UObject* WorldContextObject)
 
 	for (auto MapEntry = ObjectPathMap.CreateConstIterator(); MapEntry; ++MapEntry)
 	{
-		OutputMap.Print(FString::Printf(TEXT("ObjectMap.emplace(%" PRIu32 ", \"%s\");"), MapEntry.Key(), *MapEntry.Value()));
+	//	OutputMap.Print(FString::Printf(TEXT("ObjectMap.emplace(%" PRIu32 ", \"%s\");"), MapEntry.Key(), *MapEntry.Value()));
 	}
 	OutputMap.Dump();
 	*/

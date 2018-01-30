@@ -11,7 +11,7 @@ class USpatialActorChannel;
 class USpatialPackageMapClient;
 class USpatialNetDriver;
 
-class FOutBunch;
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialUpdateInterop, Log, All);
 
 UCLASS()
 class NUF_API USpatialUpdateInterop : public UObject
@@ -28,14 +28,20 @@ public:
 
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
 	void UnregisterInteropType(UClass* Class);
-	USpatialTypeBinding* GetTypeBindingByClass(UClass* Class);
+	USpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
+	void InvokeRPC(const AActor* const TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, USpatialActorChannel* Channel, const worker::EntityId& Target);
 
 	USpatialOS* GetSpatialOS() const
 	{
 		return SpatialOSInstance;
+	}
+
+	USpatialNetDriver* GetNetDriver() const 
+	{
+		return NetDriver;	
 	}
 
 private:

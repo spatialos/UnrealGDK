@@ -13,7 +13,7 @@ public class InteropCodeGenerator : ModuleRules
 				"CoreUObject",
 				"Engine",
 				"InputCore",
-				"UnrealEd",
+				"UnrealEd"
 			}
 		);
 	}

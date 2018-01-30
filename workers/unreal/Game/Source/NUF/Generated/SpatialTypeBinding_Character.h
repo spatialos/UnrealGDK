@@ -1,6 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // Note that this file has been generated automatically
-
 #pragma once
 
 #include <improbable/worker.h>
@@ -15,13 +14,19 @@ UCLASS()
 class USpatialTypeBinding_Character : public USpatialTypeBinding
 {
 	GENERATED_BODY()
+
 public:
 	static const FRepHandlePropertyMap& GetHandlePropertyMap();
+	
+	void Init(USpatialUpdateInterop* InUpdateInterop, USpatialPackageMapClient* InPackageMap) override;
 	void BindToView() override;
 	void UnbindFromView() override;
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
+	
 	worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 	void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
+	void SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target) override;
+	
 	void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;
 
 private:
@@ -34,7 +39,12 @@ private:
 	TMap<worker::EntityId, improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data> PendingSingleClientData;
 	TMap<worker::EntityId, improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data> PendingMultiClientData;
 
-	// Helper functions.
+	// RPC sender and receiver callbacks.
+	using FRPCSender = void (USpatialTypeBinding_Character::*)(worker::Connection* const, struct FFrame* const, USpatialActorChannel*, const worker::EntityId&);
+	TMap<FName, FRPCSender> RPCToSenderMap;
+	TArray<worker::Dispatcher::CallbackKey> RPCReceiverCallbacks;
+
+	// Component update helper functions.
 	void BuildSpatialComponentUpdate(
 		const FPropertyChangeState& Changes,
 		USpatialActorChannel* Channel,
@@ -60,4 +70,14 @@ private:
 	void ReceiveUpdateFromSpatial_MultiClient(
 		USpatialActorChannel* ActorChannel,
 		const improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update) const;
+
+	// RPC sender functions.
+	void ClientCheatWalk_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target);
+	void ClientCheatGhost_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target);
+	void ClientCheatFly_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target);
+
+	// RPC receiver functions.
+	void ClientCheatWalk_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op);
+	void ClientCheatGhost_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>& Op);
+	void ClientCheatFly_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>& Op);
 };
