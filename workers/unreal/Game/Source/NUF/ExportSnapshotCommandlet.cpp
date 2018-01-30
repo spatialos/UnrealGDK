@@ -8,7 +8,6 @@
 #include "improbable/collections.h"
 #include "improbable/standard_library.h"
 #include <improbable/spawner/spawner.h>
-#include <improbable/player/player.h>
 #include <improbable/package_map/package_map.h>
 #include <improbable/worker.h>
 #include <unreal/generated/UnrealCharacter.h>

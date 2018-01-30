@@ -9,14 +9,13 @@ public class InteropCodeGeneratorTarget : TargetRules
 		Type = TargetType.Editor;
 		ExtraModuleNames.Add("InteropCodeGenerator");
 	}
-
 	public override void SetupGlobalEnvironment(
-		TargetInfo Target,
-		ref LinkEnvironmentConfiguration OutLinkEnvironmentConfiguration,
-		ref CPPEnvironmentConfiguration OutCPPEnvironmentConfiguration
-		)
-	{
-		bBuildEditor = false;
-		bBuildWithEditorOnlyData = false;
-	}
+ 		TargetInfo Target,
+ 		ref LinkEnvironmentConfiguration OutLinkEnvironmentConfiguration,
+ 		ref CPPEnvironmentConfiguration OutCPPEnvironmentConfiguration
+ 		)
+ 	{
+ 		bBuildEditor = false;
+ 		bBuildWithEditorOnlyData = false;
+ 	}
 }

@@ -13,8 +13,9 @@
 
 // We assume that #define ENABLE_PROPERTY_CHECKSUMS exists in RepLayout.cpp:88 here.
 #define ENABLE_PROPERTY_CHECKSUMS
+DEFINE_LOG_CATEGORY(LogSpatialUpdateInterop);
 
-USpatialUpdateInterop::USpatialUpdateInterop()
+USpatialUpdateInterop::USpatialUpdateInterop() 
 {
 }
 
@@ -32,6 +33,7 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 
 void USpatialUpdateInterop::Tick(float DeltaTime)
 {
+	// todo sami - check before commit
 	//Leaving it here for now, we'll remove if it ends up unused.
 }
 
@@ -70,7 +72,7 @@ void USpatialUpdateInterop::UnregisterInteropType(UClass* Class)
 	}
 }
 
-USpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class)
+USpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class) const
 {
 	for (const UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
 	{
@@ -88,11 +90,10 @@ void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, con
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
+		//UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
 		//	*Channel->Actor->GetClass()->GetName());
 		return;
 	}
-
 	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), Channel, Channel->GetEntityId());
 }
 
@@ -123,6 +124,18 @@ void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, 
 	Channel->UActorChannel::ReceivedBunch(Bunch);
 }
 
+void USpatialUpdateInterop::InvokeRPC(const AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
+	if (!Binding)
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send RPC on unsupported class %s."),
+			*Channel->Actor->GetClass()->GetName());
+		return;
+	}
+	Binding->SendRPCCommand(Function, DuplicateFrame, Channel, Target);
+}
+
 void USpatialUpdateInterop::SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId)
 {
 	UClass* ActorClass = ActorChannel->Actor->GetClass();
@@ -136,7 +149,7 @@ void USpatialUpdateInterop::SetComponentInterests(USpatialActorChannel* ActorCha
 			worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
 			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{true});
 			SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId, Interest);
-			UE_LOG(LogTemp, Warning, TEXT("We are the owning client, therefore we want single client updates. Client ID: %s"),
+			UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("We are the owning client, therefore we want single client updates. Client ID: %s"),
 				*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId());
 		}
 	}

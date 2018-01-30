@@ -710,6 +710,45 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	}
 }
 
+void USpatialNetDriver::ProcessRemoteFunction(
+	AActor* Actor,
+	UFunction* Function,
+	void* Parameters,
+	FOutParmRec* OutParms,
+	FFrame* Stack,
+	UObject* SubObject)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Function: %s, actor: %s"), *Function->GetName(), *Actor->GetName());
+	USpatialNetConnection* Connection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
+	if (!Connection)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
+		return;
+	}
+
+	// Get target EntityId.
+	FEntityId TargetEntityId = EntityRegistry->GetEntityIdFromActor(Actor);
+	if (TargetEntityId == FEntityId())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Attempted to send RPC from an actor with no entity ID. TODO: Add queuing."))
+		return;
+	}
+
+	// The RPC might have been called by an actor directly, or by a subobject on that actor (e.g. UCharacterMovementComponent).
+	UObject* CallingObject = SubObject ? Actor : SubObject;
+
+	// Reading properties from an FFrame changes the FFrame (internal pointer to the last property read). So we need to make a new one.
+	FFrame TempRpcFrameForReading{CallingObject, Function, Parameters, nullptr, Function->Children};
+	if (Function->FunctionFlags & FUNC_Net)
+	{
+		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Actor));
+		UpdateInterop->InvokeRPC(Actor, Function, &TempRpcFrameForReading, Channel, TargetEntityId.ToSpatialEntityId());
+	}
+
+	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver
+	//UIpNetDriver::ProcessRemoteFunction(Actor, Function, Parameters, OutParms, Stack, SubObject);
+}
+
 void USpatialNetDriver::TickFlush(float DeltaTime)
 {
 	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
@@ -868,4 +907,3 @@ void USpatialPendingNetGame::InitNetDriver()
 		ConnectionError = NSLOCTEXT("Engine", "UsedCheatCommands", "Console commands were used which are disallowed in netplay.  You must restart the game to create a match.").ToString();
 	}
 }
-

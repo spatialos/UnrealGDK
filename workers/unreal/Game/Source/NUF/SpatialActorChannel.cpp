@@ -271,16 +271,20 @@ bool USpatialActorChannel::ReplicateActor()
 
 	//todo-giray: We currently don't take replication of custom delta properties into account here because it doesn't use changelists.
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
-	if (RepFlags.bNetInitial)
-	{
-		SendCreateEntityRequest(Changed);
-	}
-	else if (Changed.Num() > 0)
+
+	if (RepFlags.bNetInitial || Changed.Num() > 0)
 	{
 		USpatialUpdateInterop* UpdateInterop = SpatialNetDriver->GetSpatialUpdateInterop();
 		check(UpdateInterop);
-	
-		UpdateInterop->SendSpatialUpdate(this, Changed);
+		
+		if (RepFlags.bNetInitial)
+		{
+			SendCreateEntityRequest(Changed);
+		}
+		else
+		{
+			UpdateInterop->SendSpatialUpdate(this, Changed);
+		}
 
 		bWroteSomethingImportant = true;
 		ActorReplicator->RepState->HistoryEnd++;
