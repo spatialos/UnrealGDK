@@ -13,7 +13,7 @@
 
 namespace {
 
-void ApplyUpdateToSpatial_SingleClient_PlayerController(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update)
+void ApplyUpdateToSpatial_SingleClient_PlayerController(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update)
 {
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
 	check(SpatialPMC);
@@ -37,7 +37,6 @@ void ApplyUpdateToSpatial_SingleClient_PlayerController(const uint8* RESTRICT Da
 		}
 	default:
 		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
-		break;
 	}
 }
 
@@ -96,7 +95,7 @@ void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateIntero
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
-void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update)
+void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update)
 {
 	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
 	check(SpatialPMC);
@@ -141,6 +140,11 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				SpatialPMC->AddPendingObjRef(Value, Channel, 5);
+				break;
+			}
 			Update.set_field_owner(UObjectRef);
 			break;
 		}
@@ -163,6 +167,11 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				SpatialPMC->AddPendingObjRef(Value, Channel, 7);
+				break;
+			}
 			Update.set_field_attachmentreplication_attachparent(UObjectRef);
 			break;
 		}
@@ -205,6 +214,11 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				SpatialPMC->AddPendingObjRef(Value, Channel, 12);
+				break;
+			}
 			Update.set_field_attachmentreplication_attachcomponent(UObjectRef);
 			break;
 		}
@@ -231,6 +245,11 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				SpatialPMC->AddPendingObjRef(Value, Channel, 15);
+				break;
+			}
 			Update.set_field_instigator(UObjectRef);
 			break;
 		}
@@ -241,6 +260,11 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				SpatialPMC->AddPendingObjRef(Value, Channel, 16);
+				break;
+			}
 			Update.set_field_pawn(UObjectRef);
 			break;
 		}
@@ -251,12 +275,16 @@ void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Dat
 			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
 
 			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				SpatialPMC->AddPendingObjRef(Value, Channel, 17);
+				break;
+			}
 			Update.set_field_playerstate(UObjectRef);
 			break;
 		}
 	default:
 		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
-		break;
 	}
 }
 
@@ -611,6 +639,7 @@ void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop
 }
 
 void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,
+		USpatialActorChannel* Channel,
 		improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& SingleClientUpdate,
 		bool& bSingleClientUpdateChanged,
 		improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& MultiClientUpdate,
@@ -630,11 +659,11 @@ void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,
 		switch (GetGroupFromCondition(PropertyMapData.Condition))
 		{
 		case GROUP_SingleClient:
-			ApplyUpdateToSpatial_SingleClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, SingleClientUpdate);
+			ApplyUpdateToSpatial_SingleClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, Channel, SingleClientUpdate);
 			bSingleClientUpdateChanged = true;
 			break;
 		case GROUP_MultiClient:
-			ApplyUpdateToSpatial_MultiClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, MultiClientUpdate);
+			ApplyUpdateToSpatial_MultiClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, Channel, MultiClientUpdate);
 			bMultiClientUpdateChanged = true;
 			break;
 		}
@@ -715,14 +744,14 @@ worker::ComponentId USpatialTypeBinding_PlayerController::GetReplicatedGroupComp
 	}
 }
 
-void USpatialTypeBinding_PlayerController::SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const
+void USpatialTypeBinding_PlayerController::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const
 {
 	// Build SpatialOS updates.
 	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update SingleClientUpdate;
 	bool SingleClientUpdateChanged = false;
 	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update MultiClientUpdate;
 	bool MultiClientUpdateChanged = false;
-	BuildSpatialComponentUpdate(Changes,
+	BuildSpatialComponentUpdate(Changes, Channel,
 		SingleClientUpdate, SingleClientUpdateChanged,
 		MultiClientUpdate, MultiClientUpdateChanged,
 		PackageMap);
@@ -739,7 +768,7 @@ void USpatialTypeBinding_PlayerController::SendComponentUpdates(const FPropertyC
 	}
 }
 
-worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const
+worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const
 {
 	// Setup initial data.
 	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Data SingleClientData;
@@ -748,7 +777,7 @@ worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FVe
 	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Data MultiClientData;
 	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update MultiClientUpdate;
 	bool bMultiClientUpdateChanged = false;
-	BuildSpatialComponentUpdate(InitialChanges,
+	BuildSpatialComponentUpdate(InitialChanges, Channel,
 		SingleClientUpdate, bSingleClientUpdateChanged,
 		MultiClientUpdate, bMultiClientUpdateChanged,
 		PackageMap);

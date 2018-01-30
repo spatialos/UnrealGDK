@@ -422,7 +422,7 @@ void VisitProperty(TArray<FPropertyInfo>& PropertyInfo, UObject* CDO, TArray<UPr
 }
 
 // Generates code to copy an Unreal PropertyValue into a SpatialOS component update.
-void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, TArray<UProperty*> PropertyChain, const FString& PropertyValue)
+void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, TArray<UProperty*> PropertyChain, const FString& PropertyValue, int32 Handle)
 {
 	// Get result type.
 	UProperty* Property = PropertyChain[PropertyChain.Num() - 1];
@@ -475,7 +475,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 				Writer.Print(TEXT("{")).Indent();
 				TArray<UProperty*> NewChain = PropertyChain;
 				NewChain.Add(*It);
-				GenerateUnrealToSchemaConversion(Writer, Update, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP());
+				GenerateUnrealToSchemaConversion(Writer, Update, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP(), Handle);
 				Writer.Outdent().Print(TEXT("}"));
 			}
 		}
@@ -498,8 +498,16 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
-		Writer.Print(FString::Printf(TEXT("improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);\n%s(UObjectRef);"),
-			*SpatialValueSetter));
+		Writer.Print(TEXT("improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);"));
+		Writer.Print(TEXT("if (UObjectRef.entity() == 0)"));
+		Writer.Print(TEXT("{"));
+		Writer.Indent();
+		Writer.Print(FString::Printf(TEXT("SpatialPMC->AddPendingObjRef(%s, Channel, %d);"), *PropertyValue, Handle));
+		Writer.Print(TEXT("break;"));
+		Writer.Outdent().Print(TEXT("}"));
+		Writer.Print(FString::Printf(TEXT("%s(UObjectRef);"),
+			*SpatialValueSetter));		
+
 	}
 	else if (Property->IsA(UNameProperty::StaticClass()))
 	{
@@ -838,7 +846,7 @@ void GenerateForwardingCodeFromLayout(
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
 		UnrealToSpatialSignatureByGroup.Add(Group, FString::Printf(
-			TEXT("void ApplyUpdateToSpatial_%s_%s(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::%s::Update& Update)"),
+			TEXT("void ApplyUpdateToSpatial_%s_%s(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, USpatialActorChannel* Channel, improbable::unreal::%s::Update& Update)"),
 			*GetReplicatedPropertyGroupName(Group),
 			*Class->GetName(),
 			*GetSchemaReplicatedDataName(Group, Class)));
@@ -862,8 +870,8 @@ void GenerateForwardingCodeFromLayout(
 	void BindToView() override;
 	void UnbindFromView() override;
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
-	void SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const override;
-	worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const override;)"""));
+	void SendComponentUpdates(const FPropertyChangeState& Changes, class USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
+	worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, class USpatialActorChannel* Channel) const override;)"""));
 	HeaderWriter.Outdent().Print(TEXT("private:")).Indent();
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
@@ -928,7 +936,7 @@ void GenerateForwardingCodeFromLayout(
 					SourceWriter.Print(FString::Printf(TEXT("%s = *(reinterpret_cast<const %s*>(Data));"), *PropertyValueName, *PropertyValueCppType));
 				}
 				SourceWriter.Print();
-				GenerateUnrealToSchemaConversion(SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName);
+				GenerateUnrealToSchemaConversion(SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName, Handle);
 				SourceWriter.Print(TEXT("break;"));
 				SourceWriter.Outdent();
 				SourceWriter.Print(TEXT("}"));
@@ -936,7 +944,6 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Outdent().Print(TEXT("default:"));
 			SourceWriter.Indent();
 			SourceWriter.Print(TEXT("checkf(false, TEXT(\"Unknown replication handle %d encountered when creating a SpatialOS update.\"));"));
-			SourceWriter.Print(TEXT("break;"));
 			SourceWriter.Outdent();
 			SourceWriter.Print(TEXT("}"));
 		}
@@ -1010,6 +1017,7 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Print();
 	SourceWriter.Print(TEXT("void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,"));
 	SourceWriter.Indent().Indent();
+	SourceWriter.Print(TEXT("USpatialActorChannel* Channel,"));
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
 		SourceWriter.Print(FString::Printf(TEXT("improbable::unreal::%s::Update& %sUpdate,"),
@@ -1044,7 +1052,7 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Outdent();
 		SourceWriter.Print(FString::Printf(TEXT("case GROUP_%s:"), *GetReplicatedPropertyGroupName(Group)));
 		SourceWriter.Indent();
-		SourceWriter.Print(FString::Printf(TEXT("ApplyUpdateToSpatial_%s_%s(Data, HandleIterator.Handle, Cmd.Property, PackageMap, %sUpdate);"),
+		SourceWriter.Print(FString::Printf(TEXT("ApplyUpdateToSpatial_%s_%s(Data, HandleIterator.Handle, Cmd.Property, PackageMap, Channel, %sUpdate);"),
 			*GetReplicatedPropertyGroupName(Group),
 			*Class->GetName(),
 			*GetReplicatedPropertyGroupName(Group)));
@@ -1175,7 +1183,7 @@ void GenerateForwardingCodeFromLayout(
 	// SendComponentUpdates
 	// ===========================================
 	SourceWriter.Print();
-	SourceWriter.Print(FString::Printf(TEXT("void USpatialTypeBinding_%s::SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const"),
+	SourceWriter.Print(FString::Printf(TEXT("void USpatialTypeBinding_%s::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const"),
 		*Class->GetName()));
 	SourceWriter.Print(TEXT("{"));
 	SourceWriter.Indent();
@@ -1189,7 +1197,7 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Print(FString::Printf(TEXT("bool %sUpdateChanged = false;"), *GetReplicatedPropertyGroupName(Group)));
 	}
 
-	SourceWriter.Print("BuildSpatialComponentUpdate(Changes,");
+	SourceWriter.Print("BuildSpatialComponentUpdate(Changes, Channel,");
 	SourceWriter.Indent();
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
@@ -1221,7 +1229,7 @@ void GenerateForwardingCodeFromLayout(
 	// CreateActorEntity
 	// ===========================================
 	SourceWriter.Print();
-	SourceWriter.Print(FString::Printf(TEXT("worker::Entity USpatialTypeBinding_%s::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const"), *Class->GetName()));
+	SourceWriter.Print(FString::Printf(TEXT("worker::Entity USpatialTypeBinding_%s::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const"), *Class->GetName()));
 	SourceWriter.Print(TEXT("{"));
 	SourceWriter.Indent();
 	
@@ -1237,7 +1245,7 @@ void GenerateForwardingCodeFromLayout(
 			*GetReplicatedPropertyGroupName(Group)));
 		SourceWriter.Print(FString::Printf(TEXT("bool b%sUpdateChanged = false;"), *GetReplicatedPropertyGroupName(Group)));
 	}
-	SourceWriter.Print("BuildSpatialComponentUpdate(InitialChanges,");
+	SourceWriter.Print("BuildSpatialComponentUpdate(InitialChanges, Channel,");
 	SourceWriter.Indent();
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{

@@ -20,8 +20,8 @@ public:
 	void BindToView() override;
 	void UnbindFromView() override;
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
-	void SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const override;
-	worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const override;
+	void SendComponentUpdates(const FPropertyChangeState& Changes, class USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
+	worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, class USpatialActorChannel* Channel) const override;
 private:
 	worker::Dispatcher::CallbackKey SingleClientCallback;
 	worker::Dispatcher::CallbackKey MultiClientCallback;
