@@ -997,7 +997,7 @@ void GenerateForwardingCodeFromLayout(
 			GenerateSchemaToUnrealConversion(SourceWriter, TEXT("Op.Update"), RepProp.Entry.Chain, PropertyValueName, PropertyValueCppType);
 			SourceWriter.Print();
 			SourceWriter.Print(FString::Printf(TEXT("%s->NetSerializeItem(OutputWriter, PackageMap, &%s);"), *PropertyName, *PropertyValueName));
-			SourceWriter.Print(TEXT("UE_LOG(LogTemp, Log, TEXT(\"<- Handle: %d Property %s\"), Handle, *Data.Property->GetName());"));			
+			SourceWriter.Print(TEXT("UE_LOG(LogTemp, Log, TEXT(\"<- Handle: %d Property %s\"), Handle, *Data.Property->GetName());"));
 
 			// End condition map check block.
 			SourceWriter.Outdent();
