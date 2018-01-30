@@ -29,17 +29,6 @@ public:
 	}
 };
 
-struct FPendingObjRefData
-{
-	FPendingObjRefData() = delete;
-	FPendingObjRefData(USpatialActorChannel* InChannel)
-		: Channel(InChannel)
-	{}
-
-	USpatialActorChannel* Channel;
-	TArray<uint16> Handles;
-};
-
 /**
  * 
  */
