@@ -11,1586 +11,12 @@
 #include "SpatialNetDriver.h"
 #include "SpatialUpdateInterop.h"
 
-namespace {
-
-void ApplyUpdateToSpatial_SingleClient_PlayerController(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update)
-{
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	check(SpatialPMC);
-	switch (Handle)
-	{
-		case 18: // field_targetviewrotation
-		{
-			FRotator Value;
-			Value = *(reinterpret_cast<const FRotator*>(Data));
-
-			Update.set_field_targetviewrotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
-			break;
-		}
-		case 19: // field_spawnlocation
-		{
-			FVector Value;
-			Value = *(reinterpret_cast<const FVector*>(Data));
-
-			Update.set_field_spawnlocation(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
-		}
-	default:
-		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
-		break;
-	}
-}
-
-void ReceiveUpdateFromSpatial_SingleClient_PlayerController(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>& Op)
-{
-	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = USpatialTypeBinding_PlayerController::GetHandlePropertyMap();
-	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
-	if (!ActorChannel)
-	{
-		return;
-	}
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	check(SpatialPMC);
-	ConditionMapFilter ConditionMap(ActorChannel);
-	if (!Op.Update.field_targetviewrotation().empty())
-	{
-		// field_targetviewrotation
-		uint32 Handle = 18;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FRotator Value;
-
-			{
-				auto& Rotator = *(Op.Update.field_targetviewrotation().data());
-				Value.Yaw = Rotator.yaw();
-				Value.Pitch = Rotator.pitch();
-				Value.Roll = Rotator.roll();
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_spawnlocation().empty())
-	{
-		// field_spawnlocation
-		uint32 Handle = 19;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FVector Value;
-
-			{
-				auto& Vector = *(Op.Update.field_spawnlocation().data());
-				Value.X = Vector.x();
-				Value.Y = Vector.y();
-				Value.Z = Vector.z();
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
-}
-
-void ApplyUpdateToSpatial_MultiClient_PlayerController(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update)
-{
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	check(SpatialPMC);
-	switch (Handle)
-	{
-		case 1: // field_bhidden
-		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
-
-			Update.set_field_bhidden(Value != 0);
-			break;
-		}
-		case 2: // field_breplicatemovement
-		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
-
-			Update.set_field_breplicatemovement(Value != 0);
-			break;
-		}
-		case 3: // field_btearoff
-		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
-
-			Update.set_field_btearoff(Value != 0);
-			break;
-		}
-		case 4: // field_remoterole
-		{
-			TEnumAsByte<ENetRole> Value;
-			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
-
-			Update.set_field_remoterole(uint32_t(Value));
-			break;
-		}
-		case 5: // field_owner
-		{
-			AActor* Value;
-			Value = *(reinterpret_cast<AActor* const*>(Data));
-
-			{
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-				Update.set_field_owner(UObjectRef);
-			}
-			break;
-		}
-		case 6: // field_replicatedmovement
-		{
-			FRepMovement Value;
-			Value = *(reinterpret_cast<const FRepMovement*>(Data));
-
-			{
-				TArray<uint8> ValueData;
-				FMemoryWriter ValueDataWriter(ValueData);
-				bool Success;
-				Value.NetSerialize(ValueDataWriter, nullptr, Success);
-				Update.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
-			}
-			break;
-		}
-		case 7: // field_attachmentreplication_attachparent
-		{
-			AActor* Value;
-			Value = *(reinterpret_cast<AActor* const*>(Data));
-
-			{
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-				Update.set_field_attachmentreplication_attachparent(UObjectRef);
-			}
-			break;
-		}
-		case 8: // field_attachmentreplication_locationoffset
-		{
-			FVector_NetQuantize100 Value;
-			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
-
-			Update.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
-		}
-		case 9: // field_attachmentreplication_relativescale3d
-		{
-			FVector_NetQuantize100 Value;
-			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
-
-			Update.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
-		}
-		case 10: // field_attachmentreplication_rotationoffset
-		{
-			FRotator Value;
-			Value = *(reinterpret_cast<const FRotator*>(Data));
-
-			Update.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
-			break;
-		}
-		case 11: // field_attachmentreplication_attachsocket
-		{
-			FName Value;
-			Value = *(reinterpret_cast<const FName*>(Data));
-
-			Update.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
-			break;
-		}
-		case 12: // field_attachmentreplication_attachcomponent
-		{
-			USceneComponent* Value;
-			Value = *(reinterpret_cast<USceneComponent* const*>(Data));
-
-			{
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-				Update.set_field_attachmentreplication_attachcomponent(UObjectRef);
-			}
-			break;
-		}
-		case 13: // field_role
-		{
-			TEnumAsByte<ENetRole> Value;
-			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
-
-			Update.set_field_role(uint32_t(Value));
-			break;
-		}
-		case 14: // field_bcanbedamaged
-		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
-
-			Update.set_field_bcanbedamaged(Value != 0);
-			break;
-		}
-		case 15: // field_instigator
-		{
-			APawn* Value;
-			Value = *(reinterpret_cast<APawn* const*>(Data));
-
-			{
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-				Update.set_field_instigator(UObjectRef);
-			}
-			break;
-		}
-		case 16: // field_pawn
-		{
-			APawn* Value;
-			Value = *(reinterpret_cast<APawn* const*>(Data));
-
-			{
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-				Update.set_field_pawn(UObjectRef);
-			}
-			break;
-		}
-		case 17: // field_playerstate
-		{
-			APlayerState* Value;
-			Value = *(reinterpret_cast<APlayerState* const*>(Data));
-
-			{
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-				Update.set_field_playerstate(UObjectRef);
-			}
-			break;
-		}
-	default:
-		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
-		break;
-	}
-}
-
-void ReceiveUpdateFromSpatial_MultiClient_PlayerController(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>& Op)
-{
-	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = USpatialTypeBinding_PlayerController::GetHandlePropertyMap();
-	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
-	if (!ActorChannel)
-	{
-		return;
-	}
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	check(SpatialPMC);
-	ConditionMapFilter ConditionMap(ActorChannel);
-	if (!Op.Update.field_bhidden().empty())
-	{
-		// field_bhidden
-		uint32 Handle = 1;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			uint8 Value;
-
-			Value = *(Op.Update.field_bhidden().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_breplicatemovement().empty())
-	{
-		// field_breplicatemovement
-		uint32 Handle = 2;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			uint8 Value;
-
-			Value = *(Op.Update.field_breplicatemovement().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_btearoff().empty())
-	{
-		// field_btearoff
-		uint32 Handle = 3;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			uint8 Value;
-
-			Value = *(Op.Update.field_btearoff().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_remoterole().empty())
-	{
-		// field_remoterole
-		uint32 Handle = 4;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			TEnumAsByte<ENetRole> Value;
-
-			Value = TEnumAsByte<ENetRole>(uint8(*(Op.Update.field_remoterole().data())));
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_owner().empty())
-	{
-		// field_owner
-		uint32 Handle = 5;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			AActor* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_owner().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_replicatedmovement().empty())
-	{
-		// field_replicatedmovement
-		uint32 Handle = 6;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FRepMovement Value;
-
-			{
-				auto& ValueDataStr = *(Op.Update.field_replicatedmovement().data());
-				TArray<uint8> ValueData;
-				ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
-				FMemoryReader ValueDataReader(ValueData);
-				bool bSuccess;
-				Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_attachmentreplication_attachparent().empty())
-	{
-		// field_attachmentreplication_attachparent
-		uint32 Handle = 7;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			AActor* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachparent().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_attachmentreplication_locationoffset().empty())
-	{
-		// field_attachmentreplication_locationoffset
-		uint32 Handle = 8;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FVector_NetQuantize100 Value;
-
-			{
-				auto& Vector = *(Op.Update.field_attachmentreplication_locationoffset().data());
-				Value.X = Vector.x();
-				Value.Y = Vector.y();
-				Value.Z = Vector.z();
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_attachmentreplication_relativescale3d().empty())
-	{
-		// field_attachmentreplication_relativescale3d
-		uint32 Handle = 9;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FVector_NetQuantize100 Value;
-
-			{
-				auto& Vector = *(Op.Update.field_attachmentreplication_relativescale3d().data());
-				Value.X = Vector.x();
-				Value.Y = Vector.y();
-				Value.Z = Vector.z();
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_attachmentreplication_rotationoffset().empty())
-	{
-		// field_attachmentreplication_rotationoffset
-		uint32 Handle = 10;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FRotator Value;
-
-			{
-				auto& Rotator = *(Op.Update.field_attachmentreplication_rotationoffset().data());
-				Value.Yaw = Rotator.yaw();
-				Value.Pitch = Rotator.pitch();
-				Value.Roll = Rotator.roll();
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_attachmentreplication_attachsocket().empty())
-	{
-		// field_attachmentreplication_attachsocket
-		uint32 Handle = 11;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FName Value;
-
-			Value = FName((*(Op.Update.field_attachmentreplication_attachsocket().data())).data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_attachmentreplication_attachcomponent().empty())
-	{
-		// field_attachmentreplication_attachcomponent
-		uint32 Handle = 12;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			USceneComponent* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachcomponent().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<USceneComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_role().empty())
-	{
-		// field_role
-		uint32 Handle = 13;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			TEnumAsByte<ENetRole> Value;
-
-			Value = TEnumAsByte<ENetRole>(uint8(*(Op.Update.field_role().data())));
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_bcanbedamaged().empty())
-	{
-		// field_bcanbedamaged
-		uint32 Handle = 14;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			uint8 Value;
-
-			Value = *(Op.Update.field_bcanbedamaged().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_instigator().empty())
-	{
-		// field_instigator
-		uint32 Handle = 15;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			APawn* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_instigator().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_pawn().empty())
-	{
-		// field_pawn
-		uint32 Handle = 16;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			APawn* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_pawn().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_playerstate().empty())
-	{
-		// field_playerstate
-		uint32 Handle = 17;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			APlayerState* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_playerstate().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
-}
-
-// RPC sender functions
-
-void OnServerStartedVisualLoggerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_UBOOL(bIsLogging);
-
-	improbable::unreal::UnrealOnServerStartedVisualLoggerRequest Request;
-	Request.set_field_bislogging(bIsLogging != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(Target, Request, 0);
-}
-
-void ClientWasKickedSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_PROPERTY(UTextProperty, KickReason);
-
-	improbable::unreal::UnrealClientWasKickedRequest Request;
-	// UNSUPPORTED
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(Target, Request, 0);
-}
-
-void ClientVoiceHandshakeCompleteSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealClientVoiceHandshakeCompleteRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(Target, Request, 0);
-}
-
-void ClientUpdateLevelStreamingStatusSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_PROPERTY(UNameProperty, PackageName);
-	P_GET_UBOOL(bNewShouldBeLoaded);
-	P_GET_UBOOL(bNewShouldBeVisible);
-	P_GET_UBOOL(bNewShouldBlockOnLoad);
-	P_GET_PROPERTY(UIntProperty, LODIndex);
-
-	improbable::unreal::UnrealClientUpdateLevelStreamingStatusRequest Request;
-	Request.set_field_packagename(TCHAR_TO_UTF8(*PackageName.ToString()));
-	Request.set_field_bnewshouldbeloaded(bNewShouldBeLoaded != 0);
-	Request.set_field_bnewshouldbevisible(bNewShouldBeVisible != 0);
-	Request.set_field_bnewshouldblockonload(bNewShouldBlockOnLoad != 0);
-	Request.set_field_lodindex(LODIndex);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(Target, Request, 0);
-}
-
-void ClientUnmutePlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
-
-	improbable::unreal::UnrealClientUnmutePlayerRequest Request;
-	{
-		TArray<uint8> ValueData;
-		FMemoryWriter ValueDataWriter(ValueData);
-		bool Success;
-		PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
-		Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
-	}
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(Target, Request, 0);
-}
-
-void ClientTravelInternalSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_PROPERTY(UStrProperty, URL);
-	P_GET_PROPERTY(UByteProperty, TravelType);
-	P_GET_UBOOL(bSeamless);
-	P_GET_STRUCT(FGuid, MapPackageGuid)
-
-	improbable::unreal::UnrealClientTravelInternalRequest Request;
-	Request.set_field_url(TCHAR_TO_UTF8(*URL));
-	Request.set_field_traveltype(uint32_t(TravelType));
-	Request.set_field_bseamless(bSeamless != 0);
-	Request.set_field_mappackageguid_a(MapPackageGuid.A);
-	Request.set_field_mappackageguid_b(MapPackageGuid.B);
-	Request.set_field_mappackageguid_c(MapPackageGuid.C);
-	Request.set_field_mappackageguid_d(MapPackageGuid.D);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(Target, Request, 0);
-}
-
-void ClientTeamMessageSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(APlayerState, SenderPlayerState);
-	P_GET_PROPERTY(UStrProperty, S);
-	P_GET_PROPERTY(UNameProperty, Type);
-	P_GET_PROPERTY(UFloatProperty, MsgLifeTime);
-
-	improbable::unreal::UnrealClientTeamMessageRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(SenderPlayerState);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_senderplayerstate(UObjectRef);
-	}
-	Request.set_field_s(TCHAR_TO_UTF8(*S));
-	Request.set_field_type(TCHAR_TO_UTF8(*Type.ToString()));
-	Request.set_field_msglifetime(MsgLifeTime);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(Target, Request, 0);
-}
-
-void ClientStopForceFeedbackSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(UForceFeedbackEffect, ForceFeedbackEffect);
-	P_GET_PROPERTY(UNameProperty, Tag);
-
-	improbable::unreal::UnrealClientStopForceFeedbackRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(ForceFeedbackEffect);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_forcefeedbackeffect(UObjectRef);
-	}
-	Request.set_field_tag(TCHAR_TO_UTF8(*Tag.ToString()));
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(Target, Request, 0);
-}
-
-void ClientStopCameraShakeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(UClass, Shake);
-	P_GET_UBOOL(bImmediately);
-
-	improbable::unreal::UnrealClientStopCameraShakeRequest Request;
-	//Not yet implemented UClass properties
-	Request.set_field_bimmediately(bImmediately != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(Target, Request, 0);
-}
-
-void ClientStopCameraAnimSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(UCameraAnim, AnimToStop);
-
-	improbable::unreal::UnrealClientStopCameraAnimRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(AnimToStop);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_animtostop(UObjectRef);
-	}
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(Target, Request, 0);
-}
-
-void ClientStartOnlineSessionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealClientStartOnlineSessionRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(Target, Request, 0);
-}
-
-void ClientSpawnCameraLensEffectSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(UClass, LensEffectEmitterClass);
-
-	improbable::unreal::UnrealClientSpawnCameraLensEffectRequest Request;
-	//Not yet implemented UClass properties
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(Target, Request, 0);
-}
-
-void ClientSetViewTargetSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(AActor, A);
-	P_GET_STRUCT(FViewTargetTransitionParams, TransitionParams)
-
-	improbable::unreal::UnrealClientSetViewTargetRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(A);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_a(UObjectRef);
-	}
-	Request.set_field_transitionparams_blendtime(TransitionParams.BlendTime);
-	Request.set_field_transitionparams_blendfunction(uint32_t(TransitionParams.BlendFunction));
-	Request.set_field_transitionparams_blendexp(TransitionParams.BlendExp);
-	Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(Target, Request, 0);
-}
-
-void ClientSetSpectatorWaitingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_UBOOL(bWaiting);
-
-	improbable::unreal::UnrealClientSetSpectatorWaitingRequest Request;
-	Request.set_field_bwaiting(bWaiting != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(Target, Request, 0);
-}
-
-void ClientSetHUDSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(UClass, NewHUDClass);
-
-	improbable::unreal::UnrealClientSetHUDRequest Request;
-	//Not yet implemented UClass properties
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(Target, Request, 0);
-}
-
-void ClientSetForceMipLevelsToBeResidentSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(UMaterialInterface, Material);
-	P_GET_PROPERTY(UFloatProperty, ForceDuration);
-	P_GET_PROPERTY(UIntProperty, CinematicTextureGroups);
-
-	improbable::unreal::UnrealClientSetForceMipLevelsToBeResidentRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Material);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_material(UObjectRef);
-	}
-	Request.set_field_forceduration(ForceDuration);
-	Request.set_field_cinematictexturegroups(CinematicTextureGroups);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(Target, Request, 0);
-}
-
-void ClientSetCinematicModeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_UBOOL(bInCinematicMode);
-	P_GET_UBOOL(bAffectsMovement);
-	P_GET_UBOOL(bAffectsTurning);
-	P_GET_UBOOL(bAffectsHUD);
-
-	improbable::unreal::UnrealClientSetCinematicModeRequest Request;
-	Request.set_field_bincinematicmode(bInCinematicMode != 0);
-	Request.set_field_baffectsmovement(bAffectsMovement != 0);
-	Request.set_field_baffectsturning(bAffectsTurning != 0);
-	Request.set_field_baffectshud(bAffectsHUD != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(Target, Request, 0);
-}
-
-void ClientSetCameraModeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_PROPERTY(UNameProperty, NewCamMode);
-
-	improbable::unreal::UnrealClientSetCameraModeRequest Request;
-	Request.set_field_newcammode(TCHAR_TO_UTF8(*NewCamMode.ToString()));
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(Target, Request, 0);
-}
-
-void ClientSetCameraFadeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_UBOOL(bEnableFading);
-	P_GET_STRUCT(FColor, FadeColor)
-	P_GET_STRUCT(FVector2D, FadeAlpha)
-	P_GET_PROPERTY(UFloatProperty, FadeTime);
-	P_GET_UBOOL(bFadeAudio);
-
-	improbable::unreal::UnrealClientSetCameraFadeRequest Request;
-	Request.set_field_benablefading(bEnableFading != 0);
-	Request.set_field_fadecolor_b(uint32_t(FadeColor.B));
-	Request.set_field_fadecolor_g(uint32_t(FadeColor.G));
-	Request.set_field_fadecolor_r(uint32_t(FadeColor.R));
-	Request.set_field_fadecolor_a(uint32_t(FadeColor.A));
-	Request.set_field_fadealpha_x(FadeAlpha.X);
-	Request.set_field_fadealpha_y(FadeAlpha.Y);
-	Request.set_field_fadetime(FadeTime);
-	Request.set_field_bfadeaudio(bFadeAudio != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(Target, Request, 0);
-}
-
-void ClientSetBlockOnAsyncLoadingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealClientSetBlockOnAsyncLoadingRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(Target, Request, 0);
-}
-
-void ClientReturnToMainMenuSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_PROPERTY(UStrProperty, ReturnReason);
-
-	improbable::unreal::UnrealClientReturnToMainMenuRequest Request;
-	Request.set_field_returnreason(TCHAR_TO_UTF8(*ReturnReason));
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(Target, Request, 0);
-}
-
-void ClientRetryClientRestartSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(APawn, NewPawn);
-
-	improbable::unreal::UnrealClientRetryClientRestartRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(NewPawn);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_newpawn(UObjectRef);
-	}
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(Target, Request, 0);
-}
-
-void ClientRestartSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(APawn, NewPawn);
-
-	improbable::unreal::UnrealClientRestartRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(NewPawn);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_newpawn(UObjectRef);
-	}
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(Target, Request, 0);
-}
-
-void ClientResetSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealClientResetRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(Target, Request, 0);
-}
-
-void ClientRepObjRefSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(UObject, Object);
-
-	improbable::unreal::UnrealClientRepObjRefRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Object);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_object(UObjectRef);
-	}
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(Target, Request, 0);
-}
-
-void ClientReceiveLocalizedMessageSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(UClass, Message);
-	P_GET_PROPERTY(UIntProperty, Switch);
-	P_GET_OBJECT(APlayerState, RelatedPlayerState_1);
-	P_GET_OBJECT(APlayerState, RelatedPlayerState_2);
-	P_GET_OBJECT(UObject, OptionalObject);
-
-	improbable::unreal::UnrealClientReceiveLocalizedMessageRequest Request;
-	//Not yet implemented UClass properties
-	Request.set_field_switch(Switch);
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(RelatedPlayerState_1);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_relatedplayerstate_1(UObjectRef);
-	}
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(RelatedPlayerState_2);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_relatedplayerstate_2(UObjectRef);
-	}
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(OptionalObject);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_optionalobject(UObjectRef);
-	}
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(Target, Request, 0);
-}
-
-void ClientPrestreamTexturesSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(AActor, ForcedActor);
-	P_GET_PROPERTY(UFloatProperty, ForceDuration);
-	P_GET_UBOOL(bEnableStreaming);
-	P_GET_PROPERTY(UIntProperty, CinematicTextureGroups);
-
-	improbable::unreal::UnrealClientPrestreamTexturesRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(ForcedActor);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_forcedactor(UObjectRef);
-	}
-	Request.set_field_forceduration(ForceDuration);
-	Request.set_field_benablestreaming(bEnableStreaming != 0);
-	Request.set_field_cinematictexturegroups(CinematicTextureGroups);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(Target, Request, 0);
-}
-
-void ClientPrepareMapChangeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_PROPERTY(UNameProperty, LevelName);
-	P_GET_UBOOL(bFirst);
-	P_GET_UBOOL(bLast);
-
-	improbable::unreal::UnrealClientPrepareMapChangeRequest Request;
-	Request.set_field_levelname(TCHAR_TO_UTF8(*LevelName.ToString()));
-	Request.set_field_bfirst(bFirst != 0);
-	Request.set_field_blast(bLast != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(Target, Request, 0);
-}
-
-void ClientPlaySoundAtLocationSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(USoundBase, Sound);
-	P_GET_STRUCT(FVector, Location)
-	P_GET_PROPERTY(UFloatProperty, VolumeMultiplier);
-	P_GET_PROPERTY(UFloatProperty, PitchMultiplier);
-
-	improbable::unreal::UnrealClientPlaySoundAtLocationRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Sound);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_sound(UObjectRef);
-	}
-	Request.set_field_location(improbable::Vector3f(Location.X, Location.Y, Location.Z));
-	Request.set_field_volumemultiplier(VolumeMultiplier);
-	Request.set_field_pitchmultiplier(PitchMultiplier);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(Target, Request, 0);
-}
-
-void ClientPlaySoundSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(USoundBase, Sound);
-	P_GET_PROPERTY(UFloatProperty, VolumeMultiplier);
-	P_GET_PROPERTY(UFloatProperty, PitchMultiplier);
-
-	improbable::unreal::UnrealClientPlaySoundRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Sound);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_sound(UObjectRef);
-	}
-	Request.set_field_volumemultiplier(VolumeMultiplier);
-	Request.set_field_pitchmultiplier(PitchMultiplier);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(Target, Request, 0);
-}
-
-void ClientPlayForceFeedbackSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(UForceFeedbackEffect, ForceFeedbackEffect);
-	P_GET_UBOOL(bLooping);
-	P_GET_PROPERTY(UNameProperty, Tag);
-
-	improbable::unreal::UnrealClientPlayForceFeedbackRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(ForceFeedbackEffect);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_forcefeedbackeffect(UObjectRef);
-	}
-	Request.set_field_blooping(bLooping != 0);
-	Request.set_field_tag(TCHAR_TO_UTF8(*Tag.ToString()));
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(Target, Request, 0);
-}
-
-void ClientPlayCameraShakeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(UClass, Shake);
-	P_GET_PROPERTY(UFloatProperty, Scale);
-	P_GET_PROPERTY(UByteProperty, PlaySpace);
-	P_GET_STRUCT(FRotator, UserPlaySpaceRot)
-
-	improbable::unreal::UnrealClientPlayCameraShakeRequest Request;
-	//Not yet implemented UClass properties
-	Request.set_field_scale(Scale);
-	Request.set_field_playspace(uint32_t(PlaySpace));
-	Request.set_field_userplayspacerot(improbable::unreal::UnrealFRotator(UserPlaySpaceRot.Yaw, UserPlaySpaceRot.Pitch, UserPlaySpaceRot.Roll));
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(Target, Request, 0);
-}
-
-void ClientPlayCameraAnimSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(UCameraAnim, AnimToPlay);
-	P_GET_PROPERTY(UFloatProperty, Scale);
-	P_GET_PROPERTY(UFloatProperty, Rate);
-	P_GET_PROPERTY(UFloatProperty, BlendInTime);
-	P_GET_PROPERTY(UFloatProperty, BlendOutTime);
-	P_GET_UBOOL(bLoop);
-	P_GET_UBOOL(bRandomStartTime);
-	P_GET_PROPERTY(UByteProperty, Space);
-	P_GET_STRUCT(FRotator, CustomPlaySpace)
-
-	improbable::unreal::UnrealClientPlayCameraAnimRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(AnimToPlay);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_animtoplay(UObjectRef);
-	}
-	Request.set_field_scale(Scale);
-	Request.set_field_rate(Rate);
-	Request.set_field_blendintime(BlendInTime);
-	Request.set_field_blendouttime(BlendOutTime);
-	Request.set_field_bloop(bLoop != 0);
-	Request.set_field_brandomstarttime(bRandomStartTime != 0);
-	Request.set_field_space(uint32_t(Space));
-	Request.set_field_customplayspace(improbable::unreal::UnrealFRotator(CustomPlaySpace.Yaw, CustomPlaySpace.Pitch, CustomPlaySpace.Roll));
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(Target, Request, 0);
-}
-
-void ClientMutePlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
-
-	improbable::unreal::UnrealClientMutePlayerRequest Request;
-	{
-		TArray<uint8> ValueData;
-		FMemoryWriter ValueDataWriter(ValueData);
-		bool Success;
-		PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
-		Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
-	}
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(Target, Request, 0);
-}
-
-void ClientMessageSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_PROPERTY(UStrProperty, S);
-	P_GET_PROPERTY(UNameProperty, Type);
-	P_GET_PROPERTY(UFloatProperty, MsgLifeTime);
-
-	improbable::unreal::UnrealClientMessageRequest Request;
-	Request.set_field_s(TCHAR_TO_UTF8(*S));
-	Request.set_field_type(TCHAR_TO_UTF8(*Type.ToString()));
-	Request.set_field_msglifetime(MsgLifeTime);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(Target, Request, 0);
-}
-
-void ClientIgnoreMoveInputSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_UBOOL(bIgnore);
-
-	improbable::unreal::UnrealClientIgnoreMoveInputRequest Request;
-	Request.set_field_bignore(bIgnore != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(Target, Request, 0);
-}
-
-void ClientIgnoreLookInputSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_UBOOL(bIgnore);
-
-	improbable::unreal::UnrealClientIgnoreLookInputRequest Request;
-	Request.set_field_bignore(bIgnore != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(Target, Request, 0);
-}
-
-void ClientGotoStateSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_PROPERTY(UNameProperty, NewState);
-
-	improbable::unreal::UnrealClientGotoStateRequest Request;
-	Request.set_field_newstate(TCHAR_TO_UTF8(*NewState.ToString()));
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(Target, Request, 0);
-}
-
-void ClientGameEndedSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(AActor, EndGameFocus);
-	P_GET_UBOOL(bIsWinner);
-
-	improbable::unreal::UnrealClientGameEndedRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(EndGameFocus);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_endgamefocus(UObjectRef);
-	}
-	Request.set_field_biswinner(bIsWinner != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(Target, Request, 0);
-}
-
-void ClientForceGarbageCollectionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealClientForceGarbageCollectionRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(Target, Request, 0);
-}
-
-void ClientFlushLevelStreamingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealClientFlushLevelStreamingRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(Target, Request, 0);
-}
-
-void ClientEndOnlineSessionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealClientEndOnlineSessionRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(Target, Request, 0);
-}
-
-void ClientEnableNetworkVoiceSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_UBOOL(bEnable);
-
-	improbable::unreal::UnrealClientEnableNetworkVoiceRequest Request;
-	Request.set_field_benable(bEnable != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(Target, Request, 0);
-}
-
-void ClientCommitMapChangeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealClientCommitMapChangeRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(Target, Request, 0);
-}
-
-void ClientClearCameraLensEffectsSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealClientClearCameraLensEffectsRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(Target, Request, 0);
-}
-
-void ClientCapBandwidthSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_PROPERTY(UIntProperty, Cap);
-
-	improbable::unreal::UnrealClientCapBandwidthRequest Request;
-	Request.set_field_cap(Cap);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(Target, Request, 0);
-}
-
-void ClientCancelPendingMapChangeSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealClientCancelPendingMapChangeRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(Target, Request, 0);
-}
-
-void ClientAddTextureStreamingLocSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_STRUCT(FVector, InLoc)
-	P_GET_PROPERTY(UFloatProperty, Duration);
-	P_GET_UBOOL(bOverrideLocation);
-
-	improbable::unreal::UnrealClientAddTextureStreamingLocRequest Request;
-	Request.set_field_inloc(improbable::Vector3f(InLoc.X, InLoc.Y, InLoc.Z));
-	Request.set_field_duration(Duration);
-	Request.set_field_boverridelocation(bOverrideLocation != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(Target, Request, 0);
-}
-
-void ClientSetRotationSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_STRUCT(FRotator, NewRotation)
-	P_GET_UBOOL(bResetCamera);
-
-	improbable::unreal::UnrealClientSetRotationRequest Request;
-	Request.set_field_newrotation(improbable::unreal::UnrealFRotator(NewRotation.Yaw, NewRotation.Pitch, NewRotation.Roll));
-	Request.set_field_bresetcamera(bResetCamera != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(Target, Request, 0);
-}
-
-void ClientSetLocationSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_STRUCT(FVector, NewLocation)
-	P_GET_STRUCT(FRotator, NewRotation)
-
-	improbable::unreal::UnrealClientSetLocationRequest Request;
-	Request.set_field_newlocation(improbable::Vector3f(NewLocation.X, NewLocation.Y, NewLocation.Z));
-	Request.set_field_newrotation(improbable::unreal::UnrealFRotator(NewRotation.Yaw, NewRotation.Pitch, NewRotation.Roll));
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(Target, Request, 0);
-}
-
-void ServerViewSelfSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_STRUCT(FViewTargetTransitionParams, TransitionParams)
-
-	improbable::unreal::UnrealServerViewSelfRequest Request;
-	Request.set_field_transitionparams_blendtime(TransitionParams.BlendTime);
-	Request.set_field_transitionparams_blendfunction(uint32_t(TransitionParams.BlendFunction));
-	Request.set_field_transitionparams_blendexp(TransitionParams.BlendExp);
-	Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(Target, Request, 0);
-}
-
-void ServerViewPrevPlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealServerViewPrevPlayerRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(Target, Request, 0);
-}
-
-void ServerViewNextPlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealServerViewNextPlayerRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(Target, Request, 0);
-}
-
-void ServerVerifyViewTargetSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealServerVerifyViewTargetRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(Target, Request, 0);
-}
-
-void ServerUpdateLevelVisibilitySender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_PROPERTY(UNameProperty, PackageName);
-	P_GET_UBOOL(bIsVisible);
-
-	improbable::unreal::UnrealServerUpdateLevelVisibilityRequest Request;
-	Request.set_field_packagename(TCHAR_TO_UTF8(*PackageName.ToString()));
-	Request.set_field_bisvisible(bIsVisible != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(Target, Request, 0);
-}
-
-void ServerUpdateCameraSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_STRUCT(FVector_NetQuantize, CamLoc)
-	P_GET_PROPERTY(UIntProperty, CamPitchAndYaw);
-
-	improbable::unreal::UnrealServerUpdateCameraRequest Request;
-	Request.set_field_camloc(improbable::Vector3f(CamLoc.X, CamLoc.Y, CamLoc.Z));
-	Request.set_field_campitchandyaw(CamPitchAndYaw);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(Target, Request, 0);
-}
-
-void ServerUnmutePlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
-
-	improbable::unreal::UnrealServerUnmutePlayerRequest Request;
-	{
-		TArray<uint8> ValueData;
-		FMemoryWriter ValueDataWriter(ValueData);
-		bool Success;
-		PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
-		Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
-	}
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(Target, Request, 0);
-}
-
-void ServerToggleAILoggingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealServerToggleAILoggingRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(Target, Request, 0);
-}
-
-void ServerShortTimeoutSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealServerShortTimeoutRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(Target, Request, 0);
-}
-
-void ServerSetSpectatorWaitingSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_UBOOL(bWaiting);
-
-	improbable::unreal::UnrealServerSetSpectatorWaitingRequest Request;
-	Request.set_field_bwaiting(bWaiting != 0);
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(Target, Request, 0);
-}
-
-void ServerSetSpectatorLocationSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_STRUCT(FVector, NewLoc)
-	P_GET_STRUCT(FRotator, NewRot)
-
-	improbable::unreal::UnrealServerSetSpectatorLocationRequest Request;
-	Request.set_field_newloc(improbable::Vector3f(NewLoc.X, NewLoc.Y, NewLoc.Z));
-	Request.set_field_newrot(improbable::unreal::UnrealFRotator(NewRot.Yaw, NewRot.Pitch, NewRot.Roll));
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(Target, Request, 0);
-}
-
-void ServerRestartPlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealServerRestartPlayerRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(Target, Request, 0);
-}
-
-void ServerPauseSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealServerPauseRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(Target, Request, 0);
-}
-
-void ServerNotifyLoadedWorldSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_PROPERTY(UNameProperty, WorldPackageName);
-
-	improbable::unreal::UnrealServerNotifyLoadedWorldRequest Request;
-	Request.set_field_worldpackagename(TCHAR_TO_UTF8(*WorldPackageName.ToString()));
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(Target, Request, 0);
-}
-
-void ServerMutePlayerSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
-
-	improbable::unreal::UnrealServerMutePlayerRequest Request;
-	{
-		TArray<uint8> ValueData;
-		FMemoryWriter ValueDataWriter(ValueData);
-		bool Success;
-		PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
-		Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
-	}
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(Target, Request, 0);
-}
-
-void ServerCheckClientPossessionReliableSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealServerCheckClientPossessionReliableRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(Target, Request, 0);
-}
-
-void ServerCheckClientPossessionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	improbable::unreal::UnrealServerCheckClientPossessionRequest Request;
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(Target, Request, 0);
-}
-
-void ServerChangeNameSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_PROPERTY(UStrProperty, S);
-
-	improbable::unreal::UnrealServerChangeNameRequest Request;
-	Request.set_field_s(TCHAR_TO_UTF8(*S));
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(Target, Request, 0);
-}
-
-void ServerCameraSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_PROPERTY(UNameProperty, NewMode);
-
-	improbable::unreal::UnrealServerCameraRequest Request;
-	Request.set_field_newmode(TCHAR_TO_UTF8(*NewMode.ToString()));
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(Target, Request, 0);
-}
-
-void ServerAcknowledgePossessionSender(worker::Connection* const Connection, struct FFrame* const RPCFrame, const worker::EntityId& Target, USpatialPackageMapClient* SpatialPMC)
-{
-	FFrame& Stack = *RPCFrame;
-	P_GET_OBJECT(APawn, P);
-
-	improbable::unreal::UnrealServerAcknowledgePossessionRequest Request;
-	{
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(P);
-		improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-		Request.set_field_p(UObjectRef);
-	}
-
-	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>(Target, Request, 0);
-}
-
-void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,
-		improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& SingleClientUpdate,
-		bool& bSingleClientUpdateChanged,
-		improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& MultiClientUpdate,
-		bool& bMultiClientUpdateChanged,
-		UPackageMap* PackageMap)
-{
-	// Build up SpatialOS component updates.
-	auto& PropertyMap = USpatialTypeBinding_PlayerController::GetHandlePropertyMap();
-	FChangelistIterator ChangelistIterator(Changes.Changed, 0);
-	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.Cmds, Changes.BaseHandleToCmdIndex, 0, 1, 0, Changes.Cmds.Num() - 1);
-	while (HandleIterator.NextHandle())
-	{
-		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
-		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
-		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
-		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
-		switch (GetGroupFromCondition(PropertyMapData.Condition))
-		{
-		case GROUP_SingleClient:
-			ApplyUpdateToSpatial_SingleClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, SingleClientUpdate);
-			bSingleClientUpdateChanged = true;
-			break;
-		case GROUP_MultiClient:
-			ApplyUpdateToSpatial_MultiClient_PlayerController(Data, HandleIterator.Handle, Cmd.Property, PackageMap, MultiClientUpdate);
-			bMultiClientUpdateChanged = true;
-			break;
-		}
-	}
-}
-} // ::
-
 const FRepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetHandlePropertyMap()
 {
-	static FRepHandlePropertyMap* HandleToPropertyMapData = nullptr;
-	if (HandleToPropertyMapData == nullptr)
+	static FRepHandlePropertyMap HandleToPropertyMap;
+	if (HandleToPropertyMap.Num() == 0)
 	{
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("PlayerController"));
-		HandleToPropertyMapData = new FRepHandlePropertyMap();
-		auto& HandleToPropertyMap = *HandleToPropertyMapData;
 		HandleToPropertyMap.Add(18, FRepHandleData{nullptr, Class->FindPropertyByName("TargetViewRotation"), COND_OwnerOnly});
 		HandleToPropertyMap.Add(19, FRepHandleData{nullptr, Class->FindPropertyByName("SpawnLocation"), COND_OwnerOnly});
 		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None});
@@ -1617,180 +43,226 @@ const FRepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetHandleProp
 		HandleToPropertyMap.Add(16, FRepHandleData{nullptr, Class->FindPropertyByName("Pawn"), COND_None});
 		HandleToPropertyMap.Add(17, FRepHandleData{nullptr, Class->FindPropertyByName("PlayerState"), COND_None});
 	}
-	return *HandleToPropertyMapData;
+	return HandleToPropertyMap;
 }
 
-void USpatialTypeBinding_PlayerController::Init(USpatialUpdateInterop* InUpdateInterop, UPackageMap* InPackageMap)
+void USpatialTypeBinding_PlayerController::Init(USpatialUpdateInterop* InUpdateInterop, USpatialPackageMapClient* InPackageMap)
 {
-	UpdateInterop = InUpdateInterop;
-	PackageMap = InPackageMap;
-	RPCToSenderMap.Emplace("OnServerStartedVisualLogger", &OnServerStartedVisualLoggerSender);
-	RPCToSenderMap.Emplace("ClientWasKicked", &ClientWasKickedSender);
-	RPCToSenderMap.Emplace("ClientVoiceHandshakeComplete", &ClientVoiceHandshakeCompleteSender);
-	RPCToSenderMap.Emplace("ClientUpdateLevelStreamingStatus", &ClientUpdateLevelStreamingStatusSender);
-	RPCToSenderMap.Emplace("ClientUnmutePlayer", &ClientUnmutePlayerSender);
-	RPCToSenderMap.Emplace("ClientTravelInternal", &ClientTravelInternalSender);
-	RPCToSenderMap.Emplace("ClientTeamMessage", &ClientTeamMessageSender);
-	RPCToSenderMap.Emplace("ClientStopForceFeedback", &ClientStopForceFeedbackSender);
-	RPCToSenderMap.Emplace("ClientStopCameraShake", &ClientStopCameraShakeSender);
-	RPCToSenderMap.Emplace("ClientStopCameraAnim", &ClientStopCameraAnimSender);
-	RPCToSenderMap.Emplace("ClientStartOnlineSession", &ClientStartOnlineSessionSender);
-	RPCToSenderMap.Emplace("ClientSpawnCameraLensEffect", &ClientSpawnCameraLensEffectSender);
-	RPCToSenderMap.Emplace("ClientSetViewTarget", &ClientSetViewTargetSender);
-	RPCToSenderMap.Emplace("ClientSetSpectatorWaiting", &ClientSetSpectatorWaitingSender);
-	RPCToSenderMap.Emplace("ClientSetHUD", &ClientSetHUDSender);
-	RPCToSenderMap.Emplace("ClientSetForceMipLevelsToBeResident", &ClientSetForceMipLevelsToBeResidentSender);
-	RPCToSenderMap.Emplace("ClientSetCinematicMode", &ClientSetCinematicModeSender);
-	RPCToSenderMap.Emplace("ClientSetCameraMode", &ClientSetCameraModeSender);
-	RPCToSenderMap.Emplace("ClientSetCameraFade", &ClientSetCameraFadeSender);
-	RPCToSenderMap.Emplace("ClientSetBlockOnAsyncLoading", &ClientSetBlockOnAsyncLoadingSender);
-	RPCToSenderMap.Emplace("ClientReturnToMainMenu", &ClientReturnToMainMenuSender);
-	RPCToSenderMap.Emplace("ClientRetryClientRestart", &ClientRetryClientRestartSender);
-	RPCToSenderMap.Emplace("ClientRestart", &ClientRestartSender);
-	RPCToSenderMap.Emplace("ClientReset", &ClientResetSender);
-	RPCToSenderMap.Emplace("ClientRepObjRef", &ClientRepObjRefSender);
-	RPCToSenderMap.Emplace("ClientReceiveLocalizedMessage", &ClientReceiveLocalizedMessageSender);
-	RPCToSenderMap.Emplace("ClientPrestreamTextures", &ClientPrestreamTexturesSender);
-	RPCToSenderMap.Emplace("ClientPrepareMapChange", &ClientPrepareMapChangeSender);
-	RPCToSenderMap.Emplace("ClientPlaySoundAtLocation", &ClientPlaySoundAtLocationSender);
-	RPCToSenderMap.Emplace("ClientPlaySound", &ClientPlaySoundSender);
-	RPCToSenderMap.Emplace("ClientPlayForceFeedback", &ClientPlayForceFeedbackSender);
-	RPCToSenderMap.Emplace("ClientPlayCameraShake", &ClientPlayCameraShakeSender);
-	RPCToSenderMap.Emplace("ClientPlayCameraAnim", &ClientPlayCameraAnimSender);
-	RPCToSenderMap.Emplace("ClientMutePlayer", &ClientMutePlayerSender);
-	RPCToSenderMap.Emplace("ClientMessage", &ClientMessageSender);
-	RPCToSenderMap.Emplace("ClientIgnoreMoveInput", &ClientIgnoreMoveInputSender);
-	RPCToSenderMap.Emplace("ClientIgnoreLookInput", &ClientIgnoreLookInputSender);
-	RPCToSenderMap.Emplace("ClientGotoState", &ClientGotoStateSender);
-	RPCToSenderMap.Emplace("ClientGameEnded", &ClientGameEndedSender);
-	RPCToSenderMap.Emplace("ClientForceGarbageCollection", &ClientForceGarbageCollectionSender);
-	RPCToSenderMap.Emplace("ClientFlushLevelStreaming", &ClientFlushLevelStreamingSender);
-	RPCToSenderMap.Emplace("ClientEndOnlineSession", &ClientEndOnlineSessionSender);
-	RPCToSenderMap.Emplace("ClientEnableNetworkVoice", &ClientEnableNetworkVoiceSender);
-	RPCToSenderMap.Emplace("ClientCommitMapChange", &ClientCommitMapChangeSender);
-	RPCToSenderMap.Emplace("ClientClearCameraLensEffects", &ClientClearCameraLensEffectsSender);
-	RPCToSenderMap.Emplace("ClientCapBandwidth", &ClientCapBandwidthSender);
-	RPCToSenderMap.Emplace("ClientCancelPendingMapChange", &ClientCancelPendingMapChangeSender);
-	RPCToSenderMap.Emplace("ClientAddTextureStreamingLoc", &ClientAddTextureStreamingLocSender);
-	RPCToSenderMap.Emplace("ClientSetRotation", &ClientSetRotationSender);
-	RPCToSenderMap.Emplace("ClientSetLocation", &ClientSetLocationSender);
-	RPCToSenderMap.Emplace("ServerViewSelf", &ServerViewSelfSender);
-	RPCToSenderMap.Emplace("ServerViewPrevPlayer", &ServerViewPrevPlayerSender);
-	RPCToSenderMap.Emplace("ServerViewNextPlayer", &ServerViewNextPlayerSender);
-	RPCToSenderMap.Emplace("ServerVerifyViewTarget", &ServerVerifyViewTargetSender);
-	RPCToSenderMap.Emplace("ServerUpdateLevelVisibility", &ServerUpdateLevelVisibilitySender);
-	RPCToSenderMap.Emplace("ServerUpdateCamera", &ServerUpdateCameraSender);
-	RPCToSenderMap.Emplace("ServerUnmutePlayer", &ServerUnmutePlayerSender);
-	RPCToSenderMap.Emplace("ServerToggleAILogging", &ServerToggleAILoggingSender);
-	RPCToSenderMap.Emplace("ServerShortTimeout", &ServerShortTimeoutSender);
-	RPCToSenderMap.Emplace("ServerSetSpectatorWaiting", &ServerSetSpectatorWaitingSender);
-	RPCToSenderMap.Emplace("ServerSetSpectatorLocation", &ServerSetSpectatorLocationSender);
-	RPCToSenderMap.Emplace("ServerRestartPlayer", &ServerRestartPlayerSender);
-	RPCToSenderMap.Emplace("ServerPause", &ServerPauseSender);
-	RPCToSenderMap.Emplace("ServerNotifyLoadedWorld", &ServerNotifyLoadedWorldSender);
-	RPCToSenderMap.Emplace("ServerMutePlayer", &ServerMutePlayerSender);
-	RPCToSenderMap.Emplace("ServerCheckClientPossessionReliable", &ServerCheckClientPossessionReliableSender);
-	RPCToSenderMap.Emplace("ServerCheckClientPossession", &ServerCheckClientPossessionSender);
-	RPCToSenderMap.Emplace("ServerChangeName", &ServerChangeNameSender);
-	RPCToSenderMap.Emplace("ServerCamera", &ServerCameraSender);
-	RPCToSenderMap.Emplace("ServerAcknowledgePossession", &ServerAcknowledgePossessionSender);
+	Super::Init(InUpdateInterop, InPackageMap);
+
+	RPCToSenderMap.Emplace("OnServerStartedVisualLogger", &USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender);
+	RPCToSenderMap.Emplace("ClientWasKicked", &USpatialTypeBinding_PlayerController::ClientWasKicked_Sender);
+	RPCToSenderMap.Emplace("ClientVoiceHandshakeComplete", &USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender);
+	RPCToSenderMap.Emplace("ClientUpdateLevelStreamingStatus", &USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Sender);
+	RPCToSenderMap.Emplace("ClientUnmutePlayer", &USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender);
+	RPCToSenderMap.Emplace("ClientTravelInternal", &USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender);
+	RPCToSenderMap.Emplace("ClientTeamMessage", &USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender);
+	RPCToSenderMap.Emplace("ClientStopForceFeedback", &USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender);
+	RPCToSenderMap.Emplace("ClientStopCameraShake", &USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender);
+	RPCToSenderMap.Emplace("ClientStopCameraAnim", &USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender);
+	RPCToSenderMap.Emplace("ClientStartOnlineSession", &USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender);
+	RPCToSenderMap.Emplace("ClientSpawnCameraLensEffect", &USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender);
+	RPCToSenderMap.Emplace("ClientSetViewTarget", &USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender);
+	RPCToSenderMap.Emplace("ClientSetSpectatorWaiting", &USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender);
+	RPCToSenderMap.Emplace("ClientSetHUD", &USpatialTypeBinding_PlayerController::ClientSetHUD_Sender);
+	RPCToSenderMap.Emplace("ClientSetForceMipLevelsToBeResident", &USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Sender);
+	RPCToSenderMap.Emplace("ClientSetCinematicMode", &USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender);
+	RPCToSenderMap.Emplace("ClientSetCameraMode", &USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender);
+	RPCToSenderMap.Emplace("ClientSetCameraFade", &USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender);
+	RPCToSenderMap.Emplace("ClientSetBlockOnAsyncLoading", &USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender);
+	RPCToSenderMap.Emplace("ClientReturnToMainMenu", &USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender);
+	RPCToSenderMap.Emplace("ClientRetryClientRestart", &USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender);
+	RPCToSenderMap.Emplace("ClientRestart", &USpatialTypeBinding_PlayerController::ClientRestart_Sender);
+	RPCToSenderMap.Emplace("ClientReset", &USpatialTypeBinding_PlayerController::ClientReset_Sender);
+	RPCToSenderMap.Emplace("ClientRepObjRef", &USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender);
+	RPCToSenderMap.Emplace("ClientReceiveLocalizedMessage", &USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender);
+	RPCToSenderMap.Emplace("ClientPrestreamTextures", &USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender);
+	RPCToSenderMap.Emplace("ClientPrepareMapChange", &USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender);
+	RPCToSenderMap.Emplace("ClientPlaySoundAtLocation", &USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender);
+	RPCToSenderMap.Emplace("ClientPlaySound", &USpatialTypeBinding_PlayerController::ClientPlaySound_Sender);
+	RPCToSenderMap.Emplace("ClientPlayForceFeedback", &USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender);
+	RPCToSenderMap.Emplace("ClientPlayCameraShake", &USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender);
+	RPCToSenderMap.Emplace("ClientPlayCameraAnim", &USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender);
+	RPCToSenderMap.Emplace("ClientMutePlayer", &USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender);
+	RPCToSenderMap.Emplace("ClientMessage", &USpatialTypeBinding_PlayerController::ClientMessage_Sender);
+	RPCToSenderMap.Emplace("ClientIgnoreMoveInput", &USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender);
+	RPCToSenderMap.Emplace("ClientIgnoreLookInput", &USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender);
+	RPCToSenderMap.Emplace("ClientGotoState", &USpatialTypeBinding_PlayerController::ClientGotoState_Sender);
+	RPCToSenderMap.Emplace("ClientGameEnded", &USpatialTypeBinding_PlayerController::ClientGameEnded_Sender);
+	RPCToSenderMap.Emplace("ClientForceGarbageCollection", &USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender);
+	RPCToSenderMap.Emplace("ClientFlushLevelStreaming", &USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender);
+	RPCToSenderMap.Emplace("ClientEndOnlineSession", &USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender);
+	RPCToSenderMap.Emplace("ClientEnableNetworkVoice", &USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender);
+	RPCToSenderMap.Emplace("ClientCommitMapChange", &USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender);
+	RPCToSenderMap.Emplace("ClientClearCameraLensEffects", &USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender);
+	RPCToSenderMap.Emplace("ClientCapBandwidth", &USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender);
+	RPCToSenderMap.Emplace("ClientCancelPendingMapChange", &USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender);
+	RPCToSenderMap.Emplace("ClientAddTextureStreamingLoc", &USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender);
+	RPCToSenderMap.Emplace("ClientSetRotation", &USpatialTypeBinding_PlayerController::ClientSetRotation_Sender);
+	RPCToSenderMap.Emplace("ClientSetLocation", &USpatialTypeBinding_PlayerController::ClientSetLocation_Sender);
+	RPCToSenderMap.Emplace("ServerViewSelf", &USpatialTypeBinding_PlayerController::ServerViewSelf_Sender);
+	RPCToSenderMap.Emplace("ServerViewPrevPlayer", &USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender);
+	RPCToSenderMap.Emplace("ServerViewNextPlayer", &USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender);
+	RPCToSenderMap.Emplace("ServerVerifyViewTarget", &USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender);
+	RPCToSenderMap.Emplace("ServerUpdateLevelVisibility", &USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender);
+	RPCToSenderMap.Emplace("ServerUpdateCamera", &USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender);
+	RPCToSenderMap.Emplace("ServerUnmutePlayer", &USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender);
+	RPCToSenderMap.Emplace("ServerToggleAILogging", &USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender);
+	RPCToSenderMap.Emplace("ServerShortTimeout", &USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender);
+	RPCToSenderMap.Emplace("ServerSetSpectatorWaiting", &USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender);
+	RPCToSenderMap.Emplace("ServerSetSpectatorLocation", &USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender);
+	RPCToSenderMap.Emplace("ServerRestartPlayer", &USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender);
+	RPCToSenderMap.Emplace("ServerPause", &USpatialTypeBinding_PlayerController::ServerPause_Sender);
+	RPCToSenderMap.Emplace("ServerNotifyLoadedWorld", &USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender);
+	RPCToSenderMap.Emplace("ServerMutePlayer", &USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender);
+	RPCToSenderMap.Emplace("ServerCheckClientPossessionReliable", &USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Sender);
+	RPCToSenderMap.Emplace("ServerCheckClientPossession", &USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender);
+	RPCToSenderMap.Emplace("ServerChangeName", &USpatialTypeBinding_PlayerController::ServerChangeName_Sender);
+	RPCToSenderMap.Emplace("ServerCamera", &USpatialTypeBinding_PlayerController::ServerCamera_Sender);
+	RPCToSenderMap.Emplace("ServerAcknowledgePossession", &USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender);
 }
 
 void USpatialTypeBinding_PlayerController::BindToView()
 {
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
-	SingleClientCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>([this](
+	SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>([this](
+		const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>& Op)
+	{
+		auto Update = improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update::FromInitialData(Op.Data);
+		USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+		if (ActorChannel)
+		{
+			ReceiveUpdateFromSpatial_SingleClient(ActorChannel, Update);
+		}
+		else
+		{
+			PendingSingleClientData.Add(Op.EntityId, Op.Data);
+		}
+	});
+	SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>([this](
 		const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>& Op)
 	{
-		ReceiveUpdateFromSpatial_SingleClient_PlayerController(UpdateInterop, PackageMap, Op);
+		USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+		if (ActorChannel)
+		{
+			ReceiveUpdateFromSpatial_SingleClient(ActorChannel, Op.Update);
+		}
+		else
+		{
+			Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
+		}
 	});
-	MultiClientCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>([this](
+	MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>([this](
+		const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>& Op)
+	{
+		auto Update = improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update::FromInitialData(Op.Data);
+		USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+		if (ActorChannel)
+		{
+			ReceiveUpdateFromSpatial_MultiClient(ActorChannel, Update);
+		}
+		else
+		{
+			PendingMultiClientData.Add(Op.EntityId, Op.Data);
+		}
+	});
+	MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>([this](
 		const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>& Op)
 	{
-		ReceiveUpdateFromSpatial_MultiClient_PlayerController(UpdateInterop, PackageMap, Op);
+		USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+		if (ActorChannel)
+		{
+			ReceiveUpdateFromSpatial_MultiClient(ActorChannel, Op.Update);
+		}
+		else
+		{
+			Op.Update.ApplyTo(PendingMultiClientData.FindOrAdd(Op.EntityId));
+		}
 	});
 	using ClientRPCCommandTypes = improbable::unreal::UnrealPlayerControllerClientRPCs::Commands;
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Onserverstartedvisuallogger>(std::bind(&USpatialTypeBinding_PlayerController::OnServerStartedVisualLoggerReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientwaskicked>(std::bind(&USpatialTypeBinding_PlayerController::ClientWasKickedReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientvoicehandshakecomplete>(std::bind(&USpatialTypeBinding_PlayerController::ClientVoiceHandshakeCompleteReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientupdatelevelstreamingstatus>(std::bind(&USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatusReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientunmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ClientUnmutePlayerReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clienttravelinternal>(std::bind(&USpatialTypeBinding_PlayerController::ClientTravelInternalReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientteammessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientTeamMessageReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstopforcefeedback>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopForceFeedbackReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstopcamerashake>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopCameraShakeReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstopcameraanim>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopCameraAnimReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstartonlinesession>(std::bind(&USpatialTypeBinding_PlayerController::ClientStartOnlineSessionReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientspawncameralenseffect>(std::bind(&USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffectReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetviewtarget>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetViewTargetReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetspectatorwaiting>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetSpectatorWaitingReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsethud>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetHUDReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetforcemiplevelstoberesident>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResidentReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetcinematicmode>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCinematicModeReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetcameramode>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCameraModeReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetcamerafade>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCameraFadeReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetblockonasyncloading>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoadingReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientreturntomainmenu>(std::bind(&USpatialTypeBinding_PlayerController::ClientReturnToMainMenuReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientretryclientrestart>(std::bind(&USpatialTypeBinding_PlayerController::ClientRetryClientRestartReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientrestart>(std::bind(&USpatialTypeBinding_PlayerController::ClientRestartReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientreset>(std::bind(&USpatialTypeBinding_PlayerController::ClientResetReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientrepobjref>(std::bind(&USpatialTypeBinding_PlayerController::ClientRepObjRefReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientreceivelocalizedmessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessageReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientprestreamtextures>(std::bind(&USpatialTypeBinding_PlayerController::ClientPrestreamTexturesReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientpreparemapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientPrepareMapChangeReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaysoundatlocation>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocationReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaysound>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlaySoundReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplayforcefeedback>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayForceFeedbackReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaycamerashake>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayCameraShakeReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaycameraanim>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayCameraAnimReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ClientMutePlayerReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientmessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientMessageReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientignoremoveinput>(std::bind(&USpatialTypeBinding_PlayerController::ClientIgnoreMoveInputReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientignorelookinput>(std::bind(&USpatialTypeBinding_PlayerController::ClientIgnoreLookInputReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientgotostate>(std::bind(&USpatialTypeBinding_PlayerController::ClientGotoStateReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientgameended>(std::bind(&USpatialTypeBinding_PlayerController::ClientGameEndedReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientforcegarbagecollection>(std::bind(&USpatialTypeBinding_PlayerController::ClientForceGarbageCollectionReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientflushlevelstreaming>(std::bind(&USpatialTypeBinding_PlayerController::ClientFlushLevelStreamingReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientendonlinesession>(std::bind(&USpatialTypeBinding_PlayerController::ClientEndOnlineSessionReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientenablenetworkvoice>(std::bind(&USpatialTypeBinding_PlayerController::ClientEnableNetworkVoiceReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcommitmapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientCommitMapChangeReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientclearcameralenseffects>(std::bind(&USpatialTypeBinding_PlayerController::ClientClearCameraLensEffectsReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcapbandwidth>(std::bind(&USpatialTypeBinding_PlayerController::ClientCapBandwidthReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcancelpendingmapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientCancelPendingMapChangeReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientaddtexturestreamingloc>(std::bind(&USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLocReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetrotation>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetRotationReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetlocation>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetLocationReceiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Onserverstartedvisuallogger>(std::bind(&USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientwaskicked>(std::bind(&USpatialTypeBinding_PlayerController::ClientWasKicked_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientvoicehandshakecomplete>(std::bind(&USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientupdatelevelstreamingstatus>(std::bind(&USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientunmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clienttravelinternal>(std::bind(&USpatialTypeBinding_PlayerController::ClientTravelInternal_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientteammessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientTeamMessage_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstopforcefeedback>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstopcamerashake>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopCameraShake_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstopcameraanim>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstartonlinesession>(std::bind(&USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientspawncameralenseffect>(std::bind(&USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetviewtarget>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetspectatorwaiting>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsethud>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetHUD_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetforcemiplevelstoberesident>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetcinematicmode>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetcameramode>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCameraMode_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetcamerafade>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCameraFade_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetblockonasyncloading>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientreturntomainmenu>(std::bind(&USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientretryclientrestart>(std::bind(&USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientrestart>(std::bind(&USpatialTypeBinding_PlayerController::ClientRestart_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientreset>(std::bind(&USpatialTypeBinding_PlayerController::ClientReset_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientrepobjref>(std::bind(&USpatialTypeBinding_PlayerController::ClientRepObjRef_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientreceivelocalizedmessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientprestreamtextures>(std::bind(&USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientpreparemapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaysoundatlocation>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaysound>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlaySound_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplayforcefeedback>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaycamerashake>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaycameraanim>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ClientMutePlayer_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientmessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientMessage_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientignoremoveinput>(std::bind(&USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientignorelookinput>(std::bind(&USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientgotostate>(std::bind(&USpatialTypeBinding_PlayerController::ClientGotoState_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientgameended>(std::bind(&USpatialTypeBinding_PlayerController::ClientGameEnded_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientforcegarbagecollection>(std::bind(&USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientflushlevelstreaming>(std::bind(&USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientendonlinesession>(std::bind(&USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientenablenetworkvoice>(std::bind(&USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcommitmapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientCommitMapChange_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientclearcameralenseffects>(std::bind(&USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcapbandwidth>(std::bind(&USpatialTypeBinding_PlayerController::ClientCapBandwidth_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcancelpendingmapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientaddtexturestreamingloc>(std::bind(&USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetrotation>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetRotation_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetlocation>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetLocation_Receiver, this, std::placeholders::_1)));
 	using ServerRPCCommandTypes = improbable::unreal::UnrealPlayerControllerServerRPCs::Commands;
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverviewself>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewSelfReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverviewprevplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewPrevPlayerReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverviewnextplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewNextPlayerReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serververifyviewtarget>(std::bind(&USpatialTypeBinding_PlayerController::ServerVerifyViewTargetReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverupdatelevelvisibility>(std::bind(&USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibilityReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverupdatecamera>(std::bind(&USpatialTypeBinding_PlayerController::ServerUpdateCameraReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverunmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerUnmutePlayerReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servertoggleailogging>(std::bind(&USpatialTypeBinding_PlayerController::ServerToggleAILoggingReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servershorttimeout>(std::bind(&USpatialTypeBinding_PlayerController::ServerShortTimeoutReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serversetspectatorwaiting>(std::bind(&USpatialTypeBinding_PlayerController::ServerSetSpectatorWaitingReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serversetspectatorlocation>(std::bind(&USpatialTypeBinding_PlayerController::ServerSetSpectatorLocationReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverrestartplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerRestartPlayerReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverpause>(std::bind(&USpatialTypeBinding_PlayerController::ServerPauseReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servernotifyloadedworld>(std::bind(&USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorldReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerMutePlayerReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servercheckclientpossessionreliable>(std::bind(&USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliableReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servercheckclientpossession>(std::bind(&USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverchangename>(std::bind(&USpatialTypeBinding_PlayerController::ServerChangeNameReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servercamera>(std::bind(&USpatialTypeBinding_PlayerController::ServerCameraReceiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serveracknowledgepossession>(std::bind(&USpatialTypeBinding_PlayerController::ServerAcknowledgePossessionReceiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverviewself>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewSelf_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverviewprevplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverviewnextplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serververifyviewtarget>(std::bind(&USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverupdatelevelvisibility>(std::bind(&USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverupdatecamera>(std::bind(&USpatialTypeBinding_PlayerController::ServerUpdateCamera_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverunmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servertoggleailogging>(std::bind(&USpatialTypeBinding_PlayerController::ServerToggleAILogging_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servershorttimeout>(std::bind(&USpatialTypeBinding_PlayerController::ServerShortTimeout_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serversetspectatorwaiting>(std::bind(&USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serversetspectatorlocation>(std::bind(&USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverrestartplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerRestartPlayer_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverpause>(std::bind(&USpatialTypeBinding_PlayerController::ServerPause_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servernotifyloadedworld>(std::bind(&USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerMutePlayer_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servercheckclientpossessionreliable>(std::bind(&USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servercheckclientpossession>(std::bind(&USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverchangename>(std::bind(&USpatialTypeBinding_PlayerController::ServerChangeName_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servercamera>(std::bind(&USpatialTypeBinding_PlayerController::ServerCamera_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serveracknowledgepossession>(std::bind(&USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Receiver, this, std::placeholders::_1)));
 }
 
 void USpatialTypeBinding_PlayerController::UnbindFromView()
 {
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
-	View->Remove(SingleClientCallback);
-	View->Remove(MultiClientCallback);
+	View->Remove(SingleClientAddCallback);
+	View->Remove(SingleClientUpdateCallback);
+	View->Remove(MultiClientAddCallback);
+	View->Remove(MultiClientUpdateCallback);
 	for (auto& Callback : RPCReceiverCallbacks)
 	{
-	View->Remove(Callback);
+		View->Remove(Callback);
 	}
 }
 
@@ -1808,31 +280,7 @@ worker::ComponentId USpatialTypeBinding_PlayerController::GetReplicatedGroupComp
 	}
 }
 
-void USpatialTypeBinding_PlayerController::SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const
-{
-	// Build SpatialOS updates.
-	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update SingleClientUpdate;
-	bool SingleClientUpdateChanged = false;
-	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update MultiClientUpdate;
-	bool MultiClientUpdateChanged = false;
-	BuildSpatialComponentUpdate(Changes,
-		SingleClientUpdate, SingleClientUpdateChanged,
-		MultiClientUpdate, MultiClientUpdateChanged,
-		PackageMap);
-
-	// Send SpatialOS updates if anything changed.
-	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
-	if (SingleClientUpdateChanged)
-	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>(EntityId, SingleClientUpdate);
-	}
-	if (MultiClientUpdateChanged)
-	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>(EntityId, MultiClientUpdate);
-	}
-}
-
-worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const
+worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const
 {
 	// Setup initial data.
 	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Data SingleClientData;
@@ -1841,13 +289,10 @@ worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FVe
 	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Data MultiClientData;
 	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update MultiClientUpdate;
 	bool bMultiClientUpdateChanged = false;
-	BuildSpatialComponentUpdate(InitialChanges,
-		SingleClientUpdate, bSingleClientUpdateChanged,
-		MultiClientUpdate, bMultiClientUpdateChanged,
-		PackageMap);
+	BuildSpatialComponentUpdate(InitialChanges, Channel, SingleClientUpdate, bSingleClientUpdateChanged, MultiClientUpdate, bMultiClientUpdateChanged);
 	SingleClientUpdate.ApplyTo(SingleClientData);
 	MultiClientUpdate.ApplyTo(MultiClientData);
-	
+
 	// Create entity.
 	const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
 	improbable::WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
@@ -1855,12 +300,12 @@ worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FVe
 	improbable::WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet}};
 	improbable::WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
 	improbable::WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
-	
 	return improbable::unreal::FEntityBuilder::Begin()
 		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, UnrealWorkerWritePermission)
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
 		.SetReadAcl(AnyWorkerReadPermission)
+		.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClient::Data{}, UnrealClientWritePermission)
 		.AddComponent<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>(SingleClientData, UnrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>(MultiClientData, UnrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealPlayerControllerCompleteData>(improbable::unreal::UnrealPlayerControllerCompleteData::Data{}, UnrealWorkerWritePermission)
@@ -1869,25 +314,1839 @@ worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FVe
 		.Build();
 }
 
-void USpatialTypeBinding_PlayerController::SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target) const
+void USpatialTypeBinding_PlayerController::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const
 {
+	// Build SpatialOS updates.
+	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update SingleClientUpdate;
+	bool bSingleClientUpdateChanged = false;
+	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update MultiClientUpdate;
+	bool bMultiClientUpdateChanged = false;
+	BuildSpatialComponentUpdate(Changes, Channel, SingleClientUpdate, bSingleClientUpdateChanged, MultiClientUpdate, bMultiClientUpdateChanged);
+
+	// Send SpatialOS updates if anything changed.
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
-	auto Func = RPCToSenderMap.Find(Function->GetFName());
-	checkf(*Func, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *(Function->GetFName().ToString()));
-	(*Func)(Connection.Get(), RPCFrame, Target, Cast<USpatialPackageMapClient>(PackageMap));
+	if (bSingleClientUpdateChanged)
+	{
+		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>(EntityId, SingleClientUpdate);
+	}
+	if (bMultiClientUpdateChanged)
+	{
+		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>(EntityId, MultiClientUpdate);
+	}
 }
 
-void USpatialTypeBinding_PlayerController::OnServerStartedVisualLoggerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op)
+void USpatialTypeBinding_PlayerController::SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
+	auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
+	checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
+	(this->*(*SenderFuncIterator))(Connection.Get(), RPCFrame, Channel, Target);
+}
+
+void USpatialTypeBinding_PlayerController::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)
+{
+	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Data* SingleClientData = PendingSingleClientData.Find(ActorChannel->GetEntityId());
+	if (SingleClientData)
+	{
+		improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update Update;
+		Update.FromInitialData(*SingleClientData);
+		PendingSingleClientData.Remove(ActorChannel->GetEntityId());
+		ReceiveUpdateFromSpatial_SingleClient(ActorChannel, Update);
+	}
+	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
+	if (MultiClientData)
+	{
+		improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update Update;
+		Update.FromInitialData(*MultiClientData);
+		PendingMultiClientData.Remove(ActorChannel->GetEntityId());
+		ReceiveUpdateFromSpatial_MultiClient(ActorChannel, Update);
+	}
+}
+
+void USpatialTypeBinding_PlayerController::BuildSpatialComponentUpdate(
+	const FPropertyChangeState& Changes,
+	USpatialActorChannel* Channel,
+	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& SingleClientUpdate,
+	bool& bSingleClientUpdateChanged,
+	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& MultiClientUpdate,
+	bool& bMultiClientUpdateChanged) const
+{
+	// Build up SpatialOS component updates.
+	auto& PropertyMap = GetHandlePropertyMap();
+	FChangelistIterator ChangelistIterator(Changes.Changed, 0);
+	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.Cmds, Changes.BaseHandleToCmdIndex, 0, 1, 0, Changes.Cmds.Num() - 1);
+	while (HandleIterator.NextHandle())
+	{
+		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
+		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
+		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
+		UE_LOG(LogSpatialUpdateInterop, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
+		switch (GetGroupFromCondition(PropertyMapData.Condition))
+		{
+		case GROUP_SingleClient:
+			ApplyUpdateToSpatial_SingleClient(Data, HandleIterator.Handle, Cmd.Property, Channel, SingleClientUpdate);
+			bSingleClientUpdateChanged = true;
+			break;
+		case GROUP_MultiClient:
+			ApplyUpdateToSpatial_MultiClient(Data, HandleIterator.Handle, Cmd.Property, Channel, MultiClientUpdate);
+			bMultiClientUpdateChanged = true;
+			break;
+		}
+	}
+}
+
+void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_SingleClient(
+	const uint8* RESTRICT Data,
+	int32 Handle,
+	UProperty* Property,
+	USpatialActorChannel* Channel,
+	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& OutUpdate) const
+{
+	switch (Handle)
+	{
+		case 18: // field_targetviewrotation
+		{
+			FRotator Value;
+			Value = *(reinterpret_cast<const FRotator*>(Data));
+
+			OutUpdate.set_field_targetviewrotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
+			break;
+		}
+		case 19: // field_spawnlocation
+		{
+			FVector Value;
+			Value = *(reinterpret_cast<const FVector*>(Data));
+
+			OutUpdate.set_field_spawnlocation(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			break;
+		}
+	default:
+		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
+		break;
+	}
+}
+
+void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
+	const uint8* RESTRICT Data,
+	int32 Handle,
+	UProperty* Property,
+	USpatialActorChannel* Channel,
+	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& OutUpdate) const
+{
+	switch (Handle)
+	{
+		case 1: // field_bhidden
+		{
+			uint8 Value;
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			OutUpdate.set_field_bhidden(Value != 0);
+			break;
+		}
+		case 2: // field_breplicatemovement
+		{
+			uint8 Value;
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			OutUpdate.set_field_breplicatemovement(Value != 0);
+			break;
+		}
+		case 3: // field_btearoff
+		{
+			uint8 Value;
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			OutUpdate.set_field_btearoff(Value != 0);
+			break;
+		}
+		case 4: // field_remoterole
+		{
+			TEnumAsByte<ENetRole> Value;
+			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
+
+			OutUpdate.set_field_remoterole(uint32_t(Value));
+			break;
+		}
+		case 5: // field_owner
+		{
+			AActor* Value;
+			Value = *(reinterpret_cast<AActor* const*>(Data));
+
+			{
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (UObjectRef.entity() == 0)
+				{
+					PackageMap->AddPendingObjRef(Value, Channel, 5);
+				}
+				else
+				{
+					OutUpdate.set_field_owner(UObjectRef);
+				}
+			}
+			break;
+		}
+		case 6: // field_replicatedmovement
+		{
+			FRepMovement Value;
+			Value = *(reinterpret_cast<const FRepMovement*>(Data));
+
+			{
+				TArray<uint8> ValueData;
+				FMemoryWriter ValueDataWriter(ValueData);
+				bool Success;
+				Value.NetSerialize(ValueDataWriter, nullptr, Success);
+				OutUpdate.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
+			}
+			break;
+		}
+		case 7: // field_attachmentreplication_attachparent
+		{
+			AActor* Value;
+			Value = *(reinterpret_cast<AActor* const*>(Data));
+
+			{
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (UObjectRef.entity() == 0)
+				{
+					PackageMap->AddPendingObjRef(Value, Channel, 7);
+				}
+				else
+				{
+					OutUpdate.set_field_attachmentreplication_attachparent(UObjectRef);
+				}
+			}
+			break;
+		}
+		case 8: // field_attachmentreplication_locationoffset
+		{
+			FVector_NetQuantize100 Value;
+			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
+
+			OutUpdate.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			break;
+		}
+		case 9: // field_attachmentreplication_relativescale3d
+		{
+			FVector_NetQuantize100 Value;
+			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
+
+			OutUpdate.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			break;
+		}
+		case 10: // field_attachmentreplication_rotationoffset
+		{
+			FRotator Value;
+			Value = *(reinterpret_cast<const FRotator*>(Data));
+
+			OutUpdate.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
+			break;
+		}
+		case 11: // field_attachmentreplication_attachsocket
+		{
+			FName Value;
+			Value = *(reinterpret_cast<const FName*>(Data));
+
+			OutUpdate.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
+			break;
+		}
+		case 12: // field_attachmentreplication_attachcomponent
+		{
+			USceneComponent* Value;
+			Value = *(reinterpret_cast<USceneComponent* const*>(Data));
+
+			{
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (UObjectRef.entity() == 0)
+				{
+					PackageMap->AddPendingObjRef(Value, Channel, 12);
+				}
+				else
+				{
+					OutUpdate.set_field_attachmentreplication_attachcomponent(UObjectRef);
+				}
+			}
+			break;
+		}
+		case 13: // field_role
+		{
+			TEnumAsByte<ENetRole> Value;
+			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
+
+			OutUpdate.set_field_role(uint32_t(Value));
+			break;
+		}
+		case 14: // field_bcanbedamaged
+		{
+			uint8 Value;
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			OutUpdate.set_field_bcanbedamaged(Value != 0);
+			break;
+		}
+		case 15: // field_instigator
+		{
+			APawn* Value;
+			Value = *(reinterpret_cast<APawn* const*>(Data));
+
+			{
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (UObjectRef.entity() == 0)
+				{
+					PackageMap->AddPendingObjRef(Value, Channel, 15);
+				}
+				else
+				{
+					OutUpdate.set_field_instigator(UObjectRef);
+				}
+			}
+			break;
+		}
+		case 16: // field_pawn
+		{
+			APawn* Value;
+			Value = *(reinterpret_cast<APawn* const*>(Data));
+
+			{
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (UObjectRef.entity() == 0)
+				{
+					PackageMap->AddPendingObjRef(Value, Channel, 16);
+				}
+				else
+				{
+					OutUpdate.set_field_pawn(UObjectRef);
+				}
+			}
+			break;
+		}
+		case 17: // field_playerstate
+		{
+			APlayerState* Value;
+			Value = *(reinterpret_cast<APlayerState* const*>(Data));
+
+			{
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (UObjectRef.entity() == 0)
+				{
+					PackageMap->AddPendingObjRef(Value, Channel, 17);
+				}
+				else
+				{
+					OutUpdate.set_field_playerstate(UObjectRef);
+				}
+			}
+			break;
+		}
+	default:
+		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
+		break;
+	}
+}
+
+void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_SingleClient(
+	USpatialActorChannel* ActorChannel,
+	const improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update) const
+{
+	FNetBitWriter OutputWriter(nullptr, 0);
+	auto& HandleToPropertyMap = GetHandlePropertyMap();
+	ConditionMapFilter ConditionMap(ActorChannel);
+	if (!Update.field_targetviewrotation().empty())
+	{
+		// field_targetviewrotation
+		uint32 Handle = 18;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FRotator Value;
+
+			{
+				auto& Rotator = *(Update.field_targetviewrotation().data());
+				Value.Yaw = Rotator.yaw();
+				Value.Pitch = Rotator.pitch();
+				Value.Roll = Rotator.roll();
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_spawnlocation().empty())
+	{
+		// field_spawnlocation
+		uint32 Handle = 19;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FVector Value;
+
+			{
+				auto& Vector = *(Update.field_spawnlocation().data());
+				Value.X = Vector.x();
+				Value.Y = Vector.y();
+				Value.Z = Vector.z();
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
+}
+
+void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
+	USpatialActorChannel* ActorChannel,
+	const improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update) const
+{
+	FNetBitWriter OutputWriter(nullptr, 0);
+	auto& HandleToPropertyMap = GetHandlePropertyMap();
+	ConditionMapFilter ConditionMap(ActorChannel);
+	if (!Update.field_bhidden().empty())
+	{
+		// field_bhidden
+		uint32 Handle = 1;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			uint8 Value;
+
+			Value = *(Update.field_bhidden().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_breplicatemovement().empty())
+	{
+		// field_breplicatemovement
+		uint32 Handle = 2;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			uint8 Value;
+
+			Value = *(Update.field_breplicatemovement().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_btearoff().empty())
+	{
+		// field_btearoff
+		uint32 Handle = 3;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			uint8 Value;
+
+			Value = *(Update.field_btearoff().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_remoterole().empty())
+	{
+		// field_remoterole
+		uint32 Handle = 4;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			TEnumAsByte<ENetRole> Value;
+
+			Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_remoterole().data())));
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_owner().empty())
+	{
+		// field_owner
+		uint32 Handle = 5;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			AActor* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_owner().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				if (NetGUID.IsValid())
+				{
+					Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				}
+				else
+				{
+					Value = nullptr;
+				}
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_replicatedmovement().empty())
+	{
+		// field_replicatedmovement
+		uint32 Handle = 6;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FRepMovement Value;
+
+			{
+				auto& ValueDataStr = *(Update.field_replicatedmovement().data());
+				TArray<uint8> ValueData;
+				ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+				FMemoryReader ValueDataReader(ValueData);
+				bool bSuccess;
+				Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_attachmentreplication_attachparent().empty())
+	{
+		// field_attachmentreplication_attachparent
+		uint32 Handle = 7;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			AActor* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachparent().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				if (NetGUID.IsValid())
+				{
+					Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				}
+				else
+				{
+					Value = nullptr;
+				}
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_attachmentreplication_locationoffset().empty())
+	{
+		// field_attachmentreplication_locationoffset
+		uint32 Handle = 8;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FVector_NetQuantize100 Value;
+
+			{
+				auto& Vector = *(Update.field_attachmentreplication_locationoffset().data());
+				Value.X = Vector.x();
+				Value.Y = Vector.y();
+				Value.Z = Vector.z();
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_attachmentreplication_relativescale3d().empty())
+	{
+		// field_attachmentreplication_relativescale3d
+		uint32 Handle = 9;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FVector_NetQuantize100 Value;
+
+			{
+				auto& Vector = *(Update.field_attachmentreplication_relativescale3d().data());
+				Value.X = Vector.x();
+				Value.Y = Vector.y();
+				Value.Z = Vector.z();
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_attachmentreplication_rotationoffset().empty())
+	{
+		// field_attachmentreplication_rotationoffset
+		uint32 Handle = 10;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FRotator Value;
+
+			{
+				auto& Rotator = *(Update.field_attachmentreplication_rotationoffset().data());
+				Value.Yaw = Rotator.yaw();
+				Value.Pitch = Rotator.pitch();
+				Value.Roll = Rotator.roll();
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_attachmentreplication_attachsocket().empty())
+	{
+		// field_attachmentreplication_attachsocket
+		uint32 Handle = 11;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FName Value;
+
+			Value = FName((*(Update.field_attachmentreplication_attachsocket().data())).data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_attachmentreplication_attachcomponent().empty())
+	{
+		// field_attachmentreplication_attachcomponent
+		uint32 Handle = 12;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			USceneComponent* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachcomponent().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				if (NetGUID.IsValid())
+				{
+					Value = static_cast<USceneComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				}
+				else
+				{
+					Value = nullptr;
+				}
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_role().empty())
+	{
+		// field_role
+		uint32 Handle = 13;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			TEnumAsByte<ENetRole> Value;
+
+			Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_role().data())));
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_bcanbedamaged().empty())
+	{
+		// field_bcanbedamaged
+		uint32 Handle = 14;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			uint8 Value;
+
+			Value = *(Update.field_bcanbedamaged().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_instigator().empty())
+	{
+		// field_instigator
+		uint32 Handle = 15;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			APawn* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_instigator().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				if (NetGUID.IsValid())
+				{
+					Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				}
+				else
+				{
+					Value = nullptr;
+				}
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_pawn().empty())
+	{
+		// field_pawn
+		uint32 Handle = 16;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			APawn* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_pawn().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				if (NetGUID.IsValid())
+				{
+					Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				}
+				else
+				{
+					Value = nullptr;
+				}
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_playerstate().empty())
+	{
+		// field_playerstate
+		uint32 Handle = 17;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			APlayerState* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_playerstate().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				if (NetGUID.IsValid())
+				{
+					Value = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				}
+				else
+				{
+					Value = nullptr;
+				}
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
+}
+
+void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_UBOOL(bIsLogging);
+
+	improbable::unreal::UnrealOnServerStartedVisualLoggerRequest Request;
+	Request.set_field_bislogging(bIsLogging != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_PROPERTY(UTextProperty, KickReason);
+
+	improbable::unreal::UnrealClientWasKickedRequest Request;
+	// UNSUPPORTED
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealClientVoiceHandshakeCompleteRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_PROPERTY(UNameProperty, PackageName);
+	P_GET_UBOOL(bNewShouldBeLoaded);
+	P_GET_UBOOL(bNewShouldBeVisible);
+	P_GET_UBOOL(bNewShouldBlockOnLoad);
+	P_GET_PROPERTY(UIntProperty, LODIndex);
+
+	improbable::unreal::UnrealClientUpdateLevelStreamingStatusRequest Request;
+	Request.set_field_packagename(TCHAR_TO_UTF8(*PackageName.ToString()));
+	Request.set_field_bnewshouldbeloaded(bNewShouldBeLoaded != 0);
+	Request.set_field_bnewshouldbevisible(bNewShouldBeVisible != 0);
+	Request.set_field_bnewshouldblockonload(bNewShouldBlockOnLoad != 0);
+	Request.set_field_lodindex(LODIndex);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
+
+	improbable::unreal::UnrealClientUnmutePlayerRequest Request;
+	{
+		TArray<uint8> ValueData;
+		FMemoryWriter ValueDataWriter(ValueData);
+		bool Success;
+		PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
+		Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+	}
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_PROPERTY(UStrProperty, URL);
+	P_GET_PROPERTY(UByteProperty, TravelType);
+	P_GET_UBOOL(bSeamless);
+	P_GET_STRUCT(FGuid, MapPackageGuid)
+
+	improbable::unreal::UnrealClientTravelInternalRequest Request;
+	Request.set_field_url(TCHAR_TO_UTF8(*URL));
+	Request.set_field_traveltype(uint32_t(TravelType));
+	Request.set_field_bseamless(bSeamless != 0);
+	Request.set_field_mappackageguid_a(MapPackageGuid.A);
+	Request.set_field_mappackageguid_b(MapPackageGuid.B);
+	Request.set_field_mappackageguid_c(MapPackageGuid.C);
+	Request.set_field_mappackageguid_d(MapPackageGuid.D);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(APlayerState, SenderPlayerState);
+	P_GET_PROPERTY(UStrProperty, S);
+	P_GET_PROPERTY(UNameProperty, Type);
+	P_GET_PROPERTY(UFloatProperty, MsgLifeTime);
+
+	improbable::unreal::UnrealClientTeamMessageRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(SenderPlayerState);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(SenderPlayerState, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_senderplayerstate(UObjectRef);
+		}
+	}
+	Request.set_field_s(TCHAR_TO_UTF8(*S));
+	Request.set_field_type(TCHAR_TO_UTF8(*Type.ToString()));
+	Request.set_field_msglifetime(MsgLifeTime);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(UForceFeedbackEffect, ForceFeedbackEffect);
+	P_GET_PROPERTY(UNameProperty, Tag);
+
+	improbable::unreal::UnrealClientStopForceFeedbackRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(ForceFeedbackEffect);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(ForceFeedbackEffect, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_forcefeedbackeffect(UObjectRef);
+		}
+	}
+	Request.set_field_tag(TCHAR_TO_UTF8(*Tag.ToString()));
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(UClass, Shake);
+	P_GET_UBOOL(bImmediately);
+
+	improbable::unreal::UnrealClientStopCameraShakeRequest Request;
+	// UNSUPPORTED UClass
+	Request.set_field_bimmediately(bImmediately != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(UCameraAnim, AnimToStop);
+
+	improbable::unreal::UnrealClientStopCameraAnimRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(AnimToStop);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(AnimToStop, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_animtostop(UObjectRef);
+		}
+	}
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealClientStartOnlineSessionRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(UClass, LensEffectEmitterClass);
+
+	improbable::unreal::UnrealClientSpawnCameraLensEffectRequest Request;
+	// UNSUPPORTED UClass
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(AActor, A);
+	P_GET_STRUCT(FViewTargetTransitionParams, TransitionParams)
+
+	improbable::unreal::UnrealClientSetViewTargetRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(A);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(A, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_a(UObjectRef);
+		}
+	}
+	Request.set_field_transitionparams_blendtime(TransitionParams.BlendTime);
+	Request.set_field_transitionparams_blendfunction(uint32_t(TransitionParams.BlendFunction));
+	Request.set_field_transitionparams_blendexp(TransitionParams.BlendExp);
+	Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_UBOOL(bWaiting);
+
+	improbable::unreal::UnrealClientSetSpectatorWaitingRequest Request;
+	Request.set_field_bwaiting(bWaiting != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(UClass, NewHUDClass);
+
+	improbable::unreal::UnrealClientSetHUDRequest Request;
+	// UNSUPPORTED UClass
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(UMaterialInterface, Material);
+	P_GET_PROPERTY(UFloatProperty, ForceDuration);
+	P_GET_PROPERTY(UIntProperty, CinematicTextureGroups);
+
+	improbable::unreal::UnrealClientSetForceMipLevelsToBeResidentRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Material);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(Material, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_material(UObjectRef);
+		}
+	}
+	Request.set_field_forceduration(ForceDuration);
+	Request.set_field_cinematictexturegroups(CinematicTextureGroups);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_UBOOL(bInCinematicMode);
+	P_GET_UBOOL(bAffectsMovement);
+	P_GET_UBOOL(bAffectsTurning);
+	P_GET_UBOOL(bAffectsHUD);
+
+	improbable::unreal::UnrealClientSetCinematicModeRequest Request;
+	Request.set_field_bincinematicmode(bInCinematicMode != 0);
+	Request.set_field_baffectsmovement(bAffectsMovement != 0);
+	Request.set_field_baffectsturning(bAffectsTurning != 0);
+	Request.set_field_baffectshud(bAffectsHUD != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_PROPERTY(UNameProperty, NewCamMode);
+
+	improbable::unreal::UnrealClientSetCameraModeRequest Request;
+	Request.set_field_newcammode(TCHAR_TO_UTF8(*NewCamMode.ToString()));
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_UBOOL(bEnableFading);
+	P_GET_STRUCT(FColor, FadeColor)
+	P_GET_STRUCT(FVector2D, FadeAlpha)
+	P_GET_PROPERTY(UFloatProperty, FadeTime);
+	P_GET_UBOOL(bFadeAudio);
+
+	improbable::unreal::UnrealClientSetCameraFadeRequest Request;
+	Request.set_field_benablefading(bEnableFading != 0);
+	Request.set_field_fadecolor_b(uint32_t(FadeColor.B));
+	Request.set_field_fadecolor_g(uint32_t(FadeColor.G));
+	Request.set_field_fadecolor_r(uint32_t(FadeColor.R));
+	Request.set_field_fadecolor_a(uint32_t(FadeColor.A));
+	Request.set_field_fadealpha_x(FadeAlpha.X);
+	Request.set_field_fadealpha_y(FadeAlpha.Y);
+	Request.set_field_fadetime(FadeTime);
+	Request.set_field_bfadeaudio(bFadeAudio != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealClientSetBlockOnAsyncLoadingRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_PROPERTY(UStrProperty, ReturnReason);
+
+	improbable::unreal::UnrealClientReturnToMainMenuRequest Request;
+	Request.set_field_returnreason(TCHAR_TO_UTF8(*ReturnReason));
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(APawn, NewPawn);
+
+	improbable::unreal::UnrealClientRetryClientRestartRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(NewPawn);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(NewPawn, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_newpawn(UObjectRef);
+		}
+	}
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(APawn, NewPawn);
+
+	improbable::unreal::UnrealClientRestartRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(NewPawn);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(NewPawn, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_newpawn(UObjectRef);
+		}
+	}
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientReset_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealClientResetRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(UObject, Object);
+
+	improbable::unreal::UnrealClientRepObjRefRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Object);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(Object, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_object(UObjectRef);
+		}
+	}
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(UClass, Message);
+	P_GET_PROPERTY(UIntProperty, Switch);
+	P_GET_OBJECT(APlayerState, RelatedPlayerState_1);
+	P_GET_OBJECT(APlayerState, RelatedPlayerState_2);
+	P_GET_OBJECT(UObject, OptionalObject);
+
+	improbable::unreal::UnrealClientReceiveLocalizedMessageRequest Request;
+	// UNSUPPORTED UClass
+	Request.set_field_switch(Switch);
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(RelatedPlayerState_1);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(RelatedPlayerState_1, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_relatedplayerstate_1(UObjectRef);
+		}
+	}
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(RelatedPlayerState_2);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(RelatedPlayerState_2, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_relatedplayerstate_2(UObjectRef);
+		}
+	}
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(OptionalObject);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(OptionalObject, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_optionalobject(UObjectRef);
+		}
+	}
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(AActor, ForcedActor);
+	P_GET_PROPERTY(UFloatProperty, ForceDuration);
+	P_GET_UBOOL(bEnableStreaming);
+	P_GET_PROPERTY(UIntProperty, CinematicTextureGroups);
+
+	improbable::unreal::UnrealClientPrestreamTexturesRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(ForcedActor);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(ForcedActor, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_forcedactor(UObjectRef);
+		}
+	}
+	Request.set_field_forceduration(ForceDuration);
+	Request.set_field_benablestreaming(bEnableStreaming != 0);
+	Request.set_field_cinematictexturegroups(CinematicTextureGroups);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_PROPERTY(UNameProperty, LevelName);
+	P_GET_UBOOL(bFirst);
+	P_GET_UBOOL(bLast);
+
+	improbable::unreal::UnrealClientPrepareMapChangeRequest Request;
+	Request.set_field_levelname(TCHAR_TO_UTF8(*LevelName.ToString()));
+	Request.set_field_bfirst(bFirst != 0);
+	Request.set_field_blast(bLast != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(USoundBase, Sound);
+	P_GET_STRUCT(FVector, Location)
+	P_GET_PROPERTY(UFloatProperty, VolumeMultiplier);
+	P_GET_PROPERTY(UFloatProperty, PitchMultiplier);
+
+	improbable::unreal::UnrealClientPlaySoundAtLocationRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Sound);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(Sound, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_sound(UObjectRef);
+		}
+	}
+	Request.set_field_location(improbable::Vector3f(Location.X, Location.Y, Location.Z));
+	Request.set_field_volumemultiplier(VolumeMultiplier);
+	Request.set_field_pitchmultiplier(PitchMultiplier);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(USoundBase, Sound);
+	P_GET_PROPERTY(UFloatProperty, VolumeMultiplier);
+	P_GET_PROPERTY(UFloatProperty, PitchMultiplier);
+
+	improbable::unreal::UnrealClientPlaySoundRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Sound);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(Sound, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_sound(UObjectRef);
+		}
+	}
+	Request.set_field_volumemultiplier(VolumeMultiplier);
+	Request.set_field_pitchmultiplier(PitchMultiplier);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(UForceFeedbackEffect, ForceFeedbackEffect);
+	P_GET_UBOOL(bLooping);
+	P_GET_PROPERTY(UNameProperty, Tag);
+
+	improbable::unreal::UnrealClientPlayForceFeedbackRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(ForceFeedbackEffect);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(ForceFeedbackEffect, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_forcefeedbackeffect(UObjectRef);
+		}
+	}
+	Request.set_field_blooping(bLooping != 0);
+	Request.set_field_tag(TCHAR_TO_UTF8(*Tag.ToString()));
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(UClass, Shake);
+	P_GET_PROPERTY(UFloatProperty, Scale);
+	P_GET_PROPERTY(UByteProperty, PlaySpace);
+	P_GET_STRUCT(FRotator, UserPlaySpaceRot)
+
+	improbable::unreal::UnrealClientPlayCameraShakeRequest Request;
+	// UNSUPPORTED UClass
+	Request.set_field_scale(Scale);
+	Request.set_field_playspace(uint32_t(PlaySpace));
+	Request.set_field_userplayspacerot(improbable::unreal::UnrealFRotator(UserPlaySpaceRot.Yaw, UserPlaySpaceRot.Pitch, UserPlaySpaceRot.Roll));
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(UCameraAnim, AnimToPlay);
+	P_GET_PROPERTY(UFloatProperty, Scale);
+	P_GET_PROPERTY(UFloatProperty, Rate);
+	P_GET_PROPERTY(UFloatProperty, BlendInTime);
+	P_GET_PROPERTY(UFloatProperty, BlendOutTime);
+	P_GET_UBOOL(bLoop);
+	P_GET_UBOOL(bRandomStartTime);
+	P_GET_PROPERTY(UByteProperty, Space);
+	P_GET_STRUCT(FRotator, CustomPlaySpace)
+
+	improbable::unreal::UnrealClientPlayCameraAnimRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(AnimToPlay);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(AnimToPlay, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_animtoplay(UObjectRef);
+		}
+	}
+	Request.set_field_scale(Scale);
+	Request.set_field_rate(Rate);
+	Request.set_field_blendintime(BlendInTime);
+	Request.set_field_blendouttime(BlendOutTime);
+	Request.set_field_bloop(bLoop != 0);
+	Request.set_field_brandomstarttime(bRandomStartTime != 0);
+	Request.set_field_space(uint32_t(Space));
+	Request.set_field_customplayspace(improbable::unreal::UnrealFRotator(CustomPlaySpace.Yaw, CustomPlaySpace.Pitch, CustomPlaySpace.Roll));
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
+
+	improbable::unreal::UnrealClientMutePlayerRequest Request;
+	{
+		TArray<uint8> ValueData;
+		FMemoryWriter ValueDataWriter(ValueData);
+		bool Success;
+		PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
+		Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+	}
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_PROPERTY(UStrProperty, S);
+	P_GET_PROPERTY(UNameProperty, Type);
+	P_GET_PROPERTY(UFloatProperty, MsgLifeTime);
+
+	improbable::unreal::UnrealClientMessageRequest Request;
+	Request.set_field_s(TCHAR_TO_UTF8(*S));
+	Request.set_field_type(TCHAR_TO_UTF8(*Type.ToString()));
+	Request.set_field_msglifetime(MsgLifeTime);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_UBOOL(bIgnore);
+
+	improbable::unreal::UnrealClientIgnoreMoveInputRequest Request;
+	Request.set_field_bignore(bIgnore != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_UBOOL(bIgnore);
+
+	improbable::unreal::UnrealClientIgnoreLookInputRequest Request;
+	Request.set_field_bignore(bIgnore != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientGotoState_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_PROPERTY(UNameProperty, NewState);
+
+	improbable::unreal::UnrealClientGotoStateRequest Request;
+	Request.set_field_newstate(TCHAR_TO_UTF8(*NewState.ToString()));
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(AActor, EndGameFocus);
+	P_GET_UBOOL(bIsWinner);
+
+	improbable::unreal::UnrealClientGameEndedRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(EndGameFocus);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(EndGameFocus, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_endgamefocus(UObjectRef);
+		}
+	}
+	Request.set_field_biswinner(bIsWinner != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealClientForceGarbageCollectionRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealClientFlushLevelStreamingRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealClientEndOnlineSessionRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_UBOOL(bEnable);
+
+	improbable::unreal::UnrealClientEnableNetworkVoiceRequest Request;
+	Request.set_field_benable(bEnable != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealClientCommitMapChangeRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealClientClearCameraLensEffectsRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_PROPERTY(UIntProperty, Cap);
+
+	improbable::unreal::UnrealClientCapBandwidthRequest Request;
+	Request.set_field_cap(Cap);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealClientCancelPendingMapChangeRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_STRUCT(FVector, InLoc)
+	P_GET_PROPERTY(UFloatProperty, Duration);
+	P_GET_UBOOL(bOverrideLocation);
+
+	improbable::unreal::UnrealClientAddTextureStreamingLocRequest Request;
+	Request.set_field_inloc(improbable::Vector3f(InLoc.X, InLoc.Y, InLoc.Z));
+	Request.set_field_duration(Duration);
+	Request.set_field_boverridelocation(bOverrideLocation != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_STRUCT(FRotator, NewRotation)
+	P_GET_UBOOL(bResetCamera);
+
+	improbable::unreal::UnrealClientSetRotationRequest Request;
+	Request.set_field_newrotation(improbable::unreal::UnrealFRotator(NewRotation.Yaw, NewRotation.Pitch, NewRotation.Roll));
+	Request.set_field_bresetcamera(bResetCamera != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_STRUCT(FVector, NewLocation)
+	P_GET_STRUCT(FRotator, NewRotation)
+
+	improbable::unreal::UnrealClientSetLocationRequest Request;
+	Request.set_field_newlocation(improbable::Vector3f(NewLocation.X, NewLocation.Y, NewLocation.Z));
+	Request.set_field_newrotation(improbable::unreal::UnrealFRotator(NewRotation.Yaw, NewRotation.Pitch, NewRotation.Roll));
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_STRUCT(FViewTargetTransitionParams, TransitionParams)
+
+	improbable::unreal::UnrealServerViewSelfRequest Request;
+	Request.set_field_transitionparams_blendtime(TransitionParams.BlendTime);
+	Request.set_field_transitionparams_blendfunction(uint32_t(TransitionParams.BlendFunction));
+	Request.set_field_transitionparams_blendexp(TransitionParams.BlendExp);
+	Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealServerViewPrevPlayerRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealServerViewNextPlayerRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealServerVerifyViewTargetRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_PROPERTY(UNameProperty, PackageName);
+	P_GET_UBOOL(bIsVisible);
+
+	improbable::unreal::UnrealServerUpdateLevelVisibilityRequest Request;
+	Request.set_field_packagename(TCHAR_TO_UTF8(*PackageName.ToString()));
+	Request.set_field_bisvisible(bIsVisible != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_STRUCT(FVector_NetQuantize, CamLoc)
+	P_GET_PROPERTY(UIntProperty, CamPitchAndYaw);
+
+	improbable::unreal::UnrealServerUpdateCameraRequest Request;
+	Request.set_field_camloc(improbable::Vector3f(CamLoc.X, CamLoc.Y, CamLoc.Z));
+	Request.set_field_campitchandyaw(CamPitchAndYaw);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
+
+	improbable::unreal::UnrealServerUnmutePlayerRequest Request;
+	{
+		TArray<uint8> ValueData;
+		FMemoryWriter ValueDataWriter(ValueData);
+		bool Success;
+		PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
+		Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+	}
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealServerToggleAILoggingRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealServerShortTimeoutRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_UBOOL(bWaiting);
+
+	improbable::unreal::UnrealServerSetSpectatorWaitingRequest Request;
+	Request.set_field_bwaiting(bWaiting != 0);
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_STRUCT(FVector, NewLoc)
+	P_GET_STRUCT(FRotator, NewRot)
+
+	improbable::unreal::UnrealServerSetSpectatorLocationRequest Request;
+	Request.set_field_newloc(improbable::Vector3f(NewLoc.X, NewLoc.Y, NewLoc.Z));
+	Request.set_field_newrot(improbable::unreal::UnrealFRotator(NewRot.Yaw, NewRot.Pitch, NewRot.Roll));
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealServerRestartPlayerRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerPause_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealServerPauseRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_PROPERTY(UNameProperty, WorldPackageName);
+
+	improbable::unreal::UnrealServerNotifyLoadedWorldRequest Request;
+	Request.set_field_worldpackagename(TCHAR_TO_UTF8(*WorldPackageName.ToString()));
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
+
+	improbable::unreal::UnrealServerMutePlayerRequest Request;
+	{
+		TArray<uint8> ValueData;
+		FMemoryWriter ValueDataWriter(ValueData);
+		bool Success;
+		PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
+		Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+	}
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealServerCheckClientPossessionReliableRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	improbable::unreal::UnrealServerCheckClientPossessionRequest Request;
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerChangeName_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_PROPERTY(UStrProperty, S);
+
+	improbable::unreal::UnrealServerChangeNameRequest Request;
+	Request.set_field_s(TCHAR_TO_UTF8(*S));
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerCamera_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_PROPERTY(UNameProperty, NewMode);
+
+	improbable::unreal::UnrealServerCameraRequest Request;
+	Request.set_field_newmode(TCHAR_TO_UTF8(*NewMode.ToString()));
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_OBJECT(APawn, P);
+
+	improbable::unreal::UnrealServerAcknowledgePossessionRequest Request;
+	{
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(P);
+		improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		if (UObjectRef.entity() == 0)
+		{
+			PackageMap->AddPendingObjRef(P, Channel, -1);
+		}
+		else
+		{
+			Request.set_field_p(UObjectRef);
+		}
+	}
+
+	Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>(Target, Request, 0);
+}
+
+void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op)
+{
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("OnServerStartedVisualLoggerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("OnServerStartedVisualLogger_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("OnServerStartedVisualLoggerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("OnServerStartedVisualLogger_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract bIsLogging
 	bool bIsLogging;
@@ -1898,17 +2157,16 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLoggerReceiver(c
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientWasKickedReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>& Op)
+void USpatialTypeBinding_PlayerController::ClientWasKicked_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientWasKickedReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientWasKicked_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientWasKickedReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientWasKicked_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract KickReason
 	FText KickReason;
@@ -1919,34 +2177,32 @@ void USpatialTypeBinding_PlayerController::ClientWasKickedReceiver(const worker:
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeCompleteReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>& Op)
+void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientVoiceHandshakeCompleteReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientVoiceHandshakeComplete_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientVoiceHandshakeCompleteReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientVoiceHandshakeComplete_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ClientVoiceHandshakeComplete_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatusReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>& Op)
+void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientUpdateLevelStreamingStatusReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientUpdateLevelStreamingStatus_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientUpdateLevelStreamingStatusReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientUpdateLevelStreamingStatus_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract PackageName
 	FName PackageName;
@@ -1973,17 +2229,16 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatusRecei
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientUnmutePlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>& Op)
+void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientUnmutePlayerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientUnmutePlayer_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientUnmutePlayerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientUnmutePlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract PlayerId
 	FUniqueNetIdRepl PlayerId;
@@ -2001,17 +2256,16 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayerReceiver(const work
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientTravelInternalReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>& Op)
+void USpatialTypeBinding_PlayerController::ClientTravelInternal_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientTravelInternalReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientTravelInternal_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientTravelInternalReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientTravelInternal_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract URL
 	FString URL;
@@ -2037,24 +2291,30 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternalReceiver(const wo
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientTeamMessageReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>& Op)
+void USpatialTypeBinding_PlayerController::ClientTeamMessage_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientTeamMessageReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientTeamMessage_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientTeamMessageReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientTeamMessage_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract SenderPlayerState
 	APlayerState* SenderPlayerState;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_senderplayerstate();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		SenderPlayerState = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			SenderPlayerState = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			SenderPlayerState = nullptr;
+		}
 	}
 
 	// Extract S
@@ -2074,24 +2334,30 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessageReceiver(const worke
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStopForceFeedbackReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>& Op)
+void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientStopForceFeedbackReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientStopForceFeedback_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientStopForceFeedbackReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientStopForceFeedback_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract ForceFeedbackEffect
 	UForceFeedbackEffect* ForceFeedbackEffect;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_forcefeedbackeffect();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		ForceFeedbackEffect = static_cast<UForceFeedbackEffect*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			ForceFeedbackEffect = static_cast<UForceFeedbackEffect*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			ForceFeedbackEffect = nullptr;
+		}
 	}
 
 	// Extract Tag
@@ -2103,21 +2369,20 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedbackReceiver(const
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStopCameraShakeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>& Op)
+void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientStopCameraShakeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientStopCameraShake_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientStopCameraShakeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientStopCameraShake_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract Shake
 	TSubclassOf<UCameraShake>  Shake;
-	//Not yet implemented UClass properties
+	// UNSUPPORTED UClass
 
 	// Extract bImmediately
 	bool bImmediately;
@@ -2128,24 +2393,30 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShakeReceiver(const w
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStopCameraAnimReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>& Op)
+void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientStopCameraAnimReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientStopCameraAnim_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientStopCameraAnimReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientStopCameraAnim_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract AnimToStop
 	UCameraAnim* AnimToStop;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_animtostop();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		AnimToStop = static_cast<UCameraAnim*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			AnimToStop = static_cast<UCameraAnim*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			AnimToStop = nullptr;
+		}
 	}
 
 	// Call implementation and send command response.
@@ -2153,62 +2424,66 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnimReceiver(const wo
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStartOnlineSessionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>& Op)
+void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientStartOnlineSessionReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientStartOnlineSession_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientStartOnlineSessionReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientStartOnlineSession_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ClientStartOnlineSession_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffectReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>& Op)
+void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSpawnCameraLensEffectReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSpawnCameraLensEffect_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSpawnCameraLensEffectReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSpawnCameraLensEffect_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract LensEffectEmitterClass
 	TSubclassOf<AEmitterCameraLensEffectBase>  LensEffectEmitterClass;
-	//Not yet implemented UClass properties
+	// UNSUPPORTED UClass
 
 	// Call implementation and send command response.
 	TargetObject->ClientSpawnCameraLensEffect_Implementation(LensEffectEmitterClass);
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetViewTargetReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetViewTargetReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetViewTarget_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetViewTargetReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetViewTarget_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract A
 	AActor* A;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_a();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		A = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			A = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			A = nullptr;
+		}
 	}
 
 	// Extract TransitionParams
@@ -2223,17 +2498,16 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTargetReceiver(const wor
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaitingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetSpectatorWaitingReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetSpectatorWaiting_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetSpectatorWaitingReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetSpectatorWaiting_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract bWaiting
 	bool bWaiting;
@@ -2244,45 +2518,50 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaitingReceiver(con
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetHUDReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetHUD_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetHUDReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetHUD_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetHUDReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetHUD_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract NewHUDClass
 	TSubclassOf<AHUD>  NewHUDClass;
-	//Not yet implemented UClass properties
+	// UNSUPPORTED UClass
 
 	// Call implementation and send command response.
 	TargetObject->ClientSetHUD_Implementation(NewHUDClass);
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResidentReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetForceMipLevelsToBeResidentReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetForceMipLevelsToBeResident_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetForceMipLevelsToBeResidentReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetForceMipLevelsToBeResident_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract Material
 	UMaterialInterface* Material;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_material();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		Material = static_cast<UMaterialInterface*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			Material = static_cast<UMaterialInterface*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			Material = nullptr;
+		}
 	}
 
 	// Extract ForceDuration
@@ -2298,17 +2577,16 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResidentRe
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetCinematicModeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetCinematicModeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetCinematicMode_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetCinematicModeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetCinematicMode_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract bInCinematicMode
 	bool bInCinematicMode;
@@ -2331,17 +2609,16 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicModeReceiver(const 
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetCameraModeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetCameraModeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetCameraMode_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetCameraModeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetCameraMode_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract NewCamMode
 	FName NewCamMode;
@@ -2352,17 +2629,16 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraModeReceiver(const wor
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetCameraFadeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetCameraFadeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetCameraFade_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetCameraFadeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetCameraFade_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract bEnableFading
 	bool bEnableFading;
@@ -2393,34 +2669,32 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFadeReceiver(const wor
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoadingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetBlockOnAsyncLoadingReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetBlockOnAsyncLoading_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetBlockOnAsyncLoadingReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetBlockOnAsyncLoading_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ClientSetBlockOnAsyncLoading_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientReturnToMainMenuReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>& Op)
+void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientReturnToMainMenuReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientReturnToMainMenu_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientReturnToMainMenuReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientReturnToMainMenu_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract ReturnReason
 	FString ReturnReason;
@@ -2431,24 +2705,30 @@ void USpatialTypeBinding_PlayerController::ClientReturnToMainMenuReceiver(const 
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientRetryClientRestartReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>& Op)
+void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientRetryClientRestartReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientRetryClientRestart_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientRetryClientRestartReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientRetryClientRestart_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract NewPawn
 	APawn* NewPawn;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_newpawn();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		NewPawn = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			NewPawn = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			NewPawn = nullptr;
+		}
 	}
 
 	// Call implementation and send command response.
@@ -2456,24 +2736,30 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestartReceiver(cons
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientRestartReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>& Op)
+void USpatialTypeBinding_PlayerController::ClientRestart_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientRestartReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientRestart_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientRestartReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientRestart_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract NewPawn
 	APawn* NewPawn;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_newpawn();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		NewPawn = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			NewPawn = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			NewPawn = nullptr;
+		}
 	}
 
 	// Call implementation and send command response.
@@ -2481,41 +2767,46 @@ void USpatialTypeBinding_PlayerController::ClientRestartReceiver(const worker::C
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientResetReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>& Op)
+void USpatialTypeBinding_PlayerController::ClientReset_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientResetReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientReset_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientResetReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientReset_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ClientReset_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientRepObjRefReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>& Op)
+void USpatialTypeBinding_PlayerController::ClientRepObjRef_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientRepObjRefReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientRepObjRef_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientRepObjRefReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientRepObjRef_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract Object
 	UObject* Object;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_object();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		Object = static_cast<UObject*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			Object = static_cast<UObject*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			Object = nullptr;
+		}
 	}
 
 	// Call implementation and send command response.
@@ -2523,21 +2814,20 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRefReceiver(const worker:
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessageReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>& Op)
+void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientReceiveLocalizedMessageReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientReceiveLocalizedMessage_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientReceiveLocalizedMessageReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientReceiveLocalizedMessage_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract Message
 	TSubclassOf<ULocalMessage>  Message;
-	//Not yet implemented UClass properties
+	// UNSUPPORTED UClass
 
 	// Extract Switch
 	int32 Switch;
@@ -2547,24 +2837,45 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessageReceiver
 	APlayerState* RelatedPlayerState_1;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_relatedplayerstate_1();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		RelatedPlayerState_1 = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			RelatedPlayerState_1 = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			RelatedPlayerState_1 = nullptr;
+		}
 	}
 
 	// Extract RelatedPlayerState_2
 	APlayerState* RelatedPlayerState_2;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_relatedplayerstate_2();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		RelatedPlayerState_2 = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			RelatedPlayerState_2 = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			RelatedPlayerState_2 = nullptr;
+		}
 	}
 
 	// Extract OptionalObject
 	UObject* OptionalObject;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_optionalobject();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		OptionalObject = static_cast<UObject*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			OptionalObject = static_cast<UObject*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			OptionalObject = nullptr;
+		}
 	}
 
 	// Call implementation and send command response.
@@ -2572,24 +2883,30 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessageReceiver
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPrestreamTexturesReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>& Op)
+void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPrestreamTexturesReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPrestreamTextures_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientPrestreamTexturesReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientPrestreamTextures_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract ForcedActor
 	AActor* ForcedActor;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_forcedactor();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		ForcedActor = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			ForcedActor = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			ForcedActor = nullptr;
+		}
 	}
 
 	// Extract ForceDuration
@@ -2609,17 +2926,16 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTexturesReceiver(const
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPrepareMapChangeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>& Op)
+void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPrepareMapChangeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPrepareMapChange_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientPrepareMapChangeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientPrepareMapChange_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract LevelName
 	FName LevelName;
@@ -2638,24 +2954,30 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChangeReceiver(const 
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocationReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>& Op)
+void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlaySoundAtLocationReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlaySoundAtLocation_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientPlaySoundAtLocationReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientPlaySoundAtLocation_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract Sound
 	USoundBase* Sound;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_sound();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		Sound = static_cast<USoundBase*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			Sound = static_cast<USoundBase*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			Sound = nullptr;
+		}
 	}
 
 	// Extract Location
@@ -2680,24 +3002,30 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocationReceiver(con
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlaySoundReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>& Op)
+void USpatialTypeBinding_PlayerController::ClientPlaySound_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlaySoundReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlaySound_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientPlaySoundReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientPlaySound_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract Sound
 	USoundBase* Sound;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_sound();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		Sound = static_cast<USoundBase*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			Sound = static_cast<USoundBase*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			Sound = nullptr;
+		}
 	}
 
 	// Extract VolumeMultiplier
@@ -2713,24 +3041,30 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundReceiver(const worker:
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlayForceFeedbackReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>& Op)
+void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlayForceFeedbackReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlayForceFeedback_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientPlayForceFeedbackReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientPlayForceFeedback_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract ForceFeedbackEffect
 	UForceFeedbackEffect* ForceFeedbackEffect;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_forcefeedbackeffect();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		ForceFeedbackEffect = static_cast<UForceFeedbackEffect*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			ForceFeedbackEffect = static_cast<UForceFeedbackEffect*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			ForceFeedbackEffect = nullptr;
+		}
 	}
 
 	// Extract bLooping
@@ -2746,21 +3080,20 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedbackReceiver(const
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlayCameraShakeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>& Op)
+void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlayCameraShakeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlayCameraShake_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientPlayCameraShakeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientPlayCameraShake_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract Shake
 	TSubclassOf<UCameraShake>  Shake;
-	//Not yet implemented UClass properties
+	// UNSUPPORTED UClass
 
 	// Extract Scale
 	float Scale;
@@ -2784,24 +3117,30 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShakeReceiver(const w
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlayCameraAnimReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>& Op)
+void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlayCameraAnimReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientPlayCameraAnim_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientPlayCameraAnimReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientPlayCameraAnim_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract AnimToPlay
 	UCameraAnim* AnimToPlay;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_animtoplay();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		AnimToPlay = static_cast<UCameraAnim*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			AnimToPlay = static_cast<UCameraAnim*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			AnimToPlay = nullptr;
+		}
 	}
 
 	// Extract Scale
@@ -2846,17 +3185,16 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnimReceiver(const wo
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientMutePlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>& Op)
+void USpatialTypeBinding_PlayerController::ClientMutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientMutePlayerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientMutePlayer_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientMutePlayerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientMutePlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract PlayerId
 	FUniqueNetIdRepl PlayerId;
@@ -2874,17 +3212,16 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayerReceiver(const worker
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientMessageReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>& Op)
+void USpatialTypeBinding_PlayerController::ClientMessage_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientMessageReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientMessage_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientMessageReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientMessage_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract S
 	FString S;
@@ -2903,17 +3240,16 @@ void USpatialTypeBinding_PlayerController::ClientMessageReceiver(const worker::C
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInputReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>& Op)
+void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientIgnoreMoveInputReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientIgnoreMoveInput_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientIgnoreMoveInputReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientIgnoreMoveInput_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract bIgnore
 	bool bIgnore;
@@ -2924,17 +3260,16 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInputReceiver(const w
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientIgnoreLookInputReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>& Op)
+void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientIgnoreLookInputReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientIgnoreLookInput_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientIgnoreLookInputReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientIgnoreLookInput_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract bIgnore
 	bool bIgnore;
@@ -2945,17 +3280,16 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInputReceiver(const w
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientGotoStateReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>& Op)
+void USpatialTypeBinding_PlayerController::ClientGotoState_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientGotoStateReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientGotoState_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientGotoStateReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientGotoState_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract NewState
 	FName NewState;
@@ -2966,24 +3300,30 @@ void USpatialTypeBinding_PlayerController::ClientGotoStateReceiver(const worker:
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientGameEndedReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>& Op)
+void USpatialTypeBinding_PlayerController::ClientGameEnded_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientGameEndedReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientGameEnded_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientGameEndedReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientGameEnded_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract EndGameFocus
 	AActor* EndGameFocus;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_endgamefocus();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		EndGameFocus = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			EndGameFocus = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			EndGameFocus = nullptr;
+		}
 	}
 
 	// Extract bIsWinner
@@ -2995,68 +3335,64 @@ void USpatialTypeBinding_PlayerController::ClientGameEndedReceiver(const worker:
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientForceGarbageCollectionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>& Op)
+void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientForceGarbageCollectionReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientForceGarbageCollection_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientForceGarbageCollectionReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientForceGarbageCollection_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ClientForceGarbageCollection_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientFlushLevelStreamingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>& Op)
+void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientFlushLevelStreamingReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientFlushLevelStreaming_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientFlushLevelStreamingReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientFlushLevelStreaming_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ClientFlushLevelStreaming_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientEndOnlineSessionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>& Op)
+void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientEndOnlineSessionReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientEndOnlineSession_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientEndOnlineSessionReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientEndOnlineSession_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ClientEndOnlineSession_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoiceReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>& Op)
+void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientEnableNetworkVoiceReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientEnableNetworkVoice_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientEnableNetworkVoiceReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientEnableNetworkVoice_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract bEnable
 	bool bEnable;
@@ -3067,51 +3403,48 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoiceReceiver(cons
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientCommitMapChangeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>& Op)
+void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientCommitMapChangeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientCommitMapChange_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientCommitMapChangeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientCommitMapChange_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ClientCommitMapChange_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffectsReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>& Op)
+void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientClearCameraLensEffectsReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientClearCameraLensEffects_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientClearCameraLensEffectsReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientClearCameraLensEffects_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ClientClearCameraLensEffects_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientCapBandwidthReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>& Op)
+void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientCapBandwidthReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientCapBandwidth_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientCapBandwidthReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientCapBandwidth_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract Cap
 	int32 Cap;
@@ -3122,34 +3455,32 @@ void USpatialTypeBinding_PlayerController::ClientCapBandwidthReceiver(const work
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChangeReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>& Op)
+void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientCancelPendingMapChangeReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientCancelPendingMapChange_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientCancelPendingMapChangeReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientCancelPendingMapChange_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ClientCancelPendingMapChange_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLocReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>& Op)
+void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientAddTextureStreamingLocReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientAddTextureStreamingLoc_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientAddTextureStreamingLocReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientAddTextureStreamingLoc_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract InLoc
 	FVector InLoc;
@@ -3173,17 +3504,16 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLocReceiver(
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetRotationReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetRotation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetRotationReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetRotation_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetRotationReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetRotation_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract NewRotation
 	FRotator NewRotation;
@@ -3203,17 +3533,16 @@ void USpatialTypeBinding_PlayerController::ClientSetRotationReceiver(const worke
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetLocationReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetLocation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetLocationReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ClientSetLocation_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetLocationReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ClientSetLocation_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract NewLocation
 	FVector NewLocation;
@@ -3238,17 +3567,16 @@ void USpatialTypeBinding_PlayerController::ClientSetLocationReceiver(const worke
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerViewSelfReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>& Op)
+void USpatialTypeBinding_PlayerController::ServerViewSelf_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerViewSelfReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerViewSelf_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerViewSelfReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerViewSelf_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract TransitionParams
 	FViewTargetTransitionParams TransitionParams;
@@ -3262,68 +3590,64 @@ void USpatialTypeBinding_PlayerController::ServerViewSelfReceiver(const worker::
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerViewPrevPlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>& Op)
+void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerViewPrevPlayerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerViewPrevPlayer_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerViewPrevPlayerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerViewPrevPlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ServerViewPrevPlayer_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerViewNextPlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>& Op)
+void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerViewNextPlayerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerViewNextPlayer_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerViewNextPlayerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerViewNextPlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ServerViewNextPlayer_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerVerifyViewTargetReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>& Op)
+void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerVerifyViewTargetReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerVerifyViewTarget_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerVerifyViewTargetReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerVerifyViewTarget_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ServerVerifyViewTarget_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibilityReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>& Op)
+void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerUpdateLevelVisibilityReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerUpdateLevelVisibility_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerUpdateLevelVisibilityReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerUpdateLevelVisibility_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract PackageName
 	FName PackageName;
@@ -3338,17 +3662,16 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibilityReceiver(c
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerUpdateCameraReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>& Op)
+void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerUpdateCameraReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerUpdateCamera_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerUpdateCameraReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerUpdateCamera_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract CamLoc
 	FVector_NetQuantize CamLoc;
@@ -3368,17 +3691,16 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCameraReceiver(const work
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerUnmutePlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>& Op)
+void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerUnmutePlayerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerUnmutePlayer_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerUnmutePlayerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerUnmutePlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract PlayerId
 	FUniqueNetIdRepl PlayerId;
@@ -3396,51 +3718,48 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayerReceiver(const work
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerToggleAILoggingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>& Op)
+void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerToggleAILoggingReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerToggleAILogging_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerToggleAILoggingReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerToggleAILogging_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ServerToggleAILogging_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerShortTimeoutReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>& Op)
+void USpatialTypeBinding_PlayerController::ServerShortTimeout_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerShortTimeoutReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerShortTimeout_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerShortTimeoutReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerShortTimeout_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ServerShortTimeout_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaitingReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>& Op)
+void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerSetSpectatorWaitingReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerSetSpectatorWaiting_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerSetSpectatorWaitingReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerSetSpectatorWaiting_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract bWaiting
 	bool bWaiting;
@@ -3451,17 +3770,16 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaitingReceiver(con
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocationReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>& Op)
+void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerSetSpectatorLocationReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerSetSpectatorLocation_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerSetSpectatorLocationReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerSetSpectatorLocation_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract NewLoc
 	FVector NewLoc;
@@ -3486,51 +3804,48 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocationReceiver(co
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerRestartPlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>& Op)
+void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerRestartPlayerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerRestartPlayer_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerRestartPlayerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerRestartPlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ServerRestartPlayer_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerPauseReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>& Op)
+void USpatialTypeBinding_PlayerController::ServerPause_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerPauseReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerPause_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerPauseReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerPause_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ServerPause_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorldReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>& Op)
+void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerNotifyLoadedWorldReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerNotifyLoadedWorld_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerNotifyLoadedWorldReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerNotifyLoadedWorld_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract WorldPackageName
 	FName WorldPackageName;
@@ -3541,17 +3856,16 @@ void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorldReceiver(const
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerMutePlayerReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>& Op)
+void USpatialTypeBinding_PlayerController::ServerMutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerMutePlayerReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerMutePlayer_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerMutePlayerReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerMutePlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract PlayerId
 	FUniqueNetIdRepl PlayerId;
@@ -3569,51 +3883,48 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayerReceiver(const worker
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliableReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>& Op)
+void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerCheckClientPossessionReliableReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerCheckClientPossessionReliable_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerCheckClientPossessionReliableReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerCheckClientPossessionReliable_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ServerCheckClientPossessionReliable_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>& Op)
+void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerCheckClientPossessionReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerCheckClientPossession_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerCheckClientPossessionReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerCheckClientPossession_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
 	TargetObject->ServerCheckClientPossession_Implementation();
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerChangeNameReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>& Op)
+void USpatialTypeBinding_PlayerController::ServerChangeName_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerChangeNameReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerChangeName_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerChangeNameReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerChangeName_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract S
 	FString S;
@@ -3624,17 +3935,16 @@ void USpatialTypeBinding_PlayerController::ServerChangeNameReceiver(const worker
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerCameraReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>& Op)
+void USpatialTypeBinding_PlayerController::ServerCamera_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerCameraReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerCamera_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerCameraReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerCamera_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract NewMode
 	FName NewMode;
@@ -3645,24 +3955,30 @@ void USpatialTypeBinding_PlayerController::ServerCameraReceiver(const worker::Co
 	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(Op);
 }
 
-void USpatialTypeBinding_PlayerController::ServerAcknowledgePossessionReceiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>& Op)
+void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>& Op)
 {
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	FNetworkGUID TargetNetGUID = SpatialPMC->GetNetGUIDFromEntityId(Op.EntityId);
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerAcknowledgePossessionReceiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("ServerAcknowledgePossession_Receiver: Entity ID %lld does not have a valid NetGUID."), Op.EntityId);
 		return;
 	}
-	APlayerController* TargetObject = Cast<APlayerController>(SpatialPMC->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerAcknowledgePossessionReceiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
+	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
+	checkf(TargetObject, TEXT("ServerAcknowledgePossession_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());
 
 	// Extract P
 	APawn* P;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_p();
-		FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-		P = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		if (NetGUID.IsValid())
+		{
+			P = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+		}
+		else
+		{
+			P = nullptr;
+		}
 	}
 
 	// Call implementation and send command response.

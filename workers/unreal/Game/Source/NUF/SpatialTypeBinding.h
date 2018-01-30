@@ -9,10 +9,8 @@
 #include "SpatialTypeBinding.generated.h"
 
 class USpatialUpdateInterop;
-class UPackageMap;
 class USpatialPackageMapClient;
-
-using FRPCSender = TFunction<void(worker::Connection* const, struct FFrame* const, const worker::EntityId&, USpatialPackageMapClient*)>; 
+class USpatialActorChannel;
 
 enum EReplicatedPropertyGroup
 {
@@ -45,14 +43,18 @@ UCLASS()
 class NUF_API USpatialTypeBinding : public UObject
 {
 	GENERATED_BODY()
+
 public:
-	virtual void Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap);
+	virtual void Init(USpatialUpdateInterop* UpdateInterop, USpatialPackageMapClient* PackageMap);
 	virtual void BindToView() PURE_VIRTUAL(USpatialTypeBinding::BindToView, );
 	virtual void UnbindFromView() PURE_VIRTUAL(USpatialTypeBinding::UnbindFromView, );
 	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const PURE_VIRTUAL(USpatialTypeBinding::GetReplicatedGroupComponentId, return worker::ComponentId{}; );
-	virtual void SendComponentUpdates(const FPropertyChangeState& Changes, const worker::EntityId& EntityId) const PURE_VIRTUAL(USpatialTypeBinding::SendComponentUpdates, );
-	virtual void SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, const worker::EntityId& Target) const PURE_VIRTUAL(USpatialTypeBinding::SendRPCCommand, );
-	virtual worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges) const PURE_VIRTUAL(USpatialTypeBinding::CreateActorEntity, return worker::Entity{}; );
+	
+	virtual worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const PURE_VIRTUAL(USpatialTypeBinding::CreateActorEntity, return worker::Entity{}; );
+	virtual void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const PURE_VIRTUAL(USpatialTypeBinding::SendComponentUpdates, );
+	virtual void SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target) PURE_VIRTUAL(USpatialTypeBinding::SendRPCCommand, );
+	
+	virtual void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) PURE_VIRTUAL(USpatialTypeBinding::ApplyQueuedStateToActor, );
 
 protected:
 	template<class CommandType>
@@ -66,5 +68,5 @@ protected:
 	USpatialUpdateInterop* UpdateInterop;
 
 	UPROPERTY()
-	UPackageMap* PackageMap;
+	USpatialPackageMapClient* PackageMap;
 };

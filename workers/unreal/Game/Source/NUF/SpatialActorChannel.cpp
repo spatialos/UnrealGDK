@@ -9,13 +9,13 @@
 #include "Net/NetworkProfiler.h"
 #include <improbable/worker.h>
 #include <improbable/standard_library.h>
+#include <improbable/player/player.h>
 #include "Commander.h"
 #include "EntityBuilder.h"
 #include "EntityTemplate.h"
 #include "SpatialNetConnection.h"
 #include "SpatialOS.h"
 #include "SpatialUpdateInterop.h"
-#include "improbable/player/player.h"
 
 using namespace improbable;
 
@@ -79,7 +79,7 @@ void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed
 
 		if (TypeBinding)
 		{
-			auto Entity = TypeBinding->CreateActorEntity(Actor->GetActorLocation(), PathStr, GetChangeState(Changed));
+			auto Entity = TypeBinding->CreateActorEntity(Actor->GetActorLocation(), PathStr, GetChangeState(Changed), this);
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ActorEntityId, 0);
 		}
 		else
@@ -272,10 +272,11 @@ bool USpatialActorChannel::ReplicateActor()
 	//todo-giray: We currently don't take replication of custom delta properties into account here because it doesn't use changelists.
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
-	if (Changed.Num() > 0)
+	if (RepFlags.bNetInitial || Changed.Num() > 0)
 	{
 		USpatialUpdateInterop* UpdateInterop = SpatialNetDriver->GetSpatialUpdateInterop();
 		check(UpdateInterop);
+		
 		if (RepFlags.bNetInitial)
 		{
 			SendCreateEntityRequest(Changed);
@@ -284,11 +285,10 @@ bool USpatialActorChannel::ReplicateActor()
 		{
 			UpdateInterop->SendSpatialUpdate(this, Changed);
 		}
+
 		bWroteSomethingImportant = true;
 		ActorReplicator->RepState->HistoryEnd++;
 		UpdateChangelistHistory(ActorReplicator->RepState);
-
-		// TODO(David): We want to create the entity or send a SpatialOS update here.
 	}
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
@@ -395,10 +395,6 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	}
 
 	ActorEntityId = *Op.EntityId;
-
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-	check(SpatialPMC);
-	SpatialPMC->ResolveEntityActor(Actor, ActorEntityId);
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
@@ -428,13 +424,9 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		{
 			worker::EntityId SpatialEntityId = Op.EntityId.value_or(0);
 			FEntityId EntityId(SpatialEntityId);
-
+			SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
+			FNetworkGUID NetGUID = PMC->ResolveEntityActor(Actor, ActorEntityId);
 			UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
-			// once we know the entity was successfully spawned, add the local actor 
-			// to the package map and to the EntityRegistry
-			PMC->ResolveEntityActor(GetActor(), EntityId);
-			SpatialNetDriver->GetEntityRegistry()->AddToRegistry(EntityId, GetActor());
-			ActorEntityId = SpatialEntityId;
 		}
 	}
 }	

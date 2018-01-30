@@ -6,11 +6,7 @@
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
 #include "SpatialOS.h"
-
-#include "Utils/BunchReader.h"
-
-#include "Engine/PackageMapClient.h"
-#include "EngineUtils.h"
+#include "SpatialPackageMapClient.h"
 
 #include "Generated/SpatialTypeBinding_Character.h"
 #include "Generated/SpatialTypeBinding_PlayerController.h"
@@ -28,14 +24,8 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 	bIsClient = bClient;
 	SpatialOSInstance = Instance;
 	NetDriver = Driver;
-	if (NetDriver->ServerConnection)
-	{
-		PackageMap = Driver->ServerConnection->PackageMap;
-	}
-	else
-	{
-		PackageMap = Driver->GetSpatialOSNetConnection()->PackageMap;
-	}
+	PackageMap = Driver->ServerConnection ? Cast<USpatialPackageMapClient>(Driver->ServerConnection->PackageMap) :
+											Cast<USpatialPackageMapClient>(Driver->GetSpatialOSNetConnection()->PackageMap);
 
 	RegisterInteropType(ACharacter::StaticClass(), NewObject<USpatialTypeBinding_Character>(this));
 	RegisterInteropType(APlayerController::StaticClass(), NewObject<USpatialTypeBinding_PlayerController>(this));
@@ -82,7 +72,7 @@ void USpatialUpdateInterop::UnregisterInteropType(UClass* Class)
 	}
 }
 
-const USpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class) const
+USpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class) const
 {
 	for (const UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
 	{
@@ -104,7 +94,7 @@ void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, con
 		//	*Channel->Actor->GetClass()->GetName());
 		return;
 	}
-	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), Channel->GetEntityId());
+	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), Channel, Channel->GetEntityId());
 }
 
 void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)
@@ -134,17 +124,16 @@ void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, 
 	Channel->UActorChannel::ReceivedBunch(Bunch);
 }
 
-void USpatialUpdateInterop::HandleRPCInvocation(const AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, const worker::EntityId& Target) const
+void USpatialUpdateInterop::InvokeRPC(const AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
 {
-	const USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
-	if (Binding)
+	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
+	if (!Binding)
 	{
-		Binding->SendRPCCommand(Function, DuplicateFrame, Target);
-	}	
-	else
-	{
-		UE_LOG(LogSpatialUpdateInterop, Log, TEXT("No TypeBinding registered for class %s"), *TargetActor->GetClass()->GetName());
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send RPC on unsupported class %s."),
+			*Channel->Actor->GetClass()->GetName());
+		return;
 	}
+	Binding->SendRPCCommand(Function, DuplicateFrame, Channel, Target);
 }
 
 void USpatialUpdateInterop::SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId)

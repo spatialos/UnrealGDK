@@ -120,10 +120,6 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 				// Option 1
 				UE_LOG(LogSpatialOSNUF, Log, TEXT("Entity for core actor %s has been checked out on the originating worker."), *EntityActor->GetName());
 				SetupComponentInterests(EntityActor, EntityToSpawn, InConnection);
-				if (EntityActor->IsA<APlayerController>())
-				{
-					Cast<APlayerController>(EntityActor)->ServerToggleAILogging();
-				}
 			}
 			else
 			{
@@ -179,6 +175,13 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 							FInBunch Bunch(Driver->ServerConnection);
 							EntityActor->OnActorChannelOpen(Bunch, Driver->ServerConnection);
 						}
+					}
+
+					// Apply queued updates for this entity ID to the new actor channel.
+					USpatialTypeBinding* Binding = Driver->GetSpatialUpdateInterop()->GetTypeBindingByClass(EntityActor->GetClass());
+					if (Binding)
+					{
+						Binding->ApplyQueuedStateToChannel(Ch);
 					}
 				}
 				EntityActor->PostNetInit();				

@@ -8,6 +8,7 @@
 
 class USpatialOS;
 class USpatialActorChannel;
+class USpatialPackageMapClient;
 class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialUpdateInterop, Log, All);
@@ -25,13 +26,13 @@ public:
 	USpatialActorChannel* GetClientActorChannel(const worker::EntityId& EntityId) const;
 	void AddClientActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel);
 
-	void HandleRPCInvocation(const AActor* const TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, const worker::EntityId& Target) const;
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
 	void UnregisterInteropType(UClass* Class);
-	const USpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
+	USpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
+	void InvokeRPC(const AActor* const TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, USpatialActorChannel* Channel, const worker::EntityId& Target);
 
 	USpatialOS* GetSpatialOS() const
 	{
@@ -54,7 +55,7 @@ private:
 	bool bIsClient;
 
 	UPROPERTY()
-	UPackageMap* PackageMap;
+	USpatialPackageMapClient* PackageMap;
 
 	// Type interop bindings.
 	UPROPERTY()
@@ -62,7 +63,6 @@ private:
 
 	// On clients, there is a 1 to 1 mapping between an actor and an actor channel (as there's just one NetConnection).
 	TMap<worker::EntityId, USpatialActorChannel*> EntityToClientActorChannel;
-
 private:
 	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
 

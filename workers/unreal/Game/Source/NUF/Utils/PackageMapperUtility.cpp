@@ -21,7 +21,8 @@ uint32 APackageMapperUtility::Hash(FString& Input)
 
 void APackageMapperUtility::MapActorPaths(TMap<uint32, FString>& OutMap, UObject* WorldContextObject)
 {
-	int ActorIndex = StaticObjectOffset;
+	//todo: handle the codewriter dependency. temporarily disabled
+	/*int ActorIndex = StaticObjectOffset;
 	for (TActorIterator<AActor> Itr(WorldContextObject->GetWorld()); Itr; ++Itr)
 	{
 		AActor* Actor = *Itr;
@@ -31,12 +32,14 @@ void APackageMapperUtility::MapActorPaths(TMap<uint32, FString>& OutMap, UObject
 		uint32 PathHash = Hasher(TCHAR_TO_UTF8(*PathStr));
 		
 		OutMap.Emplace((PathHash & (StaticObjectOffset - 1)) + StaticObjectOffset, PathStr);
-	}
+	}*/
 }
 
 void APackageMapperUtility::GeneratePackageMap(UObject* WorldContextObject)
 {
-	//FCodeWriter OutputMap;
+	//todo: handle the codewriter dependency. temporarily disabled
+	/*
+	FCodeWriter OutputMap;
 
 	TMap<uint32, FString> ObjectPathMap;
 	MapActorPaths(ObjectPathMap, WorldContextObject);
@@ -45,5 +48,6 @@ void APackageMapperUtility::GeneratePackageMap(UObject* WorldContextObject)
 	{
 	//	OutputMap.Print(FString::Printf(TEXT("ObjectMap.emplace(%" PRIu32 ", \"%s\");"), MapEntry.Key(), *MapEntry.Value()));
 	}
-	//OutputMap.Dump();
+	OutputMap.Dump();
+	*/
 }

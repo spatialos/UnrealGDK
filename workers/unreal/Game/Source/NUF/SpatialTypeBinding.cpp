@@ -1,9 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTypeBinding.h"
+#include "SpatialPackageMapClient.h"
 
-void USpatialTypeBinding::Init(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap)
+void USpatialTypeBinding::Init(USpatialUpdateInterop* InUpdateInterop, USpatialPackageMapClient* InPackageMap)
 {
-	this->PackageMap = PackageMap;
-	this->UpdateInterop = UpdateInterop;
+	check(InUpdateInterop);
+	check(InPackageMap);
+	UpdateInterop = InUpdateInterop;
+	PackageMap = InPackageMap;
 }
