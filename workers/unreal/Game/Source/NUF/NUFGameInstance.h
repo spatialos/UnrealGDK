@@ -18,5 +18,5 @@ class NUF_API UNUFGameInstance : public UGameInstance
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
 #endif
 	
-	
+	void RequestPlayerSpawn();
 };

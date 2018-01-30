@@ -79,7 +79,6 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID(const UObject* Object)
 {
-	
 	FNetworkGUID GUID = (0x80000000 - 1) & ++UniqueNetIDs[0];
 	FNetGuidCacheObject CacheObject;
 	CacheObject.Object = Object;
