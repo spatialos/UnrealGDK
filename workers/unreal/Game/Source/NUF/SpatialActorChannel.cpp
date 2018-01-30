@@ -277,8 +277,6 @@ bool USpatialActorChannel::ReplicateActor()
 		USpatialUpdateInterop* UpdateInterop = SpatialNetDriver->GetSpatialUpdateInterop();
 		check(UpdateInterop);
 		
-		static TArray<uint16> PendingObjUpdates;
-		PendingObjUpdates.Reset();
 		if (RepFlags.bNetInitial)
 		{
 			SendCreateEntityRequest(Changed);
