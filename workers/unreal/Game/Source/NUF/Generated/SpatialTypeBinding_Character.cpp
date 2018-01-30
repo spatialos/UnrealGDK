@@ -11,1359 +11,12 @@
 #include "SpatialPackageMapClient.h"
 #include "SpatialUpdateInterop.h"
 
-namespace {
-
-void ApplyUpdateToSpatial_SingleClient_Character(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, USpatialActorChannel* Channel, improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update)
-{
-}
-
-void ReceiveUpdateFromSpatial_SingleClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
-{
-	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
-	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
-	if (!ActorChannel)
-	{
-		return;
-	}
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	check(SpatialPMC);
-	ConditionMapFilter ConditionMap(ActorChannel);
-	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
-}
-
-void ApplyUpdateToSpatial_MultiClient_Character(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, UPackageMap* PackageMap, USpatialActorChannel* Channel, improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update)
-{
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	check(SpatialPMC);
-	switch (Handle)
-	{
-		case 1: // field_bhidden
-		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
-
-			Update.set_field_bhidden(Value != 0);
-			break;
-		}
-		case 2: // field_breplicatemovement
-		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
-
-			Update.set_field_breplicatemovement(Value != 0);
-			break;
-		}
-		case 3: // field_btearoff
-		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
-
-			Update.set_field_btearoff(Value != 0);
-			break;
-		}
-		case 4: // field_remoterole
-		{
-			TEnumAsByte<ENetRole> Value;
-			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
-
-			Update.set_field_remoterole(uint32_t(Value));
-			break;
-		}
-		case 5: // field_owner
-		{
-			AActor* Value;
-			Value = *(reinterpret_cast<AActor* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
-			{
-				SpatialPMC->AddPendingObjRef(Value, Channel, 5);
-				break;
-			}
-			Update.set_field_owner(UObjectRef);
-			break;
-		}
-		case 6: // field_replicatedmovement
-		{
-			FRepMovement Value;
-			Value = *(reinterpret_cast<const FRepMovement*>(Data));
-
-			TArray<uint8> ValueData;
-			FMemoryWriter ValueDataWriter(ValueData);
-			bool Success;
-			Value.NetSerialize(ValueDataWriter, nullptr, Success);
-			Update.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
-			break;
-		}
-		case 7: // field_attachmentreplication_attachparent
-		{
-			AActor* Value;
-			Value = *(reinterpret_cast<AActor* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
-			{
-				SpatialPMC->AddPendingObjRef(Value, Channel, 7);
-				break;
-			}
-			Update.set_field_attachmentreplication_attachparent(UObjectRef);
-			break;
-		}
-		case 8: // field_attachmentreplication_locationoffset
-		{
-			FVector_NetQuantize100 Value;
-			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
-
-			Update.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
-		}
-		case 9: // field_attachmentreplication_relativescale3d
-		{
-			FVector_NetQuantize100 Value;
-			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
-
-			Update.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
-		}
-		case 10: // field_attachmentreplication_rotationoffset
-		{
-			FRotator Value;
-			Value = *(reinterpret_cast<const FRotator*>(Data));
-
-			Update.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
-			break;
-		}
-		case 11: // field_attachmentreplication_attachsocket
-		{
-			FName Value;
-			Value = *(reinterpret_cast<const FName*>(Data));
-
-			Update.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
-			break;
-		}
-		case 12: // field_attachmentreplication_attachcomponent
-		{
-			USceneComponent* Value;
-			Value = *(reinterpret_cast<USceneComponent* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
-			{
-				SpatialPMC->AddPendingObjRef(Value, Channel, 12);
-				break;
-			}
-			Update.set_field_attachmentreplication_attachcomponent(UObjectRef);
-			break;
-		}
-		case 13: // field_role
-		{
-			TEnumAsByte<ENetRole> Value;
-			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
-
-			Update.set_field_role(uint32_t(Value));
-			break;
-		}
-		case 14: // field_bcanbedamaged
-		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
-
-			Update.set_field_bcanbedamaged(Value != 0);
-			break;
-		}
-		case 15: // field_instigator
-		{
-			APawn* Value;
-			Value = *(reinterpret_cast<APawn* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
-			{
-				SpatialPMC->AddPendingObjRef(Value, Channel, 15);
-				break;
-			}
-			Update.set_field_instigator(UObjectRef);
-			break;
-		}
-		case 16: // field_playerstate
-		{
-			APlayerState* Value;
-			Value = *(reinterpret_cast<APlayerState* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
-			{
-				SpatialPMC->AddPendingObjRef(Value, Channel, 16);
-				break;
-			}
-			Update.set_field_playerstate(UObjectRef);
-			break;
-		}
-		case 17: // field_remoteviewpitch
-		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
-
-			Update.set_field_remoteviewpitch(uint32_t(Value));
-			break;
-		}
-		case 18: // field_controller
-		{
-			AController* Value;
-			Value = *(reinterpret_cast<AController* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
-			{
-				SpatialPMC->AddPendingObjRef(Value, Channel, 18);
-				break;
-			}
-			Update.set_field_controller(UObjectRef);
-			break;
-		}
-		case 19: // field_replicatedbasedmovement_movementbase
-		{
-			UPrimitiveComponent* Value;
-			Value = *(reinterpret_cast<UPrimitiveComponent* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
-			{
-				SpatialPMC->AddPendingObjRef(Value, Channel, 19);
-				break;
-			}
-			Update.set_field_replicatedbasedmovement_movementbase(UObjectRef);
-			break;
-		}
-		case 20: // field_replicatedbasedmovement_bonename
-		{
-			FName Value;
-			Value = *(reinterpret_cast<const FName*>(Data));
-
-			Update.set_field_replicatedbasedmovement_bonename(TCHAR_TO_UTF8(*Value.ToString()));
-			break;
-		}
-		case 21: // field_replicatedbasedmovement_location
-		{
-			FVector_NetQuantize100 Value;
-			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
-
-			Update.set_field_replicatedbasedmovement_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
-		}
-		case 22: // field_replicatedbasedmovement_rotation
-		{
-			FRotator Value;
-			Value = *(reinterpret_cast<const FRotator*>(Data));
-
-			Update.set_field_replicatedbasedmovement_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
-			break;
-		}
-		case 23: // field_replicatedbasedmovement_bserverhasbasecomponent
-		{
-			bool Value;
-			Value = *(reinterpret_cast<const bool*>(Data));
-
-			Update.set_field_replicatedbasedmovement_bserverhasbasecomponent(Value != 0);
-			break;
-		}
-		case 24: // field_replicatedbasedmovement_brelativerotation
-		{
-			bool Value;
-			Value = *(reinterpret_cast<const bool*>(Data));
-
-			Update.set_field_replicatedbasedmovement_brelativerotation(Value != 0);
-			break;
-		}
-		case 25: // field_replicatedbasedmovement_bserverhasvelocity
-		{
-			bool Value;
-			Value = *(reinterpret_cast<const bool*>(Data));
-
-			Update.set_field_replicatedbasedmovement_bserverhasvelocity(Value != 0);
-			break;
-		}
-		case 26: // field_animrootmotiontranslationscale
-		{
-			float Value;
-			Value = *(reinterpret_cast<const float*>(Data));
-
-			Update.set_field_animrootmotiontranslationscale(Value);
-			break;
-		}
-		case 27: // field_replicatedserverlasttransformupdatetimestamp
-		{
-			float Value;
-			Value = *(reinterpret_cast<const float*>(Data));
-
-			Update.set_field_replicatedserverlasttransformupdatetimestamp(Value);
-			break;
-		}
-		case 28: // field_replicatedmovementmode
-		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
-
-			Update.set_field_replicatedmovementmode(uint32_t(Value));
-			break;
-		}
-		case 29: // field_biscrouched
-		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
-
-			Update.set_field_biscrouched(Value != 0);
-			break;
-		}
-		case 30: // field_jumpmaxholdtime
-		{
-			float Value;
-			Value = *(reinterpret_cast<const float*>(Data));
-
-			Update.set_field_jumpmaxholdtime(Value);
-			break;
-		}
-		case 31: // field_jumpmaxcount
-		{
-			int32 Value;
-			Value = *(reinterpret_cast<const int32*>(Data));
-
-			Update.set_field_jumpmaxcount(Value);
-			break;
-		}
-		case 32: // field_reprootmotion_bisactive
-		{
-			bool Value;
-			Value = *(reinterpret_cast<const bool*>(Data));
-
-			Update.set_field_reprootmotion_bisactive(Value != 0);
-			break;
-		}
-		case 33: // field_reprootmotion_animmontage
-		{
-			UAnimMontage* Value;
-			Value = *(reinterpret_cast<UAnimMontage* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
-			{
-				SpatialPMC->AddPendingObjRef(Value, Channel, 33);
-				break;
-			}
-			Update.set_field_reprootmotion_animmontage(UObjectRef);
-			break;
-		}
-		case 34: // field_reprootmotion_position
-		{
-			float Value;
-			Value = *(reinterpret_cast<const float*>(Data));
-
-			Update.set_field_reprootmotion_position(Value);
-			break;
-		}
-		case 35: // field_reprootmotion_location
-		{
-			FVector_NetQuantize100 Value;
-			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
-
-			Update.set_field_reprootmotion_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
-		}
-		case 36: // field_reprootmotion_rotation
-		{
-			FRotator Value;
-			Value = *(reinterpret_cast<const FRotator*>(Data));
-
-			Update.set_field_reprootmotion_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
-			break;
-		}
-		case 37: // field_reprootmotion_movementbase
-		{
-			UPrimitiveComponent* Value;
-			Value = *(reinterpret_cast<UPrimitiveComponent* const*>(Data));
-			FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromObject(Value);
-
-			improbable::unreal::UnrealObjectRef UObjectRef = SpatialPMC->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
-			{
-				SpatialPMC->AddPendingObjRef(Value, Channel, 37);
-				break;
-			}
-			Update.set_field_reprootmotion_movementbase(UObjectRef);
-			break;
-		}
-		case 38: // field_reprootmotion_movementbasebonename
-		{
-			FName Value;
-			Value = *(reinterpret_cast<const FName*>(Data));
-
-			Update.set_field_reprootmotion_movementbasebonename(TCHAR_TO_UTF8(*Value.ToString()));
-			break;
-		}
-		case 39: // field_reprootmotion_brelativeposition
-		{
-			bool Value;
-			Value = *(reinterpret_cast<const bool*>(Data));
-
-			Update.set_field_reprootmotion_brelativeposition(Value != 0);
-			break;
-		}
-		case 40: // field_reprootmotion_brelativerotation
-		{
-			bool Value;
-			Value = *(reinterpret_cast<const bool*>(Data));
-
-			Update.set_field_reprootmotion_brelativerotation(Value != 0);
-			break;
-		}
-		case 41: // field_reprootmotion_authoritativerootmotion
-		{
-			FRootMotionSourceGroup Value;
-			Value = *(reinterpret_cast<const FRootMotionSourceGroup*>(Data));
-
-			{
-				Update.set_field_reprootmotion_authoritativerootmotion_bhasadditivesources(Value.bHasAdditiveSources != 0);
-			}
-			{
-				Update.set_field_reprootmotion_authoritativerootmotion_bhasoverridesources(Value.bHasOverrideSources != 0);
-			}
-			{
-				Update.set_field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity(improbable::Vector3f(Value.LastPreAdditiveVelocity.X, Value.LastPreAdditiveVelocity.Y, Value.LastPreAdditiveVelocity.Z));
-			}
-			{
-				Update.set_field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied(Value.bIsAdditiveVelocityApplied != 0);
-			}
-			{
-				{
-					Update.set_field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags(uint32_t(Value.LastAccumulatedSettings.Flags));
-				}
-			}
-			break;
-		}
-		case 42: // field_reprootmotion_acceleration
-		{
-			FVector_NetQuantize10 Value;
-			Value = *(reinterpret_cast<const FVector_NetQuantize10*>(Data));
-
-			Update.set_field_reprootmotion_acceleration(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
-		}
-		case 43: // field_reprootmotion_linearvelocity
-		{
-			FVector_NetQuantize10 Value;
-			Value = *(reinterpret_cast<const FVector_NetQuantize10*>(Data));
-
-			Update.set_field_reprootmotion_linearvelocity(improbable::Vector3f(Value.X, Value.Y, Value.Z));
-			break;
-		}
-	default:
-		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
-	}
-}
-
-void ReceiveUpdateFromSpatial_MultiClient_Character(USpatialUpdateInterop* UpdateInterop, UPackageMap* PackageMap, const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
-{
-	FNetBitWriter OutputWriter(nullptr, 0); 
-	auto& HandleToPropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
-	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
-	if (!ActorChannel)
-	{
-		return;
-	}
-	USpatialPackageMapClient* SpatialPMC = Cast<USpatialPackageMapClient>(PackageMap);
-	check(SpatialPMC);
-	ConditionMapFilter ConditionMap(ActorChannel);
-	if (!Op.Update.field_bhidden().empty())
-	{
-		// field_bhidden
-		uint32 Handle = 1;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			uint8 Value;
-
-			Value = *(Op.Update.field_bhidden().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_breplicatemovement().empty())
-	{
-		// field_breplicatemovement
-		uint32 Handle = 2;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			uint8 Value;
-
-			Value = *(Op.Update.field_breplicatemovement().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_btearoff().empty())
-	{
-		// field_btearoff
-		uint32 Handle = 3;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			uint8 Value;
-
-			Value = *(Op.Update.field_btearoff().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_remoterole().empty())
-	{
-		// field_remoterole
-		uint32 Handle = 4;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			TEnumAsByte<ENetRole> Value;
-
-			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-			Value = TEnumAsByte<ENetRole>(uint8(*(Op.Update.field_remoterole().data())));
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_owner().empty())
-	{
-		// field_owner
-		uint32 Handle = 5;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			AActor* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_owner().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_replicatedmovement().empty())
-	{
-		// field_replicatedmovement
-		uint32 Handle = 6;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FRepMovement Value;
-
-			auto& ValueDataStr = *(Op.Update.field_replicatedmovement().data());
-			TArray<uint8> ValueData;
-			ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
-			FMemoryReader ValueDataReader(ValueData);
-			bool bSuccess;
-			Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_attachmentreplication_attachparent().empty())
-	{
-		// field_attachmentreplication_attachparent
-		uint32 Handle = 7;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			AActor* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachparent().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<AActor*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_attachmentreplication_locationoffset().empty())
-	{
-		// field_attachmentreplication_locationoffset
-		uint32 Handle = 8;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FVector_NetQuantize100 Value;
-
-			auto& Vector = *(Op.Update.field_attachmentreplication_locationoffset().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_attachmentreplication_relativescale3d().empty())
-	{
-		// field_attachmentreplication_relativescale3d
-		uint32 Handle = 9;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FVector_NetQuantize100 Value;
-
-			auto& Vector = *(Op.Update.field_attachmentreplication_relativescale3d().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_attachmentreplication_rotationoffset().empty())
-	{
-		// field_attachmentreplication_rotationoffset
-		uint32 Handle = 10;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FRotator Value;
-
-			auto& Rotator = *(Op.Update.field_attachmentreplication_rotationoffset().data());
-			Value.Yaw = Rotator.yaw();
-			Value.Pitch = Rotator.pitch();
-			Value.Roll = Rotator.roll();
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_attachmentreplication_attachsocket().empty())
-	{
-		// field_attachmentreplication_attachsocket
-		uint32 Handle = 11;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FName Value;
-
-			Value = FName((*(Op.Update.field_attachmentreplication_attachsocket().data())).data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_attachmentreplication_attachcomponent().empty())
-	{
-		// field_attachmentreplication_attachcomponent
-		uint32 Handle = 12;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			USceneComponent* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_attachmentreplication_attachcomponent().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<USceneComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_role().empty())
-	{
-		// field_role
-		uint32 Handle = 13;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			TEnumAsByte<ENetRole> Value;
-
-			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-			Value = TEnumAsByte<ENetRole>(uint8(*(Op.Update.field_role().data())));
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_bcanbedamaged().empty())
-	{
-		// field_bcanbedamaged
-		uint32 Handle = 14;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			uint8 Value;
-
-			Value = *(Op.Update.field_bcanbedamaged().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_instigator().empty())
-	{
-		// field_instigator
-		uint32 Handle = 15;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			APawn* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_instigator().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<APawn*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_playerstate().empty())
-	{
-		// field_playerstate
-		uint32 Handle = 16;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			APlayerState* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_playerstate().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<APlayerState*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_remoteviewpitch().empty())
-	{
-		// field_remoteviewpitch
-		uint32 Handle = 17;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			uint8 Value;
-
-			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-			Value = uint8(uint8(*(Op.Update.field_remoteviewpitch().data())));
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_controller().empty())
-	{
-		// field_controller
-		uint32 Handle = 18;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			AController* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_controller().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<AController*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_replicatedbasedmovement_movementbase().empty())
-	{
-		// field_replicatedbasedmovement_movementbase
-		uint32 Handle = 19;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			UPrimitiveComponent* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_replicatedbasedmovement_movementbase().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<UPrimitiveComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_replicatedbasedmovement_bonename().empty())
-	{
-		// field_replicatedbasedmovement_bonename
-		uint32 Handle = 20;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FName Value;
-
-			Value = FName((*(Op.Update.field_replicatedbasedmovement_bonename().data())).data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_replicatedbasedmovement_location().empty())
-	{
-		// field_replicatedbasedmovement_location
-		uint32 Handle = 21;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FVector_NetQuantize100 Value;
-
-			auto& Vector = *(Op.Update.field_replicatedbasedmovement_location().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_replicatedbasedmovement_rotation().empty())
-	{
-		// field_replicatedbasedmovement_rotation
-		uint32 Handle = 22;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FRotator Value;
-
-			auto& Rotator = *(Op.Update.field_replicatedbasedmovement_rotation().data());
-			Value.Yaw = Rotator.yaw();
-			Value.Pitch = Rotator.pitch();
-			Value.Roll = Rotator.roll();
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_replicatedbasedmovement_bserverhasbasecomponent().empty())
-	{
-		// field_replicatedbasedmovement_bserverhasbasecomponent
-		uint32 Handle = 23;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			bool Value;
-
-			Value = *(Op.Update.field_replicatedbasedmovement_bserverhasbasecomponent().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_replicatedbasedmovement_brelativerotation().empty())
-	{
-		// field_replicatedbasedmovement_brelativerotation
-		uint32 Handle = 24;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			bool Value;
-
-			Value = *(Op.Update.field_replicatedbasedmovement_brelativerotation().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_replicatedbasedmovement_bserverhasvelocity().empty())
-	{
-		// field_replicatedbasedmovement_bserverhasvelocity
-		uint32 Handle = 25;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			bool Value;
-
-			Value = *(Op.Update.field_replicatedbasedmovement_bserverhasvelocity().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_animrootmotiontranslationscale().empty())
-	{
-		// field_animrootmotiontranslationscale
-		uint32 Handle = 26;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			float Value;
-
-			Value = *(Op.Update.field_animrootmotiontranslationscale().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_replicatedserverlasttransformupdatetimestamp().empty())
-	{
-		// field_replicatedserverlasttransformupdatetimestamp
-		uint32 Handle = 27;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			float Value;
-
-			Value = *(Op.Update.field_replicatedserverlasttransformupdatetimestamp().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_replicatedmovementmode().empty())
-	{
-		// field_replicatedmovementmode
-		uint32 Handle = 28;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			uint8 Value;
-
-			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-			Value = uint8(uint8(*(Op.Update.field_replicatedmovementmode().data())));
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_biscrouched().empty())
-	{
-		// field_biscrouched
-		uint32 Handle = 29;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			uint8 Value;
-
-			Value = *(Op.Update.field_biscrouched().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_jumpmaxholdtime().empty())
-	{
-		// field_jumpmaxholdtime
-		uint32 Handle = 30;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			float Value;
-
-			Value = *(Op.Update.field_jumpmaxholdtime().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_jumpmaxcount().empty())
-	{
-		// field_jumpmaxcount
-		uint32 Handle = 31;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			int32 Value;
-
-			Value = *(Op.Update.field_jumpmaxcount().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_reprootmotion_bisactive().empty())
-	{
-		// field_reprootmotion_bisactive
-		uint32 Handle = 32;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			bool Value;
-
-			Value = *(Op.Update.field_reprootmotion_bisactive().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_reprootmotion_animmontage().empty())
-	{
-		// field_reprootmotion_animmontage
-		uint32 Handle = 33;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			UAnimMontage* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_reprootmotion_animmontage().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<UAnimMontage*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_reprootmotion_position().empty())
-	{
-		// field_reprootmotion_position
-		uint32 Handle = 34;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			float Value;
-
-			Value = *(Op.Update.field_reprootmotion_position().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_reprootmotion_location().empty())
-	{
-		// field_reprootmotion_location
-		uint32 Handle = 35;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FVector_NetQuantize100 Value;
-
-			auto& Vector = *(Op.Update.field_reprootmotion_location().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_reprootmotion_rotation().empty())
-	{
-		// field_reprootmotion_rotation
-		uint32 Handle = 36;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FRotator Value;
-
-			auto& Rotator = *(Op.Update.field_reprootmotion_rotation().data());
-			Value.Yaw = Rotator.yaw();
-			Value.Pitch = Rotator.pitch();
-			Value.Roll = Rotator.roll();
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_reprootmotion_movementbase().empty())
-	{
-		// field_reprootmotion_movementbase
-		uint32 Handle = 37;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			UPrimitiveComponent* Value;
-
-			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Op.Update.field_reprootmotion_movementbase().data());
-				FNetworkGUID NetGUID = SpatialPMC->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<UPrimitiveComponent*>(SpatialPMC->GetObjectFromNetGUID(NetGUID, true));
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_reprootmotion_movementbasebonename().empty())
-	{
-		// field_reprootmotion_movementbasebonename
-		uint32 Handle = 38;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FName Value;
-
-			Value = FName((*(Op.Update.field_reprootmotion_movementbasebonename().data())).data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_reprootmotion_brelativeposition().empty())
-	{
-		// field_reprootmotion_brelativeposition
-		uint32 Handle = 39;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			bool Value;
-
-			Value = *(Op.Update.field_reprootmotion_brelativeposition().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_reprootmotion_brelativerotation().empty())
-	{
-		// field_reprootmotion_brelativerotation
-		uint32 Handle = 40;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			bool Value;
-
-			Value = *(Op.Update.field_reprootmotion_brelativerotation().data());
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().empty())
-	{
-		// field_reprootmotion_authoritativerootmotion
-		uint32 Handle = 41;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FRootMotionSourceGroup Value;
-
-			{
-				Value.bHasAdditiveSources = *(Op.Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().data());
-			}
-			{
-				Value.bHasOverrideSources = *(Op.Update.field_reprootmotion_authoritativerootmotion_bhasoverridesources().data());
-			}
-			{
-				auto& Vector = *(Op.Update.field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity().data());
-				Value.LastPreAdditiveVelocity.X = Vector.x();
-				Value.LastPreAdditiveVelocity.Y = Vector.y();
-				Value.LastPreAdditiveVelocity.Z = Vector.z();
-			}
-			{
-				Value.bIsAdditiveVelocityApplied = *(Op.Update.field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied().data());
-			}
-			{
-				{
-					// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
-					// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
-					// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
-					// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
-					Value.LastAccumulatedSettings.Flags = uint8(uint8(*(Op.Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
-				}
-			}
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_reprootmotion_acceleration().empty())
-	{
-		// field_reprootmotion_acceleration
-		uint32 Handle = 42;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FVector_NetQuantize10 Value;
-
-			auto& Vector = *(Op.Update.field_reprootmotion_acceleration().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	if (!Op.Update.field_reprootmotion_linearvelocity().empty())
-	{
-		// field_reprootmotion_linearvelocity
-		uint32 Handle = 43;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
-		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FVector_NetQuantize10 Value;
-
-			auto& Vector = *(Op.Update.field_reprootmotion_linearvelocity().data());
-			Value.X = Vector.x();
-			Value.Y = Vector.y();
-			Value.Z = Vector.z();
-
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
-		}
-	}
-	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
-}
-
-void BuildSpatialComponentUpdate(const FPropertyChangeState& Changes,
-		USpatialActorChannel* Channel,
-		improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& SingleClientUpdate,
-		bool& bSingleClientUpdateChanged,
-		improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& MultiClientUpdate,
-		bool& bMultiClientUpdateChanged,
-		UPackageMap* PackageMap)
-{
-	// Build up SpatialOS component updates.
-	auto& PropertyMap = USpatialTypeBinding_Character::GetHandlePropertyMap();
-	FChangelistIterator ChangelistIterator(Changes.Changed, 0);
-	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.Cmds, Changes.BaseHandleToCmdIndex, 0, 1, 0, Changes.Cmds.Num() - 1);
-	while (HandleIterator.NextHandle())
-	{
-		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
-		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
-		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
-		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
-		switch (GetGroupFromCondition(PropertyMapData.Condition))
-		{
-		case GROUP_SingleClient:
-			ApplyUpdateToSpatial_SingleClient_Character(Data, HandleIterator.Handle, Cmd.Property, PackageMap, Channel, SingleClientUpdate);
-			bSingleClientUpdateChanged = true;
-			break;
-		case GROUP_MultiClient:
-			ApplyUpdateToSpatial_MultiClient_Character(Data, HandleIterator.Handle, Cmd.Property, PackageMap, Channel, MultiClientUpdate);
-			bMultiClientUpdateChanged = true;
-			break;
-		}
-	}
-}
-} // ::
-
 const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
 {
-	static FRepHandlePropertyMap* HandleToPropertyMapData = nullptr;
-	if (HandleToPropertyMapData == nullptr)
+	static FRepHandlePropertyMap HandleToPropertyMap;
+	if (HandleToPropertyMap.Num() == 0)
 	{
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("Character"));
-		HandleToPropertyMapData = new FRepHandlePropertyMap();
-		auto& HandleToPropertyMap = *HandleToPropertyMapData;
 		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None});
 		HandleToPropertyMap.Add(2, FRepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), COND_None});
 		HandleToPropertyMap.Add(3, FRepHandleData{nullptr, Class->FindPropertyByName("bTearOff"), COND_None});
@@ -1433,29 +86,43 @@ const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap
 		HandleToPropertyMap.Add(43, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
 		HandleToPropertyMap[43].Property = Cast<UStructProperty>(HandleToPropertyMap[43].Parent)->Struct->FindPropertyByName("LinearVelocity");
 	}
-	return *HandleToPropertyMapData;
+	return HandleToPropertyMap;
 }
 
 void USpatialTypeBinding_Character::BindToView()
 {
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
-	SingleClientCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
+	SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
+		const worker::AddComponentOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
+	{
+		auto Update = improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update::FromInitialData(Op.Data);
+		ReceiveUpdateFromSpatial_SingleClient(Op.EntityId, Update);
+	});
+	SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
 		const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
 	{
-		ReceiveUpdateFromSpatial_SingleClient_Character(UpdateInterop, PackageMap, Op);
+		ReceiveUpdateFromSpatial_SingleClient(Op.EntityId, Op.Update);
 	});
-	MultiClientCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
+	MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
+		const worker::AddComponentOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
+	{
+		auto Update = improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update::FromInitialData(Op.Data);
+		ReceiveUpdateFromSpatial_MultiClient(Op.EntityId, Update);
+	});
+	MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
 		const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
 	{
-		ReceiveUpdateFromSpatial_MultiClient_Character(UpdateInterop, PackageMap, Op);
+		ReceiveUpdateFromSpatial_MultiClient(Op.EntityId, Op.Update);
 	});
 }
 
 void USpatialTypeBinding_Character::UnbindFromView()
 {
 	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
-	View->Remove(SingleClientCallback);
-	View->Remove(MultiClientCallback);
+	View->Remove(SingleClientAddCallback);
+	View->Remove(SingleClientUpdateCallback);
+	View->Remove(MultiClientAddCallback);
+	View->Remove(MultiClientUpdateCallback);
 }
 
 worker::ComponentId USpatialTypeBinding_Character::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
@@ -1472,30 +139,6 @@ worker::ComponentId USpatialTypeBinding_Character::GetReplicatedGroupComponentId
 	}
 }
 
-void USpatialTypeBinding_Character::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const
-{
-	// Build SpatialOS updates.
-	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
-	bool SingleClientUpdateChanged = false;
-	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
-	bool MultiClientUpdateChanged = false;
-	BuildSpatialComponentUpdate(Changes, Channel,
-		SingleClientUpdate, SingleClientUpdateChanged,
-		MultiClientUpdate, MultiClientUpdateChanged,
-		PackageMap);
-
-	// Send SpatialOS updates if anything changed.
-	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
-	if (SingleClientUpdateChanged)
-	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(EntityId, SingleClientUpdate);
-	}
-	if (MultiClientUpdateChanged)
-	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(EntityId, MultiClientUpdate);
-	}
-}
-
 worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const
 {
 	// Setup initial data.
@@ -1505,13 +148,13 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& P
 	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data MultiClientData;
 	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
 	bool bMultiClientUpdateChanged = false;
-	BuildSpatialComponentUpdate(InitialChanges, Channel,
-		SingleClientUpdate, bSingleClientUpdateChanged,
-		MultiClientUpdate, bMultiClientUpdateChanged,
-		PackageMap);
+	BuildSpatialComponentUpdate(InitialChanges, Channel
+		, SingleClientUpdate, bSingleClientUpdateChanged
+		, MultiClientUpdate, bMultiClientUpdateChanged
+	);
 	SingleClientUpdate.ApplyTo(SingleClientData);
 	MultiClientUpdate.ApplyTo(MultiClientData);
-	
+
 	// Create entity.
 	const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
 	improbable::WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
@@ -1530,4 +173,1379 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& P
 		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(MultiClientData, UnrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, UnrealWorkerWritePermission)
 		.Build();
+}
+
+void USpatialTypeBinding_Character::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const
+{
+	// Build SpatialOS updates.
+	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
+	bool SingleClientUpdateChanged = false;
+	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
+	bool MultiClientUpdateChanged = false;
+	BuildSpatialComponentUpdate(Changes, Channel
+		, SingleClientUpdate, SingleClientUpdateChanged
+		, MultiClientUpdate, MultiClientUpdateChanged
+	);
+
+	// Send SpatialOS updates if anything changed.
+	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
+	if (SingleClientUpdateChanged)
+	{
+		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(EntityId, SingleClientUpdate);
+	}
+	if (MultiClientUpdateChanged)
+	{
+		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(EntityId, MultiClientUpdate);
+	}
+}
+
+void USpatialTypeBinding_Character::BuildSpatialComponentUpdate(
+	const FPropertyChangeState& Changes,
+	USpatialActorChannel* Channel,
+	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& SingleClientUpdate,
+	bool& bSingleClientUpdateChanged,
+	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& MultiClientUpdate,
+	bool& bMultiClientUpdateChanged) const
+{
+	// Build up SpatialOS component updates.
+	auto& PropertyMap = GetHandlePropertyMap();
+	FChangelistIterator ChangelistIterator(Changes.Changed, 0);
+	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.Cmds, Changes.BaseHandleToCmdIndex, 0, 1, 0, Changes.Cmds.Num() - 1);
+	while (HandleIterator.NextHandle())
+	{
+		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
+		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
+		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
+		UE_LOG(LogTemp, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
+		switch (GetGroupFromCondition(PropertyMapData.Condition))
+		{
+		case GROUP_SingleClient:
+			ApplyUpdateToSpatial_SingleClient(Data, HandleIterator.Handle, Cmd.Property, Channel, SingleClientUpdate);
+			bSingleClientUpdateChanged = true;
+			break;
+		case GROUP_MultiClient:
+			ApplyUpdateToSpatial_MultiClient(Data, HandleIterator.Handle, Cmd.Property, Channel, MultiClientUpdate);
+			bMultiClientUpdateChanged = true;
+			break;
+		}
+	}
+}
+
+void USpatialTypeBinding_Character::ApplyUpdateToSpatial_SingleClient(
+	const uint8* RESTRICT Data,
+	int32 Handle,
+	UProperty* Property,
+	USpatialActorChannel* Channel,
+	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& OutUpdate) const
+{
+}
+
+void USpatialTypeBinding_Character::ApplyUpdateToSpatial_MultiClient(
+	const uint8* RESTRICT Data,
+	int32 Handle,
+	UProperty* Property,
+	USpatialActorChannel* Channel,
+	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& OutUpdate) const
+{
+	switch (Handle)
+	{
+		case 1: // field_bhidden
+		{
+			uint8 Value;
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			OutUpdate.set_field_bhidden(Value != 0);
+			break;
+		}
+		case 2: // field_breplicatemovement
+		{
+			uint8 Value;
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			OutUpdate.set_field_breplicatemovement(Value != 0);
+			break;
+		}
+		case 3: // field_btearoff
+		{
+			uint8 Value;
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			OutUpdate.set_field_btearoff(Value != 0);
+			break;
+		}
+		case 4: // field_remoterole
+		{
+			TEnumAsByte<ENetRole> Value;
+			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
+
+			OutUpdate.set_field_remoterole(uint32_t(Value));
+			break;
+		}
+		case 5: // field_owner
+		{
+			AActor* Value;
+			Value = *(reinterpret_cast<AActor* const*>(Data));
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				PackageMap->AddPendingObjRef(Value, Channel, 5);
+				break;
+			}
+			OutUpdate.set_field_owner(UObjectRef);
+			break;
+		}
+		case 6: // field_replicatedmovement
+		{
+			FRepMovement Value;
+			Value = *(reinterpret_cast<const FRepMovement*>(Data));
+
+			TArray<uint8> ValueData;
+			FMemoryWriter ValueDataWriter(ValueData);
+			bool Success;
+			Value.NetSerialize(ValueDataWriter, nullptr, Success);
+			OutUpdate.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
+			break;
+		}
+		case 7: // field_attachmentreplication_attachparent
+		{
+			AActor* Value;
+			Value = *(reinterpret_cast<AActor* const*>(Data));
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				PackageMap->AddPendingObjRef(Value, Channel, 7);
+				break;
+			}
+			OutUpdate.set_field_attachmentreplication_attachparent(UObjectRef);
+			break;
+		}
+		case 8: // field_attachmentreplication_locationoffset
+		{
+			FVector_NetQuantize100 Value;
+			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
+
+			OutUpdate.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			break;
+		}
+		case 9: // field_attachmentreplication_relativescale3d
+		{
+			FVector_NetQuantize100 Value;
+			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
+
+			OutUpdate.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			break;
+		}
+		case 10: // field_attachmentreplication_rotationoffset
+		{
+			FRotator Value;
+			Value = *(reinterpret_cast<const FRotator*>(Data));
+
+			OutUpdate.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
+			break;
+		}
+		case 11: // field_attachmentreplication_attachsocket
+		{
+			FName Value;
+			Value = *(reinterpret_cast<const FName*>(Data));
+
+			OutUpdate.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
+			break;
+		}
+		case 12: // field_attachmentreplication_attachcomponent
+		{
+			USceneComponent* Value;
+			Value = *(reinterpret_cast<USceneComponent* const*>(Data));
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				PackageMap->AddPendingObjRef(Value, Channel, 12);
+				break;
+			}
+			OutUpdate.set_field_attachmentreplication_attachcomponent(UObjectRef);
+			break;
+		}
+		case 13: // field_role
+		{
+			TEnumAsByte<ENetRole> Value;
+			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
+
+			OutUpdate.set_field_role(uint32_t(Value));
+			break;
+		}
+		case 14: // field_bcanbedamaged
+		{
+			uint8 Value;
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			OutUpdate.set_field_bcanbedamaged(Value != 0);
+			break;
+		}
+		case 15: // field_instigator
+		{
+			APawn* Value;
+			Value = *(reinterpret_cast<APawn* const*>(Data));
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				PackageMap->AddPendingObjRef(Value, Channel, 15);
+				break;
+			}
+			OutUpdate.set_field_instigator(UObjectRef);
+			break;
+		}
+		case 16: // field_playerstate
+		{
+			APlayerState* Value;
+			Value = *(reinterpret_cast<APlayerState* const*>(Data));
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				PackageMap->AddPendingObjRef(Value, Channel, 16);
+				break;
+			}
+			OutUpdate.set_field_playerstate(UObjectRef);
+			break;
+		}
+		case 17: // field_remoteviewpitch
+		{
+			uint8 Value;
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			OutUpdate.set_field_remoteviewpitch(uint32_t(Value));
+			break;
+		}
+		case 18: // field_controller
+		{
+			AController* Value;
+			Value = *(reinterpret_cast<AController* const*>(Data));
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				PackageMap->AddPendingObjRef(Value, Channel, 18);
+				break;
+			}
+			OutUpdate.set_field_controller(UObjectRef);
+			break;
+		}
+		case 19: // field_replicatedbasedmovement_movementbase
+		{
+			UPrimitiveComponent* Value;
+			Value = *(reinterpret_cast<UPrimitiveComponent* const*>(Data));
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				PackageMap->AddPendingObjRef(Value, Channel, 19);
+				break;
+			}
+			OutUpdate.set_field_replicatedbasedmovement_movementbase(UObjectRef);
+			break;
+		}
+		case 20: // field_replicatedbasedmovement_bonename
+		{
+			FName Value;
+			Value = *(reinterpret_cast<const FName*>(Data));
+
+			OutUpdate.set_field_replicatedbasedmovement_bonename(TCHAR_TO_UTF8(*Value.ToString()));
+			break;
+		}
+		case 21: // field_replicatedbasedmovement_location
+		{
+			FVector_NetQuantize100 Value;
+			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
+
+			OutUpdate.set_field_replicatedbasedmovement_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			break;
+		}
+		case 22: // field_replicatedbasedmovement_rotation
+		{
+			FRotator Value;
+			Value = *(reinterpret_cast<const FRotator*>(Data));
+
+			OutUpdate.set_field_replicatedbasedmovement_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
+			break;
+		}
+		case 23: // field_replicatedbasedmovement_bserverhasbasecomponent
+		{
+			bool Value;
+			Value = *(reinterpret_cast<const bool*>(Data));
+
+			OutUpdate.set_field_replicatedbasedmovement_bserverhasbasecomponent(Value != 0);
+			break;
+		}
+		case 24: // field_replicatedbasedmovement_brelativerotation
+		{
+			bool Value;
+			Value = *(reinterpret_cast<const bool*>(Data));
+
+			OutUpdate.set_field_replicatedbasedmovement_brelativerotation(Value != 0);
+			break;
+		}
+		case 25: // field_replicatedbasedmovement_bserverhasvelocity
+		{
+			bool Value;
+			Value = *(reinterpret_cast<const bool*>(Data));
+
+			OutUpdate.set_field_replicatedbasedmovement_bserverhasvelocity(Value != 0);
+			break;
+		}
+		case 26: // field_animrootmotiontranslationscale
+		{
+			float Value;
+			Value = *(reinterpret_cast<const float*>(Data));
+
+			OutUpdate.set_field_animrootmotiontranslationscale(Value);
+			break;
+		}
+		case 27: // field_replicatedserverlasttransformupdatetimestamp
+		{
+			float Value;
+			Value = *(reinterpret_cast<const float*>(Data));
+
+			OutUpdate.set_field_replicatedserverlasttransformupdatetimestamp(Value);
+			break;
+		}
+		case 28: // field_replicatedmovementmode
+		{
+			uint8 Value;
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			OutUpdate.set_field_replicatedmovementmode(uint32_t(Value));
+			break;
+		}
+		case 29: // field_biscrouched
+		{
+			uint8 Value;
+			Value = *(reinterpret_cast<const uint8*>(Data));
+
+			OutUpdate.set_field_biscrouched(Value != 0);
+			break;
+		}
+		case 30: // field_jumpmaxholdtime
+		{
+			float Value;
+			Value = *(reinterpret_cast<const float*>(Data));
+
+			OutUpdate.set_field_jumpmaxholdtime(Value);
+			break;
+		}
+		case 31: // field_jumpmaxcount
+		{
+			int32 Value;
+			Value = *(reinterpret_cast<const int32*>(Data));
+
+			OutUpdate.set_field_jumpmaxcount(Value);
+			break;
+		}
+		case 32: // field_reprootmotion_bisactive
+		{
+			bool Value;
+			Value = *(reinterpret_cast<const bool*>(Data));
+
+			OutUpdate.set_field_reprootmotion_bisactive(Value != 0);
+			break;
+		}
+		case 33: // field_reprootmotion_animmontage
+		{
+			UAnimMontage* Value;
+			Value = *(reinterpret_cast<UAnimMontage* const*>(Data));
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				PackageMap->AddPendingObjRef(Value, Channel, 33);
+				break;
+			}
+			OutUpdate.set_field_reprootmotion_animmontage(UObjectRef);
+			break;
+		}
+		case 34: // field_reprootmotion_position
+		{
+			float Value;
+			Value = *(reinterpret_cast<const float*>(Data));
+
+			OutUpdate.set_field_reprootmotion_position(Value);
+			break;
+		}
+		case 35: // field_reprootmotion_location
+		{
+			FVector_NetQuantize100 Value;
+			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
+
+			OutUpdate.set_field_reprootmotion_location(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			break;
+		}
+		case 36: // field_reprootmotion_rotation
+		{
+			FRotator Value;
+			Value = *(reinterpret_cast<const FRotator*>(Data));
+
+			OutUpdate.set_field_reprootmotion_rotation(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
+			break;
+		}
+		case 37: // field_reprootmotion_movementbase
+		{
+			UPrimitiveComponent* Value;
+			Value = *(reinterpret_cast<UPrimitiveComponent* const*>(Data));
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+
+			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (UObjectRef.entity() == 0)
+			{
+				PackageMap->AddPendingObjRef(Value, Channel, 37);
+				break;
+			}
+			OutUpdate.set_field_reprootmotion_movementbase(UObjectRef);
+			break;
+		}
+		case 38: // field_reprootmotion_movementbasebonename
+		{
+			FName Value;
+			Value = *(reinterpret_cast<const FName*>(Data));
+
+			OutUpdate.set_field_reprootmotion_movementbasebonename(TCHAR_TO_UTF8(*Value.ToString()));
+			break;
+		}
+		case 39: // field_reprootmotion_brelativeposition
+		{
+			bool Value;
+			Value = *(reinterpret_cast<const bool*>(Data));
+
+			OutUpdate.set_field_reprootmotion_brelativeposition(Value != 0);
+			break;
+		}
+		case 40: // field_reprootmotion_brelativerotation
+		{
+			bool Value;
+			Value = *(reinterpret_cast<const bool*>(Data));
+
+			OutUpdate.set_field_reprootmotion_brelativerotation(Value != 0);
+			break;
+		}
+		case 41: // field_reprootmotion_authoritativerootmotion
+		{
+			FRootMotionSourceGroup Value;
+			Value = *(reinterpret_cast<const FRootMotionSourceGroup*>(Data));
+
+			{
+				OutUpdate.set_field_reprootmotion_authoritativerootmotion_bhasadditivesources(Value.bHasAdditiveSources != 0);
+			}
+			{
+				OutUpdate.set_field_reprootmotion_authoritativerootmotion_bhasoverridesources(Value.bHasOverrideSources != 0);
+			}
+			{
+				OutUpdate.set_field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity(improbable::Vector3f(Value.LastPreAdditiveVelocity.X, Value.LastPreAdditiveVelocity.Y, Value.LastPreAdditiveVelocity.Z));
+			}
+			{
+				OutUpdate.set_field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied(Value.bIsAdditiveVelocityApplied != 0);
+			}
+			{
+				{
+					OutUpdate.set_field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags(uint32_t(Value.LastAccumulatedSettings.Flags));
+				}
+			}
+			break;
+		}
+		case 42: // field_reprootmotion_acceleration
+		{
+			FVector_NetQuantize10 Value;
+			Value = *(reinterpret_cast<const FVector_NetQuantize10*>(Data));
+
+			OutUpdate.set_field_reprootmotion_acceleration(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			break;
+		}
+		case 43: // field_reprootmotion_linearvelocity
+		{
+			FVector_NetQuantize10 Value;
+			Value = *(reinterpret_cast<const FVector_NetQuantize10*>(Data));
+
+			OutUpdate.set_field_reprootmotion_linearvelocity(improbable::Vector3f(Value.X, Value.Y, Value.Z));
+			break;
+		}
+	default:
+		checkf(false, TEXT("Unknown replication handle %d encountered when creating a SpatialOS update."));
+		break;
+	}
+}
+
+void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_SingleClient(
+	worker::EntityId EntityId,
+	const improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update) const
+{
+	FNetBitWriter OutputWriter(nullptr, 0);
+	auto& HandleToPropertyMap = GetHandlePropertyMap();
+	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(EntityId);
+	if (!ActorChannel)
+	{
+		return;
+	}
+	ConditionMapFilter ConditionMap(ActorChannel);
+	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
+}
+
+void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
+	worker::EntityId EntityId,
+	const improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update) const
+{
+	FNetBitWriter OutputWriter(nullptr, 0);
+	auto& HandleToPropertyMap = GetHandlePropertyMap();
+	USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(EntityId);
+	if (!ActorChannel)
+	{
+		return;
+	}
+	ConditionMapFilter ConditionMap(ActorChannel);
+	if (!Update.field_bhidden().empty())
+	{
+		// field_bhidden
+		uint32 Handle = 1;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			uint8 Value;
+
+			Value = *(Update.field_bhidden().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_breplicatemovement().empty())
+	{
+		// field_breplicatemovement
+		uint32 Handle = 2;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			uint8 Value;
+
+			Value = *(Update.field_breplicatemovement().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_btearoff().empty())
+	{
+		// field_btearoff
+		uint32 Handle = 3;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			uint8 Value;
+
+			Value = *(Update.field_btearoff().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_remoterole().empty())
+	{
+		// field_remoterole
+		uint32 Handle = 4;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			TEnumAsByte<ENetRole> Value;
+
+			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+			Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_remoterole().data())));
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_owner().empty())
+	{
+		// field_owner
+		uint32 Handle = 5;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			AActor* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_owner().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_replicatedmovement().empty())
+	{
+		// field_replicatedmovement
+		uint32 Handle = 6;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FRepMovement Value;
+
+			auto& ValueDataStr = *(Update.field_replicatedmovement().data());
+			TArray<uint8> ValueData;
+			ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+			FMemoryReader ValueDataReader(ValueData);
+			bool bSuccess;
+			Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_attachmentreplication_attachparent().empty())
+	{
+		// field_attachmentreplication_attachparent
+		uint32 Handle = 7;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			AActor* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachparent().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_attachmentreplication_locationoffset().empty())
+	{
+		// field_attachmentreplication_locationoffset
+		uint32 Handle = 8;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FVector_NetQuantize100 Value;
+
+			auto& Vector = *(Update.field_attachmentreplication_locationoffset().data());
+			Value.X = Vector.x();
+			Value.Y = Vector.y();
+			Value.Z = Vector.z();
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_attachmentreplication_relativescale3d().empty())
+	{
+		// field_attachmentreplication_relativescale3d
+		uint32 Handle = 9;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FVector_NetQuantize100 Value;
+
+			auto& Vector = *(Update.field_attachmentreplication_relativescale3d().data());
+			Value.X = Vector.x();
+			Value.Y = Vector.y();
+			Value.Z = Vector.z();
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_attachmentreplication_rotationoffset().empty())
+	{
+		// field_attachmentreplication_rotationoffset
+		uint32 Handle = 10;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FRotator Value;
+
+			auto& Rotator = *(Update.field_attachmentreplication_rotationoffset().data());
+			Value.Yaw = Rotator.yaw();
+			Value.Pitch = Rotator.pitch();
+			Value.Roll = Rotator.roll();
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_attachmentreplication_attachsocket().empty())
+	{
+		// field_attachmentreplication_attachsocket
+		uint32 Handle = 11;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FName Value;
+
+			Value = FName((*(Update.field_attachmentreplication_attachsocket().data())).data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_attachmentreplication_attachcomponent().empty())
+	{
+		// field_attachmentreplication_attachcomponent
+		uint32 Handle = 12;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			USceneComponent* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachcomponent().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<USceneComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_role().empty())
+	{
+		// field_role
+		uint32 Handle = 13;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			TEnumAsByte<ENetRole> Value;
+
+			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+			Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_role().data())));
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_bcanbedamaged().empty())
+	{
+		// field_bcanbedamaged
+		uint32 Handle = 14;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			uint8 Value;
+
+			Value = *(Update.field_bcanbedamaged().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_instigator().empty())
+	{
+		// field_instigator
+		uint32 Handle = 15;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			APawn* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_instigator().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_playerstate().empty())
+	{
+		// field_playerstate
+		uint32 Handle = 16;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			APlayerState* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_playerstate().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_remoteviewpitch().empty())
+	{
+		// field_remoteviewpitch
+		uint32 Handle = 17;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			uint8 Value;
+
+			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+			Value = uint8(uint8(*(Update.field_remoteviewpitch().data())));
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_controller().empty())
+	{
+		// field_controller
+		uint32 Handle = 18;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			AController* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_controller().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<AController*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_replicatedbasedmovement_movementbase().empty())
+	{
+		// field_replicatedbasedmovement_movementbase
+		uint32 Handle = 19;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			UPrimitiveComponent* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_replicatedbasedmovement_movementbase().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<UPrimitiveComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_replicatedbasedmovement_bonename().empty())
+	{
+		// field_replicatedbasedmovement_bonename
+		uint32 Handle = 20;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FName Value;
+
+			Value = FName((*(Update.field_replicatedbasedmovement_bonename().data())).data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_replicatedbasedmovement_location().empty())
+	{
+		// field_replicatedbasedmovement_location
+		uint32 Handle = 21;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FVector_NetQuantize100 Value;
+
+			auto& Vector = *(Update.field_replicatedbasedmovement_location().data());
+			Value.X = Vector.x();
+			Value.Y = Vector.y();
+			Value.Z = Vector.z();
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_replicatedbasedmovement_rotation().empty())
+	{
+		// field_replicatedbasedmovement_rotation
+		uint32 Handle = 22;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FRotator Value;
+
+			auto& Rotator = *(Update.field_replicatedbasedmovement_rotation().data());
+			Value.Yaw = Rotator.yaw();
+			Value.Pitch = Rotator.pitch();
+			Value.Roll = Rotator.roll();
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_replicatedbasedmovement_bserverhasbasecomponent().empty())
+	{
+		// field_replicatedbasedmovement_bserverhasbasecomponent
+		uint32 Handle = 23;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			bool Value;
+
+			Value = *(Update.field_replicatedbasedmovement_bserverhasbasecomponent().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_replicatedbasedmovement_brelativerotation().empty())
+	{
+		// field_replicatedbasedmovement_brelativerotation
+		uint32 Handle = 24;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			bool Value;
+
+			Value = *(Update.field_replicatedbasedmovement_brelativerotation().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_replicatedbasedmovement_bserverhasvelocity().empty())
+	{
+		// field_replicatedbasedmovement_bserverhasvelocity
+		uint32 Handle = 25;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			bool Value;
+
+			Value = *(Update.field_replicatedbasedmovement_bserverhasvelocity().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_animrootmotiontranslationscale().empty())
+	{
+		// field_animrootmotiontranslationscale
+		uint32 Handle = 26;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			float Value;
+
+			Value = *(Update.field_animrootmotiontranslationscale().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_replicatedserverlasttransformupdatetimestamp().empty())
+	{
+		// field_replicatedserverlasttransformupdatetimestamp
+		uint32 Handle = 27;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			float Value;
+
+			Value = *(Update.field_replicatedserverlasttransformupdatetimestamp().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_replicatedmovementmode().empty())
+	{
+		// field_replicatedmovementmode
+		uint32 Handle = 28;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			uint8 Value;
+
+			// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+			// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+			// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+			// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+			Value = uint8(uint8(*(Update.field_replicatedmovementmode().data())));
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_biscrouched().empty())
+	{
+		// field_biscrouched
+		uint32 Handle = 29;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			uint8 Value;
+
+			Value = *(Update.field_biscrouched().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_jumpmaxholdtime().empty())
+	{
+		// field_jumpmaxholdtime
+		uint32 Handle = 30;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			float Value;
+
+			Value = *(Update.field_jumpmaxholdtime().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_jumpmaxcount().empty())
+	{
+		// field_jumpmaxcount
+		uint32 Handle = 31;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			int32 Value;
+
+			Value = *(Update.field_jumpmaxcount().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_reprootmotion_bisactive().empty())
+	{
+		// field_reprootmotion_bisactive
+		uint32 Handle = 32;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			bool Value;
+
+			Value = *(Update.field_reprootmotion_bisactive().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_reprootmotion_animmontage().empty())
+	{
+		// field_reprootmotion_animmontage
+		uint32 Handle = 33;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			UAnimMontage* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_reprootmotion_animmontage().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<UAnimMontage*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_reprootmotion_position().empty())
+	{
+		// field_reprootmotion_position
+		uint32 Handle = 34;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			float Value;
+
+			Value = *(Update.field_reprootmotion_position().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_reprootmotion_location().empty())
+	{
+		// field_reprootmotion_location
+		uint32 Handle = 35;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FVector_NetQuantize100 Value;
+
+			auto& Vector = *(Update.field_reprootmotion_location().data());
+			Value.X = Vector.x();
+			Value.Y = Vector.y();
+			Value.Z = Vector.z();
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_reprootmotion_rotation().empty())
+	{
+		// field_reprootmotion_rotation
+		uint32 Handle = 36;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FRotator Value;
+
+			auto& Rotator = *(Update.field_reprootmotion_rotation().data());
+			Value.Yaw = Rotator.yaw();
+			Value.Pitch = Rotator.pitch();
+			Value.Roll = Rotator.roll();
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_reprootmotion_movementbase().empty())
+	{
+		// field_reprootmotion_movementbase
+		uint32 Handle = 37;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			UPrimitiveComponent* Value;
+
+			{
+				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_reprootmotion_movementbase().data());
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				Value = static_cast<UPrimitiveComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_reprootmotion_movementbasebonename().empty())
+	{
+		// field_reprootmotion_movementbasebonename
+		uint32 Handle = 38;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FName Value;
+
+			Value = FName((*(Update.field_reprootmotion_movementbasebonename().data())).data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_reprootmotion_brelativeposition().empty())
+	{
+		// field_reprootmotion_brelativeposition
+		uint32 Handle = 39;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			bool Value;
+
+			Value = *(Update.field_reprootmotion_brelativeposition().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_reprootmotion_brelativerotation().empty())
+	{
+		// field_reprootmotion_brelativerotation
+		uint32 Handle = 40;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			bool Value;
+
+			Value = *(Update.field_reprootmotion_brelativerotation().data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().empty())
+	{
+		// field_reprootmotion_authoritativerootmotion
+		uint32 Handle = 41;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FRootMotionSourceGroup Value;
+
+			{
+				Value.bHasAdditiveSources = *(Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().data());
+			}
+			{
+				Value.bHasOverrideSources = *(Update.field_reprootmotion_authoritativerootmotion_bhasoverridesources().data());
+			}
+			{
+				auto& Vector = *(Update.field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity().data());
+				Value.LastPreAdditiveVelocity.X = Vector.x();
+				Value.LastPreAdditiveVelocity.Y = Vector.y();
+				Value.LastPreAdditiveVelocity.Z = Vector.z();
+			}
+			{
+				Value.bIsAdditiveVelocityApplied = *(Update.field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied().data());
+			}
+			{
+				{
+					// Byte properties are weird, because they can also be an enum in the form TEnumAsByte<...>.
+					// Therefore, the code generator needs to cast to either TEnumAsByte<...> or uint8. However,
+					// as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into
+					// uint8 first, which causes "uint8(uint8(...))" to be generated for non enum bytes.
+					Value.LastAccumulatedSettings.Flags = uint8(uint8(*(Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
+				}
+			}
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_reprootmotion_acceleration().empty())
+	{
+		// field_reprootmotion_acceleration
+		uint32 Handle = 42;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FVector_NetQuantize10 Value;
+
+			auto& Vector = *(Update.field_reprootmotion_acceleration().data());
+			Value.X = Vector.x();
+			Value.Y = Vector.y();
+			Value.Z = Vector.z();
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	if (!Update.field_reprootmotion_linearvelocity().empty())
+	{
+		// field_reprootmotion_linearvelocity
+		uint32 Handle = 43;
+		const FRepHandleData& Data = HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data.Condition))
+		{
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FVector_NetQuantize10 Value;
+
+			auto& Vector = *(Update.field_reprootmotion_linearvelocity().data());
+			Value.X = Vector.x();
+			Value.Y = Vector.y();
+			Value.Z = Vector.z();
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogTemp, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+		}
+	}
+	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
