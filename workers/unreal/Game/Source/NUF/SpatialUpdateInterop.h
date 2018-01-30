@@ -8,6 +8,7 @@
 
 class USpatialOS;
 class USpatialActorChannel;
+class USpatialPackageMapClient;
 class USpatialNetDriver;
 
 class FOutBunch;
@@ -48,7 +49,7 @@ private:
 	bool bIsClient;
 
 	UPROPERTY()
-	UPackageMap* PackageMap;
+	USpatialPackageMapClient* PackageMap;
 
 	// Type interop bindings.
 	UPROPERTY()
@@ -56,7 +57,6 @@ private:
 
 	// On clients, there is a 1 to 1 mapping between an actor and an actor channel (as there's just one NetConnection).
 	TMap<worker::EntityId, USpatialActorChannel*> EntityToClientActorChannel;
-
 private:
 	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
 

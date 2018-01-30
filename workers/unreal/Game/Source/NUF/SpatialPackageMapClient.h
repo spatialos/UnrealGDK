@@ -9,6 +9,10 @@
 
 #include "SpatialPackageMapClient.generated.h"
 
+class USpatialActorChannel;
+
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSPackageMap, Log, All);
+
 //todo-giray: super hacky to inject GetTypeHash() into UnrealObjectRef. Will find a better way.
 class FUnrealObjectRefWrapper
 {
@@ -34,12 +38,13 @@ class NUF_API USpatialPackageMapClient : public UPackageMapClient
 	GENERATED_BODY()		
 public:
 	void ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FString& Path);
-	void ResolveEntityActor(AActor* Actor, FEntityId EntityId);
+	FNetworkGUID ResolveEntityActor(AActor* Actor, FEntityId EntityId);
 	virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel *Channel, class AActor*& Actor) override;
 
 	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
+	void AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle);
 };
 
 class NUF_API FSpatialNetGUIDCache : public FNetGUIDCache
@@ -52,10 +57,16 @@ public:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
 	improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
+
+	void AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle);	
 private:
 	FNetworkGUID AssignNewNetGUID(const UObject* Object);
+	void ResolvePendingObjRefs(const UObject* Object);
 
 	TMap<FNetworkGUID, FUnrealObjectRefWrapper> NetGUIDToUnrealObjectRef;
 	TMap<FUnrealObjectRefWrapper, FNetworkGUID> UnrealObjectRefToNetGUID;
+
+	TMap<UObject*, TArray<USpatialActorChannel*>> ChannelsAwaitingObjRefResolve;
+	TMap<USpatialActorChannel*, TArray<uint16>> PendingObjRefHandles;
 };
 
