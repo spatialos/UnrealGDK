@@ -591,7 +591,14 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_owner().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				if (NetGUID.IsValid())
+				{
+					Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				}
+				else
+				{
+					Value = nullptr;
+				}
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -634,7 +641,14 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachparent().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				if (NetGUID.IsValid())
+				{
+					Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				}
+				else
+				{
+					Value = nullptr;
+				}
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -732,7 +746,14 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachcomponent().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<USceneComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				if (NetGUID.IsValid())
+				{
+					Value = static_cast<USceneComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				}
+				else
+				{
+					Value = nullptr;
+				}
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -791,7 +812,14 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_instigator().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				if (NetGUID.IsValid())
+				{
+					Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				}
+				else
+				{
+					Value = nullptr;
+				}
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -812,7 +840,14 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_pawn().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				if (NetGUID.IsValid())
+				{
+					Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				}
+				else
+				{
+					Value = nullptr;
+				}
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
@@ -833,7 +868,14 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_playerstate().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
-				Value = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				if (NetGUID.IsValid())
+				{
+					Value = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				}
+				else
+				{
+					Value = nullptr;
+				}
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);

@@ -110,9 +110,11 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 		RegisterNetGUID_Client(NewNetGuid, Actor);
 		
 		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("NetGUID for %s was not found in the cache. Generated new NetGUID."), *Actor->GetName());
+		NetGUID = NewNetGuid;
 	}
 
 	check(NetGUID.IsValid());
+	check(!NetGUID.IsDefault());
 	uint32 SubObjOffset = 0;
 	improbable::unreal::UnrealObjectRef ObjRef{ EntityId.ToSpatialEntityId(), SubObjOffset };
 	FUnrealObjectRefWrapper ObjRefWrapper;

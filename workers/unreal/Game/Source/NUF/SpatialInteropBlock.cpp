@@ -179,8 +179,10 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 
 					// Apply queued updates for this entity ID to the new actor channel.
 					USpatialTypeBinding* Binding = Driver->GetSpatialUpdateInterop()->GetTypeBindingByClass(EntityActor->GetClass());
-					check(Binding);
-					Binding->ApplyQueuedStateToChannel(Ch);
+					if (Binding)
+					{
+						Binding->ApplyQueuedStateToChannel(Ch);
+					}
 				}
 				EntityActor->PostNetInit();				
 			}

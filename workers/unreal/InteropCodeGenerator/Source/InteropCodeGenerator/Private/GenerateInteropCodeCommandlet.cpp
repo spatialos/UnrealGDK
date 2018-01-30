@@ -642,7 +642,14 @@ void GenerateSchemaToUnrealConversion(FCodeWriter& Writer, const FString& Update
 		Writer.Indent();
 		Writer.Print(FString::Printf(TEXT("improbable::unreal::UnrealObjectRef TargetObject = %s;"), *SpatialValue));
 		Writer.Print(FString::Printf(TEXT("FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);")));
+		Writer.Print("if (NetGUID.IsValid())");
+		Writer.Print("{").Indent();
 		Writer.Print(FString::Printf(TEXT("%s = static_cast<%s>(PackageMap->GetObjectFromNetGUID(NetGUID, true));"), *PropertyValue, *PropertyType));
+		Writer.Outdent().Print("}");
+		Writer.Print("else");
+		Writer.Print("{").Indent();
+		Writer.Print(FString::Printf(TEXT("%s = nullptr;"), *PropertyValue));
+		Writer.Outdent().Print("}");
 		Writer.Outdent().Print(TEXT("}"));
 	}
 	else if (Property->IsA(UNameProperty::StaticClass()))
