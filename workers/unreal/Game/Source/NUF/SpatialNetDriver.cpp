@@ -729,7 +729,8 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FEntityId TargetEntityId = EntityRegistry->GetEntityIdFromActor(Actor);
 	if (TargetEntityId == FEntityId())
 	{
-		UE_LOG(LogTemp, Error, TEXT("Attempted to send RPC from an actor with no entity ID. TODO: Add queuing."))
+		auto SpatialPMC = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+		SpatialPMC->AddPendingRPC(TargetEntityId.ToSpatialEntityId(), FQueuedRPCData{ Actor, Function, Parameters, OutParms, Stack, SubObject });
 		return;
 	}
 
