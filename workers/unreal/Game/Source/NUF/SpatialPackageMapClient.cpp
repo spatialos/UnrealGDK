@@ -5,6 +5,7 @@
 #include "SpatialNetDriver.h"
 #include "SpatialUpdateInterop.h"
 #include "SpatialActorChannel.h"
+#include "SpatialTypeBinding.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSPackageMap);
 
@@ -123,7 +124,17 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	UnrealObjectRefToNetGUID.Emplace(ObjRefWrapper, NetGUID);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new objref for actor: %s, entityid: %d"), *Actor->GetName(), EntityId.ToSpatialEntityId());
 
+	// Resolve pending replication updates that reference this actor.
 	ResolvePendingObjRefs(Actor);
+
+	// Resolve pending RPCs that reference this actor.
+	USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Driver)->GetSpatialUpdateInterop();
+	check(UpdateInterop);
+	USpatialTypeBinding* Binding = UpdateInterop->GetTypeBindingByClass(Actor->GetClass());
+	if (Binding)
+	{
+		Binding->ResolvePendingRPCs(Actor);
+	}
 
 	// Allocate GUIDs for each subobject too
 	TArray<UObject*> DefaultSubobjects;

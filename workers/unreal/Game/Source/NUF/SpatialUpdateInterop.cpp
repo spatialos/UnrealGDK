@@ -6,6 +6,7 @@
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
 #include "SpatialOS.h"
+#include "EntityRegistry.h"
 #include "SpatialPackageMapClient.h"
 
 #include "Generated/SpatialTypeBinding_Character.h"
@@ -125,7 +126,7 @@ void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, 
 	Channel->UActorChannel::ReceivedBunch(Bunch);
 }
 
-void USpatialUpdateInterop::InvokeRPC(const AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+void USpatialUpdateInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, USpatialActorChannel* Channel)
 {
 	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
 	if (!Binding)
@@ -134,7 +135,8 @@ void USpatialUpdateInterop::InvokeRPC(const AActor* TargetActor, const UFunction
 			*Channel->Actor->GetClass()->GetName());
 		return;
 	}
-	Binding->SendRPCCommand(Function, DuplicateFrame, Channel, Target);
+
+	Binding->SendRPCCommand(TargetActor, Function, DuplicateFrame, Channel);
 }
 
 void USpatialUpdateInterop::SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId)

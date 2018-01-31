@@ -39,16 +39,29 @@ struct FPropertyChangeState
 	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex;
 };
 
+using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
+struct FRPCRequestResult
+{
+	UObject* UnresolvedObject;
+	FUntypedRequestId RequestId;
+
+	FRPCRequestResult(UObject* UnresolvedObject) : UnresolvedObject{UnresolvedObject}, RequestId{0} {}
+	FRPCRequestResult(FUntypedRequestId RequestId) : UnresolvedObject{nullptr}, RequestId{RequestId} {}
+};
+
 // Storage for a command request.
-class FCommandRetryContext
+class FCommandRequestContext
 {
 public:
-	using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
-	FCommandRetryContext(TFunction<FUntypedRequestId()> SendCommandRequest) : SendCommandRequest{SendCommandRequest}, NumFailures{0}
+	using FRequestFunction = TFunction<FRPCRequestResult()>;
+
+	FCommandRequestContext(FRequestFunction SendCommandRequest) :
+		SendCommandRequest{SendCommandRequest},
+		NumFailures{0}
 	{
 	}
 
-	TFunction<FUntypedRequestId()> SendCommandRequest;
+	FRequestFunction SendCommandRequest;
 	uint32 NumFailures;
 };
 
@@ -65,9 +78,10 @@ public:
 	
 	virtual worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const PURE_VIRTUAL(USpatialTypeBinding::CreateActorEntity, return worker::Entity{}; );
 	virtual void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const PURE_VIRTUAL(USpatialTypeBinding::SendComponentUpdates, );
-	virtual void SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target) PURE_VIRTUAL(USpatialTypeBinding::SendRPCCommand, );
+	virtual void SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame, USpatialActorChannel* Channel) PURE_VIRTUAL(USpatialTypeBinding::SendRPCCommand, );
 	
 	virtual void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) PURE_VIRTUAL(USpatialTypeBinding::ApplyQueuedStateToActor, );
+	void ResolvePendingRPCs(UObject* Object);
 
 protected:
 	template<class CommandType>
@@ -77,9 +91,17 @@ protected:
 		PinnedConnection.Get()->SendCommandResponse<CommandType>(Op.RequestId, {});
 	}
 
+	void SendCommandRequest(FCommandRequestContext::FRequestFunction Function);
+
 	UPROPERTY()
 	USpatialUpdateInterop* UpdateInterop;
 
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
+
+	// Pending RPCs.
+	TMap<UObject*, TArray<FCommandRequestContext::FRequestFunction>> PendingRPCs;
+
+	// Outgoing RPCs (for retry logic).
+	TMap<FUntypedRequestId, FCommandRequestContext> OutgoingRPCs;
 };

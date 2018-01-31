@@ -144,11 +144,6 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 					//todo-giray: When we have multiple servers, this won't work. On which connection would we create the channel?
 					USpatialActorChannel* Ch = nullptr;
 					UNetConnection* Connection = Driver->GetSpatialOSNetConnection();
-					if (Connection == nullptr)
-					{
-						check(Driver->GetNetMode() == NM_Client);
-						Connection = Driver->ServerConnection;
-					}
 
 					PMC = Cast<USpatialPackageMapClient>(Connection->PackageMap);
 					Ch = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, false));
@@ -182,6 +177,7 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 					if (Binding)
 					{
 						Binding->ApplyQueuedStateToChannel(Ch);
+						Binding->ResolvePendingRPCs(EntityActor);
 					}
 				}
 				EntityActor->PostNetInit();				

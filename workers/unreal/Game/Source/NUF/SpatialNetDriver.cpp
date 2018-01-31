@@ -737,14 +737,6 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		return;
 	}
 
-	// Get target EntityId.
-	FEntityId TargetEntityId = EntityRegistry->GetEntityIdFromActor(Actor);
-	if (TargetEntityId == FEntityId())
-	{
-		UE_LOG(LogSpatialOSNUF, Error, TEXT("Attempted to send RPC from an actor with no entity ID. TODO: Add queuing."))
-		return;
-	}
-
 	// The RPC might have been called by an actor directly, or by a subobject on that actor (e.g. UCharacterMovementComponent).
 	UObject* CallingObject = SubObject ? Actor : SubObject;
 
@@ -753,7 +745,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	if (Function->FunctionFlags & FUNC_Net)
 	{
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Actor));
-		UpdateInterop->InvokeRPC(Actor, Function, &TempRpcFrameForReading, Channel, TargetEntityId.ToSpatialEntityId());
+		UpdateInterop->InvokeRPC(Actor, Function, &TempRpcFrameForReading, Channel);
 	}
 
 	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver
@@ -805,10 +797,12 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 {
 	if (ServerConnection)
 	{
-		return nullptr;
+		return Cast<USpatialNetConnection>(ServerConnection);
 	}
-	
-	return Cast<USpatialNetConnection>(ClientConnections[0]);
+	else
+	{
+		return Cast<USpatialNetConnection>(ClientConnections[0]);
+	}
 }
 
 bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
