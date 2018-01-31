@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialNetConnection.h"
+#include "SpatialNetDriver.h"
 #include "SpatialPackageMapClient.h"
 
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -19,6 +20,9 @@ void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSock
 
 void USpatialNetConnection::InitLocalConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket, int32 InPacketOverhead)
 {
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(InDriver);
+	check(SpatialNetDriver);
+	SpatialNetDriver->GetSpatialUpdateInterop()->Init(true, SpatialNetDriver->GetSpatialOS(), SpatialNetDriver);
 	Super::InitLocalConnection(InDriver, InSocket, InURL, InState, InMaxPacket, InPacketOverhead);
 }
 

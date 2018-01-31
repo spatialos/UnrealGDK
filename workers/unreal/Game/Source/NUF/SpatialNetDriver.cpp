@@ -107,7 +107,6 @@ void USpatialNetDriver::OnSpatialOSConnected()
 			WorldContext->PendingNetGame->bSuccessfullyConnected = true;
 			WorldContext->PendingNetGame->bSentJoinRequest = false;
 		}
-		UpdateInterop->Init(true, SpatialOSInstance, this);
 
 		// Send the player spawn commands with retries
 		PlayerSpawner.RequestPlayer(SpatialOSInstance, &GetWorld()->GetGameInstance()->GetTimerManager(), DummyURL);
