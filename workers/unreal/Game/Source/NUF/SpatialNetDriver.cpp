@@ -100,6 +100,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	if (ServerConnection)
 	{
 		FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this);
+		check(WorldContext);
 
 		// Here we need to fake a few things to start ticking the level travel on client.
 		if (WorldContext && WorldContext->PendingNetGame)
@@ -109,7 +110,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		}
 
 		// Send the player spawn commands with retries
-		PlayerSpawner.RequestPlayer(SpatialOSInstance, &GetWorld()->GetGameInstance()->GetTimerManager(), DummyURL);
+		PlayerSpawner.RequestPlayer(SpatialOSInstance, &WorldContext->World()->GetTimerManager(), DummyURL);
 	}
 	else
 	{
