@@ -81,12 +81,12 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	SpatialInteropBlock = NewObject<USpatialInteropBlock>();
 	SpatialInteropBlock->Init(EntityRegistry);
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(SpatialInteropBlock);
-	
+
 	TArray<FString> BlueprintPaths;
 	BlueprintPaths.Add(TEXT(ENTITY_BLUEPRINTS_FOLDER));
 
 	EntityRegistry->RegisterEntityBlueprints(BlueprintPaths);
-		
+
 	// Each connection stores a URL with various optional settings (host, port, map, netspeed...)
 	// We currently don't make use of any of these as some are meaningless in a SpatialOS world, and some are less of a priority.
 	// So for now we just give the connection a dummy url, might change in the future.
@@ -119,7 +119,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 
 		ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
 		TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
-		
+
 		Connection->InitRemoteConnection(this, nullptr, DummyURL, *FromAddr, USOCK_Open);
 		Notify->NotifyAcceptedConnection(Connection);
 		Connection->bReliableSpatialConnection = true;
@@ -719,10 +719,10 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	UObject* SubObject)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Function: %s, actor: %s"), *Function->GetName(), *Actor->GetName());
-	USpatialNetConnection* Connection = GetSpatialOSNetConnection();
+	USpatialNetConnection* Connection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
 	if (!Connection)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was established"))
+		UE_LOG(LogTemp, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
 		return;
 	}
 
@@ -730,7 +730,6 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FEntityId TargetEntityId = EntityRegistry->GetEntityIdFromActor(Actor);
 	if (TargetEntityId == FEntityId())
 	{
-		UpdateInterop->GetPackageMap()->AddPendingRPC(TargetEntityId.ToSpatialEntityId(), FQueuedRPCData{ Actor, Function, Parameters, OutParms, Stack, SubObject });
 		UE_LOG(LogTemp, Error, TEXT("Attempted to send RPC from an actor with no entity ID. TODO: Add queuing."))
 		return;
 	}
@@ -790,12 +789,10 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 {
 	if (ServerConnection)
 	{
-		return Cast<USpatialNetConnection>(ServerConnection);
+		return nullptr;
 	}
-	else
-	{
-		return Cast<USpatialNetConnection>(ClientConnections[0]);
-	}
+	
+	return Cast<USpatialNetConnection>(ClientConnections[0]);
 }
 
 bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
@@ -803,6 +800,10 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 	check(GetNetMode() != NM_Client);
 
 	bool bOk = true;
+	// Commented out the code that creates a new connection per player controller. Leaving the code here for now in case it causes side effects.
+	// We instead use the "special" connection for everything.
+	//todo-giray: Remove the commented out code if connection setup looks stable.
+	
 	/*
 	USpatialNetConnection* Connection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(Connection);
@@ -815,6 +816,7 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 	Connection->InitRemoteConnection(this, nullptr, InUrl, *FromAddr, USOCK_Open);
 	Notify->NotifyAcceptedConnection(Connection);
 	AddClientConnection(Connection);*/
+
 	USpatialNetConnection* Connection = GetSpatialOSNetConnection();
 
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
