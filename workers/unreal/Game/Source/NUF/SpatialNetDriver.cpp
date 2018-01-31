@@ -722,7 +722,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	USpatialNetConnection* Connection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
 	if (!Connection)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
+		UE_LOG(LogTemp, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was established"))
 		return;
 	}
 
@@ -730,6 +730,8 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FEntityId TargetEntityId = EntityRegistry->GetEntityIdFromActor(Actor);
 	if (TargetEntityId == FEntityId())
 	{
+		USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(PackageMap);
+		PMC->AddPendingRPC(TargetEntityId, FQueuedRPCData{ Actor, Function, Parameters, OutParms, Stack, SubObject });
 		UE_LOG(LogTemp, Error, TEXT("Attempted to send RPC from an actor with no entity ID. TODO: Add queuing."))
 		return;
 	}
@@ -747,6 +749,11 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver
 	//UIpNetDriver::ProcessRemoteFunction(Actor, Function, Parameters, OutParms, Stack, SubObject);
+}
+
+void USpatialNetDriver::ResendQueuedRPCs()
+{
+	
 }
 
 void USpatialNetDriver::TickFlush(float DeltaTime)

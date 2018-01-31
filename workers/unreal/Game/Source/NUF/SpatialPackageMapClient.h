@@ -10,8 +10,28 @@
 #include "SpatialPackageMapClient.generated.h"
 
 class USpatialActorChannel;
+class UFunction;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSPackageMap, Log, All);
+
+struct FQueuedRPCData
+{
+	FQueuedRPCData()
+		: Actor(nullptr),
+		Function(nullptr),
+		Parameters(nullptr),
+		OutParms(nullptr),
+		Stack(nullptr),
+		SubObject(nullptr)
+	{}
+
+	AActor* Actor;
+	UFunction* Function;
+	void* Parameters;
+	FOutParmRec* OutParms;
+	FFrame* Stack;
+	UObject* SubObject;
+};
 
 //todo-giray: super hacky to inject GetTypeHash() into UnrealObjectRef. Will find a better way.
 class FUnrealObjectRefWrapper
@@ -45,6 +65,7 @@ public:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 	void AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle);
+	void AddPendingRPC(worker::EntityId EntityId, const FQueuedRPCData& RPCData);
 };
 
 class NUF_API FSpatialNetGUIDCache : public FNetGUIDCache
@@ -58,15 +79,19 @@ public:
 	improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 
-	void AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle);	
+	void AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle);
+	void AddPendingRPC(worker::EntityId EntityId, const FQueuedRPCData& RPCData);
 private:
 	FNetworkGUID AssignNewNetGUID(const UObject* Object);
 	void ResolvePendingObjRefs(const UObject* Object);
+	void ResolvePendingRPCs(worker::EntityId EntityId);
 
 	TMap<FNetworkGUID, FUnrealObjectRefWrapper> NetGUIDToUnrealObjectRef;
 	TMap<FUnrealObjectRefWrapper, FNetworkGUID> UnrealObjectRefToNetGUID;
 
 	TMap<UObject*, TArray<USpatialActorChannel*>> ChannelsAwaitingObjRefResolve;
 	TMap<USpatialActorChannel*, TArray<uint16>> PendingObjRefHandles;
+
+	TMap<worker::EntityId, TArray<FQueuedRPCData>> QueuedRPCs;
 };
 
