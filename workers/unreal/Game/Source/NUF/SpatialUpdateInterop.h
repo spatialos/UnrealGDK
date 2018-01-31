@@ -21,8 +21,7 @@ public:
 	USpatialUpdateInterop();
 
 	void Init(bool bClient, USpatialOS* Instance, USpatialNetDriver* Driver);
-	void Tick(float DeltaTime);
-
+	
 	USpatialActorChannel* GetClientActorChannel(const worker::EntityId& EntityId) const;
 	void AddClientActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel);
 

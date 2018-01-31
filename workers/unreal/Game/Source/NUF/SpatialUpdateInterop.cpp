@@ -30,12 +30,6 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 	RegisterInteropType(APlayerController::StaticClass(), NewObject<USpatialTypeBinding_PlayerController>(this));
 }
 
-void USpatialUpdateInterop::Tick(float DeltaTime)
-{
-	// todo sami - check before commit
-	//Leaving it here for now, we'll remove if it ends up unused.
-}
-
 USpatialActorChannel* USpatialUpdateInterop::GetClientActorChannel(const worker::EntityId & EntityId) const
 {
 	// Get actor channel.
