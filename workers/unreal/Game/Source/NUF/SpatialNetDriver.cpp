@@ -730,7 +730,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	if (TargetEntityId == FEntityId())
 	{
 		auto SpatialPMC = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
-		SpatialPMC->AddPendingRPC(TargetEntityId.ToSpatialEntityId(), FQueuedRPCData{ Actor, Function, Parameters, OutParms, Stack, SubObject });
+		SpatialPMC->AddPendingRPC(Actor, FQueuedRPCData{ Actor, Function, Parameters, OutParms, Stack, SubObject });
 		return;
 	}
 
@@ -789,10 +789,12 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 {
 	if (ServerConnection)
 	{
-		return nullptr;
+		return Cast<USpatialNetConnection>(ServerConnection);
 	}
-	
-	return Cast<USpatialNetConnection>(ClientConnections[0]);
+	else
+	{
+		return Cast<USpatialNetConnection>(ClientConnections[0]);
+	}
 }
 
 bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)

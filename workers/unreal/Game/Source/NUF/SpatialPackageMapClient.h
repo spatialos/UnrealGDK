@@ -79,7 +79,7 @@ public:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 	void AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle);
-	void AddPendingRPC(worker::EntityId EntityId, const FQueuedRPCData& RPCData);
+	void AddPendingRPC(AActor* Actor, const FQueuedRPCData& RPCData);
 };
 
 class NUF_API FSpatialNetGUIDCache : public FNetGUIDCache
@@ -94,11 +94,11 @@ public:
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 
 	void AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle);
-	void AddPendingRPC(worker::EntityId EntityId, const FQueuedRPCData& RPCData);
+	void AddPendingRPC(AActor* Actor, const FQueuedRPCData& RPCData);
 private:
 	FNetworkGUID AssignNewNetGUID(const UObject* Object);
 	void ResolvePendingObjRefs(const UObject* Object);
-	void ResolvePendingRPCs(worker::EntityId EntityId);
+	void ResolvePendingRPCs(AActor* Actor);
 
 	TMap<FNetworkGUID, FUnrealObjectRefWrapper> NetGUIDToUnrealObjectRef;
 	TMap<FUnrealObjectRefWrapper, FNetworkGUID> UnrealObjectRefToNetGUID;
@@ -106,6 +106,6 @@ private:
 	TMap<UObject*, TArray<USpatialActorChannel*>> ChannelsAwaitingObjRefResolve;
 	TMap<USpatialActorChannel*, TArray<uint16>> PendingObjRefHandles;
 
-	TMap<worker::EntityId, TArray<FQueuedRPCData>> QueuedRPCs;
+	TMap<AActor*, TArray<FQueuedRPCData>> QueuedRPCs;
 };
 
