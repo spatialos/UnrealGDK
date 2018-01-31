@@ -800,6 +800,10 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 	check(GetNetMode() != NM_Client);
 
 	bool bOk = true;
+	// Commented out the code that creates a new connection per player controller. Leaving the code here for now in case it causes side effects.
+	// We instead use the "special" connection for everything.
+	//todo-giray: Remove the commented out code if connection setup looks stable.
+	
 	/*
 	USpatialNetConnection* Connection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(Connection);
@@ -812,6 +816,7 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 	Connection->InitRemoteConnection(this, nullptr, InUrl, *FromAddr, USOCK_Open);
 	Notify->NotifyAcceptedConnection(Connection);
 	AddClientConnection(Connection);*/
+
 	USpatialNetConnection* Connection = GetSpatialOSNetConnection();
 
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
