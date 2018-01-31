@@ -9,6 +9,7 @@
 #include "SpatialPackageMapClient.h"
 #include "Utils/BunchReader.h"
 #include "SpatialNetDriver.h"
+#include "SpatialConstants.h"
 #include "SpatialUpdateInterop.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
@@ -159,6 +160,9 @@ void USpatialTypeBinding_Character::BindToView()
 	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatwalk>(std::bind(&USpatialTypeBinding_Character::ClientCheatWalk_Receiver, this, std::placeholders::_1)));
 	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatghost>(std::bind(&USpatialTypeBinding_Character::ClientCheatGhost_Receiver, this, std::placeholders::_1)));
 	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatfly>(std::bind(&USpatialTypeBinding_Character::ClientCheatFly_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatwalk>(std::bind(&USpatialTypeBinding_Character::ClientCheatWalk_Sender_Response, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatghost>(std::bind(&USpatialTypeBinding_Character::ClientCheatGhost_Sender_Response, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatfly>(std::bind(&USpatialTypeBinding_Character::ClientCheatFly_Sender_Response, this, std::placeholders::_1)));
 }
 
 void USpatialTypeBinding_Character::UnbindFromView()
@@ -1695,21 +1699,159 @@ void USpatialTypeBinding_Character::ClientCheatWalk_Sender(worker::Connection* c
 {
 	improbable::unreal::UnrealClientCheatWalkRequest Request;
 
-	Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>(Target, Request, 0);
+	// Capture request data and send command.
+	FCommandRetryContext Context{
+		[Connection, Target, Request]() -> FCommandRetryContext::FUntypedRequestId
+		{
+			return Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>(Target, Request, 0).Id;
+		}
+	};
+	auto RequestId = Context.SendCommandRequest();
+	OutgoingRPCs.Emplace(RequestId, std::move(Context));
 }
 
 void USpatialTypeBinding_Character::ClientCheatGhost_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
 {
 	improbable::unreal::UnrealClientCheatGhostRequest Request;
 
-	Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>(Target, Request, 0);
+	// Capture request data and send command.
+	FCommandRetryContext Context{
+		[Connection, Target, Request]() -> FCommandRetryContext::FUntypedRequestId
+		{
+			return Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>(Target, Request, 0).Id;
+		}
+	};
+	auto RequestId = Context.SendCommandRequest();
+	OutgoingRPCs.Emplace(RequestId, std::move(Context));
 }
 
 void USpatialTypeBinding_Character::ClientCheatFly_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
 {
 	improbable::unreal::UnrealClientCheatFlyRequest Request;
 
-	Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>(Target, Request, 0);
+	// Capture request data and send command.
+	FCommandRetryContext Context{
+		[Connection, Target, Request]() -> FCommandRetryContext::FUntypedRequestId
+		{
+			return Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>(Target, Request, 0).Id;
+		}
+	};
+	auto RequestId = Context.SendCommandRequest();
+	OutgoingRPCs.Emplace(RequestId, std::move(Context));
+}
+
+void USpatialTypeBinding_Character::ClientCheatWalk_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op)
+{
+	FCommandRetryContext* RetryContext = OutgoingRPCs.Find(Op.RequestId.Id);
+	if (!RetryContext)
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
+		return;
+	}
+
+	if (Op.StatusCode == worker::StatusCode::kSuccess)
+	{
+		OutgoingRPCs.Remove(Op.RequestId.Id);
+	}
+	else
+	{
+		RetryContext->NumFailures++;
+		if (RetryContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+		{
+			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RetryContext->NumFailures);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientCheatWalk failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
+
+			// Queue retry.
+			FTimerHandle RetryTimer;
+			FTimerDelegate TimerCallback;
+			TimerCallback.BindLambda([RetryContext]()
+			{
+				RetryContext->SendCommandRequest();
+			});
+			UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
+		}
+		else
+		{
+			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientCheatWalk failed too many times (%u attempts). Error code: %d Message: %s"),
+				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
+		}
+	}
+}
+
+void USpatialTypeBinding_Character::ClientCheatGhost_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>& Op)
+{
+	FCommandRetryContext* RetryContext = OutgoingRPCs.Find(Op.RequestId.Id);
+	if (!RetryContext)
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
+		return;
+	}
+
+	if (Op.StatusCode == worker::StatusCode::kSuccess)
+	{
+		OutgoingRPCs.Remove(Op.RequestId.Id);
+	}
+	else
+	{
+		RetryContext->NumFailures++;
+		if (RetryContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+		{
+			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RetryContext->NumFailures);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientCheatGhost failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
+
+			// Queue retry.
+			FTimerHandle RetryTimer;
+			FTimerDelegate TimerCallback;
+			TimerCallback.BindLambda([RetryContext]()
+			{
+				RetryContext->SendCommandRequest();
+			});
+			UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
+		}
+		else
+		{
+			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientCheatGhost failed too many times (%u attempts). Error code: %d Message: %s"),
+				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
+		}
+	}
+}
+
+void USpatialTypeBinding_Character::ClientCheatFly_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>& Op)
+{
+	FCommandRetryContext* RetryContext = OutgoingRPCs.Find(Op.RequestId.Id);
+	if (!RetryContext)
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
+		return;
+	}
+
+	if (Op.StatusCode == worker::StatusCode::kSuccess)
+	{
+		OutgoingRPCs.Remove(Op.RequestId.Id);
+	}
+	else
+	{
+		RetryContext->NumFailures++;
+		if (RetryContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+		{
+			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RetryContext->NumFailures);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientCheatFly failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
+
+			// Queue retry.
+			FTimerHandle RetryTimer;
+			FTimerDelegate TimerCallback;
+			TimerCallback.BindLambda([RetryContext]()
+			{
+				RetryContext->SendCommandRequest();
+			});
+			UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
+		}
+		else
+		{
+			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientCheatFly failed too many times (%u attempts). Error code: %d Message: %s"),
+				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
+		}
+	}
 }
 
 void USpatialTypeBinding_Character::ClientCheatWalk_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op)

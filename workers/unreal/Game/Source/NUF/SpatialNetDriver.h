@@ -36,6 +36,14 @@ public:
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	// End UNetDriver interface.
 
+	// Set the timer manager.
+	void SetTimerManager(FTimerManager* InTimerManager);
+
+	FTimerManager& GetTimerManager() const
+	{
+		return *TimerManager;
+	}
+
 	USpatialOS* GetSpatialOS() const
 	{
 		return SpatialOSInstance;
@@ -69,6 +77,9 @@ protected:
 
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
+
+	// Timer manager.
+	FTimerManager* TimerManager;
 
 	// Update interop.
 	UPROPERTY()

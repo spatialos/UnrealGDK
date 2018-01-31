@@ -17,16 +17,16 @@ class USpatialTypeBinding_PlayerController : public USpatialTypeBinding
 
 public:
 	static const FRepHandlePropertyMap& GetHandlePropertyMap();
-	
+
 	void Init(USpatialUpdateInterop* InUpdateInterop, USpatialPackageMapClient* InPackageMap) override;
 	void BindToView() override;
 	void UnbindFromView() override;
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
-	
+
 	worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 	void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
 	void SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target) override;
-	
+
 	void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;
 
 private:
@@ -43,6 +43,9 @@ private:
 	using FRPCSender = void (USpatialTypeBinding_PlayerController::*)(worker::Connection* const, struct FFrame* const, USpatialActorChannel*, const worker::EntityId&);
 	TMap<FName, FRPCSender> RPCToSenderMap;
 	TArray<worker::Dispatcher::CallbackKey> RPCReceiverCallbacks;
+
+	// Outgoing RPCs (for reliability).
+	TMap<FCommandRetryContext::FUntypedRequestId, FCommandRetryContext> OutgoingRPCs;
 
 	// Component update helper functions.
 	void BuildSpatialComponentUpdate(
@@ -142,6 +145,78 @@ private:
 	void ServerChangeName_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target);
 	void ServerCamera_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target);
 	void ServerAcknowledgePossession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target);
+
+	// RPC sender response functions.
+	void OnServerStartedVisualLogger_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op);
+	void ClientWasKicked_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>& Op);
+	void ClientVoiceHandshakeComplete_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>& Op);
+	void ClientUpdateLevelStreamingStatus_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>& Op);
+	void ClientUnmutePlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>& Op);
+	void ClientTravelInternal_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>& Op);
+	void ClientTeamMessage_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>& Op);
+	void ClientStopForceFeedback_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>& Op);
+	void ClientStopCameraShake_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>& Op);
+	void ClientStopCameraAnim_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>& Op);
+	void ClientStartOnlineSession_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>& Op);
+	void ClientSpawnCameraLensEffect_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>& Op);
+	void ClientSetViewTarget_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>& Op);
+	void ClientSetSpectatorWaiting_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>& Op);
+	void ClientSetHUD_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>& Op);
+	void ClientSetForceMipLevelsToBeResident_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>& Op);
+	void ClientSetCinematicMode_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>& Op);
+	void ClientSetCameraMode_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>& Op);
+	void ClientSetCameraFade_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>& Op);
+	void ClientSetBlockOnAsyncLoading_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>& Op);
+	void ClientReturnToMainMenu_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>& Op);
+	void ClientRetryClientRestart_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>& Op);
+	void ClientRestart_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>& Op);
+	void ClientReset_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>& Op);
+	void ClientRepObjRef_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>& Op);
+	void ClientReceiveLocalizedMessage_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>& Op);
+	void ClientPrestreamTextures_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>& Op);
+	void ClientPrepareMapChange_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>& Op);
+	void ClientPlaySoundAtLocation_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>& Op);
+	void ClientPlaySound_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>& Op);
+	void ClientPlayForceFeedback_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>& Op);
+	void ClientPlayCameraShake_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>& Op);
+	void ClientPlayCameraAnim_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>& Op);
+	void ClientMutePlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>& Op);
+	void ClientMessage_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>& Op);
+	void ClientIgnoreMoveInput_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>& Op);
+	void ClientIgnoreLookInput_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>& Op);
+	void ClientGotoState_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>& Op);
+	void ClientGameEnded_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>& Op);
+	void ClientForceGarbageCollection_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>& Op);
+	void ClientFlushLevelStreaming_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>& Op);
+	void ClientEndOnlineSession_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>& Op);
+	void ClientEnableNetworkVoice_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>& Op);
+	void ClientCommitMapChange_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>& Op);
+	void ClientClearCameraLensEffects_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>& Op);
+	void ClientCapBandwidth_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>& Op);
+	void ClientCancelPendingMapChange_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>& Op);
+	void ClientAddTextureStreamingLoc_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>& Op);
+	void ClientSetRotation_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>& Op);
+	void ClientSetLocation_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>& Op);
+	void ServerViewSelf_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>& Op);
+	void ServerViewPrevPlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>& Op);
+	void ServerViewNextPlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>& Op);
+	void ServerVerifyViewTarget_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>& Op);
+	void ServerUpdateLevelVisibility_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>& Op);
+	void ServerUpdateCamera_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>& Op);
+	void ServerUnmutePlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>& Op);
+	void ServerToggleAILogging_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>& Op);
+	void ServerShortTimeout_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>& Op);
+	void ServerSetSpectatorWaiting_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>& Op);
+	void ServerSetSpectatorLocation_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>& Op);
+	void ServerRestartPlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>& Op);
+	void ServerPause_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>& Op);
+	void ServerNotifyLoadedWorld_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>& Op);
+	void ServerMutePlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>& Op);
+	void ServerCheckClientPossessionReliable_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>& Op);
+	void ServerCheckClientPossession_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>& Op);
+	void ServerChangeName_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>& Op);
+	void ServerCamera_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>& Op);
+	void ServerAcknowledgePossession_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>& Op);
 
 	// RPC receiver functions.
 	void OnServerStartedVisualLogger_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op);

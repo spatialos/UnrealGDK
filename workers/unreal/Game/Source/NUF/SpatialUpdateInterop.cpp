@@ -19,11 +19,12 @@ USpatialUpdateInterop::USpatialUpdateInterop()
 {
 }
 
-void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNetDriver* Driver)
+void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNetDriver* Driver, FTimerManager* InTimerManager)
 {
 	bIsClient = bClient;
 	SpatialOSInstance = Instance;
 	NetDriver = Driver;
+	TimerManager = InTimerManager;
 	PackageMap = Driver->ServerConnection ? Cast<USpatialPackageMapClient>(Driver->ServerConnection->PackageMap) :
 											Cast<USpatialPackageMapClient>(Driver->GetSpatialOSNetConnection()->PackageMap);
 

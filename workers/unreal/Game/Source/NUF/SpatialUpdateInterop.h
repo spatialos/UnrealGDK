@@ -20,7 +20,7 @@ class NUF_API USpatialUpdateInterop : public UObject
 public:
 	USpatialUpdateInterop();
 
-	void Init(bool bClient, USpatialOS* Instance, USpatialNetDriver* Driver);
+	void Init(bool bClient, USpatialOS* Instance, USpatialNetDriver* Driver, FTimerManager* TimerManager);
 	void Tick(float DeltaTime);
 
 	USpatialActorChannel* GetClientActorChannel(const worker::EntityId& EntityId) const;
@@ -44,6 +44,11 @@ public:
 		return NetDriver;	
 	}
 
+	FTimerManager& GetTimerManager() const
+	{
+		return *TimerManager;
+	}
+
 private:
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
@@ -56,6 +61,9 @@ private:
 
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
+
+	// Timer manager.
+	FTimerManager* TimerManager;
 
 	// Type interop bindings.
 	UPROPERTY()

@@ -36,10 +36,6 @@ private:
 
 	void SendPlayerSpawnRequest();
 	void HandlePlayerSpawnResponse(const worker::CommandResponseOp<SpawnPlayerCommand>& Op);
-	float GetRetryWaitTimeSeconds();
-
-	static const float FIRST_RETRY_WAIT_SECONDS;
-	static const uint32 MAX_NUMBER_ATTEMPTS;
 
 	FTimerManager* TimerManager;
 

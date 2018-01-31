@@ -39,6 +39,19 @@ struct FPropertyChangeState
 	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex;
 };
 
+// Storage for a command request.
+class FCommandRetryContext
+{
+public:
+	using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
+	FCommandRetryContext(TFunction<FUntypedRequestId()> SendCommandRequest) : SendCommandRequest{SendCommandRequest}, NumFailures{0}
+	{
+	}
+
+	TFunction<FUntypedRequestId()> SendCommandRequest;
+	uint32 NumFailures;
+};
+
 UCLASS()
 class NUF_API USpatialTypeBinding : public UObject
 {

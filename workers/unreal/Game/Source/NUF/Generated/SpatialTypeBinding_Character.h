@@ -17,16 +17,16 @@ class USpatialTypeBinding_Character : public USpatialTypeBinding
 
 public:
 	static const FRepHandlePropertyMap& GetHandlePropertyMap();
-	
+
 	void Init(USpatialUpdateInterop* InUpdateInterop, USpatialPackageMapClient* InPackageMap) override;
 	void BindToView() override;
 	void UnbindFromView() override;
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
-	
+
 	worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 	void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
 	void SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target) override;
-	
+
 	void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;
 
 private:
@@ -43,6 +43,9 @@ private:
 	using FRPCSender = void (USpatialTypeBinding_Character::*)(worker::Connection* const, struct FFrame* const, USpatialActorChannel*, const worker::EntityId&);
 	TMap<FName, FRPCSender> RPCToSenderMap;
 	TArray<worker::Dispatcher::CallbackKey> RPCReceiverCallbacks;
+
+	// Outgoing RPCs (for reliability).
+	TMap<FCommandRetryContext::FUntypedRequestId, FCommandRetryContext> OutgoingRPCs;
 
 	// Component update helper functions.
 	void BuildSpatialComponentUpdate(
@@ -75,6 +78,11 @@ private:
 	void ClientCheatWalk_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target);
 	void ClientCheatGhost_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target);
 	void ClientCheatFly_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target);
+
+	// RPC sender response functions.
+	void ClientCheatWalk_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op);
+	void ClientCheatGhost_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>& Op);
+	void ClientCheatFly_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>& Op);
 
 	// RPC receiver functions.
 	void ClientCheatWalk_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op);
