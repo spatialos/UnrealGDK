@@ -25,6 +25,20 @@ struct FQueuedRPCData
 		SubObject(nullptr)
 	{}
 
+	FQueuedRPCData(AActor* InActor,
+		UFunction* InFunction,
+		void* InParameters,
+		FOutParmRec* InOutParms,
+		FFrame* InStack,
+		UObject* InSubObject)
+		: Actor(InActor),
+		Function(InFunction),
+		Parameters(InParameters),
+		OutParms(InOutParms),
+		Stack(InStack),
+		SubObject(InSubObject)
+	{}
+
 	AActor* Actor;
 	UFunction* Function;
 	void* Parameters;

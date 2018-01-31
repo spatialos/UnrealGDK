@@ -204,14 +204,14 @@ void FSpatialNetGUIDCache::ResolvePendingRPCs(worker::EntityId EntityId)
 	TArray<FQueuedRPCData>* RPCList = QueuedRPCs.Find(EntityId);
 	if (RPCList && RPCList->Num() > 0)
 	{
-		for (RPCData : *RPCList)
+		for (auto RPCData : *RPCList)
 		{
 			Cast<USpatialNetDriver>(Driver)->ProcessRemoteFunction(
 				RPCData.Actor,
 				RPCData.Function,
 				RPCData.Parameters,
 				RPCData.OutParms,
-				RPCData.NotStack,
+				RPCData.Stack,
 				RPCData.SubObject);
 		}
 	}

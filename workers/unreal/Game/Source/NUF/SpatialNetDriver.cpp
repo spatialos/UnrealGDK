@@ -86,6 +86,11 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	BlueprintPaths.Add(TEXT(ENTITY_BLUEPRINTS_FOLDER));
 
 	EntityRegistry->RegisterEntityBlueprints(BlueprintPaths);
+		
+	// Each connection stores a URL with various optional settings (host, port, map, netspeed...)
+	// We currently don't make use of any of these as some are meaningless in a SpatialOS world, and some are less of a priority.
+	// So for now we just give the connection a dummy url, might change in the future.
+	FURL DummyURL;
 
 	// If we're the client, we can now ask the server to spawn our controller.
 
@@ -115,11 +120,6 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
 		TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
 		
-		// Each connection stores a URL with various optional settings (host, port, map, netspeed...)
-		// We currently don't make use of any of these as some are meaningless in a SpatialOS world, and some are less of a priority.
-		// So for now we just give the connection a dummy url, might change in the future.
-		FURL DummyURL;
-
 		Connection->InitRemoteConnection(this, nullptr, DummyURL, *FromAddr, USOCK_Open);
 		Notify->NotifyAcceptedConnection(Connection);
 		Connection->bReliableSpatialConnection = true;
@@ -719,7 +719,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	UObject* SubObject)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Function: %s, actor: %s"), *Function->GetName(), *Actor->GetName());
-	USpatialNetConnection* Connection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
+	USpatialNetConnection* Connection = GetSpatialOSNetConnection();
 	if (!Connection)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was established"))
@@ -730,8 +730,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FEntityId TargetEntityId = EntityRegistry->GetEntityIdFromActor(Actor);
 	if (TargetEntityId == FEntityId())
 	{
-		USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(PackageMap);
-		PMC->AddPendingRPC(TargetEntityId, FQueuedRPCData{ Actor, Function, Parameters, OutParms, Stack, SubObject });
+		UpdateInterop->GetPackageMap()->AddPendingRPC(TargetEntityId.ToSpatialEntityId(), FQueuedRPCData{ Actor, Function, Parameters, OutParms, Stack, SubObject });
 		UE_LOG(LogTemp, Error, TEXT("Attempted to send RPC from an actor with no entity ID. TODO: Add queuing."))
 		return;
 	}
@@ -749,11 +748,6 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver
 	//UIpNetDriver::ProcessRemoteFunction(Actor, Function, Parameters, OutParms, Stack, SubObject);
-}
-
-void USpatialNetDriver::ResendQueuedRPCs()
-{
-	
 }
 
 void USpatialNetDriver::TickFlush(float DeltaTime)
@@ -796,10 +790,12 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 {
 	if (ServerConnection)
 	{
-		return nullptr;
+		return Cast<USpatialNetConnection>(ServerConnection);
 	}
-	
-	return Cast<USpatialNetConnection>(ClientConnections[0]);
+	else
+	{
+		return Cast<USpatialNetConnection>(ClientConnections[0]);
+	}
 }
 
 bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
