@@ -705,8 +705,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		SpatialOSInstance->ProcessOps();
 		SpatialOSInstance->GetEntityPipeline()->ProcessOps(SpatialOSInstance->GetView(), SpatialOSInstance->GetConnection(), GetWorld());
-		SpatialOSComponentUpdater->UpdateComponents(EntityRegistry, DeltaTime);
-		UpdateInterop->Tick(DeltaTime);
+		SpatialOSComponentUpdater->UpdateComponents(EntityRegistry, DeltaTime);		
 	}
 }
 
