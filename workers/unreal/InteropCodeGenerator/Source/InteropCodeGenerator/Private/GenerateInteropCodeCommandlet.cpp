@@ -1462,15 +1462,16 @@ void GenerateForwardingCodeFromLayout(
 		improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
 		improbable::WorkerRequirementSet ClientsOnly{{ClientAttribute}};
 		improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
-		improbable::WorkerRequirementSet WorkerOrClientOnly{{WorkerAttribute, ClientAttribute}};)""");
-	SourceWriter.Print();
+		improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
+
+		const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);)""");
 	SourceWriter.Print("return improbable::unreal::FEntityBuilder::Begin()");
 	SourceWriter.Indent();
 	SourceWriter.Print(R"""(
-		.AddPositionComponent(improbable::Position::Data{USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position)}, WorkersOnly)
+		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, WorkersOnly)
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
-		.SetReadAcl(WorkerOrClientOnly))""");
+		.SetReadAcl(AnyUnrealWorkerOrClient))""");
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
 		SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(%sData, WorkersOnly)",

@@ -214,13 +214,14 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FString& C
 	improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
 	improbable::WorkerRequirementSet ClientsOnly{{ClientAttribute}};
 	improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
-	improbable::WorkerRequirementSet WorkerOrClientOnly{{WorkerAttribute, ClientAttribute}};
+	improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
 
+	const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
 	return improbable::unreal::FEntityBuilder::Begin()
-		.AddPositionComponent(improbable::Position::Data{USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position)}, WorkersOnly)
+		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, WorkersOnly)
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
-		.SetReadAcl(WorkerOrClientOnly)
+		.SetReadAcl(AnyUnrealWorkerOrClient)
 		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(SingleClientData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(MultiClientData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, WorkersOnly)

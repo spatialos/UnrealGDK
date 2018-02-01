@@ -91,13 +91,14 @@ void USpatialActorChannel::SendCreateEntityRequest(const FString& PlayerWorkerId
 			improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
 			improbable::WorkerRequirementSet ClientsOnly{{ClientAttribute}};
 			improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
-			improbable::WorkerRequirementSet WorkerOrClientOnly{{WorkerAttribute, ClientAttribute}};
+			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
 
+			const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Actor->GetActorLocation());
 			auto Entity = improbable::unreal::FEntityBuilder::Begin()
-				.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Actor->GetActorLocation()), WorkersOnly)
+				.AddPositionComponent(SpatialPosition, WorkersOnly)
 				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
 				.SetPersistence(true)
-				.SetReadAcl(WorkerOrClientOnly)
+				.SetReadAcl(AnyUnrealWorkerOrClient)
 				// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
 				// todo-giray: Remove once we're using proper (generated) entity templates here.
 				.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, OwnClientOnly)
