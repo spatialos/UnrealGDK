@@ -1556,8 +1556,7 @@ void GenerateForwardingCodeFromLayout(
 			improbable::unreal::%s::Data* %sData = Pending%sData.Find(ActorChannel->GetEntityId());
 			if (%sData)
 			{
-				improbable::unreal::%s::Update Update;
-				Update.FromInitialData(*%sData);
+				auto Update = improbable::unreal::%s::Update::FromInitialData(*%sData);
 				Pending%sData.Remove(ActorChannel->GetEntityId());
 				ReceiveUpdateFromSpatial_%s(ActorChannel, Update);
 			})""",
@@ -1709,7 +1708,15 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Print();
 			GeneratePropertyToUnrealConversion(SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName, true, PropertyValueCppType);
 			SourceWriter.Print();
-			SourceWriter.Printf("%s->NetSerializeItem(OutputWriter, PackageMap, &%s);", *PropertyName, *PropertyValueName);
+			//todo-giray: re-enable FName deserialization.
+			if (!Property->IsA(UNameProperty::StaticClass()))
+			{
+				SourceWriter.Printf("%s->NetSerializeItem(OutputWriter, PackageMap, &%s);", *PropertyName, *PropertyValueName);
+			}
+			else
+			{
+				SourceWriter.Printf("//FName deserialization not currently supported.");
+			}
 			SourceWriter.Print("UE_LOG(LogSpatialUpdateInterop, Log, TEXT(\"<- Handle: %d Property %s\"), Handle, *Data.Property->GetName());");
 
 			// End condition map check block.

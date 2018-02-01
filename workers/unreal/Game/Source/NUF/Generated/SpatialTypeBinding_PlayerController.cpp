@@ -419,16 +419,14 @@ void USpatialTypeBinding_PlayerController::ApplyQueuedStateToChannel(USpatialAct
 	improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Data* SingleClientData = PendingSingleClientData.Find(ActorChannel->GetEntityId());
 	if (SingleClientData)
 	{
-		improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update Update;
-		Update.FromInitialData(*SingleClientData);
+		auto Update = improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update::FromInitialData(*SingleClientData);
 		PendingSingleClientData.Remove(ActorChannel->GetEntityId());
 		ReceiveUpdateFromSpatial_SingleClient(ActorChannel, Update);
 	}
 	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
 	if (MultiClientData)
 	{
-		improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update Update;
-		Update.FromInitialData(*MultiClientData);
+		auto Update = improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update::FromInitialData(*MultiClientData);
 		PendingMultiClientData.Remove(ActorChannel->GetEntityId());
 		ReceiveUpdateFromSpatial_MultiClient(ActorChannel, Update);
 	}
@@ -1008,7 +1006,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 
 			Value = FName((*(Update.field_attachmentreplication_attachsocket().data())).data());
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			//FName deserialization not currently supported.
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
