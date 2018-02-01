@@ -21,8 +21,7 @@ public:
 	USpatialUpdateInterop();
 
 	void Init(bool bClient, USpatialOS* Instance, USpatialNetDriver* Driver);
-	void Tick(float DeltaTime);
-
+	
 	USpatialActorChannel* GetClientActorChannel(const worker::EntityId& EntityId) const;
 	void AddClientActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel);
 
@@ -34,14 +33,19 @@ public:
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
 	void InvokeRPC(const AActor* const TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, USpatialActorChannel* Channel, const worker::EntityId& Target);
 
-	USpatialOS* GetSpatialOS() const
+	FORCEINLINE USpatialOS* GetSpatialOS() const
 	{
 		return SpatialOSInstance;
 	}
 
-	USpatialNetDriver* GetNetDriver() const 
+	FORCEINLINE USpatialNetDriver* GetNetDriver() const
 	{
 		return NetDriver;	
+	}
+
+	FORCEINLINE USpatialPackageMapClient* GetPackageMap()
+	{
+		return PackageMap;
 	}
 
 private:

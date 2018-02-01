@@ -705,8 +705,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		SpatialOSInstance->ProcessOps();
 		SpatialOSInstance->GetEntityPipeline()->ProcessOps(SpatialOSInstance->GetView(), SpatialOSInstance->GetConnection(), GetWorld());
-		SpatialOSComponentUpdater->UpdateComponents(EntityRegistry, DeltaTime);
-		UpdateInterop->Tick(DeltaTime);
+		SpatialOSComponentUpdater->UpdateComponents(EntityRegistry, DeltaTime);		
 	}
 }
 
@@ -730,7 +729,8 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FEntityId TargetEntityId = EntityRegistry->GetEntityIdFromActor(Actor);
 	if (TargetEntityId == FEntityId())
 	{
-		UE_LOG(LogTemp, Error, TEXT("Attempted to send RPC from an actor with no entity ID. TODO: Add queuing."))
+		auto SpatialPMC = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+		SpatialPMC->AddPendingRPC(Actor, FQueuedRPCData{ Actor, Function, Parameters, OutParms, Stack, SubObject });
 		return;
 	}
 
@@ -789,10 +789,12 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 {
 	if (ServerConnection)
 	{
-		return nullptr;
+		return Cast<USpatialNetConnection>(ServerConnection);
 	}
-	
-	return Cast<USpatialNetConnection>(ClientConnections[0]);
+	else
+	{
+		return Cast<USpatialNetConnection>(ClientConnections[0]);
+	}
 }
 
 bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)

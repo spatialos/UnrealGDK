@@ -45,6 +45,14 @@ void USpatialPackageMapClient::AddPendingObjRef(UObject* Object, USpatialActorCh
 	SpatialGuidCache->AddPendingObjRef(Object, DependentChannel, Handle);
 }
 
+void USpatialPackageMapClient::AddPendingRPC(AActor* Actor, const FQueuedRPCData& RPCData)
+{
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending RPC for actor: %s - function: %s"),
+		*Actor->GetName(), *RPCData.Function->GetName());
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	SpatialGuidCache->AddPendingRPC(Actor, RPCData);
+}
+
 void FSpatialNetGUIDCache::ResolvePendingObjRefs(const UObject* Object)
 {
 	TArray<USpatialActorChannel*>* DependentChannels = ChannelsAwaitingObjRefResolve.Find(Object);
@@ -124,6 +132,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new objref for actor: %s, entityid: %d"), *Actor->GetName(), EntityId.ToSpatialEntityId());
 
 	ResolvePendingObjRefs(Actor);
+	ResolvePendingRPCs(Actor);
 
 	// Allocate GUIDs for each subobject too
 	TArray<UObject*> DefaultSubobjects;
@@ -185,6 +194,29 @@ void FSpatialNetGUIDCache::AddPendingObjRef(UObject* Object, USpatialActorChanne
 	Handles.AddUnique(Handle);
 }
 
+void FSpatialNetGUIDCache::AddPendingRPC(AActor* Actor, const FQueuedRPCData& RPCData)
+{
+	QueuedRPCs.FindOrAdd(Actor).Add(RPCData);
+}
+
+void FSpatialNetGUIDCache::ResolvePendingRPCs(AActor* Actor)
+{
+	TArray<FQueuedRPCData>* RPCList = QueuedRPCs.Find(Actor);
+	if (RPCList && RPCList->Num() > 0)
+	{
+		for (auto RPCData : *RPCList)
+		{
+			Cast<USpatialNetDriver>(Driver)->ProcessRemoteFunction(
+				RPCData.Actor,
+				RPCData.Function,
+				RPCData.Parameters,
+				RPCData.OutParms,
+				RPCData.Stack,
+				RPCData.SubObject);
+		}
+		QueuedRPCs.Remove(Actor);
+	}	
+}
 
 void USpatialPackageMapClient::ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FString& Path)
 {
