@@ -127,22 +127,29 @@ void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, 
 	Channel->UActorChannel::ReceivedBunch(Bunch);
 }
 
-void USpatialUpdateInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, USpatialActorChannel* Channel)
+void USpatialUpdateInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame)
 {
 	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
 	if (!Binding)
 	{
 		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send RPC on unsupported class %s."),
-			*Channel->Actor->GetClass()->GetName());
+			*TargetActor->GetClass()->GetName());
 		return;
 	}
 
-	Binding->SendRPCCommand(TargetActor, Function, DuplicateFrame, Channel);
+	Binding->SendRPCCommand(TargetActor, Function, DuplicateFrame);
 }
 
-void USpatialUpdateInterop::SendCommandRequest(FCommandRequestContext::FRequestFunction Function)
+void USpatialUpdateInterop::SendCommandRequest(FRPCRequestFunction Function)
 {
-	// Attempt to trigger command request.
+	// Attempt to trigger command request by calling the passed RPC request function. This function is generated in the type binding
+	// classes which capture the target actor and arguments of the RPC (unpacked from the FFrame) by value, and attempts to serialize
+	// the RPC arguments to a command request.
+	//
+	// The generated function tries to first resolve the target actor using the package map, then any UObject arguments. If any of these
+	// fail, `Function()` will return with Result.UnresolvedObject being set to the object which was unable to be resolved by the package
+	// map. We then queue this RPC until that object becomes resolved. If all objects are resolved successfully, we instead get back a
+	// RequestId returned from Connection->SendCommandRequest<...>(...).
 	auto Result = Function();
 	if (Result.UnresolvedObject != nullptr)
 	{
@@ -152,39 +159,39 @@ void USpatialUpdateInterop::SendCommandRequest(FCommandRequestContext::FRequestF
 	else
 	{
 		// Add to outgoing RPCs.
-		FCommandRequestContext Context{Function};
-		OutgoingRPCs.Emplace(Result.RequestId, std::move(Context));
+		OutgoingRPCs.Emplace(Result.RequestId, TSharedPtr<FRPCRetryContext>(new FRPCRetryContext(Function)));
 	}
 }
 
 void USpatialUpdateInterop::HandleCommandResponse(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(RequestId);
-	if (!RequestContext)
+	TSharedPtr<FRPCRetryContext>* RequestContextIterator = OutgoingRPCs.Find(RequestId);
+	if (!RequestContextIterator)
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("%s: received an response which we did not send. Entity ID: %lld, Request ID: %d"), *RPCName, EntityId, RequestId);
+		UE_LOG(LogSpatialUpdateInterop, Error, TEXT("%s: received an response which we did not send. Entity ID: %lld, Request ID: %d"), *RPCName, EntityId, RequestId);
 		return;
 	}
 
-	if (StatusCode == worker::StatusCode::kSuccess)
+	TSharedPtr<FRPCRetryContext> RetryContext = *RequestContextIterator;
+	OutgoingRPCs.Remove(RequestId);
+	if (StatusCode != worker::StatusCode::kSuccess)
 	{
-		OutgoingRPCs.Remove(RequestId);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+		RetryContext->NumFailures++;
+		if (RetryContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
+			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RetryContext->NumFailures);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"), *RPCName, WaitTime, (int)StatusCode, *Message);
 
 			// Queue retry.
 			FTimerHandle RetryTimer;
 			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
+			TimerCallback.BindLambda([this, RetryContext]()
 			{
-				RequestContext->SendCommandRequest();
+				auto Result = RetryContext->SendCommandRequest();
+				check(Result.UnresolvedObject == nullptr);
+				OutgoingRPCs.Emplace(Result.RequestId, RetryContext);
 			});
+			// TODO(David): Commenting out for now to avoid a potentially buggy retry solution interfering with getting the character to move.
 			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
 		}
 		else

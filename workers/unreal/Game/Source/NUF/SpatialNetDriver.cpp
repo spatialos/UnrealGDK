@@ -744,8 +744,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame TempRpcFrameForReading{CallingObject, Function, Parameters, nullptr, Function->Children};
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Actor));
-		UpdateInterop->InvokeRPC(Actor, Function, &TempRpcFrameForReading, Channel);
+		UpdateInterop->InvokeRPC(Actor, Function, &TempRpcFrameForReading);
 	}
 
 	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver

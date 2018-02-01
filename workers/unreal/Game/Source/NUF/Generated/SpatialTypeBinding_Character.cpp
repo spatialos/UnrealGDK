@@ -247,12 +247,12 @@ void USpatialTypeBinding_Character::SendComponentUpdates(const FPropertyChangeSt
 	}
 }
 
-void USpatialTypeBinding_Character::SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame, USpatialActorChannel* Channel)
+void USpatialTypeBinding_Character::SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)
 {
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
 	auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
 	checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
-	(this->*(*SenderFuncIterator))(Connection.Get(), Frame, Channel, TargetActor);
+	(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetActor);
 }
 
 void USpatialTypeBinding_Character::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)
@@ -1695,7 +1695,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
-void USpatialTypeBinding_Character::ClientCheatWalk_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_Character::ClientCheatWalk_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -1717,7 +1717,7 @@ void USpatialTypeBinding_Character::ClientCheatWalk_Sender(worker::Connection* c
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_Character::ClientCheatGhost_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_Character::ClientCheatGhost_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -1739,7 +1739,7 @@ void USpatialTypeBinding_Character::ClientCheatGhost_Sender(worker::Connection* 
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_Character::ClientCheatFly_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_Character::ClientCheatFly_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{

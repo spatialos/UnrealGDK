@@ -1124,7 +1124,7 @@ void GenerateForwardingCodeFromLayout(
 
 		worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 		void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
-		void SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, USpatialActorChannel* Channel) override;
+		void SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame) override;
 
 		void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;)""");
 	HeaderWriter.Print();
@@ -1145,7 +1145,7 @@ void GenerateForwardingCodeFromLayout(
 	HeaderWriter.Print();
 	HeaderWriter.Printf(R"""(
 		// RPC sender and receiver callbacks.
-		using FRPCSender = void (%s::*)(worker::Connection* const, struct FFrame* const, USpatialActorChannel*, AActor*);
+		using FRPCSender = void (%s::*)(worker::Connection* const, struct FFrame* const, AActor*);
 		TMap<FName, FRPCSender> RPCToSenderMap;
 		TArray<worker::Dispatcher::CallbackKey> RPCReceiverCallbacks;)""", *TypeBindingName);
 	HeaderWriter.Print();
@@ -1167,7 +1167,7 @@ void GenerateForwardingCodeFromLayout(
 		// Command receiver function signatures
 		for (auto& RPC : Layout.RPCs[Group])
 		{
-			HeaderWriter.Printf("void %s_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor);",
+			HeaderWriter.Printf("void %s_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor);",
 				*RPC->GetName());
 		}
 	}
@@ -1533,7 +1533,7 @@ void GenerateForwardingCodeFromLayout(
 	// SendRPCCommand
 	// ===========================================
 	SourceWriter.Print();
-	SourceWriter.Printf("void %s::SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame, USpatialActorChannel* Channel)",
+	SourceWriter.Printf("void %s::SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)",
 		*TypeBindingName);
 	SourceWriter.Print("{");
 	SourceWriter.Indent();
@@ -1541,7 +1541,7 @@ void GenerateForwardingCodeFromLayout(
 		TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
 		auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
 		checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
-		(this->*(*SenderFuncIterator))(Connection.Get(), Frame, Channel, TargetActor);)""");
+		(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetActor);)""");
 	SourceWriter.Outdent().Print("}");
 
 	// ApplyQueuedStateToChannel
@@ -1732,7 +1732,7 @@ void GenerateForwardingCodeFromLayout(
 		for (auto& RPC : Layout.RPCs[Group])
 		{
 			SourceWriter.Print();
-			SourceWriter.Printf("void %s::%s_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)",
+			SourceWriter.Printf("void %s::%s_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)",
 				*TypeBindingName,
 				*RPC->GetName());
 			SourceWriter.Print("{").Indent();

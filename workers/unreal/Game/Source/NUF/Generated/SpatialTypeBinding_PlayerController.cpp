@@ -406,12 +406,12 @@ void USpatialTypeBinding_PlayerController::SendComponentUpdates(const FPropertyC
 	}
 }
 
-void USpatialTypeBinding_PlayerController::SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame, USpatialActorChannel* Channel)
+void USpatialTypeBinding_PlayerController::SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)
 {
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
 	auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
 	checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
-	(this->*(*SenderFuncIterator))(Connection.Get(), Frame, Channel, TargetActor);
+	(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetActor);
 }
 
 void USpatialTypeBinding_PlayerController::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)
@@ -1161,7 +1161,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
-void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bIsLogging);
@@ -1187,7 +1187,7 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender(wo
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UTextProperty, KickReason);
@@ -1213,7 +1213,7 @@ void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender(worker::Connec
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -1235,7 +1235,7 @@ void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender(w
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, PackageName);
@@ -1269,7 +1269,7 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Send
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
@@ -1301,7 +1301,7 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender(worker::Con
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UStrProperty, URL);
@@ -1336,7 +1336,7 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender(worker::C
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(APlayerState, SenderPlayerState);
@@ -1380,7 +1380,7 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Conn
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UForceFeedbackEffect, ForceFeedbackEffect);
@@ -1420,7 +1420,7 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, Shake);
@@ -1448,7 +1448,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender(worker::
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UCameraAnim, AnimToStop);
@@ -1486,7 +1486,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::C
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -1508,7 +1508,7 @@ void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender(worke
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, LensEffectEmitterClass);
@@ -1534,7 +1534,7 @@ void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender(wo
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(AActor, A);
@@ -1577,7 +1577,7 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Co
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bWaiting);
@@ -1603,7 +1603,7 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender(work
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, NewHUDClass);
@@ -1629,7 +1629,7 @@ void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender(worker::Connectio
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UMaterialInterface, Material);
@@ -1671,7 +1671,7 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_S
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bInCinematicMode);
@@ -1703,7 +1703,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender(worker:
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, NewCamMode);
@@ -1729,7 +1729,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender(worker::Co
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bEnableFading);
@@ -1767,7 +1767,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Co
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -1789,7 +1789,7 @@ void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender(w
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UStrProperty, ReturnReason);
@@ -1815,7 +1815,7 @@ void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender(worker:
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(APawn, NewPawn);
@@ -1853,7 +1853,7 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worke
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(APawn, NewPawn);
@@ -1891,7 +1891,7 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connecti
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientReset_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientReset_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -1913,7 +1913,7 @@ void USpatialTypeBinding_PlayerController::ClientReset_Sender(worker::Connection
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UObject, Object);
@@ -1951,7 +1951,7 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connec
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, Message);
@@ -2021,7 +2021,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(AActor, ForcedActor);
@@ -2065,7 +2065,7 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, LevelName);
@@ -2095,7 +2095,7 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender(worker:
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(USoundBase, Sound);
@@ -2139,7 +2139,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(work
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(USoundBase, Sound);
@@ -2181,7 +2181,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connec
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UForceFeedbackEffect, ForceFeedbackEffect);
@@ -2223,7 +2223,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, Shake);
@@ -2255,7 +2255,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender(worker::
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UCameraAnim, AnimToPlay);
@@ -2309,7 +2309,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::C
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
@@ -2341,7 +2341,7 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender(worker::Conne
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UStrProperty, S);
@@ -2371,7 +2371,7 @@ void USpatialTypeBinding_PlayerController::ClientMessage_Sender(worker::Connecti
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bIgnore);
@@ -2397,7 +2397,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender(worker::
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bIgnore);
@@ -2423,7 +2423,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender(worker::
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientGotoState_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientGotoState_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, NewState);
@@ -2449,7 +2449,7 @@ void USpatialTypeBinding_PlayerController::ClientGotoState_Sender(worker::Connec
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(AActor, EndGameFocus);
@@ -2489,7 +2489,7 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connec
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -2511,7 +2511,7 @@ void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender(w
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -2533,7 +2533,7 @@ void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender(work
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -2555,7 +2555,7 @@ void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender(worker:
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bEnable);
@@ -2581,7 +2581,7 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender(worke
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -2603,7 +2603,7 @@ void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender(worker::
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -2625,7 +2625,7 @@ void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender(w
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UIntProperty, Cap);
@@ -2651,7 +2651,7 @@ void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender(worker::Con
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -2673,7 +2673,7 @@ void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender(w
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FVector, InLoc)
@@ -2703,7 +2703,7 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender(w
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FRotator, NewRotation)
@@ -2731,7 +2731,7 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender(worker::Conn
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FVector, NewLocation)
@@ -2759,7 +2759,7 @@ void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender(worker::Conn
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FViewTargetTransitionParams, TransitionParams)
@@ -2788,7 +2788,7 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender(worker::Connect
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -2810,7 +2810,7 @@ void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender(worker::C
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -2832,7 +2832,7 @@ void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender(worker::C
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -2854,7 +2854,7 @@ void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender(worker:
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, PackageName);
@@ -2882,7 +2882,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender(wo
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FVector_NetQuantize, CamLoc)
@@ -2910,7 +2910,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender(worker::Con
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
@@ -2942,7 +2942,7 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender(worker::Con
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -2964,7 +2964,7 @@ void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender(worker::
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -2986,7 +2986,7 @@ void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender(worker::Con
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bWaiting);
@@ -3012,7 +3012,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender(work
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FVector, NewLoc)
@@ -3040,7 +3040,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender(wor
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -3062,7 +3062,7 @@ void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender(worker::Co
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerPause_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerPause_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -3084,7 +3084,7 @@ void USpatialTypeBinding_PlayerController::ServerPause_Sender(worker::Connection
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, WorldPackageName);
@@ -3110,7 +3110,7 @@ void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender(worker
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
@@ -3142,7 +3142,7 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender(worker::Conne
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -3164,7 +3164,7 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_S
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
 	{
@@ -3186,7 +3186,7 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender(wo
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerChangeName_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerChangeName_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UStrProperty, S);
@@ -3212,7 +3212,7 @@ void USpatialTypeBinding_PlayerController::ServerChangeName_Sender(worker::Conne
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerCamera_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerCamera_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, NewMode);
@@ -3238,7 +3238,7 @@ void USpatialTypeBinding_PlayerController::ServerCamera_Sender(worker::Connectio
 	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
+void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(APawn, P);

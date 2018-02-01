@@ -65,7 +65,6 @@ bool USpatialPackageMapClient::SerializeNewActor(FArchive & Ar, UActorChannel * 
 	return bResult;
 }
 
-
 improbable::unreal::UnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromNetGUID(const FNetworkGUID & NetGUID) const
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
@@ -93,7 +92,7 @@ void USpatialPackageMapClient::AddPendingObjRef(UObject* Object, USpatialActorCh
 	SpatialGuidCache->AddPendingObjRef(Object, DependentChannel, Handle);
 }
 
-void USpatialPackageMapClient::AddPendingRPC(UObject* UnresolvedObject, FCommandRequestContext::FRequestFunction CommandSender)
+void USpatialPackageMapClient::AddPendingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender)
 {
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending RPC for object: %s."), *UnresolvedObject->GetName());
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
@@ -206,7 +205,7 @@ void FSpatialNetGUIDCache::AddPendingObjRef(UObject* Object, USpatialActorChanne
 	Handles.AddUnique(Handle);
 }
 
-void FSpatialNetGUIDCache::AddPendingRPC(UObject* UnresolvedObject, FCommandRequestContext::FRequestFunction CommandSender)
+void FSpatialNetGUIDCache::AddPendingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender)
 {
 	if (UnresolvedObject == nullptr)
 	{
@@ -255,7 +254,7 @@ void FSpatialNetGUIDCache::ResolvePendingObjRefs(const UObject* Object)
 
 void FSpatialNetGUIDCache::ResolvePendingRPCs(UObject* Object)
 {
-	TArray<FCommandRequestContext::FRequestFunction>* RPCList = PendingRPCs.Find(Object);
+	TArray<FRPCRequestFunction>* RPCList = PendingRPCs.Find(Object);
 	if (RPCList)
 	{
 		USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Driver)->GetSpatialUpdateInterop();

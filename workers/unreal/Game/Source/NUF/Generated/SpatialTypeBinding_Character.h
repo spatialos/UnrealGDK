@@ -25,7 +25,7 @@ public:
 
 	worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 	void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
-	void SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, USpatialActorChannel* Channel) override;
+	void SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame) override;
 
 	void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;
 
@@ -40,7 +40,7 @@ private:
 	TMap<worker::EntityId, improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data> PendingMultiClientData;
 
 	// RPC sender and receiver callbacks.
-	using FRPCSender = void (USpatialTypeBinding_Character::*)(worker::Connection* const, struct FFrame* const, USpatialActorChannel*, AActor*);
+	using FRPCSender = void (USpatialTypeBinding_Character::*)(worker::Connection* const, struct FFrame* const, AActor*);
 	TMap<FName, FRPCSender> RPCToSenderMap;
 	TArray<worker::Dispatcher::CallbackKey> RPCReceiverCallbacks;
 
@@ -72,9 +72,9 @@ private:
 		const improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update) const;
 
 	// RPC sender functions.
-	void ClientCheatWalk_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor);
-	void ClientCheatGhost_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor);
-	void ClientCheatFly_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor);
+	void ClientCheatWalk_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor);
+	void ClientCheatGhost_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor);
+	void ClientCheatFly_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor);
 
 	// RPC sender response functions.
 	void ClientCheatWalk_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op);

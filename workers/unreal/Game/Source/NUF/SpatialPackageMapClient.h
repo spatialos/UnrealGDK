@@ -47,7 +47,7 @@ public:
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 
 	void AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle);
-	void AddPendingRPC(UObject* UnresolvedObject, FCommandRequestContext::FRequestFunction CommandSender);
+	void AddPendingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender);
 };
 
 class NUF_API FSpatialNetGUIDCache : public FNetGUIDCache
@@ -62,7 +62,7 @@ public:
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 
 	void AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle);
-	void AddPendingRPC(UObject* UnresolvedObject, FCommandRequestContext::FRequestFunction CommandSender);
+	void AddPendingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender);
 
 private:
 	FNetworkGUID AssignNewNetGUID(const UObject* Object);
@@ -79,6 +79,6 @@ private:
 	TMap<USpatialActorChannel*, TArray<uint16>> PendingObjRefHandles;
 
 	// Pending RPCs.
-	TMap<UObject*, TArray<FCommandRequestContext::FRequestFunction>> PendingRPCs;
+	TMap<UObject*, TArray<FRPCRequestFunction>> PendingRPCs;
 };
 

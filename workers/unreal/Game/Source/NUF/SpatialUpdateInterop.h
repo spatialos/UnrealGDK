@@ -13,29 +13,35 @@ class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialUpdateInterop, Log, All);
 
+// An general version of worker::RequestId.
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
+
+// Stores the result of an attempt to call an RPC sender function. Either we have an unresolved object, or we
+// sent a command request.
 struct FRPCRequestResult
 {
 	UObject* UnresolvedObject;
 	FUntypedRequestId RequestId;
 
+	FRPCRequestResult() = delete;
 	FRPCRequestResult(UObject* UnresolvedObject) : UnresolvedObject{ UnresolvedObject }, RequestId{ 0 } {}
 	FRPCRequestResult(FUntypedRequestId RequestId) : UnresolvedObject{ nullptr }, RequestId{ RequestId } {}
 };
 
-// Storage for a command request.
-class FCommandRequestContext
+// Function storing a command request, capturing all arguments by value.
+using FRPCRequestFunction = TFunction<FRPCRequestResult()>;
+
+// Stores the number of attempts when retrying failed commands.
+class FRPCRetryContext
 {
 public:
-	using FRequestFunction = TFunction<FRPCRequestResult()>;
-
-	FCommandRequestContext(FRequestFunction SendCommandRequest) :
-		SendCommandRequest{ SendCommandRequest },
-		NumFailures{ 0 }
+	FRPCRetryContext(FRPCRequestFunction SendCommandRequest) :
+		SendCommandRequest{SendCommandRequest},
+		NumFailures{0}
 	{
 	}
 
-	FRequestFunction SendCommandRequest;
+	FRPCRequestFunction SendCommandRequest;
 	uint32 NumFailures;
 };
 
@@ -58,7 +64,7 @@ public:
 
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
-	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame, USpatialActorChannel* Channel);
+	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame);
 
 	USpatialOS* GetSpatialOS() const
 	{
@@ -75,7 +81,7 @@ public:
 		return *TimerManager;
 	}
 
-	void SendCommandRequest(FCommandRequestContext::FRequestFunction Function);
+	void SendCommandRequest(FRPCRequestFunction Function);
 	void HandleCommandResponse(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
 
 private:
@@ -102,7 +108,8 @@ private:
 	TMap<worker::EntityId, USpatialActorChannel*> EntityToClientActorChannel;
 
 	// Outgoing RPCs (for retry logic).
-	TMap<FUntypedRequestId, FCommandRequestContext> OutgoingRPCs;
+	TMap<FUntypedRequestId, TSharedPtr<FRPCRetryContext>> OutgoingRPCs;
+
 private:
 	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
 
