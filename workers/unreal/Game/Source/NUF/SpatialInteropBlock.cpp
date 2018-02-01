@@ -177,7 +177,6 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 					if (Binding)
 					{
 						Binding->ApplyQueuedStateToChannel(Ch);
-						Binding->ResolvePendingRPCs(EntityActor);
 					}
 				}
 				EntityActor->PostNetInit();				

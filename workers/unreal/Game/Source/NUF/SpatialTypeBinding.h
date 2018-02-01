@@ -39,32 +39,6 @@ struct FPropertyChangeState
 	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex;
 };
 
-using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
-struct FRPCRequestResult
-{
-	UObject* UnresolvedObject;
-	FUntypedRequestId RequestId;
-
-	FRPCRequestResult(UObject* UnresolvedObject) : UnresolvedObject{UnresolvedObject}, RequestId{0} {}
-	FRPCRequestResult(FUntypedRequestId RequestId) : UnresolvedObject{nullptr}, RequestId{RequestId} {}
-};
-
-// Storage for a command request.
-class FCommandRequestContext
-{
-public:
-	using FRequestFunction = TFunction<FRPCRequestResult()>;
-
-	FCommandRequestContext(FRequestFunction SendCommandRequest) :
-		SendCommandRequest{SendCommandRequest},
-		NumFailures{0}
-	{
-	}
-
-	FRequestFunction SendCommandRequest;
-	uint32 NumFailures;
-};
-
 UCLASS()
 class NUF_API USpatialTypeBinding : public UObject
 {
@@ -81,7 +55,6 @@ public:
 	virtual void SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame, USpatialActorChannel* Channel) PURE_VIRTUAL(USpatialTypeBinding::SendRPCCommand, );
 	
 	virtual void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) PURE_VIRTUAL(USpatialTypeBinding::ApplyQueuedStateToActor, );
-	void ResolvePendingRPCs(UObject* Object);
 
 protected:
 	template<class CommandType>
@@ -91,17 +64,9 @@ protected:
 		PinnedConnection.Get()->SendCommandResponse<CommandType>(Op.RequestId, {});
 	}
 
-	void SendCommandRequest(FCommandRequestContext::FRequestFunction Function);
-
 	UPROPERTY()
 	USpatialUpdateInterop* UpdateInterop;
 
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
-
-	// Pending RPCs.
-	TMap<UObject*, TArray<FCommandRequestContext::FRequestFunction>> PendingRPCs;
-
-	// Outgoing RPCs (for retry logic).
-	TMap<FUntypedRequestId, FCommandRequestContext> OutgoingRPCs;
 };

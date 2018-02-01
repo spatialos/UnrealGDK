@@ -2,6 +2,7 @@
 
 #include "SpatialUpdateInterop.h"
 
+#include "SpatialConstants.h"
 #include "SpatialActorChannel.h"
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
@@ -137,6 +138,61 @@ void USpatialUpdateInterop::InvokeRPC(AActor* TargetActor, const UFunction* cons
 	}
 
 	Binding->SendRPCCommand(TargetActor, Function, DuplicateFrame, Channel);
+}
+
+void USpatialUpdateInterop::SendCommandRequest(FCommandRequestContext::FRequestFunction Function)
+{
+	// Attempt to trigger command request.
+	auto Result = Function();
+	if (Result.UnresolvedObject != nullptr)
+	{
+		// Add to pending RPCs if any actors were unresolved.
+		PackageMap->AddPendingRPC(Result.UnresolvedObject, Function);
+	}
+	else
+	{
+		// Add to outgoing RPCs.
+		FCommandRequestContext Context{Function};
+		OutgoingRPCs.Emplace(Result.RequestId, std::move(Context));
+	}
+}
+
+void USpatialUpdateInterop::HandleCommandResponse(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message)
+{
+	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(RequestId);
+	if (!RequestContext)
+	{
+		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("%s: received an response which we did not send. Entity ID: %lld, Request ID: %d"), *RPCName, EntityId, RequestId);
+		return;
+	}
+
+	if (StatusCode == worker::StatusCode::kSuccess)
+	{
+		OutgoingRPCs.Remove(RequestId);
+	}
+	else
+	{
+		RequestContext->NumFailures++;
+		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+		{
+			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"), *RPCName, WaitTime, (int)StatusCode, *Message);
+
+			// Queue retry.
+			FTimerHandle RetryTimer;
+			FTimerDelegate TimerCallback;
+			TimerCallback.BindLambda([RequestContext]()
+			{
+				RequestContext->SendCommandRequest();
+			});
+			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
+		}
+		else
+		{
+			UE_LOG(LogSpatialUpdateInterop, Error, TEXT("%s: failed too many times, giving up (%u attempts). Error code: %d Message: %s"),
+				*RPCName, SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)StatusCode, *Message);
+		}
+	}
 }
 
 void USpatialUpdateInterop::SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId)

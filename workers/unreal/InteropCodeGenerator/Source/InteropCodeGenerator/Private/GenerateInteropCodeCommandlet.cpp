@@ -598,8 +598,8 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		Writer.Print("{").Indent();
 		Writer.Printf(R"""(
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(%s);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0))""", *PropertyValue);
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0))""", *PropertyValue);
 		Writer.Print("{").Indent();
 		if (bIsUpdate)
 		{
@@ -616,7 +616,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		Writer.Printf(R"""(
 			else
 			{
-				%s(UObjectRef);
+				%s(ObjectRef);
 			})""", *SpatialValueSetter);
 		Writer.Outdent().Print("}");
 	}
@@ -1475,9 +1475,9 @@ void GenerateForwardingCodeFromLayout(
 	}
 	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, UnrealWorkerWritePermission)",
 		*GetSchemaCompleteDataName(Class), *GetSchemaCompleteDataName(Class));
-	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, UnrealWorkerWritePermission)",
-		*GetSchemaRPCComponentName(ERPCType::RPC_Client, Class), *GetSchemaRPCComponentName(ERPCType::RPC_Client, Class));
 	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, UnrealClientWritePermission)",
+		*GetSchemaRPCComponentName(ERPCType::RPC_Client, Class), *GetSchemaRPCComponentName(ERPCType::RPC_Client, Class));
+	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, UnrealWorkerWritePermission)",
 		*GetSchemaRPCComponentName(ERPCType::RPC_Server, Class), *GetSchemaRPCComponentName(ERPCType::RPC_Server, Class));
 	SourceWriter.Print(".Build();");
 	SourceWriter.Outdent();
@@ -1782,37 +1782,7 @@ void GenerateForwardingCodeFromLayout(
 				*GetSchemaRPCComponentName(Group, Class),
 				*GetCommandNameFromFunction(RPC));
 			SourceWriter.Outdent().Print("};");
-			SourceWriter.Print("SendCommandRequest(Sender);");
-
-			/*
-			SourceWriter.Printf("improbable::unreal::%s Request;", *GetSchemaRPCRequestTypeFromUnreal(RPC));
-			for (TFieldIterator<UProperty> Param(RPC); Param; ++Param)
-			{
-				TArray<UProperty*> NewChain = { *Param };
-				GenerateUnrealToSchemaConversion(SourceWriter, "Request", NewChain, *Param->GetNameCPP(), -1);
-			}
-			SourceWriter.Print();
-			SourceWriter.Printf(R"""(
-				// Crease command request closure.
-				FCommandRequestContext::FRequestFunction Closure = [Connection, Request](const worker::EntityId& Target) -> FCommandRequestContext::FUntypedRequestId
-				{
-					return Connection->SendCommandRequest<improbable::unreal::%s::Commands::%s>(Target, Request, 0).Id;
-				};
-
-				// If we don't have a target entity ID, stash the command until we do.
-				if (Target == worker::EntityId{})
-				{
-					PendingRPCs.FindOrAdd(TargetActor).Add(Closure);
-					return;
-				}
-
-				// Add command request to OutgoingRPCs and trigger.
-				FCommandRequestContext Context{Closure, Target};
-				auto RequestId = Context.SendCommandRequest();
-				OutgoingRPCs.Emplace(RequestId, std::move(Context));)""",
-				*GetSchemaRPCComponentName(Group, Class),
-				*GetCommandNameFromFunction(RPC));
-			*/
+			SourceWriter.Print("UpdateInterop->SendCommandRequest(Sender);");
 			SourceWriter.Outdent().Print("}");
 		}
 	}
@@ -1830,42 +1800,7 @@ void GenerateForwardingCodeFromLayout(
 				*GetSchemaRPCComponentName(Group, Class),
 				*GetCommandNameFromFunction(RPC));
 			SourceWriter.Print("{").Indent();
-			SourceWriter.Printf(R"""(
-				FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-				if (!RequestContext)
-				{
-					UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %%lld, Request ID: %%d"), Op.EntityId, Op.RequestId.Id);
-					return;
-				}
-
-				if (Op.StatusCode == worker::StatusCode::kSuccess)
-				{
-					OutgoingRPCs.Remove(Op.RequestId.Id);
-				}
-				else
-				{
-					RequestContext->NumFailures++;
-					if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-					{
-						float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-						UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC %s failed, retrying in %%f seconds. Error code: %%d Message: %%s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-						// Queue retry.
-						FTimerHandle RetryTimer;
-						FTimerDelegate TimerCallback;
-						TimerCallback.BindLambda([RequestContext]()
-						{
-							RequestContext->SendCommandRequest();
-						});
-						//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-					}
-					else
-					{
-						UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC %s failed too many times (%%u attempts). Error code: %%d Message: %%s"),
-							SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-					}
-				})""",
-				*RPC->GetName(),
+			SourceWriter.Printf("UpdateInterop->HandleCommandResponse(TEXT(\"%s\"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));",
 				*RPC->GetName());
 			SourceWriter.Outdent().Print("}");
 		}

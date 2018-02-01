@@ -380,8 +380,8 @@ worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FVe
 		.AddComponent<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>(SingleClientData, UnrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>(MultiClientData, UnrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealPlayerControllerCompleteData>(improbable::unreal::UnrealPlayerControllerCompleteData::Data{}, UnrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealPlayerControllerClientRPCs>(improbable::unreal::UnrealPlayerControllerClientRPCs::Data{}, UnrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealPlayerControllerServerRPCs>(improbable::unreal::UnrealPlayerControllerServerRPCs::Data{}, UnrealClientWritePermission)
+		.AddComponent<improbable::unreal::UnrealPlayerControllerClientRPCs>(improbable::unreal::UnrealPlayerControllerClientRPCs::Data{}, UnrealClientWritePermission)
+		.AddComponent<improbable::unreal::UnrealPlayerControllerServerRPCs>(improbable::unreal::UnrealPlayerControllerServerRPCs::Data{}, UnrealWorkerWritePermission)
 		.Build();
 }
 
@@ -545,14 +545,14 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 5);
 				}
 				else
 				{
-					OutUpdate.set_field_owner(UObjectRef);
+					OutUpdate.set_field_owner(ObjectRef);
 				}
 			}
 			break;
@@ -578,14 +578,14 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 7);
 				}
 				else
 				{
-					OutUpdate.set_field_attachmentreplication_attachparent(UObjectRef);
+					OutUpdate.set_field_attachmentreplication_attachparent(ObjectRef);
 				}
 			}
 			break;
@@ -629,14 +629,14 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 12);
 				}
 				else
 				{
-					OutUpdate.set_field_attachmentreplication_attachcomponent(UObjectRef);
+					OutUpdate.set_field_attachmentreplication_attachcomponent(ObjectRef);
 				}
 			}
 			break;
@@ -664,14 +664,14 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 15);
 				}
 				else
 				{
-					OutUpdate.set_field_instigator(UObjectRef);
+					OutUpdate.set_field_instigator(ObjectRef);
 				}
 			}
 			break;
@@ -683,14 +683,14 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 16);
 				}
 				else
 				{
-					OutUpdate.set_field_pawn(UObjectRef);
+					OutUpdate.set_field_pawn(ObjectRef);
 				}
 			}
 			break;
@@ -702,14 +702,14 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 17);
 				}
 				else
 				{
-					OutUpdate.set_field_playerstate(UObjectRef);
+					OutUpdate.set_field_playerstate(ObjectRef);
 				}
 			}
 			break;
@@ -1184,7 +1184,7 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender(wo
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1210,7 +1210,7 @@ void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender(worker::Connec
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1232,7 +1232,7 @@ void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender(w
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1266,7 +1266,7 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Send
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1298,7 +1298,7 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender(worker::Con
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1333,7 +1333,7 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender(worker::C
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1358,15 +1358,15 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Conn
 		improbable::unreal::UnrealClientTeamMessageRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(SenderPlayerState);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. SenderPlayerState is unresolved."));
 				return FRPCRequestResult{SenderPlayerState};
 			}
 			else
 			{
-				Request.set_field_senderplayerstate(UObjectRef);
+				Request.set_field_senderplayerstate(ObjectRef);
 			}
 		}
 		Request.set_field_s(TCHAR_TO_UTF8(*S));
@@ -1377,7 +1377,7 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Conn
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1400,15 +1400,15 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker
 		improbable::unreal::UnrealClientStopForceFeedbackRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(ForceFeedbackEffect);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. ForceFeedbackEffect is unresolved."));
 				return FRPCRequestResult{ForceFeedbackEffect};
 			}
 			else
 			{
-				Request.set_field_forcefeedbackeffect(UObjectRef);
+				Request.set_field_forcefeedbackeffect(ObjectRef);
 			}
 		}
 		Request.set_field_tag(TCHAR_TO_UTF8(*Tag.ToString()));
@@ -1417,7 +1417,7 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1445,7 +1445,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender(worker::
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1467,15 +1467,15 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::C
 		improbable::unreal::UnrealClientStopCameraAnimRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(AnimToStop);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. AnimToStop is unresolved."));
 				return FRPCRequestResult{AnimToStop};
 			}
 			else
 			{
-				Request.set_field_animtostop(UObjectRef);
+				Request.set_field_animtostop(ObjectRef);
 			}
 		}
 
@@ -1483,7 +1483,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::C
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1505,7 +1505,7 @@ void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender(worke
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1531,7 +1531,7 @@ void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender(wo
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1554,15 +1554,15 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Co
 		improbable::unreal::UnrealClientSetViewTargetRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(A);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. A is unresolved."));
 				return FRPCRequestResult{A};
 			}
 			else
 			{
-				Request.set_field_a(UObjectRef);
+				Request.set_field_a(ObjectRef);
 			}
 		}
 		Request.set_field_transitionparams_blendtime(TransitionParams.BlendTime);
@@ -1574,7 +1574,7 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Co
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1600,7 +1600,7 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender(work
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1626,7 +1626,7 @@ void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender(worker::Connectio
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1650,15 +1650,15 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_S
 		improbable::unreal::UnrealClientSetForceMipLevelsToBeResidentRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Material);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. Material is unresolved."));
 				return FRPCRequestResult{Material};
 			}
 			else
 			{
-				Request.set_field_material(UObjectRef);
+				Request.set_field_material(ObjectRef);
 			}
 		}
 		Request.set_field_forceduration(ForceDuration);
@@ -1668,7 +1668,7 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_S
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1700,7 +1700,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender(worker:
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1726,7 +1726,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender(worker::Co
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1764,7 +1764,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Co
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1786,7 +1786,7 @@ void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender(w
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1812,7 +1812,7 @@ void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender(worker:
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1834,15 +1834,15 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worke
 		improbable::unreal::UnrealClientRetryClientRestartRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(NewPawn);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. NewPawn is unresolved."));
 				return FRPCRequestResult{NewPawn};
 			}
 			else
 			{
-				Request.set_field_newpawn(UObjectRef);
+				Request.set_field_newpawn(ObjectRef);
 			}
 		}
 
@@ -1850,7 +1850,7 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worke
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1872,15 +1872,15 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connecti
 		improbable::unreal::UnrealClientRestartRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(NewPawn);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. NewPawn is unresolved."));
 				return FRPCRequestResult{NewPawn};
 			}
 			else
 			{
-				Request.set_field_newpawn(UObjectRef);
+				Request.set_field_newpawn(ObjectRef);
 			}
 		}
 
@@ -1888,7 +1888,7 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connecti
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientReset_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1910,7 +1910,7 @@ void USpatialTypeBinding_PlayerController::ClientReset_Sender(worker::Connection
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1932,15 +1932,15 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connec
 		improbable::unreal::UnrealClientRepObjRefRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Object);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. Object is unresolved."));
 				return FRPCRequestResult{Object};
 			}
 			else
 			{
-				Request.set_field_object(UObjectRef);
+				Request.set_field_object(ObjectRef);
 			}
 		}
 
@@ -1948,7 +1948,7 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connec
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -1976,41 +1976,41 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(
 		Request.set_field_switch(Switch);
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(RelatedPlayerState_1);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. RelatedPlayerState_1 is unresolved."));
 				return FRPCRequestResult{RelatedPlayerState_1};
 			}
 			else
 			{
-				Request.set_field_relatedplayerstate_1(UObjectRef);
+				Request.set_field_relatedplayerstate_1(ObjectRef);
 			}
 		}
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(RelatedPlayerState_2);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. RelatedPlayerState_2 is unresolved."));
 				return FRPCRequestResult{RelatedPlayerState_2};
 			}
 			else
 			{
-				Request.set_field_relatedplayerstate_2(UObjectRef);
+				Request.set_field_relatedplayerstate_2(ObjectRef);
 			}
 		}
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(OptionalObject);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. OptionalObject is unresolved."));
 				return FRPCRequestResult{OptionalObject};
 			}
 			else
 			{
-				Request.set_field_optionalobject(UObjectRef);
+				Request.set_field_optionalobject(ObjectRef);
 			}
 		}
 
@@ -2018,7 +2018,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2043,15 +2043,15 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker
 		improbable::unreal::UnrealClientPrestreamTexturesRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(ForcedActor);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. ForcedActor is unresolved."));
 				return FRPCRequestResult{ForcedActor};
 			}
 			else
 			{
-				Request.set_field_forcedactor(UObjectRef);
+				Request.set_field_forcedactor(ObjectRef);
 			}
 		}
 		Request.set_field_forceduration(ForceDuration);
@@ -2062,7 +2062,7 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2092,7 +2092,7 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender(worker:
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2117,15 +2117,15 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(work
 		improbable::unreal::UnrealClientPlaySoundAtLocationRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Sound);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. Sound is unresolved."));
 				return FRPCRequestResult{Sound};
 			}
 			else
 			{
-				Request.set_field_sound(UObjectRef);
+				Request.set_field_sound(ObjectRef);
 			}
 		}
 		Request.set_field_location(improbable::Vector3f(Location.X, Location.Y, Location.Z));
@@ -2136,7 +2136,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(work
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2160,15 +2160,15 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connec
 		improbable::unreal::UnrealClientPlaySoundRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Sound);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. Sound is unresolved."));
 				return FRPCRequestResult{Sound};
 			}
 			else
 			{
-				Request.set_field_sound(UObjectRef);
+				Request.set_field_sound(ObjectRef);
 			}
 		}
 		Request.set_field_volumemultiplier(VolumeMultiplier);
@@ -2178,7 +2178,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connec
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2202,15 +2202,15 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker
 		improbable::unreal::UnrealClientPlayForceFeedbackRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(ForceFeedbackEffect);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. ForceFeedbackEffect is unresolved."));
 				return FRPCRequestResult{ForceFeedbackEffect};
 			}
 			else
 			{
-				Request.set_field_forcefeedbackeffect(UObjectRef);
+				Request.set_field_forcefeedbackeffect(ObjectRef);
 			}
 		}
 		Request.set_field_blooping(bLooping != 0);
@@ -2220,7 +2220,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2252,7 +2252,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender(worker::
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2282,15 +2282,15 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::C
 		improbable::unreal::UnrealClientPlayCameraAnimRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(AnimToPlay);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. AnimToPlay is unresolved."));
 				return FRPCRequestResult{AnimToPlay};
 			}
 			else
 			{
-				Request.set_field_animtoplay(UObjectRef);
+				Request.set_field_animtoplay(ObjectRef);
 			}
 		}
 		Request.set_field_scale(Scale);
@@ -2306,7 +2306,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::C
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2338,7 +2338,7 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender(worker::Conne
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2368,7 +2368,7 @@ void USpatialTypeBinding_PlayerController::ClientMessage_Sender(worker::Connecti
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2394,7 +2394,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender(worker::
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2420,7 +2420,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender(worker::
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientGotoState_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2446,7 +2446,7 @@ void USpatialTypeBinding_PlayerController::ClientGotoState_Sender(worker::Connec
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2469,15 +2469,15 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connec
 		improbable::unreal::UnrealClientGameEndedRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(EndGameFocus);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. EndGameFocus is unresolved."));
 				return FRPCRequestResult{EndGameFocus};
 			}
 			else
 			{
-				Request.set_field_endgamefocus(UObjectRef);
+				Request.set_field_endgamefocus(ObjectRef);
 			}
 		}
 		Request.set_field_biswinner(bIsWinner != 0);
@@ -2486,7 +2486,7 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connec
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2508,7 +2508,7 @@ void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender(w
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2530,7 +2530,7 @@ void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender(work
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2552,7 +2552,7 @@ void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender(worker:
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2578,7 +2578,7 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender(worke
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2600,7 +2600,7 @@ void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender(worker::
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2622,7 +2622,7 @@ void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender(w
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2648,7 +2648,7 @@ void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender(worker::Con
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2670,7 +2670,7 @@ void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender(w
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2700,7 +2700,7 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender(w
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2728,7 +2728,7 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender(worker::Conn
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2756,7 +2756,7 @@ void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender(worker::Conn
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2785,7 +2785,7 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender(worker::Connect
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2807,7 +2807,7 @@ void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender(worker::C
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2829,7 +2829,7 @@ void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender(worker::C
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2851,7 +2851,7 @@ void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender(worker:
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2879,7 +2879,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender(wo
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2907,7 +2907,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender(worker::Con
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2939,7 +2939,7 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender(worker::Con
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2961,7 +2961,7 @@ void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender(worker::
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -2983,7 +2983,7 @@ void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender(worker::Con
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -3009,7 +3009,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender(work
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -3037,7 +3037,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender(wor
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -3059,7 +3059,7 @@ void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender(worker::Co
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerPause_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -3081,7 +3081,7 @@ void USpatialTypeBinding_PlayerController::ServerPause_Sender(worker::Connection
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -3107,7 +3107,7 @@ void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender(worker
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -3139,7 +3139,7 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender(worker::Conne
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -3161,7 +3161,7 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_S
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -3183,7 +3183,7 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender(wo
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerChangeName_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -3209,7 +3209,7 @@ void USpatialTypeBinding_PlayerController::ServerChangeName_Sender(worker::Conne
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerCamera_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -3235,7 +3235,7 @@ void USpatialTypeBinding_PlayerController::ServerCamera_Sender(worker::Connectio
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, AActor* TargetActor)
@@ -3257,15 +3257,15 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender(wo
 		improbable::unreal::UnrealServerAcknowledgePossessionRequest Request;
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(P);
-			improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (UObjectRef.entity() == 0)
+			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (ObjectRef.entity() == 0)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. P is unresolved."));
 				return FRPCRequestResult{P};
 			}
 			else
 			{
-				Request.set_field_p(UObjectRef);
+				Request.set_field_p(ObjectRef);
 			}
 		}
 
@@ -3273,2667 +3273,357 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender(wo
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	SendCommandRequest(Sender);
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
 void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC OnServerStartedVisualLogger failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC OnServerStartedVisualLogger failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("OnServerStartedVisualLogger"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientWasKicked failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientWasKicked failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientWasKicked"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientVoiceHandshakeComplete failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientVoiceHandshakeComplete failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientVoiceHandshakeComplete"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientUpdateLevelStreamingStatus failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientUpdateLevelStreamingStatus failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientUpdateLevelStreamingStatus"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientUnmutePlayer failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientUnmutePlayer failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientUnmutePlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientTravelInternal failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientTravelInternal failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientTravelInternal"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientTeamMessage failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientTeamMessage failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientTeamMessage"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientStopForceFeedback failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientStopForceFeedback failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientStopForceFeedback"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientStopCameraShake failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientStopCameraShake failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientStopCameraShake"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientStopCameraAnim failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientStopCameraAnim failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientStopCameraAnim"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientStartOnlineSession failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientStartOnlineSession failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientStartOnlineSession"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSpawnCameraLensEffect failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientSpawnCameraLensEffect failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientSpawnCameraLensEffect"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetViewTarget failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientSetViewTarget failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientSetViewTarget"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetSpectatorWaiting failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientSetSpectatorWaiting failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientSetSpectatorWaiting"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetHUD failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientSetHUD failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientSetHUD"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetForceMipLevelsToBeResident failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientSetForceMipLevelsToBeResident failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientSetForceMipLevelsToBeResident"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetCinematicMode failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientSetCinematicMode failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientSetCinematicMode"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetCameraMode failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientSetCameraMode failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientSetCameraMode"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetCameraFade failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientSetCameraFade failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientSetCameraFade"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetBlockOnAsyncLoading failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientSetBlockOnAsyncLoading failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientSetBlockOnAsyncLoading"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientReturnToMainMenu failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientReturnToMainMenu failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientReturnToMainMenu"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientRetryClientRestart failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientRetryClientRestart failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientRetryClientRestart"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientRestart_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientRestart failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientRestart failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientRestart"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientReset_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientReset failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientReset failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientReset"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientRepObjRef failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientRepObjRef failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientRepObjRef"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientReceiveLocalizedMessage failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientReceiveLocalizedMessage failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientReceiveLocalizedMessage"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientPrestreamTextures failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientPrestreamTextures failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientPrestreamTextures"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientPrepareMapChange failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientPrepareMapChange failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientPrepareMapChange"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientPlaySoundAtLocation failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientPlaySoundAtLocation failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientPlaySoundAtLocation"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientPlaySound failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientPlaySound failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientPlaySound"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientPlayForceFeedback failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientPlayForceFeedback failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientPlayForceFeedback"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientPlayCameraShake failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientPlayCameraShake failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientPlayCameraShake"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientPlayCameraAnim failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientPlayCameraAnim failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientPlayCameraAnim"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientMutePlayer failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientMutePlayer failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientMutePlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientMessage_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientMessage failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientMessage failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientMessage"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientIgnoreMoveInput failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientIgnoreMoveInput failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientIgnoreMoveInput"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientIgnoreLookInput failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientIgnoreLookInput failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientIgnoreLookInput"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientGotoState_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientGotoState failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientGotoState failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientGotoState"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientGameEnded failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientGameEnded failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientGameEnded"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientForceGarbageCollection failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientForceGarbageCollection failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientForceGarbageCollection"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientFlushLevelStreaming failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientFlushLevelStreaming failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientFlushLevelStreaming"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientEndOnlineSession failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientEndOnlineSession failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientEndOnlineSession"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientEnableNetworkVoice failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientEnableNetworkVoice failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientEnableNetworkVoice"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientCommitMapChange failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientCommitMapChange failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientCommitMapChange"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientClearCameraLensEffects failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientClearCameraLensEffects failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientClearCameraLensEffects"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientCapBandwidth failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientCapBandwidth failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientCapBandwidth"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientCancelPendingMapChange failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientCancelPendingMapChange failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientCancelPendingMapChange"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientAddTextureStreamingLoc failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientAddTextureStreamingLoc failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientAddTextureStreamingLoc"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetRotation failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientSetRotation failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientSetRotation"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetLocation failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ClientSetLocation failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ClientSetLocation"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerViewSelf failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerViewSelf failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerViewSelf"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerViewPrevPlayer failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerViewPrevPlayer failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerViewPrevPlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerViewNextPlayer failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerViewNextPlayer failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerViewNextPlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerVerifyViewTarget failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerVerifyViewTarget failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerVerifyViewTarget"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerUpdateLevelVisibility failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerUpdateLevelVisibility failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerUpdateLevelVisibility"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerUpdateCamera failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerUpdateCamera failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerUpdateCamera"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerUnmutePlayer failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerUnmutePlayer failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerUnmutePlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerToggleAILogging failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerToggleAILogging failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerToggleAILogging"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerShortTimeout failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerShortTimeout failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerShortTimeout"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerSetSpectatorWaiting failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerSetSpectatorWaiting failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerSetSpectatorWaiting"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerSetSpectatorLocation failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerSetSpectatorLocation failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerSetSpectatorLocation"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerRestartPlayer failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerRestartPlayer failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerRestartPlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerPause_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerPause failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerPause failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerPause"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerNotifyLoadedWorld failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerNotifyLoadedWorld failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerNotifyLoadedWorld"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerMutePlayer failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerMutePlayer failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerMutePlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerCheckClientPossessionReliable failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerCheckClientPossessionReliable failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerCheckClientPossessionReliable"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerCheckClientPossession failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerCheckClientPossession failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerCheckClientPossession"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerChangeName_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerChangeName failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerChangeName failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerChangeName"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerCamera_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerCamera failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerCamera failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerCamera"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>& Op)
 {
-	FCommandRequestContext* RequestContext = OutgoingRPCs.Find(Op.RequestId.Id);
-	if (!RequestContext)
-	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("Received an RPC response which we did not send. Entity ID: %lld, Request ID: %d"), Op.EntityId, Op.RequestId.Id);
-		return;
-	}
-
-	if (Op.StatusCode == worker::StatusCode::kSuccess)
-	{
-		OutgoingRPCs.Remove(Op.RequestId.Id);
-	}
-	else
-	{
-		RequestContext->NumFailures++;
-		if (RequestContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RequestContext->NumFailures);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerAcknowledgePossession failed, retrying in %f seconds. Error code: %d Message: %s"), WaitTime, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-
-			// Queue retry.
-			FTimerHandle RetryTimer;
-			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([RequestContext]()
-			{
-				RequestContext->SendCommandRequest();
-			});
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialUpdateInterop, Fatal, TEXT("RPC ServerAcknowledgePossession failed too many times (%u attempts). Error code: %d Message: %s"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.StatusCode, UTF8_TO_TCHAR(Op.Message.c_str()));
-		}
-	}
+	UpdateInterop->HandleCommandResponse(TEXT("ServerAcknowledgePossession"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op)
