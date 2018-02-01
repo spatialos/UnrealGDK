@@ -1700,21 +1700,21 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Print("if (ConditionMap.IsRelevant(Data.Condition))\n{");
 			SourceWriter.Indent();
 
-			// Write handle.
-			SourceWriter.Print("OutputWriter.SerializeIntPacked(Handle);");
-			SourceWriter.Print();
-
-			// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
-			FString PropertyValueName = TEXT("Value");
-			FString PropertyValueCppType = Property->GetCPPType();
-			FString PropertyName = TEXT("Data.Property");
-			SourceWriter.Printf("%s %s;", *PropertyValueCppType, *PropertyValueName);
-			SourceWriter.Print();
-			GeneratePropertyToUnrealConversion(SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName, true, PropertyValueCppType);
-			SourceWriter.Print();
 			//todo-giray: re-enable FName deserialization.
 			if (!Property->IsA(UNameProperty::StaticClass()))
 			{
+				// Write handle.
+				SourceWriter.Print("OutputWriter.SerializeIntPacked(Handle);");
+				SourceWriter.Print();
+
+				// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
+				FString PropertyValueName = TEXT("Value");
+				FString PropertyValueCppType = Property->GetCPPType();
+				FString PropertyName = TEXT("Data.Property");
+				SourceWriter.Printf("%s %s;", *PropertyValueCppType, *PropertyValueName);
+				SourceWriter.Print();
+				GeneratePropertyToUnrealConversion(SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName, true, PropertyValueCppType);
+				SourceWriter.Print();
 				SourceWriter.Printf("%s->NetSerializeItem(OutputWriter, PackageMap, &%s);", *PropertyName, *PropertyValueName);
 			}
 			else

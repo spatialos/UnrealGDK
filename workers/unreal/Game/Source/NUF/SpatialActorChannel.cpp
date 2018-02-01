@@ -241,6 +241,11 @@ bool USpatialActorChannel::ReplicateActor()
 	// ----------------------------------------------------------
 
 	bool bWroteSomethingImportant = false;
+	if (RepFlags.bNetInitial)
+	{
+		ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer.Empty();
+		ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer.AddZeroed(Actor->GetClass()->GetDefaultsCount());
+	}
 
 	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame, ActorReplicator->RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
 

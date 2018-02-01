@@ -1024,12 +1024,6 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FName Value;
-
-			Value = FName((*(Update.field_attachmentreplication_attachsocket().data())).data());
-
 			//FName deserialization not currently supported.
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
@@ -1232,12 +1226,6 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FName Value;
-
-			Value = FName((*(Update.field_replicatedbasedmovement_bonename().data())).data());
-
 			//FName deserialization not currently supported.
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
@@ -1580,12 +1568,6 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
-			FName Value;
-
-			Value = FName((*(Update.field_reprootmotion_movementbasebonename().data())).data());
-
 			//FName deserialization not currently supported.
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
