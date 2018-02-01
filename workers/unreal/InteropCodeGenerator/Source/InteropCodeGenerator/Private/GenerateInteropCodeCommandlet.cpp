@@ -1122,7 +1122,7 @@ void GenerateForwardingCodeFromLayout(
 		void UnbindFromView() override;
 		worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
 
-		worker::Entity CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
+		worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 		void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
 		void SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame) override;
 
@@ -1214,7 +1214,6 @@ void GenerateForwardingCodeFromLayout(
 		#include "SpatialActorChannel.h"
 		#include "EntityBuilder.h"
 		#include "SpatialPackageMapClient.h"
-		#include "Utils/BunchReader.h"
 		#include "SpatialNetDriver.h"
 		#include "SpatialConstants.h"
 		#include "SpatialUpdateInterop.h")""", *InteropFilename);
@@ -1417,7 +1416,7 @@ void GenerateForwardingCodeFromLayout(
 	// CreateActorEntity
 	// ===========================================
 	SourceWriter.Print();
-	SourceWriter.Printf("worker::Entity %s::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const", *TypeBindingName);
+	SourceWriter.Printf("worker::Entity %s::CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const", *TypeBindingName);
 	SourceWriter.Print("{");
 	SourceWriter.Indent();
 	
@@ -1454,30 +1453,34 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Print();
 	SourceWriter.Print(R"""(
 		// Create entity.
-		const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
-		improbable::WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
-		improbable::WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
-		improbable::WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet}};
-		improbable::WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
-		improbable::WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};)""");
+		std::string ClientWorkerIdString = TCHAR_TO_UTF8(*ClientWorkerId);
+
+		improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
+		improbable::WorkerAttributeSet ClientAttribute{{worker::List<std::string>{"UnrealClient"}}};
+		improbable::WorkerAttributeSet OwnClientAttribute{{"workerId:" + ClientWorkerIdString}};
+
+		improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
+		improbable::WorkerRequirementSet ClientsOnly{{ClientAttribute}};
+		improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
+		improbable::WorkerRequirementSet WorkerOrClientOnly{{WorkerAttribute, ClientAttribute}};)""");
+	SourceWriter.Print();
 	SourceWriter.Print("return improbable::unreal::FEntityBuilder::Begin()");
 	SourceWriter.Indent();
 	SourceWriter.Print(R"""(
-		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, UnrealWorkerWritePermission)
+		.AddPositionComponent(improbable::Position::Data{USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position)}, WorkersOnly)
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
-		.SetReadAcl(AnyWorkerReadPermission)
-		.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClient::Data{}, UnrealClientWritePermission))""");
+		.SetReadAcl(WorkerOrClientOnly))""");
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
-		SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(%sData, UnrealWorkerWritePermission)",
+		SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(%sData, WorkersOnly)",
 			*GetSchemaReplicatedDataName(Group, Class), *GetReplicatedPropertyGroupName(Group));
 	}
-	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, UnrealWorkerWritePermission)",
+	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, WorkersOnly)",
 		*GetSchemaCompleteDataName(Class), *GetSchemaCompleteDataName(Class));
-	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, UnrealClientWritePermission)",
+	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, OwnClientOnly)",
 		*GetSchemaRPCComponentName(ERPCType::RPC_Client, Class), *GetSchemaRPCComponentName(ERPCType::RPC_Client, Class));
-	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, UnrealWorkerWritePermission)",
+	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, WorkersOnly)",
 		*GetSchemaRPCComponentName(ERPCType::RPC_Server, Class), *GetSchemaRPCComponentName(ERPCType::RPC_Server, Class));
 	SourceWriter.Print(".Build();");
 	SourceWriter.Outdent();

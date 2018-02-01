@@ -19,6 +19,22 @@ class USpatialNetConnection;
 // SpatialNetDriver will not be in the NUF module in a final product, so we can merge this with LogSpatialOS.
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNUF, Log, All);
 
+class FSpatialWorkerUniqueNetId : public FUniqueNetId
+{
+public:
+	FSpatialWorkerUniqueNetId(const FString& WorkerId) : WorkerId{WorkerId} {}
+	~FSpatialWorkerUniqueNetId() override = default;
+
+	const uint8* GetBytes() const override { return reinterpret_cast<const uint8*>(*WorkerId); }
+	int32 GetSize() const override { return WorkerId.Len() * sizeof(TCHAR); }
+	bool IsValid() const override { return true; }
+	FString ToString() const override { return WorkerId; }
+	FString ToDebugString() const override { return TEXT("workerId:") + WorkerId; }
+
+private:
+	FString WorkerId;
+};
+
 UCLASS()
 class NUF_API USpatialNetDriver : public UIpNetDriver
 {

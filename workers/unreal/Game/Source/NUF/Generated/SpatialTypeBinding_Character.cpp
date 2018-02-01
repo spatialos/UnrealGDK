@@ -7,7 +7,6 @@
 #include "SpatialActorChannel.h"
 #include "EntityBuilder.h"
 #include "SpatialPackageMapClient.h"
-#include "Utils/BunchReader.h"
 #include "SpatialNetDriver.h"
 #include "SpatialConstants.h"
 #include "SpatialUpdateInterop.h"
@@ -192,7 +191,7 @@ worker::ComponentId USpatialTypeBinding_Character::GetReplicatedGroupComponentId
 	}
 }
 
-worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const
+worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const
 {
 	// Setup initial data.
 	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data SingleClientData;
@@ -206,23 +205,27 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& P
 	MultiClientUpdate.ApplyTo(MultiClientData);
 
 	// Create entity.
-	const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
-	improbable::WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
-	improbable::WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
-	improbable::WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet}};
-	improbable::WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
-	improbable::WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
+	std::string ClientWorkerIdString = TCHAR_TO_UTF8(*ClientWorkerId);
+
+	improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
+	improbable::WorkerAttributeSet ClientAttribute{{worker::List<std::string>{"UnrealClient"}}};
+	improbable::WorkerAttributeSet OwnClientAttribute{{"workerId:" + ClientWorkerIdString}};
+
+	improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
+	improbable::WorkerRequirementSet ClientsOnly{{ClientAttribute}};
+	improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
+	improbable::WorkerRequirementSet WorkerOrClientOnly{{WorkerAttribute, ClientAttribute}};
+
 	return improbable::unreal::FEntityBuilder::Begin()
-		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, UnrealWorkerWritePermission)
+		.AddPositionComponent(improbable::Position::Data{USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position)}, WorkersOnly)
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
-		.SetReadAcl(AnyWorkerReadPermission)
-		.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClient::Data{}, UnrealClientWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(SingleClientData, UnrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(MultiClientData, UnrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, UnrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterClientRPCs>(improbable::unreal::UnrealCharacterClientRPCs::Data{}, UnrealClientWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterServerRPCs>(improbable::unreal::UnrealCharacterServerRPCs::Data{}, UnrealWorkerWritePermission)
+		.SetReadAcl(WorkerOrClientOnly)
+		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(SingleClientData, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(MultiClientData, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealCharacterClientRPCs>(improbable::unreal::UnrealCharacterClientRPCs::Data{}, OwnClientOnly)
+		.AddComponent<improbable::unreal::UnrealCharacterServerRPCs>(improbable::unreal::UnrealCharacterServerRPCs::Data{}, WorkersOnly)
 		.Build();
 }
 
