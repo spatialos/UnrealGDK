@@ -828,6 +828,12 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 
 	USpatialNetConnection* Connection = GetSpatialOSNetConnection();
 
+	const TCHAR* ClientWorkerIdOption = InUrl.GetOption(TEXT("workerId"), nullptr);
+	check(ClientWorkerIdOption);
+	FString ClientWorkerId(ClientWorkerIdOption);
+	ClientWorkerId = ClientWorkerId.Mid(1); // Trim off the = at the beginning.
+	FUniqueNetIdRepl WorkerId(TSharedPtr<FSpatialWorkerUniqueNetId>(new FSpatialWorkerUniqueNetId(ClientWorkerId)));
+
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
 	// Note that in the initial implementation, we carry over no data about the user here (such as a unique player id, or the real IP)
 	// In the future it would make sense to add metadata to the Spawn request and pass it here.
@@ -841,7 +847,7 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 	AGameModeBase* GameMode = GetWorld()->GetAuthGameMode();
 	if (GameMode)
 	{
-		GameMode->PreLogin(Tmp, Connection->LowLevelGetRemoteAddress(), Connection->PlayerId, ErrorMsg);
+		GameMode->PreLogin(Tmp, Connection->LowLevelGetRemoteAddress(), WorkerId, ErrorMsg);
 	}
 	
 	if (!ErrorMsg.IsEmpty())
@@ -865,7 +871,7 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 
 	if (bOk)
 	{
-		Connection->PlayerController = World->SpawnPlayActor(Connection, ROLE_AutonomousProxy, InUrl, Connection->PlayerId, ErrorMsg);
+		Connection->PlayerController = World->SpawnPlayActor(Connection, ROLE_AutonomousProxy, InUrl, WorkerId, ErrorMsg);
 		if (Connection->PlayerController == NULL)
 		{
 			// Failed to connect.

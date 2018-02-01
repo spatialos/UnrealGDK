@@ -48,7 +48,9 @@ void ASpatialSpawner::HandleSpawnRequest(USpawnPlayerCommandResponder * Responde
 
 	if (NetDriver)
 	{
-		NetDriver->AcceptNewPlayer(FURL(nullptr, *(Responder->GetRequest()->GetUrl()), TRAVEL_Absolute));
+		FString URLString = Responder->GetRequest()->GetUrl();
+		URLString += TEXT("?workerId=") + Responder->GetCallerWorkerId();
+		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute));
 	}
 	else
 	{

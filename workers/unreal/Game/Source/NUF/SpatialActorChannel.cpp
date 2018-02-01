@@ -17,8 +17,6 @@
 #include "SpatialOS.h"
 #include "SpatialUpdateInterop.h"
 
-using namespace improbable;
-
 DEFINE_LOG_CATEGORY(LogSpatialOSActorChannel);
 
 namespace
@@ -64,7 +62,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	SpatialNetDriver = nullptr;
 }
 
-void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed)
+void USpatialActorChannel::SendCreateEntityRequest(const FString& PlayerWorkerId, const TArray<uint16>& Changed)
 {
 	TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
 	if (PinnedConnection.IsValid())
@@ -79,27 +77,31 @@ void USpatialActorChannel::SendCreateEntityRequest(const TArray<uint16>& Changed
 
 		if (TypeBinding)
 		{
-			auto Entity = TypeBinding->CreateActorEntity(Actor->GetActorLocation(), PathStr, GetChangeState(Changed), this);
+			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Actor->GetActorLocation(), PathStr, GetChangeState(Changed), this);
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ActorEntityId, 0);
 		}
 		else
 		{
-			WorkerAttributeSet UnrealWorkerAttributeSet{ { worker::List<std::string>{"UnrealWorker"} } };
-			WorkerAttributeSet UnrealClientAttributeSet{ { worker::List<std::string>{"UnrealClient"} } };
+			std::string ClientWorkerIdString = TCHAR_TO_UTF8(*PlayerWorkerId);
 
-			// UnrealWorker write authority, any worker read authority
-			WorkerRequirementSet UnrealWorkerWritePermission{ { UnrealWorkerAttributeSet } };
-			WorkerRequirementSet UnrealClientWritePermission{ { UnrealClientAttributeSet } };
-			WorkerRequirementSet AnyWorkerReadRequirement{ { UnrealWorkerAttributeSet, UnrealClientAttributeSet } };
+			improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
+			improbable::WorkerAttributeSet ClientAttribute{{worker::List<std::string>{"UnrealClient"}}};
+			improbable::WorkerAttributeSet OwnClientAttribute{{"workerId:" + ClientWorkerIdString}};
 
-			auto Entity = unreal::FEntityBuilder::Begin()
-				.AddPositionComponent(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Actor->GetActorLocation()), UnrealWorkerWritePermission)
-				.AddMetadataComponent(Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
+			improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
+			improbable::WorkerRequirementSet ClientsOnly{{ClientAttribute}};
+			improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
+			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
+
+			const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Actor->GetActorLocation());
+			auto Entity = improbable::unreal::FEntityBuilder::Begin()
+				.AddPositionComponent(SpatialPosition, WorkersOnly)
+				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
 				.SetPersistence(true)
-				.SetReadAcl(AnyWorkerReadRequirement)
+				.SetReadAcl(AnyUnrealWorkerOrClient)
 				// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
-				//todo-giray: Remove once we're using proper (generated) entity templates here.
-				.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, UnrealClientWritePermission)
+				// todo-giray: Remove once we're using proper (generated) entity templates here.
+				.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, OwnClientOnly)
 				.Build();
 
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ActorEntityId, 0);
@@ -279,7 +281,28 @@ bool USpatialActorChannel::ReplicateActor()
 		
 		if (RepFlags.bNetInitial)
 		{
-			SendCreateEntityRequest(Changed);
+			// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
+			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
+			// player controller, get the player state.
+			FString PlayerWorkerId;
+			APawn* Pawn = Cast<APawn>(Actor);
+			if (Pawn && Pawn->PlayerState)
+			{
+				PlayerWorkerId = Pawn->PlayerState->UniqueId.ToString();
+			}
+			else
+			{
+				APlayerController* PlayerController = Cast<APlayerController>(Actor);
+				if (PlayerController)
+				{
+					PlayerWorkerId = PlayerController->PlayerState->UniqueId.ToString();
+				}
+				else
+				{
+					UE_LOG(LogSpatialOSActorChannel, Warning, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
+				}
+			}
+			SendCreateEntityRequest(PlayerWorkerId, Changed);
 		}
 		else
 		{
