@@ -9,14 +9,14 @@ FCodeWriter::FCodeWriter() : Scope(0)
 
 FCodeWriter& FCodeWriter::Print()
 {
-	OutputSource += TEXT("\n");
+	OutputSource += TEXT("\r\n");
 	return *this;
 }
 
 FCodeWriter& FCodeWriter::Print(const FString& String)
 {
 	TArray<FString> Lines;
-	String.ParseIntoArray(Lines, TEXT("\n"), false);
+	String.Replace(TEXT("\r\n"), TEXT("\n")).ParseIntoArray(Lines, TEXT("\n"), false);
 
 	if (Lines.Num() == 0)
 	{
@@ -54,12 +54,17 @@ FCodeWriter& FCodeWriter::Print(const FString& String)
 	// Add lines to output.
 	for (auto& Line : Lines)
 	{
-		FString ScopeIdent;
-		for (int ScopeLevel = 0; ScopeLevel < Scope; ++ScopeLevel)
+		FString TrimmedLine = Line.Mid(TrimScope);
+		if (!TrimmedLine.IsEmpty())
 		{
-			ScopeIdent += FString(TEXT("\t"));
+			FString ScopeIndent;
+			for (int ScopeLevel = 0; ScopeLevel < Scope; ++ScopeLevel)
+			{
+				ScopeIndent += FString(TEXT("\t"));
+			}
+			TrimmedLine = ScopeIndent + TrimmedLine;
 		}
-		OutputSource += ScopeIdent + Line.Mid(TrimScope) + TEXT("\n");
+		OutputSource += TrimmedLine + TEXT("\r\n");
 	}
 
 	return *this;

@@ -31,6 +31,17 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
+	// Set the timer manager.
+	UWorld* World = GetWorld();
+	if (World == nullptr)
+	{
+		// This means we're not a listen server, grab the world from the pending net game instead.
+		FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this);
+		check(WorldContext);
+		World = WorldContext->World();
+	}
+	TimerManager = &World->GetTimerManager();
+
 	// make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	UChannel::ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
@@ -110,7 +121,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		}
 
 		// Send the player spawn commands with retries
-		PlayerSpawner.RequestPlayer(SpatialOSInstance, &WorldContext->World()->GetTimerManager(), DummyURL);
+		PlayerSpawner.RequestPlayer(SpatialOSInstance, TimerManager, DummyURL);
 	}
 	else
 	{
@@ -126,7 +137,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		AddClientConnection(Connection);
 		//Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
 		Connection->SetClientLoginState(EClientLoginState::Welcomed);
-		UpdateInterop->Init(false, SpatialOSInstance, this);
+		UpdateInterop->Init(false, SpatialOSInstance, this, TimerManager);
 	}
 }
 
@@ -718,19 +729,11 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame* Stack,
 	UObject* SubObject)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Function: %s, actor: %s"), *Function->GetName(), *Actor->GetName());
+	UE_LOG(LogSpatialOSNUF, Warning, TEXT("Function: %s, actor: %s"), *Function->GetName(), *Actor->GetName());
 	USpatialNetConnection* Connection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
 	if (!Connection)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
-		return;
-	}
-
-	// Get target EntityId.
-	FEntityId TargetEntityId = EntityRegistry->GetEntityIdFromActor(Actor);
-	if (TargetEntityId == FEntityId())
-	{
-		UE_LOG(LogTemp, Error, TEXT("Attempted to send RPC from an actor with no entity ID. TODO: Add queuing."))
+		UE_LOG(LogSpatialOSNUF, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
 		return;
 	}
 
@@ -741,8 +744,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame TempRpcFrameForReading{CallingObject, Function, Parameters, nullptr, Function->Children};
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Actor));
-		UpdateInterop->InvokeRPC(Actor, Function, &TempRpcFrameForReading, Channel, TargetEntityId.ToSpatialEntityId());
+		UpdateInterop->InvokeRPC(Actor, Function, &TempRpcFrameForReading);
 	}
 
 	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver
@@ -785,14 +787,21 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	Super::TickFlush(DeltaTime);
 }
 
+void USpatialNetDriver::SetTimerManager(FTimerManager* InTimerManager)
+{
+	TimerManager = InTimerManager;
+}
+
 USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 {
 	if (ServerConnection)
 	{
-		return nullptr;
+		return Cast<USpatialNetConnection>(ServerConnection);
 	}
-	
-	return Cast<USpatialNetConnection>(ClientConnections[0]);
+	else
+	{
+		return Cast<USpatialNetConnection>(ClientConnections[0]);
+	}
 }
 
 bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)

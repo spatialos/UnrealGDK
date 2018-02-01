@@ -9,6 +9,7 @@
 #include "SpatialPackageMapClient.h"
 #include "Utils/BunchReader.h"
 #include "SpatialNetDriver.h"
+#include "SpatialConstants.h"
 #include "SpatialUpdateInterop.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
@@ -159,6 +160,9 @@ void USpatialTypeBinding_Character::BindToView()
 	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatwalk>(std::bind(&USpatialTypeBinding_Character::ClientCheatWalk_Receiver, this, std::placeholders::_1)));
 	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatghost>(std::bind(&USpatialTypeBinding_Character::ClientCheatGhost_Receiver, this, std::placeholders::_1)));
 	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatfly>(std::bind(&USpatialTypeBinding_Character::ClientCheatFly_Receiver, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatwalk>(std::bind(&USpatialTypeBinding_Character::ClientCheatWalk_Sender_Response, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatghost>(std::bind(&USpatialTypeBinding_Character::ClientCheatGhost_Sender_Response, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatfly>(std::bind(&USpatialTypeBinding_Character::ClientCheatFly_Sender_Response, this, std::placeholders::_1)));
 }
 
 void USpatialTypeBinding_Character::UnbindFromView()
@@ -217,8 +221,8 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FVector& P
 		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(SingleClientData, UnrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(MultiClientData, UnrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, UnrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterClientRPCs>(improbable::unreal::UnrealCharacterClientRPCs::Data{}, UnrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealCharacterServerRPCs>(improbable::unreal::UnrealCharacterServerRPCs::Data{}, UnrealClientWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterClientRPCs>(improbable::unreal::UnrealCharacterClientRPCs::Data{}, UnrealClientWritePermission)
+		.AddComponent<improbable::unreal::UnrealCharacterServerRPCs>(improbable::unreal::UnrealCharacterServerRPCs::Data{}, UnrealWorkerWritePermission)
 		.Build();
 }
 
@@ -243,12 +247,12 @@ void USpatialTypeBinding_Character::SendComponentUpdates(const FPropertyChangeSt
 	}
 }
 
-void USpatialTypeBinding_Character::SendRPCCommand(const UFunction* const Function, FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+void USpatialTypeBinding_Character::SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)
 {
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
 	auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
 	checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
-	(this->*(*SenderFuncIterator))(Connection.Get(), RPCFrame, Channel, Target);
+	(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetActor);
 }
 
 void USpatialTypeBinding_Character::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)
@@ -360,14 +364,14 @@ void USpatialTypeBinding_Character::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 5);
 				}
 				else
 				{
-					OutUpdate.set_field_owner(UObjectRef);
+					OutUpdate.set_field_owner(ObjectRef);
 				}
 			}
 			break;
@@ -393,14 +397,14 @@ void USpatialTypeBinding_Character::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 7);
 				}
 				else
 				{
-					OutUpdate.set_field_attachmentreplication_attachparent(UObjectRef);
+					OutUpdate.set_field_attachmentreplication_attachparent(ObjectRef);
 				}
 			}
 			break;
@@ -444,14 +448,14 @@ void USpatialTypeBinding_Character::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 12);
 				}
 				else
 				{
-					OutUpdate.set_field_attachmentreplication_attachcomponent(UObjectRef);
+					OutUpdate.set_field_attachmentreplication_attachcomponent(ObjectRef);
 				}
 			}
 			break;
@@ -479,14 +483,14 @@ void USpatialTypeBinding_Character::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 15);
 				}
 				else
 				{
-					OutUpdate.set_field_instigator(UObjectRef);
+					OutUpdate.set_field_instigator(ObjectRef);
 				}
 			}
 			break;
@@ -498,14 +502,14 @@ void USpatialTypeBinding_Character::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 16);
 				}
 				else
 				{
-					OutUpdate.set_field_playerstate(UObjectRef);
+					OutUpdate.set_field_playerstate(ObjectRef);
 				}
 			}
 			break;
@@ -525,14 +529,14 @@ void USpatialTypeBinding_Character::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 18);
 				}
 				else
 				{
-					OutUpdate.set_field_controller(UObjectRef);
+					OutUpdate.set_field_controller(ObjectRef);
 				}
 			}
 			break;
@@ -544,14 +548,14 @@ void USpatialTypeBinding_Character::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 19);
 				}
 				else
 				{
-					OutUpdate.set_field_replicatedbasedmovement_movementbase(UObjectRef);
+					OutUpdate.set_field_replicatedbasedmovement_movementbase(ObjectRef);
 				}
 			}
 			break;
@@ -667,14 +671,14 @@ void USpatialTypeBinding_Character::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 33);
 				}
 				else
 				{
-					OutUpdate.set_field_reprootmotion_animmontage(UObjectRef);
+					OutUpdate.set_field_reprootmotion_animmontage(ObjectRef);
 				}
 			}
 			break;
@@ -710,14 +714,14 @@ void USpatialTypeBinding_Character::ApplyUpdateToSpatial_MultiClient(
 
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-				improbable::unreal::UnrealObjectRef UObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (UObjectRef.entity() == 0)
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef.entity() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 37);
 				}
 				else
 				{
-					OutUpdate.set_field_reprootmotion_movementbase(UObjectRef);
+					OutUpdate.set_field_reprootmotion_movementbase(ObjectRef);
 				}
 			}
 			break;
@@ -1691,25 +1695,85 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
-void USpatialTypeBinding_Character::ClientCheatWalk_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+void USpatialTypeBinding_Character::ClientCheatWalk_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
-	improbable::unreal::UnrealClientCheatWalkRequest Request;
+	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
+	{
+		// Resolve TargetActor.
+		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetActor));
+		if (TargetObjectRef.entity() == 0)
+		{
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientCheatWalk queued. Target actor is unresolved."));
+			return FRPCRequestResult{TargetActor};
+		}
 
-	Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>(Target, Request, 0);
+		// Build request.
+		improbable::unreal::UnrealClientCheatWalkRequest Request;
+
+		// Send command request.
+		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>(TargetObjectRef.entity(), Request, 0);
+		return FRPCRequestResult{RequestId.Id};
+	};
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_Character::ClientCheatGhost_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+void USpatialTypeBinding_Character::ClientCheatGhost_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
-	improbable::unreal::UnrealClientCheatGhostRequest Request;
+	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
+	{
+		// Resolve TargetActor.
+		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetActor));
+		if (TargetObjectRef.entity() == 0)
+		{
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientCheatGhost queued. Target actor is unresolved."));
+			return FRPCRequestResult{TargetActor};
+		}
 
-	Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>(Target, Request, 0);
+		// Build request.
+		improbable::unreal::UnrealClientCheatGhostRequest Request;
+
+		// Send command request.
+		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>(TargetObjectRef.entity(), Request, 0);
+		return FRPCRequestResult{RequestId.Id};
+	};
+	UpdateInterop->SendCommandRequest(Sender);
 }
 
-void USpatialTypeBinding_Character::ClientCheatFly_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, USpatialActorChannel* Channel, const worker::EntityId& Target)
+void USpatialTypeBinding_Character::ClientCheatFly_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)
 {
-	improbable::unreal::UnrealClientCheatFlyRequest Request;
+	auto Sender = [this, Connection, TargetActor]() mutable -> FRPCRequestResult
+	{
+		// Resolve TargetActor.
+		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetActor));
+		if (TargetObjectRef.entity() == 0)
+		{
+			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientCheatFly queued. Target actor is unresolved."));
+			return FRPCRequestResult{TargetActor};
+		}
 
-	Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>(Target, Request, 0);
+		// Build request.
+		improbable::unreal::UnrealClientCheatFlyRequest Request;
+
+		// Send command request.
+		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>(TargetObjectRef.entity(), Request, 0);
+		return FRPCRequestResult{RequestId.Id};
+	};
+	UpdateInterop->SendCommandRequest(Sender);
+}
+
+void USpatialTypeBinding_Character::ClientCheatWalk_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op)
+{
+	UpdateInterop->HandleCommandResponse(TEXT("ClientCheatWalk"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_Character::ClientCheatGhost_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>& Op)
+{
+	UpdateInterop->HandleCommandResponse(TEXT("ClientCheatGhost"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_Character::ClientCheatFly_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>& Op)
+{
+	UpdateInterop->HandleCommandResponse(TEXT("ClientCheatFly"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
 
 void USpatialTypeBinding_Character::ClientCheatWalk_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op)
