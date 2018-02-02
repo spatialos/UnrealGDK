@@ -742,7 +742,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_SingleClient
 			FRotator Value;
 
 			{
-				auto& Rotator = *(Update.field_targetviewrotation().data());
+				auto& Rotator = (*Update.field_targetviewrotation().data());
 				Value.Yaw = Rotator.yaw();
 				Value.Pitch = Rotator.pitch();
 				Value.Roll = Rotator.roll();
@@ -764,7 +764,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_SingleClient
 			FVector Value;
 
 			{
-				auto& Vector = *(Update.field_spawnlocation().data());
+				auto& Vector = (*Update.field_spawnlocation().data());
 				Value.X = Vector.x();
 				Value.Y = Vector.y();
 				Value.Z = Vector.z();
@@ -796,7 +796,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 
 			uint8 Value;
 
-			Value = *(Update.field_bhidden().data());
+			Value = (*Update.field_bhidden().data());
 			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
 			// We will soon move away from using bunches when receiving Spatial updates.
 			if (Value)
@@ -819,7 +819,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 
 			uint8 Value;
 
-			Value = *(Update.field_breplicatemovement().data());
+			Value = (*Update.field_breplicatemovement().data());
 			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
 			// We will soon move away from using bunches when receiving Spatial updates.
 			if (Value)
@@ -842,7 +842,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 
 			uint8 Value;
 
-			Value = *(Update.field_btearoff().data());
+			Value = (*Update.field_btearoff().data());
 			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
 			// We will soon move away from using bunches when receiving Spatial updates.
 			if (Value)
@@ -865,7 +865,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 
 			TEnumAsByte<ENetRole> Value;
 
-			Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_remoterole().data())));
+			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_remoterole().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -883,7 +883,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			AActor* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_owner().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_owner().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -911,7 +911,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			FRepMovement Value;
 
 			{
-				auto& ValueDataStr = *(Update.field_replicatedmovement().data());
+				auto& ValueDataStr = (*Update.field_replicatedmovement().data());
 				TArray<uint8> ValueData;
 				ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
@@ -935,7 +935,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			AActor* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachparent().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_attachmentreplication_attachparent().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -963,7 +963,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			FVector_NetQuantize100 Value;
 
 			{
-				auto& Vector = *(Update.field_attachmentreplication_locationoffset().data());
+				auto& Vector = (*Update.field_attachmentreplication_locationoffset().data());
 				Value.X = Vector.x();
 				Value.Y = Vector.y();
 				Value.Z = Vector.z();
@@ -985,7 +985,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			FVector_NetQuantize100 Value;
 
 			{
-				auto& Vector = *(Update.field_attachmentreplication_relativescale3d().data());
+				auto& Vector = (*Update.field_attachmentreplication_relativescale3d().data());
 				Value.X = Vector.x();
 				Value.Y = Vector.y();
 				Value.Z = Vector.z();
@@ -1007,7 +1007,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			FRotator Value;
 
 			{
-				auto& Rotator = *(Update.field_attachmentreplication_rotationoffset().data());
+				auto& Rotator = (*Update.field_attachmentreplication_rotationoffset().data());
 				Value.Yaw = Rotator.yaw();
 				Value.Pitch = Rotator.pitch();
 				Value.Roll = Rotator.roll();
@@ -1040,7 +1040,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			USceneComponent* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachcomponent().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_attachmentreplication_attachcomponent().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1067,7 +1067,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 
 			TEnumAsByte<ENetRole> Value;
 
-			Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_role().data())));
+			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_role().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1084,7 +1084,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 
 			uint8 Value;
 
-			Value = *(Update.field_bcanbedamaged().data());
+			Value = (*Update.field_bcanbedamaged().data());
 			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
 			// We will soon move away from using bunches when receiving Spatial updates.
 			if (Value)
@@ -1108,7 +1108,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			APawn* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_instigator().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_instigator().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1136,7 +1136,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			APawn* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_pawn().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_pawn().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1164,7 +1164,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			APlayerState* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_playerstate().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_playerstate().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{

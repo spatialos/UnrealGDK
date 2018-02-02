@@ -650,7 +650,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	// This bool is used to differentiate between property updates and command arguments. Unlike command arguments, all property updates are optionals and must be accessed through .data()
 	if (bIsUpdate)
 	{
-		SpatialValue = FString::Printf(TEXT("*(%s.%s().data())"), *Update, *GetFullyQualifiedName(PropertyChain));
+		SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), *Update, *GetFullyQualifiedName(PropertyChain));
 	}	
 	else
 	{
@@ -1915,7 +1915,7 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 
-	TArray<FString> Classes = { TEXT("Character"), TEXT("PlayerController") };
+	TArray<FString> Classes = {TEXT("Character"), TEXT("PlayerController"), TEXT("PlayerState"), TEXT("GameStateBase")};
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
 		int ComponentId = 100000;

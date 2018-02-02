@@ -816,7 +816,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			uint8 Value;
 
-			Value = *(Update.field_bhidden().data());
+			Value = (*Update.field_bhidden().data());
 			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
 			// We will soon move away from using bunches when receiving Spatial updates.
 			if (Value)
@@ -839,7 +839,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			uint8 Value;
 
-			Value = *(Update.field_breplicatemovement().data());
+			Value = (*Update.field_breplicatemovement().data());
 			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
 			// We will soon move away from using bunches when receiving Spatial updates.
 			if (Value)
@@ -862,7 +862,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			uint8 Value;
 
-			Value = *(Update.field_btearoff().data());
+			Value = (*Update.field_btearoff().data());
 			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
 			// We will soon move away from using bunches when receiving Spatial updates.
 			if (Value)
@@ -885,7 +885,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			TEnumAsByte<ENetRole> Value;
 
-			Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_remoterole().data())));
+			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_remoterole().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -903,7 +903,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			AActor* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_owner().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_owner().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -931,7 +931,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			FRepMovement Value;
 
 			{
-				auto& ValueDataStr = *(Update.field_replicatedmovement().data());
+				auto& ValueDataStr = (*Update.field_replicatedmovement().data());
 				TArray<uint8> ValueData;
 				ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
@@ -955,7 +955,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			AActor* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachparent().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_attachmentreplication_attachparent().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -983,7 +983,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			FVector_NetQuantize100 Value;
 
 			{
-				auto& Vector = *(Update.field_attachmentreplication_locationoffset().data());
+				auto& Vector = (*Update.field_attachmentreplication_locationoffset().data());
 				Value.X = Vector.x();
 				Value.Y = Vector.y();
 				Value.Z = Vector.z();
@@ -1005,7 +1005,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			FVector_NetQuantize100 Value;
 
 			{
-				auto& Vector = *(Update.field_attachmentreplication_relativescale3d().data());
+				auto& Vector = (*Update.field_attachmentreplication_relativescale3d().data());
 				Value.X = Vector.x();
 				Value.Y = Vector.y();
 				Value.Z = Vector.z();
@@ -1027,7 +1027,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			FRotator Value;
 
 			{
-				auto& Rotator = *(Update.field_attachmentreplication_rotationoffset().data());
+				auto& Rotator = (*Update.field_attachmentreplication_rotationoffset().data());
 				Value.Yaw = Rotator.yaw();
 				Value.Pitch = Rotator.pitch();
 				Value.Roll = Rotator.roll();
@@ -1060,7 +1060,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			USceneComponent* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_attachmentreplication_attachcomponent().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_attachmentreplication_attachcomponent().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1087,7 +1087,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			TEnumAsByte<ENetRole> Value;
 
-			Value = TEnumAsByte<ENetRole>(uint8(*(Update.field_role().data())));
+			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_role().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1104,7 +1104,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			uint8 Value;
 
-			Value = *(Update.field_bcanbedamaged().data());
+			Value = (*Update.field_bcanbedamaged().data());
 			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
 			// We will soon move away from using bunches when receiving Spatial updates.
 			if (Value)
@@ -1128,7 +1128,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			APawn* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_instigator().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_instigator().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1156,7 +1156,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			APlayerState* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_playerstate().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_playerstate().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1183,7 +1183,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			uint8 Value;
 
-			Value = uint8(uint8(*(Update.field_remoteviewpitch().data())));
+			Value = uint8(uint8((*Update.field_remoteviewpitch().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1201,7 +1201,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			AController* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_controller().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_controller().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1229,7 +1229,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			UPrimitiveComponent* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_replicatedbasedmovement_movementbase().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_replicatedbasedmovement_movementbase().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1268,7 +1268,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			FVector_NetQuantize100 Value;
 
 			{
-				auto& Vector = *(Update.field_replicatedbasedmovement_location().data());
+				auto& Vector = (*Update.field_replicatedbasedmovement_location().data());
 				Value.X = Vector.x();
 				Value.Y = Vector.y();
 				Value.Z = Vector.z();
@@ -1290,7 +1290,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			FRotator Value;
 
 			{
-				auto& Rotator = *(Update.field_replicatedbasedmovement_rotation().data());
+				auto& Rotator = (*Update.field_replicatedbasedmovement_rotation().data());
 				Value.Yaw = Rotator.yaw();
 				Value.Pitch = Rotator.pitch();
 				Value.Roll = Rotator.roll();
@@ -1311,7 +1311,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			bool Value;
 
-			Value = *(Update.field_replicatedbasedmovement_bserverhasbasecomponent().data());
+			Value = (*Update.field_replicatedbasedmovement_bserverhasbasecomponent().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1328,7 +1328,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			bool Value;
 
-			Value = *(Update.field_replicatedbasedmovement_brelativerotation().data());
+			Value = (*Update.field_replicatedbasedmovement_brelativerotation().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1345,7 +1345,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			bool Value;
 
-			Value = *(Update.field_replicatedbasedmovement_bserverhasvelocity().data());
+			Value = (*Update.field_replicatedbasedmovement_bserverhasvelocity().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1362,7 +1362,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			float Value;
 
-			Value = *(Update.field_animrootmotiontranslationscale().data());
+			Value = (*Update.field_animrootmotiontranslationscale().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1379,7 +1379,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			float Value;
 
-			Value = *(Update.field_replicatedserverlasttransformupdatetimestamp().data());
+			Value = (*Update.field_replicatedserverlasttransformupdatetimestamp().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1396,7 +1396,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			uint8 Value;
 
-			Value = uint8(uint8(*(Update.field_replicatedmovementmode().data())));
+			Value = uint8(uint8((*Update.field_replicatedmovementmode().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1413,7 +1413,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			uint8 Value;
 
-			Value = *(Update.field_biscrouched().data());
+			Value = (*Update.field_biscrouched().data());
 			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
 			// We will soon move away from using bunches when receiving Spatial updates.
 			if (Value)
@@ -1436,7 +1436,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			float Value;
 
-			Value = *(Update.field_jumpmaxholdtime().data());
+			Value = (*Update.field_jumpmaxholdtime().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1453,7 +1453,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			int32 Value;
 
-			Value = *(Update.field_jumpmaxcount().data());
+			Value = (*Update.field_jumpmaxcount().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1470,7 +1470,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			bool Value;
 
-			Value = *(Update.field_reprootmotion_bisactive().data());
+			Value = (*Update.field_reprootmotion_bisactive().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1488,7 +1488,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			UAnimMontage* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_reprootmotion_animmontage().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_reprootmotion_animmontage().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1515,7 +1515,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			float Value;
 
-			Value = *(Update.field_reprootmotion_position().data());
+			Value = (*Update.field_reprootmotion_position().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1533,7 +1533,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			FVector_NetQuantize100 Value;
 
 			{
-				auto& Vector = *(Update.field_reprootmotion_location().data());
+				auto& Vector = (*Update.field_reprootmotion_location().data());
 				Value.X = Vector.x();
 				Value.Y = Vector.y();
 				Value.Z = Vector.z();
@@ -1555,7 +1555,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			FRotator Value;
 
 			{
-				auto& Rotator = *(Update.field_reprootmotion_rotation().data());
+				auto& Rotator = (*Update.field_reprootmotion_rotation().data());
 				Value.Yaw = Rotator.yaw();
 				Value.Pitch = Rotator.pitch();
 				Value.Roll = Rotator.roll();
@@ -1577,7 +1577,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			UPrimitiveComponent* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = *(Update.field_reprootmotion_movementbase().data());
+				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_reprootmotion_movementbase().data());
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1615,7 +1615,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			bool Value;
 
-			Value = *(Update.field_reprootmotion_brelativeposition().data());
+			Value = (*Update.field_reprootmotion_brelativeposition().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1632,7 +1632,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			bool Value;
 
-			Value = *(Update.field_reprootmotion_brelativerotation().data());
+			Value = (*Update.field_reprootmotion_brelativerotation().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1649,16 +1649,16 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 
 			FRootMotionSourceGroup Value;
 
-			Value.bHasAdditiveSources = *(Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().data());
-			Value.bHasOverrideSources = *(Update.field_reprootmotion_authoritativerootmotion_bhasoverridesources().data());
+			Value.bHasAdditiveSources = (*Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().data());
+			Value.bHasOverrideSources = (*Update.field_reprootmotion_authoritativerootmotion_bhasoverridesources().data());
 			{
-				auto& Vector = *(Update.field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity().data());
+				auto& Vector = (*Update.field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity().data());
 				Value.LastPreAdditiveVelocity.X = Vector.x();
 				Value.LastPreAdditiveVelocity.Y = Vector.y();
 				Value.LastPreAdditiveVelocity.Z = Vector.z();
 			}
-			Value.bIsAdditiveVelocityApplied = *(Update.field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied().data());
-			Value.LastAccumulatedSettings.Flags = uint8(uint8(*(Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
+			Value.bIsAdditiveVelocityApplied = (*Update.field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied().data());
+			Value.LastAccumulatedSettings.Flags = uint8(uint8((*Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1676,7 +1676,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			FVector_NetQuantize10 Value;
 
 			{
-				auto& Vector = *(Update.field_reprootmotion_acceleration().data());
+				auto& Vector = (*Update.field_reprootmotion_acceleration().data());
 				Value.X = Vector.x();
 				Value.Y = Vector.y();
 				Value.Z = Vector.z();
@@ -1698,7 +1698,7 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			FVector_NetQuantize10 Value;
 
 			{
-				auto& Vector = *(Update.field_reprootmotion_linearvelocity().data());
+				auto& Vector = (*Update.field_reprootmotion_linearvelocity().data());
 				Value.X = Vector.x();
 				Value.Y = Vector.y();
 				Value.Z = Vector.z();
