@@ -109,58 +109,42 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	FEntityId EntityId = Cast<USpatialNetDriver>(Driver)->GetEntityRegistry()->GetEntityIdFromActor(Actor);
 	check(EntityId.ToSpatialEntityId() > 0)
 
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Assigning a NetGUID to entityid %d, actor: %s"), EntityId.ToSpatialEntityId(), *Actor->GetName());
-	FNetworkGUID NetGUID = GetOrAssignNetGUID(Actor);
-	//One major difference between how Unreal does NetGUIDs vs us is, we don't attempt to make them consistent across workers and client.
-	// The function above might have returned without assigning new GUID, because we are the client.
-	// Let's directly call the client function in that case.
-	if (NetGUID == FNetworkGUID::GetDefault() && !IsNetGUIDAuthority() && IsDynamicObject(Actor)) //todo-giray: Support static objects
+	// Set up the NetGUID and ObjectRef for this actor.
+	FNetworkGUID NetGUID = GetOrAssignNetGUID_NUF(Actor);
+	improbable::unreal::UnrealObjectRef ObjectRef{EntityId.ToSpatialEntityId(), 0};
+	RegisterObjectRef(NetGUID, ObjectRef);
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %d"),
+		*Actor->GetName(), *NetGUID.ToString(), EntityId.ToSpatialEntityId());
+
+	// Allocate NetGUIDs for each subobject, sorting alphabetically to ensure stable references.
+	TArray<UObject*> ActorSubobjects;
+	ForEachObjectWithOuter(Actor, [&ActorSubobjects](UObject* Object)
 	{
-		// Here we have to borrow from FNetGuidCache::\\\\\\\GUID_Server to avoid source change
-#define COMPOSE_NET_GUID( Index, IsStatic )	( ( ( Index ) << 1 ) | ( IsStatic ) )
-#define ALLOC_NEW_NET_GUID( IsStatic )		( COMPOSE_NET_GUID( ++UniqueNetIDs[ IsStatic ], IsStatic ) )
-
-		// Generate new NetGUID and assign it
-		const int32 IsStatic = IsDynamicObject(Actor) ? 0 : 1;
-
-		const FNetworkGUID NewNetGuid(ALLOC_NEW_NET_GUID(IsStatic));
-		RegisterNetGUID_Client(NewNetGuid, Actor);
-		
-		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("NetGUID for %s was not found in the cache. Generated new NetGUID."), *Actor->GetName());
-		NetGUID = NewNetGuid;
+		// Objects can only be allocated NetGUIDs if this is true.
+		if (Object->IsSupportedForNetworking())
+		{
+			ActorSubobjects.Add(Object);
+		}
+	});
+	Sort(ActorSubobjects.GetData(), ActorSubobjects.Num(), FCompareComponentNames());
+	uint32 SubobjectOffset = 0;
+	for (UObject* Subobject : ActorSubobjects)
+	{
+		SubobjectOffset++;
+		FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_NUF(Subobject);
+		improbable::unreal::UnrealObjectRef SubobjectRef{EntityId.ToSpatialEntityId(), SubobjectOffset};
+		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
+		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: (entity ID: %d, offset: %d)"),
+			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), EntityId.ToSpatialEntityId(), SubobjectOffset);
 	}
 
-	check(NetGUID.IsValid());
-	check(!NetGUID.IsDefault());
-	uint32 SubObjOffset = 0;
-	improbable::unreal::UnrealObjectRef ObjRef{ EntityId.ToSpatialEntityId(), SubObjOffset };
-	FUnrealObjectRefWrapper ObjRefWrapper;
-	ObjRefWrapper.ObjectRef = ObjRef;
-	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjRefWrapper);
-	UnrealObjectRefToNetGUID.Emplace(ObjRefWrapper, NetGUID);
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new objref for actor: %s, entityid: %d"), *Actor->GetName(), EntityId.ToSpatialEntityId());
-
-	// Resolve pending replication updates and RPCs that reference this actor.
+	// Resolve pending replication updates and RPCs that reference this actor and its subobjects.
 	ResolvePendingObjRefs(Actor);
 	ResolvePendingRPCs(Actor);
-
-	// Allocate GUIDs for each subobject too
-	TArray<UObject*> DefaultSubobjects;
-	Actor->GetDefaultSubobjects(DefaultSubobjects);
-
-	// Sorting alphabetically to ensure stable references
-	Sort(DefaultSubobjects.GetData(), DefaultSubobjects.Num(), FCompareComponentNames());
-
-	for (UObject* Subobject : DefaultSubobjects)
+	for (UObject* Subobject : ActorSubobjects)
 	{
-		SubObjOffset++;
-		FNetworkGUID SubObjectNetGUID = GetOrAssignNetGUID(Subobject);
-		ObjRefWrapper.ObjectRef.set_offset(SubObjOffset);
-		NetGUIDToUnrealObjectRef.Emplace(SubObjectNetGUID, ObjRefWrapper);
-		UnrealObjectRefToNetGUID.Emplace(ObjRefWrapper, SubObjectNetGUID);
 		ResolvePendingObjRefs(Subobject);
 		ResolvePendingRPCs(Subobject);
-		check(SubObjectNetGUID.IsValid());
 	}
 
 	return NetGUID;
@@ -215,6 +199,8 @@ void FSpatialNetGUIDCache::AddPendingRPC(UObject* UnresolvedObject, FRPCRequestF
 	PendingRPCs.FindOrAdd(UnresolvedObject).Add(CommandSender);
 }
 
+// TODO(David): Do something with this function.
+/*
 FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID(const UObject* Object)
 {
 	FNetworkGUID GUID = (0x80000000 - 1) & ++UniqueNetIDs[0];
@@ -223,6 +209,41 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID(const UObject* Object)
 
 	RegisterNetGUID_Internal(GUID, CacheObject);
 	return GUID;
+}
+*/
+
+FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_NUF(const UObject* Object)
+{
+	FNetworkGUID NetGUID = GetOrAssignNetGUID(Object);
+	// One major difference between how Unreal does NetGUIDs vs us is, we don't attempt to make them consistent across workers and client.
+	// The function above might have returned without assigning new GUID, because we are the client.
+	// Let's directly call the client function in that case.
+	if (NetGUID == FNetworkGUID::GetDefault() && !IsNetGUIDAuthority() && IsDynamicObject(Object)) //todo-giray: Support static objects
+	{
+		// Here we have to borrow from FNetGuidCache::AssignNewNetGUID_Server to avoid a source change.
+#define COMPOSE_NET_GUID(Index, IsStatic)	(((Index) << 1) | (IsStatic) )
+#define ALLOC_NEW_NET_GUID(IsStatic)		(COMPOSE_NET_GUID(++UniqueNetIDs[IsStatic], IsStatic))
+
+		// Generate new NetGUID and assign it
+		const int32 IsStatic = IsDynamicObject(Object) ? 0 : 1;
+
+		NetGUID = FNetworkGUID(ALLOC_NEW_NET_GUID(IsStatic));
+		RegisterNetGUID_Client(NetGUID, Object);
+
+		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("NetGUID for object %s was not found in the cache. Generated new NetGUID."), *Object->GetName());
+		NetGUID = NetGUID;
+	}
+
+	check(NetGUID.IsValid());
+	check(!NetGUID.IsDefault());
+	return NetGUID;
+}
+
+void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const improbable::unreal::UnrealObjectRef& ObjectRef)
+{
+	FUnrealObjectRefWrapper ObjRefWrapper{ObjectRef};
+	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjRefWrapper);
+	UnrealObjectRefToNetGUID.Emplace(ObjRefWrapper, NetGUID);
 }
 
 void FSpatialNetGUIDCache::ResolvePendingObjRefs(const UObject* Object)

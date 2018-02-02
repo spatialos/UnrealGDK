@@ -19,7 +19,7 @@ class FUnrealObjectRefWrapper
 {
 public:
 	improbable::unreal::UnrealObjectRef ObjectRef;
-	bool operator == (const FUnrealObjectRefWrapper& Rhs) const
+	bool operator==(const FUnrealObjectRefWrapper& Rhs) const
 	{
 		return ObjectRef == Rhs.ObjectRef;
 	}
@@ -65,7 +65,9 @@ public:
 	void AddPendingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender);
 
 private:
-	FNetworkGUID AssignNewNetGUID(const UObject* Object);
+	//FNetworkGUID AssignNewNetGUID(const UObject* Object);
+	FNetworkGUID GetOrAssignNetGUID_NUF(const UObject* Object);
+	void RegisterObjectRef(FNetworkGUID NetGUID, const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	void ResolvePendingObjRefs(const UObject* Object);
 	void ResolvePendingRPCs(UObject* Object);
