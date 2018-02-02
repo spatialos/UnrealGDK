@@ -240,15 +240,33 @@ bool USpatialActorChannel::ReplicateActor()
 	// Replicate Actor and Component properties and RPCs
 	// ----------------------------------------------------------
 
+	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
 
+	// The ChangelistMgr uses ChangelistState->StaticBuffer to compare properties against when building a changelist. As SpatialOS has no concept of a CDO, we
+	// need to make sure we send a changelist of ALL properties compared against default initialised properties (i.e. zeroed properties). To accomplish this,
+	// we recreate the static buffer in the initial replication (and stash the existing one), then restore it after building the changelist. This would cause some
+	// redundancy (the second changelist to be created would contain the properties different from the CDO, which was already included in the initial changelist),
+	// but this is safe.
+	FRepStateStaticBuffer SavedStaticBuffer;
+	if (RepFlags.bNetInitial)
+	{
+		SavedStaticBuffer = ChangelistState->StaticBuffer;
+		ChangelistState->StaticBuffer.Empty();
+		ChangelistState->StaticBuffer.AddZeroed(Actor->GetClass()->GetDefaultsCount());
+	}
+
 	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame, ActorReplicator->RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
+
+	if (RepFlags.bNetInitial)
+	{
+		ChangelistState->StaticBuffer = SavedStaticBuffer;
+	}
 
 	const int32 PossibleNewHistoryIndex = ActorReplicator->RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
 	FRepChangedHistory& PossibleNewHistoryItem = ActorReplicator->RepState->ChangeHistory[PossibleNewHistoryIndex];
 	TArray<uint16>& Changed = PossibleNewHistoryItem.Changed;
 
-	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	// Gather all change lists that are new since we last looked, and merge them all together into a single CL
 	for (int32 i = ActorReplicator->RepState->LastChangelistIndex; i < ChangelistState->HistoryEnd; i++)
 	{

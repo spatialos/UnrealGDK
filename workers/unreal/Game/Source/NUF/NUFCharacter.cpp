@@ -108,6 +108,8 @@ void ANUFCharacter::MoveForward(float Value)
 {
 	if ((Controller != NULL) && (Value != 0.0f))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Role: %d, RemoteRole: %d"), (int)Role.GetValue(), (int)GetRemoteRole());
+
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);

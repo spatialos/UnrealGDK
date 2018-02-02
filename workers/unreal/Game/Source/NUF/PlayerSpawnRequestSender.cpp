@@ -67,7 +67,7 @@ void FPlayerSpawnRequestSender::HandlePlayerSpawnResponse(
 			SendPlayerSpawnRequest();
 		});
 
-		TimerManager->SetTimer(RetryTimer, TimerCallback, SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts - 1), false);
+		TimerManager->SetTimer(RetryTimer, TimerCallback, SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts), false);
 	} 
 	else 
 	{
