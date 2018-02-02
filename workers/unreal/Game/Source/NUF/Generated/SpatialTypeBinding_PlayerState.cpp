@@ -321,7 +321,7 @@ void USpatialTypeBinding_PlayerState::ApplyUpdateToSpatial_MultiClient(
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (ObjectRef.entity() == 0)
+				if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 5);
 				}
@@ -354,7 +354,7 @@ void USpatialTypeBinding_PlayerState::ApplyUpdateToSpatial_MultiClient(
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (ObjectRef.entity() == 0)
+				if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 7);
 				}
@@ -405,7 +405,7 @@ void USpatialTypeBinding_PlayerState::ApplyUpdateToSpatial_MultiClient(
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (ObjectRef.entity() == 0)
+				if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 12);
 				}
@@ -440,7 +440,7 @@ void USpatialTypeBinding_PlayerState::ApplyUpdateToSpatial_MultiClient(
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (ObjectRef.entity() == 0)
+				if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 15);
 				}

@@ -8,6 +8,8 @@
 #include <unreal/core_types.h>
 #include "SpatialUpdateInterop.h"
 
+#include <improbable/package_map/package_map.h>
+
 #include "SpatialPackageMapClient.generated.h"
 
 class USpatialActorChannel;
@@ -46,6 +48,8 @@ public:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 
+	void RegisterStaticObjects(const improbable::package_map::PackageMapData& PackageMapData);
+
 	void AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void AddPendingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender);
 };
@@ -60,6 +64,8 @@ public:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
 	improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
+
+	void RegisterStaticObjects(const improbable::package_map::PackageMapData& PackageMapData);
 
 	void AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void AddPendingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender);

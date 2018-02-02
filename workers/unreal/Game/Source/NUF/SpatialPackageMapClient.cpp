@@ -19,6 +19,20 @@ struct FCompareComponentNames
 	}
 };
 
+void GetSubobjects(UObject* Object, TArray<UObject*>& Subobjects)
+{
+	Subobjects.Empty();
+	ForEachObjectWithOuter(Object, [&Subobjects](UObject* Object)
+	{
+		// Objects can only be allocated NetGUIDs if this is true.
+		if (Object->IsSupportedForNetworking())
+		{
+			Subobjects.Add(Object);
+		}
+	});
+	Sort(Subobjects.GetData(), Subobjects.Num(), FCompareComponentNames());
+}
+
 void USpatialPackageMapClient::ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FString& Path)
 {
 	// there should never be a case where a static object gets allocated in the dynamic region
@@ -84,6 +98,12 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const worker::Enti
 	return GetNetGUIDFromUnrealObjectRef(ObjectRef);
 }
 
+void USpatialPackageMapClient::RegisterStaticObjects(const improbable::package_map::PackageMapData& PackageMapData)
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	return SpatialGuidCache->RegisterStaticObjects(PackageMapData);
+}
+
 void USpatialPackageMapClient::AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle)
 {
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending obj ref for object: %s, channel: %s, handle: %d."),
@@ -118,15 +138,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 
 	// Allocate NetGUIDs for each subobject, sorting alphabetically to ensure stable references.
 	TArray<UObject*> ActorSubobjects;
-	ForEachObjectWithOuter(Actor, [&ActorSubobjects](UObject* Object)
-	{
-		// Objects can only be allocated NetGUIDs if this is true.
-		if (Object->IsSupportedForNetworking())
-		{
-			ActorSubobjects.Add(Object);
-		}
-	});
-	Sort(ActorSubobjects.GetData(), ActorSubobjects.Num(), FCompareComponentNames());
+	GetSubobjects(Actor, ActorSubobjects);
 	uint32 SubobjectOffset = 0;
 	for (UObject* Subobject : ActorSubobjects)
 	{
@@ -173,6 +185,69 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(const worker::EntityId
 	ObjRefWrapper.ObjectRef = ObjRef;
 	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRefWrapper);
 	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
+}
+
+void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::package_map::PackageMapData& PackageMapData)
+{
+	auto& IdToPathMap = PackageMapData.id_to_path_map();
+	for (auto& Pair : IdToPathMap)
+	{
+		/*
+		FStringAssetReference StringRef(UTF8_TO_TCHAR(Pair.second.c_str()));
+		UObject* Object = StringRef.ResolveObject();
+		check(Object);
+		*/
+		// Iterate through the world and find the actors which match the full path name stored in the package map entity.
+		UWorld* World = Driver->GetWorld();
+		UObject* Object = nullptr;
+		for (TActorIterator<AActor> Itr(World); Itr; ++Itr)
+		{
+			AActor* Actor = *Itr;
+			FString PathName = Actor->GetPathName(World);
+			FString StoredPathName = UTF8_TO_TCHAR(Pair.second.c_str());
+			if (PathName == StoredPathName)
+			{
+				Object = Actor;
+				break;
+			}
+		}
+
+		// Skip objects which don't exist.
+		if (!Object)
+		{
+			continue;
+		}
+
+		// Register NetGUID.
+		FNetworkGUID NetGUID{Pair.first};
+		FNetGuidCacheObject CacheObject;
+		CacheObject.Object = Object;
+		RegisterNetGUID_Internal(NetGUID, CacheObject);
+
+		// Register object refs.
+		improbable::unreal::UnrealObjectRef ObjectRef{0, NetGUID.Value};
+		RegisterObjectRef(NetGUID, ObjectRef);
+
+		// Deal with subobjects of static objects.
+		// TODO(David): Ensure that the NetGUID allocated in the snapshot generator (which are always > 0x7fffffff) ensures that there's enough space
+		// for subobjects to be stored in increasing NetGUIDs after the static object one (currently, they're just hashes of the path).
+		TArray<UObject*> StaticSubobjects;
+		GetSubobjects(Object, StaticSubobjects);
+		uint32 SubobjectOffset = 0;
+		for (auto Subobject : StaticSubobjects)
+		{
+			SubobjectOffset++;
+
+			// Register NetGUID.
+			FNetworkGUID SubobjectNetGUID{NetGUID.Value + SubobjectOffset};
+			CacheObject.Object = Subobject;
+			RegisterNetGUID_Internal(SubobjectNetGUID, CacheObject);
+
+			// Register object refs.
+			improbable::unreal::UnrealObjectRef SubobjectObjectRef{0, SubobjectNetGUID.Value};
+			RegisterObjectRef(SubobjectNetGUID, SubobjectObjectRef);
+		}
+	}
 }
 
 void FSpatialNetGUIDCache::AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle)

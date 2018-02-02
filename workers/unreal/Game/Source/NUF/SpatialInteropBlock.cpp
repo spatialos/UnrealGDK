@@ -17,6 +17,7 @@
 #include "SpatialOSConversionFunctionLibrary.h"
 #include "improbable/view.h"
 #include "improbable/worker.h"
+#include "PackageMapComponent.h"
 
 void USpatialInteropBlock::Init(UEntityRegistry* Registry)
 {
@@ -223,6 +224,16 @@ void USpatialInteropBlock::AddComponents(const TWeakPtr<worker::View>& InView,
 					}
 
 					InitialisedComponents.Add(ComponentToAdd.Key);
+
+					UPackageMapComponent* PackageMapComponent = Cast<UPackageMapComponent>(Component);
+					if (PackageMapComponent)
+					{
+						USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver());
+						UNetConnection* Connection = Driver->GetSpatialOSNetConnection();
+						USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(Connection->PackageMap);
+						UPackageMapAddComponentOp* DerivedOp = Cast<UPackageMapAddComponentOp>(ComponentToAdd.Value);
+						PMC->RegisterStaticObjects(*DerivedOp->Data.data());
+					}
 				}
 			}
 		}

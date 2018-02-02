@@ -607,7 +607,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		Writer.Printf(R"""(
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(%s);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0))""", *PropertyValue);
+			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0))""", *PropertyValue);
 		Writer.Print("{").Indent();
 		if (bIsUpdate)
 		{
@@ -1799,7 +1799,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Printf(R"""(
 				// Resolve TargetObject.
 				improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-				if (TargetObjectRef.entity() == 0)
+				if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
 				{
 					UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC %s queued. Target object is unresolved."));
 					return FRPCRequestResult{TargetObject};
