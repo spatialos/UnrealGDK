@@ -795,6 +795,12 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			uint8 Value;
 
 			Value = *(Update.field_bhidden().data());
+			//Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
+			//We will soon move away from using bunches when receiving Spatial updates.
+			if (Value)
+			{
+				Value = 0xFF;
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -812,6 +818,12 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			uint8 Value;
 
 			Value = *(Update.field_breplicatemovement().data());
+			//Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
+			//We will soon move away from using bunches when receiving Spatial updates.
+			if (Value)
+			{
+				Value = 0xFF;
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -829,6 +841,12 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			uint8 Value;
 
 			Value = *(Update.field_btearoff().data());
+			//Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
+			//We will soon move away from using bunches when receiving Spatial updates.
+			if (Value)
+			{
+				Value = 0xFF;
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -1065,6 +1083,12 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			uint8 Value;
 
 			Value = *(Update.field_bcanbedamaged().data());
+			//Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
+			//We will soon move away from using bunches when receiving Spatial updates.
+			if (Value)
+			{
+				Value = 0xFF;
+			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
@@ -3977,6 +4001,12 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver(const wo
 	TransitionParams.BlendFunction = TEnumAsByte<EViewTargetBlendFunction>(uint8(Op.Request.field_transitionparams_blendfunction()));
 	TransitionParams.BlendExp = Op.Request.field_transitionparams_blendexp();
 	TransitionParams.bLockOutgoing = Op.Request.field_transitionparams_blockoutgoing();
+	//Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
+	//We will soon move away from using bunches when receiving Spatial updates.
+	if (TransitionParams.bLockOutgoing)
+	{
+		TransitionParams.bLockOutgoing = 0xFF;
+	}
 
 	// Call implementation and send command response.
 	TargetObject->ClientSetViewTarget_Implementation(A, TransitionParams);
@@ -5069,6 +5099,12 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Receiver(const worker:
 	TransitionParams.BlendFunction = TEnumAsByte<EViewTargetBlendFunction>(uint8(Op.Request.field_transitionparams_blendfunction()));
 	TransitionParams.BlendExp = Op.Request.field_transitionparams_blendexp();
 	TransitionParams.bLockOutgoing = Op.Request.field_transitionparams_blockoutgoing();
+	//Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
+	//We will soon move away from using bunches when receiving Spatial updates.
+	if (TransitionParams.bLockOutgoing)
+	{
+		TransitionParams.bLockOutgoing = 0xFF;
+	}
 
 	// Call implementation and send command response.
 	TargetObject->ServerViewSelf_Implementation(TransitionParams);

@@ -727,6 +727,15 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	else if (Property->IsA(UBoolProperty::StaticClass()))
 	{
 		Writer.Printf("%s = %s;", *PropertyValue, *SpatialValue);
+		if (Property->GetCPPType() != TEXT("bool"))
+		{
+			Writer.Printf("//Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.");
+			Writer.Printf("//We will soon move away from using bunches when receiving Spatial updates.");
+			Writer.Printf("if (%s)", *PropertyValue);
+			Writer.Printf("{").Indent();
+			Writer.Printf("%s = 0xFF;", *PropertyValue);
+			Writer.Outdent().Print("}");
+		}
 	}
 	else if (Property->IsA(UFloatProperty::StaticClass()))
 	{
