@@ -738,7 +738,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	}
 
 	// The RPC might have been called by an actor directly, or by a subobject on that actor (e.g. UCharacterMovementComponent).
-	UObject* CallingObject = SubObject ? Actor : SubObject;
+	UObject* CallingObject = SubObject ? SubObject : Actor;
 
 	// Reading properties from an FFrame changes the FFrame (internal pointer to the last property read). So we need to make a new one.
 	FFrame TempRpcFrameForReading{CallingObject, Function, Parameters, nullptr, Function->Children};

@@ -18,6 +18,7 @@ struct FPropertyInfo
 {
 	UProperty* Property;
 	ERepLayoutCmdType Type;
+	UStruct* PropertyStruct; // If Struct or Object, this will be set to the UClass*
 	// Properties that were traversed to reach this property, including the property itself.
 	TArray<UProperty*> Chain;
 
@@ -76,11 +77,17 @@ enum ERPCType
 	RPC_Unknown
 };
 
+struct FRPCDefinition
+{
+	UClass* CallerType;
+	UFunction* Function;
+};
+
 struct FPropertyLayout
 {
 	TMap<EReplicatedPropertyGroup, TArray<FReplicatedPropertyInfo>> ReplicatedProperties;
 	TArray<FPropertyInfo> CompleteProperties;
-	TMap<ERPCType, TArray<UFunction*>> RPCs;
+	TMap<ERPCType, TArray<FRPCDefinition>> RPCs;
 };
 
 FString GetLifetimeConditionAsString(ELifetimeCondition Condition)
@@ -407,11 +414,11 @@ void VisitProperty(TArray<FPropertyInfo>& PropertyInfo, UObject* CDO, TArray<UPr
 	//
 	// Usually, struct properties map directly to built in types like FString, or FPlane. However, custom structs map
 	// directly to REPCMD_Property, so we need to make sure that it's a struct.
+	UStruct* PropertyValueStruct = nullptr;
 	if ((PropertyType == REPCMD_Property && Property->IsA<UStructProperty>()) ||
 		(PropertyType == REPCMD_PropertyObject && Property->IsA<UObjectProperty>()))
 	{
 		// Get struct/class of property value.
-		UStruct* PropertyValueStruct;
 		if (PropertyType != REPCMD_PropertyObject)
 		{ // UStruct property
 			PropertyValueStruct = Cast<UStructProperty>(Property)->Struct;
@@ -509,6 +516,7 @@ void VisitProperty(TArray<FPropertyInfo>& PropertyInfo, UObject* CDO, TArray<UPr
 	PropertyInfo.Add({
 		Property,
 		PropertyType,
+		PropertyValueStruct,
 		Stack
 		});
 }
@@ -650,7 +658,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	// This bool is used to differentiate between property updates and command arguments. Unlike command arguments, all property updates are optionals and must be accessed through .data()
 	if (bIsUpdate)
 	{
-		SpatialValue = FString::Printf(TEXT("*(%s.%s().data())"), *Update, *GetFullyQualifiedName(PropertyChain));
+		SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), *Update, *GetFullyQualifiedName(PropertyChain));
 	}	
 	else
 	{
@@ -913,7 +921,21 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
 			RemoteFunction->FunctionFlags & FUNC_NetServer)
 		{
-			Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(*RemoteFunction);
+			Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{Class, *RemoteFunction});
+		}
+	}
+
+	// Character: Add CharacterMovementComponent.
+	if (Class->GetName() == TEXT("Character"))
+	{
+		UClass* CharacterMovementComponentClass = FindObject<UClass>(ANY_PACKAGE, TEXT("CharacterMovementComponent"));
+		for (TFieldIterator<UFunction> RemoteFunction(CharacterMovementComponentClass); RemoteFunction; ++RemoteFunction)
+		{
+			if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
+				RemoteFunction->FunctionFlags & FUNC_NetServer)
+			{
+				Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{CharacterMovementComponentClass, *RemoteFunction});
+			}
 		}
 	}
 
@@ -980,8 +1002,8 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 	Writer.Printf("component %s {", *GetSchemaCompleteDataName(Class));
 	Writer.Indent();
 	Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
-	int FieldCounter = 0;
 
+	int FieldCounter = 0;
 	for (auto& Prop : Layout.CompleteProperties)
 	{
 		FieldCounter++;
@@ -996,41 +1018,36 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 	for (auto Group : GetRPCTypes())
 	{
 		// Generate schema RPC command types
-		for (auto& Func : (Layout.RPCs[Group]))
+		for (auto& RPC : (Layout.RPCs[Group]))
 		{
-			FString TypeStr = GetSchemaRPCRequestTypeFromUnreal(Func);
+			FString TypeStr = GetSchemaRPCRequestTypeFromUnreal(RPC.Function);
 
-			if (Func->NumParms == 0)
+			Writer.Printf("type %s {", *TypeStr);
+			Writer.Indent();
+
+			// Recurse into class properties and build a complete property list.
+			TArray<FPropertyInfo> ParamList;
+			for (TFieldIterator<UProperty> It(RPC.Function); It; ++It)
 			{
-				Writer.Printf("type %s {}", *TypeStr);
+				VisitProperty(ParamList, nullptr, {}, *It);
 			}
-			else
+
+			// Subobject offset.
+			Writer.Printf("uint32 subobject_offset = 1;");
+			FieldCounter = 1;
+			for (auto& Param : ParamList)
 			{
-				Writer.Printf("type %s {", *TypeStr);
-				Writer.Indent();
-
-				// Recurse into class properties and build a complete property list.
-				TArray<FPropertyInfo> ParamList;
-				for (TFieldIterator<UProperty> It(Func); It; ++It)
-				{
-					VisitProperty(ParamList, nullptr, {}, *It);
-				}
-	
-				for (auto& Param : ParamList)
-				{
-					FieldCounter++;
-					Writer.Printf("%s %s = %d;",
-						*RepLayoutTypeToSchemaType(Param.Type),
-						*GetFullyQualifiedName(Param.Chain),
-						FieldCounter
-					);
-				}
-
-				Writer.Outdent().Print("}");
+				FieldCounter++;
+				Writer.Printf("%s %s = %d;",
+					*RepLayoutTypeToSchemaType(Param.Type),
+					*GetFullyQualifiedName(Param.Chain),
+					FieldCounter
+				);
 			}
+			Writer.Outdent().Print("}");
 
 			// RPC responses don't contain any parameters
-			Writer.Printf("type %s {}", *GetSchemaRPCResponseTypeFromUnreal(Func));
+			Writer.Printf("type %s {}", *GetSchemaRPCResponseTypeFromUnreal(RPC.Function));
 		}
 	}
 	Writer.Print();
@@ -1041,12 +1058,12 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 		Writer.Printf("component %s {", *GetSchemaRPCComponentName(Group, Class));
 		Writer.Indent();
 		Writer.Printf("id = %i;", IdGenerator.GetNextAvailableId());
-		for (auto& Func : Layout.RPCs[Group])
+		for (auto& RPC : Layout.RPCs[Group])
 		{		
 			Writer.Printf("command %s %s(%s);",
-				*GetSchemaRPCResponseTypeFromUnreal(Func),
-				*PropertyNameToSchemaName(Func->GetName()),
-				*GetSchemaRPCRequestTypeFromUnreal(Func));
+				*GetSchemaRPCResponseTypeFromUnreal(RPC.Function),
+				*PropertyNameToSchemaName(RPC.Function->GetName()),
+				*GetSchemaRPCRequestTypeFromUnreal(RPC.Function));
 		}
 		Writer.Outdent().Print("}");
 	}
@@ -1133,7 +1150,7 @@ void GenerateForwardingCodeFromLayout(
 
 		worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 		void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
-		void SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame) override;
+		void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) override;
 
 		void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;)""");
 	HeaderWriter.Print();
@@ -1154,7 +1171,7 @@ void GenerateForwardingCodeFromLayout(
 	HeaderWriter.Print();
 	HeaderWriter.Printf(R"""(
 		// RPC sender and receiver callbacks.
-		using FRPCSender = void (%s::*)(worker::Connection* const, struct FFrame* const, AActor*);
+		using FRPCSender = void (%s::*)(worker::Connection* const, struct FFrame* const, UObject*);
 		TMap<FName, FRPCSender> RPCToSenderMap;
 		TArray<worker::Dispatcher::CallbackKey> RPCReceiverCallbacks;)""", *TypeBindingName);
 	HeaderWriter.Print();
@@ -1176,8 +1193,8 @@ void GenerateForwardingCodeFromLayout(
 		// Command receiver function signatures
 		for (auto& RPC : Layout.RPCs[Group])
 		{
-			HeaderWriter.Printf("void %s_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor);",
-				*RPC->GetName());
+			HeaderWriter.Printf("void %s_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject);",
+				*RPC.Function->GetName());
 		}
 	}
 
@@ -1189,9 +1206,9 @@ void GenerateForwardingCodeFromLayout(
 		for (auto& RPC : Layout.RPCs[Group])
 		{
 			HeaderWriter.Printf("void %s_Sender_Response(const worker::CommandResponseOp<improbable::unreal::%s::Commands::%s>& Op);",
-				*RPC->GetName(),
+				*RPC.Function->GetName(),
 				*GetSchemaRPCComponentName(Group, Class),
-				*GetCommandNameFromFunction(RPC));
+				*GetCommandNameFromFunction(RPC.Function));
 		}
 	}
 
@@ -1203,9 +1220,9 @@ void GenerateForwardingCodeFromLayout(
 		for (auto& RPC : Layout.RPCs[Group])
 		{
 			HeaderWriter.Printf("void %s_Receiver(const worker::CommandRequestOp<improbable::unreal::%s::Commands::%s>& Op);",
-				*RPC->GetName(),
+				*RPC.Function->GetName(),
 				*GetSchemaRPCComponentName(Group, Class),
-				*GetCommandNameFromFunction(RPC));
+				*GetCommandNameFromFunction(RPC.Function));
 		}
 	}
 	HeaderWriter.Outdent();
@@ -1278,7 +1295,7 @@ void GenerateForwardingCodeFromLayout(
 	{
 		for (auto& RPC : Layout.RPCs[Group])
 		{
-			SourceWriter.Printf("RPCToSenderMap.Emplace(\"%s\", &%s::%s_Sender);", *RPC->GetName(), *TypeBindingName, *RPC->GetName());
+			SourceWriter.Printf("RPCToSenderMap.Emplace(\"%s\", &%s::%s_Sender);", *RPC.Function->GetName(), *TypeBindingName, *RPC.Function->GetName());
 		}
 	}
 
@@ -1359,17 +1376,17 @@ void GenerateForwardingCodeFromLayout(
 			{
 				SourceWriter.Printf("RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<%sRPCCommandTypes::%s>(std::bind(&%s::%s_Receiver, this, std::placeholders::_1)));",
 					*GetRPCTypeString(Group),
-					*GetCommandNameFromFunction(RPC),
+					*GetCommandNameFromFunction(RPC.Function),
 					*TypeBindingName,
-					*RPC->GetName());
+					*RPC.Function->GetName());
 			}
 			for (auto& RPC : Layout.RPCs[Group])
 			{
 				SourceWriter.Printf("RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<%sRPCCommandTypes::%s>(std::bind(&%s::%s_Sender_Response, this, std::placeholders::_1)));",
 					*GetRPCTypeString(Group),
-					*GetCommandNameFromFunction(RPC),
+					*GetCommandNameFromFunction(RPC.Function),
 					*TypeBindingName,
-					*RPC->GetName());
+					*RPC.Function->GetName());
 			}
 		}
 	}
@@ -1546,7 +1563,7 @@ void GenerateForwardingCodeFromLayout(
 	// SendRPCCommand
 	// ===========================================
 	SourceWriter.Print();
-	SourceWriter.Printf("void %s::SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)",
+	SourceWriter.Printf("void %s::SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame)",
 		*TypeBindingName);
 	SourceWriter.Print("{");
 	SourceWriter.Indent();
@@ -1554,7 +1571,7 @@ void GenerateForwardingCodeFromLayout(
 		TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
 		auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
 		checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
-		(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetActor);)""");
+		(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetObject);)""");
 	SourceWriter.Outdent().Print("}");
 
 	// ApplyQueuedStateToChannel
@@ -1753,17 +1770,17 @@ void GenerateForwardingCodeFromLayout(
 		for (auto& RPC : Layout.RPCs[Group])
 		{
 			SourceWriter.Print();
-			SourceWriter.Printf("void %s::%s_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, AActor* TargetActor)",
+			SourceWriter.Printf("void %s::%s_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)",
 				*TypeBindingName,
-				*RPC->GetName());
+				*RPC.Function->GetName());
 			SourceWriter.Print("{").Indent();
 
 			// Extract RPC arguments from the stack.
-			if (RPC->NumParms > 0)
+			if (RPC.Function->NumParms > 0)
 			{
 				// Note that macros returned by GeneratePropertyReader require this FFrame variable to be named "Stack"
 				SourceWriter.Print("FFrame& Stack = *RPCFrame;");
-				for (TFieldIterator<UProperty> Param(RPC); Param; ++Param)
+				for (TFieldIterator<UProperty> Param(RPC.Function); Param; ++Param)
 				{
 					SourceWriter.Print(*GeneratePropertyReader(*Param));
 				}
@@ -1772,25 +1789,25 @@ void GenerateForwardingCodeFromLayout(
 
 			// Build closure to send the command request.
 			TArray<FString> CapturedArguments;
-			CapturedArguments.Add(TEXT("TargetActor"));
-			for (TFieldIterator<UProperty> Param(RPC); Param; ++Param)
+			CapturedArguments.Add(TEXT("TargetObject"));
+			for (TFieldIterator<UProperty> Param(RPC.Function); Param; ++Param)
 			{
 				CapturedArguments.Add((*Param)->GetName());
 			}
 			SourceWriter.Printf("auto Sender = [this, Connection, %s]() mutable -> FRPCRequestResult", *FString::Join(CapturedArguments, TEXT(", ")));
 			SourceWriter.Print("{").Indent();
 			SourceWriter.Printf(R"""(
-				// Resolve TargetActor.
-				improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetActor));
+				// Resolve TargetObject.
+				improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 				if (TargetObjectRef.entity() == 0)
 				{
-					UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC %s queued. Target actor is unresolved."));
-					return FRPCRequestResult{TargetActor};
-				})""", *RPC->GetName());
+					UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC %s queued. Target object is unresolved."));
+					return FRPCRequestResult{TargetObject};
+				})""", *RPC.Function->GetName());
 			SourceWriter.Print();
 			SourceWriter.Print("// Build request.");
-			SourceWriter.Printf("improbable::unreal::%s Request;", *GetSchemaRPCRequestTypeFromUnreal(RPC));
-			for (TFieldIterator<UProperty> Param(RPC); Param; ++Param)
+			SourceWriter.Printf("improbable::unreal::%s Request;", *GetSchemaRPCRequestTypeFromUnreal(RPC.Function));
+			for (TFieldIterator<UProperty> Param(RPC.Function); Param; ++Param)
 			{
 				TArray<UProperty*> NewChain = {*Param};
 				GenerateUnrealToSchemaConversion(SourceWriter, "Request", NewChain, *Param->GetNameCPP(), false, 0);
@@ -1798,10 +1815,11 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Print();
 			SourceWriter.Printf(R"""(
 				// Send command request.
+				Request.set_subobject_offset(TargetObjectRef.offset());
 				auto RequestId = Connection->SendCommandRequest<improbable::unreal::%s::Commands::%s>(TargetObjectRef.entity(), Request, 0);
 				return FRPCRequestResult{RequestId.Id};)""",
 				*GetSchemaRPCComponentName(Group, Class),
-				*GetCommandNameFromFunction(RPC));
+				*GetCommandNameFromFunction(RPC.Function));
 			SourceWriter.Outdent().Print("};");
 			SourceWriter.Print("UpdateInterop->SendCommandRequest(Sender);");
 			SourceWriter.Outdent().Print("}");
@@ -1817,12 +1835,12 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Print();
 			SourceWriter.Printf("void %s::%s_Sender_Response(const worker::CommandResponseOp<improbable::unreal::%s::Commands::%s>& Op)",
 				*TypeBindingName,
-				*RPC->GetName(),
+				*RPC.Function->GetName(),
 				*GetSchemaRPCComponentName(Group, Class),
-				*GetCommandNameFromFunction(RPC));
+				*GetCommandNameFromFunction(RPC.Function));
 			SourceWriter.Print("{").Indent();
 			SourceWriter.Printf("UpdateInterop->HandleCommandResponse(TEXT(\"%s\"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));",
-				*RPC->GetName());
+				*RPC.Function->GetName());
 			SourceWriter.Outdent().Print("}");
 		}
 	}
@@ -1836,30 +1854,31 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Print();
 			SourceWriter.Printf("void %s::%s_Receiver(const worker::CommandRequestOp<improbable::unreal::%s::Commands::%s>& Op)",
 				*TypeBindingName,
-				*RPC->GetName(),
+				*RPC.Function->GetName(),
 				*GetSchemaRPCComponentName(Group, Class),
-				*GetCommandNameFromFunction(RPC));
+				*GetCommandNameFromFunction(RPC.Function));
 			SourceWriter.Print("{");
 			SourceWriter.Indent();
 
 			// Get the target object.
 			SourceWriter.Printf(R"""(
-				FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromEntityId(Op.EntityId);
+				improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+				FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 				if (!TargetNetGUID.IsValid())
 				{
-					UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("%s_Receiver: Entity ID %%lld does not have a valid NetGUID."), Op.EntityId);
+					UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("%s_Receiver: Entity ID %%lld (offset %%d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
 					return;
 				}
 				%s* TargetObject = Cast<%s>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-				checkf(TargetObject, TEXT("%s_Receiver: Entity ID %%lld (NetGUID %%s) does not correspond to a UObject."), Op.EntityId, *TargetNetGUID.ToString());)""",
-				*RPC->GetName(),
-				*GetFullCPPName(Class),
-				*GetFullCPPName(Class),
-				*RPC->GetName());
+				checkf(TargetObject, TEXT("%s_Receiver: Entity ID %%lld (NetGUID %%s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());)""",
+				*RPC.Function->GetName(),
+				*GetFullCPPName(RPC.CallerType),
+				*GetFullCPPName(RPC.CallerType),
+				*RPC.Function->GetName());
 
 			// Grab RPC arguments.
 			TArray<FString> RPCParameters;
-			for (TFieldIterator<UProperty> Param(RPC); Param; ++Param)
+			for (TFieldIterator<UProperty> Param(RPC.Function); Param; ++Param)
 			{
 				FString PropertyValueName = Param->GetNameCPP();
 				FString PropertyValueCppType = Param->GetCPPType();
@@ -1877,10 +1896,10 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Print();
 			SourceWriter.Print("// Call implementation and send command response.");
 			SourceWriter.Printf("TargetObject->%s_Implementation(%s);",
-				*RPC->GetName(), *FString::Join(RPCParameters, TEXT(", ")));
+				*RPC.Function->GetName(), *FString::Join(RPCParameters, TEXT(", ")));
 			SourceWriter.Printf("SendRPCResponse<improbable::unreal::%s::Commands::%s>(Op);",
 				*GetSchemaRPCComponentName(Group, Class),
-				*GetCommandNameFromFunction(RPC));
+				*GetCommandNameFromFunction(RPC.Function));
 			SourceWriter.Outdent().Print(TEXT("}"));
 		}
 	}
@@ -1915,7 +1934,7 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 
-	TArray<FString> Classes = { TEXT("Character"), TEXT("PlayerController") };
+	TArray<FString> Classes = {TEXT("Character"), TEXT("PlayerController"), TEXT("PlayerState"), TEXT("GameStateBase")};
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
 		int ComponentId = 100000;
