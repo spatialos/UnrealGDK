@@ -13,8 +13,6 @@
 #include "Generated/SpatialTypeBinding_Character.h"
 #include "Generated/SpatialTypeBinding_PlayerController.h"
 
-// We assume that #define ENABLE_PROPERTY_CHECKSUMS exists in RepLayout.cpp:88 here.
-#define ENABLE_PROPERTY_CHECKSUMS
 DEFINE_LOG_CATEGORY(LogSpatialUpdateInterop);
 
 USpatialUpdateInterop::USpatialUpdateInterop() 
@@ -112,11 +110,8 @@ void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, 
 	BunchData.WriteBit(1); // bHasRepLayout
 	BunchData.WriteBit(1); // bIsActor
 	// Write property info.
-	uint32 PayloadSize = IncomingPayload.GetNumBits() + 1; // extra bit for bDoChecksum
+	uint32 PayloadSize = IncomingPayload.GetNumBits();
 	BunchData.SerializeIntPacked(PayloadSize);
-#ifdef ENABLE_PROPERTY_CHECKSUMS
-	BunchData.WriteBit(0); // bDoChecksum
-#endif
 	BunchData.SerializeBits(IncomingPayload.GetData(), IncomingPayload.GetNumBits());
 
 	// Create bunch and send to actor channel.
@@ -176,10 +171,9 @@ void USpatialUpdateInterop::HandleCommandResponse(const FString& RPCName, FUntyp
 	OutgoingRPCs.Remove(RequestId);
 	if (StatusCode != worker::StatusCode::kSuccess)
 	{
-		RetryContext->NumFailures++;
-		if (RetryContext->NumFailures == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+		if (RetryContext->NumAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RetryContext->NumFailures);
+			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RetryContext->NumAttempts);
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"), *RPCName, WaitTime, (int)StatusCode, *Message);
 
 			// Queue retry.
@@ -188,6 +182,7 @@ void USpatialUpdateInterop::HandleCommandResponse(const FString& RPCName, FUntyp
 			TimerCallback.BindLambda([this, RetryContext]()
 			{
 				auto Result = RetryContext->SendCommandRequest();
+				RetryContext->NumAttempts++;
 				check(Result.UnresolvedObject == nullptr);
 				OutgoingRPCs.Emplace(Result.RequestId, RetryContext);
 			});

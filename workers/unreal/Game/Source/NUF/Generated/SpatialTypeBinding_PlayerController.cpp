@@ -727,6 +727,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_SingleClient
 	const improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update) const
 {
 	FNetBitWriter OutputWriter(nullptr, 0);
+	OutputWriter.WriteBit(0); // bDoChecksum
 	auto& HandleToPropertyMap = GetHandlePropertyMap();
 	ConditionMapFilter ConditionMap(ActorChannel);
 	if (!Update.field_targetviewrotation().empty())
@@ -781,6 +782,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 	const improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update) const
 {
 	FNetBitWriter OutputWriter(nullptr, 0);
+	OutputWriter.WriteBit(0); // bDoChecksum
 	auto& HandleToPropertyMap = GetHandlePropertyMap();
 	ConditionMapFilter ConditionMap(ActorChannel);
 	if (!Update.field_bhidden().empty())
@@ -795,8 +797,8 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			uint8 Value;
 
 			Value = *(Update.field_bhidden().data());
-			//Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
-			//We will soon move away from using bunches when receiving Spatial updates.
+			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
+			// We will soon move away from using bunches when receiving Spatial updates.
 			if (Value)
 			{
 				Value = 0xFF;
@@ -818,8 +820,8 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			uint8 Value;
 
 			Value = *(Update.field_breplicatemovement().data());
-			//Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
-			//We will soon move away from using bunches when receiving Spatial updates.
+			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
+			// We will soon move away from using bunches when receiving Spatial updates.
 			if (Value)
 			{
 				Value = 0xFF;
@@ -841,8 +843,8 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			uint8 Value;
 
 			Value = *(Update.field_btearoff().data());
-			//Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
-			//We will soon move away from using bunches when receiving Spatial updates.
+			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
+			// We will soon move away from using bunches when receiving Spatial updates.
 			if (Value)
 			{
 				Value = 0xFF;
@@ -1083,8 +1085,8 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			uint8 Value;
 
 			Value = *(Update.field_bcanbedamaged().data());
-			//Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
-			//We will soon move away from using bunches when receiving Spatial updates.
+			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
+			// We will soon move away from using bunches when receiving Spatial updates.
 			if (Value)
 			{
 				Value = 0xFF;
@@ -4001,8 +4003,8 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver(const wo
 	TransitionParams.BlendFunction = TEnumAsByte<EViewTargetBlendFunction>(uint8(Op.Request.field_transitionparams_blendfunction()));
 	TransitionParams.BlendExp = Op.Request.field_transitionparams_blendexp();
 	TransitionParams.bLockOutgoing = Op.Request.field_transitionparams_blockoutgoing();
-	//Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
-	//We will soon move away from using bunches when receiving Spatial updates.
+	// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
+	// We will soon move away from using bunches when receiving Spatial updates.
 	if (TransitionParams.bLockOutgoing)
 	{
 		TransitionParams.bLockOutgoing = 0xFF;
@@ -5099,8 +5101,8 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Receiver(const worker:
 	TransitionParams.BlendFunction = TEnumAsByte<EViewTargetBlendFunction>(uint8(Op.Request.field_transitionparams_blendfunction()));
 	TransitionParams.BlendExp = Op.Request.field_transitionparams_blendexp();
 	TransitionParams.bLockOutgoing = Op.Request.field_transitionparams_blockoutgoing();
-	//Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
-	//We will soon move away from using bunches when receiving Spatial updates.
+	// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
+	// We will soon move away from using bunches when receiving Spatial updates.
 	if (TransitionParams.bLockOutgoing)
 	{
 		TransitionParams.bLockOutgoing = 0xFF;

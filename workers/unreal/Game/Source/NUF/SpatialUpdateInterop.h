@@ -24,8 +24,8 @@ struct FRPCRequestResult
 	FUntypedRequestId RequestId;
 
 	FRPCRequestResult() = delete;
-	FRPCRequestResult(UObject* UnresolvedObject) : UnresolvedObject{ UnresolvedObject }, RequestId{ 0 } {}
-	FRPCRequestResult(FUntypedRequestId RequestId) : UnresolvedObject{ nullptr }, RequestId{ RequestId } {}
+	FRPCRequestResult(UObject* UnresolvedObject) : UnresolvedObject{UnresolvedObject}, RequestId{0} {}
+	FRPCRequestResult(FUntypedRequestId RequestId) : UnresolvedObject{nullptr}, RequestId{RequestId} {}
 };
 
 // Function storing a command request, capturing all arguments by value.
@@ -37,12 +37,12 @@ class FRPCRetryContext
 public:
 	FRPCRetryContext(FRPCRequestFunction SendCommandRequest) :
 		SendCommandRequest{SendCommandRequest},
-		NumFailures{0}
+		NumAttempts{1}
 	{
 	}
 
 	FRPCRequestFunction SendCommandRequest;
-	uint32 NumFailures;
+	uint32 NumAttempts;
 };
 
 UCLASS()
