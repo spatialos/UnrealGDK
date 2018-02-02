@@ -126,7 +126,7 @@ void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, 
 	Channel->UActorChannel::ReceivedBunch(Bunch);
 }
 
-void USpatialUpdateInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame)
+void USpatialUpdateInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)
 {
 	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
 	if (!Binding)
@@ -136,7 +136,7 @@ void USpatialUpdateInterop::InvokeRPC(AActor* TargetActor, const UFunction* cons
 		return;
 	}
 
-	Binding->SendRPCCommand(TargetActor, Function, DuplicateFrame);
+	Binding->SendRPCCommand(Frame->Object, Function, Frame);
 }
 
 void USpatialUpdateInterop::SendCommandRequest(FRPCRequestFunction Function)

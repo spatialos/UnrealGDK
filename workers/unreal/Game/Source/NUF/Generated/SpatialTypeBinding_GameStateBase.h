@@ -25,7 +25,7 @@ public:
 
 	worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 	void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
-	void SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame) override;
+	void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) override;
 
 	void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;
 
@@ -40,7 +40,7 @@ private:
 	TMap<worker::EntityId, improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData::Data> PendingMultiClientData;
 
 	// RPC sender and receiver callbacks.
-	using FRPCSender = void (USpatialTypeBinding_GameStateBase::*)(worker::Connection* const, struct FFrame* const, AActor*);
+	using FRPCSender = void (USpatialTypeBinding_GameStateBase::*)(worker::Connection* const, struct FFrame* const, UObject*);
 	TMap<FName, FRPCSender> RPCToSenderMap;
 	TArray<worker::Dispatcher::CallbackKey> RPCReceiverCallbacks;
 

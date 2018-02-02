@@ -198,12 +198,12 @@ void USpatialTypeBinding_GameStateBase::SendComponentUpdates(const FPropertyChan
 	}
 }
 
-void USpatialTypeBinding_GameStateBase::SendRPCCommand(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)
+void USpatialTypeBinding_GameStateBase::SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame)
 {
 	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
 	auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
 	checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
-	(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetActor);
+	(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetObject);
 }
 
 void USpatialTypeBinding_GameStateBase::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)
