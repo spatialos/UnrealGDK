@@ -866,7 +866,8 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_SingleClient(
 	FNetBitWriter OutputWriter(nullptr, 0);
 	OutputWriter.WriteBit(0); // bDoChecksum
 	auto& HandleToPropertyMap = GetHandlePropertyMap();
-	ConditionMapFilter ConditionMap(ActorChannel);
+	auto& EntityAuthorityMap = Interop->GetNetDriver()->GetSpatialOS()->GetView().Pin()->ComponentAuthority[ActorChannel->GetEntityId()];
+	ConditionMapFilter ConditionMap(ActorChannel, EntityAuthorityMap.count(improbable::unreal::UnrealCharacterServerRPCs::ComponentId));
 	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
@@ -877,7 +878,8 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 	FNetBitWriter OutputWriter(nullptr, 0);
 	OutputWriter.WriteBit(0); // bDoChecksum
 	auto& HandleToPropertyMap = GetHandlePropertyMap();
-	ConditionMapFilter ConditionMap(ActorChannel);
+	auto& EntityAuthorityMap = Interop->GetNetDriver()->GetSpatialOS()->GetView().Pin()->ComponentAuthority[ActorChannel->GetEntityId()];
+	ConditionMapFilter ConditionMap(ActorChannel, EntityAuthorityMap.count(improbable::unreal::UnrealCharacterServerRPCs::ComponentId));
 	if (!Update.field_bhidden().empty())
 	{
 		// field_bhidden
@@ -976,9 +978,9 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			AActor* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_owner().data());
-				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_owner().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 				if (NetGUID.IsValid())
 				{
 					Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -1029,9 +1031,9 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			AActor* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_attachmentreplication_attachparent().data());
-				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_attachmentreplication_attachparent().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 				if (NetGUID.IsValid())
 				{
 					Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -1135,9 +1137,9 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			USceneComponent* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_attachmentreplication_attachcomponent().data());
-				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_attachmentreplication_attachcomponent().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 				if (NetGUID.IsValid())
 				{
 					Value = static_cast<USceneComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -1204,9 +1206,9 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			APawn* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_instigator().data());
-				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_instigator().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 				if (NetGUID.IsValid())
 				{
 					Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -1233,9 +1235,9 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			APlayerState* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_playerstate().data());
-				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_playerstate().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 				if (NetGUID.IsValid())
 				{
 					Value = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -1279,9 +1281,9 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			AController* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_controller().data());
-				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_controller().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 				if (NetGUID.IsValid())
 				{
 					Value = static_cast<AController*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -1308,9 +1310,9 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			UPrimitiveComponent* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_replicatedbasedmovement_movementbase().data());
-				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_replicatedbasedmovement_movementbase().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 				if (NetGUID.IsValid())
 				{
 					Value = static_cast<UPrimitiveComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -1568,9 +1570,9 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			UAnimMontage* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_reprootmotion_animmontage().data());
-				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_reprootmotion_animmontage().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 				if (NetGUID.IsValid())
 				{
 					Value = static_cast<UAnimMontage*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -1658,9 +1660,9 @@ void USpatialTypeBinding_Character::ReceiveUpdateFromSpatial_MultiClient(
 			UPrimitiveComponent* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_reprootmotion_movementbase().data());
-				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_reprootmotion_movementbase().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 				if (NetGUID.IsValid())
 				{
 					Value = static_cast<UPrimitiveComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -2501,9 +2503,9 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Receiver(const
 	// Extract NewBase
 	UPrimitiveComponent* NewBase;
 	{
-		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_newbase();
-		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_newbase();
+		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 		if (NetGUID.IsValid())
 		{
 			NewBase = static_cast<UPrimitiveComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -2597,9 +2599,9 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Receive
 	// Extract ServerBase
 	UPrimitiveComponent* ServerBase;
 	{
-		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_serverbase();
-		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_serverbase();
+		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 		if (NetGUID.IsValid())
 		{
 			ServerBase = static_cast<UPrimitiveComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -2676,9 +2678,9 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Receiver(cons
 	// Extract ServerBase
 	UPrimitiveComponent* ServerBase;
 	{
-		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_serverbase();
-		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_serverbase();
+		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 		if (NetGUID.IsValid())
 		{
 			ServerBase = static_cast<UPrimitiveComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -2747,9 +2749,9 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Receiver(const worker::
 	// Extract NewBase
 	UPrimitiveComponent* NewBase;
 	{
-		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_newbase();
-		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_newbase();
+		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 		if (NetGUID.IsValid())
 		{
 			NewBase = static_cast<UPrimitiveComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -2906,9 +2908,9 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Receiver(cons
 	// Extract ClientMovementBase
 	UPrimitiveComponent* ClientMovementBase;
 	{
-		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_clientmovementbase();
-		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_clientmovementbase();
+		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 		if (NetGUID.IsValid())
 		{
 			ClientMovementBase = static_cast<UPrimitiveComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -3002,9 +3004,9 @@ void USpatialTypeBinding_Character::ServerMoveDual_Receiver(const worker::Comman
 	// Extract ClientMovementBase
 	UPrimitiveComponent* ClientMovementBase;
 	{
-		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_clientmovementbase();
-		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_clientmovementbase();
+		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 		if (NetGUID.IsValid())
 		{
 			ClientMovementBase = static_cast<UPrimitiveComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -3077,9 +3079,9 @@ void USpatialTypeBinding_Character::ServerMove_Receiver(const worker::CommandReq
 	// Extract ClientMovementBase
 	UPrimitiveComponent* ClientMovementBase;
 	{
-		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_clientmovementbase();
-		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_clientmovementbase();
+		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 		if (NetGUID.IsValid())
 		{
 			ClientMovementBase = static_cast<UPrimitiveComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));

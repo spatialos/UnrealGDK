@@ -777,7 +777,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 		Writer.Print("{").Indent();
 		Writer.Printf(R"""(
 			improbable::unreal::UnrealObjectRef ObjectRef = %s;
-			check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
+			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 			if (NetGUID.IsValid())
 			{
@@ -1711,11 +1711,13 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Print(SpatialToUnrealSignatureByGroup[Group].Definition(TypeBindingName));
 		SourceWriter.Print("{");
 		SourceWriter.Indent();
-		SourceWriter.Print(R"""(
+		SourceWriter.Printf(R"""(
 			FNetBitWriter OutputWriter(nullptr, 0);
 			OutputWriter.WriteBit(0); // bDoChecksum
 			auto& HandleToPropertyMap = GetHandlePropertyMap();
-			ConditionMapFilter ConditionMap(ActorChannel);)""");
+			auto& EntityAuthorityMap = Interop->GetNetDriver()->GetSpatialOS()->GetView().Pin()->ComponentAuthority[ActorChannel->GetEntityId()];
+			ConditionMapFilter ConditionMap(ActorChannel, EntityAuthorityMap.count(improbable::unreal::%s::ComponentId));)""",
+			*GetSchemaRPCComponentName(ERPCType::RPC_Server, Class));
 		for (auto& RepProp : Layout.ReplicatedProperties[Group])
 		{
 			auto Handle = RepProp.Entry.Handle;

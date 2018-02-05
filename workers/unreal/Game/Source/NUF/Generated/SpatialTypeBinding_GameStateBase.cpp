@@ -509,7 +509,8 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_SingleClient(
 	FNetBitWriter OutputWriter(nullptr, 0);
 	OutputWriter.WriteBit(0); // bDoChecksum
 	auto& HandleToPropertyMap = GetHandlePropertyMap();
-	ConditionMapFilter ConditionMap(ActorChannel);
+	auto& EntityAuthorityMap = Interop->GetNetDriver()->GetSpatialOS()->GetView().Pin()->ComponentAuthority[ActorChannel->GetEntityId()];
+	ConditionMapFilter ConditionMap(ActorChannel, EntityAuthorityMap.count(improbable::unreal::UnrealGameStateBaseServerRPCs::ComponentId));
 	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
@@ -520,7 +521,8 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 	FNetBitWriter OutputWriter(nullptr, 0);
 	OutputWriter.WriteBit(0); // bDoChecksum
 	auto& HandleToPropertyMap = GetHandlePropertyMap();
-	ConditionMapFilter ConditionMap(ActorChannel);
+	auto& EntityAuthorityMap = Interop->GetNetDriver()->GetSpatialOS()->GetView().Pin()->ComponentAuthority[ActorChannel->GetEntityId()];
+	ConditionMapFilter ConditionMap(ActorChannel, EntityAuthorityMap.count(improbable::unreal::UnrealGameStateBaseServerRPCs::ComponentId));
 	if (!Update.field_bhidden().empty())
 	{
 		// field_bhidden
@@ -619,9 +621,9 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			AActor* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_owner().data());
-				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_owner().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 				if (NetGUID.IsValid())
 				{
 					Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -672,9 +674,9 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			AActor* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_attachmentreplication_attachparent().data());
-				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_attachmentreplication_attachparent().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 				if (NetGUID.IsValid())
 				{
 					Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -778,9 +780,9 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			USceneComponent* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_attachmentreplication_attachcomponent().data());
-				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_attachmentreplication_attachcomponent().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 				if (NetGUID.IsValid())
 				{
 					Value = static_cast<USceneComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -847,9 +849,9 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			APawn* Value;
 
 			{
-				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_instigator().data());
-				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_instigator().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 				if (NetGUID.IsValid())
 				{
 					Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));

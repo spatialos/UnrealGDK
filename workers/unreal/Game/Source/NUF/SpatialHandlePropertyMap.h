@@ -22,8 +22,16 @@ using FRepHandlePropertyMap = TMap<int32, FRepHandleData>;
 class ConditionMapFilter
 {
 public:
-	ConditionMapFilter(UActorChannel* ActorChannel)
+	ConditionMapFilter(UActorChannel* ActorChannel, bool IsAuthoritative)
 	{
+		// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
+		// the client RPCs component (if IsAuthoritative is false).
+		ENetRole ActorRole = ActorChannel->Actor->Role;
+		if (ActorRole == ROLE_AutonomousProxy && !IsAuthoritative)
+		{
+			ActorRole = ROLE_SimulatedProxy;
+		}
+
 		// Reconstruct replication flags on the client side.
 		FReplicationFlags RepFlags;
 		RepFlags.bReplay = 0;
