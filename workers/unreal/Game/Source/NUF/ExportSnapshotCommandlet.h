@@ -20,6 +20,6 @@ public:
 
 private:
 	void GenerateSnapshot(const FString& savePath) const;
-	worker::Entity CreatePackageMapEntity() const;
+	worker::Entity CreateLevelDataEntity() const;
 	worker::Entity CreateSpawnerEntity() const;
 };

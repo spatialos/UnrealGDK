@@ -8,7 +8,7 @@
 #include <unreal/core_types.h>
 #include "SpatialUpdateInterop.h"
 
-#include <improbable/package_map/package_map.h>
+#include <unreal/level_data.h>
 
 #include "SpatialPackageMapClient.generated.h"
 
@@ -40,7 +40,7 @@ class NUF_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()		
 public:
-	void ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FString& Path);
+	//void ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FString& Path);
 	FNetworkGUID ResolveEntityActor(AActor* Actor, FEntityId EntityId);
 	virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel *Channel, class AActor*& Actor) override;
 
@@ -48,7 +48,7 @@ public:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 
-	void RegisterStaticObjects(const improbable::package_map::PackageMapData& PackageMapData);
+	void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);
 
 	void AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void AddPendingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender);
@@ -62,10 +62,10 @@ public:
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor);
 	
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
-	improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
+	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 
-	void RegisterStaticObjects(const improbable::package_map::PackageMapData& PackageMapData);
+	void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);
 
 	void AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void AddPendingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender);
@@ -74,6 +74,7 @@ private:
 	//FNetworkGUID AssignNewNetGUID(const UObject* Object);
 	FNetworkGUID GetOrAssignNetGUID_NUF(const UObject* Object);
 	void RegisterObjectRef(FNetworkGUID NetGUID, const improbable::unreal::UnrealObjectRef& ObjectRef);
+	FNetworkGUID AssignStaticActorNetGUID(const UObject* Object, const FNetworkGUID& StaticNetGUID);
 
 	void ResolvePendingObjRefs(const UObject* Object);
 	void ResolvePendingRPCs(UObject* Object);

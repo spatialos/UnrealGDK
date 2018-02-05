@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialPackageMapClient.h"
+#include "SpatialConstants.h"
 #include "EntityRegistry.h"
 #include "SpatialNetDriver.h"
 #include "SpatialUpdateInterop.h"
@@ -9,18 +10,19 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialOSPackageMap);
 
-const uint32 StaticObjectOffset = 0x80000000; // 2^31
-
-struct FCompareComponentNames
-{
-	bool operator()(UObject& A, UObject& B) const 
-	{
-		return A.GetName() < B.GetName();
-	}
-};
+//const uint32 StaticObjectOffset = 0x80000000; // 2^31
 
 void GetSubobjects(UObject* Object, TArray<UObject*>& Subobjects)
 {
+	// Functor to sort by name.
+	struct FCompareComponentNames
+	{
+		bool operator()(UObject& A, UObject& B) const
+		{
+			return A.GetName() < B.GetName();
+		}
+	};
+
 	Subobjects.Empty();
 	ForEachObjectWithOuter(Object, [&Subobjects](UObject* Object)
 	{
@@ -30,9 +32,12 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& Subobjects)
 			Subobjects.Add(Object);
 		}
 	});
+
+	// Sort to ensure stable order.
 	Sort(Subobjects.GetData(), Subobjects.Num(), FCompareComponentNames());
 }
 
+/*
 void USpatialPackageMapClient::ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FString& Path)
 {
 	// there should never be a case where a static object gets allocated in the dynamic region
@@ -58,6 +63,7 @@ void USpatialPackageMapClient::ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FS
 		}
 	}
 }
+*/
 
 FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntityId EntityId)
 {
@@ -98,10 +104,10 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const worker::Enti
 	return GetNetGUIDFromUnrealObjectRef(ObjectRef);
 }
 
-void USpatialPackageMapClient::RegisterStaticObjects(const improbable::package_map::PackageMapData& PackageMapData)
+void USpatialPackageMapClient::RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	return SpatialGuidCache->RegisterStaticObjects(PackageMapData);
+	return SpatialGuidCache->RegisterStaticObjects(LevelData);
 }
 
 void USpatialPackageMapClient::AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle)
@@ -173,9 +179,7 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbabl
 improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
 {
 	const FUnrealObjectRefWrapper* ObjRefWrapper = NetGUIDToUnrealObjectRef.Find(NetGUID);
-
-	// If not found, return entity id 0 as it's not a valid entity id.
-	return ObjRefWrapper ? ObjRefWrapper->ObjectRef : improbable::unreal::UnrealObjectRef{0, 0};
+	return ObjRefWrapper ? ObjRefWrapper->ObjectRef : SpatialConstants::UNRESOLVED_OBJECT_REF;
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const
@@ -187,30 +191,23 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(const worker::EntityId
 	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
 }
 
-void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::package_map::PackageMapData& PackageMapData)
+void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData)
 {
-	auto& IdToPathMap = PackageMapData.id_to_path_map();
-	for (auto& Pair : IdToPathMap)
+	// Build list of static objects in the world.
+	UWorld* World = Driver->GetWorld();
+	TMap<FString, UObject*> StaticActorsInWorld;
+	for (TActorIterator<AActor> Itr(World); Itr; ++Itr)
 	{
-		/*
-		FStringAssetReference StringRef(UTF8_TO_TCHAR(Pair.second.c_str()));
-		UObject* Object = StringRef.ResolveObject();
-		check(Object);
-		*/
-		// Iterate through the world and find the actors which match the full path name stored in the package map entity.
-		UWorld* World = Driver->GetWorld();
-		UObject* Object = nullptr;
-		for (TActorIterator<AActor> Itr(World); Itr; ++Itr)
-		{
-			AActor* Actor = *Itr;
-			FString PathName = Actor->GetPathName(World);
-			FString StoredPathName = UTF8_TO_TCHAR(Pair.second.c_str());
-			if (PathName == StoredPathName)
-			{
-				Object = Actor;
-				break;
-			}
-		}
+		AActor* Actor = *Itr;
+		FString PathName = Actor->GetPathName(World);
+		StaticActorsInWorld.Add(PathName, Actor);
+	}
+
+	// Match the above list with the static actor data.
+	auto& StaticActorData = LevelData.static_actor_map();
+	for (auto& Pair : StaticActorData)
+	{
+		UObject* Object = StaticActorsInWorld.FindRef(UTF8_TO_TCHAR(Pair.second.c_str()));
 
 		// Skip objects which don't exist.
 		if (!Object)
@@ -218,34 +215,25 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::package_map::
 			continue;
 		}
 
-		// Register NetGUID.
-		FNetworkGUID NetGUID{Pair.first};
-		FNetGuidCacheObject CacheObject;
-		CacheObject.Object = Object;
-		RegisterNetGUID_Internal(NetGUID, CacheObject);
+		// Skip objects which we've already registered.
+		if (NetGUIDLookup.FindRef(Object).IsValid())
+		{
+			continue;
+		}
 
-		// Register object refs.
-		improbable::unreal::UnrealObjectRef ObjectRef{0, NetGUID.Value};
-		RegisterObjectRef(NetGUID, ObjectRef);
+		// Register static NetGUID.
+		AssignStaticActorNetGUID(Object, FNetworkGUID(Pair.first));
 
-		// Deal with subobjects of static objects.
+		// Deal with sub-objects of static objects.
 		// TODO(David): Ensure that the NetGUID allocated in the snapshot generator (which are always > 0x7fffffff) ensures that there's enough space
-		// for subobjects to be stored in increasing NetGUIDs after the static object one (currently, they're just hashes of the path).
+		// for sub-objects to be stored in increasing NetGUIDs after the static object one (currently, they're just hashes of the path).
 		TArray<UObject*> StaticSubobjects;
 		GetSubobjects(Object, StaticSubobjects);
 		uint32 SubobjectOffset = 0;
 		for (auto Subobject : StaticSubobjects)
 		{
 			SubobjectOffset++;
-
-			// Register NetGUID.
-			FNetworkGUID SubobjectNetGUID{NetGUID.Value + SubobjectOffset};
-			CacheObject.Object = Subobject;
-			RegisterNetGUID_Internal(SubobjectNetGUID, CacheObject);
-
-			// Register object refs.
-			improbable::unreal::UnrealObjectRef SubobjectObjectRef{0, SubobjectNetGUID.Value};
-			RegisterObjectRef(SubobjectNetGUID, SubobjectObjectRef);
+			AssignStaticActorNetGUID(Subobject, FNetworkGUID(Pair.first + SubobjectOffset));
 		}
 	}
 }
@@ -319,6 +307,21 @@ void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const improba
 	FUnrealObjectRefWrapper ObjRefWrapper{ObjectRef};
 	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjRefWrapper);
 	UnrealObjectRefToNetGUID.Emplace(ObjRefWrapper, NetGUID);
+}
+
+FNetworkGUID FSpatialNetGUIDCache::AssignStaticActorNetGUID(const UObject* Object, const FNetworkGUID& StaticNetGUID)
+{
+	check(!NetGUIDLookup.FindRef(Object).IsValid());
+
+	FNetGuidCacheObject CacheObject;
+	CacheObject.Object = Object;
+	RegisterNetGUID_Internal(StaticNetGUID, CacheObject);
+
+	// Register object ref.
+	improbable::unreal::UnrealObjectRef ObjectRef{0, StaticNetGUID.Value};
+	RegisterObjectRef(StaticNetGUID, ObjectRef);
+
+	return StaticNetGUID;
 }
 
 void FSpatialNetGUIDCache::ResolvePendingObjRefs(const UObject* Object)

@@ -545,10 +545,11 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 			AActor* Value;
 			Value = *(reinterpret_cast<AActor* const*>(Data));
 
+			if (Value != nullptr)
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 5);
 				}
@@ -556,6 +557,10 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 				{
 					OutUpdate.set_field_owner(ObjectRef);
 				}
+			}
+			else
+			{
+				OutUpdate.set_field_owner(SpatialConstants::NULL_OBJECT_REF);
 			}
 			break;
 		}
@@ -578,10 +583,11 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 			AActor* Value;
 			Value = *(reinterpret_cast<AActor* const*>(Data));
 
+			if (Value != nullptr)
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 7);
 				}
@@ -589,6 +595,10 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 				{
 					OutUpdate.set_field_attachmentreplication_attachparent(ObjectRef);
 				}
+			}
+			else
+			{
+				OutUpdate.set_field_attachmentreplication_attachparent(SpatialConstants::NULL_OBJECT_REF);
 			}
 			break;
 		}
@@ -629,10 +639,11 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 			USceneComponent* Value;
 			Value = *(reinterpret_cast<USceneComponent* const*>(Data));
 
+			if (Value != nullptr)
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 12);
 				}
@@ -640,6 +651,10 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 				{
 					OutUpdate.set_field_attachmentreplication_attachcomponent(ObjectRef);
 				}
+			}
+			else
+			{
+				OutUpdate.set_field_attachmentreplication_attachcomponent(SpatialConstants::NULL_OBJECT_REF);
 			}
 			break;
 		}
@@ -664,10 +679,11 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 			APawn* Value;
 			Value = *(reinterpret_cast<APawn* const*>(Data));
 
+			if (Value != nullptr)
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 15);
 				}
@@ -676,6 +692,10 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 					OutUpdate.set_field_instigator(ObjectRef);
 				}
 			}
+			else
+			{
+				OutUpdate.set_field_instigator(SpatialConstants::NULL_OBJECT_REF);
+			}
 			break;
 		}
 		case 16: // field_pawn
@@ -683,10 +703,11 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 			APawn* Value;
 			Value = *(reinterpret_cast<APawn* const*>(Data));
 
+			if (Value != nullptr)
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 16);
 				}
@@ -695,6 +716,10 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 					OutUpdate.set_field_pawn(ObjectRef);
 				}
 			}
+			else
+			{
+				OutUpdate.set_field_pawn(SpatialConstants::NULL_OBJECT_REF);
+			}
 			break;
 		}
 		case 17: // field_playerstate
@@ -702,10 +727,11 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 			APlayerState* Value;
 			Value = *(reinterpret_cast<APlayerState* const*>(Data));
 
+			if (Value != nullptr)
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 17);
 				}
@@ -713,6 +739,10 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 				{
 					OutUpdate.set_field_playerstate(ObjectRef);
 				}
+			}
+			else
+			{
+				OutUpdate.set_field_playerstate(SpatialConstants::NULL_OBJECT_REF);
 			}
 			break;
 		}
@@ -884,6 +914,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_owner().data());
+				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -936,6 +967,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_attachmentreplication_attachparent().data());
+				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1041,6 +1073,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_attachmentreplication_attachcomponent().data());
+				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1109,6 +1142,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_instigator().data());
+				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1137,6 +1171,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_pawn().data());
+				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1165,6 +1200,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_playerstate().data());
+				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -1192,7 +1228,7 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender(wo
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC OnServerStartedVisualLogger queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1203,7 +1239,7 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender(wo
 		Request.set_field_bislogging(bIsLogging != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1219,7 +1255,7 @@ void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender(worker::Connec
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientWasKicked queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1230,7 +1266,7 @@ void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender(worker::Connec
 		// UNSUPPORTED
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1243,7 +1279,7 @@ void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender(w
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientVoiceHandshakeComplete queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1253,7 +1289,7 @@ void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender(w
 		improbable::unreal::UnrealClientVoiceHandshakeCompleteRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1273,7 +1309,7 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Send
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientUpdateLevelStreamingStatus queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1288,7 +1324,7 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Send
 		Request.set_field_lodindex(LODIndex);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1304,7 +1340,7 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender(worker::Con
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientUnmutePlayer queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1321,7 +1357,7 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender(worker::Con
 		}
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1340,7 +1376,7 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender(worker::C
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientTravelInternal queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1357,7 +1393,7 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender(worker::C
 		Request.set_field_mappackageguid_d(MapPackageGuid.D);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1376,7 +1412,7 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Conn
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientTeamMessage queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1384,10 +1420,11 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Conn
 
 		// Build request.
 		improbable::unreal::UnrealClientTeamMessageRequest Request;
+		if (SenderPlayerState != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(SenderPlayerState);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. SenderPlayerState is unresolved."));
 				return FRPCRequestResult{SenderPlayerState};
@@ -1397,12 +1434,16 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Conn
 				Request.set_field_senderplayerstate(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_senderplayerstate(SpatialConstants::NULL_OBJECT_REF);
+		}
 		Request.set_field_s(TCHAR_TO_UTF8(*S));
 		Request.set_field_type(TCHAR_TO_UTF8(*Type.ToString()));
 		Request.set_field_msglifetime(MsgLifeTime);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1419,7 +1460,7 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientStopForceFeedback queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1427,10 +1468,11 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker
 
 		// Build request.
 		improbable::unreal::UnrealClientStopForceFeedbackRequest Request;
+		if (ForceFeedbackEffect != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(ForceFeedbackEffect);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. ForceFeedbackEffect is unresolved."));
 				return FRPCRequestResult{ForceFeedbackEffect};
@@ -1440,10 +1482,14 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker
 				Request.set_field_forcefeedbackeffect(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_forcefeedbackeffect(SpatialConstants::NULL_OBJECT_REF);
+		}
 		Request.set_field_tag(TCHAR_TO_UTF8(*Tag.ToString()));
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1460,7 +1506,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender(worker::
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientStopCameraShake queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1472,7 +1518,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender(worker::
 		Request.set_field_bimmediately(bImmediately != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1488,7 +1534,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::C
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientStopCameraAnim queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1496,10 +1542,11 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::C
 
 		// Build request.
 		improbable::unreal::UnrealClientStopCameraAnimRequest Request;
+		if (AnimToStop != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(AnimToStop);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. AnimToStop is unresolved."));
 				return FRPCRequestResult{AnimToStop};
@@ -1509,9 +1556,13 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::C
 				Request.set_field_animtostop(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_animtostop(SpatialConstants::NULL_OBJECT_REF);
+		}
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1524,7 +1575,7 @@ void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender(worke
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientStartOnlineSession queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1534,7 +1585,7 @@ void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender(worke
 		improbable::unreal::UnrealClientStartOnlineSessionRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1550,7 +1601,7 @@ void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender(wo
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSpawnCameraLensEffect queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1561,7 +1612,7 @@ void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender(wo
 		// UNSUPPORTED UClass
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1578,7 +1629,7 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Co
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetViewTarget queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1586,10 +1637,11 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Co
 
 		// Build request.
 		improbable::unreal::UnrealClientSetViewTargetRequest Request;
+		if (A != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(A);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. A is unresolved."));
 				return FRPCRequestResult{A};
@@ -1599,13 +1651,17 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Co
 				Request.set_field_a(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_a(SpatialConstants::NULL_OBJECT_REF);
+		}
 		Request.set_field_transitionparams_blendtime(TransitionParams.BlendTime);
 		Request.set_field_transitionparams_blendfunction(uint32_t(TransitionParams.BlendFunction));
 		Request.set_field_transitionparams_blendexp(TransitionParams.BlendExp);
 		Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1621,7 +1677,7 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender(work
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetSpectatorWaiting queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1632,7 +1688,7 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender(work
 		Request.set_field_bwaiting(bWaiting != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1648,7 +1704,7 @@ void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender(worker::Connectio
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetHUD queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1659,7 +1715,7 @@ void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender(worker::Connectio
 		// UNSUPPORTED UClass
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1677,7 +1733,7 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_S
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetForceMipLevelsToBeResident queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1685,10 +1741,11 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_S
 
 		// Build request.
 		improbable::unreal::UnrealClientSetForceMipLevelsToBeResidentRequest Request;
+		if (Material != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Material);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. Material is unresolved."));
 				return FRPCRequestResult{Material};
@@ -1698,11 +1755,15 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_S
 				Request.set_field_material(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_material(SpatialConstants::NULL_OBJECT_REF);
+		}
 		Request.set_field_forceduration(ForceDuration);
 		Request.set_field_cinematictexturegroups(CinematicTextureGroups);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1721,7 +1782,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender(worker:
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetCinematicMode queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1735,7 +1796,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender(worker:
 		Request.set_field_baffectshud(bAffectsHUD != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1751,7 +1812,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender(worker::Co
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetCameraMode queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1762,7 +1823,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender(worker::Co
 		Request.set_field_newcammode(TCHAR_TO_UTF8(*NewCamMode.ToString()));
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1782,7 +1843,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Co
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetCameraFade queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1801,7 +1862,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Co
 		Request.set_field_bfadeaudio(bFadeAudio != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1814,7 +1875,7 @@ void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender(w
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetBlockOnAsyncLoading queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1824,7 +1885,7 @@ void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender(w
 		improbable::unreal::UnrealClientSetBlockOnAsyncLoadingRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1840,7 +1901,7 @@ void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender(worker:
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientReturnToMainMenu queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1851,7 +1912,7 @@ void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender(worker:
 		Request.set_field_returnreason(TCHAR_TO_UTF8(*ReturnReason));
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1867,7 +1928,7 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worke
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientRetryClientRestart queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1875,10 +1936,11 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worke
 
 		// Build request.
 		improbable::unreal::UnrealClientRetryClientRestartRequest Request;
+		if (NewPawn != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(NewPawn);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. NewPawn is unresolved."));
 				return FRPCRequestResult{NewPawn};
@@ -1888,9 +1950,13 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worke
 				Request.set_field_newpawn(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_newpawn(SpatialConstants::NULL_OBJECT_REF);
+		}
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1906,7 +1972,7 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connecti
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientRestart queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1914,10 +1980,11 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connecti
 
 		// Build request.
 		improbable::unreal::UnrealClientRestartRequest Request;
+		if (NewPawn != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(NewPawn);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. NewPawn is unresolved."));
 				return FRPCRequestResult{NewPawn};
@@ -1927,9 +1994,13 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connecti
 				Request.set_field_newpawn(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_newpawn(SpatialConstants::NULL_OBJECT_REF);
+		}
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1942,7 +2013,7 @@ void USpatialTypeBinding_PlayerController::ClientReset_Sender(worker::Connection
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientReset queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1952,7 +2023,7 @@ void USpatialTypeBinding_PlayerController::ClientReset_Sender(worker::Connection
 		improbable::unreal::UnrealClientResetRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1968,7 +2039,7 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connec
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientRepObjRef queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -1976,10 +2047,11 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connec
 
 		// Build request.
 		improbable::unreal::UnrealClientRepObjRefRequest Request;
+		if (Object != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Object);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. Object is unresolved."));
 				return FRPCRequestResult{Object};
@@ -1989,9 +2061,13 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connec
 				Request.set_field_object(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_object(SpatialConstants::NULL_OBJECT_REF);
+		}
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2011,7 +2087,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientReceiveLocalizedMessage queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2021,10 +2097,11 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(
 		improbable::unreal::UnrealClientReceiveLocalizedMessageRequest Request;
 		// UNSUPPORTED UClass
 		Request.set_field_switch(Switch);
+		if (RelatedPlayerState_1 != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(RelatedPlayerState_1);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. RelatedPlayerState_1 is unresolved."));
 				return FRPCRequestResult{RelatedPlayerState_1};
@@ -2034,10 +2111,15 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(
 				Request.set_field_relatedplayerstate_1(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_relatedplayerstate_1(SpatialConstants::NULL_OBJECT_REF);
+		}
+		if (RelatedPlayerState_2 != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(RelatedPlayerState_2);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. RelatedPlayerState_2 is unresolved."));
 				return FRPCRequestResult{RelatedPlayerState_2};
@@ -2047,10 +2129,15 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(
 				Request.set_field_relatedplayerstate_2(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_relatedplayerstate_2(SpatialConstants::NULL_OBJECT_REF);
+		}
+		if (OptionalObject != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(OptionalObject);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. OptionalObject is unresolved."));
 				return FRPCRequestResult{OptionalObject};
@@ -2060,9 +2147,13 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(
 				Request.set_field_optionalobject(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_optionalobject(SpatialConstants::NULL_OBJECT_REF);
+		}
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2081,7 +2172,7 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientPrestreamTextures queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2089,10 +2180,11 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker
 
 		// Build request.
 		improbable::unreal::UnrealClientPrestreamTexturesRequest Request;
+		if (ForcedActor != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(ForcedActor);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. ForcedActor is unresolved."));
 				return FRPCRequestResult{ForcedActor};
@@ -2102,12 +2194,16 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker
 				Request.set_field_forcedactor(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_forcedactor(SpatialConstants::NULL_OBJECT_REF);
+		}
 		Request.set_field_forceduration(ForceDuration);
 		Request.set_field_benablestreaming(bEnableStreaming != 0);
 		Request.set_field_cinematictexturegroups(CinematicTextureGroups);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2125,7 +2221,7 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender(worker:
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientPrepareMapChange queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2138,7 +2234,7 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender(worker:
 		Request.set_field_blast(bLast != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2157,7 +2253,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(work
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientPlaySoundAtLocation queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2165,10 +2261,11 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(work
 
 		// Build request.
 		improbable::unreal::UnrealClientPlaySoundAtLocationRequest Request;
+		if (Sound != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Sound);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. Sound is unresolved."));
 				return FRPCRequestResult{Sound};
@@ -2178,12 +2275,16 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(work
 				Request.set_field_sound(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_sound(SpatialConstants::NULL_OBJECT_REF);
+		}
 		Request.set_field_location(improbable::Vector3f(Location.X, Location.Y, Location.Z));
 		Request.set_field_volumemultiplier(VolumeMultiplier);
 		Request.set_field_pitchmultiplier(PitchMultiplier);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2201,7 +2302,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connec
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientPlaySound queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2209,10 +2310,11 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connec
 
 		// Build request.
 		improbable::unreal::UnrealClientPlaySoundRequest Request;
+		if (Sound != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Sound);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. Sound is unresolved."));
 				return FRPCRequestResult{Sound};
@@ -2222,11 +2324,15 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connec
 				Request.set_field_sound(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_sound(SpatialConstants::NULL_OBJECT_REF);
+		}
 		Request.set_field_volumemultiplier(VolumeMultiplier);
 		Request.set_field_pitchmultiplier(PitchMultiplier);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2244,7 +2350,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientPlayForceFeedback queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2252,10 +2358,11 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker
 
 		// Build request.
 		improbable::unreal::UnrealClientPlayForceFeedbackRequest Request;
+		if (ForceFeedbackEffect != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(ForceFeedbackEffect);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. ForceFeedbackEffect is unresolved."));
 				return FRPCRequestResult{ForceFeedbackEffect};
@@ -2265,11 +2372,15 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker
 				Request.set_field_forcefeedbackeffect(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_forcefeedbackeffect(SpatialConstants::NULL_OBJECT_REF);
+		}
 		Request.set_field_blooping(bLooping != 0);
 		Request.set_field_tag(TCHAR_TO_UTF8(*Tag.ToString()));
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2288,7 +2399,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender(worker::
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientPlayCameraShake queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2302,7 +2413,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender(worker::
 		Request.set_field_userplayspacerot(improbable::unreal::UnrealFRotator(UserPlaySpaceRot.Yaw, UserPlaySpaceRot.Pitch, UserPlaySpaceRot.Roll));
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2326,7 +2437,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::C
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientPlayCameraAnim queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2334,10 +2445,11 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::C
 
 		// Build request.
 		improbable::unreal::UnrealClientPlayCameraAnimRequest Request;
+		if (AnimToPlay != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(AnimToPlay);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. AnimToPlay is unresolved."));
 				return FRPCRequestResult{AnimToPlay};
@@ -2346,6 +2458,10 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::C
 			{
 				Request.set_field_animtoplay(ObjectRef);
 			}
+		}
+		else
+		{
+			Request.set_field_animtoplay(SpatialConstants::NULL_OBJECT_REF);
 		}
 		Request.set_field_scale(Scale);
 		Request.set_field_rate(Rate);
@@ -2357,7 +2473,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::C
 		Request.set_field_customplayspace(improbable::unreal::UnrealFRotator(CustomPlaySpace.Yaw, CustomPlaySpace.Pitch, CustomPlaySpace.Roll));
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2373,7 +2489,7 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender(worker::Conne
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientMutePlayer queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2390,7 +2506,7 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender(worker::Conne
 		}
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2408,7 +2524,7 @@ void USpatialTypeBinding_PlayerController::ClientMessage_Sender(worker::Connecti
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientMessage queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2421,7 +2537,7 @@ void USpatialTypeBinding_PlayerController::ClientMessage_Sender(worker::Connecti
 		Request.set_field_msglifetime(MsgLifeTime);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2437,7 +2553,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender(worker::
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientIgnoreMoveInput queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2448,7 +2564,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender(worker::
 		Request.set_field_bignore(bIgnore != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2464,7 +2580,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender(worker::
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientIgnoreLookInput queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2475,7 +2591,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender(worker::
 		Request.set_field_bignore(bIgnore != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2491,7 +2607,7 @@ void USpatialTypeBinding_PlayerController::ClientGotoState_Sender(worker::Connec
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientGotoState queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2502,7 +2618,7 @@ void USpatialTypeBinding_PlayerController::ClientGotoState_Sender(worker::Connec
 		Request.set_field_newstate(TCHAR_TO_UTF8(*NewState.ToString()));
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2519,7 +2635,7 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connec
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientGameEnded queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2527,10 +2643,11 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connec
 
 		// Build request.
 		improbable::unreal::UnrealClientGameEndedRequest Request;
+		if (EndGameFocus != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(EndGameFocus);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. EndGameFocus is unresolved."));
 				return FRPCRequestResult{EndGameFocus};
@@ -2540,10 +2657,14 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connec
 				Request.set_field_endgamefocus(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_endgamefocus(SpatialConstants::NULL_OBJECT_REF);
+		}
 		Request.set_field_biswinner(bIsWinner != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2556,7 +2677,7 @@ void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender(w
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientForceGarbageCollection queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2566,7 +2687,7 @@ void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender(w
 		improbable::unreal::UnrealClientForceGarbageCollectionRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2579,7 +2700,7 @@ void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender(work
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientFlushLevelStreaming queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2589,7 +2710,7 @@ void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender(work
 		improbable::unreal::UnrealClientFlushLevelStreamingRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2602,7 +2723,7 @@ void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender(worker:
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientEndOnlineSession queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2612,7 +2733,7 @@ void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender(worker:
 		improbable::unreal::UnrealClientEndOnlineSessionRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2628,7 +2749,7 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender(worke
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientEnableNetworkVoice queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2639,7 +2760,7 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender(worke
 		Request.set_field_benable(bEnable != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2652,7 +2773,7 @@ void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender(worker::
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientCommitMapChange queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2662,7 +2783,7 @@ void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender(worker::
 		improbable::unreal::UnrealClientCommitMapChangeRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2675,7 +2796,7 @@ void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender(w
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientClearCameraLensEffects queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2685,7 +2806,7 @@ void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender(w
 		improbable::unreal::UnrealClientClearCameraLensEffectsRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2701,7 +2822,7 @@ void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender(worker::Con
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientCapBandwidth queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2712,7 +2833,7 @@ void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender(worker::Con
 		Request.set_field_cap(Cap);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2725,7 +2846,7 @@ void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender(w
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientCancelPendingMapChange queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2735,7 +2856,7 @@ void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender(w
 		improbable::unreal::UnrealClientCancelPendingMapChangeRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2753,7 +2874,7 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender(w
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientAddTextureStreamingLoc queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2766,7 +2887,7 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender(w
 		Request.set_field_boverridelocation(bOverrideLocation != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2783,7 +2904,7 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender(worker::Conn
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetRotation queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2795,7 +2916,7 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender(worker::Conn
 		Request.set_field_bresetcamera(bResetCamera != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2812,7 +2933,7 @@ void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender(worker::Conn
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ClientSetLocation queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2824,7 +2945,7 @@ void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender(worker::Conn
 		Request.set_field_newrotation(improbable::unreal::UnrealFRotator(NewRotation.Yaw, NewRotation.Pitch, NewRotation.Roll));
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2840,7 +2961,7 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender(worker::Connect
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerViewSelf queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2854,7 +2975,7 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender(worker::Connect
 		Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2867,7 +2988,7 @@ void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender(worker::C
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerViewPrevPlayer queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2877,7 +2998,7 @@ void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender(worker::C
 		improbable::unreal::UnrealServerViewPrevPlayerRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2890,7 +3011,7 @@ void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender(worker::C
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerViewNextPlayer queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2900,7 +3021,7 @@ void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender(worker::C
 		improbable::unreal::UnrealServerViewNextPlayerRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2913,7 +3034,7 @@ void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender(worker:
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerVerifyViewTarget queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2923,7 +3044,7 @@ void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender(worker:
 		improbable::unreal::UnrealServerVerifyViewTargetRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2940,7 +3061,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender(wo
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerUpdateLevelVisibility queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2952,7 +3073,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender(wo
 		Request.set_field_bisvisible(bIsVisible != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2969,7 +3090,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender(worker::Con
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerUpdateCamera queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -2981,7 +3102,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender(worker::Con
 		Request.set_field_campitchandyaw(CamPitchAndYaw);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2997,7 +3118,7 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender(worker::Con
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerUnmutePlayer queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -3014,7 +3135,7 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender(worker::Con
 		}
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3027,7 +3148,7 @@ void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender(worker::
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerToggleAILogging queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -3037,7 +3158,7 @@ void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender(worker::
 		improbable::unreal::UnrealServerToggleAILoggingRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3050,7 +3171,7 @@ void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender(worker::Con
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerShortTimeout queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -3060,7 +3181,7 @@ void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender(worker::Con
 		improbable::unreal::UnrealServerShortTimeoutRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3076,7 +3197,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender(work
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerSetSpectatorWaiting queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -3087,7 +3208,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender(work
 		Request.set_field_bwaiting(bWaiting != 0);
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3104,7 +3225,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender(wor
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerSetSpectatorLocation queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -3116,7 +3237,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender(wor
 		Request.set_field_newrot(improbable::unreal::UnrealFRotator(NewRot.Yaw, NewRot.Pitch, NewRot.Roll));
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3129,7 +3250,7 @@ void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender(worker::Co
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerRestartPlayer queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -3139,7 +3260,7 @@ void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender(worker::Co
 		improbable::unreal::UnrealServerRestartPlayerRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3152,7 +3273,7 @@ void USpatialTypeBinding_PlayerController::ServerPause_Sender(worker::Connection
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerPause queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -3162,7 +3283,7 @@ void USpatialTypeBinding_PlayerController::ServerPause_Sender(worker::Connection
 		improbable::unreal::UnrealServerPauseRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3178,7 +3299,7 @@ void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender(worker
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerNotifyLoadedWorld queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -3189,7 +3310,7 @@ void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender(worker
 		Request.set_field_worldpackagename(TCHAR_TO_UTF8(*WorldPackageName.ToString()));
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3205,7 +3326,7 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender(worker::Conne
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerMutePlayer queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -3222,7 +3343,7 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender(worker::Conne
 		}
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3235,7 +3356,7 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_S
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerCheckClientPossessionReliable queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -3245,7 +3366,7 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_S
 		improbable::unreal::UnrealServerCheckClientPossessionReliableRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3258,7 +3379,7 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender(wo
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerCheckClientPossession queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -3268,7 +3389,7 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender(wo
 		improbable::unreal::UnrealServerCheckClientPossessionRequest Request;
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3284,7 +3405,7 @@ void USpatialTypeBinding_PlayerController::ServerChangeName_Sender(worker::Conne
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerChangeName queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -3295,7 +3416,7 @@ void USpatialTypeBinding_PlayerController::ServerChangeName_Sender(worker::Conne
 		Request.set_field_s(TCHAR_TO_UTF8(*S));
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3311,7 +3432,7 @@ void USpatialTypeBinding_PlayerController::ServerCamera_Sender(worker::Connectio
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerCamera queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -3322,7 +3443,7 @@ void USpatialTypeBinding_PlayerController::ServerCamera_Sender(worker::Connectio
 		Request.set_field_newmode(TCHAR_TO_UTF8(*NewMode.ToString()));
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3338,7 +3459,7 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender(wo
 	{
 		// Resolve TargetObject.
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef.entity() == 0 && TargetObjectRef.offset() == 0)
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC ServerAcknowledgePossession queued. Target object is unresolved."));
 			return FRPCRequestResult{TargetObject};
@@ -3346,10 +3467,11 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender(wo
 
 		// Build request.
 		improbable::unreal::UnrealServerAcknowledgePossessionRequest Request;
+		if (P != nullptr)
 		{
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(P);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0 && ObjectRef.offset() == 0)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC queued. P is unresolved."));
 				return FRPCRequestResult{P};
@@ -3359,9 +3481,13 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender(wo
 				Request.set_field_p(ObjectRef);
 			}
 		}
+		else
+		{
+			Request.set_field_p(SpatialConstants::NULL_OBJECT_REF);
+		}
 
 		// Send command request.
-		Request.set_subobject_offset(TargetObjectRef.offset());
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3720,7 +3846,7 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender_Re
 
 void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -3741,7 +3867,7 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Receiver(
 
 void USpatialTypeBinding_PlayerController::ClientWasKicked_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -3762,7 +3888,7 @@ void USpatialTypeBinding_PlayerController::ClientWasKicked_Receiver(const worker
 
 void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -3779,7 +3905,7 @@ void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Receiver
 
 void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -3816,7 +3942,7 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Rece
 
 void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -3844,7 +3970,7 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Receiver(const wor
 
 void USpatialTypeBinding_PlayerController::ClientTravelInternal_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -3880,7 +4006,7 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_Receiver(const w
 
 void USpatialTypeBinding_PlayerController::ClientTeamMessage_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -3894,6 +4020,7 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Receiver(const work
 	APlayerState* SenderPlayerState;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_senderplayerstate();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -3924,7 +4051,7 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Receiver(const work
 
 void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -3938,6 +4065,7 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Receiver(cons
 	UForceFeedbackEffect* ForceFeedbackEffect;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_forcefeedbackeffect();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -3960,7 +4088,7 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Receiver(cons
 
 void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -3985,7 +4113,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Receiver(const 
 
 void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -3999,6 +4127,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Receiver(const w
 	UCameraAnim* AnimToStop;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_animtostop();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4017,7 +4146,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Receiver(const w
 
 void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4034,7 +4163,7 @@ void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Receiver(con
 
 void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4055,7 +4184,7 @@ void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Receiver(
 
 void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4069,6 +4198,7 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver(const wo
 	AActor* A;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_a();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4100,7 +4230,7 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver(const wo
 
 void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4121,7 +4251,7 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Receiver(co
 
 void USpatialTypeBinding_PlayerController::ClientSetHUD_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4142,7 +4272,7 @@ void USpatialTypeBinding_PlayerController::ClientSetHUD_Receiver(const worker::C
 
 void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4156,6 +4286,7 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_R
 	UMaterialInterface* Material;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_material();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4182,7 +4313,7 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_R
 
 void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4215,7 +4346,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Receiver(const
 
 void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4236,7 +4367,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Receiver(const wo
 
 void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4277,7 +4408,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Receiver(const wo
 
 void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4294,7 +4425,7 @@ void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Receiver
 
 void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4315,7 +4446,7 @@ void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Receiver(const
 
 void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4329,6 +4460,7 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Receiver(con
 	APawn* NewPawn;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_newpawn();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4347,7 +4479,7 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Receiver(con
 
 void USpatialTypeBinding_PlayerController::ClientRestart_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4361,6 +4493,7 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Receiver(const worker::
 	APawn* NewPawn;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_newpawn();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4379,7 +4512,7 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Receiver(const worker::
 
 void USpatialTypeBinding_PlayerController::ClientReset_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4396,7 +4529,7 @@ void USpatialTypeBinding_PlayerController::ClientReset_Receiver(const worker::Co
 
 void USpatialTypeBinding_PlayerController::ClientRepObjRef_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4410,6 +4543,7 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Receiver(const worker
 	UObject* Object;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_object();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4428,7 +4562,7 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Receiver(const worker
 
 void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4450,6 +4584,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receive
 	APlayerState* RelatedPlayerState_1;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_relatedplayerstate_1();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4465,6 +4600,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receive
 	APlayerState* RelatedPlayerState_2;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_relatedplayerstate_2();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4480,6 +4616,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receive
 	UObject* OptionalObject;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_optionalobject();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4498,7 +4635,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receive
 
 void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4512,6 +4649,7 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Receiver(cons
 	AActor* ForcedActor;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_forcedactor();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4542,7 +4680,7 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Receiver(cons
 
 void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4571,7 +4709,7 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Receiver(const
 
 void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4585,6 +4723,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Receiver(co
 	USoundBase* Sound;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_sound();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4620,7 +4759,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Receiver(co
 
 void USpatialTypeBinding_PlayerController::ClientPlaySound_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4634,6 +4773,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Receiver(const worker
 	USoundBase* Sound;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_sound();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4660,7 +4800,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Receiver(const worker
 
 void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4674,6 +4814,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Receiver(cons
 	UForceFeedbackEffect* ForceFeedbackEffect;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_forcefeedbackeffect();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4700,7 +4841,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Receiver(cons
 
 void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4738,7 +4879,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Receiver(const 
 
 void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4752,6 +4893,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Receiver(const w
 	UCameraAnim* AnimToPlay;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_animtoplay();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4807,7 +4949,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Receiver(const w
 
 void USpatialTypeBinding_PlayerController::ClientMutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4835,7 +4977,7 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_Receiver(const worke
 
 void USpatialTypeBinding_PlayerController::ClientMessage_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4864,7 +5006,7 @@ void USpatialTypeBinding_PlayerController::ClientMessage_Receiver(const worker::
 
 void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4885,7 +5027,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Receiver(const 
 
 void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4906,7 +5048,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Receiver(const 
 
 void USpatialTypeBinding_PlayerController::ClientGotoState_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4927,7 +5069,7 @@ void USpatialTypeBinding_PlayerController::ClientGotoState_Receiver(const worker
 
 void USpatialTypeBinding_PlayerController::ClientGameEnded_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4941,6 +5083,7 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Receiver(const worker
 	AActor* EndGameFocus;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_endgamefocus();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
@@ -4963,7 +5106,7 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Receiver(const worker
 
 void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4980,7 +5123,7 @@ void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Receiver
 
 void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -4997,7 +5140,7 @@ void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Receiver(co
 
 void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5014,7 +5157,7 @@ void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Receiver(const
 
 void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5035,7 +5178,7 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Receiver(con
 
 void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5052,7 +5195,7 @@ void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Receiver(const 
 
 void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5069,7 +5212,7 @@ void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Receiver
 
 void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5090,7 +5233,7 @@ void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Receiver(const wor
 
 void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5107,7 +5250,7 @@ void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Receiver
 
 void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5141,7 +5284,7 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Receiver
 
 void USpatialTypeBinding_PlayerController::ClientSetRotation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5171,7 +5314,7 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_Receiver(const work
 
 void USpatialTypeBinding_PlayerController::ClientSetLocation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5206,7 +5349,7 @@ void USpatialTypeBinding_PlayerController::ClientSetLocation_Receiver(const work
 
 void USpatialTypeBinding_PlayerController::ServerViewSelf_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5236,7 +5379,7 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Receiver(const worker:
 
 void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5253,7 +5396,7 @@ void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Receiver(const w
 
 void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5270,7 +5413,7 @@ void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Receiver(const w
 
 void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5287,7 +5430,7 @@ void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Receiver(const
 
 void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5312,7 +5455,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Receiver(
 
 void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5342,7 +5485,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Receiver(const wor
 
 void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5370,7 +5513,7 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Receiver(const wor
 
 void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5387,7 +5530,7 @@ void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Receiver(const 
 
 void USpatialTypeBinding_PlayerController::ServerShortTimeout_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5404,7 +5547,7 @@ void USpatialTypeBinding_PlayerController::ServerShortTimeout_Receiver(const wor
 
 void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5425,7 +5568,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Receiver(co
 
 void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5460,7 +5603,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Receiver(c
 
 void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5477,7 +5620,7 @@ void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Receiver(const wo
 
 void USpatialTypeBinding_PlayerController::ServerPause_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5494,7 +5637,7 @@ void USpatialTypeBinding_PlayerController::ServerPause_Receiver(const worker::Co
 
 void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5515,7 +5658,7 @@ void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Receiver(cons
 
 void USpatialTypeBinding_PlayerController::ServerMutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5543,7 +5686,7 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_Receiver(const worke
 
 void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5560,7 +5703,7 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_R
 
 void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5577,7 +5720,7 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Receiver(
 
 void USpatialTypeBinding_PlayerController::ServerChangeName_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5598,7 +5741,7 @@ void USpatialTypeBinding_PlayerController::ServerChangeName_Receiver(const worke
 
 void USpatialTypeBinding_PlayerController::ServerCamera_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5619,7 +5762,7 @@ void USpatialTypeBinding_PlayerController::ServerCamera_Receiver(const worker::C
 
 void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>& Op)
 {
-	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+	improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
@@ -5633,6 +5776,7 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Receiver(
 	APawn* P;
 	{
 		improbable::unreal::UnrealObjectRef TargetObject = Op.Request.field_p();
+		check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 		if (NetGUID.IsValid())
 		{
