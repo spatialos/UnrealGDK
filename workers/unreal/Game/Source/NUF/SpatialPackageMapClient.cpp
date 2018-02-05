@@ -315,6 +315,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignStaticActorNetGUID(const UObject* Objec
 
 	FNetGuidCacheObject CacheObject;
 	CacheObject.Object = Object;
+	CacheObject.PathName = Object->GetFName();
 	RegisterNetGUID_Internal(StaticNetGUID, CacheObject);
 
 	// Register object ref.
