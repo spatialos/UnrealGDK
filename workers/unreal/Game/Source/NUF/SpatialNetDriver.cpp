@@ -6,7 +6,7 @@
 #include "EntityPipeline.h"
 #include "SocketSubsystem.h"
 #include "SpatialConstants.h"
-#include "SpatialInteropBlock.h"
+#include "SpatialInteropPipelineBlock.h"
 #include "SpatialOS.h"
 #include "SpatialOSComponentUpdater.h"
 #include "Engine/ActorChannel.h"
@@ -69,7 +69,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	EntityRegistry = NewObject<UEntityRegistry>(this);
 
-	UpdateInterop = NewObject<USpatialUpdateInterop>(this);
+	Interop = NewObject<USpatialInterop>(this);
 
 	return true;
 }
@@ -89,9 +89,9 @@ void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogSpatialOSNUF, Warning, TEXT("Connected to SpatialOS."));
 
-	SpatialInteropBlock = NewObject<USpatialInteropBlock>();
-	SpatialInteropBlock->Init(EntityRegistry);
-	SpatialOSInstance->GetEntityPipeline()->AddBlock(SpatialInteropBlock);
+	InteropPipelineBlock = NewObject<USpatialInteropPipelineBlock>();
+	InteropPipelineBlock->Init(EntityRegistry);
+	SpatialOSInstance->GetEntityPipeline()->AddBlock(InteropPipelineBlock);
 
 	TArray<FString> BlueprintPaths;
 	BlueprintPaths.Add(TEXT(ENTITY_BLUEPRINTS_FOLDER));
@@ -137,7 +137,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		AddClientConnection(Connection);
 		//Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
 		Connection->SetClientLoginState(EClientLoginState::Welcomed);
-		UpdateInterop->Init(false, SpatialOSInstance, this, TimerManager);
+		Interop->Init(false, SpatialOSInstance, this, TimerManager);
 	}
 }
 
@@ -717,7 +717,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		SpatialOSInstance->ProcessOps();
 		SpatialOSInstance->GetEntityPipeline()->ProcessOps(SpatialOSInstance->GetView(), SpatialOSInstance->GetConnection(), GetWorld());
 		SpatialOSComponentUpdater->UpdateComponents(EntityRegistry, DeltaTime);
-		UpdateInterop->Tick(DeltaTime);
+		Interop->Tick(DeltaTime);
 	}
 }
 
@@ -744,7 +744,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame TempRpcFrameForReading{CallingObject, Function, Parameters, nullptr, Function->Children};
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		UpdateInterop->InvokeRPC(Actor, Function, &TempRpcFrameForReading);
+		Interop->InvokeRPC(Actor, Function, &TempRpcFrameForReading);
 	}
 
 	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver

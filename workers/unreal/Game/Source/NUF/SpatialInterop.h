@@ -4,14 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "SpatialTypeBinding.h"
-#include "SpatialUpdateInterop.generated.h"
+#include "SpatialInterop.generated.h"
 
 class USpatialOS;
 class USpatialActorChannel;
 class USpatialPackageMapClient;
 class USpatialNetDriver;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialUpdateInterop, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInterop, Log, All);
 
 // An general version of worker::RequestId.
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
@@ -46,11 +46,11 @@ public:
 };
 
 UCLASS()
-class NUF_API USpatialUpdateInterop : public UObject
+class NUF_API USpatialInterop : public UObject
 {
 	GENERATED_BODY()
 public:
-	USpatialUpdateInterop();
+	USpatialInterop();
 
 	void Init(bool bClient, USpatialOS* Instance, USpatialNetDriver* Driver, FTimerManager* TimerManager);
 	void Tick(float DeltaTime);
@@ -113,5 +113,5 @@ private:
 private:
 	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
 
-	friend class USpatialInteropBlock;
+	friend class USpatialInteropPipelineBlock;
 };

@@ -8,7 +8,7 @@
 #include "Net/RepLayout.h"
 #include "SpatialTypeBinding.generated.h"
 
-class USpatialUpdateInterop;
+class USpatialInterop;
 class USpatialPackageMapClient;
 class USpatialActorChannel;
 
@@ -45,7 +45,7 @@ class NUF_API USpatialTypeBinding : public UObject
 	GENERATED_BODY()
 
 public:
-	virtual void Init(USpatialUpdateInterop* UpdateInterop, USpatialPackageMapClient* PackageMap);
+	virtual void Init(USpatialInterop* Interop, USpatialPackageMapClient* PackageMap);
 	virtual void BindToView() PURE_VIRTUAL(USpatialTypeBinding::BindToView, );
 	virtual void UnbindFromView() PURE_VIRTUAL(USpatialTypeBinding::UnbindFromView, );
 	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const PURE_VIRTUAL(USpatialTypeBinding::GetReplicatedGroupComponentId, return worker::ComponentId{}; );
@@ -60,12 +60,12 @@ protected:
 	template<class CommandType>
 	void SendRPCResponse(const worker::CommandRequestOp<CommandType>& Op) const 
 	{
-		TSharedPtr<worker::Connection> PinnedConnection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
+		TSharedPtr<worker::Connection> PinnedConnection = Interop->GetSpatialOS()->GetConnection().Pin();
 		PinnedConnection.Get()->SendCommandResponse<CommandType>(Op.RequestId, {});
 	}
 
 	UPROPERTY()
-	USpatialUpdateInterop* UpdateInterop;
+	USpatialInterop* Interop;
 
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;

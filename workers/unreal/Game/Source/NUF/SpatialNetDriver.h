@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "IpNetDriver.h"
-#include "SpatialInteropBlock.h"
-#include "SpatialUpdateInterop.h"
+#include "SpatialInteropPipelineBlock.h"
+#include "SpatialInterop.h"
 #include "PlayerSpawnRequestSender.h"
 #include "SpatialNetDriver.generated.h"
 
@@ -71,7 +71,7 @@ public:
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
 	UPROPERTY()
-	USpatialInteropBlock* SpatialInteropBlock;
+	USpatialInteropPipelineBlock* InteropPipelineBlock;
 
 	UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
 
@@ -79,9 +79,9 @@ public:
 	
 	bool AcceptNewPlayer(const FURL& InUrl);
 
-	USpatialUpdateInterop* GetSpatialUpdateInterop() const
+	USpatialInterop* GetSpatialInterop() const
 	{
-		return UpdateInterop;
+		return Interop;
 	}
 
 protected:
@@ -97,9 +97,9 @@ protected:
 	// Timer manager.
 	FTimerManager* TimerManager;
 
-	// Update interop.
+	// Update/RPC interop with SpatialOS.
 	UPROPERTY()
-	USpatialUpdateInterop* UpdateInterop;
+	USpatialInterop* Interop;
 
 	UFUNCTION()
 	void OnSpatialOSConnected();

@@ -6,7 +6,7 @@
 #include "Engine/PackageMapClient.h"
 #include "EntityId.h"
 #include <unreal/core_types.h>
-#include "SpatialUpdateInterop.h"
+#include "SpatialInterop.h"
 
 #include <unreal/level_data.h>
 

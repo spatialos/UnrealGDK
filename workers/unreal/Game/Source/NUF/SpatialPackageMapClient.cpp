@@ -4,7 +4,7 @@
 #include "SpatialConstants.h"
 #include "EntityRegistry.h"
 #include "SpatialNetDriver.h"
-#include "SpatialUpdateInterop.h"
+#include "SpatialInterop.h"
 #include "SpatialActorChannel.h"
 #include "SpatialTypeBinding.h"
 
@@ -332,8 +332,8 @@ void FSpatialNetGUIDCache::ResolvePendingObjRefs(const UObject* Object)
 		return;
 	}
 
-	USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Driver)->GetSpatialUpdateInterop();
-	check(UpdateInterop);
+	USpatialInterop* Interop = Cast<USpatialNetDriver>(Driver)->GetSpatialInterop();
+	check(Interop);
 
 	for (auto DependentChannel : *DependentChannels)
 	{
@@ -343,7 +343,7 @@ void FSpatialNetGUIDCache::ResolvePendingObjRefs(const UObject* Object)
 			// Changelists always have a 0 at the end.
 			Handles->Add(0);
 
-			UpdateInterop->SendSpatialUpdate(DependentChannel, *Handles);
+			Interop->SendSpatialUpdate(DependentChannel, *Handles);
 			PendingObjRefHandles.Remove(DependentChannel);
 		}
 	}
@@ -356,7 +356,7 @@ void FSpatialNetGUIDCache::ResolvePendingRPCs(UObject* Object)
 	TArray<FRPCRequestFunction>* RPCList = PendingRPCs.Find(Object);
 	if (RPCList)
 	{
-		USpatialUpdateInterop* UpdateInterop = Cast<USpatialNetDriver>(Driver)->GetSpatialUpdateInterop();
+		USpatialInterop* UpdateInterop = Cast<USpatialNetDriver>(Driver)->GetSpatialInterop();
 		check(UpdateInterop);
 		for (auto& RequestFunc : *RPCList)
 		{

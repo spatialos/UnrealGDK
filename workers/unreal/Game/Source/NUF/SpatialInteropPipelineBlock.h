@@ -4,7 +4,7 @@
 #include "EntityId.h"
 #include "EntityPipelineBlock.h"
 
-#include "SpatialInteropBlock.generated.h"
+#include "SpatialInteropPipelineBlock.generated.h"
 
 namespace worker
 {
@@ -23,7 +23,7 @@ class USpatialOsComponent;
 class USpatialActorChannel;
 
 UCLASS(BlueprintType)
-class NUF_API USpatialInteropBlock : public UEntityPipelineBlock
+class NUF_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 {
 	GENERATED_BODY()
 
