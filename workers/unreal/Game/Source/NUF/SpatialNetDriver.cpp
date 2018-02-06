@@ -729,7 +729,6 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame* Stack,
 	UObject* SubObject)
 {
-	UE_LOG(LogSpatialOSNUF, Warning, TEXT("Function: %s, actor: %s"), *Function->GetName(), *Actor->GetName());
 	USpatialNetConnection* Connection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
 	if (!Connection)
 	{

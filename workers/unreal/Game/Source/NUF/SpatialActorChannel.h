@@ -38,6 +38,23 @@ public:
 		return ActorEntityId != worker::EntityId{};
 	}
 
+	// Called on the client when receiving an update.
+	FORCEINLINE bool IsClientAutonomousProxy(worker::ComponentId ServerRPCsComponentId)
+	{
+		TSharedPtr<worker::View> View = WorkerView.Pin();
+		if (View.Get())
+		{
+			// This will never fail because we can't have an actor channel without having checked out the entity.
+			auto& EntityAuthority = View->ComponentAuthority[ActorEntityId];
+			auto ComponentIterator = EntityAuthority.find(ServerRPCsComponentId);
+			if (ComponentIterator != EntityAuthority.end())
+			{
+				return (*ComponentIterator).second == worker::Authority::kAuthoritative;
+			}
+		}
+		return false;
+	}
+
 	FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16>& Changed) const
 	{
 		return{
@@ -47,8 +64,6 @@ public:
 			ActorReplicator->RepLayout->BaseHandleToCmdIndex,
 		};
 	}
-	
-	void SendCreateEntityRequest(const FString& PlayerWorkerId, const TArray<uint16>& Changed);
 
 	// UChannel interface
 	virtual void Init(UNetConnection * connection, int32 channelIndex, bool bOpenedLocally) override;

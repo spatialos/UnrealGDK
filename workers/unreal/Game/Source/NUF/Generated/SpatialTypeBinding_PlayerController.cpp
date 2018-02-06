@@ -132,7 +132,7 @@ void USpatialTypeBinding_PlayerController::BindToView()
 		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
 		if (ActorChannel)
 		{
-			ReceiveUpdateFromSpatial_SingleClient(ActorChannel, Update);
+			ClientReceiveUpdate_SingleClient(ActorChannel, Update);
 		}
 		else
 		{
@@ -145,7 +145,7 @@ void USpatialTypeBinding_PlayerController::BindToView()
 		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
 		if (ActorChannel)
 		{
-			ReceiveUpdateFromSpatial_SingleClient(ActorChannel, Op.Update);
+			ClientReceiveUpdate_SingleClient(ActorChannel, Op.Update);
 		}
 		else
 		{
@@ -159,7 +159,7 @@ void USpatialTypeBinding_PlayerController::BindToView()
 		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
 		if (ActorChannel)
 		{
-			ReceiveUpdateFromSpatial_MultiClient(ActorChannel, Update);
+			ClientReceiveUpdate_MultiClient(ActorChannel, Update);
 		}
 		else
 		{
@@ -172,7 +172,7 @@ void USpatialTypeBinding_PlayerController::BindToView()
 		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
 		if (ActorChannel)
 		{
-			ReceiveUpdateFromSpatial_MultiClient(ActorChannel, Op.Update);
+			ClientReceiveUpdate_MultiClient(ActorChannel, Op.Update);
 		}
 		else
 		{
@@ -425,14 +425,14 @@ void USpatialTypeBinding_PlayerController::ApplyQueuedStateToChannel(USpatialAct
 	{
 		auto Update = improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update::FromInitialData(*SingleClientData);
 		PendingSingleClientData.Remove(ActorChannel->GetEntityId());
-		ReceiveUpdateFromSpatial_SingleClient(ActorChannel, Update);
+		ClientReceiveUpdate_SingleClient(ActorChannel, Update);
 	}
 	improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
 	if (MultiClientData)
 	{
 		auto Update = improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update::FromInitialData(*MultiClientData);
 		PendingMultiClientData.Remove(ActorChannel->GetEntityId());
-		ReceiveUpdateFromSpatial_MultiClient(ActorChannel, Update);
+		ClientReceiveUpdate_MultiClient(ActorChannel, Update);
 	}
 }
 
@@ -453,22 +453,27 @@ void USpatialTypeBinding_PlayerController::BuildSpatialComponentUpdate(
 		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
 		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*Channel->Actor->GetName(),
+			Channel->GetEntityId(),
+			*Cmd.Property->GetName(),
+			HandleIterator.Handle);
 		switch (GetGroupFromCondition(PropertyMapData.Condition))
 		{
 		case GROUP_SingleClient:
-			ApplyUpdateToSpatial_SingleClient(Data, HandleIterator.Handle, Cmd.Property, Channel, SingleClientUpdate);
+			ServerSendUpdate_SingleClient(Data, HandleIterator.Handle, Cmd.Property, Channel, SingleClientUpdate);
 			bSingleClientUpdateChanged = true;
 			break;
 		case GROUP_MultiClient:
-			ApplyUpdateToSpatial_MultiClient(Data, HandleIterator.Handle, Cmd.Property, Channel, MultiClientUpdate);
+			ServerSendUpdate_MultiClient(Data, HandleIterator.Handle, Cmd.Property, Channel, MultiClientUpdate);
 			bMultiClientUpdateChanged = true;
 			break;
 		}
 	}
 }
 
-void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_SingleClient(
+void USpatialTypeBinding_PlayerController::ServerSendUpdate_SingleClient(
 	const uint8* RESTRICT Data,
 	int32 Handle,
 	UProperty* Property,
@@ -499,7 +504,7 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_SingleClient(
 	}
 }
 
-void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
+void USpatialTypeBinding_PlayerController::ServerSendUpdate_MultiClient(
 	const uint8* RESTRICT Data,
 	int32 Handle,
 	UProperty* Property,
@@ -752,15 +757,16 @@ void USpatialTypeBinding_PlayerController::ApplyUpdateToSpatial_MultiClient(
 	}
 }
 
-void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_SingleClient(
+void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_SingleClient(
 	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update) const
 {
-	FNetBitWriter OutputWriter(nullptr, 0);
+	FNetBitWriter OutputWriter(PackageMap, 0);
 	OutputWriter.WriteBit(0); // bDoChecksum
+
 	auto& HandleToPropertyMap = GetHandlePropertyMap();
-	auto& EntityAuthorityMap = Interop->GetNetDriver()->GetSpatialOS()->GetView().Pin()->ComponentAuthority[ActorChannel->GetEntityId()];
-	ConditionMapFilter ConditionMap(ActorChannel, EntityAuthorityMap.count(improbable::unreal::UnrealPlayerControllerServerRPCs::ComponentId));
+	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealPlayerControllerClientRPCs::ComponentId);
+	ConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
 	if (!Update.field_targetviewrotation().empty())
 	{
 		// field_targetviewrotation
@@ -780,7 +786,12 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_SingleClient
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_spawnlocation().empty())
@@ -802,21 +813,27 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_SingleClient
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
-void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
+void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update) const
 {
-	FNetBitWriter OutputWriter(nullptr, 0);
+	FNetBitWriter OutputWriter(PackageMap, 0);
 	OutputWriter.WriteBit(0); // bDoChecksum
+
 	auto& HandleToPropertyMap = GetHandlePropertyMap();
-	auto& EntityAuthorityMap = Interop->GetNetDriver()->GetSpatialOS()->GetView().Pin()->ComponentAuthority[ActorChannel->GetEntityId()];
-	ConditionMapFilter ConditionMap(ActorChannel, EntityAuthorityMap.count(improbable::unreal::UnrealPlayerControllerServerRPCs::ComponentId));
+	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealPlayerControllerClientRPCs::ComponentId);
+	ConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
 	if (!Update.field_bhidden().empty())
 	{
 		// field_bhidden
@@ -837,7 +854,12 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_breplicatemovement().empty())
@@ -860,7 +882,12 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_btearoff().empty())
@@ -883,7 +910,12 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_remoterole().empty())
@@ -899,8 +931,20 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_remoterole().data())));
 
+			// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
+			// the server RPCs component.
+			if (Value == ROLE_AutonomousProxy && !bAutonomousProxy)
+			{
+				Value = ROLE_SimulatedProxy;
+			}
+
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_owner().empty())
@@ -917,19 +961,32 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			{
 				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_owner().data());
 				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-				if (NetGUID.IsValid())
+				if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 				{
-					Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+					Value = nullptr;
 				}
 				else
 				{
-					Value = nullptr;
+					FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+					if (NetGUID.IsValid())
+					{
+						Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+					}
+					else
+					{
+						// TODO(David): Deal with an unresolved object ref on the client.
+						Value = nullptr;
+					}
 				}
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_replicatedmovement().empty())
@@ -953,7 +1010,12 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_attachmentreplication_attachparent().empty())
@@ -970,19 +1032,32 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			{
 				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_attachmentreplication_attachparent().data());
 				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-				if (NetGUID.IsValid())
+				if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 				{
-					Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+					Value = nullptr;
 				}
 				else
 				{
-					Value = nullptr;
+					FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+					if (NetGUID.IsValid())
+					{
+						Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+					}
+					else
+					{
+						// TODO(David): Deal with an unresolved object ref on the client.
+						Value = nullptr;
+					}
 				}
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_attachmentreplication_locationoffset().empty())
@@ -1004,7 +1079,12 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_attachmentreplication_relativescale3d().empty())
@@ -1026,7 +1106,12 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_attachmentreplication_rotationoffset().empty())
@@ -1048,7 +1133,12 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_attachmentreplication_attachsocket().empty())
@@ -1058,8 +1148,19 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			//FName deserialization not currently supported.
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			OutputWriter.SerializeIntPacked(Handle);
+
+			FName Value;
+
+			Value = FName(((*Update.field_attachmentreplication_attachsocket().data())).data());
+
+			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_attachmentreplication_attachcomponent().empty())
@@ -1076,19 +1177,32 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			{
 				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_attachmentreplication_attachcomponent().data());
 				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-				if (NetGUID.IsValid())
+				if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 				{
-					Value = static_cast<USceneComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+					Value = nullptr;
 				}
 				else
 				{
-					Value = nullptr;
+					FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+					if (NetGUID.IsValid())
+					{
+						Value = static_cast<USceneComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+					}
+					else
+					{
+						// TODO(David): Deal with an unresolved object ref on the client.
+						Value = nullptr;
+					}
 				}
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_role().empty())
@@ -1105,7 +1219,12 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_role().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_bcanbedamaged().empty())
@@ -1128,7 +1247,12 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_instigator().empty())
@@ -1145,19 +1269,32 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			{
 				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_instigator().data());
 				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-				if (NetGUID.IsValid())
+				if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 				{
-					Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+					Value = nullptr;
 				}
 				else
 				{
-					Value = nullptr;
+					FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+					if (NetGUID.IsValid())
+					{
+						Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+					}
+					else
+					{
+						// TODO(David): Deal with an unresolved object ref on the client.
+						Value = nullptr;
+					}
 				}
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_pawn().empty())
@@ -1174,19 +1311,32 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			{
 				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_pawn().data());
 				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-				if (NetGUID.IsValid())
+				if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 				{
-					Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+					Value = nullptr;
 				}
 				else
 				{
-					Value = nullptr;
+					FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+					if (NetGUID.IsValid())
+					{
+						Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+					}
+					else
+					{
+						// TODO(David): Deal with an unresolved object ref on the client.
+						Value = nullptr;
+					}
 				}
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	if (!Update.field_playerstate().empty())
@@ -1203,19 +1353,32 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdateFromSpatial_MultiClient(
 			{
 				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_playerstate().data());
 				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-				if (NetGUID.IsValid())
+				if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 				{
-					Value = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+					Value = nullptr;
 				}
 				else
 				{
-					Value = nullptr;
+					FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+					if (NetGUID.IsValid())
+					{
+						Value = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+					}
+					else
+					{
+						// TODO(David): Deal with an unresolved object ref on the client.
+						Value = nullptr;
+					}
 				}
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId(),
+				*Data.Property->GetName(),
+				Handle);
 		}
 	}
 	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
@@ -1242,6 +1405,7 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender(wo
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: OnServerStartedVisualLogger, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1269,6 +1433,7 @@ void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender(worker::Connec
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientWasKicked, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1292,6 +1457,7 @@ void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender(w
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientVoiceHandshakeComplete, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1327,6 +1493,7 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Send
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientUpdateLevelStreamingStatus, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1360,6 +1527,7 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender(worker::Con
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientUnmutePlayer, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1396,6 +1564,7 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender(worker::C
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientTravelInternal, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1446,6 +1615,7 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Conn
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientTeamMessage, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1492,6 +1662,7 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientStopForceFeedback, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1521,6 +1692,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender(worker::
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientStopCameraShake, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1565,6 +1737,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::C
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientStopCameraAnim, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1588,6 +1761,7 @@ void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender(worke
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientStartOnlineSession, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1615,6 +1789,7 @@ void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender(wo
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientSpawnCameraLensEffect, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1664,6 +1839,7 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Co
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientSetViewTarget, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1691,6 +1867,7 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender(work
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientSetSpectatorWaiting, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1718,6 +1895,7 @@ void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender(worker::Connectio
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientSetHUD, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1766,6 +1944,7 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_S
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientSetForceMipLevelsToBeResident, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1799,6 +1978,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender(worker:
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientSetCinematicMode, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1826,6 +2006,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender(worker::Co
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientSetCameraMode, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1865,6 +2046,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Co
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientSetCameraFade, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1888,6 +2070,7 @@ void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender(w
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientSetBlockOnAsyncLoading, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1915,6 +2098,7 @@ void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender(worker:
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientReturnToMainMenu, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -1959,6 +2143,7 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worke
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientRetryClientRestart, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2003,6 +2188,7 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connecti
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientRestart, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2026,6 +2212,7 @@ void USpatialTypeBinding_PlayerController::ClientReset_Sender(worker::Connection
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientReset, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2070,6 +2257,7 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connec
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientRepObjRef, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2156,6 +2344,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientReceiveLocalizedMessage, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2206,6 +2395,7 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientPrestreamTextures, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2237,6 +2427,7 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender(worker:
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientPrepareMapChange, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2287,6 +2478,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(work
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientPlaySoundAtLocation, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2335,6 +2527,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connec
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientPlaySound, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2383,6 +2576,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientPlayForceFeedback, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2416,6 +2610,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender(worker::
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientPlayCameraShake, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2476,6 +2671,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::C
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientPlayCameraAnim, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2509,6 +2705,7 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender(worker::Conne
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientMutePlayer, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2540,6 +2737,7 @@ void USpatialTypeBinding_PlayerController::ClientMessage_Sender(worker::Connecti
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientMessage, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2567,6 +2765,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender(worker::
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientIgnoreMoveInput, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2594,6 +2793,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender(worker::
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientIgnoreLookInput, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2621,6 +2821,7 @@ void USpatialTypeBinding_PlayerController::ClientGotoState_Sender(worker::Connec
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientGotoState, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2667,6 +2868,7 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connec
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientGameEnded, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2690,6 +2892,7 @@ void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender(w
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientForceGarbageCollection, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2713,6 +2916,7 @@ void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender(work
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientFlushLevelStreaming, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2736,6 +2940,7 @@ void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender(worker:
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientEndOnlineSession, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2763,6 +2968,7 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender(worke
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientEnableNetworkVoice, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2786,6 +2992,7 @@ void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender(worker::
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientCommitMapChange, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2809,6 +3016,7 @@ void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender(w
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientClearCameraLensEffects, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2836,6 +3044,7 @@ void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender(worker::Con
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientCapBandwidth, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2859,6 +3068,7 @@ void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender(w
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientCancelPendingMapChange, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2890,6 +3100,7 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender(w
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientAddTextureStreamingLoc, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2919,6 +3130,7 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender(worker::Conn
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientSetRotation, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2948,6 +3160,7 @@ void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender(worker::Conn
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientSetLocation, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2978,6 +3191,7 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender(worker::Connect
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerViewSelf, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3001,6 +3215,7 @@ void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender(worker::C
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerViewPrevPlayer, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3024,6 +3239,7 @@ void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender(worker::C
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerViewNextPlayer, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3047,6 +3263,7 @@ void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender(worker:
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerVerifyViewTarget, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3076,6 +3293,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender(wo
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerUpdateLevelVisibility, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3105,6 +3323,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender(worker::Con
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerUpdateCamera, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3138,6 +3357,7 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender(worker::Con
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerUnmutePlayer, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3161,6 +3381,7 @@ void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender(worker::
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerToggleAILogging, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3184,6 +3405,7 @@ void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender(worker::Con
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerShortTimeout, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3211,6 +3433,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender(work
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerSetSpectatorWaiting, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3240,6 +3463,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender(wor
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerSetSpectatorLocation, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3263,6 +3487,7 @@ void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender(worker::Co
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerRestartPlayer, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3286,6 +3511,7 @@ void USpatialTypeBinding_PlayerController::ServerPause_Sender(worker::Connection
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerPause, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3313,6 +3539,7 @@ void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender(worker
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerNotifyLoadedWorld, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3346,6 +3573,7 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender(worker::Conne
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerMutePlayer, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3369,6 +3597,7 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_S
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerCheckClientPossessionReliable, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3392,6 +3621,7 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender(wo
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerCheckClientPossession, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3419,6 +3649,7 @@ void USpatialTypeBinding_PlayerController::ServerChangeName_Sender(worker::Conne
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerChangeName, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3446,6 +3677,7 @@ void USpatialTypeBinding_PlayerController::ServerCamera_Sender(worker::Connectio
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerCamera, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3490,6 +3722,7 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender(wo
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerAcknowledgePossession, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -3852,19 +4085,28 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Receiver(
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("OnServerStartedVisualLogger_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: OnServerStartedVisualLogger_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("OnServerStartedVisualLogger_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: OnServerStartedVisualLogger_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract bIsLogging
 	bool bIsLogging;
 	bIsLogging = Op.Request.field_bislogging();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: OnServerStartedVisualLogger, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->OnServerStartedVisualLogger_Implementation(bIsLogging);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientWasKicked_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>& Op)
@@ -3873,19 +4115,28 @@ void USpatialTypeBinding_PlayerController::ClientWasKicked_Receiver(const worker
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientWasKicked_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientWasKicked_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientWasKicked_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientWasKicked_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract KickReason
 	FText KickReason;
 	// UNSUPPORTED
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientWasKicked, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientWasKicked_Implementation(KickReason);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>& Op)
@@ -3894,15 +4145,24 @@ void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Receiver
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientVoiceHandshakeComplete_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientVoiceHandshakeComplete_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientVoiceHandshakeComplete_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientVoiceHandshakeComplete_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientVoiceHandshakeComplete, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientVoiceHandshakeComplete_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>& Op)
@@ -3911,11 +4171,15 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Rece
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientUpdateLevelStreamingStatus_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientUpdateLevelStreamingStatus_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientUpdateLevelStreamingStatus_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientUpdateLevelStreamingStatus_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract PackageName
 	FName PackageName;
@@ -3938,8 +4202,13 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Rece
 	LODIndex = Op.Request.field_lodindex();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientUpdateLevelStreamingStatus, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientUpdateLevelStreamingStatus_Implementation(PackageName, bNewShouldBeLoaded, bNewShouldBeVisible, bNewShouldBlockOnLoad, LODIndex);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>& Op)
@@ -3948,11 +4217,15 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Receiver(const wor
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientUnmutePlayer_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientUnmutePlayer_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientUnmutePlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientUnmutePlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract PlayerId
 	FUniqueNetIdRepl PlayerId;
@@ -3966,8 +4239,13 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Receiver(const wor
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientUnmutePlayer, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientUnmutePlayer_Implementation(PlayerId);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientTravelInternal_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>& Op)
@@ -3976,11 +4254,15 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_Receiver(const w
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientTravelInternal_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientTravelInternal_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientTravelInternal_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientTravelInternal_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract URL
 	FString URL;
@@ -4002,8 +4284,13 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_Receiver(const w
 	MapPackageGuid.D = Op.Request.field_mappackageguid_d();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientTravelInternal, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientTravelInternal_Implementation(URL, TravelType, bSeamless, MapPackageGuid);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientTeamMessage_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>& Op)
@@ -4012,25 +4299,41 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Receiver(const work
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientTeamMessage_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientTeamMessage_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientTeamMessage_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientTeamMessage_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract SenderPlayerState
 	APlayerState* SenderPlayerState;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_senderplayerstate();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			SenderPlayerState = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			SenderPlayerState = nullptr;
 		}
 		else
 		{
-			SenderPlayerState = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				SenderPlayerState = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientTeamMessage_Receiver: SenderPlayerState (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(Op, false, TEXT("SenderPlayerState is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
@@ -4047,8 +4350,13 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Receiver(const work
 	MsgLifeTime = Op.Request.field_msglifetime();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientTeamMessage, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientTeamMessage_Implementation(SenderPlayerState, S, Type, MsgLifeTime);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>& Op)
@@ -4057,25 +4365,41 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Receiver(cons
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientStopForceFeedback_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientStopForceFeedback_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientStopForceFeedback_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientStopForceFeedback_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract ForceFeedbackEffect
 	UForceFeedbackEffect* ForceFeedbackEffect;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_forcefeedbackeffect();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			ForceFeedbackEffect = static_cast<UForceFeedbackEffect*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			ForceFeedbackEffect = nullptr;
 		}
 		else
 		{
-			ForceFeedbackEffect = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				ForceFeedbackEffect = static_cast<UForceFeedbackEffect*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientStopForceFeedback_Receiver: ForceFeedbackEffect (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(Op, false, TEXT("ForceFeedbackEffect is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
@@ -4084,8 +4408,13 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Receiver(cons
 	Tag = FName((Op.Request.field_tag()).data());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientStopForceFeedback, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientStopForceFeedback_Implementation(ForceFeedbackEffect, Tag);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>& Op)
@@ -4094,11 +4423,15 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Receiver(const 
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientStopCameraShake_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientStopCameraShake_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientStopCameraShake_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientStopCameraShake_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract Shake
 	TSubclassOf<UCameraShake>  Shake;
@@ -4109,8 +4442,13 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Receiver(const 
 	bImmediately = Op.Request.field_bimmediately();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientStopCameraShake, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientStopCameraShake_Implementation(Shake, bImmediately);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>& Op)
@@ -4119,31 +4457,52 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Receiver(const w
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientStopCameraAnim_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientStopCameraAnim_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientStopCameraAnim_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientStopCameraAnim_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract AnimToStop
 	UCameraAnim* AnimToStop;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_animtostop();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			AnimToStop = static_cast<UCameraAnim*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			AnimToStop = nullptr;
 		}
 		else
 		{
-			AnimToStop = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				AnimToStop = static_cast<UCameraAnim*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientStopCameraAnim_Receiver: AnimToStop (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(Op, false, TEXT("AnimToStop is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientStopCameraAnim, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientStopCameraAnim_Implementation(AnimToStop);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>& Op)
@@ -4152,15 +4511,24 @@ void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Receiver(con
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientStartOnlineSession_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientStartOnlineSession_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientStartOnlineSession_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientStartOnlineSession_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientStartOnlineSession, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientStartOnlineSession_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>& Op)
@@ -4169,19 +4537,28 @@ void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Receiver(
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientSpawnCameraLensEffect_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientSpawnCameraLensEffect_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSpawnCameraLensEffect_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientSpawnCameraLensEffect_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract LensEffectEmitterClass
 	TSubclassOf<AEmitterCameraLensEffectBase>  LensEffectEmitterClass;
 	// UNSUPPORTED UClass
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientSpawnCameraLensEffect, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientSpawnCameraLensEffect_Implementation(LensEffectEmitterClass);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>& Op)
@@ -4190,25 +4567,41 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver(const wo
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientSetViewTarget_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientSetViewTarget_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetViewTarget_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientSetViewTarget_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract A
 	AActor* A;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_a();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			A = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			A = nullptr;
 		}
 		else
 		{
-			A = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				A = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientSetViewTarget_Receiver: A (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(Op, false, TEXT("A is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
@@ -4226,8 +4619,13 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver(const wo
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientSetViewTarget, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientSetViewTarget_Implementation(A, TransitionParams);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>& Op)
@@ -4236,19 +4634,28 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Receiver(co
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientSetSpectatorWaiting_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientSetSpectatorWaiting_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetSpectatorWaiting_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientSetSpectatorWaiting_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract bWaiting
 	bool bWaiting;
 	bWaiting = Op.Request.field_bwaiting();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientSetSpectatorWaiting, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientSetSpectatorWaiting_Implementation(bWaiting);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetHUD_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>& Op)
@@ -4257,19 +4664,28 @@ void USpatialTypeBinding_PlayerController::ClientSetHUD_Receiver(const worker::C
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientSetHUD_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientSetHUD_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetHUD_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientSetHUD_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract NewHUDClass
 	TSubclassOf<AHUD>  NewHUDClass;
 	// UNSUPPORTED UClass
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientSetHUD, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientSetHUD_Implementation(NewHUDClass);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>& Op)
@@ -4278,25 +4694,41 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_R
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientSetForceMipLevelsToBeResident_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientSetForceMipLevelsToBeResident_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetForceMipLevelsToBeResident_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientSetForceMipLevelsToBeResident_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract Material
 	UMaterialInterface* Material;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_material();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			Material = static_cast<UMaterialInterface*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			Material = nullptr;
 		}
 		else
 		{
-			Material = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				Material = static_cast<UMaterialInterface*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientSetForceMipLevelsToBeResident_Receiver: Material (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(Op, false, TEXT("Material is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
@@ -4309,8 +4741,13 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_R
 	CinematicTextureGroups = Op.Request.field_cinematictexturegroups();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientSetForceMipLevelsToBeResident, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientSetForceMipLevelsToBeResident_Implementation(Material, ForceDuration, CinematicTextureGroups);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>& Op)
@@ -4319,11 +4756,15 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Receiver(const
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientSetCinematicMode_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientSetCinematicMode_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetCinematicMode_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientSetCinematicMode_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract bInCinematicMode
 	bool bInCinematicMode;
@@ -4342,8 +4783,13 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Receiver(const
 	bAffectsHUD = Op.Request.field_baffectshud();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientSetCinematicMode, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientSetCinematicMode_Implementation(bInCinematicMode, bAffectsMovement, bAffectsTurning, bAffectsHUD);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>& Op)
@@ -4352,19 +4798,28 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Receiver(const wo
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientSetCameraMode_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientSetCameraMode_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetCameraMode_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientSetCameraMode_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract NewCamMode
 	FName NewCamMode;
 	NewCamMode = FName((Op.Request.field_newcammode()).data());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientSetCameraMode, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientSetCameraMode_Implementation(NewCamMode);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>& Op)
@@ -4373,11 +4828,15 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Receiver(const wo
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientSetCameraFade_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientSetCameraFade_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetCameraFade_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientSetCameraFade_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract bEnableFading
 	bool bEnableFading;
@@ -4404,8 +4863,13 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Receiver(const wo
 	bFadeAudio = Op.Request.field_bfadeaudio();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientSetCameraFade, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientSetCameraFade_Implementation(bEnableFading, FadeColor, FadeAlpha, FadeTime, bFadeAudio);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>& Op)
@@ -4414,15 +4878,24 @@ void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Receiver
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientSetBlockOnAsyncLoading_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientSetBlockOnAsyncLoading_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetBlockOnAsyncLoading_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientSetBlockOnAsyncLoading_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientSetBlockOnAsyncLoading, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientSetBlockOnAsyncLoading_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>& Op)
@@ -4431,19 +4904,28 @@ void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Receiver(const
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientReturnToMainMenu_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientReturnToMainMenu_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientReturnToMainMenu_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientReturnToMainMenu_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract ReturnReason
 	FString ReturnReason;
 	ReturnReason = FString(UTF8_TO_TCHAR(Op.Request.field_returnreason().c_str()));
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientReturnToMainMenu, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientReturnToMainMenu_Implementation(ReturnReason);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>& Op)
@@ -4452,31 +4934,52 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Receiver(con
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientRetryClientRestart_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientRetryClientRestart_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientRetryClientRestart_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientRetryClientRestart_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract NewPawn
 	APawn* NewPawn;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_newpawn();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			NewPawn = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			NewPawn = nullptr;
 		}
 		else
 		{
-			NewPawn = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				NewPawn = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientRetryClientRestart_Receiver: NewPawn (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(Op, false, TEXT("NewPawn is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientRetryClientRestart, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientRetryClientRestart_Implementation(NewPawn);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientRestart_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>& Op)
@@ -4485,31 +4988,52 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Receiver(const worker::
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientRestart_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientRestart_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientRestart_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientRestart_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract NewPawn
 	APawn* NewPawn;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_newpawn();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			NewPawn = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			NewPawn = nullptr;
 		}
 		else
 		{
-			NewPawn = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				NewPawn = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientRestart_Receiver: NewPawn (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(Op, false, TEXT("NewPawn is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientRestart, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientRestart_Implementation(NewPawn);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientReset_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>& Op)
@@ -4518,15 +5042,24 @@ void USpatialTypeBinding_PlayerController::ClientReset_Receiver(const worker::Co
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientReset_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientReset_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientReset_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientReset_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientReset, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientReset_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientRepObjRef_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>& Op)
@@ -4535,31 +5068,52 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Receiver(const worker
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientRepObjRef_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientRepObjRef_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientRepObjRef_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientRepObjRef_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract Object
 	UObject* Object;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_object();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			Object = static_cast<UObject*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			Object = nullptr;
 		}
 		else
 		{
-			Object = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				Object = static_cast<UObject*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientRepObjRef_Receiver: Object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(Op, false, TEXT("Object is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientRepObjRef, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientRepObjRef_Implementation(Object);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>& Op)
@@ -4568,11 +5122,15 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receive
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientReceiveLocalizedMessage_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientReceiveLocalizedMessage_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientReceiveLocalizedMessage_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientReceiveLocalizedMessage_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract Message
 	TSubclassOf<ULocalMessage>  Message;
@@ -4587,14 +5145,26 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receive
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_relatedplayerstate_1();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			RelatedPlayerState_1 = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			RelatedPlayerState_1 = nullptr;
 		}
 		else
 		{
-			RelatedPlayerState_1 = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				RelatedPlayerState_1 = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientReceiveLocalizedMessage_Receiver: RelatedPlayerState_1 (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(Op, false, TEXT("RelatedPlayerState_1 is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
@@ -4603,14 +5173,26 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receive
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_relatedplayerstate_2();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			RelatedPlayerState_2 = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			RelatedPlayerState_2 = nullptr;
 		}
 		else
 		{
-			RelatedPlayerState_2 = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				RelatedPlayerState_2 = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientReceiveLocalizedMessage_Receiver: RelatedPlayerState_2 (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(Op, false, TEXT("RelatedPlayerState_2 is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
@@ -4619,20 +5201,37 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receive
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_optionalobject();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			OptionalObject = static_cast<UObject*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			OptionalObject = nullptr;
 		}
 		else
 		{
-			OptionalObject = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				OptionalObject = static_cast<UObject*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientReceiveLocalizedMessage_Receiver: OptionalObject (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(Op, false, TEXT("OptionalObject is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientReceiveLocalizedMessage, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientReceiveLocalizedMessage_Implementation(Message, Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>& Op)
@@ -4641,25 +5240,41 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Receiver(cons
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientPrestreamTextures_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientPrestreamTextures_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientPrestreamTextures_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientPrestreamTextures_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract ForcedActor
 	AActor* ForcedActor;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_forcedactor();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			ForcedActor = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			ForcedActor = nullptr;
 		}
 		else
 		{
-			ForcedActor = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				ForcedActor = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientPrestreamTextures_Receiver: ForcedActor (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(Op, false, TEXT("ForcedActor is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
@@ -4676,8 +5291,13 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Receiver(cons
 	CinematicTextureGroups = Op.Request.field_cinematictexturegroups();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientPrestreamTextures, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientPrestreamTextures_Implementation(ForcedActor, ForceDuration, bEnableStreaming, CinematicTextureGroups);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>& Op)
@@ -4686,11 +5306,15 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Receiver(const
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientPrepareMapChange_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientPrepareMapChange_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientPrepareMapChange_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientPrepareMapChange_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract LevelName
 	FName LevelName;
@@ -4705,8 +5329,13 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Receiver(const
 	bLast = Op.Request.field_blast();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientPrepareMapChange, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientPrepareMapChange_Implementation(LevelName, bFirst, bLast);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>& Op)
@@ -4715,25 +5344,41 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Receiver(co
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientPlaySoundAtLocation_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientPlaySoundAtLocation_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientPlaySoundAtLocation_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientPlaySoundAtLocation_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract Sound
 	USoundBase* Sound;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_sound();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			Sound = static_cast<USoundBase*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			Sound = nullptr;
 		}
 		else
 		{
-			Sound = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				Sound = static_cast<USoundBase*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientPlaySoundAtLocation_Receiver: Sound (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(Op, false, TEXT("Sound is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
@@ -4755,8 +5400,13 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Receiver(co
 	PitchMultiplier = Op.Request.field_pitchmultiplier();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientPlaySoundAtLocation, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientPlaySoundAtLocation_Implementation(Sound, Location, VolumeMultiplier, PitchMultiplier);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlaySound_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>& Op)
@@ -4765,25 +5415,41 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Receiver(const worker
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientPlaySound_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientPlaySound_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientPlaySound_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientPlaySound_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract Sound
 	USoundBase* Sound;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_sound();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			Sound = static_cast<USoundBase*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			Sound = nullptr;
 		}
 		else
 		{
-			Sound = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				Sound = static_cast<USoundBase*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientPlaySound_Receiver: Sound (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(Op, false, TEXT("Sound is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
@@ -4796,8 +5462,13 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Receiver(const worker
 	PitchMultiplier = Op.Request.field_pitchmultiplier();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientPlaySound, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientPlaySound_Implementation(Sound, VolumeMultiplier, PitchMultiplier);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>& Op)
@@ -4806,25 +5477,41 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Receiver(cons
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientPlayForceFeedback_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientPlayForceFeedback_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientPlayForceFeedback_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientPlayForceFeedback_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract ForceFeedbackEffect
 	UForceFeedbackEffect* ForceFeedbackEffect;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_forcefeedbackeffect();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			ForceFeedbackEffect = static_cast<UForceFeedbackEffect*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			ForceFeedbackEffect = nullptr;
 		}
 		else
 		{
-			ForceFeedbackEffect = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				ForceFeedbackEffect = static_cast<UForceFeedbackEffect*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientPlayForceFeedback_Receiver: ForceFeedbackEffect (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(Op, false, TEXT("ForceFeedbackEffect is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
@@ -4837,8 +5524,13 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Receiver(cons
 	Tag = FName((Op.Request.field_tag()).data());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientPlayForceFeedback, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientPlayForceFeedback_Implementation(ForceFeedbackEffect, bLooping, Tag);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>& Op)
@@ -4847,11 +5539,15 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Receiver(const 
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientPlayCameraShake_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientPlayCameraShake_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientPlayCameraShake_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientPlayCameraShake_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract Shake
 	TSubclassOf<UCameraShake>  Shake;
@@ -4875,8 +5571,13 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Receiver(const 
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientPlayCameraShake, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientPlayCameraShake_Implementation(Shake, Scale, PlaySpace, UserPlaySpaceRot);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>& Op)
@@ -4885,25 +5586,41 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Receiver(const w
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientPlayCameraAnim_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientPlayCameraAnim_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientPlayCameraAnim_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientPlayCameraAnim_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract AnimToPlay
 	UCameraAnim* AnimToPlay;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_animtoplay();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			AnimToPlay = static_cast<UCameraAnim*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			AnimToPlay = nullptr;
 		}
 		else
 		{
-			AnimToPlay = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				AnimToPlay = static_cast<UCameraAnim*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientPlayCameraAnim_Receiver: AnimToPlay (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(Op, false, TEXT("AnimToPlay is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
@@ -4945,8 +5662,13 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Receiver(const w
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientPlayCameraAnim, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientPlayCameraAnim_Implementation(AnimToPlay, Scale, Rate, BlendInTime, BlendOutTime, bLoop, bRandomStartTime, Space, CustomPlaySpace);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientMutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>& Op)
@@ -4955,11 +5677,15 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_Receiver(const worke
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientMutePlayer_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientMutePlayer_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientMutePlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientMutePlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract PlayerId
 	FUniqueNetIdRepl PlayerId;
@@ -4973,8 +5699,13 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_Receiver(const worke
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientMutePlayer, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientMutePlayer_Implementation(PlayerId);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientMessage_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>& Op)
@@ -4983,11 +5714,15 @@ void USpatialTypeBinding_PlayerController::ClientMessage_Receiver(const worker::
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientMessage_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientMessage_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientMessage_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientMessage_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract S
 	FString S;
@@ -5002,8 +5737,13 @@ void USpatialTypeBinding_PlayerController::ClientMessage_Receiver(const worker::
 	MsgLifeTime = Op.Request.field_msglifetime();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientMessage, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientMessage_Implementation(S, Type, MsgLifeTime);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>& Op)
@@ -5012,19 +5752,28 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Receiver(const 
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientIgnoreMoveInput_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientIgnoreMoveInput_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientIgnoreMoveInput_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientIgnoreMoveInput_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract bIgnore
 	bool bIgnore;
 	bIgnore = Op.Request.field_bignore();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientIgnoreMoveInput, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientIgnoreMoveInput_Implementation(bIgnore);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>& Op)
@@ -5033,19 +5782,28 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Receiver(const 
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientIgnoreLookInput_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientIgnoreLookInput_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientIgnoreLookInput_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientIgnoreLookInput_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract bIgnore
 	bool bIgnore;
 	bIgnore = Op.Request.field_bignore();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientIgnoreLookInput, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientIgnoreLookInput_Implementation(bIgnore);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientGotoState_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>& Op)
@@ -5054,19 +5812,28 @@ void USpatialTypeBinding_PlayerController::ClientGotoState_Receiver(const worker
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientGotoState_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientGotoState_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientGotoState_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientGotoState_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract NewState
 	FName NewState;
 	NewState = FName((Op.Request.field_newstate()).data());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientGotoState, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientGotoState_Implementation(NewState);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientGameEnded_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>& Op)
@@ -5075,25 +5842,41 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Receiver(const worker
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientGameEnded_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientGameEnded_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientGameEnded_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientGameEnded_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract EndGameFocus
 	AActor* EndGameFocus;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_endgamefocus();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			EndGameFocus = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			EndGameFocus = nullptr;
 		}
 		else
 		{
-			EndGameFocus = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				EndGameFocus = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientGameEnded_Receiver: EndGameFocus (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(Op, false, TEXT("EndGameFocus is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
@@ -5102,8 +5885,13 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Receiver(const worker
 	bIsWinner = Op.Request.field_biswinner();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientGameEnded, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientGameEnded_Implementation(EndGameFocus, bIsWinner);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>& Op)
@@ -5112,15 +5900,24 @@ void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Receiver
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientForceGarbageCollection_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientForceGarbageCollection_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientForceGarbageCollection_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientForceGarbageCollection_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientForceGarbageCollection, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientForceGarbageCollection_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>& Op)
@@ -5129,15 +5926,24 @@ void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Receiver(co
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientFlushLevelStreaming_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientFlushLevelStreaming_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientFlushLevelStreaming_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientFlushLevelStreaming_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientFlushLevelStreaming, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientFlushLevelStreaming_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>& Op)
@@ -5146,15 +5952,24 @@ void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Receiver(const
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientEndOnlineSession_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientEndOnlineSession_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientEndOnlineSession_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientEndOnlineSession_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientEndOnlineSession, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientEndOnlineSession_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>& Op)
@@ -5163,19 +5978,28 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Receiver(con
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientEnableNetworkVoice_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientEnableNetworkVoice_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientEnableNetworkVoice_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientEnableNetworkVoice_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract bEnable
 	bool bEnable;
 	bEnable = Op.Request.field_benable();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientEnableNetworkVoice, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientEnableNetworkVoice_Implementation(bEnable);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>& Op)
@@ -5184,15 +6008,24 @@ void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Receiver(const 
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientCommitMapChange_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientCommitMapChange_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientCommitMapChange_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientCommitMapChange_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientCommitMapChange, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientCommitMapChange_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>& Op)
@@ -5201,15 +6034,24 @@ void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Receiver
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientClearCameraLensEffects_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientClearCameraLensEffects_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientClearCameraLensEffects_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientClearCameraLensEffects_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientClearCameraLensEffects, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientClearCameraLensEffects_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>& Op)
@@ -5218,19 +6060,28 @@ void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Receiver(const wor
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientCapBandwidth_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientCapBandwidth_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientCapBandwidth_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientCapBandwidth_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract Cap
 	int32 Cap;
 	Cap = Op.Request.field_cap();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientCapBandwidth, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientCapBandwidth_Implementation(Cap);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>& Op)
@@ -5239,15 +6090,24 @@ void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Receiver
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientCancelPendingMapChange_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientCancelPendingMapChange_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientCancelPendingMapChange_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientCancelPendingMapChange_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientCancelPendingMapChange, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientCancelPendingMapChange_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>& Op)
@@ -5256,11 +6116,15 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Receiver
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientAddTextureStreamingLoc_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientAddTextureStreamingLoc_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientAddTextureStreamingLoc_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientAddTextureStreamingLoc_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract InLoc
 	FVector InLoc;
@@ -5280,8 +6144,13 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Receiver
 	bOverrideLocation = Op.Request.field_boverridelocation();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientAddTextureStreamingLoc, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientAddTextureStreamingLoc_Implementation(InLoc, Duration, bOverrideLocation);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetRotation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>& Op)
@@ -5290,11 +6159,15 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_Receiver(const work
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientSetRotation_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientSetRotation_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetRotation_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientSetRotation_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract NewRotation
 	FRotator NewRotation;
@@ -5310,8 +6183,13 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_Receiver(const work
 	bResetCamera = Op.Request.field_bresetcamera();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientSetRotation, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientSetRotation_Implementation(NewRotation, bResetCamera);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetLocation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>& Op)
@@ -5320,11 +6198,15 @@ void USpatialTypeBinding_PlayerController::ClientSetLocation_Receiver(const work
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ClientSetLocation_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientSetLocation_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ClientSetLocation_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientSetLocation_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract NewLocation
 	FVector NewLocation;
@@ -5345,8 +6227,13 @@ void USpatialTypeBinding_PlayerController::ClientSetLocation_Receiver(const work
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientSetLocation, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ClientSetLocation_Implementation(NewLocation, NewRotation);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerViewSelf_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>& Op)
@@ -5355,11 +6242,15 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Receiver(const worker:
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerViewSelf_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerViewSelf_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerViewSelf_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerViewSelf_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract TransitionParams
 	FViewTargetTransitionParams TransitionParams;
@@ -5375,8 +6266,13 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Receiver(const worker:
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerViewSelf, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerViewSelf_Implementation(TransitionParams);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>& Op)
@@ -5385,15 +6281,24 @@ void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Receiver(const w
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerViewPrevPlayer_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerViewPrevPlayer_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerViewPrevPlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerViewPrevPlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerViewPrevPlayer, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerViewPrevPlayer_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>& Op)
@@ -5402,15 +6307,24 @@ void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Receiver(const w
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerViewNextPlayer_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerViewNextPlayer_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerViewNextPlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerViewNextPlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerViewNextPlayer, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerViewNextPlayer_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>& Op)
@@ -5419,15 +6333,24 @@ void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Receiver(const
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerVerifyViewTarget_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerVerifyViewTarget_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerVerifyViewTarget_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerVerifyViewTarget_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerVerifyViewTarget, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerVerifyViewTarget_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>& Op)
@@ -5436,11 +6359,15 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Receiver(
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerUpdateLevelVisibility_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerUpdateLevelVisibility_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerUpdateLevelVisibility_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerUpdateLevelVisibility_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract PackageName
 	FName PackageName;
@@ -5451,8 +6378,13 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Receiver(
 	bIsVisible = Op.Request.field_bisvisible();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerUpdateLevelVisibility, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerUpdateLevelVisibility_Implementation(PackageName, bIsVisible);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>& Op)
@@ -5461,11 +6393,15 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Receiver(const wor
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerUpdateCamera_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerUpdateCamera_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerUpdateCamera_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerUpdateCamera_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract CamLoc
 	FVector_NetQuantize CamLoc;
@@ -5481,8 +6417,13 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Receiver(const wor
 	CamPitchAndYaw = Op.Request.field_campitchandyaw();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerUpdateCamera, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerUpdateCamera_Implementation(CamLoc, CamPitchAndYaw);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>& Op)
@@ -5491,11 +6432,15 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Receiver(const wor
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerUnmutePlayer_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerUnmutePlayer_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerUnmutePlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerUnmutePlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract PlayerId
 	FUniqueNetIdRepl PlayerId;
@@ -5509,8 +6454,13 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Receiver(const wor
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerUnmutePlayer, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerUnmutePlayer_Implementation(PlayerId);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>& Op)
@@ -5519,15 +6469,24 @@ void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Receiver(const 
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerToggleAILogging_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerToggleAILogging_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerToggleAILogging_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerToggleAILogging_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerToggleAILogging, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerToggleAILogging_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerShortTimeout_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>& Op)
@@ -5536,15 +6495,24 @@ void USpatialTypeBinding_PlayerController::ServerShortTimeout_Receiver(const wor
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerShortTimeout_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerShortTimeout_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerShortTimeout_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerShortTimeout_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerShortTimeout, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerShortTimeout_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>& Op)
@@ -5553,19 +6521,28 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Receiver(co
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerSetSpectatorWaiting_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerSetSpectatorWaiting_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerSetSpectatorWaiting_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerSetSpectatorWaiting_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract bWaiting
 	bool bWaiting;
 	bWaiting = Op.Request.field_bwaiting();
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerSetSpectatorWaiting, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerSetSpectatorWaiting_Implementation(bWaiting);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>& Op)
@@ -5574,11 +6551,15 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Receiver(c
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerSetSpectatorLocation_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerSetSpectatorLocation_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerSetSpectatorLocation_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerSetSpectatorLocation_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract NewLoc
 	FVector NewLoc;
@@ -5599,8 +6580,13 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Receiver(c
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerSetSpectatorLocation, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerSetSpectatorLocation_Implementation(NewLoc, NewRot);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>& Op)
@@ -5609,15 +6595,24 @@ void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Receiver(const wo
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerRestartPlayer_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerRestartPlayer_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerRestartPlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerRestartPlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerRestartPlayer, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerRestartPlayer_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerPause_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>& Op)
@@ -5626,15 +6621,24 @@ void USpatialTypeBinding_PlayerController::ServerPause_Receiver(const worker::Co
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerPause_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerPause_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerPause_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerPause_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerPause, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerPause_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>& Op)
@@ -5643,19 +6647,28 @@ void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Receiver(cons
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerNotifyLoadedWorld_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerNotifyLoadedWorld_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerNotifyLoadedWorld_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerNotifyLoadedWorld_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract WorldPackageName
 	FName WorldPackageName;
 	WorldPackageName = FName((Op.Request.field_worldpackagename()).data());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerNotifyLoadedWorld, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerNotifyLoadedWorld_Implementation(WorldPackageName);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerMutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>& Op)
@@ -5664,11 +6677,15 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_Receiver(const worke
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerMutePlayer_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerMutePlayer_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerMutePlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerMutePlayer_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract PlayerId
 	FUniqueNetIdRepl PlayerId;
@@ -5682,8 +6699,13 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_Receiver(const worke
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerMutePlayer, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerMutePlayer_Implementation(PlayerId);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>& Op)
@@ -5692,15 +6714,24 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_R
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerCheckClientPossessionReliable_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerCheckClientPossessionReliable_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerCheckClientPossessionReliable_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerCheckClientPossessionReliable_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerCheckClientPossessionReliable, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerCheckClientPossessionReliable_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>& Op)
@@ -5709,15 +6740,24 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Receiver(
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerCheckClientPossession_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerCheckClientPossession_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerCheckClientPossession_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerCheckClientPossession_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerCheckClientPossession, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerCheckClientPossession_Implementation();
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerChangeName_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>& Op)
@@ -5726,19 +6766,28 @@ void USpatialTypeBinding_PlayerController::ServerChangeName_Receiver(const worke
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerChangeName_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerChangeName_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerChangeName_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerChangeName_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract S
 	FString S;
 	S = FString(UTF8_TO_TCHAR(Op.Request.field_s().c_str()));
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerChangeName, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerChangeName_Implementation(S);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerCamera_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>& Op)
@@ -5747,19 +6796,28 @@ void USpatialTypeBinding_PlayerController::ServerCamera_Receiver(const worker::C
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerCamera_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerCamera_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerCamera_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerCamera_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract NewMode
 	FName NewMode;
 	NewMode = FName((Op.Request.field_newmode()).data());
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerCamera, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerCamera_Implementation(NewMode);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(Op, true, FString());
 }
 
 void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>& Op)
@@ -5768,29 +6826,50 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Receiver(
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("ServerAcknowledgePossession_Receiver: Entity ID %lld (offset %d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerAcknowledgePossession_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
+		SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
 	APlayerController* TargetObject = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("ServerAcknowledgePossession_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerAcknowledgePossession_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
 
 	// Extract P
 	APawn* P;
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_p();
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
-			P = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			P = nullptr;
 		}
 		else
 		{
-			P = nullptr;
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				P = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerAcknowledgePossession_Receiver: P (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					ObjectRef.entity(),
+					ObjectRef.offset());
+				SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>(Op, false, TEXT("P is unresolved on the target worker"));
+				return;
+			}
 		}
 	}
 
 	// Call implementation and send command response.
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerAcknowledgePossession, target: %s (entity ID %lld, offset: %d)"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		*TargetObject->GetName(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset());
 	TargetObject->ServerAcknowledgePossession_Implementation(P);
-	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>(Op);
+	SendRPCResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>(Op, true, FString());
 }

@@ -52,22 +52,22 @@ private:
 		bool& bSingleClientUpdateChanged,
 		improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& MultiClientUpdate,
 		bool& bMultiClientUpdateChanged) const;
-	void ApplyUpdateToSpatial_SingleClient(
+	void ServerSendUpdate_SingleClient(
 		const uint8* RESTRICT Data,
 		int32 Handle,
 		UProperty* Property,
 		USpatialActorChannel* Channel,
 		improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& OutUpdate) const;
-	void ApplyUpdateToSpatial_MultiClient(
+	void ServerSendUpdate_MultiClient(
 		const uint8* RESTRICT Data,
 		int32 Handle,
 		UProperty* Property,
 		USpatialActorChannel* Channel,
 		improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& OutUpdate) const;
-	void ReceiveUpdateFromSpatial_SingleClient(
+	void ClientReceiveUpdate_SingleClient(
 		USpatialActorChannel* ActorChannel,
 		const improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update) const;
-	void ReceiveUpdateFromSpatial_MultiClient(
+	void ClientReceiveUpdate_MultiClient(
 		USpatialActorChannel* ActorChannel,
 		const improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update) const;
 

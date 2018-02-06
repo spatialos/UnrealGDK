@@ -10,6 +10,12 @@
 #include "EntityRegistry.h"
 #include "SpatialPackageMapClient.h"
 
+// Needed for the entity template stuff.
+#include <improbable/standard_library.h>
+#include <improbable/player/player.h>
+#include "EntityBuilder.h"
+#include "EntityTemplate.h"
+
 #include "Generated/SpatialTypeBinding_Character.h"
 #include "Generated/SpatialTypeBinding_PlayerController.h"
 #include "Generated/SpatialTypeBinding_GameStateBase.h"
@@ -88,6 +94,59 @@ USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 		}
 	}
 	return nullptr;
+}
+
+worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FString& PlayerWorkerId, const TArray<uint16>& Changed)
+{
+	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
+	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
+	if (PinnedConnection.IsValid())
+	{
+		AActor* Actor = Channel->Actor;
+		const USpatialTypeBinding* TypeBinding = GetTypeBindingByClass(Actor->GetClass());
+
+		FStringAssetReference ActorClassRef(Actor->GetClass());
+		FString PathStr = ActorClassRef.ToString();
+
+		if (TypeBinding)
+		{
+			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Actor->GetActorLocation(), PathStr, Channel->GetChangeState(Changed), Channel);
+			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId(), 0);
+		}
+		else
+		{
+			std::string ClientWorkerIdString = TCHAR_TO_UTF8(*PlayerWorkerId);
+
+			improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
+			improbable::WorkerAttributeSet ClientAttribute{{worker::List<std::string>{"UnrealClient"}}};
+			improbable::WorkerAttributeSet OwnClientAttribute{{"workerId:" + ClientWorkerIdString}};
+
+			improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
+			improbable::WorkerRequirementSet ClientsOnly{{ClientAttribute}};
+			improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
+			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
+
+			const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Actor->GetActorLocation());
+			auto Entity = improbable::unreal::FEntityBuilder::Begin()
+				.AddPositionComponent(SpatialPosition, WorkersOnly)
+				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
+				.SetPersistence(true)
+				.SetReadAcl(AnyUnrealWorkerOrClient)
+				// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
+				// todo-giray: Remove once we're using proper (generated) entity templates here.
+				.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, OwnClientOnly)
+				.Build();
+
+			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId(), 0);
+		}
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
+			*SpatialOSInstance->GetWorkerId(), *Actor->GetName(), Channel->GetEntityId(), CreateEntityRequestId.Id);
+	}
+	else
+	{
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
+	}
+	return CreateEntityRequestId;
 }
 
 void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed)
@@ -214,8 +273,10 @@ void USpatialInterop::SetComponentInterests(USpatialActorChannel* ActorChannel, 
 			worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
 			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{true});
 			SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId, Interest);
-			UE_LOG(LogSpatialOSInterop, Warning, TEXT("We are the owning client, therefore we want single client updates. Client ID: %s"),
-				*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: We are the owning client of %s (%lld), therefore we want single client updates"),
+				*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				EntityId);
 		}
 	}
 }

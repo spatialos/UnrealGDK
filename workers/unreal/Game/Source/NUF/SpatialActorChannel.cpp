@@ -7,12 +7,7 @@
 #include "Engine/DemoNetDriver.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
-#include <improbable/worker.h>
-#include <improbable/standard_library.h>
-#include <improbable/player/player.h>
 #include "Commander.h"
-#include "EntityBuilder.h"
-#include "EntityTemplate.h"
 #include "SpatialNetConnection.h"
 #include "SpatialOS.h"
 #include "SpatialInterop.h"
@@ -60,59 +55,6 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	bCoreActor = true;
 	ActorEntityId = worker::EntityId{};
 	SpatialNetDriver = nullptr;
-}
-
-void USpatialActorChannel::SendCreateEntityRequest(const FString& PlayerWorkerId, const TArray<uint16>& Changed)
-{
-	TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
-	if (PinnedConnection.IsValid())
-	{
-		USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
-		checkf(Driver->GetSpatialInterop(), TEXT("Spatial Interop is not initialised"));
-
-		const USpatialTypeBinding* TypeBinding = Driver->GetSpatialInterop()->GetTypeBindingByClass(Actor->GetClass());
-
-		FStringAssetReference ActorClassRef(Actor->GetClass());
-		FString PathStr = ActorClassRef.ToString();
-
-		if (TypeBinding)
-		{
-			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Actor->GetActorLocation(), PathStr, GetChangeState(Changed), this);
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ActorEntityId, 0);
-		}
-		else
-		{
-			std::string ClientWorkerIdString = TCHAR_TO_UTF8(*PlayerWorkerId);
-
-			improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
-			improbable::WorkerAttributeSet ClientAttribute{{worker::List<std::string>{"UnrealClient"}}};
-			improbable::WorkerAttributeSet OwnClientAttribute{{"workerId:" + ClientWorkerIdString}};
-
-			improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
-			improbable::WorkerRequirementSet ClientsOnly{{ClientAttribute}};
-			improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
-			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
-
-			const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Actor->GetActorLocation());
-			auto Entity = improbable::unreal::FEntityBuilder::Begin()
-				.AddPositionComponent(SpatialPosition, WorkersOnly)
-				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
-				.SetPersistence(true)
-				.SetReadAcl(AnyUnrealWorkerOrClient)
-				// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
-				// todo-giray: Remove once we're using proper (generated) entity templates here.
-				.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, OwnClientOnly)
-				.Build();
-
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ActorEntityId, 0);
-		}
-		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Creating entity for actor %s. Request id: %d. Entity id: %d"), *Actor->GetName(), CreateEntityRequestId.Id, ActorEntityId);
-	}
-	else
-	{
-		UE_LOG(LogSpatialOSActorChannel, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
-		return;
-	}
 }
 
 void USpatialActorChannel::Init(UNetConnection* Connection, int32 ChannelIndex, bool bOpenedLocally)
@@ -294,8 +236,8 @@ bool USpatialActorChannel::ReplicateActor()
 
 	if (RepFlags.bNetInitial || Changed.Num() > 0)
 	{
-		USpatialInterop* UpdateInterop = SpatialNetDriver->GetSpatialInterop();
-		check(UpdateInterop);
+		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+		check(Interop);
 		
 		if (RepFlags.bNetInitial)
 		{
@@ -303,28 +245,36 @@ bool USpatialActorChannel::ReplicateActor()
 			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
 			// player controller, get the player state.
 			FString PlayerWorkerId;
-			APawn* Pawn = Cast<APawn>(Actor);
-			if (Pawn && Pawn->PlayerState)
+			APlayerState* PlayerState = Cast<APlayerState>(Actor);
+			if (!PlayerState)
 			{
-				PlayerWorkerId = Pawn->PlayerState->UniqueId.ToString();
+				APawn* Pawn = Cast<APawn>(Actor);
+				if (Pawn)
+				{
+					PlayerState = Pawn->PlayerState;
+				}
 			}
-			else
+			if (!PlayerState)
 			{
 				APlayerController* PlayerController = Cast<APlayerController>(Actor);
 				if (PlayerController)
 				{
-					PlayerWorkerId = PlayerController->PlayerState->UniqueId.ToString();
-				}
-				else
-				{
-					UE_LOG(LogSpatialOSActorChannel, Warning, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
+					PlayerState = PlayerController->PlayerState;
 				}
 			}
-			SendCreateEntityRequest(PlayerWorkerId, Changed);
+			if (PlayerState)
+			{
+				PlayerWorkerId = PlayerState->UniqueId.ToString();
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSActorChannel, Warning, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
+			}
+			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, PlayerWorkerId, Changed);
 		}
 		else
 		{
-			UpdateInterop->SendSpatialUpdate(this, Changed);
+			Interop->SendSpatialUpdate(this, Changed);
 		}
 
 		bWroteSomethingImportant = true;
