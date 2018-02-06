@@ -211,317 +211,406 @@ component UnrealPlayerControllerCompleteData {
 	bytes field_instancecomponents = 177;
 }
 type UnrealOnServerStartedVisualLoggerRequest {
-	bool field_bislogging = 178;
+	uint32 subobject_offset = 1;
+	bool field_bislogging = 2;
 }
 type UnrealOnServerStartedVisualLoggerResponse {}
 type UnrealClientWasKickedRequest {
-	bytes field_kickreason = 179;
+	uint32 subobject_offset = 1;
+	bytes field_kickreason = 2;
 }
 type UnrealClientWasKickedResponse {}
-type UnrealClientVoiceHandshakeCompleteRequest {}
+type UnrealClientVoiceHandshakeCompleteRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealClientVoiceHandshakeCompleteResponse {}
 type UnrealClientUpdateLevelStreamingStatusRequest {
-	string field_packagename = 180;
-	bool field_bnewshouldbeloaded = 181;
-	bool field_bnewshouldbevisible = 182;
-	bool field_bnewshouldblockonload = 183;
-	int32 field_lodindex = 184;
+	uint32 subobject_offset = 1;
+	string field_packagename = 2;
+	bool field_bnewshouldbeloaded = 3;
+	bool field_bnewshouldbevisible = 4;
+	bool field_bnewshouldblockonload = 5;
+	int32 field_lodindex = 6;
 }
 type UnrealClientUpdateLevelStreamingStatusResponse {}
 type UnrealClientUnmutePlayerRequest {
-	bytes field_playerid = 185;
+	uint32 subobject_offset = 1;
+	bytes field_playerid = 2;
 }
 type UnrealClientUnmutePlayerResponse {}
 type UnrealClientTravelInternalRequest {
-	string field_url = 186;
-	uint32 field_traveltype = 187;
-	bool field_bseamless = 188;
-	int32 field_mappackageguid_a = 189;
-	int32 field_mappackageguid_b = 190;
-	int32 field_mappackageguid_c = 191;
-	int32 field_mappackageguid_d = 192;
+	uint32 subobject_offset = 1;
+	string field_url = 2;
+	uint32 field_traveltype = 3;
+	bool field_bseamless = 4;
+	int32 field_mappackageguid_a = 5;
+	int32 field_mappackageguid_b = 6;
+	int32 field_mappackageguid_c = 7;
+	int32 field_mappackageguid_d = 8;
 }
 type UnrealClientTravelInternalResponse {}
 type UnrealClientTeamMessageRequest {
-	UnrealObjectRef field_senderplayerstate = 193;
-	string field_s = 194;
-	string field_type = 195;
-	float field_msglifetime = 196;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_senderplayerstate = 2;
+	string field_s = 3;
+	string field_type = 4;
+	float field_msglifetime = 5;
 }
 type UnrealClientTeamMessageResponse {}
 type UnrealClientStopForceFeedbackRequest {
-	UnrealObjectRef field_forcefeedbackeffect = 197;
-	string field_tag = 198;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_forcefeedbackeffect = 2;
+	string field_tag = 3;
 }
 type UnrealClientStopForceFeedbackResponse {}
 type UnrealClientStopCameraShakeRequest {
-	UnrealObjectRef field_shake = 199;
-	bool field_bimmediately = 200;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_shake = 2;
+	bool field_bimmediately = 3;
 }
 type UnrealClientStopCameraShakeResponse {}
 type UnrealClientStopCameraAnimRequest {
-	UnrealObjectRef field_animtostop = 201;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_animtostop = 2;
 }
 type UnrealClientStopCameraAnimResponse {}
-type UnrealClientStartOnlineSessionRequest {}
+type UnrealClientStartOnlineSessionRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealClientStartOnlineSessionResponse {}
 type UnrealClientSpawnCameraLensEffectRequest {
-	UnrealObjectRef field_lenseffectemitterclass = 202;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_lenseffectemitterclass = 2;
 }
 type UnrealClientSpawnCameraLensEffectResponse {}
 type UnrealClientSetViewTargetRequest {
-	UnrealObjectRef field_a = 203;
-	float field_transitionparams_blendtime = 204;
-	uint32 field_transitionparams_blendfunction = 205;
-	float field_transitionparams_blendexp = 206;
-	bool field_transitionparams_blockoutgoing = 207;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_a = 2;
+	float field_transitionparams_blendtime = 3;
+	uint32 field_transitionparams_blendfunction = 4;
+	float field_transitionparams_blendexp = 5;
+	bool field_transitionparams_blockoutgoing = 6;
 }
 type UnrealClientSetViewTargetResponse {}
 type UnrealClientSetSpectatorWaitingRequest {
-	bool field_bwaiting = 208;
+	uint32 subobject_offset = 1;
+	bool field_bwaiting = 2;
 }
 type UnrealClientSetSpectatorWaitingResponse {}
 type UnrealClientSetHUDRequest {
-	UnrealObjectRef field_newhudclass = 209;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_newhudclass = 2;
 }
 type UnrealClientSetHUDResponse {}
 type UnrealClientSetForceMipLevelsToBeResidentRequest {
-	UnrealObjectRef field_material = 210;
-	float field_forceduration = 211;
-	int32 field_cinematictexturegroups = 212;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_material = 2;
+	float field_forceduration = 3;
+	int32 field_cinematictexturegroups = 4;
 }
 type UnrealClientSetForceMipLevelsToBeResidentResponse {}
 type UnrealClientSetCinematicModeRequest {
-	bool field_bincinematicmode = 213;
-	bool field_baffectsmovement = 214;
-	bool field_baffectsturning = 215;
-	bool field_baffectshud = 216;
+	uint32 subobject_offset = 1;
+	bool field_bincinematicmode = 2;
+	bool field_baffectsmovement = 3;
+	bool field_baffectsturning = 4;
+	bool field_baffectshud = 5;
 }
 type UnrealClientSetCinematicModeResponse {}
 type UnrealClientSetCameraModeRequest {
-	string field_newcammode = 217;
+	uint32 subobject_offset = 1;
+	string field_newcammode = 2;
 }
 type UnrealClientSetCameraModeResponse {}
 type UnrealClientSetCameraFadeRequest {
-	bool field_benablefading = 218;
-	uint32 field_fadecolor_b = 219;
-	uint32 field_fadecolor_g = 220;
-	uint32 field_fadecolor_r = 221;
-	uint32 field_fadecolor_a = 222;
-	float field_fadealpha_x = 223;
-	float field_fadealpha_y = 224;
-	float field_fadetime = 225;
-	bool field_bfadeaudio = 226;
+	uint32 subobject_offset = 1;
+	bool field_benablefading = 2;
+	uint32 field_fadecolor_b = 3;
+	uint32 field_fadecolor_g = 4;
+	uint32 field_fadecolor_r = 5;
+	uint32 field_fadecolor_a = 6;
+	float field_fadealpha_x = 7;
+	float field_fadealpha_y = 8;
+	float field_fadetime = 9;
+	bool field_bfadeaudio = 10;
 }
 type UnrealClientSetCameraFadeResponse {}
-type UnrealClientSetBlockOnAsyncLoadingRequest {}
+type UnrealClientSetBlockOnAsyncLoadingRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealClientSetBlockOnAsyncLoadingResponse {}
 type UnrealClientReturnToMainMenuRequest {
-	string field_returnreason = 227;
+	uint32 subobject_offset = 1;
+	string field_returnreason = 2;
 }
 type UnrealClientReturnToMainMenuResponse {}
 type UnrealClientRetryClientRestartRequest {
-	UnrealObjectRef field_newpawn = 228;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_newpawn = 2;
 }
 type UnrealClientRetryClientRestartResponse {}
 type UnrealClientRestartRequest {
-	UnrealObjectRef field_newpawn = 229;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_newpawn = 2;
 }
 type UnrealClientRestartResponse {}
-type UnrealClientResetRequest {}
+type UnrealClientResetRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealClientResetResponse {}
 type UnrealClientRepObjRefRequest {
-	UnrealObjectRef field_object = 230;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_object = 2;
 }
 type UnrealClientRepObjRefResponse {}
 type UnrealClientReceiveLocalizedMessageRequest {
-	UnrealObjectRef field_message = 231;
-	int32 field_switch = 232;
-	UnrealObjectRef field_relatedplayerstate_1 = 233;
-	UnrealObjectRef field_relatedplayerstate_2 = 234;
-	UnrealObjectRef field_optionalobject = 235;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_message = 2;
+	int32 field_switch = 3;
+	UnrealObjectRef field_relatedplayerstate_1 = 4;
+	UnrealObjectRef field_relatedplayerstate_2 = 5;
+	UnrealObjectRef field_optionalobject = 6;
 }
 type UnrealClientReceiveLocalizedMessageResponse {}
 type UnrealClientPrestreamTexturesRequest {
-	UnrealObjectRef field_forcedactor = 236;
-	float field_forceduration = 237;
-	bool field_benablestreaming = 238;
-	int32 field_cinematictexturegroups = 239;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_forcedactor = 2;
+	float field_forceduration = 3;
+	bool field_benablestreaming = 4;
+	int32 field_cinematictexturegroups = 5;
 }
 type UnrealClientPrestreamTexturesResponse {}
 type UnrealClientPrepareMapChangeRequest {
-	string field_levelname = 240;
-	bool field_bfirst = 241;
-	bool field_blast = 242;
+	uint32 subobject_offset = 1;
+	string field_levelname = 2;
+	bool field_bfirst = 3;
+	bool field_blast = 4;
 }
 type UnrealClientPrepareMapChangeResponse {}
 type UnrealClientPlaySoundAtLocationRequest {
-	UnrealObjectRef field_sound = 243;
-	improbable.Vector3f field_location = 244;
-	float field_volumemultiplier = 245;
-	float field_pitchmultiplier = 246;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_sound = 2;
+	improbable.Vector3f field_location = 3;
+	float field_volumemultiplier = 4;
+	float field_pitchmultiplier = 5;
 }
 type UnrealClientPlaySoundAtLocationResponse {}
 type UnrealClientPlaySoundRequest {
-	UnrealObjectRef field_sound = 247;
-	float field_volumemultiplier = 248;
-	float field_pitchmultiplier = 249;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_sound = 2;
+	float field_volumemultiplier = 3;
+	float field_pitchmultiplier = 4;
 }
 type UnrealClientPlaySoundResponse {}
 type UnrealClientPlayForceFeedbackRequest {
-	UnrealObjectRef field_forcefeedbackeffect = 250;
-	bool field_blooping = 251;
-	string field_tag = 252;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_forcefeedbackeffect = 2;
+	bool field_blooping = 3;
+	string field_tag = 4;
 }
 type UnrealClientPlayForceFeedbackResponse {}
 type UnrealClientPlayCameraShakeRequest {
-	UnrealObjectRef field_shake = 253;
-	float field_scale = 254;
-	uint32 field_playspace = 255;
-	UnrealFRotator field_userplayspacerot = 256;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_shake = 2;
+	float field_scale = 3;
+	uint32 field_playspace = 4;
+	UnrealFRotator field_userplayspacerot = 5;
 }
 type UnrealClientPlayCameraShakeResponse {}
 type UnrealClientPlayCameraAnimRequest {
-	UnrealObjectRef field_animtoplay = 257;
-	float field_scale = 258;
-	float field_rate = 259;
-	float field_blendintime = 260;
-	float field_blendouttime = 261;
-	bool field_bloop = 262;
-	bool field_brandomstarttime = 263;
-	uint32 field_space = 264;
-	UnrealFRotator field_customplayspace = 265;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_animtoplay = 2;
+	float field_scale = 3;
+	float field_rate = 4;
+	float field_blendintime = 5;
+	float field_blendouttime = 6;
+	bool field_bloop = 7;
+	bool field_brandomstarttime = 8;
+	uint32 field_space = 9;
+	UnrealFRotator field_customplayspace = 10;
 }
 type UnrealClientPlayCameraAnimResponse {}
 type UnrealClientMutePlayerRequest {
-	bytes field_playerid = 266;
+	uint32 subobject_offset = 1;
+	bytes field_playerid = 2;
 }
 type UnrealClientMutePlayerResponse {}
 type UnrealClientMessageRequest {
-	string field_s = 267;
-	string field_type = 268;
-	float field_msglifetime = 269;
+	uint32 subobject_offset = 1;
+	string field_s = 2;
+	string field_type = 3;
+	float field_msglifetime = 4;
 }
 type UnrealClientMessageResponse {}
 type UnrealClientIgnoreMoveInputRequest {
-	bool field_bignore = 270;
+	uint32 subobject_offset = 1;
+	bool field_bignore = 2;
 }
 type UnrealClientIgnoreMoveInputResponse {}
 type UnrealClientIgnoreLookInputRequest {
-	bool field_bignore = 271;
+	uint32 subobject_offset = 1;
+	bool field_bignore = 2;
 }
 type UnrealClientIgnoreLookInputResponse {}
 type UnrealClientGotoStateRequest {
-	string field_newstate = 272;
+	uint32 subobject_offset = 1;
+	string field_newstate = 2;
 }
 type UnrealClientGotoStateResponse {}
 type UnrealClientGameEndedRequest {
-	UnrealObjectRef field_endgamefocus = 273;
-	bool field_biswinner = 274;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_endgamefocus = 2;
+	bool field_biswinner = 3;
 }
 type UnrealClientGameEndedResponse {}
-type UnrealClientForceGarbageCollectionRequest {}
+type UnrealClientForceGarbageCollectionRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealClientForceGarbageCollectionResponse {}
-type UnrealClientFlushLevelStreamingRequest {}
+type UnrealClientFlushLevelStreamingRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealClientFlushLevelStreamingResponse {}
-type UnrealClientEndOnlineSessionRequest {}
+type UnrealClientEndOnlineSessionRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealClientEndOnlineSessionResponse {}
 type UnrealClientEnableNetworkVoiceRequest {
-	bool field_benable = 275;
+	uint32 subobject_offset = 1;
+	bool field_benable = 2;
 }
 type UnrealClientEnableNetworkVoiceResponse {}
-type UnrealClientCommitMapChangeRequest {}
+type UnrealClientCommitMapChangeRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealClientCommitMapChangeResponse {}
-type UnrealClientClearCameraLensEffectsRequest {}
+type UnrealClientClearCameraLensEffectsRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealClientClearCameraLensEffectsResponse {}
 type UnrealClientCapBandwidthRequest {
-	int32 field_cap = 276;
+	uint32 subobject_offset = 1;
+	int32 field_cap = 2;
 }
 type UnrealClientCapBandwidthResponse {}
-type UnrealClientCancelPendingMapChangeRequest {}
+type UnrealClientCancelPendingMapChangeRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealClientCancelPendingMapChangeResponse {}
 type UnrealClientAddTextureStreamingLocRequest {
-	improbable.Vector3f field_inloc = 277;
-	float field_duration = 278;
-	bool field_boverridelocation = 279;
+	uint32 subobject_offset = 1;
+	improbable.Vector3f field_inloc = 2;
+	float field_duration = 3;
+	bool field_boverridelocation = 4;
 }
 type UnrealClientAddTextureStreamingLocResponse {}
 type UnrealClientSetRotationRequest {
-	UnrealFRotator field_newrotation = 280;
-	bool field_bresetcamera = 281;
+	uint32 subobject_offset = 1;
+	UnrealFRotator field_newrotation = 2;
+	bool field_bresetcamera = 3;
 }
 type UnrealClientSetRotationResponse {}
 type UnrealClientSetLocationRequest {
-	improbable.Vector3f field_newlocation = 282;
-	UnrealFRotator field_newrotation = 283;
+	uint32 subobject_offset = 1;
+	improbable.Vector3f field_newlocation = 2;
+	UnrealFRotator field_newrotation = 3;
 }
 type UnrealClientSetLocationResponse {}
 type UnrealServerViewSelfRequest {
-	float field_transitionparams_blendtime = 284;
-	uint32 field_transitionparams_blendfunction = 285;
-	float field_transitionparams_blendexp = 286;
-	bool field_transitionparams_blockoutgoing = 287;
+	uint32 subobject_offset = 1;
+	float field_transitionparams_blendtime = 2;
+	uint32 field_transitionparams_blendfunction = 3;
+	float field_transitionparams_blendexp = 4;
+	bool field_transitionparams_blockoutgoing = 5;
 }
 type UnrealServerViewSelfResponse {}
-type UnrealServerViewPrevPlayerRequest {}
+type UnrealServerViewPrevPlayerRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealServerViewPrevPlayerResponse {}
-type UnrealServerViewNextPlayerRequest {}
+type UnrealServerViewNextPlayerRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealServerViewNextPlayerResponse {}
-type UnrealServerVerifyViewTargetRequest {}
+type UnrealServerVerifyViewTargetRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealServerVerifyViewTargetResponse {}
 type UnrealServerUpdateLevelVisibilityRequest {
-	string field_packagename = 288;
-	bool field_bisvisible = 289;
+	uint32 subobject_offset = 1;
+	string field_packagename = 2;
+	bool field_bisvisible = 3;
 }
 type UnrealServerUpdateLevelVisibilityResponse {}
 type UnrealServerUpdateCameraRequest {
-	improbable.Vector3f field_camloc = 290;
-	int32 field_campitchandyaw = 291;
+	uint32 subobject_offset = 1;
+	improbable.Vector3f field_camloc = 2;
+	int32 field_campitchandyaw = 3;
 }
 type UnrealServerUpdateCameraResponse {}
 type UnrealServerUnmutePlayerRequest {
-	bytes field_playerid = 292;
+	uint32 subobject_offset = 1;
+	bytes field_playerid = 2;
 }
 type UnrealServerUnmutePlayerResponse {}
-type UnrealServerToggleAILoggingRequest {}
+type UnrealServerToggleAILoggingRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealServerToggleAILoggingResponse {}
-type UnrealServerShortTimeoutRequest {}
+type UnrealServerShortTimeoutRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealServerShortTimeoutResponse {}
 type UnrealServerSetSpectatorWaitingRequest {
-	bool field_bwaiting = 293;
+	uint32 subobject_offset = 1;
+	bool field_bwaiting = 2;
 }
 type UnrealServerSetSpectatorWaitingResponse {}
 type UnrealServerSetSpectatorLocationRequest {
-	improbable.Vector3f field_newloc = 294;
-	UnrealFRotator field_newrot = 295;
+	uint32 subobject_offset = 1;
+	improbable.Vector3f field_newloc = 2;
+	UnrealFRotator field_newrot = 3;
 }
 type UnrealServerSetSpectatorLocationResponse {}
-type UnrealServerRestartPlayerRequest {}
+type UnrealServerRestartPlayerRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealServerRestartPlayerResponse {}
-type UnrealServerPauseRequest {}
+type UnrealServerPauseRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealServerPauseResponse {}
 type UnrealServerNotifyLoadedWorldRequest {
-	string field_worldpackagename = 296;
+	uint32 subobject_offset = 1;
+	string field_worldpackagename = 2;
 }
 type UnrealServerNotifyLoadedWorldResponse {}
 type UnrealServerMutePlayerRequest {
-	bytes field_playerid = 297;
+	uint32 subobject_offset = 1;
+	bytes field_playerid = 2;
 }
 type UnrealServerMutePlayerResponse {}
-type UnrealServerCheckClientPossessionReliableRequest {}
+type UnrealServerCheckClientPossessionReliableRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealServerCheckClientPossessionReliableResponse {}
-type UnrealServerCheckClientPossessionRequest {}
+type UnrealServerCheckClientPossessionRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealServerCheckClientPossessionResponse {}
 type UnrealServerChangeNameRequest {
-	string field_s = 298;
+	uint32 subobject_offset = 1;
+	string field_s = 2;
 }
 type UnrealServerChangeNameResponse {}
 type UnrealServerCameraRequest {
-	string field_newmode = 299;
+	uint32 subobject_offset = 1;
+	string field_newmode = 2;
 }
 type UnrealServerCameraResponse {}
 type UnrealServerAcknowledgePossessionRequest {
-	UnrealObjectRef field_p = 300;
+	uint32 subobject_offset = 1;
+	UnrealObjectRef field_p = 2;
 }
 type UnrealServerAcknowledgePossessionResponse {}
 

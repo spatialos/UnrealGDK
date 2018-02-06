@@ -64,7 +64,7 @@ public:
 
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
-	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame);
+	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
 
 	USpatialOS* GetSpatialOS() const
 	{

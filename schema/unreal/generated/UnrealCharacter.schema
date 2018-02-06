@@ -1084,19 +1084,150 @@ component UnrealCharacterCompleteData {
 	bytes field_blueprintcreatedcomponents = 1022;
 	bytes field_instancecomponents = 1023;
 }
-type UnrealClientCheatWalkRequest {}
+type UnrealClientCheatWalkRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealClientCheatWalkResponse {}
-type UnrealClientCheatGhostRequest {}
+type UnrealClientCheatGhostRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealClientCheatGhostResponse {}
-type UnrealClientCheatFlyRequest {}
+type UnrealClientCheatFlyRequest {
+	uint32 subobject_offset = 1;
+}
 type UnrealClientCheatFlyResponse {}
+type UnrealClientVeryShortAdjustPositionRequest {
+	uint32 subobject_offset = 1;
+	float field_timestamp = 2;
+	improbable.Vector3f field_newloc = 3;
+	UnrealObjectRef field_newbase = 4;
+	string field_newbasebonename = 5;
+	bool field_bhasbase = 6;
+	bool field_bbaserelativeposition = 7;
+	uint32 field_servermovementmode = 8;
+}
+type UnrealClientVeryShortAdjustPositionResponse {}
+type UnrealClientAdjustRootMotionSourcePositionRequest {
+	uint32 subobject_offset = 1;
+	float field_timestamp = 2;
+	bool field_serverrootmotion_bhasadditivesources = 3;
+	bool field_serverrootmotion_bhasoverridesources = 4;
+	improbable.Vector3f field_serverrootmotion_lastpreadditivevelocity = 5;
+	bool field_serverrootmotion_bisadditivevelocityapplied = 6;
+	uint32 field_serverrootmotion_lastaccumulatedsettings_flags = 7;
+	bool field_bhasanimrootmotion = 8;
+	float field_servermontagetrackposition = 9;
+	improbable.Vector3f field_serverloc = 10;
+	improbable.Vector3f field_serverrotation = 11;
+	float field_servervelz = 12;
+	UnrealObjectRef field_serverbase = 13;
+	string field_serverbonename = 14;
+	bool field_bhasbase = 15;
+	bool field_bbaserelativeposition = 16;
+	uint32 field_servermovementmode = 17;
+}
+type UnrealClientAdjustRootMotionSourcePositionResponse {}
+type UnrealClientAdjustRootMotionPositionRequest {
+	uint32 subobject_offset = 1;
+	float field_timestamp = 2;
+	float field_servermontagetrackposition = 3;
+	improbable.Vector3f field_serverloc = 4;
+	improbable.Vector3f field_serverrotation = 5;
+	float field_servervelz = 6;
+	UnrealObjectRef field_serverbase = 7;
+	string field_serverbonename = 8;
+	bool field_bhasbase = 9;
+	bool field_bbaserelativeposition = 10;
+	uint32 field_servermovementmode = 11;
+}
+type UnrealClientAdjustRootMotionPositionResponse {}
+type UnrealClientAdjustPositionRequest {
+	uint32 subobject_offset = 1;
+	float field_timestamp = 2;
+	improbable.Vector3f field_newloc = 3;
+	improbable.Vector3f field_newvel = 4;
+	UnrealObjectRef field_newbase = 5;
+	string field_newbasebonename = 6;
+	bool field_bhasbase = 7;
+	bool field_bbaserelativeposition = 8;
+	uint32 field_servermovementmode = 9;
+}
+type UnrealClientAdjustPositionResponse {}
+type UnrealClientAckGoodMoveRequest {
+	uint32 subobject_offset = 1;
+	float field_timestamp = 2;
+}
+type UnrealClientAckGoodMoveResponse {}
+type UnrealServerMoveOldRequest {
+	uint32 subobject_offset = 1;
+	float field_oldtimestamp = 2;
+	improbable.Vector3f field_oldaccel = 3;
+	uint32 field_oldmoveflags = 4;
+}
+type UnrealServerMoveOldResponse {}
+type UnrealServerMoveDualHybridRootMotionRequest {
+	uint32 subobject_offset = 1;
+	float field_timestamp0 = 2;
+	improbable.Vector3f field_inaccel0 = 3;
+	uint32 field_pendingflags = 4;
+	uint32 field_view0 = 5;
+	float field_timestamp = 6;
+	improbable.Vector3f field_inaccel = 7;
+	improbable.Vector3f field_clientloc = 8;
+	uint32 field_newflags = 9;
+	uint32 field_clientroll = 10;
+	uint32 field_view = 11;
+	UnrealObjectRef field_clientmovementbase = 12;
+	string field_clientbasebonename = 13;
+	uint32 field_clientmovementmode = 14;
+}
+type UnrealServerMoveDualHybridRootMotionResponse {}
+type UnrealServerMoveDualRequest {
+	uint32 subobject_offset = 1;
+	float field_timestamp0 = 2;
+	improbable.Vector3f field_inaccel0 = 3;
+	uint32 field_pendingflags = 4;
+	uint32 field_view0 = 5;
+	float field_timestamp = 6;
+	improbable.Vector3f field_inaccel = 7;
+	improbable.Vector3f field_clientloc = 8;
+	uint32 field_newflags = 9;
+	uint32 field_clientroll = 10;
+	uint32 field_view = 11;
+	UnrealObjectRef field_clientmovementbase = 12;
+	string field_clientbasebonename = 13;
+	uint32 field_clientmovementmode = 14;
+}
+type UnrealServerMoveDualResponse {}
+type UnrealServerMoveRequest {
+	uint32 subobject_offset = 1;
+	float field_timestamp = 2;
+	improbable.Vector3f field_inaccel = 3;
+	improbable.Vector3f field_clientloc = 4;
+	uint32 field_compressedmoveflags = 5;
+	uint32 field_clientroll = 6;
+	uint32 field_view = 7;
+	UnrealObjectRef field_clientmovementbase = 8;
+	string field_clientbasebonename = 9;
+	uint32 field_clientmovementmode = 10;
+}
+type UnrealServerMoveResponse {}
 
 component UnrealCharacterClientRPCs {
 	id = 100003;
 	command UnrealClientCheatWalkResponse clientcheatwalk(UnrealClientCheatWalkRequest);
 	command UnrealClientCheatGhostResponse clientcheatghost(UnrealClientCheatGhostRequest);
 	command UnrealClientCheatFlyResponse clientcheatfly(UnrealClientCheatFlyRequest);
+	command UnrealClientVeryShortAdjustPositionResponse clientveryshortadjustposition(UnrealClientVeryShortAdjustPositionRequest);
+	command UnrealClientAdjustRootMotionSourcePositionResponse clientadjustrootmotionsourceposition(UnrealClientAdjustRootMotionSourcePositionRequest);
+	command UnrealClientAdjustRootMotionPositionResponse clientadjustrootmotionposition(UnrealClientAdjustRootMotionPositionRequest);
+	command UnrealClientAdjustPositionResponse clientadjustposition(UnrealClientAdjustPositionRequest);
+	command UnrealClientAckGoodMoveResponse clientackgoodmove(UnrealClientAckGoodMoveRequest);
 }
 component UnrealCharacterServerRPCs {
 	id = 100004;
+	command UnrealServerMoveOldResponse servermoveold(UnrealServerMoveOldRequest);
+	command UnrealServerMoveDualHybridRootMotionResponse servermovedualhybridrootmotion(UnrealServerMoveDualHybridRootMotionRequest);
+	command UnrealServerMoveDualResponse servermovedual(UnrealServerMoveDualRequest);
+	command UnrealServerMoveResponse servermove(UnrealServerMoveRequest);
 }

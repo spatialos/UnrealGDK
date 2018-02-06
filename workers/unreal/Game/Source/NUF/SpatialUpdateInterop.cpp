@@ -12,6 +12,8 @@
 
 #include "Generated/SpatialTypeBinding_Character.h"
 #include "Generated/SpatialTypeBinding_PlayerController.h"
+#include "Generated/SpatialTypeBinding_GameStateBase.h"
+#include "Generated/SpatialTypeBinding_PlayerState.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialUpdateInterop);
 
@@ -30,6 +32,8 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 
 	RegisterInteropType(ACharacter::StaticClass(), NewObject<USpatialTypeBinding_Character>(this));
 	RegisterInteropType(APlayerController::StaticClass(), NewObject<USpatialTypeBinding_PlayerController>(this));
+	RegisterInteropType(AGameStateBase::StaticClass(), NewObject<USpatialTypeBinding_GameStateBase>(this));
+	RegisterInteropType(APlayerState::StaticClass(), NewObject<USpatialTypeBinding_PlayerState>(this));
 }
 
 void USpatialUpdateInterop::Tick(float DeltaTime)
@@ -122,7 +126,7 @@ void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, 
 	Channel->UActorChannel::ReceivedBunch(Bunch);
 }
 
-void USpatialUpdateInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const DuplicateFrame)
+void USpatialUpdateInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)
 {
 	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
 	if (!Binding)
@@ -132,7 +136,7 @@ void USpatialUpdateInterop::InvokeRPC(AActor* TargetActor, const UFunction* cons
 		return;
 	}
 
-	Binding->SendRPCCommand(TargetActor, Function, DuplicateFrame);
+	Binding->SendRPCCommand(Frame->Object, Function, Frame);
 }
 
 void USpatialUpdateInterop::SendCommandRequest(FRPCRequestFunction Function)
@@ -187,7 +191,7 @@ void USpatialUpdateInterop::HandleCommandResponse(const FString& RPCName, FUntyp
 				OutgoingRPCs.Emplace(Result.RequestId, RetryContext);
 			});
 			// TODO(David): Commenting out for now to avoid a potentially buggy retry solution interfering with getting the character to move.
-			//UpdateInterop->GetTimerManager().SetTimer(RetryTimer, TimerCallback, WaitTime, false);
+			TimerManager->SetTimer(RetryTimer, TimerCallback, WaitTime, false);
 		}
 		else
 		{
