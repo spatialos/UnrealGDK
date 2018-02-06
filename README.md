@@ -20,6 +20,8 @@ The code generator will take a set of Unreal classes, and generate routing code 
 
 The interop code generator first generates `.schema` files from `UObject` class layouts via Unreals reflection system for SpatialOS to be able to understand and store Unreal data. Then, it generates special `SpatialTypeBinding` classes which are designed to convert property updates to and from SpatialOS (in the form of component updates), and send/receive RPCs via SpatialOS commands. There is rudimentary logic to handle conditional replication based on actor ownership.
 
+The code generator can be run by executing either `generate_code.bat` or `generate_code.sh` after building the `InteropCodeGenerator` project with `Development Editor` at least once.
+
 ### `USpatialNetDriver`
 
 Unlike our `UnrealSDK` examples, SpatialOS initialization in NUF happens at the net driver level. `SpatialNetDriver` connects to SpatialOS. Within the `OnSpatialOSConnected` callback, client will send a request to spawn a player.
@@ -32,7 +34,7 @@ How we handle net connection presents a major change from Unreal's approach. In 
 
 This layer is responsible for most of the conversion between Unreal property updates and SpatialOS component updates, plus RPCs. When there is a change, it invokes serialization code through the auto-generated type bindings (one for each supported actor class, discussed above) and packs the changes into Spatial updates.
 
-Moreover, RPC invokations are intercepted by this layer and directed through appropriate class bindings where they turn into SpatialOS commands.
+Moreover, RPC invocations are intercepted by this layer and directed through appropriate class bindings where they turn into SpatialOS commands.
 
 ### `USpatialInteropPipelineBlock`
 
@@ -70,8 +72,8 @@ There is a small number of changes to UE4 source code we have to make. These cha
 
 - Build the engine fork.
 - Set the uproject to use the engine fork.
-- `spatial codegen`
-- `spatial build --target=local`
+- `spatial worker codegen`
+- `spatial worker build --target=local`
 - Launch PIE with dedicated server + 1 player.
 
 The interop code and schema generated for marshalling updates/RPCs is committed directly to the source tree in `workers/unreal/Game/NUF/Generated` and `schema/unreal/generated` respectively, so the commandlet is not required to be re-run unless the code generator is changed.
