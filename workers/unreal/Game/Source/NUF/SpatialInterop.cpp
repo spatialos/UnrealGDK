@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialUpdateInterop.h"
+#include "SpatialInterop.h"
 
 #include "SpatialConstants.h"
 #include "SpatialActorChannel.h"
@@ -15,13 +15,13 @@
 #include "Generated/SpatialTypeBinding_GameStateBase.h"
 #include "Generated/SpatialTypeBinding_PlayerState.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialUpdateInterop);
+DEFINE_LOG_CATEGORY(LogSpatialOSInterop);
 
-USpatialUpdateInterop::USpatialUpdateInterop() 
+USpatialInterop::USpatialInterop() 
 {
 }
 
-void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNetDriver* Driver, FTimerManager* InTimerManager)
+void USpatialInterop::Init(bool bClient, USpatialOS* Instance, USpatialNetDriver* Driver, FTimerManager* InTimerManager)
 {
 	bIsClient = bClient;
 	SpatialOSInstance = Instance;
@@ -36,13 +36,13 @@ void USpatialUpdateInterop::Init(bool bClient, USpatialOS* Instance, USpatialNet
 	RegisterInteropType(APlayerState::StaticClass(), NewObject<USpatialTypeBinding_PlayerState>(this));
 }
 
-void USpatialUpdateInterop::Tick(float DeltaTime)
+void USpatialInterop::Tick(float DeltaTime)
 {
 	// todo sami - check before commit
 	//Leaving it here for now, we'll remove if it ends up unused.
 }
 
-USpatialActorChannel* USpatialUpdateInterop::GetClientActorChannel(const worker::EntityId & EntityId) const
+USpatialActorChannel* USpatialInterop::GetClientActorChannel(const worker::EntityId & EntityId) const
 {
 	// Get actor channel.
 	USpatialActorChannel* const* ActorChannelIt = EntityToClientActorChannel.Find(EntityId);
@@ -54,19 +54,19 @@ USpatialActorChannel* USpatialUpdateInterop::GetClientActorChannel(const worker:
 	return *ActorChannelIt;
 }
 
-void USpatialUpdateInterop::AddClientActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel)
+void USpatialInterop::AddClientActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel)
 {
 	EntityToClientActorChannel.Add(EntityId, Channel);
 }
 
-void USpatialUpdateInterop::RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding)
+void USpatialInterop::RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding)
 {
 	Binding->Init(this, PackageMap);
 	Binding->BindToView();
 	TypeBinding.Add(Class, Binding);
 }
 
-void USpatialUpdateInterop::UnregisterInteropType(UClass* Class)
+void USpatialInterop::UnregisterInteropType(UClass* Class)
 {
 	USpatialTypeBinding** BindingIterator = TypeBinding.Find(Class);
 	if (BindingIterator != nullptr)
@@ -77,7 +77,7 @@ void USpatialUpdateInterop::UnregisterInteropType(UClass* Class)
 	}
 }
 
-USpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class) const
+USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 {
 	for (const UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
 	{
@@ -90,19 +90,19 @@ USpatialTypeBinding* USpatialUpdateInterop::GetTypeBindingByClass(UClass* Class)
 	return nullptr;
 }
 
-void USpatialUpdateInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed)
+void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed)
 {
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
 	{
-		//UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
+		//UE_LOG(LogSpatialOSInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
 		//	*Channel->Actor->GetClass()->GetName());
 		return;
 	}
 	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), Channel, Channel->GetEntityId());
 }
 
-void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)
+void USpatialInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)
 {
 	// Add null terminator to payload.
 	uint32 Terminator = 0;
@@ -126,12 +126,12 @@ void USpatialUpdateInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, 
 	Channel->UActorChannel::ReceivedBunch(Bunch);
 }
 
-void USpatialUpdateInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)
+void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)
 {
 	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
 	if (!Binding)
 	{
-		UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send RPC on unsupported class %s."),
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send RPC on unsupported class %s."),
 			*TargetActor->GetClass()->GetName());
 		return;
 	}
@@ -139,7 +139,7 @@ void USpatialUpdateInterop::InvokeRPC(AActor* TargetActor, const UFunction* cons
 	Binding->SendRPCCommand(Frame->Object, Function, Frame);
 }
 
-void USpatialUpdateInterop::SendCommandRequest(FRPCRequestFunction Function)
+void USpatialInterop::SendCommandRequest(FRPCRequestFunction Function)
 {
 	// Attempt to trigger command request by calling the passed RPC request function. This function is generated in the type binding
 	// classes which capture the target actor and arguments of the RPC (unpacked from the FFrame) by value, and attempts to serialize
@@ -162,12 +162,12 @@ void USpatialUpdateInterop::SendCommandRequest(FRPCRequestFunction Function)
 	}
 }
 
-void USpatialUpdateInterop::HandleCommandResponse(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message)
+void USpatialInterop::HandleCommandResponse(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message)
 {
 	TSharedPtr<FRPCRetryContext>* RequestContextIterator = OutgoingRPCs.Find(RequestId);
 	if (!RequestContextIterator)
 	{
-		UE_LOG(LogSpatialUpdateInterop, Error, TEXT("%s: received an response which we did not send. Entity ID: %lld, Request ID: %d"), *RPCName, EntityId, RequestId);
+		UE_LOG(LogSpatialOSInterop, Error, TEXT("%s: received an response which we did not send. Entity ID: %lld, Request ID: %d"), *RPCName, EntityId, RequestId);
 		return;
 	}
 
@@ -178,7 +178,7 @@ void USpatialUpdateInterop::HandleCommandResponse(const FString& RPCName, FUntyp
 		if (RetryContext->NumAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 		{
 			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RetryContext->NumAttempts);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"), *RPCName, WaitTime, (int)StatusCode, *Message);
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"), *RPCName, WaitTime, (int)StatusCode, *Message);
 
 			// Queue retry.
 			FTimerHandle RetryTimer;
@@ -195,13 +195,13 @@ void USpatialUpdateInterop::HandleCommandResponse(const FString& RPCName, FUntyp
 		}
 		else
 		{
-			UE_LOG(LogSpatialUpdateInterop, Error, TEXT("%s: failed too many times, giving up (%u attempts). Error code: %d Message: %s"),
+			UE_LOG(LogSpatialOSInterop, Error, TEXT("%s: failed too many times, giving up (%u attempts). Error code: %d Message: %s"),
 				*RPCName, SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)StatusCode, *Message);
 		}
 	}
 }
 
-void USpatialUpdateInterop::SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId)
+void USpatialInterop::SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId)
 {
 	UClass* ActorClass = ActorChannel->Actor->GetClass();
 	// Are we the autonomous proxy?
@@ -214,7 +214,7 @@ void USpatialUpdateInterop::SetComponentInterests(USpatialActorChannel* ActorCha
 			worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
 			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{true});
 			SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId, Interest);
-			UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("We are the owning client, therefore we want single client updates. Client ID: %s"),
+			UE_LOG(LogSpatialOSInterop, Warning, TEXT("We are the owning client, therefore we want single client updates. Client ID: %s"),
 				*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId());
 		}
 	}

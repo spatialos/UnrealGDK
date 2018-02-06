@@ -18,7 +18,7 @@ class USpatialTypeBinding_Character : public USpatialTypeBinding
 public:
 	static const FRepHandlePropertyMap& GetHandlePropertyMap();
 
-	void Init(USpatialUpdateInterop* InUpdateInterop, USpatialPackageMapClient* InPackageMap) override;
+	void Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap) override;
 	void BindToView() override;
 	void UnbindFromView() override;
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;

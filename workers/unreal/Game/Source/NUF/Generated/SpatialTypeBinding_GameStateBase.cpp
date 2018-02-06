@@ -9,7 +9,7 @@
 #include "SpatialPackageMapClient.h"
 #include "SpatialNetDriver.h"
 #include "SpatialConstants.h"
-#include "SpatialUpdateInterop.h"
+#include "SpatialInterop.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_GameStateBase::GetHandlePropertyMap()
 {
@@ -46,20 +46,20 @@ const FRepHandlePropertyMap& USpatialTypeBinding_GameStateBase::GetHandlePropert
 	return HandleToPropertyMap;
 }
 
-void USpatialTypeBinding_GameStateBase::Init(USpatialUpdateInterop* InUpdateInterop, USpatialPackageMapClient* InPackageMap)
+void USpatialTypeBinding_GameStateBase::Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)
 {
-	Super::Init(InUpdateInterop, InPackageMap);
+	Super::Init(InInterop, InPackageMap);
 
 }
 
 void USpatialTypeBinding_GameStateBase::BindToView()
 {
-	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
+	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
 	SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>([this](
 		const worker::AddComponentOp<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>& Op)
 	{
 		auto Update = improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData::Update::FromInitialData(Op.Data);
-		USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
 		if (ActorChannel)
 		{
 			ReceiveUpdateFromSpatial_SingleClient(ActorChannel, Update);
@@ -72,7 +72,7 @@ void USpatialTypeBinding_GameStateBase::BindToView()
 	SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>([this](
 		const worker::ComponentUpdateOp<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>& Op)
 	{
-		USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
 		if (ActorChannel)
 		{
 			ReceiveUpdateFromSpatial_SingleClient(ActorChannel, Op.Update);
@@ -86,7 +86,7 @@ void USpatialTypeBinding_GameStateBase::BindToView()
 		const worker::AddComponentOp<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>& Op)
 	{
 		auto Update = improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData::Update::FromInitialData(Op.Data);
-		USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
 		if (ActorChannel)
 		{
 			ReceiveUpdateFromSpatial_MultiClient(ActorChannel, Update);
@@ -99,7 +99,7 @@ void USpatialTypeBinding_GameStateBase::BindToView()
 	MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>([this](
 		const worker::ComponentUpdateOp<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>& Op)
 	{
-		USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
 		if (ActorChannel)
 		{
 			ReceiveUpdateFromSpatial_MultiClient(ActorChannel, Op.Update);
@@ -113,7 +113,7 @@ void USpatialTypeBinding_GameStateBase::BindToView()
 
 void USpatialTypeBinding_GameStateBase::UnbindFromView()
 {
-	TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();
+	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
 	View->Remove(SingleClientAddCallback);
 	View->Remove(SingleClientUpdateCallback);
 	View->Remove(MultiClientAddCallback);
@@ -187,7 +187,7 @@ void USpatialTypeBinding_GameStateBase::SendComponentUpdates(const FPropertyChan
 	BuildSpatialComponentUpdate(Changes, Channel, SingleClientUpdate, bSingleClientUpdateChanged, MultiClientUpdate, bMultiClientUpdateChanged);
 
 	// Send SpatialOS updates if anything changed.
-	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
+	TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();
 	if (bSingleClientUpdateChanged)
 	{
 		Connection->SendComponentUpdate<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>(EntityId, SingleClientUpdate);
@@ -200,7 +200,7 @@ void USpatialTypeBinding_GameStateBase::SendComponentUpdates(const FPropertyChan
 
 void USpatialTypeBinding_GameStateBase::SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame)
 {
-	TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
+	TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();
 	auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
 	checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
 	(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetObject);
@@ -241,7 +241,7 @@ void USpatialTypeBinding_GameStateBase::BuildSpatialComponentUpdate(
 		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
 		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
-		UE_LOG(LogSpatialUpdateInterop, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());
 		switch (GetGroupFromCondition(PropertyMapData.Condition))
 		{
 		case GROUP_SingleClient:
@@ -510,7 +510,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_SingleClient(
 	OutputWriter.WriteBit(0); // bDoChecksum
 	auto& HandleToPropertyMap = GetHandlePropertyMap();
 	ConditionMapFilter ConditionMap(ActorChannel);
-	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
+	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }
 
 void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
@@ -541,7 +541,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_breplicatemovement().empty())
@@ -564,7 +564,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_btearoff().empty())
@@ -587,7 +587,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_remoterole().empty())
@@ -604,7 +604,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_remoterole().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_owner().empty())
@@ -633,7 +633,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_replicatedmovement().empty())
@@ -657,7 +657,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_attachmentreplication_attachparent().empty())
@@ -686,7 +686,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_attachmentreplication_locationoffset().empty())
@@ -708,7 +708,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_attachmentreplication_relativescale3d().empty())
@@ -730,7 +730,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_attachmentreplication_rotationoffset().empty())
@@ -752,7 +752,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_attachmentreplication_attachsocket().empty())
@@ -763,7 +763,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
 			//FName deserialization not currently supported.
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_attachmentreplication_attachcomponent().empty())
@@ -792,7 +792,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_role().empty())
@@ -809,7 +809,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_role().data())));
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_bcanbedamaged().empty())
@@ -832,7 +832,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_instigator().empty())
@@ -861,7 +861,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			}
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_gamemodeclass().empty())
@@ -878,7 +878,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			// UNSUPPORTED UClass
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_spectatorclass().empty())
@@ -895,7 +895,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			// UNSUPPORTED UClass
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_breplicatedhasbegunplay().empty())
@@ -912,7 +912,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			Value = (*Update.field_breplicatedhasbegunplay().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
 	if (!Update.field_replicatedworldtimeseconds().empty())
@@ -929,8 +929,8 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 			Value = (*Update.field_replicatedworldtimeseconds().data());
 
 			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialUpdateInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("<- Handle: %d Property %s"), Handle, *Data.Property->GetName());
 		}
 	}
-	UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
+	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
 }

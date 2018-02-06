@@ -618,7 +618,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		else
 		{
 			// RPCs.
-			Writer.Printf("UE_LOG(LogSpatialUpdateInterop, Log, TEXT(\"RPC queued. %s is unresolved.\"));", *PropertyValue);
+			Writer.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"RPC queued. %s is unresolved.\"));", *PropertyValue);
 			Writer.Printf("return FRPCRequestResult{%s};", *PropertyValue);
 		}
 		Writer.Outdent().Print("}");
@@ -776,9 +776,9 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	{
 		Writer.Print("{").Indent();
 		Writer.Printf(R"""(
-			improbable::unreal::UnrealObjectRef TargetObject = %s;
+			improbable::unreal::UnrealObjectRef ObjectRef = %s;
 			check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
-			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 			if (NetGUID.IsValid())
 			{
 				%s = static_cast<%s>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
@@ -1150,7 +1150,7 @@ void GenerateForwardingCodeFromLayout(
 	HeaderWriter.Print(R"""(
 		static const FRepHandlePropertyMap& GetHandlePropertyMap();
 
-		void Init(USpatialUpdateInterop* InUpdateInterop, USpatialPackageMapClient* InPackageMap) override;
+		void Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap) override;
 		void BindToView() override;
 		void UnbindFromView() override;
 		worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
@@ -1249,7 +1249,7 @@ void GenerateForwardingCodeFromLayout(
 		#include "SpatialPackageMapClient.h"
 		#include "SpatialNetDriver.h"
 		#include "SpatialConstants.h"
-		#include "SpatialUpdateInterop.h")""", *InteropFilename);
+		#include "SpatialInterop.h")""", *InteropFilename);
 
 	// Handle to Property map.
 	// ===========================================
@@ -1293,10 +1293,10 @@ void GenerateForwardingCodeFromLayout(
 	// Init
 	// ===========================================
 	SourceWriter.Print();
-	SourceWriter.Printf("void %s::Init(USpatialUpdateInterop* InUpdateInterop, USpatialPackageMapClient* InPackageMap)", *TypeBindingName);
+	SourceWriter.Printf("void %s::Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)", *TypeBindingName);
 	SourceWriter.Print("{");
 	SourceWriter.Indent();
-	SourceWriter.Print("Super::Init(InUpdateInterop, InPackageMap);");
+	SourceWriter.Print("Super::Init(InInterop, InPackageMap);");
 	SourceWriter.Print();
 	for (auto Group : GetRPCTypes())
 	{
@@ -1315,7 +1315,7 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Printf("void %s::BindToView()", *TypeBindingName);
 	SourceWriter.Print("{");
 	SourceWriter.Indent();
-	SourceWriter.Print("TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();");
+	SourceWriter.Print("TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();");
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
 		// OnAddComponent.
@@ -1331,7 +1331,7 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Printf("auto Update = improbable::unreal::%s::Update::FromInitialData(Op.Data);",
 			*GetSchemaReplicatedDataName(Group, Class));
 		SourceWriter.Printf(R"""(
-			USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+			USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
 			if (ActorChannel)
 			{
 				ReceiveUpdateFromSpatial_%s(ActorChannel, Update);
@@ -1356,7 +1356,7 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Print("{");
 		SourceWriter.Indent();
 		SourceWriter.Printf(R"""(
-			USpatialActorChannel* ActorChannel = UpdateInterop->GetClientActorChannel(Op.EntityId);
+			USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
 			if (ActorChannel)
 			{
 				ReceiveUpdateFromSpatial_%s(ActorChannel, Op.Update);
@@ -1407,7 +1407,7 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Printf("void %s::UnbindFromView()", *TypeBindingName);
 	SourceWriter.Print("{");
 	SourceWriter.Indent();
-	SourceWriter.Print("TSharedPtr<worker::View> View = UpdateInterop->GetSpatialOS()->GetView().Pin();");
+	SourceWriter.Print("TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();");
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
 		SourceWriter.Printf("View->Remove(%sAddCallback);", *GetReplicatedPropertyGroupName(Group));
@@ -1551,7 +1551,7 @@ void GenerateForwardingCodeFromLayout(
 
 	SourceWriter.Print();
 	SourceWriter.Print("// Send SpatialOS updates if anything changed.");
-	SourceWriter.Print("TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();");
+	SourceWriter.Print("TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();");
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
 		SourceWriter.Printf(R"""(
@@ -1575,7 +1575,7 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Print("{");
 	SourceWriter.Indent();
 	SourceWriter.Print(R"""(
-		TSharedPtr<worker::Connection> Connection = UpdateInterop->GetSpatialOS()->GetConnection().Pin();
+		TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();
 		auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
 		checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
 		(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetObject);)""");
@@ -1627,7 +1627,7 @@ void GenerateForwardingCodeFromLayout(
 		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
 		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
-		UE_LOG(LogSpatialUpdateInterop, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());)""");
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("-> Handle: %d Property %s"), HandleIterator.Handle, *Cmd.Property->GetName());)""");
 
 	SourceWriter.Print("switch (GetGroupFromCondition(PropertyMapData.Condition))");
 	SourceWriter.Print("{");
@@ -1755,7 +1755,7 @@ void GenerateForwardingCodeFromLayout(
 			{
 				SourceWriter.Printf("//FName deserialization not currently supported.");
 			}
-			SourceWriter.Print("UE_LOG(LogSpatialUpdateInterop, Log, TEXT(\"<- Handle: %d Property %s\"), Handle, *Data.Property->GetName());");
+			SourceWriter.Print("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"<- Handle: %d Property %s\"), Handle, *Data.Property->GetName());");
 
 			// End condition map check block.
 			SourceWriter.Outdent();
@@ -1765,7 +1765,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Outdent();
 			SourceWriter.Print("}");
 		}
-		SourceWriter.Print("UpdateInterop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);");
+		SourceWriter.Print("Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);");
 		SourceWriter.Outdent();
 		SourceWriter.Print("}");
 	}
@@ -1808,7 +1808,7 @@ void GenerateForwardingCodeFromLayout(
 				improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 				if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC %s queued. Target object is unresolved."));
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC %s queued. Target object is unresolved."));
 					return FRPCRequestResult{TargetObject};
 				})""", *RPC.Function->GetName());
 			SourceWriter.Print();
@@ -1828,7 +1828,7 @@ void GenerateForwardingCodeFromLayout(
 				*GetSchemaRPCComponentName(Group, Class),
 				*GetCommandNameFromFunction(RPC.Function));
 			SourceWriter.Outdent().Print("};");
-			SourceWriter.Print("UpdateInterop->SendCommandRequest(Sender);");
+			SourceWriter.Print("Interop->SendCommandRequest(Sender);");
 			SourceWriter.Outdent().Print("}");
 		}
 	}
@@ -1846,7 +1846,7 @@ void GenerateForwardingCodeFromLayout(
 				*GetSchemaRPCComponentName(Group, Class),
 				*GetCommandNameFromFunction(RPC.Function));
 			SourceWriter.Print("{").Indent();
-			SourceWriter.Printf("UpdateInterop->HandleCommandResponse(TEXT(\"%s\"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));",
+			SourceWriter.Printf("Interop->HandleCommandResponse(TEXT(\"%s\"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));",
 				*RPC.Function->GetName());
 			SourceWriter.Outdent().Print("}");
 		}
@@ -1873,7 +1873,7 @@ void GenerateForwardingCodeFromLayout(
 				FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 				if (!TargetNetGUID.IsValid())
 				{
-					UE_LOG(LogSpatialUpdateInterop, Warning, TEXT("%s_Receiver: Entity ID %%lld (offset %%d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
+					UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s_Receiver: Entity ID %%lld (offset %%d) does not have a valid NetGUID."), TargetObjectRef.entity(), TargetObjectRef.offset());
 					return;
 				}
 				%s* TargetObject = Cast<%s>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));

@@ -1,5 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#include "SpatialInteropBlock.h"
+#include "SpatialInteropPipelineBlock.h"
 
 #include "SpatialActorChannel.h"
 #include "SpatialNetDriver.h"
@@ -19,12 +19,12 @@
 #include "improbable/worker.h"
 #include "UnrealLevelComponent.h"
 
-void USpatialInteropBlock::Init(UEntityRegistry* Registry)
+void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry)
 {
 	EntityRegistry = Registry;
 }
 
-void USpatialInteropBlock::AddEntity(const worker::AddEntityOp& AddEntityOp)
+void USpatialInteropPipelineBlock::AddEntity(const worker::AddEntityOp& AddEntityOp)
 {
 	// Add this to the list of entities waiting to be spawned
 	EntitiesToSpawn.AddUnique(AddEntityOp.EntityId);
@@ -34,7 +34,7 @@ void USpatialInteropBlock::AddEntity(const worker::AddEntityOp& AddEntityOp)
 	}
 }
 
-void USpatialInteropBlock::RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp)
+void USpatialInteropPipelineBlock::RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp)
 {
 	// Add this to the list of entities waiting to be deleted
 	EntitiesToRemove.AddUnique(RemoveEntityOp.EntityId);
@@ -44,7 +44,7 @@ void USpatialInteropBlock::RemoveEntity(const worker::RemoveEntityOp& RemoveEnti
 	}
 }
 
-void USpatialInteropBlock::AddComponent(UAddComponentOpWrapperBase* AddComponentOp)
+void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddComponentOp)
 {
 	// Store this op to be used later on when setting the initial state of the component
 	ComponentsToAdd.Emplace(FComponentIdentifier{ AddComponentOp->EntityId, AddComponentOp->ComponentId }, AddComponentOp);
@@ -54,7 +54,7 @@ void USpatialInteropBlock::AddComponent(UAddComponentOpWrapperBase* AddComponent
 	}
 }
 
-void USpatialInteropBlock::RemoveComponent(const worker::ComponentId ComponentId,
+void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId ComponentId,
 	const worker::RemoveComponentOp& RemoveComponentOp)
 {
 	// Add this to the list of components waiting to be disabled
@@ -65,7 +65,7 @@ void USpatialInteropBlock::RemoveComponent(const worker::ComponentId ComponentId
 	}
 }
 
-void USpatialInteropBlock::ChangeAuthority(const worker::ComponentId ComponentId,
+void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId ComponentId,
 	const worker::AuthorityChangeOp& AuthChangeOp)
 {
 	// Set the latest authority value for this Component on the owning entity
@@ -77,7 +77,7 @@ void USpatialInteropBlock::ChangeAuthority(const worker::ComponentId ComponentId
 	}
 }
 
-void USpatialInteropBlock::AddEntities(UWorld* World,
+void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 	const TWeakPtr<worker::Connection>& InConnection)
 {
 	if (World == nullptr)
@@ -150,11 +150,11 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 					Ch = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, false));
 					
 					check(Ch);
-					Driver->GetSpatialUpdateInterop()->AddClientActorChannel(EntityToSpawn.ToSpatialEntityId(), Ch);
+					Driver->GetSpatialInterop()->AddClientActorChannel(EntityToSpawn.ToSpatialEntityId(), Ch);
 					
 					PMC->ResolveEntityActor(EntityActor, EntityToSpawn);
 					Ch->SetChannelActor(EntityActor);
-					Driver->GetSpatialUpdateInterop()->SetComponentInterests(Ch, EntityToSpawn.ToSpatialEntityId());
+					Driver->GetSpatialInterop()->SetComponentInterests(Ch, EntityToSpawn.ToSpatialEntityId());
 
 					//This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 					// a player index. For now we don't support split screen, so the number is always 0.
@@ -174,7 +174,7 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 					}
 
 					// Apply queued updates for this entity ID to the new actor channel.
-					USpatialTypeBinding* Binding = Driver->GetSpatialUpdateInterop()->GetTypeBindingByClass(EntityActor->GetClass());
+					USpatialTypeBinding* Binding = Driver->GetSpatialInterop()->GetTypeBindingByClass(EntityActor->GetClass());
 					if (Binding)
 					{
 						Binding->ApplyQueuedStateToChannel(Ch);
@@ -192,7 +192,7 @@ void USpatialInteropBlock::AddEntities(UWorld* World,
 	}
 }
 
-void USpatialInteropBlock::AddComponents(const TWeakPtr<worker::View>& InView,
+void USpatialInteropPipelineBlock::AddComponents(const TWeakPtr<worker::View>& InView,
 	const TWeakPtr<worker::Connection>& InConnection,
 	UCallbackDispatcher* InCallbackDispatcher)
 {
@@ -245,7 +245,7 @@ void USpatialInteropBlock::AddComponents(const TWeakPtr<worker::View>& InView,
 	}
 }
 
-void USpatialInteropBlock::RemoveComponents(UCallbackDispatcher* InCallbackDispatcher)
+void USpatialInteropPipelineBlock::RemoveComponents(UCallbackDispatcher* InCallbackDispatcher)
 {
 	for (auto& ComponentToRemove : ComponentsToRemove)
 	{
@@ -272,7 +272,7 @@ void USpatialInteropBlock::RemoveComponents(UCallbackDispatcher* InCallbackDispa
 	ComponentsToRemove.Empty();
 }
 
-void USpatialInteropBlock::RemoveEntities(UWorld* World)
+void USpatialInteropPipelineBlock::RemoveEntities(UWorld* World)
 {
 	if (World == nullptr)
 	{
@@ -293,7 +293,7 @@ void USpatialInteropBlock::RemoveEntities(UWorld* World)
 	EntitiesToRemove.Empty();
 }
 
-void USpatialInteropBlock::ProcessOps(const TWeakPtr<worker::View>& InView,
+void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<worker::View>& InView,
 	const TWeakPtr<worker::Connection>& InConnection,
 	UWorld* World, UCallbackDispatcher* InCallbackDispatcher)
 {
@@ -307,7 +307,7 @@ void USpatialInteropBlock::ProcessOps(const TWeakPtr<worker::View>& InView,
 
 // Note that in NUF, this function will not be called on the spawning worker.
 // It's only for client, and in the future, other workers.
-AActor* USpatialInteropBlock::SpawnNewEntity(
+AActor* USpatialInteropPipelineBlock::SpawnNewEntity(
 	UPositionAddComponentOp* PositionComponent,
 	UWorld* World,
 	UClass* ClassToSpawn)
@@ -351,7 +351,7 @@ AActor* USpatialInteropBlock::SpawnNewEntity(
 }
 
 //This is for classes that we register explicitly with Unreal, currently used for "non-native" replication. This logic might change soon.
-UClass* USpatialInteropBlock::GetRegisteredEntityClass(UMetadataAddComponentOp* MetadataComponent)
+UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(UMetadataAddComponentOp* MetadataComponent)
 {
 	FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
 
@@ -373,7 +373,7 @@ UClass* USpatialInteropBlock::GetRegisteredEntityClass(UMetadataAddComponentOp* 
 }
 
 //This is for classes that we derive from meta name, mainly to spawn the corresponding actors on clients.
-UClass* USpatialInteropBlock::GetNativeEntityClass(UMetadataAddComponentOp* MetadataComponent)
+UClass* USpatialInteropPipelineBlock::GetNativeEntityClass(UMetadataAddComponentOp* MetadataComponent)
 {
 	FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
 
@@ -381,7 +381,7 @@ UClass* USpatialInteropBlock::GetNativeEntityClass(UMetadataAddComponentOp* Meta
 	return FindObject<UClass>(ANY_PACKAGE, *EntityTypeString);	
 }
 
-void USpatialInteropBlock::SetupComponentInterests(
+void USpatialInteropPipelineBlock::SetupComponentInterests(
 	AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection)
 {
 	TArray<UActorComponent*> SpatialOSComponents =

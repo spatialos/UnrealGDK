@@ -15,7 +15,7 @@
 #include "EntityTemplate.h"
 #include "SpatialNetConnection.h"
 #include "SpatialOS.h"
-#include "SpatialUpdateInterop.h"
+#include "SpatialInterop.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSActorChannel);
 
@@ -68,9 +68,9 @@ void USpatialActorChannel::SendCreateEntityRequest(const FString& PlayerWorkerId
 	if (PinnedConnection.IsValid())
 	{
 		USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
-		checkf(Driver->GetSpatialUpdateInterop(), TEXT("Spatial Update Interop is not initialised"));
+		checkf(Driver->GetSpatialInterop(), TEXT("Spatial Interop is not initialised"));
 
-		const USpatialTypeBinding* TypeBinding = Driver->GetSpatialUpdateInterop()->GetTypeBindingByClass(Actor->GetClass());
+		const USpatialTypeBinding* TypeBinding = Driver->GetSpatialInterop()->GetTypeBindingByClass(Actor->GetClass());
 
 		FStringAssetReference ActorClassRef(Actor->GetClass());
 		FString PathStr = ActorClassRef.ToString();
@@ -294,7 +294,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 	if (RepFlags.bNetInitial || Changed.Num() > 0)
 	{
-		USpatialUpdateInterop* UpdateInterop = SpatialNetDriver->GetSpatialUpdateInterop();
+		USpatialInterop* UpdateInterop = SpatialNetDriver->GetSpatialInterop();
 		check(UpdateInterop);
 		
 		if (RepFlags.bNetInitial)
