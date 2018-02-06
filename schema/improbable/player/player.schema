@@ -4,8 +4,3 @@ component PlayerControlClient
 {
 	id = 1001;
 }
-
-component PlayerControlServer
-{
-	id = 1002;
-}

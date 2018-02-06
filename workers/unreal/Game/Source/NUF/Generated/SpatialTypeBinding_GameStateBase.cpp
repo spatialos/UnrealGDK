@@ -311,10 +311,11 @@ void USpatialTypeBinding_GameStateBase::ApplyUpdateToSpatial_MultiClient(
 			AActor* Value;
 			Value = *(reinterpret_cast<AActor* const*>(Data));
 
+			if (Value != nullptr)
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (ObjectRef.entity() == 0)
+				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 5);
 				}
@@ -322,6 +323,10 @@ void USpatialTypeBinding_GameStateBase::ApplyUpdateToSpatial_MultiClient(
 				{
 					OutUpdate.set_field_owner(ObjectRef);
 				}
+			}
+			else
+			{
+				OutUpdate.set_field_owner(SpatialConstants::NULL_OBJECT_REF);
 			}
 			break;
 		}
@@ -344,10 +349,11 @@ void USpatialTypeBinding_GameStateBase::ApplyUpdateToSpatial_MultiClient(
 			AActor* Value;
 			Value = *(reinterpret_cast<AActor* const*>(Data));
 
+			if (Value != nullptr)
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (ObjectRef.entity() == 0)
+				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 7);
 				}
@@ -355,6 +361,10 @@ void USpatialTypeBinding_GameStateBase::ApplyUpdateToSpatial_MultiClient(
 				{
 					OutUpdate.set_field_attachmentreplication_attachparent(ObjectRef);
 				}
+			}
+			else
+			{
+				OutUpdate.set_field_attachmentreplication_attachparent(SpatialConstants::NULL_OBJECT_REF);
 			}
 			break;
 		}
@@ -395,10 +405,11 @@ void USpatialTypeBinding_GameStateBase::ApplyUpdateToSpatial_MultiClient(
 			USceneComponent* Value;
 			Value = *(reinterpret_cast<USceneComponent* const*>(Data));
 
+			if (Value != nullptr)
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (ObjectRef.entity() == 0)
+				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 12);
 				}
@@ -406,6 +417,10 @@ void USpatialTypeBinding_GameStateBase::ApplyUpdateToSpatial_MultiClient(
 				{
 					OutUpdate.set_field_attachmentreplication_attachcomponent(ObjectRef);
 				}
+			}
+			else
+			{
+				OutUpdate.set_field_attachmentreplication_attachcomponent(SpatialConstants::NULL_OBJECT_REF);
 			}
 			break;
 		}
@@ -430,10 +445,11 @@ void USpatialTypeBinding_GameStateBase::ApplyUpdateToSpatial_MultiClient(
 			APawn* Value;
 			Value = *(reinterpret_cast<APawn* const*>(Data));
 
+			if (Value != nullptr)
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				if (ObjectRef.entity() == 0)
+				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
 					PackageMap->AddPendingObjRef(Value, Channel, 15);
 				}
@@ -441,6 +457,10 @@ void USpatialTypeBinding_GameStateBase::ApplyUpdateToSpatial_MultiClient(
 				{
 					OutUpdate.set_field_instigator(ObjectRef);
 				}
+			}
+			else
+			{
+				OutUpdate.set_field_instigator(SpatialConstants::NULL_OBJECT_REF);
 			}
 			break;
 		}
@@ -600,6 +620,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_owner().data());
+				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -652,6 +673,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_attachmentreplication_attachparent().data());
+				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -757,6 +779,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_attachmentreplication_attachcomponent().data());
+				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{
@@ -825,6 +848,7 @@ void USpatialTypeBinding_GameStateBase::ReceiveUpdateFromSpatial_MultiClient(
 
 			{
 				improbable::unreal::UnrealObjectRef TargetObject = (*Update.field_instigator().data());
+				check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 				if (NetGUID.IsValid())
 				{

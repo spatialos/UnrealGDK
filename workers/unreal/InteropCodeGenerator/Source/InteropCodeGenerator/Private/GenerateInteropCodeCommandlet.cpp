@@ -603,11 +603,12 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
+		Writer.Printf("if (%s != nullptr)", *PropertyValue);
 		Writer.Print("{").Indent();
 		Writer.Printf(R"""(
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(%s);
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef.entity() == 0))""", *PropertyValue);
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF))""", *PropertyValue);
 		Writer.Print("{").Indent();
 		if (bIsUpdate)
 		{
@@ -627,6 +628,11 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 				%s(ObjectRef);
 			})""", *SpatialValueSetter);
 		Writer.Outdent().Print("}");
+		Writer.Printf(R"""(
+			else
+			{
+				%s(SpatialConstants::NULL_OBJECT_REF);
+			})""", *SpatialValueSetter);
 	}
 	else if (Property->IsA(UNameProperty::StaticClass()))
 	{
@@ -771,6 +777,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 		Writer.Print("{").Indent();
 		Writer.Printf(R"""(
 			improbable::unreal::UnrealObjectRef TargetObject = %s;
+			check(TargetObject != SpatialConstants::UNRESOLVED_OBJECT_REF);
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObject);
 			if (NetGUID.IsValid())
 			{
@@ -1032,8 +1039,8 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 				VisitProperty(ParamList, nullptr, {}, *It);
 			}
 
-			// Subobject offset.
-			Writer.Printf("uint32 subobject_offset = 1;");
+			// RPC target subobject offset.
+			Writer.Printf("uint32 target_subobject_offset = 1;");
 			FieldCounter = 1;
 			for (auto& Param : ParamList)
 			{
@@ -1799,7 +1806,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Printf(R"""(
 				// Resolve TargetObject.
 				improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-				if (TargetObjectRef.entity() == 0)
+				if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
 					UE_LOG(LogSpatialUpdateInterop, Log, TEXT("RPC %s queued. Target object is unresolved."));
 					return FRPCRequestResult{TargetObject};
@@ -1815,7 +1822,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Print();
 			SourceWriter.Printf(R"""(
 				// Send command request.
-				Request.set_subobject_offset(TargetObjectRef.offset());
+				Request.set_target_subobject_offset(TargetObjectRef.offset());
 				auto RequestId = Connection->SendCommandRequest<improbable::unreal::%s::Commands::%s>(TargetObjectRef.entity(), Request, 0);
 				return FRPCRequestResult{RequestId.Id};)""",
 				*GetSchemaRPCComponentName(Group, Class),
@@ -1862,7 +1869,7 @@ void GenerateForwardingCodeFromLayout(
 
 			// Get the target object.
 			SourceWriter.Printf(R"""(
-				improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.subobject_offset()};
+				improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
 				FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 				if (!TargetNetGUID.IsValid())
 				{
