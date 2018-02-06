@@ -12,29 +12,23 @@ DEFINE_LOG_CATEGORY(LogSpatialOSPackageMap);
 
 //const uint32 StaticObjectOffset = 0x80000000; // 2^31
 
-void GetSubobjects(UObject* Object, TArray<UObject*>& Subobjects)
+void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 {
-	// Functor to sort by name.
-	struct FCompareComponentNames
-	{
-		bool operator()(UObject& A, UObject& B) const
-		{
-			return A.GetName() < B.GetName();
-		}
-	};
-
-	Subobjects.Empty();
-	ForEachObjectWithOuter(Object, [&Subobjects](UObject* Object)
+	InSubobjects.Empty();
+	ForEachObjectWithOuter(Object, [&InSubobjects](UObject* Object)
 	{
 		// Objects can only be allocated NetGUIDs if this is true.
 		if (Object->IsSupportedForNetworking())
 		{
-			Subobjects.Add(Object);
+			InSubobjects.Add(Object);
 		}
 	});
 
 	// Sort to ensure stable order.
-	Sort(Subobjects.GetData(), Subobjects.Num(), FCompareComponentNames());
+	InSubobjects.StableSort([](UObject& A, UObject& B)
+	{
+		return A.GetName() < B.GetName();
+	});
 }
 
 /*
@@ -107,7 +101,7 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const worker::Enti
 void USpatialPackageMapClient::RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	return SpatialGuidCache->RegisterStaticObjects(LevelData);
+	SpatialGuidCache->RegisterStaticObjects(LevelData);
 }
 
 void USpatialPackageMapClient::AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle)
