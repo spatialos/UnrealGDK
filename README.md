@@ -15,28 +15,26 @@ At a very high level, NUF does 3 things:
 
 Main components of the project are:
 
-### `GenerateSchemaCommandlet`
-The code generator will take a set of Unreal classes, and generate routing code that enables automated Unreal <-> SpatialOS communication. This file lives in a separate .uproject (`InteropCodeGenerator`) to prevent cross-dependency between generated code and the code generator.
+### `GenerateInteropCodeCommandlet`
+The code generator will take a set of Unreal classes, and generate routing code (called "type bindings") that enables automated Unreal <-> SpatialOS communication. This file lives in a separate .uproject (`InteropCodeGenerator`) to prevent cross-dependency between generated code and the code generator.
 
-The generated code has components to mirror data to/from SpatialOS in the form of component updates, as well as RPCs in the form of SpatialOS commands. There is rudimentary logic to handle conditional replication based on actor ownership.
-
-Interop code generator also creates `.schema` files from `UObject` class layouts for SpatialOS to be able to understand Unreal data. 
+The interop code generator first generates `.schema` files from `UObject` class layouts via Unreals reflection system for SpatialOS to be able to understand and store Unreal data. Then, it generates special `SpatialTypeBinding` classes which are designed to convert property updates to and from SpatialOS (in the form of component updates), and send/receive RPCs via SpatialOS commands. There is rudimentary logic to handle conditional replication based on actor ownership.
 
 ### `USpatialNetDriver`
 
-Unlike our `UnrealSDK` examples, SpatialOS initialization in NUF happens at the net driver level. Spatial net driver connects to SpatialOS. Within the `OnSpatialOSConnected` callback, client will request spawning a player.
-
-### `USpatialUpdateInterop`
-
-This layer keeps track of properties changed on authoritative actors using the same mechanism Unreal does. When there is a change, it invokes serialization code through auto-generated type bindings (one for each supported actor class) and packs the changes into Spatial updates.
-
-Moreover, RPC invokations are intercepted by this layer and directed through appropriate class bindings where they turn into SpatialOS commands.
+Unlike our `UnrealSDK` examples, SpatialOS initialization in NUF happens at the net driver level. `SpatialNetDriver` connects to SpatialOS. Within the `OnSpatialOSConnected` callback, client will send a request to spawn a player.
 
 ### `USpatialNetConnection`
 
 How we handle net connection presents a major change from Unreal's approach. In our project, there is only one connection as opposed to one connection per player. This connection simply communicates with SpatialOS, which does the heavy work of 
 
-### `USpatialInteropBlock`
+### `USpatialInterop`
+
+This layer is responsible for most of the conversion between Unreal property updates and SpatialOS component updates, plus RPCs. When there is a change, it invokes serialization code through the auto-generated type bindings (one for each supported actor class, discussed above) and packs the changes into Spatial updates.
+
+Moreover, RPC invokations are intercepted by this layer and directed through appropriate class bindings where they turn into SpatialOS commands.
+
+### `USpatialInteropPipelineBlock`
 
 This file extends on the entity pipeline block concept that is present in our UnrealSDK. The main functionality here is maintaining a registry of `AActor` <-> SpatialOS entity associations. There are multiple scenarios for these associations, depending on who the original worker that spawns the actor is, the type of worker, and the type of actor.
 
@@ -44,7 +42,7 @@ This file extends on the entity pipeline block concept that is present in our Un
 
 Transmitting `UObject` references over the wire requires extra care. We encode each UObject reference in SpatialOS terms in a structure called `UnrealObjectRef`, and the workers translate these to pointers to their local objects using a GUID system that builds on Unreal's implementation.
 
-Note that this class is responsible for dealing with the async nature of SpatialOS entity spawning. For example, it might not be possible to resolve an object update or RPC parameter immediately if the entity that corresponds to the relevant actor has not been created by SpatialOS yet. There are mechanisms built into this layer that retry sending these operations upon resolving actor <-> entity associations.
+Note that this class is responsible for dealing with the async nature of SpatialOS entity spawning. For example, it might not be possible to resolve an object property update or RPC parameter immediately if the entity that corresponds to the relevant actor has not been created by SpatialOS yet. There are mechanisms built into this layer that retry sending these operations upon resolving actor <-> entity associations.
 
 ### `USpatialActorChannel`:
 
@@ -70,12 +68,13 @@ There is a small number of changes to UE4 source code we have to make. These cha
 
 ## How to run:
 
-- Build the engine fork
+- Build the engine fork.
 - Set the uproject to use the engine fork.
 - `spatial codegen`
-- GenerateSchemaCommandlet`
-- `spatial build`
+- `spatial build --target=local`
 - Launch PIE with dedicated server + 1 player.
+
+The interop code and schema generated for marshalling updates/RPCs is committed directly to the source tree in `workers/unreal/Game/NUF/Generated` and `schema/unreal/generated` respectively, so the commandlet is not required to be re-run unless the code generator is changed.
 
 ## Future work:
 - Move away from using `FArchive`s when converting a Spatial update to Unreal.
