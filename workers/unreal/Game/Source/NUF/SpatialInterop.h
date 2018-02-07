@@ -67,23 +67,32 @@ public:
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
 
+	void SendCommandRequest(FRPCRequestFunction Function);
+	void HandleCommandResponse(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
+
+	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.
+	void OnResolveObject(UObject* Object);
+
+	void AddPendingOutgoingObjectRefUpdate(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
+	void AddPendingOutgoingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender);
+	// Pending incoming object update
+	// Pending incoming RPC
+
+	// Accessors.
 	USpatialOS* GetSpatialOS() const
 	{
 		return SpatialOSInstance;
 	}
 
-	USpatialNetDriver* GetNetDriver() const 
+	USpatialNetDriver* GetNetDriver() const
 	{
-		return NetDriver;	
+		return NetDriver;
 	}
 
 	FTimerManager& GetTimerManager() const
 	{
 		return *TimerManager;
 	}
-
-	void SendCommandRequest(FRPCRequestFunction Function);
-	void HandleCommandResponse(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
 
 private:
 	UPROPERTY()
@@ -111,8 +120,20 @@ private:
 	// Outgoing RPCs (for retry logic).
 	TMap<FUntypedRequestId, TSharedPtr<FRPCRetryContext>> OutgoingRPCs;
 
+
+	TMap<UObject*, TArray<USpatialActorChannel*>> ChannelsAwaitingObjRefResolve;
+
+	// Pending outgoing object ref property updates.
+	TMap<USpatialActorChannel*, TArray<uint16>> PendingObjRefHandles;
+
+	// Pending outgoing RPCs.
+	TMap<UObject*, TArray<FRPCRequestFunction>> PendingRPCs;
+
 private:
 	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
+
+	void ResolvePendingOutgoingObjectRefUpdates(UObject* Object);
+	void ResolvePendingOutgoingRPCs(UObject* Object);
 
 	friend class USpatialInteropPipelineBlock;
 };

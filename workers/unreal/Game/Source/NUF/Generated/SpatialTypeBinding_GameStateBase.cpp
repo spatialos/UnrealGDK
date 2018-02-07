@@ -281,40 +281,35 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 	{
 		case 1: // field_bhidden
 		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
+			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
 
 			OutUpdate.set_field_bhidden(Value != 0);
 			break;
 		}
 		case 2: // field_breplicatemovement
 		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
+			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
 
 			OutUpdate.set_field_breplicatemovement(Value != 0);
 			break;
 		}
 		case 3: // field_btearoff
 		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
+			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
 
 			OutUpdate.set_field_btearoff(Value != 0);
 			break;
 		}
 		case 4: // field_remoterole
 		{
-			TEnumAsByte<ENetRole> Value;
-			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
+			TEnumAsByte<ENetRole> Value = *(reinterpret_cast<TEnumAsByte<ENetRole> const*>(Data));
 
 			OutUpdate.set_field_remoterole(uint32_t(Value));
 			break;
 		}
 		case 5: // field_owner
 		{
-			AActor* Value;
-			Value = *(reinterpret_cast<AActor* const*>(Data));
+			AActor* Value = *(reinterpret_cast<AActor* const*>(Data));
 
 			if (Value != nullptr)
 			{
@@ -322,7 +317,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					PackageMap->AddPendingObjRef(Value, Channel, 5);
+					Interop->AddPendingOutgoingObjectRefUpdate(Value, Channel, 5);
 				}
 				else
 				{
@@ -337,8 +332,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 		}
 		case 6: // field_replicatedmovement
 		{
-			FRepMovement Value;
-			Value = *(reinterpret_cast<const FRepMovement*>(Data));
+			FRepMovement Value = *(reinterpret_cast<FRepMovement const*>(Data));
 
 			{
 				TArray<uint8> ValueData;
@@ -351,8 +345,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 		}
 		case 7: // field_attachmentreplication_attachparent
 		{
-			AActor* Value;
-			Value = *(reinterpret_cast<AActor* const*>(Data));
+			AActor* Value = *(reinterpret_cast<AActor* const*>(Data));
 
 			if (Value != nullptr)
 			{
@@ -360,7 +353,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					PackageMap->AddPendingObjRef(Value, Channel, 7);
+					Interop->AddPendingOutgoingObjectRefUpdate(Value, Channel, 7);
 				}
 				else
 				{
@@ -375,40 +368,35 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 		}
 		case 8: // field_attachmentreplication_locationoffset
 		{
-			FVector_NetQuantize100 Value;
-			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
+			FVector_NetQuantize100 Value = *(reinterpret_cast<FVector_NetQuantize100 const*>(Data));
 
 			OutUpdate.set_field_attachmentreplication_locationoffset(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
 		case 9: // field_attachmentreplication_relativescale3d
 		{
-			FVector_NetQuantize100 Value;
-			Value = *(reinterpret_cast<const FVector_NetQuantize100*>(Data));
+			FVector_NetQuantize100 Value = *(reinterpret_cast<FVector_NetQuantize100 const*>(Data));
 
 			OutUpdate.set_field_attachmentreplication_relativescale3d(improbable::Vector3f(Value.X, Value.Y, Value.Z));
 			break;
 		}
 		case 10: // field_attachmentreplication_rotationoffset
 		{
-			FRotator Value;
-			Value = *(reinterpret_cast<const FRotator*>(Data));
+			FRotator Value = *(reinterpret_cast<FRotator const*>(Data));
 
 			OutUpdate.set_field_attachmentreplication_rotationoffset(improbable::unreal::UnrealFRotator(Value.Yaw, Value.Pitch, Value.Roll));
 			break;
 		}
 		case 11: // field_attachmentreplication_attachsocket
 		{
-			FName Value;
-			Value = *(reinterpret_cast<const FName*>(Data));
+			FName Value = *(reinterpret_cast<FName const*>(Data));
 
 			OutUpdate.set_field_attachmentreplication_attachsocket(TCHAR_TO_UTF8(*Value.ToString()));
 			break;
 		}
 		case 12: // field_attachmentreplication_attachcomponent
 		{
-			USceneComponent* Value;
-			Value = *(reinterpret_cast<USceneComponent* const*>(Data));
+			USceneComponent* Value = *(reinterpret_cast<USceneComponent* const*>(Data));
 
 			if (Value != nullptr)
 			{
@@ -416,7 +404,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					PackageMap->AddPendingObjRef(Value, Channel, 12);
+					Interop->AddPendingOutgoingObjectRefUpdate(Value, Channel, 12);
 				}
 				else
 				{
@@ -431,24 +419,21 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 		}
 		case 13: // field_role
 		{
-			TEnumAsByte<ENetRole> Value;
-			Value = *(reinterpret_cast<const TEnumAsByte<ENetRole>*>(Data));
+			TEnumAsByte<ENetRole> Value = *(reinterpret_cast<TEnumAsByte<ENetRole> const*>(Data));
 
 			OutUpdate.set_field_role(uint32_t(Value));
 			break;
 		}
 		case 14: // field_bcanbedamaged
 		{
-			uint8 Value;
-			Value = *(reinterpret_cast<const uint8*>(Data));
+			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
 
 			OutUpdate.set_field_bcanbedamaged(Value != 0);
 			break;
 		}
 		case 15: // field_instigator
 		{
-			APawn* Value;
-			Value = *(reinterpret_cast<APawn* const*>(Data));
+			APawn* Value = *(reinterpret_cast<APawn* const*>(Data));
 
 			if (Value != nullptr)
 			{
@@ -456,7 +441,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					PackageMap->AddPendingObjRef(Value, Channel, 15);
+					Interop->AddPendingOutgoingObjectRefUpdate(Value, Channel, 15);
 				}
 				else
 				{
@@ -471,32 +456,28 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 		}
 		case 16: // field_gamemodeclass
 		{
-			TSubclassOf<AGameModeBase>  Value;
-			Value = *(reinterpret_cast<TSubclassOf<AGameModeBase>  const*>(Data));
+			TSubclassOf<AGameModeBase>  Value = *(reinterpret_cast<TSubclassOf<AGameModeBase>  const*>(Data));
 
 			// UNSUPPORTED UClass
 			break;
 		}
 		case 17: // field_spectatorclass
 		{
-			TSubclassOf<ASpectatorPawn>  Value;
-			Value = *(reinterpret_cast<TSubclassOf<ASpectatorPawn>  const*>(Data));
+			TSubclassOf<ASpectatorPawn>  Value = *(reinterpret_cast<TSubclassOf<ASpectatorPawn>  const*>(Data));
 
 			// UNSUPPORTED UClass
 			break;
 		}
 		case 18: // field_breplicatedhasbegunplay
 		{
-			bool Value;
-			Value = *(reinterpret_cast<const bool*>(Data));
+			bool Value = *(reinterpret_cast<bool const*>(Data));
 
 			OutUpdate.set_field_breplicatedhasbegunplay(Value != 0);
 			break;
 		}
 		case 19: // field_replicatedworldtimeseconds
 		{
-			float Value;
-			Value = *(reinterpret_cast<const float*>(Data));
+			float Value = *(reinterpret_cast<float const*>(Data));
 
 			OutUpdate.set_field_replicatedworldtimeseconds(Value);
 			break;

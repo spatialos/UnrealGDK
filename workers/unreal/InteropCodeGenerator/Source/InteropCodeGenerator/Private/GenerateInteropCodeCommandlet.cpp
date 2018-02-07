@@ -523,7 +523,14 @@ void VisitProperty(TArray<FPropertyInfo>& PropertyInfo, UObject* CDO, TArray<UPr
 }
 
 // Generates code to copy an Unreal PropertyValue into a SpatialOS component update.
-void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, TArray<UProperty*> PropertyChain, const FString& PropertyValue, const bool bIsUpdate, int32 Handle)
+void GenerateUnrealToSchemaConversion(
+	FCodeWriter& Writer,
+	const FString& Update,
+	TArray<UProperty*> PropertyChain,
+	const FString& PropertyValue,
+	const bool bIsUpdate,
+	//int32 Handle,
+	TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
 	// Get result type.
 	UProperty* Property = PropertyChain[PropertyChain.Num() - 1];
@@ -576,7 +583,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 			{
 				TArray<UProperty*> NewChain = PropertyChain;
 				NewChain.Add(*It);
-				GenerateUnrealToSchemaConversion(Writer, Update, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP(), bIsUpdate, Handle);
+				GenerateUnrealToSchemaConversion(Writer, Update, NewChain, PropertyValue + TEXT(".") + (*It)->GetNameCPP(), bIsUpdate, ObjectResolveFailureGenerator);
 			}
 		}
 	}
@@ -611,17 +618,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF))""", *PropertyValue);
 		Writer.Print("{").Indent();
-		if (bIsUpdate)
-		{
-			// Updates.
-			Writer.Printf("PackageMap->AddPendingObjRef(%s, Channel, %d);", *PropertyValue, Handle);
-		}
-		else
-		{
-			// RPCs.
-			Writer.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"RPC queued. %s is unresolved.\"));", *PropertyValue);
-			Writer.Printf("return FRPCRequestResult{%s};", *PropertyValue);
-		}
+		ObjectResolveFailureGenerator(*PropertyValue);
 		Writer.Outdent().Print("}");
 		Writer.Printf(R"""(
 			else
@@ -1697,18 +1694,15 @@ void GenerateForwardingCodeFromLayout(
 				FString PropertyValueName = TEXT("Value");
 				FString PropertyValueCppType = Property->GetCPPType();
 				FString PropertyName = TEXT("Property");
-				SourceWriter.Printf("%s %s;", *PropertyValueCppType, *PropertyValueName);
 				//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
-				if (Property->IsA(UObjectPropertyBase::StaticClass()))
-				{
-					SourceWriter.Printf("%s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueName, *PropertyValueCppType);
-				}
-				else
-				{
-					SourceWriter.Printf("%s = *(reinterpret_cast<const %s*>(Data));", *PropertyValueName, *PropertyValueCppType);
-				}
+				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
 				SourceWriter.Print();
-				GenerateUnrealToSchemaConversion(SourceWriter, TEXT("OutUpdate"), RepProp.Entry.Chain, PropertyValueName, true, Handle);
+				GenerateUnrealToSchemaConversion(
+					SourceWriter, "OutUpdate", RepProp.Entry.Chain, PropertyValueName, true,
+					[&SourceWriter, Handle](const FString& PropertyValue)
+					{
+						SourceWriter.Printf("Interop->AddPendingOutgoingObjectRefUpdate(%s, Channel, %d);", *PropertyValue, Handle);
+					});
 				SourceWriter.Print("break;");
 				SourceWriter.Outdent();
 				SourceWriter.Print("}");
@@ -1769,12 +1763,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Printf("%s %s;", *PropertyValueCppType, *PropertyValueName);
 			SourceWriter.Print();
 			GeneratePropertyToUnrealConversion(
-				SourceWriter,
-				TEXT("Update"),
-				RepProp.Entry.Chain,
-				PropertyValueName,
-				true,
-				PropertyValueCppType,
+				SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName, true, PropertyValueCppType,
 				[&SourceWriter](const FString& PropertyValue)
 				{
 					SourceWriter.Printf("// TODO(David): Deal with an unresolved object ref on the client.");
@@ -1871,7 +1860,13 @@ void GenerateForwardingCodeFromLayout(
 			for (TFieldIterator<UProperty> Param(RPC.Function); Param; ++Param)
 			{
 				TArray<UProperty*> NewChain = {*Param};
-				GenerateUnrealToSchemaConversion(SourceWriter, "Request", NewChain, *Param->GetNameCPP(), false, 0);
+				GenerateUnrealToSchemaConversion(
+					SourceWriter, "Request", NewChain, *Param->GetNameCPP(), false,
+					[&SourceWriter](const FString& PropertyValue)
+					{
+						SourceWriter.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"RPC queued. %s is unresolved.\"));", *PropertyValue);
+						SourceWriter.Printf("return FRPCRequestResult{%s};", *PropertyValue);
+					});
 			}
 			SourceWriter.Print();
 			SourceWriter.Printf(R"""(
@@ -1973,12 +1968,7 @@ void GenerateForwardingCodeFromLayout(
 				SourceWriter.Printf("// Extract %s", *Param->GetName());
 				SourceWriter.Printf("%s %s;", *PropertyValueCppType, *PropertyValueName);
 				GeneratePropertyToUnrealConversion(
-					SourceWriter,
-					TEXT("Op.Request"),
-					{*Param},
-					PropertyValueName,
-					false,
-					PropertyValueCppType,
+					SourceWriter, "Op.Request", {*Param}, PropertyValueName, false, PropertyValueCppType,
 					std::bind(ObjectResolveFailureGenerator, std::placeholders::_1, "ObjectRef"));
 
 				// Append to parameter list.

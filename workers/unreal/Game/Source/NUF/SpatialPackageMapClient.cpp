@@ -104,21 +104,6 @@ void USpatialPackageMapClient::RegisterStaticObjects(const improbable::unreal::U
 	SpatialGuidCache->RegisterStaticObjects(LevelData);
 }
 
-void USpatialPackageMapClient::AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle)
-{
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending obj ref for object: %s, channel: %s, handle: %d."),
-		*Object->GetName(), *DependentChannel->GetName(), Handle);
-	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	SpatialGuidCache->AddPendingObjRef(Object, DependentChannel, Handle);
-}
-
-void USpatialPackageMapClient::AddPendingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender)
-{
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending RPC for object: %s."), *UnresolvedObject->GetName());
-	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	SpatialGuidCache->AddPendingRPC(UnresolvedObject, CommandSender);
-}
-
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 	: FNetGUIDCache(InDriver)
 {
@@ -151,12 +136,12 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	}
 
 	// Resolve pending replication updates and RPCs that reference this actor and its subobjects.
-	ResolvePendingObjRefs(Actor);
-	ResolvePendingRPCs(Actor);
+	USpatialInterop* Interop = Cast<USpatialNetDriver>(Driver)->GetSpatialInterop();
+	check(Interop);
+	Interop->OnResolveObject(Actor);
 	for (UObject* Subobject : ActorSubobjects)
 	{
-		ResolvePendingObjRefs(Subobject);
-		ResolvePendingRPCs(Subobject);
+		Interop->OnResolveObject(Subobject);
 	}
 
 	return NetGUID;
@@ -197,6 +182,10 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 		StaticActorsInWorld.Add(PathName, Actor);
 	}
 
+	// Get interop.
+	USpatialInterop* Interop = Cast<USpatialNetDriver>(Driver)->GetSpatialInterop();
+	check(Interop);
+
 	// Match the above list with the static actor data.
 	auto& StaticActorData = LevelData.static_actor_map();
 	for (auto& Pair : StaticActorData)
@@ -224,36 +213,19 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 		TArray<UObject*> StaticSubobjects;
 		GetSubobjects(Object, StaticSubobjects);
 		uint32 SubobjectOffset = 0;
-		for (auto Subobject : StaticSubobjects)
+		for (UObject* Subobject : StaticSubobjects)
 		{
 			SubobjectOffset++;
 			AssignStaticActorNetGUID(Subobject, FNetworkGUID(Pair.first + SubobjectOffset));
 		}
+
+		// Resolve pending replication updates and RPCs that reference this actor and its subobjects.
+		Interop->OnResolveObject(Object);
+		for (UObject* Subobject : StaticSubobjects)
+		{
+			Interop->OnResolveObject(Subobject);
+		}
 	}
-}
-
-void FSpatialNetGUIDCache::AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle)
-{
-	if (Object == nullptr)
-	{
-		return;
-	}
-
-	TArray<USpatialActorChannel*>& Channels = ChannelsAwaitingObjRefResolve.FindOrAdd(Object);
-	Channels.AddUnique(DependentChannel);
-
-	TArray<uint16>& Handles = PendingObjRefHandles.FindOrAdd(DependentChannel);
-	Handles.AddUnique(Handle);
-}
-
-void FSpatialNetGUIDCache::AddPendingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender)
-{
-	if (UnresolvedObject == nullptr)
-	{
-		return;
-	}
-
-	PendingRPCs.FindOrAdd(UnresolvedObject).Add(CommandSender);
 }
 
 // TODO(David): Do something with this function.
@@ -317,48 +289,4 @@ FNetworkGUID FSpatialNetGUIDCache::AssignStaticActorNetGUID(const UObject* Objec
 	RegisterObjectRef(StaticNetGUID, ObjectRef);
 
 	return StaticNetGUID;
-}
-
-void FSpatialNetGUIDCache::ResolvePendingObjRefs(const UObject* Object)
-{
-	TArray<USpatialActorChannel*>* DependentChannels = ChannelsAwaitingObjRefResolve.Find(Object);
-	if (DependentChannels == nullptr)
-	{
-		return;
-	}
-
-	USpatialInterop* Interop = Cast<USpatialNetDriver>(Driver)->GetSpatialInterop();
-	check(Interop);
-
-	for (auto DependentChannel : *DependentChannels)
-	{
-		TArray<uint16>* Handles = PendingObjRefHandles.Find(DependentChannel);
-		if (Handles && Handles->Num() > 0)
-		{
-			// Changelists always have a 0 at the end.
-			Handles->Add(0);
-
-			Interop->SendSpatialUpdate(DependentChannel, *Handles);
-			PendingObjRefHandles.Remove(DependentChannel);
-		}
-	}
-	DependentChannels->Reset();
-	ChannelsAwaitingObjRefResolve.Remove(Object);
-}
-
-void FSpatialNetGUIDCache::ResolvePendingRPCs(UObject* Object)
-{
-	TArray<FRPCRequestFunction>* RPCList = PendingRPCs.Find(Object);
-	if (RPCList)
-	{
-		USpatialInterop* UpdateInterop = Cast<USpatialNetDriver>(Driver)->GetSpatialInterop();
-		check(UpdateInterop);
-		for (auto& RequestFunc : *RPCList)
-		{
-			// We can guarantee that SendCommandRequest won't populate PendingRPCs[Actor], because Actor has
-			// been resolved when we call ResolvePendingRPCs.
-			UpdateInterop->SendCommandRequest(RequestFunc);
-		}
-		PendingRPCs.Remove(Object);
-	}
 }

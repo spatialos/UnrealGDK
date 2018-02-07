@@ -212,7 +212,7 @@ void USpatialInterop::SendCommandRequest(FRPCRequestFunction Function)
 	if (Result.UnresolvedObject != nullptr)
 	{
 		// Add to pending RPCs if any actors were unresolved.
-		PackageMap->AddPendingRPC(Result.UnresolvedObject, Function);
+		AddPendingOutgoingRPC(Result.UnresolvedObject, Function);
 	}
 	else
 	{
@@ -249,7 +249,6 @@ void USpatialInterop::HandleCommandResponse(const FString& RPCName, FUntypedRequ
 				check(Result.UnresolvedObject == nullptr);
 				OutgoingRPCs.Emplace(Result.RequestId, RetryContext);
 			});
-			// TODO(David): Commenting out for now to avoid a potentially buggy retry solution interfering with getting the character to move.
 			TimerManager->SetTimer(RetryTimer, TimerCallback, WaitTime, false);
 		}
 		else
@@ -258,6 +257,34 @@ void USpatialInterop::HandleCommandResponse(const FString& RPCName, FUntypedRequ
 				*RPCName, SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)StatusCode, *Message);
 		}
 	}
+}
+
+void USpatialInterop::OnResolveObject(UObject* Object)
+{
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Resolving pending object refs and RPCs which depend on object: %s."), *Object->GetName());
+	ResolvePendingOutgoingObjectRefUpdates(Object);
+	ResolvePendingOutgoingRPCs(Object);
+}
+
+void USpatialInterop::AddPendingOutgoingObjectRefUpdate(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
+{
+	check(UnresolvedObject);
+
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing object ref depending on object: %s, channel: %s, handle: %d."),
+		*UnresolvedObject->GetName(), *DependentChannel->GetName(), Handle);
+
+	TArray<USpatialActorChannel*>& Channels = ChannelsAwaitingObjRefResolve.FindOrAdd(UnresolvedObject);
+	Channels.AddUnique(DependentChannel);
+
+	TArray<uint16>& Handles = PendingObjRefHandles.FindOrAdd(DependentChannel);
+	Handles.AddUnique(Handle);
+}
+
+void USpatialInterop::AddPendingOutgoingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender)
+{
+	check(UnresolvedObject);
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending RPC depending on object: %s."), *UnresolvedObject->GetName());
+	PendingRPCs.FindOrAdd(UnresolvedObject).Add(CommandSender);
 }
 
 void USpatialInterop::SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId)
@@ -278,5 +305,44 @@ void USpatialInterop::SetComponentInterests(USpatialActorChannel* ActorChannel, 
 				*ActorChannel->Actor->GetName(),
 				EntityId);
 		}
+	}
+}
+
+void USpatialInterop::ResolvePendingOutgoingObjectRefUpdates(UObject* Object)
+{
+	TArray<USpatialActorChannel*>* DependentChannels = ChannelsAwaitingObjRefResolve.Find(Object);
+	if (DependentChannels == nullptr)
+	{
+		return;
+	}
+
+	for (auto DependentChannel : *DependentChannels)
+	{
+		TArray<uint16>* Handles = PendingObjRefHandles.Find(DependentChannel);
+		if (Handles && Handles->Num() > 0)
+		{
+			// Changelists always have a 0 at the end.
+			Handles->Add(0);
+
+			SendSpatialUpdate(DependentChannel, *Handles);
+			PendingObjRefHandles.Remove(DependentChannel);
+		}
+	}
+	DependentChannels->Reset();
+	ChannelsAwaitingObjRefResolve.Remove(Object);
+}
+
+void USpatialInterop::ResolvePendingOutgoingRPCs(UObject* Object)
+{
+	TArray<FRPCRequestFunction>* RPCList = PendingRPCs.Find(Object);
+	if (RPCList)
+	{
+		for (auto& RequestFunc : *RPCList)
+		{
+			// We can guarantee that SendCommandRequest won't populate PendingRPCs[Actor], because Actor has
+			// been resolved when we call ResolvePendingOutgoingRPCs.
+			SendCommandRequest(RequestFunc);
+		}
+		PendingRPCs.Remove(Object);
 	}
 }
