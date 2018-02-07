@@ -1778,6 +1778,13 @@ void GenerateForwardingCodeFromLayout(
 				[&SourceWriter](const FString& PropertyValue)
 				{
 					SourceWriter.Printf("// TODO(David): Deal with an unresolved object ref on the client.");
+					SourceWriter.Print(R"""(
+						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+							*Interop->GetSpatialOS()->GetWorkerId(),
+							*ActorChannel->Actor->GetName(),
+							ActorChannel->GetEntityId(),
+							*Data.Property->GetName(),
+							Handle);)""");
 					SourceWriter.Printf("%s = nullptr;", *PropertyValue);
 				});
 

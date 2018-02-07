@@ -1028,6 +1028,12 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					else
 					{
 						// TODO(David): Deal with an unresolved object ref on the client.
+						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+							*Interop->GetSpatialOS()->GetWorkerId(),
+							*ActorChannel->Actor->GetName(),
+							ActorChannel->GetEntityId(),
+							*Data.Property->GetName(),
+							Handle);
 						Value = nullptr;
 					}
 				}
@@ -1099,6 +1105,12 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					else
 					{
 						// TODO(David): Deal with an unresolved object ref on the client.
+						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+							*Interop->GetSpatialOS()->GetWorkerId(),
+							*ActorChannel->Actor->GetName(),
+							ActorChannel->GetEntityId(),
+							*Data.Property->GetName(),
+							Handle);
 						Value = nullptr;
 					}
 				}
@@ -1244,6 +1256,12 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					else
 					{
 						// TODO(David): Deal with an unresolved object ref on the client.
+						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+							*Interop->GetSpatialOS()->GetWorkerId(),
+							*ActorChannel->Actor->GetName(),
+							ActorChannel->GetEntityId(),
+							*Data.Property->GetName(),
+							Handle);
 						Value = nullptr;
 					}
 				}
@@ -1336,6 +1354,12 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					else
 					{
 						// TODO(David): Deal with an unresolved object ref on the client.
+						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+							*Interop->GetSpatialOS()->GetWorkerId(),
+							*ActorChannel->Actor->GetName(),
+							ActorChannel->GetEntityId(),
+							*Data.Property->GetName(),
+							Handle);
 						Value = nullptr;
 					}
 				}
@@ -1378,6 +1402,12 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					else
 					{
 						// TODO(David): Deal with an unresolved object ref on the client.
+						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+							*Interop->GetSpatialOS()->GetWorkerId(),
+							*ActorChannel->Actor->GetName(),
+							ActorChannel->GetEntityId(),
+							*Data.Property->GetName(),
+							Handle);
 						Value = nullptr;
 					}
 				}
@@ -1442,6 +1472,12 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					else
 					{
 						// TODO(David): Deal with an unresolved object ref on the client.
+						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+							*Interop->GetSpatialOS()->GetWorkerId(),
+							*ActorChannel->Actor->GetName(),
+							ActorChannel->GetEntityId(),
+							*Data.Property->GetName(),
+							Handle);
 						Value = nullptr;
 					}
 				}
@@ -1484,6 +1520,12 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					else
 					{
 						// TODO(David): Deal with an unresolved object ref on the client.
+						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+							*Interop->GetSpatialOS()->GetWorkerId(),
+							*ActorChannel->Actor->GetName(),
+							ActorChannel->GetEntityId(),
+							*Data.Property->GetName(),
+							Handle);
 						Value = nullptr;
 					}
 				}
@@ -1828,6 +1870,12 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					else
 					{
 						// TODO(David): Deal with an unresolved object ref on the client.
+						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+							*Interop->GetSpatialOS()->GetWorkerId(),
+							*ActorChannel->Actor->GetName(),
+							ActorChannel->GetEntityId(),
+							*Data.Property->GetName(),
+							Handle);
 						Value = nullptr;
 					}
 				}
@@ -1946,6 +1994,12 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					else
 					{
 						// TODO(David): Deal with an unresolved object ref on the client.
+						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+							*Interop->GetSpatialOS()->GetWorkerId(),
+							*ActorChannel->Actor->GetName(),
+							ActorChannel->GetEntityId(),
+							*Data.Property->GetName(),
+							Handle);
 						Value = nullptr;
 					}
 				}
@@ -2131,7 +2185,11 @@ void USpatialTypeBinding_Character::ClientCheatWalk_Sender(worker::Connection* c
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientCheatWalk, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientCheatWalk, target: %s (entity ID %lld, offset: %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*TargetObject->GetName(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2155,7 +2213,11 @@ void USpatialTypeBinding_Character::ClientCheatGhost_Sender(worker::Connection* 
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientCheatGhost, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientCheatGhost, target: %s (entity ID %lld, offset: %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*TargetObject->GetName(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2179,7 +2241,11 @@ void USpatialTypeBinding_Character::ClientCheatFly_Sender(worker::Connection* co
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientCheatFly, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientCheatFly, target: %s (entity ID %lld, offset: %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*TargetObject->GetName(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2236,7 +2302,11 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Sender(worker:
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientVeryShortAdjustPosition, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientVeryShortAdjustPosition, target: %s (entity ID %lld, offset: %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*TargetObject->GetName(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientveryshortadjustposition>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2307,7 +2377,11 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Sender(
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientAdjustRootMotionSourcePosition, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientAdjustRootMotionSourcePosition, target: %s (entity ID %lld, offset: %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*TargetObject->GetName(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionsourceposition>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2370,7 +2444,11 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Sender(worker
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientAdjustRootMotionPosition, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientAdjustRootMotionPosition, target: %s (entity ID %lld, offset: %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*TargetObject->GetName(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionposition>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2429,7 +2507,11 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Sender(worker::Connecti
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientAdjustPosition, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientAdjustPosition, target: %s (entity ID %lld, offset: %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*TargetObject->GetName(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustposition>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2457,7 +2539,11 @@ void USpatialTypeBinding_Character::ClientAckGoodMove_Sender(worker::Connection*
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientAckGoodMove, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientAckGoodMove, target: %s (entity ID %lld, offset: %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*TargetObject->GetName(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientackgoodmove>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2489,7 +2575,11 @@ void USpatialTypeBinding_Character::ServerMoveOld_Sender(worker::Connection* con
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerMoveOld, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerMoveOld, target: %s (entity ID %lld, offset: %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*TargetObject->GetName(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermoveold>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2558,7 +2648,11 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Sender(worker
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerMoveDualHybridRootMotion, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerMoveDualHybridRootMotion, target: %s (entity ID %lld, offset: %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*TargetObject->GetName(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedualhybridrootmotion>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2627,7 +2721,11 @@ void USpatialTypeBinding_Character::ServerMoveDual_Sender(worker::Connection* co
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerMoveDual, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerMoveDual, target: %s (entity ID %lld, offset: %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*TargetObject->GetName(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedual>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
@@ -2688,7 +2786,11 @@ void USpatialTypeBinding_Character::ServerMove_Sender(worker::Connection* const 
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerMove, target: %s (entity ID %lld)"), *Interop->GetSpatialOS()->GetWorkerId(), *TargetObject->GetName(), TargetObjectRef.entity());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerMove, target: %s (entity ID %lld, offset: %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*TargetObject->GetName(),
+			TargetObjectRef.entity(),
+			TargetObjectRef.offset());
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermove>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
