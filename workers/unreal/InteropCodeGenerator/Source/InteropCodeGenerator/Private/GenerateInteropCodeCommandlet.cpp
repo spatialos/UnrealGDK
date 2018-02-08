@@ -1640,7 +1640,7 @@ void GenerateForwardingCodeFromLayout(
 		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
 		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending property update. actor %s (%llu), property %s (handle %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*Channel->Actor->GetName(),
 			Channel->GetEntityId(),
@@ -1768,7 +1768,7 @@ void GenerateForwardingCodeFromLayout(
 				{
 					SourceWriter.Printf("// TODO(David): Deal with an unresolved object ref on the client.");
 					SourceWriter.Print(R"""(
-						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
@@ -1801,7 +1801,7 @@ void GenerateForwardingCodeFromLayout(
 
 			SourceWriter.Printf("OutputWriter.SerializeProperty(Handle, %s, &%s);", *PropertyName, *PropertyValueName);
 			SourceWriter.Print(R"""(
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1885,7 +1885,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Printf(R"""(
 				// Send command request.
 				Request.set_target_subobject_offset(TargetObjectRef.offset());
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: Sending RPC: %s, target: %%s (entity ID %%lld, offset: %%d)"),
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: Sending RPC: %s, target: %%s (entity ID %%llu, offset: %%u)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*TargetObject->GetName(),
 					TargetObjectRef.entity(),
@@ -1938,7 +1938,7 @@ void GenerateForwardingCodeFromLayout(
 			auto ObjectResolveFailureGenerator = [&SourceWriter, &RPC, Group, Class](const FString& PropertyName, const FString& ObjectRef)
 			{
 				SourceWriter.Printf(R"""(
-					UE_LOG(LogSpatialOSInterop, Warning, TEXT("%%s: %s_Receiver: %s (entity id %%lld, offset %%d) is not resolved on this worker. Sending command failure."),
+					UE_LOG(LogSpatialOSInterop, Warning, TEXT("%%s: %s_Receiver: %s (entity id %%llu, offset %%u) is not resolved on this worker. Sending command failure."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
 						%s.entity(),
 						%s.offset());
@@ -1963,7 +1963,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Outdent().Print("}");
 			SourceWriter.Printf(R"""(
 				%s* TargetObject = Cast<%s>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-				checkf(TargetObject, TEXT("%%s: %s_Receiver: Entity ID %%lld (NetGUID %%s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());)""",
+				checkf(TargetObject, TEXT("%%s: %s_Receiver: Entity ID %%llu (NetGUID %%s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());)""",
 				*GetFullCPPName(RPC.CallerType),
 				*GetFullCPPName(RPC.CallerType),
 				*RPC.Function->GetName());
@@ -1990,7 +1990,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Print();
 			SourceWriter.Print("// Call implementation and send command response.");
 			SourceWriter.Printf(R"""(
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: Receiving RPC: %s, target: %%s (entity ID %%lld, offset: %%d)"),
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: Receiving RPC: %s, target: %%s (entity ID %%llu, offset: %%u)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*TargetObject->GetName(),
 					TargetObjectRef.entity(),

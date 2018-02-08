@@ -247,8 +247,10 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_NUF(const UObject* Object)
 		NetGUID = FNetworkGUID(ALLOC_NEW_NET_GUID(IsStatic));
 		RegisterNetGUID_Client(NetGUID, Object);
 
-		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("NetGUID for object %s was not found in the cache. Generated new NetGUID."), *Object->GetName());
-		NetGUID = NetGUID;
+		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: NetGUID for object %s was not found in the cache. Generated new NetGUID %s."),
+			*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
+			*Object->GetName(),
+			*NetGUID.ToString());
 	}
 
 	check(NetGUID.IsValid());
@@ -274,6 +276,13 @@ FNetworkGUID FSpatialNetGUIDCache::AssignStaticActorNetGUID(const UObject* Objec
 	// Register object ref.
 	improbable::unreal::UnrealObjectRef ObjectRef{0, StaticNetGUID.Value};
 	RegisterObjectRef(StaticNetGUID, ObjectRef);
+
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: Registered static object %s. NetGUID %s (entity ID: %llu, offset: %u)."),
+		*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
+		*Object->GetName(),
+		*StaticNetGUID.ToString(),
+		ObjectRef.entity(),
+		ObjectRef.offset());
 
 	return StaticNetGUID;
 }
