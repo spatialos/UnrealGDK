@@ -11,7 +11,6 @@
 
 bool UNUFGameInstance::StartGameInstance_NUFClient(FString& Error)
 {
-	// Network URL.
 	if (WorldContext->PendingNetGame)
 	{
 		if (WorldContext->PendingNetGame->NetDriver && WorldContext->PendingNetGame->NetDriver->ServerConnection)
@@ -56,11 +55,9 @@ FGameInstancePIEResult UNUFGameInstance::StartPlayInEditorGameInstance(ULocalPla
 {
 	// This is sadly hacky to avoid a larger engine change. It borrows code from UGameInstance::StartPlayInEditorGameInstance() and 
 	//  UEngine::Browse().
-
 	check(WorldContext);
 
-	ULevelEditorPlaySettings const* PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
-	
+	ULevelEditorPlaySettings const* PlayInSettings = GetDefault<ULevelEditorPlaySettings>();	
 	const EPlayNetMode PlayNetMode = [&PlayInSettings] { EPlayNetMode NetMode(PIE_Standalone); return (PlayInSettings->GetPlayNetMode(NetMode) ? NetMode : PIE_Standalone); }();
 
 	// for clients, just connect to the server
@@ -72,7 +69,6 @@ FGameInstancePIEResult UNUFGameInstance::StartPlayInEditorGameInstance(ULocalPla
 	}
 
 	FString Error;
-
 	if (StartGameInstance_NUFClient(Error))
 	{
 		GetEngine()->TransitionType = TT_WaitingToConnect;
