@@ -18,7 +18,7 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 	ForEachObjectWithOuter(Object, [&InSubobjects](UObject* Object)
 	{
 		// Objects can only be allocated NetGUIDs if this is true.
-		if (Object->IsSupportedForNetworking())
+		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill())
 		{
 			InSubobjects.Add(Object);
 		}
@@ -143,10 +143,6 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	for (UObject* Subobject : ActorSubobjects)
 	{
 		SubobjectOffset++;
-		if (Subobject->IsPendingKill())
-		{
-			continue;
-		}
 		FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_NUF(Subobject);
 		improbable::unreal::UnrealObjectRef SubobjectRef{EntityId.ToSpatialEntityId(), SubobjectOffset};
 		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
