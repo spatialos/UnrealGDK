@@ -18,7 +18,7 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 	ForEachObjectWithOuter(Object, [&InSubobjects](UObject* Object)
 	{
 		// Objects can only be allocated NetGUIDs if this is true.
-		if (Object->IsSupportedForNetworking())
+		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill())
 		{
 			InSubobjects.Add(Object);
 		}
