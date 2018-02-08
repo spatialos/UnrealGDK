@@ -1964,10 +1964,22 @@ void GenerateForwardingCodeFromLayout(
 			ObjectResolveFailureGenerator("Target object", "TargetObjectRef");
 			SourceWriter.Outdent().Print("}");
 			SourceWriter.Printf(R"""(
-				%s* TargetObject = Cast<%s>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-				checkf(TargetObject, TEXT("%%s: %s_Receiver: Entity ID %%lld (NetGUID %%s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());)""",
+				UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+				%s* TargetObject = Cast<%s>(TargetObjectUntyped);
+				checkf(TargetObjectUntyped, TEXT("%%s: %s_Receiver: Object Ref (entity: %%llu, offset: %%u) (NetGUID %%s) does not correspond to a UObject."),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					TargetObjectRef.entity(),
+					TargetObjectRef.offset(),
+					*TargetNetGUID.ToString());
+				checkf(TargetObject, TEXT("%%s: %s_Receiver: Object Ref (entity: %%llu, offset: %%u) (NetGUID %%s) is the wrong type. Name: %%s"),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					TargetObjectRef.entity(),
+					TargetObjectRef.offset(),
+					*TargetNetGUID.ToString(),
+					*TargetObjectUntyped->GetName());)""",
 				*GetFullCPPName(RPC.CallerType),
 				*GetFullCPPName(RPC.CallerType),
+				*RPC.Function->GetName(),
 				*RPC.Function->GetName());
 
 			// Grab RPC arguments.

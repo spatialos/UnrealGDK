@@ -2785,8 +2785,19 @@ void USpatialTypeBinding_Character::ClientCheatWalk_Receiver(const worker::Comma
 		SendRPCResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
-	ACharacter* TargetObject = Cast<ACharacter>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("%s: ClientCheatWalk_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+	ACharacter* TargetObject = Cast<ACharacter>(TargetObjectUntyped);
+	checkf(TargetObjectUntyped, TEXT("%s: ClientCheatWalk_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientCheatWalk_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString(),
+		*TargetObjectUntyped->GetName());
 
 	// Call implementation and send command response.
 	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientCheatWalk, target: %s (entity ID %lld, offset: %d)"),
@@ -2811,8 +2822,19 @@ void USpatialTypeBinding_Character::ClientCheatGhost_Receiver(const worker::Comm
 		SendRPCResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
-	ACharacter* TargetObject = Cast<ACharacter>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("%s: ClientCheatGhost_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+	ACharacter* TargetObject = Cast<ACharacter>(TargetObjectUntyped);
+	checkf(TargetObjectUntyped, TEXT("%s: ClientCheatGhost_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientCheatGhost_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString(),
+		*TargetObjectUntyped->GetName());
 
 	// Call implementation and send command response.
 	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientCheatGhost, target: %s (entity ID %lld, offset: %d)"),
@@ -2837,8 +2859,19 @@ void USpatialTypeBinding_Character::ClientCheatFly_Receiver(const worker::Comman
 		SendRPCResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
-	ACharacter* TargetObject = Cast<ACharacter>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("%s: ClientCheatFly_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+	ACharacter* TargetObject = Cast<ACharacter>(TargetObjectUntyped);
+	checkf(TargetObjectUntyped, TEXT("%s: ClientCheatFly_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientCheatFly_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString(),
+		*TargetObjectUntyped->GetName());
 
 	// Call implementation and send command response.
 	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientCheatFly, target: %s (entity ID %lld, offset: %d)"),
@@ -2863,8 +2896,19 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Receiver(const
 		SendRPCResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientveryshortadjustposition>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
-	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("%s: ClientVeryShortAdjustPosition_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
+	checkf(TargetObjectUntyped, TEXT("%s: ClientVeryShortAdjustPosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientVeryShortAdjustPosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString(),
+		*TargetObjectUntyped->GetName());
 
 	// Extract TimeStamp
 	float TimeStamp;
@@ -2946,8 +2990,19 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Receive
 		SendRPCResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionsourceposition>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
-	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("%s: ClientAdjustRootMotionSourcePosition_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
+	checkf(TargetObjectUntyped, TEXT("%s: ClientAdjustRootMotionSourcePosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientAdjustRootMotionSourcePosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString(),
+		*TargetObjectUntyped->GetName());
 
 	// Extract TimeStamp
 	float TimeStamp;
@@ -3063,8 +3118,19 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Receiver(cons
 		SendRPCResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionposition>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
-	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("%s: ClientAdjustRootMotionPosition_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
+	checkf(TargetObjectUntyped, TEXT("%s: ClientAdjustRootMotionPosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientAdjustRootMotionPosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString(),
+		*TargetObjectUntyped->GetName());
 
 	// Extract TimeStamp
 	float TimeStamp;
@@ -3163,8 +3229,19 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Receiver(const worker::
 		SendRPCResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustposition>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
-	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("%s: ClientAdjustPosition_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
+	checkf(TargetObjectUntyped, TEXT("%s: ClientAdjustPosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientAdjustPosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString(),
+		*TargetObjectUntyped->GetName());
 
 	// Extract TimeStamp
 	float TimeStamp;
@@ -3255,8 +3332,19 @@ void USpatialTypeBinding_Character::ClientAckGoodMove_Receiver(const worker::Com
 		SendRPCResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientackgoodmove>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
-	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("%s: ClientAckGoodMove_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
+	checkf(TargetObjectUntyped, TEXT("%s: ClientAckGoodMove_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ClientAckGoodMove_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString(),
+		*TargetObjectUntyped->GetName());
 
 	// Extract TimeStamp
 	float TimeStamp;
@@ -3285,8 +3373,19 @@ void USpatialTypeBinding_Character::ServerMoveOld_Receiver(const worker::Command
 		SendRPCResponse<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermoveold>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
-	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("%s: ServerMoveOld_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
+	checkf(TargetObjectUntyped, TEXT("%s: ServerMoveOld_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerMoveOld_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString(),
+		*TargetObjectUntyped->GetName());
 
 	// Extract OldTimeStamp
 	float OldTimeStamp;
@@ -3328,8 +3427,19 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Receiver(cons
 		SendRPCResponse<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedualhybridrootmotion>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
-	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("%s: ServerMoveDualHybridRootMotion_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
+	checkf(TargetObjectUntyped, TEXT("%s: ServerMoveDualHybridRootMotion_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerMoveDualHybridRootMotion_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString(),
+		*TargetObjectUntyped->GetName());
 
 	// Extract TimeStamp0
 	float TimeStamp0;
@@ -3445,8 +3555,19 @@ void USpatialTypeBinding_Character::ServerMoveDual_Receiver(const worker::Comman
 		SendRPCResponse<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedual>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
-	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("%s: ServerMoveDual_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
+	checkf(TargetObjectUntyped, TEXT("%s: ServerMoveDual_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerMoveDual_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString(),
+		*TargetObjectUntyped->GetName());
 
 	// Extract TimeStamp0
 	float TimeStamp0;
@@ -3562,8 +3683,19 @@ void USpatialTypeBinding_Character::ServerMove_Receiver(const worker::CommandReq
 		SendRPCResponse<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermove>(Op, false, TEXT("Target object is unresolved on the target worker"));
 		return;
 	}
-	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(PackageMap->GetObjectFromNetGUID(TargetNetGUID, false));
-	checkf(TargetObject, TEXT("%s: ServerMove_Receiver: Entity ID %lld (NetGUID %s) does not correspond to a UObject."), *Interop->GetSpatialOS()->GetWorkerId(), TargetObjectRef.entity(), *TargetNetGUID.ToString());
+	UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+	UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
+	checkf(TargetObjectUntyped, TEXT("%s: ServerMove_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString());
+	checkf(TargetObject, TEXT("%s: ServerMove_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		*Interop->GetSpatialOS()->GetWorkerId(),
+		TargetObjectRef.entity(),
+		TargetObjectRef.offset(),
+		*TargetNetGUID.ToString(),
+		*TargetObjectUntyped->GetName());
 
 	// Extract TimeStamp
 	float TimeStamp;

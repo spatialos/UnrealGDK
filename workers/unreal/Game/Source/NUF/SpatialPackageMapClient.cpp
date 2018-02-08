@@ -260,6 +260,8 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_NUF(const UObject* Object)
 
 void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
+	check(!NetGUIDToUnrealObjectRef.Contains(NetGUID));
+	check(!UnrealObjectRefToNetGUID.Contains(ObjectRef));
 	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjectRef);
 	UnrealObjectRefToNetGUID.Emplace(ObjectRef, NetGUID);
 }
