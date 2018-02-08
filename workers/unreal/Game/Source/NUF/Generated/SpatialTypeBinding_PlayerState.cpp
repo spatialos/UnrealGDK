@@ -554,21 +554,19 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_SingleClient(
 	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealPlayerStateSingleClientReplicatedData::Update& Update) const
 {
-	FNetBitWriter OutputWriter(PackageMap, 0);
-	OutputWriter.WriteBit(0); // bDoChecksum
+	FBunchPayloadWriter OutputWriter(PackageMap);
 
 	auto& HandleToPropertyMap = GetHandlePropertyMap();
 	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealPlayerStateClientRPCs::ComponentId);
 	ConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
-	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
+	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter.GetNetBitWriter());
 }
 
 void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealPlayerStateMultiClientReplicatedData::Update& Update) const
 {
-	FNetBitWriter OutputWriter(PackageMap, 0);
-	OutputWriter.WriteBit(0); // bDoChecksum
+	FBunchPayloadWriter OutputWriter(PackageMap);
 
 	auto& HandleToPropertyMap = GetHandlePropertyMap();
 	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealPlayerStateClientRPCs::ComponentId);
@@ -580,8 +578,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			uint8 Value;
 
 			Value = (*Update.field_bhidden().data());
@@ -592,7 +588,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -608,8 +604,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			uint8 Value;
 
 			Value = (*Update.field_breplicatemovement().data());
@@ -620,7 +614,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -636,8 +630,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			uint8 Value;
 
 			Value = (*Update.field_btearoff().data());
@@ -648,7 +640,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -664,8 +656,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			TEnumAsByte<ENetRole> Value;
 
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_remoterole().data())));
@@ -677,7 +667,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value = ROLE_SimulatedProxy;
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -693,8 +683,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
+			bool bWriteObjectProperty = true;
 			AActor* Value;
 
 			{
@@ -720,18 +709,22 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
-						Value = nullptr;
+						bWriteObjectProperty = false;
+						Interop->AddPendingIncomingObjectRefUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
-				Handle);
+			if (bWriteObjectProperty)
+			{
+				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					*ActorChannel->Actor->GetName(),
+					ActorChannel->GetEntityId(),
+					*Data.Property->GetName(),
+					Handle);
+			}
 		}
 	}
 	if (!Update.field_replicatedmovement().empty())
@@ -741,8 +734,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			FRepMovement Value;
 
 			{
@@ -754,7 +745,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -770,8 +761,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
+			bool bWriteObjectProperty = true;
 			AActor* Value;
 
 			{
@@ -797,18 +787,22 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
-						Value = nullptr;
+						bWriteObjectProperty = false;
+						Interop->AddPendingIncomingObjectRefUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
-				Handle);
+			if (bWriteObjectProperty)
+			{
+				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					*ActorChannel->Actor->GetName(),
+					ActorChannel->GetEntityId(),
+					*Data.Property->GetName(),
+					Handle);
+			}
 		}
 	}
 	if (!Update.field_attachmentreplication_locationoffset().empty())
@@ -818,8 +812,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			FVector_NetQuantize100 Value;
 
 			{
@@ -829,7 +821,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value.Z = Vector.z();
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -845,8 +837,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			FVector_NetQuantize100 Value;
 
 			{
@@ -856,7 +846,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value.Z = Vector.z();
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -872,8 +862,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			FRotator Value;
 
 			{
@@ -883,7 +871,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value.Roll = Rotator.roll();
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -899,13 +887,11 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			FName Value;
 
 			Value = FName(((*Update.field_attachmentreplication_attachsocket().data())).data());
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -921,8 +907,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
+			bool bWriteObjectProperty = true;
 			USceneComponent* Value;
 
 			{
@@ -948,18 +933,22 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
-						Value = nullptr;
+						bWriteObjectProperty = false;
+						Interop->AddPendingIncomingObjectRefUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
-				Handle);
+			if (bWriteObjectProperty)
+			{
+				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					*ActorChannel->Actor->GetName(),
+					ActorChannel->GetEntityId(),
+					*Data.Property->GetName(),
+					Handle);
+			}
 		}
 	}
 	if (!Update.field_role().empty())
@@ -969,13 +958,11 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			TEnumAsByte<ENetRole> Value;
 
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_role().data())));
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -991,8 +978,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			uint8 Value;
 
 			Value = (*Update.field_bcanbedamaged().data());
@@ -1003,7 +988,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1019,8 +1004,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
+			bool bWriteObjectProperty = true;
 			APawn* Value;
 
 			{
@@ -1046,18 +1030,22 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
-						Value = nullptr;
+						bWriteObjectProperty = false;
+						Interop->AddPendingIncomingObjectRefUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
-				Handle);
+			if (bWriteObjectProperty)
+			{
+				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					*ActorChannel->Actor->GetName(),
+					ActorChannel->GetEntityId(),
+					*Data.Property->GetName(),
+					Handle);
+			}
 		}
 	}
 	if (!Update.field_score().empty())
@@ -1067,13 +1055,11 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			float Value;
 
 			Value = (*Update.field_score().data());
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1089,13 +1075,11 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			uint8 Value;
 
 			Value = uint8(uint8((*Update.field_ping().data())));
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1111,13 +1095,11 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			FString Value;
 
 			Value = FString(UTF8_TO_TCHAR((*Update.field_playername().data()).c_str()));
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1133,13 +1115,11 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			int32 Value;
 
 			Value = (*Update.field_playerid().data());
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1155,8 +1135,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			uint8 Value;
 
 			Value = (*Update.field_bfrompreviouslevel().data());
@@ -1167,7 +1145,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1183,8 +1161,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			uint8 Value;
 
 			Value = (*Update.field_bisabot().data());
@@ -1195,7 +1171,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1211,8 +1187,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			uint8 Value;
 
 			Value = (*Update.field_bisinactive().data());
@@ -1223,7 +1197,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1239,8 +1213,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			uint8 Value;
 
 			Value = (*Update.field_bisspectator().data());
@@ -1251,7 +1223,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1267,8 +1239,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			uint8 Value;
 
 			Value = (*Update.field_bonlyspectator().data());
@@ -1279,7 +1249,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1295,13 +1265,11 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			int32 Value;
 
 			Value = (*Update.field_starttime().data());
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1317,8 +1285,6 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 		const FRepHandleData& Data = HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(Data.Condition))
 		{
-			OutputWriter.SerializeIntPacked(Handle);
-
 			FUniqueNetIdRepl Value;
 
 			{
@@ -1330,7 +1296,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
 			}
 
-			Data.Property->NetSerializeItem(OutputWriter, PackageMap, &Value);
+			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1339,5 +1305,5 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 				Handle);
 		}
 	}
-	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);
+	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter.GetNetBitWriter());
 }

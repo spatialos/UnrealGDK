@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "SpatialTypeBinding.h"
+#include "SpatialUnrealObjectRef.h"
 #include "SpatialInterop.generated.h"
 
 class USpatialOS;
@@ -12,6 +13,32 @@ class USpatialPackageMapClient;
 class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInterop, Log, All);
+
+// A helper class for creating an incoming payload consumed by ReceiveSpatialUpdate.
+class FBunchPayloadWriter
+{
+public:
+	FBunchPayloadWriter(UPackageMap* PackageMap) : Writer(PackageMap, 0)
+	{
+		// First bit is the "enable checksum" bit, which we set to 0.
+		Writer.WriteBit(0);
+	}
+
+	template <typename T>
+	void SerializeProperty(uint32 Handle, UProperty* Property, T* Value)
+	{
+		Writer.SerializeIntPacked(Handle);
+		Property->NetSerializeItem(Writer, Writer.PackageMap, Value);
+	}
+
+	FNetBitWriter& GetNetBitWriter()
+	{
+		return Writer;
+	}
+
+private:
+	FNetBitWriter Writer;
+};
 
 // An general version of worker::RequestId.
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
@@ -71,11 +98,11 @@ public:
 	void HandleCommandResponse(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
 
 	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.
-	void OnResolveObject(UObject* Object);
+	void OnResolveObject(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	void AddPendingOutgoingObjectRefUpdate(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void AddPendingOutgoingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender);
-	// Pending incoming object update
+	void AddPendingIncomingObjectRefUpdate(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, UObjectPropertyBase* Property, uint16 Handle);
 	// Pending incoming RPC
 
 	// Accessors.
@@ -87,11 +114,6 @@ public:
 	USpatialNetDriver* GetNetDriver() const
 	{
 		return NetDriver;
-	}
-
-	FTimerManager& GetTimerManager() const
-	{
-		return *TimerManager;
 	}
 
 private:
@@ -120,20 +142,23 @@ private:
 	// Outgoing RPCs (for retry logic).
 	TMap<FUntypedRequestId, TSharedPtr<FRPCRetryContext>> OutgoingRPCs;
 
-
-	TMap<UObject*, TArray<USpatialActorChannel*>> ChannelsAwaitingObjRefResolve;
-
 	// Pending outgoing object ref property updates.
-	TMap<USpatialActorChannel*, TArray<uint16>> PendingObjRefHandles;
+	TMap<UObject*, TArray<USpatialActorChannel*>> ChannelsAwaitingOutgoingObjectResolve;
+	TMap<USpatialActorChannel*, TArray<uint16>> PendingOutgoingObjectRefHandles;
 
 	// Pending outgoing RPCs.
-	TMap<UObject*, TArray<FRPCRequestFunction>> PendingRPCs;
+	TMap<UObject*, TArray<FRPCRequestFunction>> PendingOutgoingRPCs;
+
+	// Pending incoming object ref property updates.
+	TMap<FHashableUnrealObjectRef, TArray<USpatialActorChannel*>> ChannelsAwaitingIncomingObjectResolve;
+	TMap<USpatialActorChannel*, TArray<TPair<UObjectPropertyBase*, uint16>>> PendingIncomingObjectRefProperties;
 
 private:
 	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
 
 	void ResolvePendingOutgoingObjectRefUpdates(UObject* Object);
 	void ResolvePendingOutgoingRPCs(UObject* Object);
+	void ResolvePendingIncomingObjectRefUpdates(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	friend class USpatialInteropPipelineBlock;
 };

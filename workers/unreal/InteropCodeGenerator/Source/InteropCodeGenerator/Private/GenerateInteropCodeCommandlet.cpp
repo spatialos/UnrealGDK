@@ -1727,8 +1727,7 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Print("{");
 		SourceWriter.Indent();
 		SourceWriter.Printf(R"""(
-			FNetBitWriter OutputWriter(PackageMap, 0);
-			OutputWriter.WriteBit(0); // bDoChecksum
+			FBunchPayloadWriter OutputWriter(PackageMap);
 
 			auto& HandleToPropertyMap = GetHandlePropertyMap();
 			const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::%s::ComponentId);
@@ -1752,9 +1751,10 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Print("if (ConditionMap.IsRelevant(Data.Condition))\n{");
 			SourceWriter.Indent();
 
-			// Write handle.
-			SourceWriter.Print("OutputWriter.SerializeIntPacked(Handle);");
-			SourceWriter.Print();
+			if (Property->IsA<UObjectPropertyBase>())
+			{
+				SourceWriter.Print("bool bWriteObjectProperty = true;");
+			}
 
 			// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
 			FString PropertyValueName = TEXT("Value");
@@ -1774,7 +1774,8 @@ void GenerateForwardingCodeFromLayout(
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);)""");
-					SourceWriter.Printf("%s = nullptr;", *PropertyValue);
+					SourceWriter.Print("bWriteObjectProperty = false;");
+					SourceWriter.Print("Interop->AddPendingIncomingObjectRefUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);");
 				});
 
 			// If this is RemoteRole (which will get swapped to Role when the bunch is processed), make sure to downgrade if bAutonomousProxy is false.
@@ -1791,7 +1792,14 @@ void GenerateForwardingCodeFromLayout(
 			}
 
 			SourceWriter.Print();
-			SourceWriter.Printf("%s->NetSerializeItem(OutputWriter, PackageMap, &%s);", *PropertyName, *PropertyValueName);
+
+			if (Property->IsA<UObjectPropertyBase>())
+			{
+				SourceWriter.Print("if (bWriteObjectProperty)");
+				SourceWriter.Print("{").Indent();
+			}
+
+			SourceWriter.Printf("OutputWriter.SerializeProperty(Handle, %s, &%s);", *PropertyName, *PropertyValueName);
 			SourceWriter.Print(R"""(
 				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
@@ -1799,6 +1807,11 @@ void GenerateForwardingCodeFromLayout(
 					ActorChannel->GetEntityId(),
 					*Data.Property->GetName(),
 					Handle);)""");
+
+			if (Property->IsA<UObjectPropertyBase>())
+			{
+				SourceWriter.Outdent().Print("}");
+			}
 
 			// End condition map check block.
 			SourceWriter.Outdent();
@@ -1808,7 +1821,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Outdent();
 			SourceWriter.Print("}");
 		}
-		SourceWriter.Print("Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter);");
+		SourceWriter.Print("Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter.GetNetBitWriter());");
 		SourceWriter.Outdent();
 		SourceWriter.Print("}");
 	}
