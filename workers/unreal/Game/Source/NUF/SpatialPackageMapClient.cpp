@@ -143,6 +143,10 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	for (UObject* Subobject : ActorSubobjects)
 	{
 		SubobjectOffset++;
+		if (Subobject->IsPendingKill())
+		{
+			continue;
+		}
 		FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_NUF(Subobject);
 		improbable::unreal::UnrealObjectRef SubobjectRef{EntityId.ToSpatialEntityId(), SubobjectOffset};
 		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
