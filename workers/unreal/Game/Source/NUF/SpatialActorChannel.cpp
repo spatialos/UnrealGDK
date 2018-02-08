@@ -51,10 +51,12 @@ void UpdateChangelistHistory(FRepState * RepState)
 
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
+	, ActorEntityId(0)
+	, ReserveEntityIdRequestId(-1)
+	, CreateEntityRequestId(-1)
+	, SpatialNetDriver(nullptr)
 {
 	bCoreActor = true;
-	ActorEntityId = worker::EntityId{};
-	SpatialNetDriver = nullptr;
 }
 
 void USpatialActorChannel::Init(UNetConnection* Connection, int32 ChannelIndex, bool bOpenedLocally)
