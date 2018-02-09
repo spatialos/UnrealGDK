@@ -299,8 +299,8 @@ void USpatialInterop::AddPendingIncomingObjectRefUpdate(const improbable::unreal
 	check(Property);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref depending on (entity ID: %lld, offset: %d), channel: %s, property: %s."),
 		UnresolvedObjectRef.entity(), UnresolvedObjectRef.offset(), *DependentChannel->GetName(), *Property->GetName());
-	ChannelsAwaitingIncomingObjectResolve.FindOrAdd(UnresolvedObjectRef).AddUnique(DependentChannel);
-	PendingIncomingObjectRefProperties.FindOrAdd(DependentChannel).AddUnique(TPair<UObjectPropertyBase*, uint16>{Property, Handle});
+	FPendingIncomingObjectProperty PendingPropertyData{Property, Handle};
+	PendingIncomingObjectRefProperties.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Add({Property, Handle});
 }
 
 void USpatialInterop::SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId)
@@ -364,32 +364,31 @@ void USpatialInterop::ResolvePendingOutgoingRPCs(UObject* Object)
 
 void USpatialInterop::ResolvePendingIncomingObjectRefUpdates(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
-	TArray<USpatialActorChannel*>* DependentChannels = ChannelsAwaitingIncomingObjectResolve.Find(ObjectRef);
+	TMap<USpatialActorChannel*, TArray<FPendingIncomingObjectProperty>>* DependentChannels = PendingIncomingObjectRefProperties.Find(ObjectRef);
 	if (DependentChannels == nullptr)
 	{
 		return;
 	}
 
-	for (auto DependentChannel : *DependentChannels)
+	for (auto& ChannelProperties : *DependentChannels)
 	{
-		TArray<TPair<UObjectPropertyBase*, uint16>>* Properties = PendingIncomingObjectRefProperties.Find(DependentChannel);
-		if (Properties && Properties->Num() > 0)
+		USpatialActorChannel* DependentChannel = ChannelProperties.Key;
+		TArray<FPendingIncomingObjectProperty>& Properties = ChannelProperties.Value;
+
+		// Build incoming bunch with resolved UObject data.
+		FBunchPayloadWriter Writer(PackageMap);
+		for (auto& Property : Properties)
 		{
-			// Build incoming bunch with resolved UObject data.
-			FBunchPayloadWriter Writer(PackageMap);
-			for (auto& Pair : *Properties)
-			{
-				Writer.SerializeProperty(Pair.Value, Pair.Key, &Object);
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object property update. actor %s (%lld), property %s (handle %d)"),
-					*SpatialOSInstance ->GetWorkerId(),
-					*DependentChannel->Actor->GetName(),
-					DependentChannel->GetEntityId(),
-					*Pair.Key->GetName(),
-					Pair.Value);
-			}
-			ReceiveSpatialUpdate(DependentChannel, Writer.GetNetBitWriter());
-			PendingIncomingObjectRefProperties.Remove(DependentChannel);
+			Writer.SerializeProperty(Property.Handle, Property.ObjectProperty, &Object);
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object property update. actor %s (%lld), property %s (handle %d)"),
+				*SpatialOSInstance ->GetWorkerId(),
+				*DependentChannel->Actor->GetName(),
+				DependentChannel->GetEntityId(),
+				*Property.ObjectProperty->GetName(),
+				Property.Handle);
 		}
+		ReceiveSpatialUpdate(DependentChannel, Writer.GetNetBitWriter());
 	}
-	ChannelsAwaitingIncomingObjectResolve.Remove(ObjectRef);
+
+	PendingIncomingObjectRefProperties.Remove(ObjectRef);
 }

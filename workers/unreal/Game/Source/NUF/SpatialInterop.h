@@ -72,6 +72,12 @@ public:
 	uint32 NumAttempts;
 };
 
+struct FPendingIncomingObjectProperty
+{
+	UObjectPropertyBase* ObjectProperty;
+	uint16 Handle;
+};
+
 UCLASS()
 class NUF_API USpatialInterop : public UObject
 {
@@ -150,8 +156,7 @@ private:
 	TMap<UObject*, TArray<TPair<FRPCRequestFunction, bool>>> PendingOutgoingRPCs;
 
 	// Pending incoming object ref property updates.
-	TMap<FHashableUnrealObjectRef, TArray<USpatialActorChannel*>> ChannelsAwaitingIncomingObjectResolve;
-	TMap<USpatialActorChannel*, TArray<TPair<UObjectPropertyBase*, uint16>>> PendingIncomingObjectRefProperties;
+	TMap<FHashableUnrealObjectRef, TMap<USpatialActorChannel*, TArray<FPendingIncomingObjectProperty>>> PendingIncomingObjectRefProperties;
 
 private:
 	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
