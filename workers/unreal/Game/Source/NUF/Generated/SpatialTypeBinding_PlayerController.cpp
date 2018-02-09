@@ -1421,7 +1421,7 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender(wo
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1453,7 +1453,7 @@ void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender(worker::Connec
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1481,7 +1481,7 @@ void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender(w
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1521,7 +1521,7 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Send
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1559,7 +1559,7 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender(worker::Con
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1600,7 +1600,7 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender(worker::C
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1655,7 +1655,7 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Conn
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1706,7 +1706,7 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1740,7 +1740,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender(worker::
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1789,7 +1789,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::C
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1817,7 +1817,7 @@ void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender(worke
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1849,7 +1849,7 @@ void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender(wo
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1903,7 +1903,7 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Co
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1935,7 +1935,7 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender(work
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1967,7 +1967,7 @@ void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender(worker::Connectio
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2020,7 +2020,7 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_S
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2058,7 +2058,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender(worker:
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2090,7 +2090,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender(worker::Co
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2134,7 +2134,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Co
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2162,7 +2162,7 @@ void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender(w
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2194,7 +2194,7 @@ void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender(worker:
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2243,7 +2243,7 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worke
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2292,7 +2292,7 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connecti
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientReset_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2320,7 +2320,7 @@ void USpatialTypeBinding_PlayerController::ClientReset_Sender(worker::Connection
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2369,7 +2369,7 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connec
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2460,7 +2460,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2515,7 +2515,7 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2551,7 +2551,7 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender(worker:
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2606,7 +2606,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(work
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2659,7 +2659,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connec
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2712,7 +2712,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2750,7 +2750,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender(worker::
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
 }
 
 void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2815,7 +2815,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::C
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
 }
 
 void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2853,7 +2853,7 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender(worker::Conne
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2889,7 +2889,7 @@ void USpatialTypeBinding_PlayerController::ClientMessage_Sender(worker::Connecti
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2921,7 +2921,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender(worker::
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2953,7 +2953,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender(worker::
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientGotoState_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -2985,7 +2985,7 @@ void USpatialTypeBinding_PlayerController::ClientGotoState_Sender(worker::Connec
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3036,7 +3036,7 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connec
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3064,7 +3064,7 @@ void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender(w
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3092,7 +3092,7 @@ void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender(work
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3120,7 +3120,7 @@ void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender(worker:
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3152,7 +3152,7 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender(worke
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3180,7 +3180,7 @@ void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender(worker::
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3208,7 +3208,7 @@ void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender(w
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3240,7 +3240,7 @@ void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender(worker::Con
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3268,7 +3268,7 @@ void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender(w
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3304,7 +3304,7 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender(w
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3338,7 +3338,7 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender(worker::Conn
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3372,7 +3372,7 @@ void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender(worker::Conn
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3407,7 +3407,7 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender(worker::Connect
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
 }
 
 void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3435,7 +3435,7 @@ void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender(worker::C
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
 }
 
 void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3463,7 +3463,7 @@ void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender(worker::C
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
 }
 
 void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3491,7 +3491,7 @@ void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender(worker:
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3525,7 +3525,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender(wo
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3559,7 +3559,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender(worker::Con
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
 }
 
 void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3597,7 +3597,7 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender(worker::Con
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3625,7 +3625,7 @@ void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender(worker::
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3653,7 +3653,7 @@ void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender(worker::Con
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3685,7 +3685,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender(work
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3719,7 +3719,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender(wor
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
 }
 
 void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3747,7 +3747,7 @@ void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender(worker::Co
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ServerPause_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3775,7 +3775,7 @@ void USpatialTypeBinding_PlayerController::ServerPause_Sender(worker::Connection
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3807,7 +3807,7 @@ void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender(worker
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3845,7 +3845,7 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender(worker::Conne
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3873,7 +3873,7 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_S
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3901,7 +3901,7 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender(wo
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
 }
 
 void USpatialTypeBinding_PlayerController::ServerChangeName_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3933,7 +3933,7 @@ void USpatialTypeBinding_PlayerController::ServerChangeName_Sender(worker::Conne
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ServerCamera_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -3965,7 +3965,7 @@ void USpatialTypeBinding_PlayerController::ServerCamera_Sender(worker::Connectio
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -4014,7 +4014,7 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender(wo
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender);
+	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
 }
 
 void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op)

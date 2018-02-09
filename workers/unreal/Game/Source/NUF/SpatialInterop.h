@@ -59,10 +59,10 @@ struct FRPCRequestResult
 using FRPCRequestFunction = TFunction<FRPCRequestResult()>;
 
 // Stores the number of attempts when retrying failed commands.
-class FRPCRetryContext
+class FOutgoingReliableRPC
 {
 public:
-	FRPCRetryContext(FRPCRequestFunction SendCommandRequest) :
+	FOutgoingReliableRPC(FRPCRequestFunction SendCommandRequest) :
 		SendCommandRequest{SendCommandRequest},
 		NumAttempts{1}
 	{
@@ -94,14 +94,14 @@ public:
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
 
-	void SendCommandRequest(FRPCRequestFunction Function);
+	void SendCommandRequest(FRPCRequestFunction Function, bool bReliable);
 	void HandleCommandResponse(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
 
 	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.
 	void OnResolveObject(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	void AddPendingOutgoingObjectRefUpdate(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
-	void AddPendingOutgoingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender);
+	void AddPendingOutgoingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender, bool bReliable);
 	void AddPendingIncomingObjectRefUpdate(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, UObjectPropertyBase* Property, uint16 Handle);
 	// Pending incoming RPC
 
@@ -140,14 +140,14 @@ private:
 	TMap<worker::EntityId, USpatialActorChannel*> EntityToClientActorChannel;
 
 	// Outgoing RPCs (for retry logic).
-	TMap<FUntypedRequestId, TSharedPtr<FRPCRetryContext>> OutgoingRPCs;
+	TMap<FUntypedRequestId, TSharedPtr<FOutgoingReliableRPC>> OutgoingReliableRPCs;
 
 	// Pending outgoing object ref property updates.
 	TMap<UObject*, TArray<USpatialActorChannel*>> ChannelsAwaitingOutgoingObjectResolve;
 	TMap<USpatialActorChannel*, TArray<uint16>> PendingOutgoingObjectRefHandles;
 
 	// Pending outgoing RPCs.
-	TMap<UObject*, TArray<FRPCRequestFunction>> PendingOutgoingRPCs;
+	TMap<UObject*, TArray<TPair<FRPCRequestFunction, bool>>> PendingOutgoingRPCs;
 
 	// Pending incoming object ref property updates.
 	TMap<FHashableUnrealObjectRef, TArray<USpatialActorChannel*>> ChannelsAwaitingIncomingObjectResolve;

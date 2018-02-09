@@ -18,7 +18,7 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 	ForEachObjectWithOuter(Object, [&InSubobjects](UObject* Object)
 	{
 		// Objects can only be allocated NetGUIDs if this is true.
-		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill())
+		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
 		{
 			InSubobjects.Add(Object);
 		}
@@ -165,6 +165,10 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(const worker::EntityId
 
 void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData)
 {
+	// Get interop.
+	USpatialInterop* Interop = Cast<USpatialNetDriver>(Driver)->GetSpatialInterop();
+	check(Interop);
+
 	// Build list of static objects in the world.
 	UWorld* World = Driver->GetWorld();
 	TMap<FString, AActor*> StaticActorsInWorld;
@@ -173,11 +177,8 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 		AActor* Actor = *Itr;
 		FString PathName = Actor->GetPathName(World);
 		StaticActorsInWorld.Add(PathName, Actor);
+		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: Static object in world: %s."), *Interop->GetSpatialOS()->GetWorkerId(), *PathName);
 	}
-
-	// Get interop.
-	USpatialInterop* Interop = Cast<USpatialNetDriver>(Driver)->GetSpatialInterop();
-	check(Interop);
 
 	// Match the above list with the static actor data.
 	auto& StaticActorData = LevelData.static_actor_map();
@@ -232,6 +233,12 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID(const UObject* Object)
 FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_NUF(const UObject* Object)
 {
 	FNetworkGUID NetGUID = GetOrAssignNetGUID(Object);
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: GetOrAssignNetGUID for object %s returned %s. IsDynamicObject: %d"),
+		*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
+		*Object->GetName(),
+		*NetGUID.ToString(),
+		(int)IsDynamicObject(Object));
+
 	// One major difference between how Unreal does NetGUIDs vs us is, we don't attempt to make them consistent across workers and client.
 	// The function above might have returned without assigning new GUID, because we are the client.
 	// Let's directly call the client function in that case.

@@ -82,6 +82,7 @@ struct FRPCDefinition
 {
 	UClass* CallerType;
 	UFunction* Function;
+	bool bReliable;
 };
 
 struct FPropertyLayout
@@ -103,7 +104,7 @@ FString GetLifetimeConditionAsString(ELifetimeCondition Condition)
 
 TArray<ERPCType> GetRPCTypes()
 {
-	static TArray<ERPCType> Groups = {RPC_Client, RPC_Server };
+	static TArray<ERPCType> Groups = {RPC_Client, RPC_Server};
 	return Groups;
 }
 
@@ -941,7 +942,8 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
 			RemoteFunction->FunctionFlags & FUNC_NetServer)
 		{
-			Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{Class, *RemoteFunction});
+			bool bReliable = (RemoteFunction->FunctionFlags & FUNC_NetReliable) != 0;
+			Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{Class, *RemoteFunction, bReliable});
 		}
 	}
 
@@ -954,7 +956,8 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 			if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
 				RemoteFunction->FunctionFlags & FUNC_NetServer)
 			{
-				Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{CharacterMovementComponentClass, *RemoteFunction});
+				bool bReliable = (RemoteFunction->FunctionFlags & FUNC_NetReliable) != 0;
+				Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{CharacterMovementComponentClass, *RemoteFunction, bReliable});
 			}
 		}
 	}
@@ -1768,10 +1771,11 @@ void GenerateForwardingCodeFromLayout(
 				SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName, true, PropertyValueCppType,
 				[&SourceWriter](const FString& PropertyValue)
 				{
-					SourceWriter.Printf("// TODO(David): Deal with an unresolved object ref on the client.");
 					SourceWriter.Print(R"""(
-						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
+							ObjectRef.entity(),
+							ObjectRef.handle(),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
@@ -1898,7 +1902,7 @@ void GenerateForwardingCodeFromLayout(
 				*GetSchemaRPCComponentName(Group, Class),
 				*GetCommandNameFromFunction(RPC.Function));
 			SourceWriter.Outdent().Print("};");
-			SourceWriter.Print("Interop->SendCommandRequest(Sender);");
+			SourceWriter.Printf("Interop->SendCommandRequest(Sender, %s);", RPC.bReliable ? TEXT("/*bReliable*/ true") : TEXT("/*bReliable*/ false"));
 			SourceWriter.Outdent().Print("}");
 		}
 	}
