@@ -323,7 +323,7 @@ void USpatialTypeBinding_Character::BuildSpatialComponentUpdate(
 		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
 		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*Channel->Actor->GetName(),
 			Channel->GetEntityId(),
@@ -861,7 +861,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -887,7 +887,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -913,7 +913,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -940,7 +940,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -974,9 +974,10 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						// TODO(David): Deal with an unresolved object ref on the client.
-						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
+							ObjectRef.entity(),
+							ObjectRef.offset(),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
@@ -990,7 +991,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1018,7 +1019,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1052,9 +1053,10 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						// TODO(David): Deal with an unresolved object ref on the client.
-						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
+							ObjectRef.entity(),
+							ObjectRef.offset(),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
@@ -1068,7 +1070,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1094,7 +1096,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1119,7 +1121,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1144,7 +1146,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1164,7 +1166,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = FName(((*Update.field_attachmentreplication_attachsocket().data())).data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1198,9 +1200,10 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						// TODO(David): Deal with an unresolved object ref on the client.
-						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
+							ObjectRef.entity(),
+							ObjectRef.offset(),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
@@ -1214,7 +1217,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1235,7 +1238,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_role().data())));
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1261,7 +1264,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1295,9 +1298,10 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						// TODO(David): Deal with an unresolved object ref on the client.
-						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
+							ObjectRef.entity(),
+							ObjectRef.offset(),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
@@ -1311,7 +1315,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1346,9 +1350,10 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						// TODO(David): Deal with an unresolved object ref on the client.
-						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
+							ObjectRef.entity(),
+							ObjectRef.offset(),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
@@ -1362,7 +1367,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1383,7 +1388,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = uint8(uint8((*Update.field_remoteviewpitch().data())));
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1417,9 +1422,10 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						// TODO(David): Deal with an unresolved object ref on the client.
-						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
+							ObjectRef.entity(),
+							ObjectRef.offset(),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
@@ -1433,7 +1439,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1468,9 +1474,10 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						// TODO(David): Deal with an unresolved object ref on the client.
-						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
+							ObjectRef.entity(),
+							ObjectRef.offset(),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
@@ -1484,7 +1491,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1505,7 +1512,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = FName(((*Update.field_replicatedbasedmovement_bonename().data())).data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1530,7 +1537,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1555,7 +1562,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1575,7 +1582,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_replicatedbasedmovement_bserverhasbasecomponent().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1595,7 +1602,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_replicatedbasedmovement_brelativerotation().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1615,7 +1622,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_replicatedbasedmovement_bserverhasvelocity().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1635,7 +1642,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_animrootmotiontranslationscale().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1655,7 +1662,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_replicatedserverlasttransformupdatetimestamp().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1675,7 +1682,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = uint8(uint8((*Update.field_replicatedmovementmode().data())));
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1701,7 +1708,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1721,7 +1728,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_jumpmaxholdtime().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1741,7 +1748,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_jumpmaxcount().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1761,7 +1768,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_reprootmotion_bisactive().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1795,9 +1802,10 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						// TODO(David): Deal with an unresolved object ref on the client.
-						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
+							ObjectRef.entity(),
+							ObjectRef.offset(),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
@@ -1811,7 +1819,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1832,7 +1840,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_reprootmotion_position().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1857,7 +1865,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1882,7 +1890,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1916,9 +1924,10 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						// TODO(David): Deal with an unresolved object ref on the client.
-						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Setting to nullptr (but this is probably incorrect). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
+							ObjectRef.entity(),
+							ObjectRef.offset(),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
@@ -1932,7 +1941,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1953,7 +1962,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = FName(((*Update.field_reprootmotion_movementbasebonename().data())).data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1973,7 +1982,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_reprootmotion_brelativeposition().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1993,7 +2002,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_reprootmotion_brelativerotation().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -2022,7 +2031,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value.LastAccumulatedSettings.Flags = uint8(uint8((*Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -2047,7 +2056,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -2072,7 +2081,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -2091,7 +2100,7 @@ void USpatialTypeBinding_Character::ClientCheatWalk_Sender(worker::Connection* c
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC ClientCheatWalk queued. Target object is unresolved."));
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ClientCheatWalk queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return FRPCRequestResult{TargetObject};
 		}
 
@@ -2100,7 +2109,7 @@ void USpatialTypeBinding_Character::ClientCheatWalk_Sender(worker::Connection* c
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientCheatWalk, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCheatWalk, target: %s (entity ID %lld, offset: %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
 			TargetObjectRef.entity(),
@@ -2119,7 +2128,7 @@ void USpatialTypeBinding_Character::ClientCheatGhost_Sender(worker::Connection* 
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC ClientCheatGhost queued. Target object is unresolved."));
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ClientCheatGhost queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return FRPCRequestResult{TargetObject};
 		}
 
@@ -2128,7 +2137,7 @@ void USpatialTypeBinding_Character::ClientCheatGhost_Sender(worker::Connection* 
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientCheatGhost, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCheatGhost, target: %s (entity ID %lld, offset: %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
 			TargetObjectRef.entity(),
@@ -2147,7 +2156,7 @@ void USpatialTypeBinding_Character::ClientCheatFly_Sender(worker::Connection* co
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC ClientCheatFly queued. Target object is unresolved."));
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ClientCheatFly queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return FRPCRequestResult{TargetObject};
 		}
 
@@ -2156,7 +2165,7 @@ void USpatialTypeBinding_Character::ClientCheatFly_Sender(worker::Connection* co
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientCheatFly, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCheatFly, target: %s (entity ID %lld, offset: %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
 			TargetObjectRef.entity(),
@@ -2184,7 +2193,7 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Sender(worker:
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC ClientVeryShortAdjustPosition queued. Target object is unresolved."));
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ClientVeryShortAdjustPosition queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return FRPCRequestResult{TargetObject};
 		}
 
@@ -2198,7 +2207,7 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Sender(worker:
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC queued. NewBase is unresolved."));
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ClientVeryShortAdjustPosition queued. NewBase is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 				return FRPCRequestResult{NewBase};
 			}
 			else
@@ -2217,7 +2226,7 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Sender(worker:
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientVeryShortAdjustPosition, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientVeryShortAdjustPosition, target: %s (entity ID %lld, offset: %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
 			TargetObjectRef.entity(),
@@ -2250,7 +2259,7 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Sender(
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC ClientAdjustRootMotionSourcePosition queued. Target object is unresolved."));
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ClientAdjustRootMotionSourcePosition queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return FRPCRequestResult{TargetObject};
 		}
 
@@ -2273,7 +2282,7 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Sender(
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC queued. ServerBase is unresolved."));
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ClientAdjustRootMotionSourcePosition queued. ServerBase is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 				return FRPCRequestResult{ServerBase};
 			}
 			else
@@ -2292,7 +2301,7 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Sender(
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientAdjustRootMotionSourcePosition, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientAdjustRootMotionSourcePosition, target: %s (entity ID %lld, offset: %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
 			TargetObjectRef.entity(),
@@ -2323,7 +2332,7 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Sender(worker
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC ClientAdjustRootMotionPosition queued. Target object is unresolved."));
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ClientAdjustRootMotionPosition queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return FRPCRequestResult{TargetObject};
 		}
 
@@ -2340,7 +2349,7 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Sender(worker
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC queued. ServerBase is unresolved."));
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ClientAdjustRootMotionPosition queued. ServerBase is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 				return FRPCRequestResult{ServerBase};
 			}
 			else
@@ -2359,7 +2368,7 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Sender(worker
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientAdjustRootMotionPosition, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientAdjustRootMotionPosition, target: %s (entity ID %lld, offset: %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
 			TargetObjectRef.entity(),
@@ -2388,7 +2397,7 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Sender(worker::Connecti
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC ClientAdjustPosition queued. Target object is unresolved."));
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ClientAdjustPosition queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return FRPCRequestResult{TargetObject};
 		}
 
@@ -2403,7 +2412,7 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Sender(worker::Connecti
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC queued. NewBase is unresolved."));
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ClientAdjustPosition queued. NewBase is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 				return FRPCRequestResult{NewBase};
 			}
 			else
@@ -2422,7 +2431,7 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Sender(worker::Connecti
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientAdjustPosition, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientAdjustPosition, target: %s (entity ID %lld, offset: %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
 			TargetObjectRef.entity(),
@@ -2444,7 +2453,7 @@ void USpatialTypeBinding_Character::ClientAckGoodMove_Sender(worker::Connection*
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC ClientAckGoodMove queued. Target object is unresolved."));
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ClientAckGoodMove queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return FRPCRequestResult{TargetObject};
 		}
 
@@ -2454,7 +2463,7 @@ void USpatialTypeBinding_Character::ClientAckGoodMove_Sender(worker::Connection*
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ClientAckGoodMove, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientAckGoodMove, target: %s (entity ID %lld, offset: %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
 			TargetObjectRef.entity(),
@@ -2478,7 +2487,7 @@ void USpatialTypeBinding_Character::ServerMoveOld_Sender(worker::Connection* con
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC ServerMoveOld queued. Target object is unresolved."));
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ServerMoveOld queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return FRPCRequestResult{TargetObject};
 		}
 
@@ -2490,7 +2499,7 @@ void USpatialTypeBinding_Character::ServerMoveOld_Sender(worker::Connection* con
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerMoveOld, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerMoveOld, target: %s (entity ID %lld, offset: %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
 			TargetObjectRef.entity(),
@@ -2524,7 +2533,7 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Sender(worker
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC ServerMoveDualHybridRootMotion queued. Target object is unresolved."));
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ServerMoveDualHybridRootMotion queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return FRPCRequestResult{TargetObject};
 		}
 
@@ -2546,7 +2555,7 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Sender(worker
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC queued. ClientMovementBase is unresolved."));
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ServerMoveDualHybridRootMotion queued. ClientMovementBase is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 				return FRPCRequestResult{ClientMovementBase};
 			}
 			else
@@ -2563,7 +2572,7 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Sender(worker
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerMoveDualHybridRootMotion, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerMoveDualHybridRootMotion, target: %s (entity ID %lld, offset: %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
 			TargetObjectRef.entity(),
@@ -2597,7 +2606,7 @@ void USpatialTypeBinding_Character::ServerMoveDual_Sender(worker::Connection* co
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC ServerMoveDual queued. Target object is unresolved."));
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ServerMoveDual queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return FRPCRequestResult{TargetObject};
 		}
 
@@ -2619,7 +2628,7 @@ void USpatialTypeBinding_Character::ServerMoveDual_Sender(worker::Connection* co
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC queued. ClientMovementBase is unresolved."));
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ServerMoveDual queued. ClientMovementBase is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 				return FRPCRequestResult{ClientMovementBase};
 			}
 			else
@@ -2636,7 +2645,7 @@ void USpatialTypeBinding_Character::ServerMoveDual_Sender(worker::Connection* co
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerMoveDual, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerMoveDual, target: %s (entity ID %lld, offset: %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
 			TargetObjectRef.entity(),
@@ -2666,7 +2675,7 @@ void USpatialTypeBinding_Character::ServerMove_Sender(worker::Connection* const 
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC ServerMove queued. Target object is unresolved."));
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ServerMove queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return FRPCRequestResult{TargetObject};
 		}
 
@@ -2684,7 +2693,7 @@ void USpatialTypeBinding_Character::ServerMove_Sender(worker::Connection* const 
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC queued. ClientMovementBase is unresolved."));
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ServerMove queued. ClientMovementBase is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 				return FRPCRequestResult{ClientMovementBase};
 			}
 			else
@@ -2701,7 +2710,7 @@ void USpatialTypeBinding_Character::ServerMove_Sender(worker::Connection* const 
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending RPC: ServerMove, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerMove, target: %s (entity ID %lld, offset: %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
 			TargetObjectRef.entity(),
@@ -2778,7 +2787,7 @@ void USpatialTypeBinding_Character::ClientCheatWalk_Receiver(const worker::Comma
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientCheatWalk_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCheatWalk_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			TargetObjectRef.entity(),
 			TargetObjectRef.offset());
@@ -2800,7 +2809,7 @@ void USpatialTypeBinding_Character::ClientCheatWalk_Receiver(const worker::Comma
 		*TargetObjectUntyped->GetName());
 
 	// Call implementation and send command response.
-	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientCheatWalk, target: %s (entity ID %lld, offset: %d)"),
+	UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCheatWalk, target: %s (entity: %llu, offset: %u)"),
 		*Interop->GetSpatialOS()->GetWorkerId(),
 		*TargetObject->GetName(),
 		TargetObjectRef.entity(),
@@ -2815,7 +2824,7 @@ void USpatialTypeBinding_Character::ClientCheatGhost_Receiver(const worker::Comm
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientCheatGhost_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCheatGhost_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			TargetObjectRef.entity(),
 			TargetObjectRef.offset());
@@ -2837,7 +2846,7 @@ void USpatialTypeBinding_Character::ClientCheatGhost_Receiver(const worker::Comm
 		*TargetObjectUntyped->GetName());
 
 	// Call implementation and send command response.
-	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientCheatGhost, target: %s (entity ID %lld, offset: %d)"),
+	UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCheatGhost, target: %s (entity: %llu, offset: %u)"),
 		*Interop->GetSpatialOS()->GetWorkerId(),
 		*TargetObject->GetName(),
 		TargetObjectRef.entity(),
@@ -2852,7 +2861,7 @@ void USpatialTypeBinding_Character::ClientCheatFly_Receiver(const worker::Comman
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientCheatFly_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCheatFly_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			TargetObjectRef.entity(),
 			TargetObjectRef.offset());
@@ -2874,7 +2883,7 @@ void USpatialTypeBinding_Character::ClientCheatFly_Receiver(const worker::Comman
 		*TargetObjectUntyped->GetName());
 
 	// Call implementation and send command response.
-	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientCheatFly, target: %s (entity ID %lld, offset: %d)"),
+	UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCheatFly, target: %s (entity: %llu, offset: %u)"),
 		*Interop->GetSpatialOS()->GetWorkerId(),
 		*TargetObject->GetName(),
 		TargetObjectRef.entity(),
@@ -2889,7 +2898,7 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Receiver(const
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientVeryShortAdjustPosition_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientVeryShortAdjustPosition_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			TargetObjectRef.entity(),
 			TargetObjectRef.offset());
@@ -2941,7 +2950,7 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Receiver(const
 			}
 			else
 			{
-				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientVeryShortAdjustPosition_Receiver: NewBase (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientVeryShortAdjustPosition_Receiver: NewBase (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					ObjectRef.entity(),
 					ObjectRef.offset());
@@ -2968,7 +2977,7 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Receiver(const
 	ServerMovementMode = uint8(uint8(Op.Request.field_servermovementmode()));
 
 	// Call implementation and send command response.
-	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientVeryShortAdjustPosition, target: %s (entity ID %lld, offset: %d)"),
+	UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientVeryShortAdjustPosition, target: %s (entity: %llu, offset: %u)"),
 		*Interop->GetSpatialOS()->GetWorkerId(),
 		*TargetObject->GetName(),
 		TargetObjectRef.entity(),
@@ -2983,7 +2992,7 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Receive
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientAdjustRootMotionSourcePosition_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustRootMotionSourcePosition_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			TargetObjectRef.entity(),
 			TargetObjectRef.offset());
@@ -3069,7 +3078,7 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Receive
 			}
 			else
 			{
-				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientAdjustRootMotionSourcePosition_Receiver: ServerBase (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustRootMotionSourcePosition_Receiver: ServerBase (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					ObjectRef.entity(),
 					ObjectRef.offset());
@@ -3096,7 +3105,7 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Receive
 	ServerMovementMode = uint8(uint8(Op.Request.field_servermovementmode()));
 
 	// Call implementation and send command response.
-	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientAdjustRootMotionSourcePosition, target: %s (entity ID %lld, offset: %d)"),
+	UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientAdjustRootMotionSourcePosition, target: %s (entity: %llu, offset: %u)"),
 		*Interop->GetSpatialOS()->GetWorkerId(),
 		*TargetObject->GetName(),
 		TargetObjectRef.entity(),
@@ -3111,7 +3120,7 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Receiver(cons
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientAdjustRootMotionPosition_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustRootMotionPosition_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			TargetObjectRef.entity(),
 			TargetObjectRef.offset());
@@ -3180,7 +3189,7 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Receiver(cons
 			}
 			else
 			{
-				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientAdjustRootMotionPosition_Receiver: ServerBase (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustRootMotionPosition_Receiver: ServerBase (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					ObjectRef.entity(),
 					ObjectRef.offset());
@@ -3207,7 +3216,7 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Receiver(cons
 	ServerMovementMode = uint8(uint8(Op.Request.field_servermovementmode()));
 
 	// Call implementation and send command response.
-	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientAdjustRootMotionPosition, target: %s (entity ID %lld, offset: %d)"),
+	UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientAdjustRootMotionPosition, target: %s (entity: %llu, offset: %u)"),
 		*Interop->GetSpatialOS()->GetWorkerId(),
 		*TargetObject->GetName(),
 		TargetObjectRef.entity(),
@@ -3222,7 +3231,7 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Receiver(const worker::
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientAdjustPosition_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustPosition_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			TargetObjectRef.entity(),
 			TargetObjectRef.offset());
@@ -3283,7 +3292,7 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Receiver(const worker::
 			}
 			else
 			{
-				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientAdjustPosition_Receiver: NewBase (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustPosition_Receiver: NewBase (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					ObjectRef.entity(),
 					ObjectRef.offset());
@@ -3310,7 +3319,7 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Receiver(const worker::
 	ServerMovementMode = uint8(uint8(Op.Request.field_servermovementmode()));
 
 	// Call implementation and send command response.
-	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientAdjustPosition, target: %s (entity ID %lld, offset: %d)"),
+	UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientAdjustPosition, target: %s (entity: %llu, offset: %u)"),
 		*Interop->GetSpatialOS()->GetWorkerId(),
 		*TargetObject->GetName(),
 		TargetObjectRef.entity(),
@@ -3325,7 +3334,7 @@ void USpatialTypeBinding_Character::ClientAckGoodMove_Receiver(const worker::Com
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ClientAckGoodMove_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAckGoodMove_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			TargetObjectRef.entity(),
 			TargetObjectRef.offset());
@@ -3351,7 +3360,7 @@ void USpatialTypeBinding_Character::ClientAckGoodMove_Receiver(const worker::Com
 	TimeStamp = Op.Request.field_timestamp();
 
 	// Call implementation and send command response.
-	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ClientAckGoodMove, target: %s (entity ID %lld, offset: %d)"),
+	UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientAckGoodMove, target: %s (entity: %llu, offset: %u)"),
 		*Interop->GetSpatialOS()->GetWorkerId(),
 		*TargetObject->GetName(),
 		TargetObjectRef.entity(),
@@ -3366,7 +3375,7 @@ void USpatialTypeBinding_Character::ServerMoveOld_Receiver(const worker::Command
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerMoveOld_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveOld_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			TargetObjectRef.entity(),
 			TargetObjectRef.offset());
@@ -3405,7 +3414,7 @@ void USpatialTypeBinding_Character::ServerMoveOld_Receiver(const worker::Command
 	OldMoveFlags = uint8(uint8(Op.Request.field_oldmoveflags()));
 
 	// Call implementation and send command response.
-	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerMoveOld, target: %s (entity ID %lld, offset: %d)"),
+	UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerMoveOld, target: %s (entity: %llu, offset: %u)"),
 		*Interop->GetSpatialOS()->GetWorkerId(),
 		*TargetObject->GetName(),
 		TargetObjectRef.entity(),
@@ -3420,7 +3429,7 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Receiver(cons
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerMoveDualHybridRootMotion_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveDualHybridRootMotion_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			TargetObjectRef.entity(),
 			TargetObjectRef.offset());
@@ -3514,7 +3523,7 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Receiver(cons
 			}
 			else
 			{
-				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerMoveDualHybridRootMotion_Receiver: ClientMovementBase (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveDualHybridRootMotion_Receiver: ClientMovementBase (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					ObjectRef.entity(),
 					ObjectRef.offset());
@@ -3533,7 +3542,7 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Receiver(cons
 	ClientMovementMode = uint8(uint8(Op.Request.field_clientmovementmode()));
 
 	// Call implementation and send command response.
-	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerMoveDualHybridRootMotion, target: %s (entity ID %lld, offset: %d)"),
+	UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerMoveDualHybridRootMotion, target: %s (entity: %llu, offset: %u)"),
 		*Interop->GetSpatialOS()->GetWorkerId(),
 		*TargetObject->GetName(),
 		TargetObjectRef.entity(),
@@ -3548,7 +3557,7 @@ void USpatialTypeBinding_Character::ServerMoveDual_Receiver(const worker::Comman
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerMoveDual_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveDual_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			TargetObjectRef.entity(),
 			TargetObjectRef.offset());
@@ -3642,7 +3651,7 @@ void USpatialTypeBinding_Character::ServerMoveDual_Receiver(const worker::Comman
 			}
 			else
 			{
-				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerMoveDual_Receiver: ClientMovementBase (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveDual_Receiver: ClientMovementBase (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					ObjectRef.entity(),
 					ObjectRef.offset());
@@ -3661,7 +3670,7 @@ void USpatialTypeBinding_Character::ServerMoveDual_Receiver(const worker::Comman
 	ClientMovementMode = uint8(uint8(Op.Request.field_clientmovementmode()));
 
 	// Call implementation and send command response.
-	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerMoveDual, target: %s (entity ID %lld, offset: %d)"),
+	UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerMoveDual, target: %s (entity: %llu, offset: %u)"),
 		*Interop->GetSpatialOS()->GetWorkerId(),
 		*TargetObject->GetName(),
 		TargetObjectRef.entity(),
@@ -3676,7 +3685,7 @@ void USpatialTypeBinding_Character::ServerMove_Receiver(const worker::CommandReq
 	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerMove_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMove_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			TargetObjectRef.entity(),
 			TargetObjectRef.offset());
@@ -3749,7 +3758,7 @@ void USpatialTypeBinding_Character::ServerMove_Receiver(const worker::CommandReq
 			}
 			else
 			{
-				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: ServerMove_Receiver: ClientMovementBase (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMove_Receiver: ClientMovementBase (entity id %lld, offset %d) is not resolved on this worker. Sending command failure."),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					ObjectRef.entity(),
 					ObjectRef.offset());
@@ -3768,7 +3777,7 @@ void USpatialTypeBinding_Character::ServerMove_Receiver(const worker::CommandReq
 	ClientMovementMode = uint8(uint8(Op.Request.field_clientmovementmode()));
 
 	// Call implementation and send command response.
-	UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Receiving RPC: ServerMove, target: %s (entity ID %lld, offset: %d)"),
+	UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerMove, target: %s (entity: %llu, offset: %u)"),
 		*Interop->GetSpatialOS()->GetWorkerId(),
 		*TargetObject->GetName(),
 		TargetObjectRef.entity(),

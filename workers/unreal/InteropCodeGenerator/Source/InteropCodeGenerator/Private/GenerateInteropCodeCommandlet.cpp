@@ -1645,7 +1645,7 @@ void GenerateForwardingCodeFromLayout(
 		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
 		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*Channel->Actor->GetName(),
 			Channel->GetEntityId(),
@@ -1772,10 +1772,10 @@ void GenerateForwardingCodeFromLayout(
 				[&SourceWriter](const FString& PropertyValue)
 				{
 					SourceWriter.Print(R"""(
-						UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
 							ObjectRef.entity(),
-							ObjectRef.handle(),
+							ObjectRef.offset(),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
@@ -1807,7 +1807,7 @@ void GenerateForwardingCodeFromLayout(
 
 			SourceWriter.Printf("OutputWriter.SerializeProperty(Handle, %s, &%s);", *PropertyName, *PropertyValueName);
 			SourceWriter.Print(R"""(
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1870,7 +1870,7 @@ void GenerateForwardingCodeFromLayout(
 				improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 				if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("RPC %s queued. Target object is unresolved."));
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: RPC %s queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 					return FRPCRequestResult{TargetObject};
 				})""", *RPC.Function->GetName());
 			SourceWriter.Print();
@@ -1881,9 +1881,11 @@ void GenerateForwardingCodeFromLayout(
 				TArray<UProperty*> NewChain = {*Param};
 				GenerateUnrealToSchemaConversion(
 					SourceWriter, "Request", NewChain, *Param->GetNameCPP(), false,
-					[&SourceWriter](const FString& PropertyValue)
+					[&SourceWriter, &RPC](const FString& PropertyValue)
 					{
-						SourceWriter.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"RPC queued. %s is unresolved.\"));", *PropertyValue);
+						SourceWriter.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"%%s: RPC %s queued. %s is unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
+							*RPC.Function->GetName(),
+							*PropertyValue);
 						SourceWriter.Printf("return FRPCRequestResult{%s};", *PropertyValue);
 					});
 			}
@@ -1891,7 +1893,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Printf(R"""(
 				// Send command request.
 				Request.set_target_subobject_offset(TargetObjectRef.offset());
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: Sending RPC: %s, target: %%s (entity ID %%lld, offset: %%d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%%s: Sending RPC: %s, target: %%s (entity ID %%lld, offset: %%d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*TargetObject->GetName(),
 					TargetObjectRef.entity(),
@@ -1944,7 +1946,7 @@ void GenerateForwardingCodeFromLayout(
 			auto ObjectResolveFailureGenerator = [&SourceWriter, &RPC, Group, Class](const FString& PropertyName, const FString& ObjectRef)
 			{
 				SourceWriter.Printf(R"""(
-					UE_LOG(LogSpatialOSInterop, Warning, TEXT("%%s: %s_Receiver: %s (entity id %%lld, offset %%d) is not resolved on this worker. Sending command failure."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: %s_Receiver: %s (entity id %%lld, offset %%d) is not resolved on this worker. Sending command failure."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
 						%s.entity(),
 						%s.offset());
@@ -2008,7 +2010,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Print();
 			SourceWriter.Print("// Call implementation and send command response.");
 			SourceWriter.Printf(R"""(
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: Receiving RPC: %s, target: %%s (entity ID %%lld, offset: %%d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%%s: Received RPC: %s, target: %%s (entity: %%llu, offset: %%u)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*TargetObject->GetName(),
 					TargetObjectRef.entity(),

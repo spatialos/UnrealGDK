@@ -33,7 +33,7 @@ public:
 		RepFlags.bNetOwner = bAuthoritative;// ActorChannel->Actor->IsOwnedBy(ActorChannel->Connection->PlayerController);
 		RepFlags.bRepPhysics = ActorChannel->Actor->ReplicatedMovement.bRepPhysics;
 
-		UE_LOG(LogTemp, Warning, TEXT("CMF Actor %s (%lld) NetOwner %d Simulated %d RepPhysics %d Client %s"),
+		UE_LOG(LogTemp, Verbose, TEXT("CMF Actor %s (%lld) NetOwner %d Simulated %d RepPhysics %d Client %s"),
 			*ActorChannel->Actor->GetName(),
 			ActorChannel->GetEntityId(),
 			RepFlags.bNetOwner,

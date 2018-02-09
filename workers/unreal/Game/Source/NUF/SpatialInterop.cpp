@@ -299,7 +299,6 @@ void USpatialInterop::AddPendingIncomingObjectRefUpdate(const improbable::unreal
 	check(Property);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref depending on (entity ID: %lld, offset: %d), channel: %s, property: %s."),
 		UnresolvedObjectRef.entity(), UnresolvedObjectRef.offset(), *DependentChannel->GetName(), *Property->GetName());
-	FPendingIncomingObjectProperty PendingPropertyData{Property, Handle};
 	PendingIncomingObjectRefProperties.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Add({Property, Handle});
 }
 
