@@ -74,6 +74,12 @@ void USpatialActorChannel::Init(UNetConnection* Connection, int32 ChannelIndex, 
 
 void USpatialActorChannel::BindToSpatialView()
 {
+	if (SpatialNetDriver->ServerConnection)
+	{
+		// Don't need to bind to reserve/create entity responses on the client.
+		return;
+	}
+
 	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
 	{

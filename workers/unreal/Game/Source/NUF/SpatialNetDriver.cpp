@@ -434,7 +434,8 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
 					if (Channel)
 					{
-						if (GetEntityRegistry()->GetEntityIdFromActor(Actor) != 0)
+						const USpatialTypeBinding* TypeBinding = Interop->GetTypeBindingByClass(Actor->GetClass());
+						if (TypeBinding == nullptr)
 						{
 							Channel->bCoreActor = false;
 						}
