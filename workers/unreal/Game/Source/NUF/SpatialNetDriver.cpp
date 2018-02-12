@@ -614,22 +614,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 				}
 			}			
 
-			// send ClientAdjustment if necessary
-			// we do this here so that we send a maximum of one per packet to that client; there is no value in stacking additional corrections
-			//todo-giray: Revisit this part as it relies on having a player controller per connection. I'm not sure if we'll do that.
-			if (Connection->PlayerController)
-			{
-				Connection->PlayerController->SendClientAdjustment();
-			}
-
-			for (int32 ChildIdx = 0; ChildIdx < Connection->Children.Num(); ChildIdx++)
-			{
-				if (Connection->Children[ChildIdx]->PlayerController != NULL)
-				{
-					Connection->Children[ChildIdx]->PlayerController->SendClientAdjustment();
-				}
-			}
-
 			FMemMark RelevantActorMark(FMemStack::Get());
 
 			FActorPriority* PriorityList = NULL;

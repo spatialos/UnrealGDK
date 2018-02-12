@@ -190,6 +190,14 @@ bool USpatialActorChannel::ReplicateActor()
 	// Replicate Actor and Component properties and RPCs
 	// ----------------------------------------------------------
 
+	// Epic does this at the net driver level, per connection. See UNetDriver::ServerReplicateActors().
+	// However, we have many player controllers sharing one connection, so we do it at the actor level before replication.
+	APlayerController* PC = Cast<APlayerController>(Actor);
+	if (PC)
+	{
+		PC->SendClientAdjustment();
+	}
+	
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
 
