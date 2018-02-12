@@ -1,4 +1,4 @@
-// Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 using UnrealBuildTool;
 
@@ -8,7 +8,12 @@ public class NUF : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "OnlineSubsystemUtils", "Sockets", "SpatialOS", "UnrealEd", "Blutility"});
-		PrivateIncludePaths.Add( "../../../ThirdParty/ThirdPartyLib/include" );
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Sockets", "OnlineSubsystemUtils", "SpatialOS" });
+
+		if (UEBuildConfiguration.bBuildEditor == true)
+		{
+			// Required by UNUFGameInstance::StartPlayInEditorGameInstance.
+			PublicDependencyModuleNames.Add("UnrealEd");
+		}
 	}
 }
