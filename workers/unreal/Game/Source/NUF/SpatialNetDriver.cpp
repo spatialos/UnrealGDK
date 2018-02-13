@@ -306,14 +306,8 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			UNetConnection* ActorConnection = Actor->GetNetConnection();
 			if (ActorConnection != Connection)
 			{
-				if (ActorConnection == nullptr && Connection == ClientConnections[0])
-				{
-					UE_LOG(LogSpatialOSNUF, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());
-				}
-				else
-				{
-					continue;
-				}
+				verify(ActorConnection == nullptr && Connection == ClientConnections[0]);
+				UE_LOG(LogSpatialOSNUF, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());				
 			}
 			else
 			{
@@ -830,8 +824,6 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 	Connection->InitRemoteConnection(this, nullptr, InUrl, *FromAddr, USOCK_Open);
 	Notify->NotifyAcceptedConnection(Connection);
 	AddClientConnection(Connection);
-
-	//USpatialNetConnection* Connection = GetSpatialOSNetConnection();
 
 	// Set up the net ID for this player.
 	const TCHAR* ClientWorkerIdOption = InUrl.GetOption(TEXT("workerId"), nullptr);
