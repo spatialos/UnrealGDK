@@ -266,7 +266,7 @@ bool USpatialActorChannel::ReplicateActor()
 			}
 			else
 			{
-				UE_LOG(LogSpatialOSActorChannel, Warning, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
+				UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
 			}
 
 			// Ensure that the initial changelist contains _every_ property. This ensures that the default properties are written to the entity template.
