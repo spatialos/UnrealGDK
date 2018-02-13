@@ -282,23 +282,23 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 	{
 		case 1: // field_bhidden
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_bhidden(Value != 0);
+			OutUpdate.set_field_bhidden(Value);
 			break;
 		}
 		case 2: // field_breplicatemovement
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_breplicatemovement(Value != 0);
+			OutUpdate.set_field_breplicatemovement(Value);
 			break;
 		}
 		case 3: // field_btearoff
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_btearoff(Value != 0);
+			OutUpdate.set_field_btearoff(Value);
 			break;
 		}
 		case 4: // field_remoterole
@@ -427,9 +427,9 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 		}
 		case 14: // field_bcanbedamaged
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_bcanbedamaged(Value != 0);
+			OutUpdate.set_field_bcanbedamaged(Value);
 			break;
 		}
 		case 15: // field_instigator
@@ -471,9 +471,9 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 		}
 		case 18: // field_breplicatedhasbegunplay
 		{
-			bool Value = *(reinterpret_cast<bool const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_breplicatedhasbegunplay(Value != 0);
+			OutUpdate.set_field_breplicatedhasbegunplay(Value);
 			break;
 		}
 		case 19: // field_replicatedworldtimeseconds

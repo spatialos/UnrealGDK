@@ -363,23 +363,23 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 	{
 		case 1: // field_bhidden
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_bhidden(Value != 0);
+			OutUpdate.set_field_bhidden(Value);
 			break;
 		}
 		case 2: // field_breplicatemovement
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_breplicatemovement(Value != 0);
+			OutUpdate.set_field_breplicatemovement(Value);
 			break;
 		}
 		case 3: // field_btearoff
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_btearoff(Value != 0);
+			OutUpdate.set_field_btearoff(Value);
 			break;
 		}
 		case 4: // field_remoterole
@@ -508,9 +508,9 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 		}
 		case 14: // field_bcanbedamaged
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_bcanbedamaged(Value != 0);
+			OutUpdate.set_field_bcanbedamaged(Value);
 			break;
 		}
 		case 15: // field_instigator
@@ -635,23 +635,23 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 		}
 		case 23: // field_replicatedbasedmovement_bserverhasbasecomponent
 		{
-			bool Value = *(reinterpret_cast<bool const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_replicatedbasedmovement_bserverhasbasecomponent(Value != 0);
+			OutUpdate.set_field_replicatedbasedmovement_bserverhasbasecomponent(Value);
 			break;
 		}
 		case 24: // field_replicatedbasedmovement_brelativerotation
 		{
-			bool Value = *(reinterpret_cast<bool const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_replicatedbasedmovement_brelativerotation(Value != 0);
+			OutUpdate.set_field_replicatedbasedmovement_brelativerotation(Value);
 			break;
 		}
 		case 25: // field_replicatedbasedmovement_bserverhasvelocity
 		{
-			bool Value = *(reinterpret_cast<bool const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_replicatedbasedmovement_bserverhasvelocity(Value != 0);
+			OutUpdate.set_field_replicatedbasedmovement_bserverhasvelocity(Value);
 			break;
 		}
 		case 26: // field_animrootmotiontranslationscale
@@ -677,9 +677,9 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 		}
 		case 29: // field_biscrouched
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_biscrouched(Value != 0);
+			OutUpdate.set_field_biscrouched(Value);
 			break;
 		}
 		case 30: // field_jumpmaxholdtime
@@ -698,9 +698,9 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 		}
 		case 32: // field_reprootmotion_bisactive
 		{
-			bool Value = *(reinterpret_cast<bool const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_reprootmotion_bisactive(Value != 0);
+			OutUpdate.set_field_reprootmotion_bisactive(Value);
 			break;
 		}
 		case 33: // field_reprootmotion_animmontage
@@ -779,26 +779,26 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 		}
 		case 39: // field_reprootmotion_brelativeposition
 		{
-			bool Value = *(reinterpret_cast<bool const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_reprootmotion_brelativeposition(Value != 0);
+			OutUpdate.set_field_reprootmotion_brelativeposition(Value);
 			break;
 		}
 		case 40: // field_reprootmotion_brelativerotation
 		{
-			bool Value = *(reinterpret_cast<bool const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_reprootmotion_brelativerotation(Value != 0);
+			OutUpdate.set_field_reprootmotion_brelativerotation(Value);
 			break;
 		}
 		case 41: // field_reprootmotion_authoritativerootmotion
 		{
 			FRootMotionSourceGroup Value = *(reinterpret_cast<FRootMotionSourceGroup const*>(Data));
 
-			OutUpdate.set_field_reprootmotion_authoritativerootmotion_bhasadditivesources(Value.bHasAdditiveSources != 0);
-			OutUpdate.set_field_reprootmotion_authoritativerootmotion_bhasoverridesources(Value.bHasOverrideSources != 0);
+			OutUpdate.set_field_reprootmotion_authoritativerootmotion_bhasadditivesources(Value.bHasAdditiveSources);
+			OutUpdate.set_field_reprootmotion_authoritativerootmotion_bhasoverridesources(Value.bHasOverrideSources);
 			OutUpdate.set_field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity(improbable::Vector3f(Value.LastPreAdditiveVelocity.X, Value.LastPreAdditiveVelocity.Y, Value.LastPreAdditiveVelocity.Z));
-			OutUpdate.set_field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied(Value.bIsAdditiveVelocityApplied != 0);
+			OutUpdate.set_field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied(Value.bIsAdditiveVelocityApplied);
 			OutUpdate.set_field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags(uint32_t(Value.LastAccumulatedSettings.Flags));
 			break;
 		}
@@ -2220,8 +2220,8 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Sender(worker:
 			Request.set_field_newbase(SpatialConstants::NULL_OBJECT_REF);
 		}
 		Request.set_field_newbasebonename(TCHAR_TO_UTF8(*NewBaseBoneName.ToString()));
-		Request.set_field_bhasbase(bHasBase != 0);
-		Request.set_field_bbaserelativeposition(bBaseRelativePosition != 0);
+		Request.set_field_bhasbase(bHasBase);
+		Request.set_field_bbaserelativeposition(bBaseRelativePosition);
 		Request.set_field_servermovementmode(uint32_t(ServerMovementMode));
 
 		// Send command request.
@@ -2266,12 +2266,12 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Sender(
 		// Build request.
 		improbable::unreal::UnrealClientAdjustRootMotionSourcePositionRequest Request;
 		Request.set_field_timestamp(TimeStamp);
-		Request.set_field_serverrootmotion_bhasadditivesources(ServerRootMotion.bHasAdditiveSources != 0);
-		Request.set_field_serverrootmotion_bhasoverridesources(ServerRootMotion.bHasOverrideSources != 0);
+		Request.set_field_serverrootmotion_bhasadditivesources(ServerRootMotion.bHasAdditiveSources);
+		Request.set_field_serverrootmotion_bhasoverridesources(ServerRootMotion.bHasOverrideSources);
 		Request.set_field_serverrootmotion_lastpreadditivevelocity(improbable::Vector3f(ServerRootMotion.LastPreAdditiveVelocity.X, ServerRootMotion.LastPreAdditiveVelocity.Y, ServerRootMotion.LastPreAdditiveVelocity.Z));
-		Request.set_field_serverrootmotion_bisadditivevelocityapplied(ServerRootMotion.bIsAdditiveVelocityApplied != 0);
+		Request.set_field_serverrootmotion_bisadditivevelocityapplied(ServerRootMotion.bIsAdditiveVelocityApplied);
 		Request.set_field_serverrootmotion_lastaccumulatedsettings_flags(uint32_t(ServerRootMotion.LastAccumulatedSettings.Flags));
-		Request.set_field_bhasanimrootmotion(bHasAnimRootMotion != 0);
+		Request.set_field_bhasanimrootmotion(bHasAnimRootMotion);
 		Request.set_field_servermontagetrackposition(ServerMontageTrackPosition);
 		Request.set_field_serverloc(improbable::Vector3f(ServerLoc.X, ServerLoc.Y, ServerLoc.Z));
 		Request.set_field_serverrotation(improbable::Vector3f(ServerRotation.X, ServerRotation.Y, ServerRotation.Z));
@@ -2295,8 +2295,8 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Sender(
 			Request.set_field_serverbase(SpatialConstants::NULL_OBJECT_REF);
 		}
 		Request.set_field_serverbonename(TCHAR_TO_UTF8(*ServerBoneName.ToString()));
-		Request.set_field_bhasbase(bHasBase != 0);
-		Request.set_field_bbaserelativeposition(bBaseRelativePosition != 0);
+		Request.set_field_bhasbase(bHasBase);
+		Request.set_field_bbaserelativeposition(bBaseRelativePosition);
 		Request.set_field_servermovementmode(uint32_t(ServerMovementMode));
 
 		// Send command request.
@@ -2362,8 +2362,8 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Sender(worker
 			Request.set_field_serverbase(SpatialConstants::NULL_OBJECT_REF);
 		}
 		Request.set_field_serverbonename(TCHAR_TO_UTF8(*ServerBoneName.ToString()));
-		Request.set_field_bhasbase(bHasBase != 0);
-		Request.set_field_bbaserelativeposition(bBaseRelativePosition != 0);
+		Request.set_field_bhasbase(bHasBase);
+		Request.set_field_bbaserelativeposition(bBaseRelativePosition);
 		Request.set_field_servermovementmode(uint32_t(ServerMovementMode));
 
 		// Send command request.
@@ -2425,8 +2425,8 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Sender(worker::Connecti
 			Request.set_field_newbase(SpatialConstants::NULL_OBJECT_REF);
 		}
 		Request.set_field_newbasebonename(TCHAR_TO_UTF8(*NewBaseBoneName.ToString()));
-		Request.set_field_bhasbase(bHasBase != 0);
-		Request.set_field_bbaserelativeposition(bBaseRelativePosition != 0);
+		Request.set_field_bhasbase(bHasBase);
+		Request.set_field_bbaserelativeposition(bBaseRelativePosition);
 		Request.set_field_servermovementmode(uint32_t(ServerMovementMode));
 
 		// Send command request.

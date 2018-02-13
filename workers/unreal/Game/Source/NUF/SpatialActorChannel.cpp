@@ -201,25 +201,7 @@ bool USpatialActorChannel::ReplicateActor()
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
 
-	// The ChangelistMgr uses ChangelistState->StaticBuffer to compare properties against when building a changelist. As SpatialOS has no concept of a CDO, we
-	// need to make sure we send a changelist of ALL properties compared against default initialised properties (i.e. zeroed properties). To accomplish this,
-	// we recreate the static buffer in the initial replication (and stash the existing one), then restore it after building the changelist. This would cause some
-	// redundancy (the second changelist to be created would contain the properties different from the CDO, which was already included in the initial changelist),
-	// but this is safe.
-	FRepStateStaticBuffer SavedStaticBuffer;
-	if (RepFlags.bNetInitial)
-	{
-		SavedStaticBuffer = ChangelistState->StaticBuffer;
-		ChangelistState->StaticBuffer.Empty();
-		ChangelistState->StaticBuffer.AddZeroed(Actor->GetClass()->GetDefaultsCount());
-	}
-
 	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame, ActorReplicator->RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
-
-	if (RepFlags.bNetInitial)
-	{
-		ChangelistState->StaticBuffer = SavedStaticBuffer;
-	}
 
 	const int32 PossibleNewHistoryIndex = ActorReplicator->RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
 	FRepChangedHistory& PossibleNewHistoryItem = ActorReplicator->RepState->ChangeHistory[PossibleNewHistoryIndex];
@@ -286,7 +268,19 @@ bool USpatialActorChannel::ReplicateActor()
 			{
 				UE_LOG(LogSpatialOSActorChannel, Warning, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
 			}
-			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, PlayerWorkerId, Changed);
+
+			// Ensure that the initial changelist contains _every_ property. This ensures that the default properties are written to the entity template.
+			// Otherwise, there will be a mismatch between the rep state shadow data used by CompareProperties and the entity in SpatialOS.
+			TArray<uint16> InitialChanged;
+			for (auto& Cmd : ActorReplicator->RepLayout->Cmds)
+			{
+				if (Cmd.Type != REPCMD_DynamicArray && Cmd.Type != REPCMD_Return)
+				{
+					InitialChanged.Add(Cmd.RelativeHandle);
+				}
+			}
+			InitialChanged.Add(0);
+			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, PlayerWorkerId, InitialChanged);
 		}
 		else
 		{

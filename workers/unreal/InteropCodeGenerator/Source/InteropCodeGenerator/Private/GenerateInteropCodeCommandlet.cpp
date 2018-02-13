@@ -590,7 +590,7 @@ void GenerateUnrealToSchemaConversion(
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
 	{
-		Writer.Printf("%s(%s != 0);", *SpatialValueSetter, *PropertyValue);
+		Writer.Printf("%s(%s);", *SpatialValueSetter, *PropertyValue);
 	}
 	else if (Property->IsA(UFloatProperty::StaticClass()))
 	{
@@ -1697,10 +1697,18 @@ void GenerateForwardingCodeFromLayout(
 
 				// Get unreal data by deserialising from the reader, convert and set the corresponding field in the update object.
 				FString PropertyValueName = TEXT("Value");
+				FString PropertyCppType = Property->GetClass()->GetFName().ToString();
 				FString PropertyValueCppType = Property->GetCPPType();
 				FString PropertyName = TEXT("Property");
 				//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
-				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+				if (Property->IsA<UBoolProperty>())
+				{
+					SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);", *PropertyValueName);
+				}
+				else
+				{
+					SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+				}
 				SourceWriter.Print();
 				GenerateUnrealToSchemaConversion(
 					SourceWriter, "OutUpdate", RepProp.Entry.Chain, PropertyValueName, true,
