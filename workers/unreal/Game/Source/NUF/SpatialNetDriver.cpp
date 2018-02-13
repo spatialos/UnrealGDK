@@ -298,6 +298,27 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 				// Channel is marked to go dormant now once all properties have been replicated (but is not dormant yet)
 				Channel->StartBecomingDormant();
 			}
+
+			// NUF: This actor should only be replicated if GetNetworkConnection() matches this connection. However, if this actor doesn't have a connection
+			// (which implies that it's owned by the server rather than a client), then it should fall back to the "catch all" SpatialOS connection which is
+			// ClientConnections[0]. The below condition means that each actor should only be replicated once, unless "ClientConnections" contain duplicates,
+			// which should never happen.
+			UNetConnection* ActorConnection = Actor->GetNetConnection();
+			if (ActorConnection != Connection)
+			{
+				if (ActorConnection == nullptr && Connection == ClientConnections[0])
+				{
+					UE_LOG(LogSpatialOSNUF, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());
+				}
+				else
+				{
+					continue;
+				}
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSNUF, Verbose, TEXT("Actor %s will be replicated on the connection %s"), *Actor->GetName(), *Connection->GetName());
+			}
 			
 			//NUF: Here, Unreal does initial relevancy checking and level load checking.
 			// We have removed the level load check because it doesn't apply.
@@ -793,11 +814,11 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 	check(GetNetMode() != NM_Client);
 
 	bool bOk = true;
+
 	// Commented out the code that creates a new connection per player controller. Leaving the code here for now in case it causes side effects.
 	// We instead use the "special" connection for everything.
 	//todo-giray: Remove the commented out code if connection setup looks stable.
 	
-	/*
 	USpatialNetConnection* Connection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(Connection);
 	
@@ -808,10 +829,11 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 
 	Connection->InitRemoteConnection(this, nullptr, InUrl, *FromAddr, USOCK_Open);
 	Notify->NotifyAcceptedConnection(Connection);
-	AddClientConnection(Connection);*/
+	AddClientConnection(Connection);
 
-	USpatialNetConnection* Connection = GetSpatialOSNetConnection();
+	//USpatialNetConnection* Connection = GetSpatialOSNetConnection();
 
+	// Set up the net ID for this player.
 	const TCHAR* ClientWorkerIdOption = InUrl.GetOption(TEXT("workerId"), nullptr);
 	check(ClientWorkerIdOption);
 	FString ClientWorkerId(ClientWorkerIdOption);

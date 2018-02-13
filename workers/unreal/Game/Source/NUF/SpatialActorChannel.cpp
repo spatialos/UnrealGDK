@@ -400,6 +400,8 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
 {
+	check(SpatialNetDriver->GetNetMode() < NM_Client);
+
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
 		UE_LOG(LogSpatialOSActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
@@ -409,25 +411,19 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 	}
 	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Created entity (%d) for: %s. Request id: %d"), Op.EntityId.value_or(0), *Actor->GetName(), ReserveEntityIdRequestId.Id);
 
-	USpatialNetConnection* SpatialConnection = SpatialNetDriver->GetSpatialOSNetConnection();
-
 	auto PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
 	{
 		PinnedView->Remove(CreateEntityCallback);
 	}
 
-	// This can be true only on the server
-	if (SpatialConnection)
+	USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
+	if (PackageMap)
 	{
-		USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(SpatialConnection->PackageMap);
-		if (PMC)
-		{
-			worker::EntityId SpatialEntityId = Op.EntityId.value_or(0);
-			FEntityId EntityId(SpatialEntityId);
-			SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
-			FNetworkGUID NetGUID = PMC->ResolveEntityActor(Actor, ActorEntityId);
-			UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
-		}
+		worker::EntityId SpatialEntityId = Op.EntityId.value_or(0);
+		FEntityId EntityId(SpatialEntityId);
+		SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
+		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(Actor, ActorEntityId);
+		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
 	}
 }	
