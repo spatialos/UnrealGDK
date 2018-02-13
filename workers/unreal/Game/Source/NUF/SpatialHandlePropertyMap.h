@@ -15,31 +15,31 @@ using FRepHandlePropertyMap = TMap<int32, FRepHandleData>;
 // TODO(david): Move the below class to the right location.
 
 #include "Net/RepLayout.h"
-#include "Engine/ActorChannel.h"
-//#include "SpatialNetDriver.h"
-//#include "SpatialOS.h"
+#include "SpatialActorChannel.h"
+#include "SpatialNetDriver.h"
+#include "Engine/NetConnection.h"
+#include "SpatialOS.h"
 
 class ConditionMapFilter
 {
 public:
-	ConditionMapFilter(UActorChannel* ActorChannel)
+	ConditionMapFilter(USpatialActorChannel* ActorChannel, bool bAuthoritative)
 	{
 		// Reconstruct replication flags on the client side.
 		FReplicationFlags RepFlags;
 		RepFlags.bReplay = 0;
 		RepFlags.bNetInitial = 1; // The server will only ever send one update for bNetInitial, so just let them through here.
 		RepFlags.bNetSimulated = ActorChannel->Actor->Role == ROLE_SimulatedProxy;
-		// TODO(david): Just pretend everything is the owner. This might break stuff.
-		RepFlags.bNetOwner = 1;// ActorChannel->Actor->IsOwnedBy(ActorChannel->Connection->PlayerController);
+		RepFlags.bNetOwner = bAuthoritative;// ActorChannel->Actor->IsOwnedBy(ActorChannel->Connection->PlayerController);
 		RepFlags.bRepPhysics = ActorChannel->Actor->ReplicatedMovement.bRepPhysics;
 
-		/*
-		UE_LOG(LogTemp, Warning, TEXT("CMF Actor %s NetOwner %d Simulated %d RepPhysics %d Client %s"), *ActorChannel->Actor->GetName(),
+		UE_LOG(LogTemp, Verbose, TEXT("CMF Actor %s (%lld) NetOwner %d Simulated %d RepPhysics %d Client %s"),
+			*ActorChannel->Actor->GetName(),
+			ActorChannel->GetEntityId(),
 			RepFlags.bNetOwner,
 			RepFlags.bNetSimulated,
 			RepFlags.bRepPhysics,
-			*Cast<USpatialNetDriver>(ActorChannel->Connection->Driver)->GetSpatialOS()->GetWorkerConfiguration().GetWorkerId());
-		*/
+			*Cast<USpatialNetDriver>(ActorChannel->Connection->Driver)->GetSpatialOS()->GetWorkerId());
 
 		// Build a ConditionMap. This code is taken directly from FRepLayout::RebuildConditionalProperties
 		static_assert(COND_Max == 14, "We are expecting 14 rep conditions"); // Guard in case more are added.

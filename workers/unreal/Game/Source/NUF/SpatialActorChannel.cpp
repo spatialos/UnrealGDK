@@ -7,12 +7,7 @@
 #include "Engine/DemoNetDriver.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
-#include <improbable/worker.h>
-#include <improbable/standard_library.h>
-#include <improbable/player/player.h>
 #include "Commander.h"
-#include "EntityBuilder.h"
-#include "EntityTemplate.h"
 #include "SpatialNetConnection.h"
 #include "SpatialOS.h"
 #include "SpatialInterop.h"
@@ -56,63 +51,12 @@ void UpdateChangelistHistory(FRepState * RepState)
 
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
+	, ActorEntityId(0)
+	, ReserveEntityIdRequestId(-1)
+	, CreateEntityRequestId(-1)
+	, SpatialNetDriver(nullptr)
 {
 	bCoreActor = true;
-	ActorEntityId = worker::EntityId{};
-	SpatialNetDriver = nullptr;
-}
-
-void USpatialActorChannel::SendCreateEntityRequest(const FString& PlayerWorkerId, const TArray<uint16>& Changed)
-{
-	TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
-	if (PinnedConnection.IsValid())
-	{
-		USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Connection->Driver);
-		checkf(Driver->GetSpatialInterop(), TEXT("Spatial Interop is not initialised"));
-
-		const USpatialTypeBinding* TypeBinding = Driver->GetSpatialInterop()->GetTypeBindingByClass(Actor->GetClass());
-
-		FStringAssetReference ActorClassRef(Actor->GetClass());
-		FString PathStr = ActorClassRef.ToString();
-
-		if (TypeBinding)
-		{
-			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Actor->GetActorLocation(), PathStr, GetChangeState(Changed), this);
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ActorEntityId, 0);
-		}
-		else
-		{
-			std::string ClientWorkerIdString = TCHAR_TO_UTF8(*PlayerWorkerId);
-
-			improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
-			improbable::WorkerAttributeSet ClientAttribute{{worker::List<std::string>{"UnrealClient"}}};
-			improbable::WorkerAttributeSet OwnClientAttribute{{"workerId:" + ClientWorkerIdString}};
-
-			improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
-			improbable::WorkerRequirementSet ClientsOnly{{ClientAttribute}};
-			improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
-			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
-
-			const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Actor->GetActorLocation());
-			auto Entity = improbable::unreal::FEntityBuilder::Begin()
-				.AddPositionComponent(SpatialPosition, WorkersOnly)
-				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
-				.SetPersistence(true)
-				.SetReadAcl(AnyUnrealWorkerOrClient)
-				// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
-				// todo-giray: Remove once we're using proper (generated) entity templates here.
-				.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, OwnClientOnly)
-				.Build();
-
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, ActorEntityId, 0);
-		}
-		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Creating entity for actor %s. Request id: %d. Entity id: %d"), *Actor->GetName(), CreateEntityRequestId.Id, ActorEntityId);
-	}
-	else
-	{
-		UE_LOG(LogSpatialOSActorChannel, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
-		return;
-	}
 }
 
 void USpatialActorChannel::Init(UNetConnection* Connection, int32 ChannelIndex, bool bOpenedLocally)
@@ -130,6 +74,12 @@ void USpatialActorChannel::Init(UNetConnection* Connection, int32 ChannelIndex, 
 
 void USpatialActorChannel::BindToSpatialView()
 {
+	if (SpatialNetDriver->ServerConnection)
+	{
+		// Don't need to bind to reserve/create entity responses on the client.
+		return;
+	}
+
 	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
 	{
@@ -240,28 +190,18 @@ bool USpatialActorChannel::ReplicateActor()
 	// Replicate Actor and Component properties and RPCs
 	// ----------------------------------------------------------
 
+	// Epic does this at the net driver level, per connection. See UNetDriver::ServerReplicateActors().
+	// However, we have many player controllers sharing one connection, so we do it at the actor level before replication.
+	APlayerController* PC = Cast<APlayerController>(Actor);
+	if (PC)
+	{
+		PC->SendClientAdjustment();
+	}
+	
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
 
-	// The ChangelistMgr uses ChangelistState->StaticBuffer to compare properties against when building a changelist. As SpatialOS has no concept of a CDO, we
-	// need to make sure we send a changelist of ALL properties compared against default initialised properties (i.e. zeroed properties). To accomplish this,
-	// we recreate the static buffer in the initial replication (and stash the existing one), then restore it after building the changelist. This would cause some
-	// redundancy (the second changelist to be created would contain the properties different from the CDO, which was already included in the initial changelist),
-	// but this is safe.
-	FRepStateStaticBuffer SavedStaticBuffer;
-	if (RepFlags.bNetInitial)
-	{
-		SavedStaticBuffer = ChangelistState->StaticBuffer;
-		ChangelistState->StaticBuffer.Empty();
-		ChangelistState->StaticBuffer.AddZeroed(Actor->GetClass()->GetDefaultsCount());
-	}
-
 	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame, ActorReplicator->RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
-
-	if (RepFlags.bNetInitial)
-	{
-		ChangelistState->StaticBuffer = SavedStaticBuffer;
-	}
 
 	const int32 PossibleNewHistoryIndex = ActorReplicator->RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
 	FRepChangedHistory& PossibleNewHistoryItem = ActorReplicator->RepState->ChangeHistory[PossibleNewHistoryIndex];
@@ -294,8 +234,8 @@ bool USpatialActorChannel::ReplicateActor()
 
 	if (RepFlags.bNetInitial || Changed.Num() > 0)
 	{
-		USpatialInterop* UpdateInterop = SpatialNetDriver->GetSpatialInterop();
-		check(UpdateInterop);
+		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+		check(Interop);
 		
 		if (RepFlags.bNetInitial)
 		{
@@ -303,28 +243,48 @@ bool USpatialActorChannel::ReplicateActor()
 			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
 			// player controller, get the player state.
 			FString PlayerWorkerId;
-			APawn* Pawn = Cast<APawn>(Actor);
-			if (Pawn && Pawn->PlayerState)
+			APlayerState* PlayerState = Cast<APlayerState>(Actor);
+			if (!PlayerState)
 			{
-				PlayerWorkerId = Pawn->PlayerState->UniqueId.ToString();
+				APawn* Pawn = Cast<APawn>(Actor);
+				if (Pawn)
+				{
+					PlayerState = Pawn->PlayerState;
+				}
 			}
-			else
+			if (!PlayerState)
 			{
 				APlayerController* PlayerController = Cast<APlayerController>(Actor);
 				if (PlayerController)
 				{
-					PlayerWorkerId = PlayerController->PlayerState->UniqueId.ToString();
-				}
-				else
-				{
-					UE_LOG(LogSpatialOSActorChannel, Warning, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
+					PlayerState = PlayerController->PlayerState;
 				}
 			}
-			SendCreateEntityRequest(PlayerWorkerId, Changed);
+			if (PlayerState)
+			{
+				PlayerWorkerId = PlayerState->UniqueId.ToString();
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
+			}
+
+			// Ensure that the initial changelist contains _every_ property. This ensures that the default properties are written to the entity template.
+			// Otherwise, there will be a mismatch between the rep state shadow data used by CompareProperties and the entity in SpatialOS.
+			TArray<uint16> InitialChanged;
+			for (auto& Cmd : ActorReplicator->RepLayout->Cmds)
+			{
+				if (Cmd.Type != REPCMD_DynamicArray && Cmd.Type != REPCMD_Return)
+				{
+					InitialChanged.Add(Cmd.RelativeHandle);
+				}
+			}
+			InitialChanged.Add(0);
+			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, PlayerWorkerId, InitialChanged);
 		}
 		else
 		{
-			UpdateInterop->SendSpatialUpdate(this, Changed);
+			Interop->SendSpatialUpdate(this, Changed);
 		}
 
 		bWroteSomethingImportant = true;
@@ -440,6 +400,8 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
 {
+	check(SpatialNetDriver->GetNetMode() < NM_Client);
+
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
 		UE_LOG(LogSpatialOSActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
@@ -449,25 +411,19 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 	}
 	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Created entity (%d) for: %s. Request id: %d"), Op.EntityId.value_or(0), *Actor->GetName(), ReserveEntityIdRequestId.Id);
 
-	USpatialNetConnection* SpatialConnection = SpatialNetDriver->GetSpatialOSNetConnection();
-
 	auto PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
 	{
 		PinnedView->Remove(CreateEntityCallback);
 	}
 
-	// This can be true only on the server
-	if (SpatialConnection)
+	USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
+	if (PackageMap)
 	{
-		USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(SpatialConnection->PackageMap);
-		if (PMC)
-		{
-			worker::EntityId SpatialEntityId = Op.EntityId.value_or(0);
-			FEntityId EntityId(SpatialEntityId);
-			SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
-			FNetworkGUID NetGUID = PMC->ResolveEntityActor(Actor, ActorEntityId);
-			UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
-		}
+		worker::EntityId SpatialEntityId = Op.EntityId.value_or(0);
+		FEntityId EntityId(SpatialEntityId);
+		SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
+		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(Actor, ActorEntityId);
+		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
 	}
 }	

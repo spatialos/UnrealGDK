@@ -18,7 +18,7 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 	ForEachObjectWithOuter(Object, [&InSubobjects](UObject* Object)
 	{
 		// Objects can only be allocated NetGUIDs if this is true.
-		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill())
+		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
 		{
 			InSubobjects.Add(Object);
 		}
@@ -104,21 +104,6 @@ void USpatialPackageMapClient::RegisterStaticObjects(const improbable::unreal::U
 	SpatialGuidCache->RegisterStaticObjects(LevelData);
 }
 
-void USpatialPackageMapClient::AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle)
-{
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending obj ref for object: %s, channel: %s, handle: %d."),
-		*Object->GetName(), *DependentChannel->GetName(), Handle);
-	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	SpatialGuidCache->AddPendingObjRef(Object, DependentChannel, Handle);
-}
-
-void USpatialPackageMapClient::AddPendingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender)
-{
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending RPC for object: %s."), *UnresolvedObject->GetName());
-	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	SpatialGuidCache->AddPendingRPC(UnresolvedObject, CommandSender);
-}
-
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 	: FNetGUIDCache(InDriver)
 {
@@ -127,7 +112,11 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 {
 	FEntityId EntityId = Cast<USpatialNetDriver>(Driver)->GetEntityRegistry()->GetEntityIdFromActor(Actor);
-	check(EntityId.ToSpatialEntityId() > 0)
+	check(EntityId.ToSpatialEntityId() > 0);
+
+	// Get interop.
+	USpatialInterop* Interop = Cast<USpatialNetDriver>(Driver)->GetSpatialInterop();
+	check(Interop);
 
 	// Set up the NetGUID and ObjectRef for this actor.
 	FNetworkGUID NetGUID = GetOrAssignNetGUID_NUF(Actor);
@@ -135,6 +124,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	RegisterObjectRef(NetGUID, ObjectRef);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %d"),
 		*Actor->GetName(), *NetGUID.ToString(), EntityId.ToSpatialEntityId());
+	Interop->OnResolveObject(Actor, ObjectRef);
 
 	// Allocate NetGUIDs for each subobject, sorting alphabetically to ensure stable references.
 	TArray<UObject*> ActorSubobjects;
@@ -148,15 +138,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
 		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: (entity ID: %d, offset: %d)"),
 			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), EntityId.ToSpatialEntityId(), SubobjectOffset);
-	}
-
-	// Resolve pending replication updates and RPCs that reference this actor and its subobjects.
-	ResolvePendingObjRefs(Actor);
-	ResolvePendingRPCs(Actor);
-	for (UObject* Subobject : ActorSubobjects)
-	{
-		ResolvePendingObjRefs(Subobject);
-		ResolvePendingRPCs(Subobject);
+		Interop->OnResolveObject(Subobject, SubobjectRef);
 	}
 
 	return NetGUID;
@@ -164,96 +146,75 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const
 {
-	FUnrealObjectRefWrapper ObjRefWrapper;
-	ObjRefWrapper.ObjectRef = ObjectRef;
-	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRefWrapper);
+	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjectRef);
 	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
 }
 
 improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
 {
-	const FUnrealObjectRefWrapper* ObjRefWrapper = NetGUIDToUnrealObjectRef.Find(NetGUID);
-	return ObjRefWrapper ? ObjRefWrapper->ObjectRef : SpatialConstants::UNRESOLVED_OBJECT_REF;
+	const FHashableUnrealObjectRef* ObjRef = NetGUIDToUnrealObjectRef.Find(NetGUID);
+	return ObjRef ? *ObjRef : SpatialConstants::UNRESOLVED_OBJECT_REF;
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const
 {
-	FUnrealObjectRefWrapper ObjRefWrapper;
 	improbable::unreal::UnrealObjectRef ObjRef{EntityId, 0};
-	ObjRefWrapper.ObjectRef = ObjRef;
-	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRefWrapper);
+	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRef);
 	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
 }
 
 void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData)
 {
+	// Get interop.
+	USpatialInterop* Interop = Cast<USpatialNetDriver>(Driver)->GetSpatialInterop();
+	check(Interop);
+
 	// Build list of static objects in the world.
 	UWorld* World = Driver->GetWorld();
-	TMap<FString, UObject*> StaticActorsInWorld;
+	TMap<FString, AActor*> StaticActorsInWorld;
 	for (TActorIterator<AActor> Itr(World); Itr; ++Itr)
 	{
 		AActor* Actor = *Itr;
 		FString PathName = Actor->GetPathName(World);
 		StaticActorsInWorld.Add(PathName, Actor);
+		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: Static object in world: %s."), *Interop->GetSpatialOS()->GetWorkerId(), *PathName);
 	}
 
 	// Match the above list with the static actor data.
 	auto& StaticActorData = LevelData.static_actor_map();
 	for (auto& Pair : StaticActorData)
 	{
-		UObject* Object = StaticActorsInWorld.FindRef(UTF8_TO_TCHAR(Pair.second.c_str()));
+		AActor* Actor = StaticActorsInWorld.FindRef(UTF8_TO_TCHAR(Pair.second.c_str()));
 
 		// Skip objects which don't exist.
-		if (!Object)
+		if (!Actor)
 		{
 			continue;
 		}
 
 		// Skip objects which we've already registered.
-		if (NetGUIDLookup.FindRef(Object).IsValid())
+		if (NetGUIDLookup.FindRef(Actor).IsValid())
 		{
 			continue;
 		}
 
 		// Register static NetGUID.
-		AssignStaticActorNetGUID(Object, FNetworkGUID(Pair.first));
+		FNetworkGUID NetGUID = AssignStaticActorNetGUID(Actor, FNetworkGUID(Pair.first));
+		Interop->OnResolveObject(Actor, GetUnrealObjectRefFromNetGUID(NetGUID));
 
 		// Deal with sub-objects of static objects.
 		// TODO(David): Ensure that the NetGUID allocated in the snapshot generator (which are always > 0x7fffffff) ensures that there's enough space
 		// for sub-objects to be stored in increasing NetGUIDs after the static object one (currently, they're just hashes of the path).
 		TArray<UObject*> StaticSubobjects;
-		GetSubobjects(Object, StaticSubobjects);
+		GetSubobjects(Actor, StaticSubobjects);
 		uint32 SubobjectOffset = 0;
-		for (auto Subobject : StaticSubobjects)
+		for (UObject* Subobject : StaticSubobjects)
 		{
 			SubobjectOffset++;
-			AssignStaticActorNetGUID(Subobject, FNetworkGUID(Pair.first + SubobjectOffset));
+			FNetworkGUID SubobjectNetGUID = AssignStaticActorNetGUID(Subobject, FNetworkGUID(Pair.first + SubobjectOffset));
+			Interop->OnResolveObject(Subobject, GetUnrealObjectRefFromNetGUID(SubobjectNetGUID));
 		}
 	}
-}
-
-void FSpatialNetGUIDCache::AddPendingObjRef(UObject* Object, USpatialActorChannel* DependentChannel, uint16 Handle)
-{
-	if (Object == nullptr)
-	{
-		return;
-	}
-
-	TArray<USpatialActorChannel*>& Channels = ChannelsAwaitingObjRefResolve.FindOrAdd(Object);
-	Channels.AddUnique(DependentChannel);
-
-	TArray<uint16>& Handles = PendingObjRefHandles.FindOrAdd(DependentChannel);
-	Handles.AddUnique(Handle);
-}
-
-void FSpatialNetGUIDCache::AddPendingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender)
-{
-	if (UnresolvedObject == nullptr)
-	{
-		return;
-	}
-
-	PendingRPCs.FindOrAdd(UnresolvedObject).Add(CommandSender);
 }
 
 // TODO(David): Do something with this function.
@@ -272,6 +233,12 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewNetGUID(const UObject* Object)
 FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_NUF(const UObject* Object)
 {
 	FNetworkGUID NetGUID = GetOrAssignNetGUID(Object);
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: GetOrAssignNetGUID for object %s returned %s. IsDynamicObject: %d"),
+		*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
+		*Object->GetName(),
+		*NetGUID.ToString(),
+		(int)IsDynamicObject(Object));
+
 	// One major difference between how Unreal does NetGUIDs vs us is, we don't attempt to make them consistent across workers and client.
 	// The function above might have returned without assigning new GUID, because we are the client.
 	// Let's directly call the client function in that case.
@@ -287,8 +254,10 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_NUF(const UObject* Object)
 		NetGUID = FNetworkGUID(ALLOC_NEW_NET_GUID(IsStatic));
 		RegisterNetGUID_Client(NetGUID, Object);
 
-		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("NetGUID for object %s was not found in the cache. Generated new NetGUID."), *Object->GetName());
-		NetGUID = NetGUID;
+		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: NetGUID for object %s was not found in the cache. Generated new NetGUID %s."),
+			*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
+			*Object->GetName(),
+			*NetGUID.ToString());
 	}
 
 	check(NetGUID.IsValid());
@@ -298,9 +267,10 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_NUF(const UObject* Object)
 
 void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
-	FUnrealObjectRefWrapper ObjRefWrapper{ObjectRef};
-	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjRefWrapper);
-	UnrealObjectRefToNetGUID.Emplace(ObjRefWrapper, NetGUID);
+	checkSlow(!NetGUIDToUnrealObjectRef.Contains(NetGUID) || (NetGUIDToUnrealObjectRef.Contains(NetGUID) && NetGUIDToUnrealObjectRef.FindChecked(NetGUID) == ObjectRef));
+	checkSlow(!UnrealObjectRefToNetGUID.Contains(ObjectRef) || (UnrealObjectRefToNetGUID.Contains(ObjectRef) && UnrealObjectRefToNetGUID.FindChecked(ObjectRef) == NetGUID));
+	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjectRef);
+	UnrealObjectRefToNetGUID.Emplace(ObjectRef, NetGUID);
 }
 
 FNetworkGUID FSpatialNetGUIDCache::AssignStaticActorNetGUID(const UObject* Object, const FNetworkGUID& StaticNetGUID)
@@ -316,49 +286,12 @@ FNetworkGUID FSpatialNetGUIDCache::AssignStaticActorNetGUID(const UObject* Objec
 	improbable::unreal::UnrealObjectRef ObjectRef{0, StaticNetGUID.Value};
 	RegisterObjectRef(StaticNetGUID, ObjectRef);
 
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: Registered static object %s. NetGUID %s (entity ID: %llu, offset: %u)."),
+		*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
+		*Object->GetName(),
+		*StaticNetGUID.ToString(),
+		ObjectRef.entity(),
+		ObjectRef.offset());
+
 	return StaticNetGUID;
-}
-
-void FSpatialNetGUIDCache::ResolvePendingObjRefs(const UObject* Object)
-{
-	TArray<USpatialActorChannel*>* DependentChannels = ChannelsAwaitingObjRefResolve.Find(Object);
-	if (DependentChannels == nullptr)
-	{
-		return;
-	}
-
-	USpatialInterop* Interop = Cast<USpatialNetDriver>(Driver)->GetSpatialInterop();
-	check(Interop);
-
-	for (auto DependentChannel : *DependentChannels)
-	{
-		TArray<uint16>* Handles = PendingObjRefHandles.Find(DependentChannel);
-		if (Handles && Handles->Num() > 0)
-		{
-			// Changelists always have a 0 at the end.
-			Handles->Add(0);
-
-			Interop->SendSpatialUpdate(DependentChannel, *Handles);
-			PendingObjRefHandles.Remove(DependentChannel);
-		}
-	}
-	DependentChannels->Reset();
-	ChannelsAwaitingObjRefResolve.Remove(Object);
-}
-
-void FSpatialNetGUIDCache::ResolvePendingRPCs(UObject* Object)
-{
-	TArray<FRPCRequestFunction>* RPCList = PendingRPCs.Find(Object);
-	if (RPCList)
-	{
-		USpatialInterop* UpdateInterop = Cast<USpatialNetDriver>(Driver)->GetSpatialInterop();
-		check(UpdateInterop);
-		for (auto& RequestFunc : *RPCList)
-		{
-			// We can guarantee that SendCommandRequest won't populate PendingRPCs[Actor], because Actor has
-			// been resolved when we call ResolvePendingRPCs.
-			UpdateInterop->SendCommandRequest(RequestFunc);
-		}
-		PendingRPCs.Remove(Object);
-	}
 }

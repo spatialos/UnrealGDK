@@ -154,7 +154,6 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 					
 					PMC->ResolveEntityActor(EntityActor, EntityToSpawn);
 					Ch->SetChannelActor(EntityActor);
-					Driver->GetSpatialInterop()->SetComponentInterests(Ch, EntityToSpawn.ToSpatialEntityId());
 
 					//This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 					// a player index. For now we don't support split screen, so the number is always 0.
@@ -179,6 +178,9 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 					{
 						Binding->ApplyQueuedStateToChannel(Ch);
 					}
+
+					// Set up component interests to receive single client component updates (now that roles have been set up).
+					Driver->GetSpatialInterop()->SetComponentInterests(Ch, EntityToSpawn.ToSpatialEntityId());
 				}
 				EntityActor->PostNetInit();				
 			}

@@ -16,10 +16,14 @@
           "name": "streaming_query_diff",
           "value": "true"
         },
-		{
-			"name": "bridge_qos_max_timeout",
-			"value": "0"
-		}
+        {
+          "name": "bridge_qos_max_timeout",
+          "value": "0"
+        },
+        {
+          "name": "qos_max_unacked_pings_rate",
+          "value": "10"
+        }
       ],
     "snapshots": {
       "snapshot_write_period_seconds": 0

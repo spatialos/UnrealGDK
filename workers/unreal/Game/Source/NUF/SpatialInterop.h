@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "SpatialTypeBinding.h"
+#include "SpatialUnrealObjectRef.h"
 #include "SpatialInterop.generated.h"
 
 class USpatialOS;
@@ -12,6 +13,32 @@ class USpatialPackageMapClient;
 class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInterop, Log, All);
+
+// A helper class for creating an incoming payload consumed by ReceiveSpatialUpdate.
+class FBunchPayloadWriter
+{
+public:
+	FBunchPayloadWriter(UPackageMap* PackageMap) : Writer(PackageMap, 0)
+	{
+		// First bit is the "enable checksum" bit, which we set to 0.
+		Writer.WriteBit(0);
+	}
+
+	template <typename T>
+	void SerializeProperty(uint32 Handle, UProperty* Property, T* Value)
+	{
+		Writer.SerializeIntPacked(Handle);
+		Property->NetSerializeItem(Writer, Writer.PackageMap, Value);
+	}
+
+	FNetBitWriter& GetNetBitWriter()
+	{
+		return Writer;
+	}
+
+private:
+	FNetBitWriter Writer;
+};
 
 // An general version of worker::RequestId.
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
@@ -32,10 +59,10 @@ struct FRPCRequestResult
 using FRPCRequestFunction = TFunction<FRPCRequestResult()>;
 
 // Stores the number of attempts when retrying failed commands.
-class FRPCRetryContext
+class FOutgoingReliableRPC
 {
 public:
-	FRPCRetryContext(FRPCRequestFunction SendCommandRequest) :
+	FOutgoingReliableRPC(FRPCRequestFunction SendCommandRequest) :
 		SendCommandRequest{SendCommandRequest},
 		NumAttempts{1}
 	{
@@ -43,6 +70,12 @@ public:
 
 	FRPCRequestFunction SendCommandRequest;
 	uint32 NumAttempts;
+};
+
+struct FPendingIncomingObjectProperty
+{
+	UObjectPropertyBase* ObjectProperty;
+	uint16 Handle;
 };
 
 UCLASS()
@@ -62,27 +95,32 @@ public:
 	void UnregisterInteropType(UClass* Class);
 	USpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
+	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FString& PlayerWorkerId, const TArray<uint16>& Changed);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
 
+	void SendCommandRequest(FRPCRequestFunction Function, bool bReliable);
+	void HandleCommandResponse(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
+
+	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.
+	void OnResolveObject(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
+
+	void AddPendingOutgoingObjectRefUpdate(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
+	void AddPendingOutgoingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender, bool bReliable);
+	void AddPendingIncomingObjectRefUpdate(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, UObjectPropertyBase* Property, uint16 Handle);
+	// Pending incoming RPC
+
+	// Accessors.
 	USpatialOS* GetSpatialOS() const
 	{
 		return SpatialOSInstance;
 	}
 
-	USpatialNetDriver* GetNetDriver() const 
+	USpatialNetDriver* GetNetDriver() const
 	{
-		return NetDriver;	
+		return NetDriver;
 	}
-
-	FTimerManager& GetTimerManager() const
-	{
-		return *TimerManager;
-	}
-
-	void SendCommandRequest(FRPCRequestFunction Function);
-	void HandleCommandResponse(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
 
 private:
 	UPROPERTY()
@@ -108,10 +146,24 @@ private:
 	TMap<worker::EntityId, USpatialActorChannel*> EntityToClientActorChannel;
 
 	// Outgoing RPCs (for retry logic).
-	TMap<FUntypedRequestId, TSharedPtr<FRPCRetryContext>> OutgoingRPCs;
+	TMap<FUntypedRequestId, TSharedPtr<FOutgoingReliableRPC>> OutgoingReliableRPCs;
+
+	// Pending outgoing object ref property updates.
+	TMap<UObject*, TArray<USpatialActorChannel*>> ChannelsAwaitingOutgoingObjectResolve;
+	TMap<USpatialActorChannel*, TArray<uint16>> PendingOutgoingObjectRefHandles;
+
+	// Pending outgoing RPCs.
+	TMap<UObject*, TArray<TPair<FRPCRequestFunction, bool>>> PendingOutgoingRPCs;
+
+	// Pending incoming object ref property updates.
+	TMap<FHashableUnrealObjectRef, TMap<USpatialActorChannel*, TArray<FPendingIncomingObjectProperty>>> PendingIncomingObjectRefProperties;
 
 private:
 	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
+
+	void ResolvePendingOutgoingObjectRefUpdates(UObject* Object);
+	void ResolvePendingOutgoingRPCs(UObject* Object);
+	void ResolvePendingIncomingObjectRefUpdates(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	friend class USpatialInteropPipelineBlock;
 };
