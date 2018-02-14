@@ -514,23 +514,23 @@ void USpatialTypeBinding_PlayerController::ServerSendUpdate_MultiClient(
 	{
 		case 1: // field_bhidden
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_bhidden(Value != 0);
+			OutUpdate.set_field_bhidden(Value);
 			break;
 		}
 		case 2: // field_breplicatemovement
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_breplicatemovement(Value != 0);
+			OutUpdate.set_field_breplicatemovement(Value);
 			break;
 		}
 		case 3: // field_btearoff
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_btearoff(Value != 0);
+			OutUpdate.set_field_btearoff(Value);
 			break;
 		}
 		case 4: // field_remoterole
@@ -659,9 +659,9 @@ void USpatialTypeBinding_PlayerController::ServerSendUpdate_MultiClient(
 		}
 		case 14: // field_bcanbedamaged
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_bcanbedamaged(Value != 0);
+			OutUpdate.set_field_bcanbedamaged(Value);
 			break;
 		}
 		case 15: // field_instigator
@@ -1415,7 +1415,7 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender(wo
 
 		// Build request.
 		improbable::unreal::UnrealOnServerStartedVisualLoggerRequest Request;
-		Request.set_field_bislogging(bIsLogging != 0);
+		Request.set_field_bislogging(bIsLogging);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -1512,9 +1512,9 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Send
 		// Build request.
 		improbable::unreal::UnrealClientUpdateLevelStreamingStatusRequest Request;
 		Request.set_field_packagename(TCHAR_TO_UTF8(*PackageName.ToString()));
-		Request.set_field_bnewshouldbeloaded(bNewShouldBeLoaded != 0);
-		Request.set_field_bnewshouldbevisible(bNewShouldBeVisible != 0);
-		Request.set_field_bnewshouldblockonload(bNewShouldBlockOnLoad != 0);
+		Request.set_field_bnewshouldbeloaded(bNewShouldBeLoaded);
+		Request.set_field_bnewshouldbevisible(bNewShouldBeVisible);
+		Request.set_field_bnewshouldblockonload(bNewShouldBlockOnLoad);
 		Request.set_field_lodindex(LODIndex);
 
 		// Send command request.
@@ -1590,7 +1590,7 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender(worker::C
 		improbable::unreal::UnrealClientTravelInternalRequest Request;
 		Request.set_field_url(TCHAR_TO_UTF8(*URL));
 		Request.set_field_traveltype(uint32_t(TravelType));
-		Request.set_field_bseamless(bSeamless != 0);
+		Request.set_field_bseamless(bSeamless);
 		Request.set_field_mappackageguid_a(MapPackageGuid.A);
 		Request.set_field_mappackageguid_b(MapPackageGuid.B);
 		Request.set_field_mappackageguid_c(MapPackageGuid.C);
@@ -1734,7 +1734,7 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender(worker::
 		// Build request.
 		improbable::unreal::UnrealClientStopCameraShakeRequest Request;
 		// UNSUPPORTED UClass
-		Request.set_field_bimmediately(bImmediately != 0);
+		Request.set_field_bimmediately(bImmediately);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -1897,7 +1897,7 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Co
 		Request.set_field_transitionparams_blendtime(TransitionParams.BlendTime);
 		Request.set_field_transitionparams_blendfunction(uint32_t(TransitionParams.BlendFunction));
 		Request.set_field_transitionparams_blendexp(TransitionParams.BlendExp);
-		Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing != 0);
+		Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -1929,7 +1929,7 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender(work
 
 		// Build request.
 		improbable::unreal::UnrealClientSetSpectatorWaitingRequest Request;
-		Request.set_field_bwaiting(bWaiting != 0);
+		Request.set_field_bwaiting(bWaiting);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -2049,10 +2049,10 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender(worker:
 
 		// Build request.
 		improbable::unreal::UnrealClientSetCinematicModeRequest Request;
-		Request.set_field_bincinematicmode(bInCinematicMode != 0);
-		Request.set_field_baffectsmovement(bAffectsMovement != 0);
-		Request.set_field_baffectsturning(bAffectsTurning != 0);
-		Request.set_field_baffectshud(bAffectsHUD != 0);
+		Request.set_field_bincinematicmode(bInCinematicMode);
+		Request.set_field_baffectsmovement(bAffectsMovement);
+		Request.set_field_baffectsturning(bAffectsTurning);
+		Request.set_field_baffectshud(bAffectsHUD);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -2120,7 +2120,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Co
 
 		// Build request.
 		improbable::unreal::UnrealClientSetCameraFadeRequest Request;
-		Request.set_field_benablefading(bEnableFading != 0);
+		Request.set_field_benablefading(bEnableFading);
 		Request.set_field_fadecolor_b(uint32_t(FadeColor.B));
 		Request.set_field_fadecolor_g(uint32_t(FadeColor.G));
 		Request.set_field_fadecolor_r(uint32_t(FadeColor.R));
@@ -2128,7 +2128,7 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Co
 		Request.set_field_fadealpha_x(FadeAlpha.X);
 		Request.set_field_fadealpha_y(FadeAlpha.Y);
 		Request.set_field_fadetime(FadeTime);
-		Request.set_field_bfadeaudio(bFadeAudio != 0);
+		Request.set_field_bfadeaudio(bFadeAudio);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -2508,7 +2508,7 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker
 			Request.set_field_forcedactor(SpatialConstants::NULL_OBJECT_REF);
 		}
 		Request.set_field_forceduration(ForceDuration);
-		Request.set_field_benablestreaming(bEnableStreaming != 0);
+		Request.set_field_benablestreaming(bEnableStreaming);
 		Request.set_field_cinematictexturegroups(CinematicTextureGroups);
 
 		// Send command request.
@@ -2544,8 +2544,8 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender(worker:
 		// Build request.
 		improbable::unreal::UnrealClientPrepareMapChangeRequest Request;
 		Request.set_field_levelname(TCHAR_TO_UTF8(*LevelName.ToString()));
-		Request.set_field_bfirst(bFirst != 0);
-		Request.set_field_blast(bLast != 0);
+		Request.set_field_bfirst(bFirst);
+		Request.set_field_blast(bLast);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -2705,7 +2705,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker
 		{
 			Request.set_field_forcefeedbackeffect(SpatialConstants::NULL_OBJECT_REF);
 		}
-		Request.set_field_blooping(bLooping != 0);
+		Request.set_field_blooping(bLooping);
 		Request.set_field_tag(TCHAR_TO_UTF8(*Tag.ToString()));
 
 		// Send command request.
@@ -2806,8 +2806,8 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::C
 		Request.set_field_rate(Rate);
 		Request.set_field_blendintime(BlendInTime);
 		Request.set_field_blendouttime(BlendOutTime);
-		Request.set_field_bloop(bLoop != 0);
-		Request.set_field_brandomstarttime(bRandomStartTime != 0);
+		Request.set_field_bloop(bLoop);
+		Request.set_field_brandomstarttime(bRandomStartTime);
 		Request.set_field_space(uint32_t(Space));
 		Request.set_field_customplayspace(improbable::unreal::UnrealFRotator(CustomPlaySpace.Yaw, CustomPlaySpace.Pitch, CustomPlaySpace.Roll));
 
@@ -2915,7 +2915,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender(worker::
 
 		// Build request.
 		improbable::unreal::UnrealClientIgnoreMoveInputRequest Request;
-		Request.set_field_bignore(bIgnore != 0);
+		Request.set_field_bignore(bIgnore);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -2947,7 +2947,7 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender(worker::
 
 		// Build request.
 		improbable::unreal::UnrealClientIgnoreLookInputRequest Request;
-		Request.set_field_bignore(bIgnore != 0);
+		Request.set_field_bignore(bIgnore);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -3030,7 +3030,7 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connec
 		{
 			Request.set_field_endgamefocus(SpatialConstants::NULL_OBJECT_REF);
 		}
-		Request.set_field_biswinner(bIsWinner != 0);
+		Request.set_field_biswinner(bIsWinner);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -3146,7 +3146,7 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender(worke
 
 		// Build request.
 		improbable::unreal::UnrealClientEnableNetworkVoiceRequest Request;
-		Request.set_field_benable(bEnable != 0);
+		Request.set_field_benable(bEnable);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -3298,7 +3298,7 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender(w
 		improbable::unreal::UnrealClientAddTextureStreamingLocRequest Request;
 		Request.set_field_inloc(improbable::Vector3f(InLoc.X, InLoc.Y, InLoc.Z));
 		Request.set_field_duration(Duration);
-		Request.set_field_boverridelocation(bOverrideLocation != 0);
+		Request.set_field_boverridelocation(bOverrideLocation);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -3332,7 +3332,7 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender(worker::Conn
 		// Build request.
 		improbable::unreal::UnrealClientSetRotationRequest Request;
 		Request.set_field_newrotation(improbable::unreal::UnrealFRotator(NewRotation.Yaw, NewRotation.Pitch, NewRotation.Roll));
-		Request.set_field_bresetcamera(bResetCamera != 0);
+		Request.set_field_bresetcamera(bResetCamera);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -3401,7 +3401,7 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender(worker::Connect
 		Request.set_field_transitionparams_blendtime(TransitionParams.BlendTime);
 		Request.set_field_transitionparams_blendfunction(uint32_t(TransitionParams.BlendFunction));
 		Request.set_field_transitionparams_blendexp(TransitionParams.BlendExp);
-		Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing != 0);
+		Request.set_field_transitionparams_blockoutgoing(TransitionParams.bLockOutgoing);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -3519,7 +3519,7 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender(wo
 		// Build request.
 		improbable::unreal::UnrealServerUpdateLevelVisibilityRequest Request;
 		Request.set_field_packagename(TCHAR_TO_UTF8(*PackageName.ToString()));
-		Request.set_field_bisvisible(bIsVisible != 0);
+		Request.set_field_bisvisible(bIsVisible);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
@@ -3679,7 +3679,7 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender(work
 
 		// Build request.
 		improbable::unreal::UnrealServerSetSpectatorWaitingRequest Request;
-		Request.set_field_bwaiting(bWaiting != 0);
+		Request.set_field_bwaiting(bWaiting);
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());

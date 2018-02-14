@@ -87,7 +87,7 @@ void USpatialNetDriver::PostInitProperties()
 
 void USpatialNetDriver::OnSpatialOSConnected()
 {
-	UE_LOG(LogSpatialOSNUF, Warning, TEXT("Connected to SpatialOS."));
+	UE_LOG(LogSpatialOSNUF, Log, TEXT("Connected to SpatialOS."));
 
 	InteropPipelineBlock = NewObject<USpatialInteropPipelineBlock>();
 	InteropPipelineBlock->Init(EntityRegistry);
@@ -297,6 +297,27 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			{
 				// Channel is marked to go dormant now once all properties have been replicated (but is not dormant yet)
 				Channel->StartBecomingDormant();
+			}
+
+			// NUF: This actor should only be replicated if GetNetworkConnection() matches this connection. However, if this actor doesn't have a connection
+			// (which implies that it's owned by the server rather than a client), then it should fall back to the "catch all" SpatialOS connection which is
+			// ClientConnections[0]. The below condition means that each actor should only be replicated once, unless "ClientConnections" contain duplicates,
+			// which should never happen.
+			UNetConnection* ActorConnection = Actor->GetNetConnection();
+			if (ActorConnection != Connection)
+			{
+				if (ActorConnection == nullptr && Connection == ClientConnections[0])
+				{
+					UE_LOG(LogSpatialOSNUF, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());
+				}
+				else
+				{
+					continue;
+				}
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSNUF, Verbose, TEXT("Actor %s will be replicated on the connection %s"), *Actor->GetName(), *Connection->GetName());
 			}
 			
 			//NUF: Here, Unreal does initial relevancy checking and level load checking.
@@ -614,22 +635,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 				}
 			}			
 
-			// send ClientAdjustment if necessary
-			// we do this here so that we send a maximum of one per packet to that client; there is no value in stacking additional corrections
-			//todo-giray: Revisit this part as it relies on having a player controller per connection. I'm not sure if we'll do that.
-			if (Connection->PlayerController)
-			{
-				Connection->PlayerController->SendClientAdjustment();
-			}
-
-			for (int32 ChildIdx = 0; ChildIdx < Connection->Children.Num(); ChildIdx++)
-			{
-				if (Connection->Children[ChildIdx]->PlayerController != NULL)
-				{
-					Connection->Children[ChildIdx]->PlayerController->SendClientAdjustment();
-				}
-			}
-
 			FMemMark RelevantActorMark(FMemStack::Get());
 
 			FActorPriority* PriorityList = NULL;
@@ -809,11 +814,11 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 	check(GetNetMode() != NM_Client);
 
 	bool bOk = true;
+
 	// Commented out the code that creates a new connection per player controller. Leaving the code here for now in case it causes side effects.
 	// We instead use the "special" connection for everything.
 	//todo-giray: Remove the commented out code if connection setup looks stable.
 	
-	/*
 	USpatialNetConnection* Connection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(Connection);
 	
@@ -824,10 +829,9 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 
 	Connection->InitRemoteConnection(this, nullptr, InUrl, *FromAddr, USOCK_Open);
 	Notify->NotifyAcceptedConnection(Connection);
-	AddClientConnection(Connection);*/
+	AddClientConnection(Connection);
 
-	USpatialNetConnection* Connection = GetSpatialOSNetConnection();
-
+	// Set up the net ID for this player.
 	const TCHAR* ClientWorkerIdOption = InUrl.GetOption(TEXT("workerId"), nullptr);
 	check(ClientWorkerIdOption);
 	FString ClientWorkerId(ClientWorkerIdOption);

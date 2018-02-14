@@ -289,23 +289,23 @@ void USpatialTypeBinding_PlayerState::ServerSendUpdate_MultiClient(
 	{
 		case 1: // field_bhidden
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_bhidden(Value != 0);
+			OutUpdate.set_field_bhidden(Value);
 			break;
 		}
 		case 2: // field_breplicatemovement
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_breplicatemovement(Value != 0);
+			OutUpdate.set_field_breplicatemovement(Value);
 			break;
 		}
 		case 3: // field_btearoff
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_btearoff(Value != 0);
+			OutUpdate.set_field_btearoff(Value);
 			break;
 		}
 		case 4: // field_remoterole
@@ -434,9 +434,9 @@ void USpatialTypeBinding_PlayerState::ServerSendUpdate_MultiClient(
 		}
 		case 14: // field_bcanbedamaged
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_bcanbedamaged(Value != 0);
+			OutUpdate.set_field_bcanbedamaged(Value);
 			break;
 		}
 		case 15: // field_instigator
@@ -492,37 +492,37 @@ void USpatialTypeBinding_PlayerState::ServerSendUpdate_MultiClient(
 		}
 		case 20: // field_bfrompreviouslevel
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_bfrompreviouslevel(Value != 0);
+			OutUpdate.set_field_bfrompreviouslevel(Value);
 			break;
 		}
 		case 21: // field_bisabot
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_bisabot(Value != 0);
+			OutUpdate.set_field_bisabot(Value);
 			break;
 		}
 		case 22: // field_bisinactive
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_bisinactive(Value != 0);
+			OutUpdate.set_field_bisinactive(Value);
 			break;
 		}
 		case 23: // field_bisspectator
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_bisspectator(Value != 0);
+			OutUpdate.set_field_bisspectator(Value);
 			break;
 		}
 		case 24: // field_bonlyspectator
 		{
-			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
 
-			OutUpdate.set_field_bonlyspectator(Value != 0);
+			OutUpdate.set_field_bonlyspectator(Value);
 			break;
 		}
 		case 25: // field_starttime

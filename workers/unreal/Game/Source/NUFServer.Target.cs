@@ -5,21 +5,9 @@ using System.Collections.Generic;
 
 public class NUFServerTarget : TargetRules
 {
-	public NUFServerTarget(TargetInfo Target)
+	public NUFServerTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Server;
-	}
-
-	//
-	// TargetRules interface.
-	//
-
-	public override void SetupBinaries(
-		TargetInfo Target,
-		ref List<UEBuildBinaryConfiguration> OutBuildBinaryConfigurations,
-		ref List<string> OutExtraModuleNames
-		)
-	{
-		OutExtraModuleNames.AddRange(new [] { "NUF" });
+		ExtraModuleNames.Add("NUF");
 	}
 }
