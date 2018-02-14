@@ -992,7 +992,7 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 		package improbable.unreal;
 
 		import "improbable/vector3.schema";
-		import "unreal/core_types.schema";)""");
+		import "improbable/unreal/core_types.schema";)""");
 	Writer.Print();
 
 	TArray<EReplicatedPropertyGroup> RepPropertyGroups;
@@ -1149,10 +1149,10 @@ void GenerateForwardingCodeFromLayout(
 
 		#include <improbable/worker.h>
 		#include <improbable/view.h>
-		#include <unreal/generated/%s.h>
-		#include <unreal/core_types.h>
-		#include "SpatialHandlePropertyMap.h"
-		#include "SpatialTypeBinding.h"
+		#include <improbable/unreal/generated/%s.h>
+		#include <improbable/unreal/core_types.h>
+		#include "../SpatialHandlePropertyMap.h"
+		#include "../SpatialTypeBinding.h"
 		#include "SpatialTypeBinding_%s.generated.h")""", *SchemaFilename, *Class->GetName());
 	HeaderWriter.Print();
 
@@ -1258,14 +1258,15 @@ void GenerateForwardingCodeFromLayout(
 		// Note that this file has been generated automatically
 
 		#include "%s.h"
-		#include "SpatialOS.h"
 		#include "Engine.h"
-		#include "SpatialActorChannel.h"
+		#include "SpatialOS.h"
 		#include "EntityBuilder.h"
-		#include "SpatialPackageMapClient.h"
-		#include "SpatialNetDriver.h"
-		#include "SpatialConstants.h"
-		#include "SpatialInterop.h")""", *InteropFilename);
+
+		#include "../SpatialActorChannel.h"
+		#include "../SpatialPackageMapClient.h"
+		#include "../SpatialNetDriver.h"
+		#include "../SpatialConstants.h"
+		#include "../SpatialInterop.h")""", *InteropFilename);
 
 	// Handle to Property map.
 	// ===========================================
@@ -2059,14 +2060,15 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 
 int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 {
-	FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../schema/unreal/generated/"));
-	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/Generated/"));
+	FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../schema/improbable/unreal/generated/"));
+	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/NUF/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 
 	TArray<FString> Classes = {TEXT("Character"), TEXT("PlayerController"), TEXT("PlayerState"), TEXT("GameStateBase")};
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
-		int ComponentId = 100000;
+		// Component IDs 100000 to 100009 reserved for other NUF components.
+		int ComponentId = 100010;
 		for (auto& ClassName : Classes)
 		{
 			UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassName);

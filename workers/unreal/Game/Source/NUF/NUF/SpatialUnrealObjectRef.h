@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <unreal/core_types.h>
+#include <improbable/unreal/core_types.h>
 
 class FHashableUnrealObjectRef
 {

@@ -3,13 +3,13 @@
 package improbable.unreal;
 
 import "improbable/vector3.schema";
-import "unreal/core_types.schema";
+import "improbable/unreal/core_types.schema";
 
 component UnrealCharacterSingleClientReplicatedData {
-	id = 100000;
+	id = 100010;
 }
 component UnrealCharacterMultiClientReplicatedData {
-	id = 100001;
+	id = 100011;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
 	bool field_btearoff = 3; // COND_None
@@ -59,7 +59,7 @@ component UnrealCharacterMultiClientReplicatedData {
 	improbable.Vector3f field_reprootmotion_linearvelocity = 47; // COND_SimulatedOnlyNoReplay
 }
 component UnrealCharacterCompleteData {
-	id = 100002;
+	id = 100012;
 	uint32 field_mesh_animationmode = 1;
 	UnrealObjectRef field_mesh_animationblueprint = 2;
 	UnrealObjectRef field_mesh_animblueprintgeneratedclass = 3;
@@ -1214,7 +1214,7 @@ type UnrealServerMoveRequest {
 type UnrealServerMoveResponse {}
 
 component UnrealCharacterClientRPCs {
-	id = 100003;
+	id = 100013;
 	command UnrealClientCheatWalkResponse clientcheatwalk(UnrealClientCheatWalkRequest);
 	command UnrealClientCheatGhostResponse clientcheatghost(UnrealClientCheatGhostRequest);
 	command UnrealClientCheatFlyResponse clientcheatfly(UnrealClientCheatFlyRequest);
@@ -1225,7 +1225,7 @@ component UnrealCharacterClientRPCs {
 	command UnrealClientAckGoodMoveResponse clientackgoodmove(UnrealClientAckGoodMoveRequest);
 }
 component UnrealCharacterServerRPCs {
-	id = 100004;
+	id = 100014;
 	command UnrealServerMoveOldResponse servermoveold(UnrealServerMoveOldRequest);
 	command UnrealServerMoveDualHybridRootMotionResponse servermovedualhybridrootmotion(UnrealServerMoveDualHybridRootMotionRequest);
 	command UnrealServerMoveDualResponse servermovedual(UnrealServerMoveDualRequest);

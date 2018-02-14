@@ -3,13 +3,13 @@
 package improbable.unreal;
 
 import "improbable/vector3.schema";
-import "unreal/core_types.schema";
+import "improbable/unreal/core_types.schema";
 
 component UnrealPlayerStateSingleClientReplicatedData {
-	id = 100010;
+	id = 100020;
 }
 component UnrealPlayerStateMultiClientReplicatedData {
-	id = 100011;
+	id = 100021;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
 	bool field_btearoff = 3; // COND_None
@@ -38,7 +38,7 @@ component UnrealPlayerStateMultiClientReplicatedData {
 	bytes field_uniqueid = 26; // COND_InitialOnly
 }
 component UnrealPlayerStateCompleteData {
-	id = 100012;
+	id = 100022;
 	UnrealObjectRef field_enginemessageclass = 1;
 	string field_savednetworkaddress = 2;
 	UnrealObjectRef field_spritecomponent = 3;
@@ -101,8 +101,8 @@ component UnrealPlayerStateCompleteData {
 }
 
 component UnrealPlayerStateClientRPCs {
-	id = 100013;
+	id = 100023;
 }
 component UnrealPlayerStateServerRPCs {
-	id = 100014;
+	id = 100024;
 }

@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "Generated/Usr/improbable/spawner/spawner.h"
+#include "improbable/unreal/spawner.h"
 #include "LogMacros.h"
-#include <worker.h>
-#include <view.h>
+#include <improbable/worker.h>
+#include <improbable/view.h>
 
 namespace worker 
 { 
@@ -32,7 +32,7 @@ public:
 	void RequestPlayer(USpatialOS* InSpatialOS, FTimerManager* InTimerManager, const FURL& Url);
 
 private:
-	using SpawnPlayerCommand = improbable::spawner::PlayerSpawner::Commands::SpawnPlayer;
+	using SpawnPlayerCommand = improbable::unreal::PlayerSpawner::Commands::SpawnPlayer;
 
 	void SendPlayerSpawnRequest();
 	void HandlePlayerSpawnResponse(const worker::CommandResponseOp<SpawnPlayerCommand>& Op);
@@ -43,7 +43,7 @@ private:
 	worker::View* View;
 
 	TOptional<uint32> ResponseCallbackKey;
-	improbable::spawner::SpawnPlayerRequest Request;
+	improbable::unreal::SpawnPlayerRequest Request;
 
 	uint32 NumberOfAttempts;
 };

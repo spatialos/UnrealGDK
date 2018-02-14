@@ -1,7 +1,7 @@
 #pragma once
 
 // Needed for UnrealObjectRef.
-#include <unreal/core_types.h>
+#include <improbable/unreal/core_types.h>
 
 namespace SpatialConstants
 {

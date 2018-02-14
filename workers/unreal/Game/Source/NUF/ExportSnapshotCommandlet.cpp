@@ -2,15 +2,14 @@
 
 #include "EntityBuilder.h"
 #include "ExportSnapshotCommandlet.h"
-#include "SpatialConstants.h"
+#include "NUF/SpatialConstants.h"
 #include "SpatialOSCommon.h"
 #include "SpatialOSConversionFunctionLibrary.h"
 
 #include <improbable/worker.h>
 #include <improbable/standard_library.h>
-#include <improbable/spawner/spawner.h>
-#include <unreal/level_data.h>
-#include <unreal/generated/UnrealCharacter.h>
+#include <improbable/unreal/spawner.h>
+#include <improbable/unreal/level_data.h>
 
 using namespace improbable;
 
@@ -45,9 +44,9 @@ int32 UExportSnapshotCommandlet::Main(const FString& Params)
 	return 0;
 }
 
-void UExportSnapshotCommandlet::GenerateSnapshot(const FString& savePath) const
+void UExportSnapshotCommandlet::GenerateSnapshot(const FString& SavePath) const
 {
-	const FString FullPath = FPaths::Combine(*savePath, TEXT("default.snapshot"));
+	const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
 
 	std::unordered_map<worker::EntityId, worker::Entity> SnapshotEntities;
 	SnapshotEntities.emplace(std::make_pair(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity()));
@@ -68,16 +67,13 @@ worker::Entity UExportSnapshotCommandlet::CreateSpawnerEntity() const
 {
 	const Coordinates InitialPosition{0, 0, 0};
 
-	auto snapshotEntity =
-		improbable::unreal::FEntityBuilder::Begin()
+	return improbable::unreal::FEntityBuilder::Begin()
 		.AddPositionComponent(Position::Data{InitialPosition}, UnrealWorkerWritePermission)
 		.AddMetadataComponent(Metadata::Data("Spawner"))
 		.SetPersistence(true)
 		.SetReadAcl(AnyWorkerReadPermission)
-		.AddComponent<spawner::PlayerSpawner>(spawner::PlayerSpawner::Data{}, UnrealWorkerWritePermission)
+		.AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{}, UnrealWorkerWritePermission)
 		.Build();
-
-	return snapshotEntity;
 }
 
 worker::Entity UExportSnapshotCommandlet::CreateLevelDataEntity() const
@@ -113,14 +109,11 @@ worker::Entity UExportSnapshotCommandlet::CreateLevelDataEntity() const
 	StaticActorMap.emplace(2408470588, "PersistentLevel.PackageMapperUtil_48");
 	StaticActorMap.emplace(4041226225, "PersistentLevel.SkySphereBlueprint");
 
-	auto snapshotEntity =
-		improbable::unreal::FEntityBuilder::Begin()
+	return improbable::unreal::FEntityBuilder::Begin()
 		.AddPositionComponent(Position::Data{InitialPosition}, UnrealWorkerWritePermission)
 		.AddMetadataComponent(Metadata::Data("LevelData"))
 		.SetPersistence(true)
 		.SetReadAcl(AnyWorkerReadPermission)
 		.AddComponent<unreal::UnrealLevel>(unreal::UnrealLevel::Data{StaticActorMap}, UnrealWorkerWritePermission)
 		.Build();
-
-	return snapshotEntity;
 }

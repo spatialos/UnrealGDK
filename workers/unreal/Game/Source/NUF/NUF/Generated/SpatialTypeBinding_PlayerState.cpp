@@ -2,14 +2,15 @@
 // Note that this file has been generated automatically
 
 #include "SpatialTypeBinding_PlayerState.h"
-#include "SpatialOS.h"
 #include "Engine.h"
-#include "SpatialActorChannel.h"
+#include "SpatialOS.h"
 #include "EntityBuilder.h"
-#include "SpatialPackageMapClient.h"
-#include "SpatialNetDriver.h"
-#include "SpatialConstants.h"
-#include "SpatialInterop.h"
+
+#include "../SpatialActorChannel.h"
+#include "../SpatialPackageMapClient.h"
+#include "../SpatialNetDriver.h"
+#include "../SpatialConstants.h"
+#include "../SpatialInterop.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_PlayerState::GetHandlePropertyMap()
 {

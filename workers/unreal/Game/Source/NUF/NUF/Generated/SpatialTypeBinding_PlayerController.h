@@ -4,10 +4,10 @@
 
 #include <improbable/worker.h>
 #include <improbable/view.h>
-#include <unreal/generated/UnrealPlayerController.h>
-#include <unreal/core_types.h>
-#include "SpatialHandlePropertyMap.h"
-#include "SpatialTypeBinding.h"
+#include <improbable/unreal/generated/UnrealPlayerController.h>
+#include <improbable/unreal/core_types.h>
+#include "../SpatialHandlePropertyMap.h"
+#include "../SpatialTypeBinding.h"
 #include "SpatialTypeBinding_PlayerController.generated.h"
 
 UCLASS()

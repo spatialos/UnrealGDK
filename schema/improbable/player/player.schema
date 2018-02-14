@@ -1,6 +1,0 @@
-package improbable.player;
-
-component PlayerControlClient
-{
-	id = 1001;
-}
