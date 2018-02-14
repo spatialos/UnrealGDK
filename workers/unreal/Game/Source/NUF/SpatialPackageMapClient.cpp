@@ -181,14 +181,16 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 	}
 
 	// Match the above list with the static actor data.
-	auto& StaticActorData = LevelData.static_actor_map();
-	for (auto& Pair : StaticActorData)
+	auto& LevelDataActors = LevelData.static_actor_map();
+	for (auto& Pair : LevelDataActors)
 	{
-		AActor* Actor = StaticActorsInWorld.FindRef(UTF8_TO_TCHAR(Pair.second.c_str()));
+		const char* LevelDataActorPath = Pair.second.c_str();
+		AActor* Actor = StaticActorsInWorld.FindRef(UTF8_TO_TCHAR(LevelDataActorPath));
 
 		// Skip objects which don't exist.
 		if (!Actor)
 		{
+			UE_LOG(LogSpatialOSPackageMap, Warning, TEXT("Expected object not found in level: %s"), UTF8_TO_TCHAR(LevelDataActorPath));
 			continue;
 		}
 

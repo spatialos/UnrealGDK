@@ -87,7 +87,7 @@ void USpatialNetDriver::PostInitProperties()
 
 void USpatialNetDriver::OnSpatialOSConnected()
 {
-	UE_LOG(LogSpatialOSNUF, Warning, TEXT("Connected to SpatialOS."));
+	UE_LOG(LogSpatialOSNUF, Log, TEXT("Connected to SpatialOS."));
 
 	InteropPipelineBlock = NewObject<USpatialInteropPipelineBlock>();
 	InteropPipelineBlock->Init(EntityRegistry);
@@ -306,8 +306,14 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			UNetConnection* ActorConnection = Actor->GetNetConnection();
 			if (ActorConnection != Connection)
 			{
-				verify(ActorConnection == nullptr && Connection == ClientConnections[0]);
-				UE_LOG(LogSpatialOSNUF, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());				
+				if (ActorConnection == nullptr && Connection == ClientConnections[0])
+				{
+					UE_LOG(LogSpatialOSNUF, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());
+				}
+				else
+				{
+					continue;
+				}
 			}
 			else
 			{
