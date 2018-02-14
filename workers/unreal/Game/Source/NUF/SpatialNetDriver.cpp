@@ -87,7 +87,7 @@ void USpatialNetDriver::PostInitProperties()
 
 void USpatialNetDriver::OnSpatialOSConnected()
 {
-	UE_LOG(LogSpatialOSNUF, Warning, TEXT("Connected to SpatialOS."));
+	UE_LOG(LogSpatialOSNUF, Log, TEXT("Connected to SpatialOS."));
 
 	InteropPipelineBlock = NewObject<USpatialInteropPipelineBlock>();
 	InteropPipelineBlock->Init(EntityRegistry);
@@ -830,8 +830,6 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 	Connection->InitRemoteConnection(this, nullptr, InUrl, *FromAddr, USOCK_Open);
 	Notify->NotifyAcceptedConnection(Connection);
 	AddClientConnection(Connection);
-
-	//USpatialNetConnection* Connection = GetSpatialOSNetConnection();
 
 	// Set up the net ID for this player.
 	const TCHAR* ClientWorkerIdOption = InUrl.GetOption(TEXT("workerId"), nullptr);

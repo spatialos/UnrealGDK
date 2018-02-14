@@ -417,13 +417,12 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		PinnedView->Remove(CreateEntityCallback);
 	}
 
-	USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
-	if (PackageMap)
-	{
-		worker::EntityId SpatialEntityId = Op.EntityId.value_or(0);
-		FEntityId EntityId(SpatialEntityId);
-		SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
-		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(Actor, ActorEntityId);
-		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
-	}
+	USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
+	check(PackageMap);
+	
+	worker::EntityId SpatialEntityId = Op.EntityId.value_or(0);
+	FEntityId EntityId(SpatialEntityId);
+	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
+	FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(Actor, ActorEntityId);
+	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());	
 }	
