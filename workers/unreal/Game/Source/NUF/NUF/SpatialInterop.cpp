@@ -12,7 +12,7 @@
 
 // Needed for the entity template stuff.
 #include <improbable/standard_library.h>
-#include <improbable/player/player.h>
+#include <improbable/unreal/player.h>
 #include "EntityBuilder.h"
 #include "EntityTemplate.h"
 
@@ -134,7 +134,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 				.SetReadAcl(AnyUnrealWorkerOrClient)
 				// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
 				// todo-giray: Remove once we're using proper (generated) entity templates here.
-				.AddComponent<improbable::player::PlayerControlClient>(improbable::player::PlayerControlClientData{}, OwnClientOnly)
+				.AddComponent<improbable::unreal::PlayerControlClient>(improbable::unreal::PlayerControlClientData{}, OwnClientOnly)
 				.Build();
 
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId(), 0);

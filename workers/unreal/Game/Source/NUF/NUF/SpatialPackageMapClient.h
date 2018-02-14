@@ -8,7 +8,7 @@
 #include "SpatialUnrealObjectRef.h"
 #include "SpatialInterop.h"
 
-#include <unreal/level_data.h>
+#include <improbable/unreal/level_data.h>
 
 #include "SpatialPackageMapClient.generated.h"
 

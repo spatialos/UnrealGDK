@@ -3,21 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/GameInstance.h"
+#include "NUF/SpatialGameInstance.h"
 #include "NUFGameInstance.generated.h"
 
-/**
- * 
- */
 UCLASS()
-class NUF_API UNUFGameInstance : public UGameInstance
+class NUF_API UNUFGameInstance : public USpatialGameInstance
 {
 	GENERATED_BODY()
-	
-	bool StartGameInstance_NUFClient(FString& Error);
-
-#if WITH_EDITOR
-	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
-#endif
-	virtual void StartGameInstance() override;	
 };

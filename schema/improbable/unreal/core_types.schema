@@ -1,3 +1,4 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package improbable.unreal;
 
 type UnrealFRotator {
