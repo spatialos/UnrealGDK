@@ -931,3 +931,8 @@ void USpatialPendingNetGame::InitNetDriver()
 		ConnectionError = NSLOCTEXT("Engine", "UsedCheatCommands", "Console commands were used which are disallowed in netplay.  You must restart the game to create a match.").ToString();
 	}
 }
+
+void USpatialPendingNetGame::SendJoin()
+{
+	bSentJoinRequest = true;
+}

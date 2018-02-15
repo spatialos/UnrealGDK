@@ -8,7 +8,7 @@ public class NUF : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Sockets", "OnlineSubsystemUtils", "SpatialOS" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "Sockets", "OnlineSubsystemUtils", "SpatialOS" });
 
 		if (UEBuildConfiguration.bBuildEditor == true)
 		{
