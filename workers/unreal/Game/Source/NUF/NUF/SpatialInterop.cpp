@@ -212,7 +212,7 @@ void USpatialInterop::SendCommandRequest(FRPCRequestFunction Function, bool bRel
 	if (Result.UnresolvedObject != nullptr)
 	{
 		// Add to pending RPCs if any actors were unresolved.
-		AddPendingOutgoingRPC(Result.UnresolvedObject, Function, bReliable);
+		QueueOutgoingRPC(Result.UnresolvedObject, Function, bReliable);
 	}
 	else
 	{
@@ -221,6 +221,15 @@ void USpatialInterop::SendCommandRequest(FRPCRequestFunction Function, bool bRel
 		{
 			OutgoingReliableRPCs.Emplace(Result.RequestId, TSharedPtr<FOutgoingReliableRPC>(new FOutgoingReliableRPC(Function)));
 		}
+	}
+}
+
+void USpatialInterop::SendCommandResponse(FRPCResponderFunction Function)
+{
+	auto Result = Function();
+	if (Result.IsSet())
+	{
+		QueueIncomingRPC(Result.GetValue(), Function);
 	}
 }
 
@@ -262,15 +271,7 @@ void USpatialInterop::HandleCommandResponse(const FString& RPCName, FUntypedRequ
 	}
 }
 
-void USpatialInterop::OnResolveObject(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
-{
-	UE_LOG(LogSpatialOSInterop, Log, TEXT("Resolving pending object refs and RPCs which depend on object: %s."), *Object->GetName());
-	ResolvePendingOutgoingObjectRefUpdates(Object);
-	ResolvePendingOutgoingRPCs(Object);
-	ResolvePendingIncomingObjectRefUpdates(Object, ObjectRef);
-}
-
-void USpatialInterop::AddPendingOutgoingObjectRefUpdate(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
+void USpatialInterop::QueueOutgoingObjectUpdate(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
 {
 	check(UnresolvedObject);
 	check(DependentChannel);
@@ -286,20 +287,35 @@ void USpatialInterop::AddPendingOutgoingObjectRefUpdate(UObject* UnresolvedObjec
 	Handles.AddUnique(Handle);
 }
 
-void USpatialInterop::AddPendingOutgoingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender, bool bReliable)
+void USpatialInterop::QueueOutgoingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender, bool bReliable)
 {
 	check(UnresolvedObject);
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending RPC depending on object: %s."), *UnresolvedObject->GetName());
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing RPC depending on object: %s."), *UnresolvedObject->GetName());
 	PendingOutgoingRPCs.FindOrAdd(UnresolvedObject).Add(TPair<FRPCRequestFunction, bool>{CommandSender, bReliable});
 }
 
-void USpatialInterop::AddPendingIncomingObjectRefUpdate(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, UObjectPropertyBase* Property, uint16 Handle)
+void USpatialInterop::QueueIncomingObjectUpdate(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, UObjectPropertyBase* Property, uint16 Handle)
 {
 	check(DependentChannel);
 	check(Property);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref depending on (entity ID: %lld, offset: %d), channel: %s, property: %s."),
 		UnresolvedObjectRef.entity(), UnresolvedObjectRef.offset(), *DependentChannel->GetName(), *Property->GetName());
 	PendingIncomingObjectRefProperties.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Add({Property, Handle});
+}
+
+void USpatialInterop::QueueIncomingRPC(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCResponderFunction Responder)
+{
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming RPC depending on object ref: (entity ID: %llu, offset: %u)."), UnresolvedObjectRef.entity(), UnresolvedObjectRef.offset());
+	PendingIncomingRPCs.FindOrAdd(UnresolvedObjectRef).Add(Responder);
+}
+
+void USpatialInterop::ResolveObject(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
+{
+	UE_LOG(LogSpatialOSInterop, Log, TEXT("Resolving pending object refs and RPCs which depend on object: %s (entity ID: %llu, offset: %u)."), *Object->GetName(), ObjectRef.entity(), ObjectRef.offset());
+	ResolvePendingOutgoingObjectRefUpdates(Object);
+	ResolvePendingOutgoingRPCs(Object);
+	ResolvePendingIncomingObjectRefUpdates(Object, ObjectRef);
+	ResolvePendingIncomingRPCs(ObjectRef);
 }
 
 void USpatialInterop::SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId)
@@ -353,8 +369,8 @@ void USpatialInterop::ResolvePendingOutgoingRPCs(UObject* Object)
 	{
 		for (auto& RequestFuncPair : *RPCList)
 		{
-			// We can guarantee that SendCommandRequest won't populate PendingRPCs[Actor], because Actor has
-			// been resolved when we call ResolvePendingOutgoingRPCs.
+			// We can guarantee that SendCommandRequest won't populate PendingOutgoingRPCs[Object] whilst we're iterating through it,
+			// because Object has been resolved when we call ResolvePendingOutgoingRPCs.
 			SendCommandRequest(RequestFuncPair.Key, RequestFuncPair.Value);
 		}
 		PendingOutgoingRPCs.Remove(Object);
@@ -390,4 +406,19 @@ void USpatialInterop::ResolvePendingIncomingObjectRefUpdates(UObject* Object, co
 	}
 
 	PendingIncomingObjectRefProperties.Remove(ObjectRef);
+}
+
+void USpatialInterop::ResolvePendingIncomingRPCs(const improbable::unreal::UnrealObjectRef& ObjectRef)
+{
+	TArray<FRPCResponderFunction>* RPCList = PendingIncomingRPCs.Find(ObjectRef);
+	if (RPCList)
+	{
+		for (auto& Responder : *RPCList)
+		{
+			// We can guarantee that SendCommandResponse won't populate PendingIncomingRPCs[ObjectRef] whilst we're iterating through it,
+			// because ObjectRef has been resolved when we call ResolvePendingIncomingRPCs.
+			SendCommandResponse(Responder);
+		}
+		PendingIncomingRPCs.Remove(ObjectRef);
+	}
 }

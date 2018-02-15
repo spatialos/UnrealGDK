@@ -319,7 +319,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->AddPendingOutgoingObjectRefUpdate(Value, Channel, 5);
+					Interop->QueueOutgoingObjectUpdate(Value, Channel, 5);
 				}
 				else
 				{
@@ -355,7 +355,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->AddPendingOutgoingObjectRefUpdate(Value, Channel, 7);
+					Interop->QueueOutgoingObjectUpdate(Value, Channel, 7);
 				}
 				else
 				{
@@ -406,7 +406,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->AddPendingOutgoingObjectRefUpdate(Value, Channel, 12);
+					Interop->QueueOutgoingObjectUpdate(Value, Channel, 12);
 				}
 				else
 				{
@@ -443,7 +443,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->AddPendingOutgoingObjectRefUpdate(Value, Channel, 15);
+					Interop->QueueOutgoingObjectUpdate(Value, Channel, 15);
 				}
 				else
 				{
@@ -651,7 +651,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->AddPendingIncomingObjectRefUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -730,7 +730,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->AddPendingIncomingObjectRefUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -877,7 +877,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->AddPendingIncomingObjectRefUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -975,7 +975,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->AddPendingIncomingObjectRefUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}

@@ -55,8 +55,11 @@ struct FRPCRequestResult
 	FRPCRequestResult(FUntypedRequestId RequestId) : UnresolvedObject{nullptr}, RequestId{RequestId} {}
 };
 
-// Function storing a command request, capturing all arguments by value.
+// Function storing a command request operation, capturing all arguments by value.
 using FRPCRequestFunction = TFunction<FRPCRequestResult()>;
+
+// Function storing a command response operation, capturing the command request op by value.
+using FRPCResponderFunction = TFunction<TOptional<improbable::unreal::UnrealObjectRef>()>;
 
 // Stores the number of attempts when retrying failed commands.
 class FOutgoingReliableRPC
@@ -91,25 +94,32 @@ public:
 	USpatialActorChannel* GetClientActorChannel(const worker::EntityId& EntityId) const;
 	void AddClientActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel);
 
+	// Type bindings.
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
 	void UnregisterInteropType(UClass* Class);
 	USpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
+	// Sending component updates and RPCs.
 	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FString& PlayerWorkerId, const TArray<uint16>& Changed);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
 
+	// RPC handlers. Used by generated interop classes.
 	void SendCommandRequest(FRPCRequestFunction Function, bool bReliable);
+	void SendCommandResponse(FRPCResponderFunction Function);
+
+	// Called when the sending worker receives a command response.
 	void HandleCommandResponse(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
 
-	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.
-	void OnResolveObject(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
+	// Called by the type bindings when an update or RPC needs to be queued. 
+	void QueueOutgoingObjectUpdate(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
+	void QueueOutgoingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender, bool bReliable);
+	void QueueIncomingObjectUpdate(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, UObjectPropertyBase* Property, uint16 Handle);
+	void QueueIncomingRPC(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCResponderFunction Responder);
 
-	void AddPendingOutgoingObjectRefUpdate(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
-	void AddPendingOutgoingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender, bool bReliable);
-	void AddPendingIncomingObjectRefUpdate(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, UObjectPropertyBase* Property, uint16 Handle);
-	// Pending incoming RPC
+	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.
+	void ResolveObject(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	// Accessors.
 	USpatialOS* GetSpatialOS() const
@@ -157,6 +167,9 @@ private:
 
 	// Pending incoming object ref property updates.
 	TMap<FHashableUnrealObjectRef, TMap<USpatialActorChannel*, TArray<FPendingIncomingObjectProperty>>> PendingIncomingObjectRefProperties;
+	
+	// Pending incoming RPCs.
+	TMap<FHashableUnrealObjectRef, TArray<FRPCResponderFunction>> PendingIncomingRPCs;
 
 private:
 	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
@@ -164,6 +177,7 @@ private:
 	void ResolvePendingOutgoingObjectRefUpdates(UObject* Object);
 	void ResolvePendingOutgoingRPCs(UObject* Object);
 	void ResolvePendingIncomingObjectRefUpdates(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
+	void ResolvePendingIncomingRPCs(const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	friend class USpatialInteropPipelineBlock;
 };

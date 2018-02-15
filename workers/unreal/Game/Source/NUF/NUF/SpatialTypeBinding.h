@@ -57,21 +57,6 @@ public:
 	virtual void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) PURE_VIRTUAL(USpatialTypeBinding::ApplyQueuedStateToActor, );
 
 protected:
-	template <typename CommandType>
-	void SendRPCResponse(const worker::CommandRequestOp<CommandType>& Op, bool bSuccess, const FString& FailureMessage) const 
-	{
-		TSharedPtr<worker::Connection> PinnedConnection = Interop->GetSpatialOS()->GetConnection().Pin();
-		checkf(PinnedConnection.Get(), TEXT("Missing connection when sending RPC response."));
-		if (bSuccess)
-		{
-			PinnedConnection->SendCommandResponse<CommandType>(Op.RequestId, {});
-		}
-		else
-		{
-			PinnedConnection->SendCommandFailure<CommandType>(Op.RequestId, std::string{TCHAR_TO_UTF8(*FailureMessage)});
-		}
-	}
-
 	UPROPERTY()
 	USpatialInterop* Interop;
 

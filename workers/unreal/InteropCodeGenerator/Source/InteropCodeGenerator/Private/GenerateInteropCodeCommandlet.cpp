@@ -1715,7 +1715,7 @@ void GenerateForwardingCodeFromLayout(
 					SourceWriter, "OutUpdate", RepProp.Entry.Chain, PropertyValueName, true,
 					[&SourceWriter, Handle](const FString& PropertyValue)
 					{
-						SourceWriter.Printf("Interop->AddPendingOutgoingObjectRefUpdate(%s, Channel, %d);", *PropertyValue, Handle);
+						SourceWriter.Printf("Interop->QueueOutgoingObjectUpdate(%s, Channel, %d);", *PropertyValue, Handle);
 					});
 				SourceWriter.Print("break;");
 				SourceWriter.Outdent();
@@ -1790,7 +1790,7 @@ void GenerateForwardingCodeFromLayout(
 							*Data.Property->GetName(),
 							Handle);)""");
 					SourceWriter.Print("bWriteObjectProperty = false;");
-					SourceWriter.Print("Interop->AddPendingIncomingObjectRefUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);");
+					SourceWriter.Print("Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);");
 				});
 
 			// If this is RemoteRole (which will get swapped to Role when the bunch is processed), make sure to downgrade if bAutonomousProxy is false.
@@ -1952,22 +1952,23 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Print("{");
 			SourceWriter.Indent();
 
+			// Generate receiver function.
+			SourceWriter.Print("auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>");
+			SourceWriter.Print("{").Indent();
+
 			auto ObjectResolveFailureGenerator = [&SourceWriter, &RPC, Group, Class](const FString& PropertyName, const FString& ObjectRef)
 			{
 				SourceWriter.Printf(R"""(
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: %s_Receiver: %s (entity id %%lld, offset %%d) is not resolved on this worker. Sending command failure."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: %s_Receiver: %s (entity id %%lld, offset %%d) is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
 						%s.entity(),
 						%s.offset());
-					SendRPCResponse<improbable::unreal::%s::Commands::%s>(Op, false, TEXT("%s is unresolved on the target worker"));
-					return;)""",
+					return TOptional<improbable::unreal::UnrealObjectRef>(%s);)""",
 					*RPC.Function->GetName(),
 					*PropertyName,
 					*ObjectRef,
 					*ObjectRef,
-					*GetSchemaRPCComponentName(Group, Class),
-					*GetCommandNameFromFunction(RPC.Function),
-					*PropertyName);
+					*ObjectRef);
 			};
 
 			// Get the target object.
@@ -2017,7 +2018,7 @@ void GenerateForwardingCodeFromLayout(
 				RPCParameters.Add(Param->GetNameCPP());
 			}
 			SourceWriter.Print();
-			SourceWriter.Print("// Call implementation and send command response.");
+			SourceWriter.Print("// Call implementation.");
 			SourceWriter.Printf(R"""(
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%%s: Received RPC: %s, target: %%s (entity: %%llu, offset: %%u)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
@@ -2027,9 +2028,16 @@ void GenerateForwardingCodeFromLayout(
 				*RPC.Function->GetName());
 			SourceWriter.Printf("TargetObject->%s_Implementation(%s);",
 				*RPC.Function->GetName(), *FString::Join(RPCParameters, TEXT(", ")));
-			SourceWriter.Printf("SendRPCResponse<improbable::unreal::%s::Commands::%s>(Op, true, FString());",
+			SourceWriter.Print();
+			SourceWriter.Print("// Send command response.");
+			SourceWriter.Print("TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();");
+			SourceWriter.Printf("Connection->SendCommandResponse<improbable::unreal::%s::Commands::%s>(Op.RequestId, {});",
 				*GetSchemaRPCComponentName(Group, Class),
 				*GetCommandNameFromFunction(RPC.Function));
+			SourceWriter.Print("return {};");
+			SourceWriter.Outdent().Print(TEXT("};"));
+
+			SourceWriter.Print("Interop->SendCommandResponse(Receiver);");
 			SourceWriter.Outdent().Print(TEXT("}"));
 		}
 	}
