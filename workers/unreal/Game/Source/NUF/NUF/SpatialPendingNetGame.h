@@ -15,4 +15,7 @@ class USpatialPendingNetGame : public UPendingNetGame
 		
 	//Made virtual in PendingNetGame.h
 	virtual void InitNetDriver() override;
+
+	virtual void SendJoin() override;
+
 };

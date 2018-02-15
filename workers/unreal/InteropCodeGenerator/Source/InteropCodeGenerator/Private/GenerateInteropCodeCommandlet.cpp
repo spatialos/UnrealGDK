@@ -1210,7 +1210,7 @@ void GenerateForwardingCodeFromLayout(
 	}
 
 	HeaderWriter.Print();
-	HeaderWriter.Print("// Command sender functions.");
+	HeaderWriter.Print("// RPC command sender functions.");
 	for (auto Group : GetRPCTypes())
 	{
 		// Command sender function signatures
@@ -1222,7 +1222,7 @@ void GenerateForwardingCodeFromLayout(
 	}
 
 	HeaderWriter.Print();
-	HeaderWriter.Print("// Command request handler functions.");
+	HeaderWriter.Print("// RPC command request handler functions.");
 	for(auto Group : GetRPCTypes())
 	{
 		// Command request receiver function signatures
@@ -1236,7 +1236,7 @@ void GenerateForwardingCodeFromLayout(
 	}
 
 	HeaderWriter.Print();
-	HeaderWriter.Print("// Command response handler functions.");
+	HeaderWriter.Print("// RPC command response handler functions.");
 	for (auto Group : GetRPCTypes())
 	{
 		// Command response receiver function signatures

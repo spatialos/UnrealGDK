@@ -26,9 +26,7 @@ public:
 
 	friend uint32 GetTypeHash(const FHashableUnrealObjectRef& ObjectRef)
 	{
-		// TODO(David): Currently this is not exported correctly with __declspec. This should be fixed in 12.1.1.
-		//return std::hash<improbable::unreal::UnrealObjectRef>{}(ObjectRef.ObjectRef);
-		return (ObjectRef.ObjectRef.entity() << 8) + ObjectRef.ObjectRef.offset();
+		return std::hash<improbable::unreal::UnrealObjectRef>{}(ObjectRef.ObjectRef);
 	}
 
 private:

@@ -71,7 +71,7 @@ private:
 		USpatialActorChannel* ActorChannel,
 		const improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update) const;
 
-	// Command sender functions.
+	// RPC command sender functions.
 	void OnServerStartedVisualLogger_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject);
 	void ClientWasKicked_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject);
 	void ClientVoiceHandshakeComplete_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject);
@@ -143,7 +143,7 @@ private:
 	void ServerCamera_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject);
 	void ServerAcknowledgePossession_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject);
 
-	// Command request handler functions.
+	// RPC command request handler functions.
 	void OnServerStartedVisualLogger_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op);
 	void ClientWasKicked_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>& Op);
 	void ClientVoiceHandshakeComplete_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>& Op);
@@ -215,7 +215,7 @@ private:
 	void ServerCamera_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>& Op);
 	void ServerAcknowledgePossession_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>& Op);
 
-	// Command response handler functions.
+	// RPC command response handler functions.
 	void OnServerStartedVisualLogger_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op);
 	void ClientWasKicked_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>& Op);
 	void ClientVoiceHandshakeComplete_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>& Op);
