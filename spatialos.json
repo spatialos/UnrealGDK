@@ -1,11 +1,11 @@
 {
   "name": "demo",
   "project_version": "0.0.1",
-  "sdk_version": "12.0.5",
+  "sdk_version": "12.1.1",
   "dependencies": [
     {
       "name": "standard_library",
-      "version": "12.0.5"
+      "version": "12.1.1"
     }
   ]
 }
