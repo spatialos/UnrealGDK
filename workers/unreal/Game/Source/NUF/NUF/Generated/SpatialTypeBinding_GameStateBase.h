@@ -71,9 +71,9 @@ private:
 		USpatialActorChannel* ActorChannel,
 		const improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData::Update& Update) const;
 
-	// RPC sender functions.
+	// Command sender functions.
 
-	// RPC sender response functions.
+	// Command request handler functions.
 
-	// RPC receiver functions.
+	// Command response handler functions.
 };

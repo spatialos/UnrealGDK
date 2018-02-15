@@ -34,37 +34,35 @@ public:
 	void RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp) override;
 
 	void AddComponent(UAddComponentOpWrapperBase* AddComponentOp) override;
-	void RemoveComponent(const worker::ComponentId ComponentId,
-		const worker::RemoveComponentOp& RemoveComponentOp) override;
+	void RemoveComponent(const worker::ComponentId ComponentId, const worker::RemoveComponentOp& RemoveComponentOp) override;
 
-	void ChangeAuthority(const worker::ComponentId ComponentId,
-		const worker::AuthorityChangeOp& AuthChangeOp) override;
+	void ChangeAuthority(const worker::ComponentId ComponentId, const worker::AuthorityChangeOp& AuthChangeOp) override;
 
 private:
 	UPROPERTY()
-		UEntityRegistry* EntityRegistry;
+	UEntityRegistry* EntityRegistry;
 
 	TArray<FEntityId> EntitiesToSpawn;
 	TArray<FEntityId> EntitiesToRemove;
+
 	// Maps ComponentId to USpatialOsComponent* class name
 	UPROPERTY()
-		TMap<int, UClass*> KnownComponents;
+	TMap<int, UClass*> KnownComponents;
+
 	UPROPERTY()
-		TMap<FComponentIdentifier, UAddComponentOpWrapperBase*> ComponentsToAdd;
+	TMap<FComponentIdentifier, UAddComponentOpWrapperBase*> ComponentsToAdd;
+
 	UPROPERTY()
-		TMap<FComponentIdentifier, USpatialOsComponent*> PendingUComponents;
+	TMap<FComponentIdentifier, USpatialOsComponent*> PendingUComponents;
 
 	TSet<FComponentIdentifier> ComponentsToRemove;
 	TMap<FComponentIdentifier, worker::AuthorityChangeOp> ComponentAuthorities;
 
-	void ProcessOps(const TWeakPtr<worker::View>& InView,
-		const TWeakPtr<worker::Connection>& InConnection, UWorld* World,
-		UCallbackDispatcher* InCallbackDispatcher) override;
+private:
+	void ProcessOps(const TWeakPtr<worker::View>& InView, const TWeakPtr<worker::Connection>& InConnection, UWorld* World, UCallbackDispatcher* InCallbackDispatcher) override;
 
 	void AddEntities(UWorld* World, const TWeakPtr<worker::Connection>& InConnection);
-	void AddComponents(const TWeakPtr<worker::View>& InView,
-		const TWeakPtr<worker::Connection>& InConnection,
-		UCallbackDispatcher* InCallbackDispatcher);
+	void AddComponents(const TWeakPtr<worker::View>& InView, const TWeakPtr<worker::Connection>& InConnection, UCallbackDispatcher* InCallbackDispatcher);
 	void RemoveComponents(UCallbackDispatcher* InCallbackDispatcher);
 	void RemoveEntities(UWorld* World);
 
@@ -73,6 +71,5 @@ private:
 	UClass* GetNativeEntityClass(UMetadataAddComponentOp * MetadataComponent);
 	UClass* GetRegisteredEntityClass(UMetadataAddComponentOp * MetadataComponent);
 	
-	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId,
-		const TWeakPtr<worker::Connection>& Connection);
+	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection);
 };

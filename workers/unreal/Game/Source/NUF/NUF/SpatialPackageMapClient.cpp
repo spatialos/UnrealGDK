@@ -122,7 +122,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	FNetworkGUID NetGUID = GetOrAssignNetGUID_NUF(Actor);
 	improbable::unreal::UnrealObjectRef ObjectRef{EntityId.ToSpatialEntityId(), 0};
 	RegisterObjectRef(NetGUID, ObjectRef);
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %d"),
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %llu"),
 		*Actor->GetName(), *NetGUID.ToString(), EntityId.ToSpatialEntityId());
 	Interop->ResolveObject(Actor, ObjectRef);
 
@@ -136,8 +136,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 		FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_NUF(Subobject);
 		improbable::unreal::UnrealObjectRef SubobjectRef{EntityId.ToSpatialEntityId(), SubobjectOffset};
 		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
-		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: (entity ID: %d, offset: %d)"),
-			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), EntityId.ToSpatialEntityId(), SubobjectOffset);
+		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
+			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *ObjectRefToString(SubobjectRef));
 		Interop->ResolveObject(Subobject, SubobjectRef);
 	}
 
@@ -288,12 +288,11 @@ FNetworkGUID FSpatialNetGUIDCache::AssignStaticActorNetGUID(const UObject* Objec
 	improbable::unreal::UnrealObjectRef ObjectRef{0, StaticNetGUID.Value};
 	RegisterObjectRef(StaticNetGUID, ObjectRef);
 
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: Registered static object %s. NetGUID %s (entity ID: %llu, offset: %u)."),
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: Registered static object %s. NetGUID: %s, Object Ref: %s."),
 		*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
 		*Object->GetName(),
 		*StaticNetGUID.ToString(),
-		ObjectRef.entity(),
-		ObjectRef.offset());
+		*ObjectRefToString(ObjectRef));
 
 	return StaticNetGUID;
 }

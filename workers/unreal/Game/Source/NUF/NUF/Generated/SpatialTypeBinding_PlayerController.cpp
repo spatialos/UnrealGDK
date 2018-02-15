@@ -6,10 +6,11 @@
 #include "SpatialOS.h"
 #include "EntityBuilder.h"
 
+#include "../SpatialConstants.h"
+#include "../SpatialUnrealObjectRef.h"
 #include "../SpatialActorChannel.h"
 #include "../SpatialPackageMapClient.h"
 #include "../SpatialNetDriver.h"
-#include "../SpatialConstants.h"
 #include "../SpatialInterop.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetHandlePropertyMap()
@@ -51,286 +52,294 @@ void USpatialTypeBinding_PlayerController::Init(USpatialInterop* InInterop, USpa
 {
 	Super::Init(InInterop, InPackageMap);
 
-	RPCToSenderMap.Emplace("OnServerStartedVisualLogger", &USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender);
-	RPCToSenderMap.Emplace("ClientWasKicked", &USpatialTypeBinding_PlayerController::ClientWasKicked_Sender);
-	RPCToSenderMap.Emplace("ClientVoiceHandshakeComplete", &USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender);
-	RPCToSenderMap.Emplace("ClientUpdateLevelStreamingStatus", &USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Sender);
-	RPCToSenderMap.Emplace("ClientUnmutePlayer", &USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender);
-	RPCToSenderMap.Emplace("ClientTravelInternal", &USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender);
-	RPCToSenderMap.Emplace("ClientTeamMessage", &USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender);
-	RPCToSenderMap.Emplace("ClientStopForceFeedback", &USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender);
-	RPCToSenderMap.Emplace("ClientStopCameraShake", &USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender);
-	RPCToSenderMap.Emplace("ClientStopCameraAnim", &USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender);
-	RPCToSenderMap.Emplace("ClientStartOnlineSession", &USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender);
-	RPCToSenderMap.Emplace("ClientSpawnCameraLensEffect", &USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender);
-	RPCToSenderMap.Emplace("ClientSetViewTarget", &USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender);
-	RPCToSenderMap.Emplace("ClientSetSpectatorWaiting", &USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender);
-	RPCToSenderMap.Emplace("ClientSetHUD", &USpatialTypeBinding_PlayerController::ClientSetHUD_Sender);
-	RPCToSenderMap.Emplace("ClientSetForceMipLevelsToBeResident", &USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Sender);
-	RPCToSenderMap.Emplace("ClientSetCinematicMode", &USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender);
-	RPCToSenderMap.Emplace("ClientSetCameraMode", &USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender);
-	RPCToSenderMap.Emplace("ClientSetCameraFade", &USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender);
-	RPCToSenderMap.Emplace("ClientSetBlockOnAsyncLoading", &USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender);
-	RPCToSenderMap.Emplace("ClientReturnToMainMenu", &USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender);
-	RPCToSenderMap.Emplace("ClientRetryClientRestart", &USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender);
-	RPCToSenderMap.Emplace("ClientRestart", &USpatialTypeBinding_PlayerController::ClientRestart_Sender);
-	RPCToSenderMap.Emplace("ClientReset", &USpatialTypeBinding_PlayerController::ClientReset_Sender);
-	RPCToSenderMap.Emplace("ClientRepObjRef", &USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender);
-	RPCToSenderMap.Emplace("ClientReceiveLocalizedMessage", &USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender);
-	RPCToSenderMap.Emplace("ClientPrestreamTextures", &USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender);
-	RPCToSenderMap.Emplace("ClientPrepareMapChange", &USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender);
-	RPCToSenderMap.Emplace("ClientPlaySoundAtLocation", &USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender);
-	RPCToSenderMap.Emplace("ClientPlaySound", &USpatialTypeBinding_PlayerController::ClientPlaySound_Sender);
-	RPCToSenderMap.Emplace("ClientPlayForceFeedback", &USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender);
-	RPCToSenderMap.Emplace("ClientPlayCameraShake", &USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender);
-	RPCToSenderMap.Emplace("ClientPlayCameraAnim", &USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender);
-	RPCToSenderMap.Emplace("ClientMutePlayer", &USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender);
-	RPCToSenderMap.Emplace("ClientMessage", &USpatialTypeBinding_PlayerController::ClientMessage_Sender);
-	RPCToSenderMap.Emplace("ClientIgnoreMoveInput", &USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender);
-	RPCToSenderMap.Emplace("ClientIgnoreLookInput", &USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender);
-	RPCToSenderMap.Emplace("ClientGotoState", &USpatialTypeBinding_PlayerController::ClientGotoState_Sender);
-	RPCToSenderMap.Emplace("ClientGameEnded", &USpatialTypeBinding_PlayerController::ClientGameEnded_Sender);
-	RPCToSenderMap.Emplace("ClientForceGarbageCollection", &USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender);
-	RPCToSenderMap.Emplace("ClientFlushLevelStreaming", &USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender);
-	RPCToSenderMap.Emplace("ClientEndOnlineSession", &USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender);
-	RPCToSenderMap.Emplace("ClientEnableNetworkVoice", &USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender);
-	RPCToSenderMap.Emplace("ClientCommitMapChange", &USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender);
-	RPCToSenderMap.Emplace("ClientClearCameraLensEffects", &USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender);
-	RPCToSenderMap.Emplace("ClientCapBandwidth", &USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender);
-	RPCToSenderMap.Emplace("ClientCancelPendingMapChange", &USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender);
-	RPCToSenderMap.Emplace("ClientAddTextureStreamingLoc", &USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender);
-	RPCToSenderMap.Emplace("ClientSetRotation", &USpatialTypeBinding_PlayerController::ClientSetRotation_Sender);
-	RPCToSenderMap.Emplace("ClientSetLocation", &USpatialTypeBinding_PlayerController::ClientSetLocation_Sender);
-	RPCToSenderMap.Emplace("ServerViewSelf", &USpatialTypeBinding_PlayerController::ServerViewSelf_Sender);
-	RPCToSenderMap.Emplace("ServerViewPrevPlayer", &USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender);
-	RPCToSenderMap.Emplace("ServerViewNextPlayer", &USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender);
-	RPCToSenderMap.Emplace("ServerVerifyViewTarget", &USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender);
-	RPCToSenderMap.Emplace("ServerUpdateLevelVisibility", &USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender);
-	RPCToSenderMap.Emplace("ServerUpdateCamera", &USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender);
-	RPCToSenderMap.Emplace("ServerUnmutePlayer", &USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender);
-	RPCToSenderMap.Emplace("ServerToggleAILogging", &USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender);
-	RPCToSenderMap.Emplace("ServerShortTimeout", &USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender);
-	RPCToSenderMap.Emplace("ServerSetSpectatorWaiting", &USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender);
-	RPCToSenderMap.Emplace("ServerSetSpectatorLocation", &USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender);
-	RPCToSenderMap.Emplace("ServerRestartPlayer", &USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender);
-	RPCToSenderMap.Emplace("ServerPause", &USpatialTypeBinding_PlayerController::ServerPause_Sender);
-	RPCToSenderMap.Emplace("ServerNotifyLoadedWorld", &USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender);
-	RPCToSenderMap.Emplace("ServerMutePlayer", &USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender);
-	RPCToSenderMap.Emplace("ServerCheckClientPossessionReliable", &USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Sender);
-	RPCToSenderMap.Emplace("ServerCheckClientPossession", &USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender);
-	RPCToSenderMap.Emplace("ServerChangeName", &USpatialTypeBinding_PlayerController::ServerChangeName_Sender);
-	RPCToSenderMap.Emplace("ServerCamera", &USpatialTypeBinding_PlayerController::ServerCamera_Sender);
-	RPCToSenderMap.Emplace("ServerAcknowledgePossession", &USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender);
+	RPCToSenderMap.Emplace("OnServerStartedVisualLogger", &USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_SendCommand);
+	RPCToSenderMap.Emplace("ClientWasKicked", &USpatialTypeBinding_PlayerController::ClientWasKicked_SendCommand);
+	RPCToSenderMap.Emplace("ClientVoiceHandshakeComplete", &USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_SendCommand);
+	RPCToSenderMap.Emplace("ClientUpdateLevelStreamingStatus", &USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_SendCommand);
+	RPCToSenderMap.Emplace("ClientUnmutePlayer", &USpatialTypeBinding_PlayerController::ClientUnmutePlayer_SendCommand);
+	RPCToSenderMap.Emplace("ClientTravelInternal", &USpatialTypeBinding_PlayerController::ClientTravelInternal_SendCommand);
+	RPCToSenderMap.Emplace("ClientTeamMessage", &USpatialTypeBinding_PlayerController::ClientTeamMessage_SendCommand);
+	RPCToSenderMap.Emplace("ClientStopForceFeedback", &USpatialTypeBinding_PlayerController::ClientStopForceFeedback_SendCommand);
+	RPCToSenderMap.Emplace("ClientStopCameraShake", &USpatialTypeBinding_PlayerController::ClientStopCameraShake_SendCommand);
+	RPCToSenderMap.Emplace("ClientStopCameraAnim", &USpatialTypeBinding_PlayerController::ClientStopCameraAnim_SendCommand);
+	RPCToSenderMap.Emplace("ClientStartOnlineSession", &USpatialTypeBinding_PlayerController::ClientStartOnlineSession_SendCommand);
+	RPCToSenderMap.Emplace("ClientSpawnCameraLensEffect", &USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_SendCommand);
+	RPCToSenderMap.Emplace("ClientSetViewTarget", &USpatialTypeBinding_PlayerController::ClientSetViewTarget_SendCommand);
+	RPCToSenderMap.Emplace("ClientSetSpectatorWaiting", &USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_SendCommand);
+	RPCToSenderMap.Emplace("ClientSetHUD", &USpatialTypeBinding_PlayerController::ClientSetHUD_SendCommand);
+	RPCToSenderMap.Emplace("ClientSetForceMipLevelsToBeResident", &USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_SendCommand);
+	RPCToSenderMap.Emplace("ClientSetCinematicMode", &USpatialTypeBinding_PlayerController::ClientSetCinematicMode_SendCommand);
+	RPCToSenderMap.Emplace("ClientSetCameraMode", &USpatialTypeBinding_PlayerController::ClientSetCameraMode_SendCommand);
+	RPCToSenderMap.Emplace("ClientSetCameraFade", &USpatialTypeBinding_PlayerController::ClientSetCameraFade_SendCommand);
+	RPCToSenderMap.Emplace("ClientSetBlockOnAsyncLoading", &USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_SendCommand);
+	RPCToSenderMap.Emplace("ClientReturnToMainMenu", &USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_SendCommand);
+	RPCToSenderMap.Emplace("ClientRetryClientRestart", &USpatialTypeBinding_PlayerController::ClientRetryClientRestart_SendCommand);
+	RPCToSenderMap.Emplace("ClientRestart", &USpatialTypeBinding_PlayerController::ClientRestart_SendCommand);
+	RPCToSenderMap.Emplace("ClientReset", &USpatialTypeBinding_PlayerController::ClientReset_SendCommand);
+	RPCToSenderMap.Emplace("ClientRepObjRef", &USpatialTypeBinding_PlayerController::ClientRepObjRef_SendCommand);
+	RPCToSenderMap.Emplace("ClientReceiveLocalizedMessage", &USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_SendCommand);
+	RPCToSenderMap.Emplace("ClientPrestreamTextures", &USpatialTypeBinding_PlayerController::ClientPrestreamTextures_SendCommand);
+	RPCToSenderMap.Emplace("ClientPrepareMapChange", &USpatialTypeBinding_PlayerController::ClientPrepareMapChange_SendCommand);
+	RPCToSenderMap.Emplace("ClientPlaySoundAtLocation", &USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_SendCommand);
+	RPCToSenderMap.Emplace("ClientPlaySound", &USpatialTypeBinding_PlayerController::ClientPlaySound_SendCommand);
+	RPCToSenderMap.Emplace("ClientPlayForceFeedback", &USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_SendCommand);
+	RPCToSenderMap.Emplace("ClientPlayCameraShake", &USpatialTypeBinding_PlayerController::ClientPlayCameraShake_SendCommand);
+	RPCToSenderMap.Emplace("ClientPlayCameraAnim", &USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_SendCommand);
+	RPCToSenderMap.Emplace("ClientMutePlayer", &USpatialTypeBinding_PlayerController::ClientMutePlayer_SendCommand);
+	RPCToSenderMap.Emplace("ClientMessage", &USpatialTypeBinding_PlayerController::ClientMessage_SendCommand);
+	RPCToSenderMap.Emplace("ClientIgnoreMoveInput", &USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_SendCommand);
+	RPCToSenderMap.Emplace("ClientIgnoreLookInput", &USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_SendCommand);
+	RPCToSenderMap.Emplace("ClientGotoState", &USpatialTypeBinding_PlayerController::ClientGotoState_SendCommand);
+	RPCToSenderMap.Emplace("ClientGameEnded", &USpatialTypeBinding_PlayerController::ClientGameEnded_SendCommand);
+	RPCToSenderMap.Emplace("ClientForceGarbageCollection", &USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_SendCommand);
+	RPCToSenderMap.Emplace("ClientFlushLevelStreaming", &USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_SendCommand);
+	RPCToSenderMap.Emplace("ClientEndOnlineSession", &USpatialTypeBinding_PlayerController::ClientEndOnlineSession_SendCommand);
+	RPCToSenderMap.Emplace("ClientEnableNetworkVoice", &USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_SendCommand);
+	RPCToSenderMap.Emplace("ClientCommitMapChange", &USpatialTypeBinding_PlayerController::ClientCommitMapChange_SendCommand);
+	RPCToSenderMap.Emplace("ClientClearCameraLensEffects", &USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_SendCommand);
+	RPCToSenderMap.Emplace("ClientCapBandwidth", &USpatialTypeBinding_PlayerController::ClientCapBandwidth_SendCommand);
+	RPCToSenderMap.Emplace("ClientCancelPendingMapChange", &USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_SendCommand);
+	RPCToSenderMap.Emplace("ClientAddTextureStreamingLoc", &USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_SendCommand);
+	RPCToSenderMap.Emplace("ClientSetRotation", &USpatialTypeBinding_PlayerController::ClientSetRotation_SendCommand);
+	RPCToSenderMap.Emplace("ClientSetLocation", &USpatialTypeBinding_PlayerController::ClientSetLocation_SendCommand);
+	RPCToSenderMap.Emplace("ServerViewSelf", &USpatialTypeBinding_PlayerController::ServerViewSelf_SendCommand);
+	RPCToSenderMap.Emplace("ServerViewPrevPlayer", &USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_SendCommand);
+	RPCToSenderMap.Emplace("ServerViewNextPlayer", &USpatialTypeBinding_PlayerController::ServerViewNextPlayer_SendCommand);
+	RPCToSenderMap.Emplace("ServerVerifyViewTarget", &USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_SendCommand);
+	RPCToSenderMap.Emplace("ServerUpdateLevelVisibility", &USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_SendCommand);
+	RPCToSenderMap.Emplace("ServerUpdateCamera", &USpatialTypeBinding_PlayerController::ServerUpdateCamera_SendCommand);
+	RPCToSenderMap.Emplace("ServerUnmutePlayer", &USpatialTypeBinding_PlayerController::ServerUnmutePlayer_SendCommand);
+	RPCToSenderMap.Emplace("ServerToggleAILogging", &USpatialTypeBinding_PlayerController::ServerToggleAILogging_SendCommand);
+	RPCToSenderMap.Emplace("ServerShortTimeout", &USpatialTypeBinding_PlayerController::ServerShortTimeout_SendCommand);
+	RPCToSenderMap.Emplace("ServerSetSpectatorWaiting", &USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_SendCommand);
+	RPCToSenderMap.Emplace("ServerSetSpectatorLocation", &USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_SendCommand);
+	RPCToSenderMap.Emplace("ServerRestartPlayer", &USpatialTypeBinding_PlayerController::ServerRestartPlayer_SendCommand);
+	RPCToSenderMap.Emplace("ServerPause", &USpatialTypeBinding_PlayerController::ServerPause_SendCommand);
+	RPCToSenderMap.Emplace("ServerNotifyLoadedWorld", &USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_SendCommand);
+	RPCToSenderMap.Emplace("ServerMutePlayer", &USpatialTypeBinding_PlayerController::ServerMutePlayer_SendCommand);
+	RPCToSenderMap.Emplace("ServerCheckClientPossessionReliable", &USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_SendCommand);
+	RPCToSenderMap.Emplace("ServerCheckClientPossession", &USpatialTypeBinding_PlayerController::ServerCheckClientPossession_SendCommand);
+	RPCToSenderMap.Emplace("ServerChangeName", &USpatialTypeBinding_PlayerController::ServerChangeName_SendCommand);
+	RPCToSenderMap.Emplace("ServerCamera", &USpatialTypeBinding_PlayerController::ServerCamera_SendCommand);
+	RPCToSenderMap.Emplace("ServerAcknowledgePossession", &USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_SendCommand);
 }
 
 void USpatialTypeBinding_PlayerController::BindToView()
 {
 	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
-	SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>([this](
-		const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>& Op)
+	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
 	{
-		auto Update = improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update::FromInitialData(Op.Data);
-		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
-		if (ActorChannel)
+		SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>([this](
+			const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>& Op)
 		{
-			ClientReceiveUpdate_SingleClient(ActorChannel, Update);
-		}
-		else
+			auto Update = improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update::FromInitialData(Op.Data);
+			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+			if (ActorChannel)
+			{
+				ClientReceiveUpdate_SingleClient(ActorChannel, Update);
+			}
+			else
+			{
+				PendingSingleClientData.Add(Op.EntityId, Op.Data);
+			}
+		});
+		SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>& Op)
 		{
-			PendingSingleClientData.Add(Op.EntityId, Op.Data);
-		}
-	});
-	SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>([this](
-		const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>& Op)
-	{
-		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
-		if (ActorChannel)
+			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+			if (ActorChannel)
+			{
+				ClientReceiveUpdate_SingleClient(ActorChannel, Op.Update);
+			}
+			else
+			{
+				Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
+			}
+		});
+		MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>([this](
+			const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>& Op)
 		{
-			ClientReceiveUpdate_SingleClient(ActorChannel, Op.Update);
-		}
-		else
+			auto Update = improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update::FromInitialData(Op.Data);
+			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+			if (ActorChannel)
+			{
+				ClientReceiveUpdate_MultiClient(ActorChannel, Update);
+			}
+			else
+			{
+				PendingMultiClientData.Add(Op.EntityId, Op.Data);
+			}
+		});
+		MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>& Op)
 		{
-			Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
-		}
-	});
-	MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>([this](
-		const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>& Op)
-	{
-		auto Update = improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update::FromInitialData(Op.Data);
-		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
-		if (ActorChannel)
-		{
-			ClientReceiveUpdate_MultiClient(ActorChannel, Update);
-		}
-		else
-		{
-			PendingMultiClientData.Add(Op.EntityId, Op.Data);
-		}
-	});
-	MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>([this](
-		const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>& Op)
-	{
-		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
-		if (ActorChannel)
-		{
-			ClientReceiveUpdate_MultiClient(ActorChannel, Op.Update);
-		}
-		else
-		{
-			Op.Update.ApplyTo(PendingMultiClientData.FindOrAdd(Op.EntityId));
-		}
-	});
+			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+			if (ActorChannel)
+			{
+				ClientReceiveUpdate_MultiClient(ActorChannel, Op.Update);
+			}
+			else
+			{
+				Op.Update.ApplyTo(PendingMultiClientData.FindOrAdd(Op.EntityId));
+			}
+		});
+	}
+
 	using ClientRPCCommandTypes = improbable::unreal::UnrealPlayerControllerClientRPCs::Commands;
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Onserverstartedvisuallogger>(std::bind(&USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientwaskicked>(std::bind(&USpatialTypeBinding_PlayerController::ClientWasKicked_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientvoicehandshakecomplete>(std::bind(&USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientupdatelevelstreamingstatus>(std::bind(&USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientunmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clienttravelinternal>(std::bind(&USpatialTypeBinding_PlayerController::ClientTravelInternal_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientteammessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientTeamMessage_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstopforcefeedback>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstopcamerashake>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopCameraShake_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstopcameraanim>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstartonlinesession>(std::bind(&USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientspawncameralenseffect>(std::bind(&USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetviewtarget>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetspectatorwaiting>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsethud>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetHUD_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetforcemiplevelstoberesident>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetcinematicmode>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetcameramode>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCameraMode_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetcamerafade>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCameraFade_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetblockonasyncloading>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientreturntomainmenu>(std::bind(&USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientretryclientrestart>(std::bind(&USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientrestart>(std::bind(&USpatialTypeBinding_PlayerController::ClientRestart_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientreset>(std::bind(&USpatialTypeBinding_PlayerController::ClientReset_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientrepobjref>(std::bind(&USpatialTypeBinding_PlayerController::ClientRepObjRef_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientreceivelocalizedmessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientprestreamtextures>(std::bind(&USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientpreparemapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaysoundatlocation>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaysound>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlaySound_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplayforcefeedback>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaycamerashake>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaycameraanim>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ClientMutePlayer_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientmessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientMessage_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientignoremoveinput>(std::bind(&USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientignorelookinput>(std::bind(&USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientgotostate>(std::bind(&USpatialTypeBinding_PlayerController::ClientGotoState_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientgameended>(std::bind(&USpatialTypeBinding_PlayerController::ClientGameEnded_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientforcegarbagecollection>(std::bind(&USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientflushlevelstreaming>(std::bind(&USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientendonlinesession>(std::bind(&USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientenablenetworkvoice>(std::bind(&USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcommitmapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientCommitMapChange_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientclearcameralenseffects>(std::bind(&USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcapbandwidth>(std::bind(&USpatialTypeBinding_PlayerController::ClientCapBandwidth_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcancelpendingmapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientaddtexturestreamingloc>(std::bind(&USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetrotation>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetRotation_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetlocation>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetLocation_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Onserverstartedvisuallogger>(std::bind(&USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientwaskicked>(std::bind(&USpatialTypeBinding_PlayerController::ClientWasKicked_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientvoicehandshakecomplete>(std::bind(&USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientupdatelevelstreamingstatus>(std::bind(&USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientunmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clienttravelinternal>(std::bind(&USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientteammessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientstopforcefeedback>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientstopcamerashake>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientstopcameraanim>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientstartonlinesession>(std::bind(&USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientspawncameralenseffect>(std::bind(&USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetviewtarget>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetspectatorwaiting>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsethud>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetHUD_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetforcemiplevelstoberesident>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetcinematicmode>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetcameramode>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetcamerafade>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetblockonasyncloading>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientreturntomainmenu>(std::bind(&USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientretryclientrestart>(std::bind(&USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientrestart>(std::bind(&USpatialTypeBinding_PlayerController::ClientRestart_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientreset>(std::bind(&USpatialTypeBinding_PlayerController::ClientReset_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientrepobjref>(std::bind(&USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientreceivelocalizedmessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientprestreamtextures>(std::bind(&USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientpreparemapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientplaysoundatlocation>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientplaysound>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlaySound_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientplayforcefeedback>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientplaycamerashake>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientplaycameraanim>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientmessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientMessage_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientignoremoveinput>(std::bind(&USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientignorelookinput>(std::bind(&USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientgotostate>(std::bind(&USpatialTypeBinding_PlayerController::ClientGotoState_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientgameended>(std::bind(&USpatialTypeBinding_PlayerController::ClientGameEnded_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientforcegarbagecollection>(std::bind(&USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientflushlevelstreaming>(std::bind(&USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientendonlinesession>(std::bind(&USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientenablenetworkvoice>(std::bind(&USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcommitmapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientclearcameralenseffects>(std::bind(&USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcapbandwidth>(std::bind(&USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcancelpendingmapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientaddtexturestreamingloc>(std::bind(&USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetrotation>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetRotation_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetlocation>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetLocation_Sender_Response, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Onserverstartedvisuallogger>(std::bind(&USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientwaskicked>(std::bind(&USpatialTypeBinding_PlayerController::ClientWasKicked_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientvoicehandshakecomplete>(std::bind(&USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientupdatelevelstreamingstatus>(std::bind(&USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientunmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ClientUnmutePlayer_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clienttravelinternal>(std::bind(&USpatialTypeBinding_PlayerController::ClientTravelInternal_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientteammessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientTeamMessage_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstopforcefeedback>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopForceFeedback_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstopcamerashake>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopCameraShake_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstopcameraanim>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopCameraAnim_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientstartonlinesession>(std::bind(&USpatialTypeBinding_PlayerController::ClientStartOnlineSession_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientspawncameralenseffect>(std::bind(&USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetviewtarget>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetViewTarget_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetspectatorwaiting>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsethud>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetHUD_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetforcemiplevelstoberesident>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetcinematicmode>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCinematicMode_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetcameramode>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCameraMode_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetcamerafade>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCameraFade_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetblockonasyncloading>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientreturntomainmenu>(std::bind(&USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientretryclientrestart>(std::bind(&USpatialTypeBinding_PlayerController::ClientRetryClientRestart_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientrestart>(std::bind(&USpatialTypeBinding_PlayerController::ClientRestart_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientreset>(std::bind(&USpatialTypeBinding_PlayerController::ClientReset_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientrepobjref>(std::bind(&USpatialTypeBinding_PlayerController::ClientRepObjRef_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientreceivelocalizedmessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientprestreamtextures>(std::bind(&USpatialTypeBinding_PlayerController::ClientPrestreamTextures_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientpreparemapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientPrepareMapChange_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaysoundatlocation>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaysound>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlaySound_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplayforcefeedback>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaycamerashake>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayCameraShake_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientplaycameraanim>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ClientMutePlayer_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientmessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientMessage_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientignoremoveinput>(std::bind(&USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientignorelookinput>(std::bind(&USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientgotostate>(std::bind(&USpatialTypeBinding_PlayerController::ClientGotoState_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientgameended>(std::bind(&USpatialTypeBinding_PlayerController::ClientGameEnded_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientforcegarbagecollection>(std::bind(&USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientflushlevelstreaming>(std::bind(&USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientendonlinesession>(std::bind(&USpatialTypeBinding_PlayerController::ClientEndOnlineSession_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientenablenetworkvoice>(std::bind(&USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcommitmapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientCommitMapChange_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientclearcameralenseffects>(std::bind(&USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcapbandwidth>(std::bind(&USpatialTypeBinding_PlayerController::ClientCapBandwidth_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcancelpendingmapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientaddtexturestreamingloc>(std::bind(&USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetrotation>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetRotation_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientsetlocation>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetLocation_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Onserverstartedvisuallogger>(std::bind(&USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientwaskicked>(std::bind(&USpatialTypeBinding_PlayerController::ClientWasKicked_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientvoicehandshakecomplete>(std::bind(&USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientupdatelevelstreamingstatus>(std::bind(&USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientunmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ClientUnmutePlayer_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clienttravelinternal>(std::bind(&USpatialTypeBinding_PlayerController::ClientTravelInternal_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientteammessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientTeamMessage_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientstopforcefeedback>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopForceFeedback_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientstopcamerashake>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopCameraShake_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientstopcameraanim>(std::bind(&USpatialTypeBinding_PlayerController::ClientStopCameraAnim_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientstartonlinesession>(std::bind(&USpatialTypeBinding_PlayerController::ClientStartOnlineSession_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientspawncameralenseffect>(std::bind(&USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetviewtarget>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetViewTarget_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetspectatorwaiting>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsethud>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetHUD_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetforcemiplevelstoberesident>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetcinematicmode>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCinematicMode_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetcameramode>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCameraMode_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetcamerafade>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetCameraFade_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetblockonasyncloading>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientreturntomainmenu>(std::bind(&USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientretryclientrestart>(std::bind(&USpatialTypeBinding_PlayerController::ClientRetryClientRestart_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientrestart>(std::bind(&USpatialTypeBinding_PlayerController::ClientRestart_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientreset>(std::bind(&USpatialTypeBinding_PlayerController::ClientReset_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientrepobjref>(std::bind(&USpatialTypeBinding_PlayerController::ClientRepObjRef_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientreceivelocalizedmessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientprestreamtextures>(std::bind(&USpatialTypeBinding_PlayerController::ClientPrestreamTextures_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientpreparemapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientPrepareMapChange_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientplaysoundatlocation>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientplaysound>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlaySound_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientplayforcefeedback>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientplaycamerashake>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayCameraShake_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientplaycameraanim>(std::bind(&USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ClientMutePlayer_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientmessage>(std::bind(&USpatialTypeBinding_PlayerController::ClientMessage_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientignoremoveinput>(std::bind(&USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientignorelookinput>(std::bind(&USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientgotostate>(std::bind(&USpatialTypeBinding_PlayerController::ClientGotoState_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientgameended>(std::bind(&USpatialTypeBinding_PlayerController::ClientGameEnded_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientforcegarbagecollection>(std::bind(&USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientflushlevelstreaming>(std::bind(&USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientendonlinesession>(std::bind(&USpatialTypeBinding_PlayerController::ClientEndOnlineSession_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientenablenetworkvoice>(std::bind(&USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcommitmapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientCommitMapChange_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientclearcameralenseffects>(std::bind(&USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcapbandwidth>(std::bind(&USpatialTypeBinding_PlayerController::ClientCapBandwidth_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcancelpendingmapchange>(std::bind(&USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientaddtexturestreamingloc>(std::bind(&USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetrotation>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetRotation_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientsetlocation>(std::bind(&USpatialTypeBinding_PlayerController::ClientSetLocation_OnCommandResponse, this, std::placeholders::_1)));
+
 	using ServerRPCCommandTypes = improbable::unreal::UnrealPlayerControllerServerRPCs::Commands;
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverviewself>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewSelf_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverviewprevplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverviewnextplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serververifyviewtarget>(std::bind(&USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverupdatelevelvisibility>(std::bind(&USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverupdatecamera>(std::bind(&USpatialTypeBinding_PlayerController::ServerUpdateCamera_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverunmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servertoggleailogging>(std::bind(&USpatialTypeBinding_PlayerController::ServerToggleAILogging_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servershorttimeout>(std::bind(&USpatialTypeBinding_PlayerController::ServerShortTimeout_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serversetspectatorwaiting>(std::bind(&USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serversetspectatorlocation>(std::bind(&USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverrestartplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerRestartPlayer_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverpause>(std::bind(&USpatialTypeBinding_PlayerController::ServerPause_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servernotifyloadedworld>(std::bind(&USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerMutePlayer_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servercheckclientpossessionreliable>(std::bind(&USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servercheckclientpossession>(std::bind(&USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverchangename>(std::bind(&USpatialTypeBinding_PlayerController::ServerChangeName_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servercamera>(std::bind(&USpatialTypeBinding_PlayerController::ServerCamera_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serveracknowledgepossession>(std::bind(&USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverviewself>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewSelf_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverviewprevplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverviewnextplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serververifyviewtarget>(std::bind(&USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverupdatelevelvisibility>(std::bind(&USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverupdatecamera>(std::bind(&USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverunmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servertoggleailogging>(std::bind(&USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servershorttimeout>(std::bind(&USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serversetspectatorwaiting>(std::bind(&USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serversetspectatorlocation>(std::bind(&USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverrestartplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverpause>(std::bind(&USpatialTypeBinding_PlayerController::ServerPause_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servernotifyloadedworld>(std::bind(&USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servermuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servercheckclientpossessionreliable>(std::bind(&USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servercheckclientpossession>(std::bind(&USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverchangename>(std::bind(&USpatialTypeBinding_PlayerController::ServerChangeName_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servercamera>(std::bind(&USpatialTypeBinding_PlayerController::ServerCamera_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serveracknowledgepossession>(std::bind(&USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender_Response, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverviewself>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewSelf_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverviewprevplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverviewnextplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewNextPlayer_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serververifyviewtarget>(std::bind(&USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverupdatelevelvisibility>(std::bind(&USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverupdatecamera>(std::bind(&USpatialTypeBinding_PlayerController::ServerUpdateCamera_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverunmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerUnmutePlayer_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servertoggleailogging>(std::bind(&USpatialTypeBinding_PlayerController::ServerToggleAILogging_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servershorttimeout>(std::bind(&USpatialTypeBinding_PlayerController::ServerShortTimeout_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serversetspectatorwaiting>(std::bind(&USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serversetspectatorlocation>(std::bind(&USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverrestartplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerRestartPlayer_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverpause>(std::bind(&USpatialTypeBinding_PlayerController::ServerPause_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servernotifyloadedworld>(std::bind(&USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerMutePlayer_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servercheckclientpossessionreliable>(std::bind(&USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servercheckclientpossession>(std::bind(&USpatialTypeBinding_PlayerController::ServerCheckClientPossession_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverchangename>(std::bind(&USpatialTypeBinding_PlayerController::ServerChangeName_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servercamera>(std::bind(&USpatialTypeBinding_PlayerController::ServerCamera_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serveracknowledgepossession>(std::bind(&USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverviewself>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewSelf_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverviewprevplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverviewnextplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerViewNextPlayer_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serververifyviewtarget>(std::bind(&USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverupdatelevelvisibility>(std::bind(&USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverupdatecamera>(std::bind(&USpatialTypeBinding_PlayerController::ServerUpdateCamera_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverunmuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerUnmutePlayer_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servertoggleailogging>(std::bind(&USpatialTypeBinding_PlayerController::ServerToggleAILogging_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servershorttimeout>(std::bind(&USpatialTypeBinding_PlayerController::ServerShortTimeout_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serversetspectatorwaiting>(std::bind(&USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serversetspectatorlocation>(std::bind(&USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverrestartplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerRestartPlayer_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverpause>(std::bind(&USpatialTypeBinding_PlayerController::ServerPause_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servernotifyloadedworld>(std::bind(&USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servermuteplayer>(std::bind(&USpatialTypeBinding_PlayerController::ServerMutePlayer_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servercheckclientpossessionreliable>(std::bind(&USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servercheckclientpossession>(std::bind(&USpatialTypeBinding_PlayerController::ServerCheckClientPossession_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverchangename>(std::bind(&USpatialTypeBinding_PlayerController::ServerChangeName_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servercamera>(std::bind(&USpatialTypeBinding_PlayerController::ServerCamera_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serveracknowledgepossession>(std::bind(&USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_OnCommandResponse, this, std::placeholders::_1)));
 }
 
 void USpatialTypeBinding_PlayerController::UnbindFromView()
 {
 	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
-	View->Remove(SingleClientAddCallback);
-	View->Remove(SingleClientUpdateCallback);
-	View->Remove(MultiClientAddCallback);
-	View->Remove(MultiClientUpdateCallback);
+	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
+	{
+		View->Remove(SingleClientAddCallback);
+		View->Remove(SingleClientUpdateCallback);
+		View->Remove(MultiClientAddCallback);
+		View->Remove(MultiClientUpdateCallback);
+	}
 	for (auto& Callback : RPCReceiverCallbacks)
 	{
 		View->Remove(Callback);
@@ -551,7 +560,7 @@ void USpatialTypeBinding_PlayerController::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 5);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 5);
 				}
 				else
 				{
@@ -587,7 +596,7 @@ void USpatialTypeBinding_PlayerController::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 7);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 7);
 				}
 				else
 				{
@@ -638,7 +647,7 @@ void USpatialTypeBinding_PlayerController::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 12);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 12);
 				}
 				else
 				{
@@ -675,7 +684,7 @@ void USpatialTypeBinding_PlayerController::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 15);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 15);
 				}
 				else
 				{
@@ -698,7 +707,7 @@ void USpatialTypeBinding_PlayerController::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 16);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 16);
 				}
 				else
 				{
@@ -721,7 +730,7 @@ void USpatialTypeBinding_PlayerController::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 17);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 17);
 				}
 				else
 				{
@@ -766,7 +775,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_SingleClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -791,7 +800,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_SingleClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -829,7 +838,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -855,7 +864,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -881,7 +890,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -908,7 +917,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -942,16 +951,15 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -959,7 +967,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -987,7 +995,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1021,16 +1029,15 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -1038,7 +1045,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1064,7 +1071,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1089,7 +1096,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1114,7 +1121,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1134,7 +1141,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			Value = FName(((*Update.field_attachmentreplication_attachsocket().data())).data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1168,16 +1175,15 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -1185,7 +1191,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1206,7 +1212,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_role().data())));
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1232,7 +1238,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1266,16 +1272,15 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -1283,7 +1288,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1318,16 +1323,15 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -1335,7 +1339,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1370,16 +1374,15 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -1387,7 +1390,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1399,7 +1402,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter.GetNetBitWriter());
 }
 
-void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bIsLogging);
@@ -1420,18 +1423,17 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender(wo
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: OnServerStartedVisualLogger, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: OnServerStartedVisualLogger, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientWasKicked_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UTextProperty, KickReason);
@@ -1452,18 +1454,17 @@ void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender(worker::Connec
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientWasKicked, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientWasKicked, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -1480,18 +1481,17 @@ void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender(w
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientVoiceHandshakeComplete, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientVoiceHandshakeComplete, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, PackageName);
@@ -1520,18 +1520,17 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Send
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientUpdateLevelStreamingStatus, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientUpdateLevelStreamingStatus, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
@@ -1558,18 +1557,17 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender(worker::Con
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientUnmutePlayer, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientUnmutePlayer, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientTravelInternal_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UStrProperty, URL);
@@ -1599,18 +1597,17 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender(worker::C
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientTravelInternal, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientTravelInternal, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientTeamMessage_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(APlayerState, SenderPlayerState);
@@ -1654,18 +1651,17 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender(worker::Conn
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientTeamMessage, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientTeamMessage, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UForceFeedbackEffect, ForceFeedbackEffect);
@@ -1705,18 +1701,17 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender(worker
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientStopForceFeedback, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientStopForceFeedback, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientStopCameraShake_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, Shake);
@@ -1739,18 +1734,17 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender(worker::
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientStopCameraShake, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientStopCameraShake, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UCameraAnim, AnimToStop);
@@ -1788,18 +1782,17 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender(worker::C
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientStopCameraAnim, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientStopCameraAnim, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -1816,18 +1809,17 @@ void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender(worke
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientStartOnlineSession, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientStartOnlineSession, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, LensEffectEmitterClass);
@@ -1848,18 +1840,17 @@ void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender(wo
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSpawnCameraLensEffect, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSpawnCameraLensEffect, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientSetViewTarget_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(AActor, A);
@@ -1902,18 +1893,17 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender(worker::Co
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetViewTarget, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetViewTarget, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bWaiting);
@@ -1934,18 +1924,17 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender(work
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetSpectatorWaiting, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetSpectatorWaiting, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientSetHUD_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, NewHUDClass);
@@ -1966,18 +1955,17 @@ void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender(worker::Connectio
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetHUD, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetHUD, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UMaterialInterface, Material);
@@ -2019,18 +2007,17 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_S
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetForceMipLevelsToBeResident, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetForceMipLevelsToBeResident, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bInCinematicMode);
@@ -2057,18 +2044,17 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender(worker:
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetCinematicMode, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetCinematicMode, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientSetCameraMode_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, NewCamMode);
@@ -2089,18 +2075,17 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender(worker::Co
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetCameraMode, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetCameraMode, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientSetCameraFade_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bEnableFading);
@@ -2133,18 +2118,17 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender(worker::Co
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetCameraFade, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetCameraFade, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -2161,18 +2145,17 @@ void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender(w
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetBlockOnAsyncLoading, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetBlockOnAsyncLoading, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UStrProperty, ReturnReason);
@@ -2193,18 +2176,17 @@ void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender(worker:
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientReturnToMainMenu, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientReturnToMainMenu, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(APawn, NewPawn);
@@ -2242,18 +2224,17 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender(worke
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientRetryClientRestart, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientRetryClientRestart, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientRestart_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(APawn, NewPawn);
@@ -2291,18 +2272,17 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Sender(worker::Connecti
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientRestart, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientRestart, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientReset_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientReset_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -2319,18 +2299,17 @@ void USpatialTypeBinding_PlayerController::ClientReset_Sender(worker::Connection
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientReset, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientReset, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientRepObjRef_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UObject, Object);
@@ -2368,18 +2347,17 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender(worker::Connec
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientRepObjRef, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientRepObjRef, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, Message);
@@ -2459,18 +2437,17 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender(
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientReceiveLocalizedMessage, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientReceiveLocalizedMessage, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(AActor, ForcedActor);
@@ -2514,18 +2491,17 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender(worker
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientPrestreamTextures, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientPrestreamTextures, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, LevelName);
@@ -2550,18 +2526,17 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender(worker:
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientPrepareMapChange, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientPrepareMapChange, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(USoundBase, Sound);
@@ -2605,18 +2580,17 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender(work
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientPlaySoundAtLocation, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientPlaySoundAtLocation, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientPlaySound_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(USoundBase, Sound);
@@ -2658,18 +2632,17 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender(worker::Connec
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientPlaySound, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientPlaySound, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UForceFeedbackEffect, ForceFeedbackEffect);
@@ -2711,18 +2684,17 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender(worker
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientPlayForceFeedback, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientPlayForceFeedback, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UClass, Shake);
@@ -2749,18 +2721,17 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender(worker::
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientPlayCameraShake, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientPlayCameraShake, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(UCameraAnim, AnimToPlay);
@@ -2814,18 +2785,17 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender(worker::C
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientPlayCameraAnim, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientPlayCameraAnim, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientMutePlayer_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
@@ -2852,18 +2822,17 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender(worker::Conne
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientMutePlayer, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientMutePlayer, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientMessage_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientMessage_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UStrProperty, S);
@@ -2888,18 +2857,17 @@ void USpatialTypeBinding_PlayerController::ClientMessage_Sender(worker::Connecti
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientMessage, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientMessage, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bIgnore);
@@ -2920,18 +2888,17 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender(worker::
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientIgnoreMoveInput, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientIgnoreMoveInput, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bIgnore);
@@ -2952,18 +2919,17 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender(worker::
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientIgnoreLookInput, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientIgnoreLookInput, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientGotoState_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientGotoState_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, NewState);
@@ -2984,18 +2950,17 @@ void USpatialTypeBinding_PlayerController::ClientGotoState_Sender(worker::Connec
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientGotoState, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientGotoState, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientGameEnded_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(AActor, EndGameFocus);
@@ -3035,18 +3000,17 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender(worker::Connec
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientGameEnded, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientGameEnded, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3063,18 +3027,17 @@ void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender(w
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientForceGarbageCollection, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientForceGarbageCollection, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3091,18 +3054,17 @@ void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender(work
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientFlushLevelStreaming, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientFlushLevelStreaming, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3119,18 +3081,17 @@ void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender(worker:
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientEndOnlineSession, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientEndOnlineSession, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bEnable);
@@ -3151,18 +3112,17 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender(worke
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientEnableNetworkVoice, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientEnableNetworkVoice, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientCommitMapChange_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3179,18 +3139,17 @@ void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender(worker::
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCommitMapChange, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCommitMapChange, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3207,18 +3166,17 @@ void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender(w
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientClearCameraLensEffects, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientClearCameraLensEffects, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientCapBandwidth_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UIntProperty, Cap);
@@ -3239,18 +3197,17 @@ void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender(worker::Con
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCapBandwidth, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCapBandwidth, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3267,18 +3224,17 @@ void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender(w
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCancelPendingMapChange, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCancelPendingMapChange, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FVector, InLoc)
@@ -3303,18 +3259,17 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender(w
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientAddTextureStreamingLoc, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientAddTextureStreamingLoc, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientSetRotation_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FRotator, NewRotation)
@@ -3337,18 +3292,17 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender(worker::Conn
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetRotation, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetRotation, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ClientSetLocation_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FVector, NewLocation)
@@ -3371,18 +3325,17 @@ void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender(worker::Conn
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetLocation, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientSetLocation, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerViewSelf_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FViewTargetTransitionParams, TransitionParams)
@@ -3406,18 +3359,17 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender(worker::Connect
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerViewSelf, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerViewSelf, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3434,18 +3386,17 @@ void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender(worker::C
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerViewPrevPlayer, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerViewPrevPlayer, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3462,18 +3413,17 @@ void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender(worker::C
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerViewNextPlayer, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerViewNextPlayer, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3490,18 +3440,17 @@ void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender(worker:
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerVerifyViewTarget, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerVerifyViewTarget, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, PackageName);
@@ -3524,18 +3473,17 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender(wo
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerUpdateLevelVisibility, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerUpdateLevelVisibility, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerUpdateCamera_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FVector_NetQuantize, CamLoc)
@@ -3558,18 +3506,17 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender(worker::Con
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerUpdateCamera, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerUpdateCamera, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
@@ -3596,18 +3543,17 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender(worker::Con
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerUnmutePlayer, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerUnmutePlayer, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerToggleAILogging_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3624,18 +3570,17 @@ void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender(worker::
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerToggleAILogging, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerToggleAILogging, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerShortTimeout_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3652,18 +3597,17 @@ void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender(worker::Con
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerShortTimeout, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerShortTimeout, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_UBOOL(bWaiting);
@@ -3684,18 +3628,17 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender(work
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerSetSpectatorWaiting, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerSetSpectatorWaiting, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FVector, NewLoc)
@@ -3718,18 +3661,17 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender(wor
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerSetSpectatorLocation, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerSetSpectatorLocation, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerRestartPlayer_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3746,18 +3688,17 @@ void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender(worker::Co
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerRestartPlayer, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerRestartPlayer, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ServerPause_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerPause_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3774,18 +3715,17 @@ void USpatialTypeBinding_PlayerController::ServerPause_Sender(worker::Connection
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerPause, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerPause, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, WorldPackageName);
@@ -3806,18 +3746,17 @@ void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender(worker
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerNotifyLoadedWorld, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerNotifyLoadedWorld, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerMutePlayer_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_STRUCT(FUniqueNetIdRepl, PlayerId)
@@ -3844,18 +3783,17 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender(worker::Conne
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerMutePlayer, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerMutePlayer, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3872,18 +3810,17 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_S
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerCheckClientPossessionReliable, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerCheckClientPossessionReliable, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -3900,18 +3837,17 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender(wo
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerCheckClientPossession, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerCheckClientPossession, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_PlayerController::ServerChangeName_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerChangeName_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UStrProperty, S);
@@ -3932,18 +3868,17 @@ void USpatialTypeBinding_PlayerController::ServerChangeName_Sender(worker::Conne
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerChangeName, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerChangeName, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ServerCamera_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerCamera_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UNameProperty, NewMode);
@@ -3964,18 +3899,17 @@ void USpatialTypeBinding_PlayerController::ServerCamera_Sender(worker::Connectio
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerCamera, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerCamera, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_OBJECT(APawn, P);
@@ -4013,368 +3947,17 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender(wo
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerAcknowledgePossession, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerAcknowledgePossession, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("OnServerStartedVisualLogger"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientWasKicked_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientWasKicked"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientVoiceHandshakeComplete"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientUpdateLevelStreamingStatus"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientUnmutePlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientTravelInternal_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientTravelInternal"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientTeamMessage_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientTeamMessage"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientStopForceFeedback"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientStopCameraShake"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientStopCameraAnim"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientStartOnlineSession"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientSpawnCameraLensEffect"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientSetViewTarget"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientSetSpectatorWaiting"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientSetHUD_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientSetHUD"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientSetForceMipLevelsToBeResident"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientSetCinematicMode"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientSetCameraMode"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientSetCameraFade"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientSetBlockOnAsyncLoading"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientReturnToMainMenu"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientRetryClientRestart"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientRestart_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientRestart"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientReset_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientReset"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientRepObjRef_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientRepObjRef"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientReceiveLocalizedMessage"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientPrestreamTextures"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientPrepareMapChange"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientPlaySoundAtLocation"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientPlaySound_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientPlaySound"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientPlayForceFeedback"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientPlayCameraShake"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientPlayCameraAnim"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientMutePlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientMutePlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientMessage_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientMessage"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientIgnoreMoveInput"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientIgnoreLookInput"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientGotoState_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientGotoState"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientGameEnded_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientGameEnded"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientForceGarbageCollection"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientFlushLevelStreaming"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientEndOnlineSession"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientEnableNetworkVoice"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientCommitMapChange"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientClearCameraLensEffects"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientCapBandwidth"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientCancelPendingMapChange"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientAddTextureStreamingLoc"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientSetRotation_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientSetRotation"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ClientSetLocation_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientSetLocation"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerViewSelf_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerViewSelf"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerViewPrevPlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerViewNextPlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerVerifyViewTarget"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerUpdateLevelVisibility"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerUpdateCamera"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerUnmutePlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerToggleAILogging"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerShortTimeout_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerShortTimeout"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerSetSpectatorWaiting"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerSetSpectatorLocation"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerRestartPlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerPause_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerPause"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerNotifyLoadedWorld"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerMutePlayer_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerMutePlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerCheckClientPossessionReliable"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerCheckClientPossession"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerChangeName_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerChangeName"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerCamera_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerCamera"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerAcknowledgePossession"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op)
+void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -4382,23 +3965,20 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Receiver(
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: OnServerStartedVisualLogger_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: OnServerStartedVisualLogger_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: OnServerStartedVisualLogger_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: OnServerStartedVisualLogger_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: OnServerStartedVisualLogger_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: OnServerStartedVisualLogger_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -4407,11 +3987,10 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Receiver(
 		bIsLogging = Op.Request.field_bislogging();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: OnServerStartedVisualLogger, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: OnServerStartedVisualLogger, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->OnServerStartedVisualLogger_Implementation(bIsLogging);
 
 		// Send command response.
@@ -4419,10 +3998,10 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_Receiver(
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientWasKicked_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>& Op)
+void USpatialTypeBinding_PlayerController::ClientWasKicked_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -4430,23 +4009,20 @@ void USpatialTypeBinding_PlayerController::ClientWasKicked_Receiver(const worker
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientWasKicked_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientWasKicked_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientWasKicked_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientWasKicked_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientWasKicked_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientWasKicked_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -4455,11 +4031,10 @@ void USpatialTypeBinding_PlayerController::ClientWasKicked_Receiver(const worker
 		// UNSUPPORTED
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientWasKicked, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientWasKicked, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientWasKicked_Implementation(KickReason);
 
 		// Send command response.
@@ -4467,10 +4042,10 @@ void USpatialTypeBinding_PlayerController::ClientWasKicked_Receiver(const worker
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>& Op)
+void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -4478,32 +4053,28 @@ void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Receiver
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientVoiceHandshakeComplete_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientVoiceHandshakeComplete_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientVoiceHandshakeComplete_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientVoiceHandshakeComplete_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientVoiceHandshakeComplete_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientVoiceHandshakeComplete_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientVoiceHandshakeComplete, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientVoiceHandshakeComplete, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientVoiceHandshakeComplete_Implementation();
 
 		// Send command response.
@@ -4511,10 +4082,10 @@ void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_Receiver
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>& Op)
+void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -4522,23 +4093,20 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Rece
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientUpdateLevelStreamingStatus_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientUpdateLevelStreamingStatus_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientUpdateLevelStreamingStatus_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientUpdateLevelStreamingStatus_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientUpdateLevelStreamingStatus_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientUpdateLevelStreamingStatus_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -4563,11 +4131,10 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Rece
 		LODIndex = Op.Request.field_lodindex();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientUpdateLevelStreamingStatus, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientUpdateLevelStreamingStatus, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientUpdateLevelStreamingStatus_Implementation(PackageName, bNewShouldBeLoaded, bNewShouldBeVisible, bNewShouldBlockOnLoad, LODIndex);
 
 		// Send command response.
@@ -4575,10 +4142,10 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_Rece
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>& Op)
+void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -4586,23 +4153,20 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Receiver(const wor
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientUnmutePlayer_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientUnmutePlayer_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientUnmutePlayer_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientUnmutePlayer_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientUnmutePlayer_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientUnmutePlayer_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -4618,11 +4182,10 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Receiver(const wor
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientUnmutePlayer, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientUnmutePlayer, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientUnmutePlayer_Implementation(PlayerId);
 
 		// Send command response.
@@ -4630,10 +4193,10 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_Receiver(const wor
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientTravelInternal_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>& Op)
+void USpatialTypeBinding_PlayerController::ClientTravelInternal_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -4641,23 +4204,20 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_Receiver(const w
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientTravelInternal_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientTravelInternal_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientTravelInternal_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientTravelInternal_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientTravelInternal_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientTravelInternal_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -4681,11 +4241,10 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_Receiver(const w
 		MapPackageGuid.D = Op.Request.field_mappackageguid_d();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientTravelInternal, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientTravelInternal, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientTravelInternal_Implementation(URL, TravelType, bSeamless, MapPackageGuid);
 
 		// Send command response.
@@ -4693,10 +4252,10 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_Receiver(const w
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientTeamMessage_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>& Op)
+void USpatialTypeBinding_PlayerController::ClientTeamMessage_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -4704,23 +4263,20 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Receiver(const work
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientTeamMessage_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientTeamMessage_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientTeamMessage_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientTeamMessage_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientTeamMessage_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientTeamMessage_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -4742,10 +4298,9 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Receiver(const work
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientTeamMessage_Receiver: SenderPlayerState (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientTeamMessage_OnCommandRequest: SenderPlayerState %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -4764,11 +4319,10 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Receiver(const work
 		MsgLifeTime = Op.Request.field_msglifetime();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientTeamMessage, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientTeamMessage, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientTeamMessage_Implementation(SenderPlayerState, S, Type, MsgLifeTime);
 
 		// Send command response.
@@ -4776,10 +4330,10 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_Receiver(const work
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>& Op)
+void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -4787,23 +4341,20 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Receiver(cons
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientStopForceFeedback_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientStopForceFeedback_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientStopForceFeedback_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientStopForceFeedback_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientStopForceFeedback_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientStopForceFeedback_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -4825,10 +4376,9 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Receiver(cons
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientStopForceFeedback_Receiver: ForceFeedbackEffect (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientStopForceFeedback_OnCommandRequest: ForceFeedbackEffect %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -4839,11 +4389,10 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Receiver(cons
 		Tag = FName((Op.Request.field_tag()).data());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientStopForceFeedback, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientStopForceFeedback, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientStopForceFeedback_Implementation(ForceFeedbackEffect, Tag);
 
 		// Send command response.
@@ -4851,10 +4400,10 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_Receiver(cons
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>& Op)
+void USpatialTypeBinding_PlayerController::ClientStopCameraShake_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -4862,23 +4411,20 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Receiver(const 
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientStopCameraShake_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientStopCameraShake_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientStopCameraShake_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientStopCameraShake_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientStopCameraShake_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientStopCameraShake_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -4891,11 +4437,10 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Receiver(const 
 		bImmediately = Op.Request.field_bimmediately();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientStopCameraShake, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientStopCameraShake, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientStopCameraShake_Implementation(Shake, bImmediately);
 
 		// Send command response.
@@ -4903,10 +4448,10 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_Receiver(const 
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>& Op)
+void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -4914,23 +4459,20 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Receiver(const w
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientStopCameraAnim_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientStopCameraAnim_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientStopCameraAnim_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientStopCameraAnim_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientStopCameraAnim_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientStopCameraAnim_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -4952,21 +4494,19 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Receiver(const w
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientStopCameraAnim_Receiver: AnimToStop (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientStopCameraAnim_OnCommandRequest: AnimToStop %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientStopCameraAnim, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientStopCameraAnim, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientStopCameraAnim_Implementation(AnimToStop);
 
 		// Send command response.
@@ -4974,10 +4514,10 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_Receiver(const w
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>& Op)
+void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -4985,32 +4525,28 @@ void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Receiver(con
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientStartOnlineSession_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientStartOnlineSession_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientStartOnlineSession_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientStartOnlineSession_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientStartOnlineSession_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientStartOnlineSession_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientStartOnlineSession, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientStartOnlineSession, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientStartOnlineSession_Implementation();
 
 		// Send command response.
@@ -5018,10 +4554,10 @@ void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_Receiver(con
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>& Op)
+void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5029,23 +4565,20 @@ void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Receiver(
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSpawnCameraLensEffect_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSpawnCameraLensEffect_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientSpawnCameraLensEffect_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientSpawnCameraLensEffect_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientSpawnCameraLensEffect_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientSpawnCameraLensEffect_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -5054,11 +4587,10 @@ void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Receiver(
 		// UNSUPPORTED UClass
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSpawnCameraLensEffect, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSpawnCameraLensEffect, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientSpawnCameraLensEffect_Implementation(LensEffectEmitterClass);
 
 		// Send command response.
@@ -5066,10 +4598,10 @@ void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_Receiver(
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetViewTarget_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5077,23 +4609,20 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver(const wo
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetViewTarget_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetViewTarget_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientSetViewTarget_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientSetViewTarget_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientSetViewTarget_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientSetViewTarget_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -5115,10 +4644,9 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver(const wo
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetViewTarget_Receiver: A (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetViewTarget_OnCommandRequest: A %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -5138,11 +4666,10 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver(const wo
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetViewTarget, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetViewTarget, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientSetViewTarget_Implementation(A, TransitionParams);
 
 		// Send command response.
@@ -5150,10 +4677,10 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_Receiver(const wo
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5161,23 +4688,20 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Receiver(co
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetSpectatorWaiting_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetSpectatorWaiting_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientSetSpectatorWaiting_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientSetSpectatorWaiting_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientSetSpectatorWaiting_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientSetSpectatorWaiting_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -5186,11 +4710,10 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Receiver(co
 		bWaiting = Op.Request.field_bwaiting();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetSpectatorWaiting, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetSpectatorWaiting, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientSetSpectatorWaiting_Implementation(bWaiting);
 
 		// Send command response.
@@ -5198,10 +4721,10 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_Receiver(co
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetHUD_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetHUD_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5209,23 +4732,20 @@ void USpatialTypeBinding_PlayerController::ClientSetHUD_Receiver(const worker::C
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetHUD_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetHUD_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientSetHUD_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientSetHUD_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientSetHUD_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientSetHUD_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -5234,11 +4754,10 @@ void USpatialTypeBinding_PlayerController::ClientSetHUD_Receiver(const worker::C
 		// UNSUPPORTED UClass
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetHUD, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetHUD, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientSetHUD_Implementation(NewHUDClass);
 
 		// Send command response.
@@ -5246,10 +4765,10 @@ void USpatialTypeBinding_PlayerController::ClientSetHUD_Receiver(const worker::C
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5257,23 +4776,20 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_R
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetForceMipLevelsToBeResident_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetForceMipLevelsToBeResident_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientSetForceMipLevelsToBeResident_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientSetForceMipLevelsToBeResident_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientSetForceMipLevelsToBeResident_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientSetForceMipLevelsToBeResident_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -5295,10 +4811,9 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_R
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetForceMipLevelsToBeResident_Receiver: Material (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetForceMipLevelsToBeResident_OnCommandRequest: Material %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -5313,11 +4828,10 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_R
 		CinematicTextureGroups = Op.Request.field_cinematictexturegroups();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetForceMipLevelsToBeResident, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetForceMipLevelsToBeResident, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientSetForceMipLevelsToBeResident_Implementation(Material, ForceDuration, CinematicTextureGroups);
 
 		// Send command response.
@@ -5325,10 +4839,10 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_R
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5336,23 +4850,20 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Receiver(const
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetCinematicMode_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetCinematicMode_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientSetCinematicMode_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientSetCinematicMode_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientSetCinematicMode_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientSetCinematicMode_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -5373,11 +4884,10 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Receiver(const
 		bAffectsHUD = Op.Request.field_baffectshud();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetCinematicMode, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetCinematicMode, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientSetCinematicMode_Implementation(bInCinematicMode, bAffectsMovement, bAffectsTurning, bAffectsHUD);
 
 		// Send command response.
@@ -5385,10 +4895,10 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_Receiver(const
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetCameraMode_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5396,23 +4906,20 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Receiver(const wo
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetCameraMode_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetCameraMode_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientSetCameraMode_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientSetCameraMode_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientSetCameraMode_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientSetCameraMode_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -5421,11 +4928,10 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Receiver(const wo
 		NewCamMode = FName((Op.Request.field_newcammode()).data());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetCameraMode, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetCameraMode, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientSetCameraMode_Implementation(NewCamMode);
 
 		// Send command response.
@@ -5433,10 +4939,10 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraMode_Receiver(const wo
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetCameraFade_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5444,23 +4950,20 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Receiver(const wo
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetCameraFade_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetCameraFade_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientSetCameraFade_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientSetCameraFade_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientSetCameraFade_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientSetCameraFade_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -5489,11 +4992,10 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Receiver(const wo
 		bFadeAudio = Op.Request.field_bfadeaudio();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetCameraFade, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetCameraFade, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientSetCameraFade_Implementation(bEnableFading, FadeColor, FadeAlpha, FadeTime, bFadeAudio);
 
 		// Send command response.
@@ -5501,10 +5003,10 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_Receiver(const wo
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5512,32 +5014,28 @@ void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Receiver
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetBlockOnAsyncLoading_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetBlockOnAsyncLoading_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientSetBlockOnAsyncLoading_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientSetBlockOnAsyncLoading_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientSetBlockOnAsyncLoading_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientSetBlockOnAsyncLoading_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetBlockOnAsyncLoading, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetBlockOnAsyncLoading, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientSetBlockOnAsyncLoading_Implementation();
 
 		// Send command response.
@@ -5545,10 +5043,10 @@ void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_Receiver
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>& Op)
+void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5556,23 +5054,20 @@ void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Receiver(const
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientReturnToMainMenu_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientReturnToMainMenu_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientReturnToMainMenu_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientReturnToMainMenu_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientReturnToMainMenu_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientReturnToMainMenu_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -5581,11 +5076,10 @@ void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Receiver(const
 		ReturnReason = FString(UTF8_TO_TCHAR(Op.Request.field_returnreason().c_str()));
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientReturnToMainMenu, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientReturnToMainMenu, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientReturnToMainMenu_Implementation(ReturnReason);
 
 		// Send command response.
@@ -5593,10 +5087,10 @@ void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_Receiver(const
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>& Op)
+void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5604,23 +5098,20 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Receiver(con
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientRetryClientRestart_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientRetryClientRestart_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientRetryClientRestart_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientRetryClientRestart_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientRetryClientRestart_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientRetryClientRestart_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -5642,21 +5133,19 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Receiver(con
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientRetryClientRestart_Receiver: NewPawn (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientRetryClientRestart_OnCommandRequest: NewPawn %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientRetryClientRestart, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientRetryClientRestart, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientRetryClientRestart_Implementation(NewPawn);
 
 		// Send command response.
@@ -5664,10 +5153,10 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_Receiver(con
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientRestart_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>& Op)
+void USpatialTypeBinding_PlayerController::ClientRestart_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5675,23 +5164,20 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Receiver(const worker::
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientRestart_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientRestart_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientRestart_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientRestart_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientRestart_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientRestart_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -5713,21 +5199,19 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Receiver(const worker::
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientRestart_Receiver: NewPawn (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientRestart_OnCommandRequest: NewPawn %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientRestart, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientRestart, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientRestart_Implementation(NewPawn);
 
 		// Send command response.
@@ -5735,10 +5219,10 @@ void USpatialTypeBinding_PlayerController::ClientRestart_Receiver(const worker::
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientReset_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>& Op)
+void USpatialTypeBinding_PlayerController::ClientReset_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5746,32 +5230,28 @@ void USpatialTypeBinding_PlayerController::ClientReset_Receiver(const worker::Co
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientReset_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientReset_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientReset_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientReset_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientReset_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientReset_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientReset, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientReset, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientReset_Implementation();
 
 		// Send command response.
@@ -5779,10 +5259,10 @@ void USpatialTypeBinding_PlayerController::ClientReset_Receiver(const worker::Co
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientRepObjRef_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>& Op)
+void USpatialTypeBinding_PlayerController::ClientRepObjRef_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5790,23 +5270,20 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Receiver(const worker
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientRepObjRef_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientRepObjRef_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientRepObjRef_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientRepObjRef_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientRepObjRef_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientRepObjRef_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -5828,21 +5305,19 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Receiver(const worker
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientRepObjRef_Receiver: Object (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientRepObjRef_OnCommandRequest: Object %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientRepObjRef, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientRepObjRef, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientRepObjRef_Implementation(Object);
 
 		// Send command response.
@@ -5850,10 +5325,10 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_Receiver(const worker
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>& Op)
+void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5861,23 +5336,20 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receive
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientReceiveLocalizedMessage_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientReceiveLocalizedMessage_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientReceiveLocalizedMessage_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientReceiveLocalizedMessage_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientReceiveLocalizedMessage_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientReceiveLocalizedMessage_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -5907,10 +5379,9 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receive
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientReceiveLocalizedMessage_Receiver: RelatedPlayerState_1 (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientReceiveLocalizedMessage_OnCommandRequest: RelatedPlayerState_1 %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -5934,10 +5405,9 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receive
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientReceiveLocalizedMessage_Receiver: RelatedPlayerState_2 (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientReceiveLocalizedMessage_OnCommandRequest: RelatedPlayerState_2 %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -5961,21 +5431,19 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receive
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientReceiveLocalizedMessage_Receiver: OptionalObject (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientReceiveLocalizedMessage_OnCommandRequest: OptionalObject %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientReceiveLocalizedMessage, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientReceiveLocalizedMessage, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientReceiveLocalizedMessage_Implementation(Message, Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
 
 		// Send command response.
@@ -5983,10 +5451,10 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_Receive
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>& Op)
+void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -5994,23 +5462,20 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Receiver(cons
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPrestreamTextures_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPrestreamTextures_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientPrestreamTextures_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientPrestreamTextures_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientPrestreamTextures_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientPrestreamTextures_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -6032,10 +5497,9 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Receiver(cons
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPrestreamTextures_Receiver: ForcedActor (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPrestreamTextures_OnCommandRequest: ForcedActor %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -6054,11 +5518,10 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Receiver(cons
 		CinematicTextureGroups = Op.Request.field_cinematictexturegroups();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientPrestreamTextures, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientPrestreamTextures, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientPrestreamTextures_Implementation(ForcedActor, ForceDuration, bEnableStreaming, CinematicTextureGroups);
 
 		// Send command response.
@@ -6066,10 +5529,10 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_Receiver(cons
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>& Op)
+void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6077,23 +5540,20 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Receiver(const
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPrepareMapChange_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPrepareMapChange_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientPrepareMapChange_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientPrepareMapChange_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientPrepareMapChange_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientPrepareMapChange_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -6110,11 +5570,10 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Receiver(const
 		bLast = Op.Request.field_blast();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientPrepareMapChange, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientPrepareMapChange, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientPrepareMapChange_Implementation(LevelName, bFirst, bLast);
 
 		// Send command response.
@@ -6122,10 +5581,10 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_Receiver(const
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>& Op)
+void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6133,23 +5592,20 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Receiver(co
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlaySoundAtLocation_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlaySoundAtLocation_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientPlaySoundAtLocation_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientPlaySoundAtLocation_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientPlaySoundAtLocation_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientPlaySoundAtLocation_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -6171,10 +5627,9 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Receiver(co
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlaySoundAtLocation_Receiver: Sound (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlaySoundAtLocation_OnCommandRequest: Sound %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -6198,11 +5653,10 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Receiver(co
 		PitchMultiplier = Op.Request.field_pitchmultiplier();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientPlaySoundAtLocation, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientPlaySoundAtLocation, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientPlaySoundAtLocation_Implementation(Sound, Location, VolumeMultiplier, PitchMultiplier);
 
 		// Send command response.
@@ -6210,10 +5664,10 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_Receiver(co
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlaySound_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>& Op)
+void USpatialTypeBinding_PlayerController::ClientPlaySound_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6221,23 +5675,20 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Receiver(const worker
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlaySound_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlaySound_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientPlaySound_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientPlaySound_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientPlaySound_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientPlaySound_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -6259,10 +5710,9 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Receiver(const worker
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlaySound_Receiver: Sound (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlaySound_OnCommandRequest: Sound %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -6277,11 +5727,10 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Receiver(const worker
 		PitchMultiplier = Op.Request.field_pitchmultiplier();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientPlaySound, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientPlaySound, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientPlaySound_Implementation(Sound, VolumeMultiplier, PitchMultiplier);
 
 		// Send command response.
@@ -6289,10 +5738,10 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_Receiver(const worker
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>& Op)
+void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6300,23 +5749,20 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Receiver(cons
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlayForceFeedback_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlayForceFeedback_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientPlayForceFeedback_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientPlayForceFeedback_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientPlayForceFeedback_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientPlayForceFeedback_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -6338,10 +5784,9 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Receiver(cons
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlayForceFeedback_Receiver: ForceFeedbackEffect (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlayForceFeedback_OnCommandRequest: ForceFeedbackEffect %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -6356,11 +5801,10 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Receiver(cons
 		Tag = FName((Op.Request.field_tag()).data());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientPlayForceFeedback, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientPlayForceFeedback, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientPlayForceFeedback_Implementation(ForceFeedbackEffect, bLooping, Tag);
 
 		// Send command response.
@@ -6368,10 +5812,10 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_Receiver(cons
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>& Op)
+void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6379,23 +5823,20 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Receiver(const 
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlayCameraShake_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlayCameraShake_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientPlayCameraShake_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientPlayCameraShake_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientPlayCameraShake_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientPlayCameraShake_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -6421,11 +5862,10 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Receiver(const 
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientPlayCameraShake, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientPlayCameraShake, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientPlayCameraShake_Implementation(Shake, Scale, PlaySpace, UserPlaySpaceRot);
 
 		// Send command response.
@@ -6433,10 +5873,10 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_Receiver(const 
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>& Op)
+void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6444,23 +5884,20 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Receiver(const w
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlayCameraAnim_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlayCameraAnim_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientPlayCameraAnim_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientPlayCameraAnim_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientPlayCameraAnim_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientPlayCameraAnim_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -6482,10 +5919,9 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Receiver(const w
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlayCameraAnim_Receiver: AnimToPlay (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientPlayCameraAnim_OnCommandRequest: AnimToPlay %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -6529,11 +5965,10 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Receiver(const w
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientPlayCameraAnim, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientPlayCameraAnim, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientPlayCameraAnim_Implementation(AnimToPlay, Scale, Rate, BlendInTime, BlendOutTime, bLoop, bRandomStartTime, Space, CustomPlaySpace);
 
 		// Send command response.
@@ -6541,10 +5976,10 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_Receiver(const w
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientMutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>& Op)
+void USpatialTypeBinding_PlayerController::ClientMutePlayer_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6552,23 +5987,20 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_Receiver(const worke
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientMutePlayer_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientMutePlayer_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientMutePlayer_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientMutePlayer_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientMutePlayer_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientMutePlayer_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -6584,11 +6016,10 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_Receiver(const worke
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientMutePlayer, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientMutePlayer, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientMutePlayer_Implementation(PlayerId);
 
 		// Send command response.
@@ -6596,10 +6027,10 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_Receiver(const worke
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientMessage_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>& Op)
+void USpatialTypeBinding_PlayerController::ClientMessage_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6607,23 +6038,20 @@ void USpatialTypeBinding_PlayerController::ClientMessage_Receiver(const worker::
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientMessage_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientMessage_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientMessage_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientMessage_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientMessage_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientMessage_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -6640,11 +6068,10 @@ void USpatialTypeBinding_PlayerController::ClientMessage_Receiver(const worker::
 		MsgLifeTime = Op.Request.field_msglifetime();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientMessage, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientMessage, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientMessage_Implementation(S, Type, MsgLifeTime);
 
 		// Send command response.
@@ -6652,10 +6079,10 @@ void USpatialTypeBinding_PlayerController::ClientMessage_Receiver(const worker::
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>& Op)
+void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6663,23 +6090,20 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Receiver(const 
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientIgnoreMoveInput_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientIgnoreMoveInput_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientIgnoreMoveInput_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientIgnoreMoveInput_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientIgnoreMoveInput_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientIgnoreMoveInput_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -6688,11 +6112,10 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Receiver(const 
 		bIgnore = Op.Request.field_bignore();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientIgnoreMoveInput, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientIgnoreMoveInput, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientIgnoreMoveInput_Implementation(bIgnore);
 
 		// Send command response.
@@ -6700,10 +6123,10 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_Receiver(const 
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>& Op)
+void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6711,23 +6134,20 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Receiver(const 
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientIgnoreLookInput_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientIgnoreLookInput_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientIgnoreLookInput_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientIgnoreLookInput_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientIgnoreLookInput_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientIgnoreLookInput_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -6736,11 +6156,10 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Receiver(const 
 		bIgnore = Op.Request.field_bignore();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientIgnoreLookInput, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientIgnoreLookInput, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientIgnoreLookInput_Implementation(bIgnore);
 
 		// Send command response.
@@ -6748,10 +6167,10 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_Receiver(const 
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientGotoState_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>& Op)
+void USpatialTypeBinding_PlayerController::ClientGotoState_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6759,23 +6178,20 @@ void USpatialTypeBinding_PlayerController::ClientGotoState_Receiver(const worker
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientGotoState_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientGotoState_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientGotoState_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientGotoState_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientGotoState_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientGotoState_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -6784,11 +6200,10 @@ void USpatialTypeBinding_PlayerController::ClientGotoState_Receiver(const worker
 		NewState = FName((Op.Request.field_newstate()).data());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientGotoState, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientGotoState, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientGotoState_Implementation(NewState);
 
 		// Send command response.
@@ -6796,10 +6211,10 @@ void USpatialTypeBinding_PlayerController::ClientGotoState_Receiver(const worker
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientGameEnded_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>& Op)
+void USpatialTypeBinding_PlayerController::ClientGameEnded_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6807,23 +6222,20 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Receiver(const worker
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientGameEnded_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientGameEnded_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientGameEnded_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientGameEnded_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientGameEnded_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientGameEnded_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -6845,10 +6257,9 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Receiver(const worker
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientGameEnded_Receiver: EndGameFocus (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientGameEnded_OnCommandRequest: EndGameFocus %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -6859,11 +6270,10 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Receiver(const worker
 		bIsWinner = Op.Request.field_biswinner();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientGameEnded, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientGameEnded, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientGameEnded_Implementation(EndGameFocus, bIsWinner);
 
 		// Send command response.
@@ -6871,10 +6281,10 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_Receiver(const worker
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>& Op)
+void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6882,32 +6292,28 @@ void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Receiver
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientForceGarbageCollection_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientForceGarbageCollection_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientForceGarbageCollection_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientForceGarbageCollection_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientForceGarbageCollection_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientForceGarbageCollection_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientForceGarbageCollection, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientForceGarbageCollection, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientForceGarbageCollection_Implementation();
 
 		// Send command response.
@@ -6915,10 +6321,10 @@ void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_Receiver
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>& Op)
+void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6926,32 +6332,28 @@ void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Receiver(co
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientFlushLevelStreaming_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientFlushLevelStreaming_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientFlushLevelStreaming_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientFlushLevelStreaming_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientFlushLevelStreaming_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientFlushLevelStreaming_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientFlushLevelStreaming, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientFlushLevelStreaming, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientFlushLevelStreaming_Implementation();
 
 		// Send command response.
@@ -6959,10 +6361,10 @@ void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_Receiver(co
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>& Op)
+void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -6970,32 +6372,28 @@ void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Receiver(const
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientEndOnlineSession_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientEndOnlineSession_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientEndOnlineSession_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientEndOnlineSession_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientEndOnlineSession_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientEndOnlineSession_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientEndOnlineSession, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientEndOnlineSession, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientEndOnlineSession_Implementation();
 
 		// Send command response.
@@ -7003,10 +6401,10 @@ void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_Receiver(const
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>& Op)
+void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7014,23 +6412,20 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Receiver(con
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientEnableNetworkVoice_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientEnableNetworkVoice_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientEnableNetworkVoice_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientEnableNetworkVoice_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientEnableNetworkVoice_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientEnableNetworkVoice_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -7039,11 +6434,10 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Receiver(con
 		bEnable = Op.Request.field_benable();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientEnableNetworkVoice, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientEnableNetworkVoice, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientEnableNetworkVoice_Implementation(bEnable);
 
 		// Send command response.
@@ -7051,10 +6445,10 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_Receiver(con
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>& Op)
+void USpatialTypeBinding_PlayerController::ClientCommitMapChange_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7062,32 +6456,28 @@ void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Receiver(const 
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCommitMapChange_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCommitMapChange_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientCommitMapChange_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientCommitMapChange_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientCommitMapChange_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientCommitMapChange_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCommitMapChange, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCommitMapChange, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientCommitMapChange_Implementation();
 
 		// Send command response.
@@ -7095,10 +6485,10 @@ void USpatialTypeBinding_PlayerController::ClientCommitMapChange_Receiver(const 
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>& Op)
+void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7106,32 +6496,28 @@ void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Receiver
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientClearCameraLensEffects_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientClearCameraLensEffects_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientClearCameraLensEffects_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientClearCameraLensEffects_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientClearCameraLensEffects_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientClearCameraLensEffects_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientClearCameraLensEffects, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientClearCameraLensEffects, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientClearCameraLensEffects_Implementation();
 
 		// Send command response.
@@ -7139,10 +6525,10 @@ void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_Receiver
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>& Op)
+void USpatialTypeBinding_PlayerController::ClientCapBandwidth_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7150,23 +6536,20 @@ void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Receiver(const wor
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCapBandwidth_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCapBandwidth_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientCapBandwidth_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientCapBandwidth_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientCapBandwidth_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientCapBandwidth_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -7175,11 +6558,10 @@ void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Receiver(const wor
 		Cap = Op.Request.field_cap();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCapBandwidth, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCapBandwidth, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientCapBandwidth_Implementation(Cap);
 
 		// Send command response.
@@ -7187,10 +6569,10 @@ void USpatialTypeBinding_PlayerController::ClientCapBandwidth_Receiver(const wor
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>& Op)
+void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7198,32 +6580,28 @@ void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Receiver
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCancelPendingMapChange_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCancelPendingMapChange_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientCancelPendingMapChange_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientCancelPendingMapChange_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientCancelPendingMapChange_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientCancelPendingMapChange_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCancelPendingMapChange, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCancelPendingMapChange, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientCancelPendingMapChange_Implementation();
 
 		// Send command response.
@@ -7231,10 +6609,10 @@ void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_Receiver
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>& Op)
+void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7242,23 +6620,20 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Receiver
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAddTextureStreamingLoc_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAddTextureStreamingLoc_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientAddTextureStreamingLoc_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientAddTextureStreamingLoc_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientAddTextureStreamingLoc_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientAddTextureStreamingLoc_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -7280,11 +6655,10 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Receiver
 		bOverrideLocation = Op.Request.field_boverridelocation();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientAddTextureStreamingLoc, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientAddTextureStreamingLoc, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientAddTextureStreamingLoc_Implementation(InLoc, Duration, bOverrideLocation);
 
 		// Send command response.
@@ -7292,10 +6666,10 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_Receiver
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetRotation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetRotation_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7303,23 +6677,20 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_Receiver(const work
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetRotation_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetRotation_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientSetRotation_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientSetRotation_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientSetRotation_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientSetRotation_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -7337,11 +6708,10 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_Receiver(const work
 		bResetCamera = Op.Request.field_bresetcamera();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetRotation, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetRotation, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientSetRotation_Implementation(NewRotation, bResetCamera);
 
 		// Send command response.
@@ -7349,10 +6719,10 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_Receiver(const work
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ClientSetLocation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>& Op)
+void USpatialTypeBinding_PlayerController::ClientSetLocation_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7360,23 +6730,20 @@ void USpatialTypeBinding_PlayerController::ClientSetLocation_Receiver(const work
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetLocation_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientSetLocation_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientSetLocation_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientSetLocation_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientSetLocation_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientSetLocation_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -7399,11 +6766,10 @@ void USpatialTypeBinding_PlayerController::ClientSetLocation_Receiver(const work
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetLocation, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetLocation, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientSetLocation_Implementation(NewLocation, NewRotation);
 
 		// Send command response.
@@ -7411,10 +6777,10 @@ void USpatialTypeBinding_PlayerController::ClientSetLocation_Receiver(const work
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerViewSelf_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>& Op)
+void USpatialTypeBinding_PlayerController::ServerViewSelf_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7422,23 +6788,20 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Receiver(const worker:
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerViewSelf_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerViewSelf_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerViewSelf_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerViewSelf_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerViewSelf_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerViewSelf_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -7456,11 +6819,10 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Receiver(const worker:
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerViewSelf, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerViewSelf, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerViewSelf_Implementation(TransitionParams);
 
 		// Send command response.
@@ -7468,10 +6830,10 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_Receiver(const worker:
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>& Op)
+void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7479,32 +6841,28 @@ void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Receiver(const w
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerViewPrevPlayer_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerViewPrevPlayer_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerViewPrevPlayer_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerViewPrevPlayer_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerViewPrevPlayer_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerViewPrevPlayer_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerViewPrevPlayer, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerViewPrevPlayer, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerViewPrevPlayer_Implementation();
 
 		// Send command response.
@@ -7512,10 +6870,10 @@ void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_Receiver(const w
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>& Op)
+void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7523,32 +6881,28 @@ void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Receiver(const w
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerViewNextPlayer_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerViewNextPlayer_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerViewNextPlayer_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerViewNextPlayer_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerViewNextPlayer_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerViewNextPlayer_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerViewNextPlayer, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerViewNextPlayer, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerViewNextPlayer_Implementation();
 
 		// Send command response.
@@ -7556,10 +6910,10 @@ void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_Receiver(const w
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>& Op)
+void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7567,32 +6921,28 @@ void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Receiver(const
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerVerifyViewTarget_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerVerifyViewTarget_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerVerifyViewTarget_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerVerifyViewTarget_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerVerifyViewTarget_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerVerifyViewTarget_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerVerifyViewTarget, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerVerifyViewTarget, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerVerifyViewTarget_Implementation();
 
 		// Send command response.
@@ -7600,10 +6950,10 @@ void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_Receiver(const
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>& Op)
+void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7611,23 +6961,20 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Receiver(
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerUpdateLevelVisibility_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerUpdateLevelVisibility_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerUpdateLevelVisibility_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerUpdateLevelVisibility_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerUpdateLevelVisibility_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerUpdateLevelVisibility_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -7640,11 +6987,10 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Receiver(
 		bIsVisible = Op.Request.field_bisvisible();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerUpdateLevelVisibility, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerUpdateLevelVisibility, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerUpdateLevelVisibility_Implementation(PackageName, bIsVisible);
 
 		// Send command response.
@@ -7652,10 +6998,10 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_Receiver(
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>& Op)
+void USpatialTypeBinding_PlayerController::ServerUpdateCamera_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7663,23 +7009,20 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Receiver(const wor
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerUpdateCamera_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerUpdateCamera_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerUpdateCamera_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerUpdateCamera_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerUpdateCamera_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerUpdateCamera_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -7697,11 +7040,10 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Receiver(const wor
 		CamPitchAndYaw = Op.Request.field_campitchandyaw();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerUpdateCamera, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerUpdateCamera, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerUpdateCamera_Implementation(CamLoc, CamPitchAndYaw);
 
 		// Send command response.
@@ -7709,10 +7051,10 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCamera_Receiver(const wor
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>& Op)
+void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7720,23 +7062,20 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Receiver(const wor
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerUnmutePlayer_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerUnmutePlayer_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerUnmutePlayer_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerUnmutePlayer_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerUnmutePlayer_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerUnmutePlayer_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -7752,11 +7091,10 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Receiver(const wor
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerUnmutePlayer, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerUnmutePlayer, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerUnmutePlayer_Implementation(PlayerId);
 
 		// Send command response.
@@ -7764,10 +7102,10 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_Receiver(const wor
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>& Op)
+void USpatialTypeBinding_PlayerController::ServerToggleAILogging_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7775,32 +7113,28 @@ void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Receiver(const 
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerToggleAILogging_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerToggleAILogging_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerToggleAILogging_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerToggleAILogging_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerToggleAILogging_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerToggleAILogging_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerToggleAILogging, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerToggleAILogging, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerToggleAILogging_Implementation();
 
 		// Send command response.
@@ -7808,10 +7142,10 @@ void USpatialTypeBinding_PlayerController::ServerToggleAILogging_Receiver(const 
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerShortTimeout_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>& Op)
+void USpatialTypeBinding_PlayerController::ServerShortTimeout_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7819,32 +7153,28 @@ void USpatialTypeBinding_PlayerController::ServerShortTimeout_Receiver(const wor
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerShortTimeout_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerShortTimeout_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerShortTimeout_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerShortTimeout_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerShortTimeout_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerShortTimeout_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerShortTimeout, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerShortTimeout, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerShortTimeout_Implementation();
 
 		// Send command response.
@@ -7852,10 +7182,10 @@ void USpatialTypeBinding_PlayerController::ServerShortTimeout_Receiver(const wor
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>& Op)
+void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7863,23 +7193,20 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Receiver(co
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerSetSpectatorWaiting_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerSetSpectatorWaiting_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerSetSpectatorWaiting_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerSetSpectatorWaiting_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerSetSpectatorWaiting_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerSetSpectatorWaiting_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -7888,11 +7215,10 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Receiver(co
 		bWaiting = Op.Request.field_bwaiting();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerSetSpectatorWaiting, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerSetSpectatorWaiting, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerSetSpectatorWaiting_Implementation(bWaiting);
 
 		// Send command response.
@@ -7900,10 +7226,10 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_Receiver(co
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>& Op)
+void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7911,23 +7237,20 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Receiver(c
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerSetSpectatorLocation_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerSetSpectatorLocation_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerSetSpectatorLocation_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerSetSpectatorLocation_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerSetSpectatorLocation_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerSetSpectatorLocation_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -7950,11 +7273,10 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Receiver(c
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerSetSpectatorLocation, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerSetSpectatorLocation, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerSetSpectatorLocation_Implementation(NewLoc, NewRot);
 
 		// Send command response.
@@ -7962,10 +7284,10 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_Receiver(c
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>& Op)
+void USpatialTypeBinding_PlayerController::ServerRestartPlayer_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -7973,32 +7295,28 @@ void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Receiver(const wo
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerRestartPlayer_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerRestartPlayer_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerRestartPlayer_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerRestartPlayer_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerRestartPlayer_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerRestartPlayer_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerRestartPlayer, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerRestartPlayer, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerRestartPlayer_Implementation();
 
 		// Send command response.
@@ -8006,10 +7324,10 @@ void USpatialTypeBinding_PlayerController::ServerRestartPlayer_Receiver(const wo
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerPause_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>& Op)
+void USpatialTypeBinding_PlayerController::ServerPause_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -8017,32 +7335,28 @@ void USpatialTypeBinding_PlayerController::ServerPause_Receiver(const worker::Co
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerPause_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerPause_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerPause_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerPause_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerPause_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerPause_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerPause, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerPause, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerPause_Implementation();
 
 		// Send command response.
@@ -8050,10 +7364,10 @@ void USpatialTypeBinding_PlayerController::ServerPause_Receiver(const worker::Co
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>& Op)
+void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -8061,23 +7375,20 @@ void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Receiver(cons
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerNotifyLoadedWorld_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerNotifyLoadedWorld_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerNotifyLoadedWorld_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerNotifyLoadedWorld_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerNotifyLoadedWorld_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerNotifyLoadedWorld_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -8086,11 +7397,10 @@ void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Receiver(cons
 		WorldPackageName = FName((Op.Request.field_worldpackagename()).data());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerNotifyLoadedWorld, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerNotifyLoadedWorld, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerNotifyLoadedWorld_Implementation(WorldPackageName);
 
 		// Send command response.
@@ -8098,10 +7408,10 @@ void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_Receiver(cons
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerMutePlayer_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>& Op)
+void USpatialTypeBinding_PlayerController::ServerMutePlayer_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -8109,23 +7419,20 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_Receiver(const worke
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMutePlayer_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMutePlayer_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerMutePlayer_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerMutePlayer_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerMutePlayer_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerMutePlayer_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -8141,11 +7448,10 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_Receiver(const worke
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerMutePlayer, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerMutePlayer, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerMutePlayer_Implementation(PlayerId);
 
 		// Send command response.
@@ -8153,10 +7459,10 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_Receiver(const worke
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>& Op)
+void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -8164,32 +7470,28 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_R
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerCheckClientPossessionReliable_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerCheckClientPossessionReliable_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerCheckClientPossessionReliable_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerCheckClientPossessionReliable_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerCheckClientPossessionReliable_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerCheckClientPossessionReliable_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerCheckClientPossessionReliable, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerCheckClientPossessionReliable, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerCheckClientPossessionReliable_Implementation();
 
 		// Send command response.
@@ -8197,10 +7499,10 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_R
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>& Op)
+void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -8208,32 +7510,28 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Receiver(
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerCheckClientPossession_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerCheckClientPossession_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerCheckClientPossession_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerCheckClientPossession_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerCheckClientPossession_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerCheckClientPossession_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerCheckClientPossession, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerCheckClientPossession, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerCheckClientPossession_Implementation();
 
 		// Send command response.
@@ -8241,10 +7539,10 @@ void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_Receiver(
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerChangeName_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>& Op)
+void USpatialTypeBinding_PlayerController::ServerChangeName_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -8252,23 +7550,20 @@ void USpatialTypeBinding_PlayerController::ServerChangeName_Receiver(const worke
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerChangeName_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerChangeName_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerChangeName_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerChangeName_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerChangeName_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerChangeName_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -8277,11 +7572,10 @@ void USpatialTypeBinding_PlayerController::ServerChangeName_Receiver(const worke
 		S = FString(UTF8_TO_TCHAR(Op.Request.field_s().c_str()));
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerChangeName, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerChangeName, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerChangeName_Implementation(S);
 
 		// Send command response.
@@ -8289,10 +7583,10 @@ void USpatialTypeBinding_PlayerController::ServerChangeName_Receiver(const worke
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerCamera_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>& Op)
+void USpatialTypeBinding_PlayerController::ServerCamera_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -8300,23 +7594,20 @@ void USpatialTypeBinding_PlayerController::ServerCamera_Receiver(const worker::C
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerCamera_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerCamera_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerCamera_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerCamera_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerCamera_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerCamera_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -8325,11 +7616,10 @@ void USpatialTypeBinding_PlayerController::ServerCamera_Receiver(const worker::C
 		NewMode = FName((Op.Request.field_newmode()).data());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerCamera, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerCamera, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerCamera_Implementation(NewMode);
 
 		// Send command response.
@@ -8337,10 +7627,10 @@ void USpatialTypeBinding_PlayerController::ServerCamera_Receiver(const worker::C
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>& Op)
+void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -8348,23 +7638,20 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Receiver(
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerAcknowledgePossession_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerAcknowledgePossession_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		APlayerController* TargetObject = Cast<APlayerController>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerAcknowledgePossession_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerAcknowledgePossession_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerAcknowledgePossession_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerAcknowledgePossession_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -8386,21 +7673,19 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Receiver(
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerAcknowledgePossession_Receiver: P (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerAcknowledgePossession_OnCommandRequest: P %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
 		}
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerAcknowledgePossession, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerAcknowledgePossession, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerAcknowledgePossession_Implementation(P);
 
 		// Send command response.
@@ -8408,5 +7693,355 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_Receiver(
 		Connection->SendCommandResponse<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
+}
+
+void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Onserverstartedvisuallogger>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("OnServerStartedVisualLogger"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientWasKicked_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientwaskicked>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientWasKicked"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientVoiceHandshakeComplete_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientvoicehandshakecomplete>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientVoiceHandshakeComplete"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientupdatelevelstreamingstatus>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientUpdateLevelStreamingStatus"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientunmuteplayer>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientUnmutePlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientTravelInternal_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clienttravelinternal>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientTravelInternal"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientTeamMessage_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientteammessage>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientTeamMessage"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopforcefeedback>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientStopForceFeedback"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientStopCameraShake_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcamerashake>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientStopCameraShake"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstopcameraanim>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientStopCameraAnim"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientStartOnlineSession_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientstartonlinesession>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientStartOnlineSession"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientspawncameralenseffect>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientSpawnCameraLensEffect"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetViewTarget_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetviewtarget>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientSetViewTarget"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetspectatorwaiting>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientSetSpectatorWaiting"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetHUD_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsethud>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientSetHUD"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetforcemiplevelstoberesident>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientSetForceMipLevelsToBeResident"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcinematicmode>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientSetCinematicMode"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetCameraMode_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcameramode>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientSetCameraMode"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetCameraFade_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetcamerafade>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientSetCameraFade"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetBlockOnAsyncLoading_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetblockonasyncloading>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientSetBlockOnAsyncLoading"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreturntomainmenu>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientReturnToMainMenu"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientretryclientrestart>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientRetryClientRestart"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientRestart_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrestart>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientRestart"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientReset_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreset>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientReset"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientRepObjRef_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientrepobjref>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientRepObjRef"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientreceivelocalizedmessage>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientReceiveLocalizedMessage"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientprestreamtextures>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientPrestreamTextures"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientpreparemapchange>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientPrepareMapChange"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysoundatlocation>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientPlaySoundAtLocation"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientPlaySound_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaysound>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientPlaySound"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplayforcefeedback>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientPlayForceFeedback"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycamerashake>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientPlayCameraShake"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientplaycameraanim>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientPlayCameraAnim"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientMutePlayer_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmuteplayer>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientMutePlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientMessage_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientmessage>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientMessage"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignoremoveinput>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientIgnoreMoveInput"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientignorelookinput>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientIgnoreLookInput"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientGotoState_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgotostate>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientGotoState"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientGameEnded_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientgameended>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientGameEnded"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientForceGarbageCollection_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientforcegarbagecollection>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientForceGarbageCollection"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientFlushLevelStreaming_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientflushlevelstreaming>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientFlushLevelStreaming"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientEndOnlineSession_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientendonlinesession>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientEndOnlineSession"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientenablenetworkvoice>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientEnableNetworkVoice"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientCommitMapChange_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcommitmapchange>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientCommitMapChange"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientClearCameraLensEffects_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientclearcameralenseffects>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientClearCameraLensEffects"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientCapBandwidth_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcapbandwidth>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientCapBandwidth"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientCancelPendingMapChange_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientcancelpendingmapchange>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientCancelPendingMapChange"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientaddtexturestreamingloc>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientAddTextureStreamingLoc"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetRotation_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetrotation>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientSetRotation"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ClientSetLocation_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerClientRPCs::Commands::Clientsetlocation>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientSetLocation"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerViewSelf_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewself>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerViewSelf"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerViewPrevPlayer_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewprevplayer>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerViewPrevPlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerViewNextPlayer_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverviewnextplayer>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerViewNextPlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerVerifyViewTarget_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serververifyviewtarget>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerVerifyViewTarget"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatelevelvisibility>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerUpdateLevelVisibility"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerUpdateCamera_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverupdatecamera>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerUpdateCamera"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverunmuteplayer>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerUnmutePlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerToggleAILogging_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servertoggleailogging>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerToggleAILogging"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerShortTimeout_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servershorttimeout>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerShortTimeout"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorwaiting>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerSetSpectatorWaiting"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serversetspectatorlocation>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerSetSpectatorLocation"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerRestartPlayer_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverrestartplayer>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerRestartPlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerPause_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverpause>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerPause"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servernotifyloadedworld>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerNotifyLoadedWorld"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerMutePlayer_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servermuteplayer>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerMutePlayer"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerCheckClientPossessionReliable_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossessionreliable>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerCheckClientPossessionReliable"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerCheckClientPossession_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercheckclientpossession>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerCheckClientPossession"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerChangeName_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serverchangename>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerChangeName"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerCamera_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Servercamera>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerCamera"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealPlayerControllerServerRPCs::Commands::Serveracknowledgepossession>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerAcknowledgePossession"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }

@@ -89,10 +89,6 @@ public:
 	USpatialInterop();
 
 	void Init(bool bClient, USpatialOS* Instance, USpatialNetDriver* Driver, FTimerManager* TimerManager);
-	void Tick(float DeltaTime);
-
-	USpatialActorChannel* GetClientActorChannel(const worker::EntityId& EntityId) const;
-	void AddClientActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel);
 
 	// Type bindings.
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
@@ -105,21 +101,25 @@ public:
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
 
-	// RPC handlers. Used by generated interop classes.
-	void SendCommandRequest(FRPCRequestFunction Function, bool bReliable);
-	void SendCommandResponse(FRPCResponderFunction Function);
-
-	// Called when the sending worker receives a command response.
-	void HandleCommandResponse(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
-
-	// Called by the type bindings when an update or RPC needs to be queued. 
-	void QueueOutgoingObjectUpdate(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
-	void QueueOutgoingRPC(UObject* UnresolvedObject, FRPCRequestFunction CommandSender, bool bReliable);
-	void QueueIncomingObjectUpdate(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, UObjectPropertyBase* Property, uint16 Handle);
-	void QueueIncomingRPC(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCResponderFunction Responder);
-
 	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.
 	void ResolveObject(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
+
+	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
+	void AddActorChannel_Client(const worker::EntityId& EntityId, USpatialActorChannel* Channel);
+
+	// Used by generated type bindings to map an entity ID to its actor channel.
+	USpatialActorChannel* GetActorChannelByEntityId(const worker::EntityId& EntityId) const;
+
+	// RPC handlers. Used by generated type bindings.
+	void SendCommandRequest_Internal(FRPCRequestFunction Function, bool bReliable);
+	void SendCommandResponse_Internal(FRPCResponderFunction Function);
+	void HandleCommandResponse_Internal(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
+
+	// Used to queue incoming/outgoing object updates/RPCs. Used by generated type bindings.
+	void QueueOutgoingObjectUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
+	void QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCRequestFunction CommandSender, bool bReliable);
+	void QueueIncomingObjectUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, UObjectPropertyBase* Property, uint16 Handle);
+	void QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCResponderFunction Responder);
 
 	// Accessors.
 	USpatialOS* GetSpatialOS() const
@@ -152,8 +152,8 @@ private:
 	UPROPERTY()
 	TMap<UClass*, USpatialTypeBinding*> TypeBinding;
 
-	// On clients, there is a 1 to 1 mapping between an actor and an actor channel (as there's just one NetConnection).
-	TMap<worker::EntityId, USpatialActorChannel*> EntityToClientActorChannel;
+	// A map from Entity ID to actor channel.
+	TMap<worker::EntityId, USpatialActorChannel*> EntityToActorChannel;
 
 	// Outgoing RPCs (for retry logic).
 	TMap<FUntypedRequestId, TSharedPtr<FOutgoingReliableRPC>> OutgoingReliableRPCs;
@@ -174,10 +174,8 @@ private:
 private:
 	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
 
-	void ResolvePendingOutgoingObjectRefUpdates(UObject* Object);
+	void ResolvePendingOutgoingObjectUpdates(UObject* Object);
 	void ResolvePendingOutgoingRPCs(UObject* Object);
-	void ResolvePendingIncomingObjectRefUpdates(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
+	void ResolvePendingIncomingObjectUpdates(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 	void ResolvePendingIncomingRPCs(const improbable::unreal::UnrealObjectRef& ObjectRef);
-
-	friend class USpatialInteropPipelineBlock;
 };

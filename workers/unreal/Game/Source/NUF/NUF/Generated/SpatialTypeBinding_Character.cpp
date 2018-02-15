@@ -6,10 +6,11 @@
 #include "SpatialOS.h"
 #include "EntityBuilder.h"
 
+#include "../SpatialConstants.h"
+#include "../SpatialUnrealObjectRef.h"
 #include "../SpatialActorChannel.h"
 #include "../SpatialPackageMapClient.h"
 #include "../SpatialNetDriver.h"
-#include "../SpatialConstants.h"
 #include "../SpatialInterop.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
@@ -94,112 +95,120 @@ void USpatialTypeBinding_Character::Init(USpatialInterop* InInterop, USpatialPac
 {
 	Super::Init(InInterop, InPackageMap);
 
-	RPCToSenderMap.Emplace("ClientCheatWalk", &USpatialTypeBinding_Character::ClientCheatWalk_Sender);
-	RPCToSenderMap.Emplace("ClientCheatGhost", &USpatialTypeBinding_Character::ClientCheatGhost_Sender);
-	RPCToSenderMap.Emplace("ClientCheatFly", &USpatialTypeBinding_Character::ClientCheatFly_Sender);
-	RPCToSenderMap.Emplace("ClientVeryShortAdjustPosition", &USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Sender);
-	RPCToSenderMap.Emplace("ClientAdjustRootMotionSourcePosition", &USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Sender);
-	RPCToSenderMap.Emplace("ClientAdjustRootMotionPosition", &USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Sender);
-	RPCToSenderMap.Emplace("ClientAdjustPosition", &USpatialTypeBinding_Character::ClientAdjustPosition_Sender);
-	RPCToSenderMap.Emplace("ClientAckGoodMove", &USpatialTypeBinding_Character::ClientAckGoodMove_Sender);
-	RPCToSenderMap.Emplace("ServerMoveOld", &USpatialTypeBinding_Character::ServerMoveOld_Sender);
-	RPCToSenderMap.Emplace("ServerMoveDualHybridRootMotion", &USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Sender);
-	RPCToSenderMap.Emplace("ServerMoveDual", &USpatialTypeBinding_Character::ServerMoveDual_Sender);
-	RPCToSenderMap.Emplace("ServerMove", &USpatialTypeBinding_Character::ServerMove_Sender);
+	RPCToSenderMap.Emplace("ClientCheatWalk", &USpatialTypeBinding_Character::ClientCheatWalk_SendCommand);
+	RPCToSenderMap.Emplace("ClientCheatGhost", &USpatialTypeBinding_Character::ClientCheatGhost_SendCommand);
+	RPCToSenderMap.Emplace("ClientCheatFly", &USpatialTypeBinding_Character::ClientCheatFly_SendCommand);
+	RPCToSenderMap.Emplace("ClientVeryShortAdjustPosition", &USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_SendCommand);
+	RPCToSenderMap.Emplace("ClientAdjustRootMotionSourcePosition", &USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_SendCommand);
+	RPCToSenderMap.Emplace("ClientAdjustRootMotionPosition", &USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_SendCommand);
+	RPCToSenderMap.Emplace("ClientAdjustPosition", &USpatialTypeBinding_Character::ClientAdjustPosition_SendCommand);
+	RPCToSenderMap.Emplace("ClientAckGoodMove", &USpatialTypeBinding_Character::ClientAckGoodMove_SendCommand);
+	RPCToSenderMap.Emplace("ServerMoveOld", &USpatialTypeBinding_Character::ServerMoveOld_SendCommand);
+	RPCToSenderMap.Emplace("ServerMoveDualHybridRootMotion", &USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_SendCommand);
+	RPCToSenderMap.Emplace("ServerMoveDual", &USpatialTypeBinding_Character::ServerMoveDual_SendCommand);
+	RPCToSenderMap.Emplace("ServerMove", &USpatialTypeBinding_Character::ServerMove_SendCommand);
 }
 
 void USpatialTypeBinding_Character::BindToView()
 {
 	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
-	SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
-		const worker::AddComponentOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
+	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
 	{
-		auto Update = improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update::FromInitialData(Op.Data);
-		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
-		if (ActorChannel)
+		SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
+			const worker::AddComponentOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
 		{
-			ClientReceiveUpdate_SingleClient(ActorChannel, Update);
-		}
-		else
+			auto Update = improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update::FromInitialData(Op.Data);
+			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+			if (ActorChannel)
+			{
+				ClientReceiveUpdate_SingleClient(ActorChannel, Update);
+			}
+			else
+			{
+				PendingSingleClientData.Add(Op.EntityId, Op.Data);
+			}
+		});
+		SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
 		{
-			PendingSingleClientData.Add(Op.EntityId, Op.Data);
-		}
-	});
-	SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
-		const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
-	{
-		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
-		if (ActorChannel)
+			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+			if (ActorChannel)
+			{
+				ClientReceiveUpdate_SingleClient(ActorChannel, Op.Update);
+			}
+			else
+			{
+				Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
+			}
+		});
+		MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
+			const worker::AddComponentOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
 		{
-			ClientReceiveUpdate_SingleClient(ActorChannel, Op.Update);
-		}
-		else
+			auto Update = improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update::FromInitialData(Op.Data);
+			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+			if (ActorChannel)
+			{
+				ClientReceiveUpdate_MultiClient(ActorChannel, Update);
+			}
+			else
+			{
+				PendingMultiClientData.Add(Op.EntityId, Op.Data);
+			}
+		});
+		MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
 		{
-			Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
-		}
-	});
-	MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
-		const worker::AddComponentOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
-	{
-		auto Update = improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update::FromInitialData(Op.Data);
-		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
-		if (ActorChannel)
-		{
-			ClientReceiveUpdate_MultiClient(ActorChannel, Update);
-		}
-		else
-		{
-			PendingMultiClientData.Add(Op.EntityId, Op.Data);
-		}
-	});
-	MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
-		const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
-	{
-		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
-		if (ActorChannel)
-		{
-			ClientReceiveUpdate_MultiClient(ActorChannel, Op.Update);
-		}
-		else
-		{
-			Op.Update.ApplyTo(PendingMultiClientData.FindOrAdd(Op.EntityId));
-		}
-	});
+			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+			if (ActorChannel)
+			{
+				ClientReceiveUpdate_MultiClient(ActorChannel, Op.Update);
+			}
+			else
+			{
+				Op.Update.ApplyTo(PendingMultiClientData.FindOrAdd(Op.EntityId));
+			}
+		});
+	}
+
 	using ClientRPCCommandTypes = improbable::unreal::UnrealCharacterClientRPCs::Commands;
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatwalk>(std::bind(&USpatialTypeBinding_Character::ClientCheatWalk_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatghost>(std::bind(&USpatialTypeBinding_Character::ClientCheatGhost_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatfly>(std::bind(&USpatialTypeBinding_Character::ClientCheatFly_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientveryshortadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientadjustrootmotionsourceposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientadjustrootmotionposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustPosition_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientackgoodmove>(std::bind(&USpatialTypeBinding_Character::ClientAckGoodMove_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatwalk>(std::bind(&USpatialTypeBinding_Character::ClientCheatWalk_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatghost>(std::bind(&USpatialTypeBinding_Character::ClientCheatGhost_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatfly>(std::bind(&USpatialTypeBinding_Character::ClientCheatFly_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientveryshortadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientadjustrootmotionsourceposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientadjustrootmotionposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustPosition_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientackgoodmove>(std::bind(&USpatialTypeBinding_Character::ClientAckGoodMove_Sender_Response, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatwalk>(std::bind(&USpatialTypeBinding_Character::ClientCheatWalk_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatghost>(std::bind(&USpatialTypeBinding_Character::ClientCheatGhost_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatfly>(std::bind(&USpatialTypeBinding_Character::ClientCheatFly_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientveryshortadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientadjustrootmotionsourceposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientadjustrootmotionposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustPosition_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientackgoodmove>(std::bind(&USpatialTypeBinding_Character::ClientAckGoodMove_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatwalk>(std::bind(&USpatialTypeBinding_Character::ClientCheatWalk_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatghost>(std::bind(&USpatialTypeBinding_Character::ClientCheatGhost_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatfly>(std::bind(&USpatialTypeBinding_Character::ClientCheatFly_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientveryshortadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientadjustrootmotionsourceposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientadjustrootmotionposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustPosition_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientackgoodmove>(std::bind(&USpatialTypeBinding_Character::ClientAckGoodMove_OnCommandResponse, this, std::placeholders::_1)));
+
 	using ServerRPCCommandTypes = improbable::unreal::UnrealCharacterServerRPCs::Commands;
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermoveold>(std::bind(&USpatialTypeBinding_Character::ServerMoveOld_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermovedualhybridrootmotion>(std::bind(&USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermovedual>(std::bind(&USpatialTypeBinding_Character::ServerMoveDual_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermove>(std::bind(&USpatialTypeBinding_Character::ServerMove_Receiver, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servermoveold>(std::bind(&USpatialTypeBinding_Character::ServerMoveOld_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servermovedualhybridrootmotion>(std::bind(&USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servermovedual>(std::bind(&USpatialTypeBinding_Character::ServerMoveDual_Sender_Response, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servermove>(std::bind(&USpatialTypeBinding_Character::ServerMove_Sender_Response, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermoveold>(std::bind(&USpatialTypeBinding_Character::ServerMoveOld_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermovedualhybridrootmotion>(std::bind(&USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermovedual>(std::bind(&USpatialTypeBinding_Character::ServerMoveDual_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermove>(std::bind(&USpatialTypeBinding_Character::ServerMove_OnCommandRequest, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servermoveold>(std::bind(&USpatialTypeBinding_Character::ServerMoveOld_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servermovedualhybridrootmotion>(std::bind(&USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servermovedual>(std::bind(&USpatialTypeBinding_Character::ServerMoveDual_OnCommandResponse, this, std::placeholders::_1)));
+	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servermove>(std::bind(&USpatialTypeBinding_Character::ServerMove_OnCommandResponse, this, std::placeholders::_1)));
 }
 
 void USpatialTypeBinding_Character::UnbindFromView()
 {
 	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
-	View->Remove(SingleClientAddCallback);
-	View->Remove(SingleClientUpdateCallback);
-	View->Remove(MultiClientAddCallback);
-	View->Remove(MultiClientUpdateCallback);
+	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
+	{
+		View->Remove(SingleClientAddCallback);
+		View->Remove(SingleClientUpdateCallback);
+		View->Remove(MultiClientAddCallback);
+		View->Remove(MultiClientUpdateCallback);
+	}
 	for (auto& Callback : RPCReceiverCallbacks)
 	{
 		View->Remove(Callback);
@@ -400,7 +409,7 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 5);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 5);
 				}
 				else
 				{
@@ -436,7 +445,7 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 7);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 7);
 				}
 				else
 				{
@@ -487,7 +496,7 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 12);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 12);
 				}
 				else
 				{
@@ -524,7 +533,7 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 15);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 15);
 				}
 				else
 				{
@@ -547,7 +556,7 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 16);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 16);
 				}
 				else
 				{
@@ -577,7 +586,7 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 18);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 18);
 				}
 				else
 				{
@@ -600,7 +609,7 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 19);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 19);
 				}
 				else
 				{
@@ -714,7 +723,7 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 33);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 33);
 				}
 				else
 				{
@@ -758,7 +767,7 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->QueueOutgoingObjectUpdate(Value, Channel, 37);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 37);
 				}
 				else
 				{
@@ -862,7 +871,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -888,7 +897,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -914,7 +923,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -941,7 +950,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -975,16 +984,15 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -992,7 +1000,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1020,7 +1028,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1054,16 +1062,15 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -1071,7 +1078,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1097,7 +1104,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1122,7 +1129,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1147,7 +1154,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1167,7 +1174,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = FName(((*Update.field_attachmentreplication_attachsocket().data())).data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1201,16 +1208,15 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -1218,7 +1224,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1239,7 +1245,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_role().data())));
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1265,7 +1271,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1299,16 +1305,15 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -1316,7 +1321,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1351,16 +1356,15 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -1368,7 +1372,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1389,7 +1393,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = uint8(uint8((*Update.field_remoteviewpitch().data())));
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1423,16 +1427,15 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -1440,7 +1443,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1475,16 +1478,15 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -1492,7 +1494,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1513,7 +1515,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = FName(((*Update.field_replicatedbasedmovement_bonename().data())).data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1538,7 +1540,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1563,7 +1565,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1583,7 +1585,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_replicatedbasedmovement_bserverhasbasecomponent().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1603,7 +1605,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_replicatedbasedmovement_brelativerotation().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1623,7 +1625,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_replicatedbasedmovement_bserverhasvelocity().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1643,7 +1645,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_animrootmotiontranslationscale().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1663,7 +1665,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_replicatedserverlasttransformupdatetimestamp().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1683,7 +1685,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = uint8(uint8((*Update.field_replicatedmovementmode().data())));
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1709,7 +1711,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1729,7 +1731,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_jumpmaxholdtime().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1749,7 +1751,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_jumpmaxcount().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1769,7 +1771,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_reprootmotion_bisactive().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1803,16 +1805,15 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -1820,7 +1821,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1841,7 +1842,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_reprootmotion_position().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1866,7 +1867,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1891,7 +1892,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1925,16 +1926,15 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -1942,7 +1942,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1963,7 +1963,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = FName(((*Update.field_reprootmotion_movementbasebonename().data())).data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1983,7 +1983,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_reprootmotion_brelativeposition().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -2003,7 +2003,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_reprootmotion_brelativerotation().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -2032,7 +2032,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value.LastAccumulatedSettings.Flags = uint8(uint8((*Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -2057,7 +2057,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -2082,7 +2082,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -2093,7 +2093,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter.GetNetBitWriter());
 }
 
-void USpatialTypeBinding_Character::ClientCheatWalk_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_Character::ClientCheatWalk_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -2110,18 +2110,17 @@ void USpatialTypeBinding_Character::ClientCheatWalk_Sender(worker::Connection* c
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCheatWalk, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCheatWalk, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_Character::ClientCheatGhost_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_Character::ClientCheatGhost_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -2138,18 +2137,17 @@ void USpatialTypeBinding_Character::ClientCheatGhost_Sender(worker::Connection* 
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCheatGhost, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCheatGhost, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_Character::ClientCheatFly_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_Character::ClientCheatFly_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	auto Sender = [this, Connection, TargetObject]() mutable -> FRPCRequestResult
 	{
@@ -2166,18 +2164,17 @@ void USpatialTypeBinding_Character::ClientCheatFly_Sender(worker::Connection* co
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCheatFly, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientCheatFly, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ true);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
 }
 
-void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UFloatProperty, TimeStamp);
@@ -2227,18 +2224,17 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Sender(worker:
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientVeryShortAdjustPosition, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientVeryShortAdjustPosition, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientveryshortadjustposition>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UFloatProperty, TimeStamp);
@@ -2302,18 +2298,17 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Sender(
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientAdjustRootMotionSourcePosition, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientAdjustRootMotionSourcePosition, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionsourceposition>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UFloatProperty, TimeStamp);
@@ -2369,18 +2364,17 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Sender(worker
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientAdjustRootMotionPosition, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientAdjustRootMotionPosition, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionposition>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_Character::ClientAdjustPosition_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_Character::ClientAdjustPosition_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UFloatProperty, TimeStamp);
@@ -2432,18 +2426,17 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Sender(worker::Connecti
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientAdjustPosition, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientAdjustPosition, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustposition>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_Character::ClientAckGoodMove_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_Character::ClientAckGoodMove_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UFloatProperty, TimeStamp);
@@ -2464,18 +2457,17 @@ void USpatialTypeBinding_Character::ClientAckGoodMove_Sender(worker::Connection*
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientAckGoodMove, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ClientAckGoodMove, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientackgoodmove>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_Character::ServerMoveOld_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_Character::ServerMoveOld_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UFloatProperty, OldTimeStamp);
@@ -2500,18 +2492,17 @@ void USpatialTypeBinding_Character::ServerMoveOld_Sender(worker::Connection* con
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerMoveOld, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerMoveOld, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermoveold>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UFloatProperty, TimeStamp0);
@@ -2573,18 +2564,17 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Sender(worker
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerMoveDualHybridRootMotion, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerMoveDualHybridRootMotion, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedualhybridrootmotion>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_Character::ServerMoveDual_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_Character::ServerMoveDual_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UFloatProperty, TimeStamp0);
@@ -2646,18 +2636,17 @@ void USpatialTypeBinding_Character::ServerMoveDual_Sender(worker::Connection* co
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerMoveDual, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerMoveDual, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedual>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_Character::ServerMove_Sender(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+void USpatialTypeBinding_Character::ServerMove_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
 {
 	FFrame& Stack = *RPCFrame;
 	P_GET_PROPERTY(UFloatProperty, TimeStamp);
@@ -2711,78 +2700,17 @@ void USpatialTypeBinding_Character::ServerMove_Sender(worker::Connection* const 
 
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerMove, target: %s (entity ID %lld, offset: %d)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerMove, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermove>(TargetObjectRef.entity(), Request, 0);
 		return FRPCRequestResult{RequestId.Id};
 	};
-	Interop->SendCommandRequest(Sender, /*bReliable*/ false);
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ false);
 }
 
-void USpatialTypeBinding_Character::ClientCheatWalk_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientCheatWalk"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_Character::ClientCheatGhost_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientCheatGhost"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_Character::ClientCheatFly_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientCheatFly"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientveryshortadjustposition>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientVeryShortAdjustPosition"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionsourceposition>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientAdjustRootMotionSourcePosition"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionposition>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientAdjustRootMotionPosition"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_Character::ClientAdjustPosition_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustposition>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientAdjustPosition"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_Character::ClientAckGoodMove_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientackgoodmove>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ClientAckGoodMove"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_Character::ServerMoveOld_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermoveold>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerMoveOld"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedualhybridrootmotion>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerMoveDualHybridRootMotion"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_Character::ServerMoveDual_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedual>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerMoveDual"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_Character::ServerMove_Sender_Response(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermove>& Op)
-{
-	Interop->HandleCommandResponse(TEXT("ServerMove"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
-}
-
-void USpatialTypeBinding_Character::ClientCheatWalk_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op)
+void USpatialTypeBinding_Character::ClientCheatWalk_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -2790,32 +2718,28 @@ void USpatialTypeBinding_Character::ClientCheatWalk_Receiver(const worker::Comma
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCheatWalk_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCheatWalk_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		ACharacter* TargetObject = Cast<ACharacter>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientCheatWalk_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientCheatWalk_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientCheatWalk_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientCheatWalk_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCheatWalk, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCheatWalk, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientCheatWalk_Implementation();
 
 		// Send command response.
@@ -2823,10 +2747,10 @@ void USpatialTypeBinding_Character::ClientCheatWalk_Receiver(const worker::Comma
 		Connection->SendCommandResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_Character::ClientCheatGhost_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>& Op)
+void USpatialTypeBinding_Character::ClientCheatGhost_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -2834,32 +2758,28 @@ void USpatialTypeBinding_Character::ClientCheatGhost_Receiver(const worker::Comm
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCheatGhost_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCheatGhost_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		ACharacter* TargetObject = Cast<ACharacter>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientCheatGhost_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientCheatGhost_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientCheatGhost_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientCheatGhost_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCheatGhost, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCheatGhost, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientCheatGhost_Implementation();
 
 		// Send command response.
@@ -2867,10 +2787,10 @@ void USpatialTypeBinding_Character::ClientCheatGhost_Receiver(const worker::Comm
 		Connection->SendCommandResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_Character::ClientCheatFly_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>& Op)
+void USpatialTypeBinding_Character::ClientCheatFly_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -2878,32 +2798,28 @@ void USpatialTypeBinding_Character::ClientCheatFly_Receiver(const worker::Comman
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCheatFly_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientCheatFly_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		ACharacter* TargetObject = Cast<ACharacter>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientCheatFly_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientCheatFly_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientCheatFly_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientCheatFly_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCheatFly, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientCheatFly, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientCheatFly_Implementation();
 
 		// Send command response.
@@ -2911,10 +2827,10 @@ void USpatialTypeBinding_Character::ClientCheatFly_Receiver(const worker::Comman
 		Connection->SendCommandResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientveryshortadjustposition>& Op)
+void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientveryshortadjustposition>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -2922,23 +2838,20 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Receiver(const
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientVeryShortAdjustPosition_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientVeryShortAdjustPosition_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientVeryShortAdjustPosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientVeryShortAdjustPosition_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientVeryShortAdjustPosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientVeryShortAdjustPosition_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -2973,10 +2886,9 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Receiver(const
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientVeryShortAdjustPosition_Receiver: NewBase (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientVeryShortAdjustPosition_OnCommandRequest: NewBase %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -2999,11 +2911,10 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Receiver(const
 		ServerMovementMode = uint8(uint8(Op.Request.field_servermovementmode()));
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientVeryShortAdjustPosition, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientVeryShortAdjustPosition, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientVeryShortAdjustPosition_Implementation(TimeStamp, NewLoc, NewBase, NewBaseBoneName, bHasBase, bBaseRelativePosition, ServerMovementMode);
 
 		// Send command response.
@@ -3011,10 +2922,10 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_Receiver(const
 		Connection->SendCommandResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientveryshortadjustposition>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionsourceposition>& Op)
+void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionsourceposition>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -3022,23 +2933,20 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Receive
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustRootMotionSourcePosition_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustRootMotionSourcePosition_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientAdjustRootMotionSourcePosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientAdjustRootMotionSourcePosition_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientAdjustRootMotionSourcePosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientAdjustRootMotionSourcePosition_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -3107,10 +3015,9 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Receive
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustRootMotionSourcePosition_Receiver: ServerBase (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustRootMotionSourcePosition_OnCommandRequest: ServerBase %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -3133,11 +3040,10 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Receive
 		ServerMovementMode = uint8(uint8(Op.Request.field_servermovementmode()));
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientAdjustRootMotionSourcePosition, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientAdjustRootMotionSourcePosition, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientAdjustRootMotionSourcePosition_Implementation(TimeStamp, ServerRootMotion, bHasAnimRootMotion, ServerMontageTrackPosition, ServerLoc, ServerRotation, ServerVelZ, ServerBase, ServerBoneName, bHasBase, bBaseRelativePosition, ServerMovementMode);
 
 		// Send command response.
@@ -3145,10 +3051,10 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_Receive
 		Connection->SendCommandResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionsourceposition>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionposition>& Op)
+void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionposition>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -3156,23 +3062,20 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Receiver(cons
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustRootMotionPosition_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustRootMotionPosition_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientAdjustRootMotionPosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientAdjustRootMotionPosition_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientAdjustRootMotionPosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientAdjustRootMotionPosition_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -3224,10 +3127,9 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Receiver(cons
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustRootMotionPosition_Receiver: ServerBase (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustRootMotionPosition_OnCommandRequest: ServerBase %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -3250,11 +3152,10 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Receiver(cons
 		ServerMovementMode = uint8(uint8(Op.Request.field_servermovementmode()));
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientAdjustRootMotionPosition, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientAdjustRootMotionPosition, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientAdjustRootMotionPosition_Implementation(TimeStamp, ServerMontageTrackPosition, ServerLoc, ServerRotation, ServerVelZ, ServerBase, ServerBoneName, bHasBase, bBaseRelativePosition, ServerMovementMode);
 
 		// Send command response.
@@ -3262,10 +3163,10 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_Receiver(cons
 		Connection->SendCommandResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionposition>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_Character::ClientAdjustPosition_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustposition>& Op)
+void USpatialTypeBinding_Character::ClientAdjustPosition_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustposition>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -3273,23 +3174,20 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Receiver(const worker::
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustPosition_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustPosition_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientAdjustPosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientAdjustPosition_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientAdjustPosition_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientAdjustPosition_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -3333,10 +3231,9 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Receiver(const worker::
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustPosition_Receiver: NewBase (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAdjustPosition_OnCommandRequest: NewBase %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -3359,11 +3256,10 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Receiver(const worker::
 		ServerMovementMode = uint8(uint8(Op.Request.field_servermovementmode()));
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientAdjustPosition, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientAdjustPosition, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientAdjustPosition_Implementation(TimeStamp, NewLoc, NewVel, NewBase, NewBaseBoneName, bHasBase, bBaseRelativePosition, ServerMovementMode);
 
 		// Send command response.
@@ -3371,10 +3267,10 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_Receiver(const worker::
 		Connection->SendCommandResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustposition>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_Character::ClientAckGoodMove_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientackgoodmove>& Op)
+void USpatialTypeBinding_Character::ClientAckGoodMove_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientackgoodmove>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -3382,23 +3278,20 @@ void USpatialTypeBinding_Character::ClientAckGoodMove_Receiver(const worker::Com
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAckGoodMove_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ClientAckGoodMove_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ClientAckGoodMove_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ClientAckGoodMove_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ClientAckGoodMove_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ClientAckGoodMove_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -3407,11 +3300,10 @@ void USpatialTypeBinding_Character::ClientAckGoodMove_Receiver(const worker::Com
 		TimeStamp = Op.Request.field_timestamp();
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientAckGoodMove, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientAckGoodMove, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ClientAckGoodMove_Implementation(TimeStamp);
 
 		// Send command response.
@@ -3419,10 +3311,10 @@ void USpatialTypeBinding_Character::ClientAckGoodMove_Receiver(const worker::Com
 		Connection->SendCommandResponse<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientackgoodmove>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_Character::ServerMoveOld_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermoveold>& Op)
+void USpatialTypeBinding_Character::ServerMoveOld_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermoveold>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -3430,23 +3322,20 @@ void USpatialTypeBinding_Character::ServerMoveOld_Receiver(const worker::Command
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveOld_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveOld_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerMoveOld_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerMoveOld_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerMoveOld_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerMoveOld_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -3468,11 +3357,10 @@ void USpatialTypeBinding_Character::ServerMoveOld_Receiver(const worker::Command
 		OldMoveFlags = uint8(uint8(Op.Request.field_oldmoveflags()));
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerMoveOld, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerMoveOld, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerMoveOld_Implementation(OldTimeStamp, OldAccel, OldMoveFlags);
 
 		// Send command response.
@@ -3480,10 +3368,10 @@ void USpatialTypeBinding_Character::ServerMoveOld_Receiver(const worker::Command
 		Connection->SendCommandResponse<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermoveold>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedualhybridrootmotion>& Op)
+void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedualhybridrootmotion>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -3491,23 +3379,20 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Receiver(cons
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveDualHybridRootMotion_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveDualHybridRootMotion_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerMoveDualHybridRootMotion_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerMoveDualHybridRootMotion_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerMoveDualHybridRootMotion_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerMoveDualHybridRootMotion_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -3584,10 +3469,9 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Receiver(cons
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveDualHybridRootMotion_Receiver: ClientMovementBase (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveDualHybridRootMotion_OnCommandRequest: ClientMovementBase %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -3602,11 +3486,10 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Receiver(cons
 		ClientMovementMode = uint8(uint8(Op.Request.field_clientmovementmode()));
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerMoveDualHybridRootMotion, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerMoveDualHybridRootMotion, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerMoveDualHybridRootMotion_Implementation(TimeStamp0, InAccel0, PendingFlags, View0, TimeStamp, InAccel, ClientLoc, NewFlags, ClientRoll, View, ClientMovementBase, ClientBaseBoneName, ClientMovementMode);
 
 		// Send command response.
@@ -3614,10 +3497,10 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_Receiver(cons
 		Connection->SendCommandResponse<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedualhybridrootmotion>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_Character::ServerMoveDual_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedual>& Op)
+void USpatialTypeBinding_Character::ServerMoveDual_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedual>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -3625,23 +3508,20 @@ void USpatialTypeBinding_Character::ServerMoveDual_Receiver(const worker::Comman
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveDual_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveDual_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerMoveDual_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerMoveDual_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerMoveDual_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerMoveDual_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -3718,10 +3598,9 @@ void USpatialTypeBinding_Character::ServerMoveDual_Receiver(const worker::Comman
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveDual_Receiver: ClientMovementBase (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMoveDual_OnCommandRequest: ClientMovementBase %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -3736,11 +3615,10 @@ void USpatialTypeBinding_Character::ServerMoveDual_Receiver(const worker::Comman
 		ClientMovementMode = uint8(uint8(Op.Request.field_clientmovementmode()));
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerMoveDual, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerMoveDual, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerMoveDual_Implementation(TimeStamp0, InAccel0, PendingFlags, View0, TimeStamp, InAccel, ClientLoc, NewFlags, ClientRoll, View, ClientMovementBase, ClientBaseBoneName, ClientMovementMode);
 
 		// Send command response.
@@ -3748,10 +3626,10 @@ void USpatialTypeBinding_Character::ServerMoveDual_Receiver(const worker::Comman
 		Connection->SendCommandResponse<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedual>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
 }
 
-void USpatialTypeBinding_Character::ServerMove_Receiver(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermove>& Op)
+void USpatialTypeBinding_Character::ServerMove_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermove>& Op)
 {
 	auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>
 	{
@@ -3759,23 +3637,20 @@ void USpatialTypeBinding_Character::ServerMove_Receiver(const worker::CommandReq
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMove_Receiver: Target object (entity id %lld, offset %d) is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMove_OnCommandRequest: Target object %s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
-				TargetObjectRef.entity(),
-				TargetObjectRef.offset());
+				*ObjectRefToString(TargetObjectRef));
 			return TOptional<improbable::unreal::UnrealObjectRef>(TargetObjectRef);
 		}
 		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		UCharacterMovementComponent* TargetObject = Cast<UCharacterMovementComponent>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%s: ServerMove_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) does not correspond to a UObject."),
+		checkf(TargetObjectUntyped, TEXT("%s: ServerMove_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%s: ServerMove_Receiver: Object Ref (entity: %llu, offset: %u) (NetGUID %s) is the wrong type. Name: %s"),
+		checkf(TargetObject, TEXT("%s: ServerMove_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset(),
+			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
@@ -3831,10 +3706,9 @@ void USpatialTypeBinding_Character::ServerMove_Receiver(const worker::CommandReq
 				}
 				else
 				{
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMove_Receiver: ClientMovementBase (entity id %lld, offset %d) is not resolved on this worker."),
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerMove_OnCommandRequest: ClientMovementBase %s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
-						ObjectRef.entity(),
-						ObjectRef.offset());
+						*ObjectRefToString(ObjectRef));
 					return TOptional<improbable::unreal::UnrealObjectRef>(ObjectRef);
 				}
 			}
@@ -3849,11 +3723,10 @@ void USpatialTypeBinding_Character::ServerMove_Receiver(const worker::CommandReq
 		ClientMovementMode = uint8(uint8(Op.Request.field_clientmovementmode()));
 
 		// Call implementation.
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerMove, target: %s (entity: %llu, offset: %u)"),
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerMove, target: %s %s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
-			TargetObjectRef.entity(),
-			TargetObjectRef.offset());
+			*ObjectRefToString(TargetObjectRef));
 		TargetObject->ServerMove_Implementation(TimeStamp, InAccel, ClientLoc, CompressedMoveFlags, ClientRoll, View, ClientMovementBase, ClientBaseBoneName, ClientMovementMode);
 
 		// Send command response.
@@ -3861,5 +3734,65 @@ void USpatialTypeBinding_Character::ServerMove_Receiver(const worker::CommandReq
 		Connection->SendCommandResponse<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermove>(Op.RequestId, {});
 		return {};
 	};
-	Interop->SendCommandResponse(Receiver);
+	Interop->SendCommandResponse_Internal(Receiver);
+}
+
+void USpatialTypeBinding_Character::ClientCheatWalk_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatwalk>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientCheatWalk"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_Character::ClientCheatGhost_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatghost>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientCheatGhost"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_Character::ClientCheatFly_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientcheatfly>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientCheatFly"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientveryshortadjustposition>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientVeryShortAdjustPosition"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionsourceposition>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientAdjustRootMotionSourcePosition"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustrootmotionposition>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientAdjustRootMotionPosition"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_Character::ClientAdjustPosition_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientadjustposition>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientAdjustPosition"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_Character::ClientAckGoodMove_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterClientRPCs::Commands::Clientackgoodmove>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ClientAckGoodMove"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_Character::ServerMoveOld_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermoveold>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerMoveOld"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedualhybridrootmotion>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerMoveDualHybridRootMotion"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_Character::ServerMoveDual_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermovedual>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerMoveDual"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
+}
+
+void USpatialTypeBinding_Character::ServerMove_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealCharacterServerRPCs::Commands::Servermove>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerMove"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }
