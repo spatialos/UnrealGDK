@@ -99,4 +99,6 @@ private:
 
 	UPROPERTY(transient)
 	USpatialNetDriver* SpatialNetDriver;
+
+	FVector LastSpatialPosition;
 };

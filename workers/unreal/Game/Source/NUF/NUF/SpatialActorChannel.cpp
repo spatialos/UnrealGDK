@@ -140,6 +140,9 @@ bool USpatialActorChannel::ReplicateActor()
 	
 	const UWorld* const ActorWorld = Actor->GetWorld();
 
+	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+	check(Interop);
+
 	// Time how long it takes to replicate this particular actor
 	STAT(FScopeCycleCounterUObject FunctionScope(Actor));
 
@@ -233,10 +236,7 @@ bool USpatialActorChannel::ReplicateActor()
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
 	if (RepFlags.bNetInitial || Changed.Num() > 0)
-	{
-		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
-		check(Interop);
-		
+	{		
 		if (RepFlags.bNetInitial)
 		{
 			// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
@@ -290,6 +290,30 @@ bool USpatialActorChannel::ReplicateActor()
 		bWroteSomethingImportant = true;
 		ActorReplicator->RepState->HistoryEnd++;
 		UpdateChangelistHistory(ActorReplicator->RepState);
+	}
+
+	// Update SpatialOS position. PlayerController's are a special case here. To ensure that the PlayerController and its pawn is migrated
+	// between workers at the same time (which is not guaranteed), we ensure that we update the position component of the PlayerController
+	// at the same time as the pawn.
+	const float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
+	if (!PC)
+	{
+		if (FVector::DistSquared(Actor->GetActorLocation(), LastSpatialPosition) > SpatialPositionThreshold)
+		{
+			LastSpatialPosition = Actor->GetActorLocation();
+			Interop->SendSpatialPositionUpdate(GetEntityId(), LastSpatialPosition);
+
+			// If we're a pawn and are controlled by a player controller, update the player controllers position too.
+			APawn* Pawn = Cast<APawn>(Actor);
+			if (Pawn && Cast<APlayerController>(Pawn->GetController()))
+			{
+				USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Pawn->GetController()));
+				if (ControllerActorChannel)
+				{
+					Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
+				}
+			}
+		}
 	}
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;

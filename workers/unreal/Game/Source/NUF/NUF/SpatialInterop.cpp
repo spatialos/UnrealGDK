@@ -106,6 +106,18 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 	return CreateEntityRequestId;
 }
 
+void USpatialInterop::SendSpatialPositionUpdate(const worker::EntityId& EntityId, const FVector& Location)
+{
+	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
+	if (!PinnedConnection.IsValid())
+	{
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
+	}
+	improbable::Position::Update PositionUpdate;
+	PositionUpdate.set_coords(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Location));
+	PinnedConnection->SendComponentUpdate<improbable::Position>(EntityId, PositionUpdate);
+}
+
 void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed)
 {
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
