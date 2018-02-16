@@ -175,7 +175,7 @@ void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Func
 	Binding->SendRPCCommand(Frame->Object, Function, Frame);
 }
 
-void USpatialInterop::ResolveObject(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
+void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
 	UE_LOG(LogSpatialOSInterop, Log, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRefToString(ObjectRef));
 	ResolvePendingOutgoingObjectUpdates(Object);

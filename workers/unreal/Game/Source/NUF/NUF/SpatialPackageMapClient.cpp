@@ -124,7 +124,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	RegisterObjectRef(NetGUID, ObjectRef);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %llu"),
 		*Actor->GetName(), *NetGUID.ToString(), EntityId.ToSpatialEntityId());
-	Interop->ResolveObject(Actor, ObjectRef);
+	Interop->ResolvePendingOperations(Actor, ObjectRef);
 
 	// Allocate NetGUIDs for each subobject, sorting alphabetically to ensure stable references.
 	TArray<UObject*> ActorSubobjects;
@@ -138,7 +138,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
 		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
 			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *ObjectRefToString(SubobjectRef));
-		Interop->ResolveObject(Subobject, SubobjectRef);
+		Interop->ResolvePendingOperations(Subobject, SubobjectRef);
 	}
 
 	return NetGUID;
@@ -202,7 +202,7 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 
 		// Register static NetGUID.
 		FNetworkGUID NetGUID = AssignStaticActorNetGUID(Actor, FNetworkGUID(Pair.first));
-		Interop->ResolveObject(Actor, GetUnrealObjectRefFromNetGUID(NetGUID));
+		Interop->ResolvePendingOperations(Actor, GetUnrealObjectRefFromNetGUID(NetGUID));
 
 		// Deal with sub-objects of static objects.
 		// TODO(David): Ensure that the NetGUID allocated in the snapshot generator (which are always > 0x7fffffff) ensures that there's enough space
@@ -214,7 +214,7 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 		{
 			SubobjectOffset++;
 			FNetworkGUID SubobjectNetGUID = AssignStaticActorNetGUID(Subobject, FNetworkGUID(Pair.first + SubobjectOffset));
-			Interop->ResolveObject(Subobject, GetUnrealObjectRefFromNetGUID(SubobjectNetGUID));
+			Interop->ResolvePendingOperations(Subobject, GetUnrealObjectRefFromNetGUID(SubobjectNetGUID));
 		}
 	}
 }

@@ -102,7 +102,8 @@ public:
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
 
 	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.
-	void ResolveObject(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
+	// This will dequeue pending object ref updates and RPCs which depend on this UObject existing in the package map.
+	void ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
 	void AddActorChannel_Client(const worker::EntityId& EntityId, USpatialActorChannel* Channel);
