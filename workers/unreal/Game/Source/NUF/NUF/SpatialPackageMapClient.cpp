@@ -122,9 +122,9 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	FNetworkGUID NetGUID = GetOrAssignNetGUID_NUF(Actor);
 	improbable::unreal::UnrealObjectRef ObjectRef{EntityId.ToSpatialEntityId(), 0};
 	RegisterObjectRef(NetGUID, ObjectRef);
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %d"),
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %llu"),
 		*Actor->GetName(), *NetGUID.ToString(), EntityId.ToSpatialEntityId());
-	Interop->OnResolveObject(Actor, ObjectRef);
+	Interop->ResolvePendingOperations(Actor, ObjectRef);
 
 	// Allocate NetGUIDs for each subobject, sorting alphabetically to ensure stable references.
 	TArray<UObject*> ActorSubobjects;
@@ -136,9 +136,9 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 		FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_NUF(Subobject);
 		improbable::unreal::UnrealObjectRef SubobjectRef{EntityId.ToSpatialEntityId(), SubobjectOffset};
 		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
-		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: (entity ID: %d, offset: %d)"),
-			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), EntityId.ToSpatialEntityId(), SubobjectOffset);
-		Interop->OnResolveObject(Subobject, SubobjectRef);
+		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
+			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *ObjectRefToString(SubobjectRef));
+		Interop->ResolvePendingOperations(Subobject, SubobjectRef);
 	}
 
 	return NetGUID;
@@ -202,7 +202,7 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 
 		// Register static NetGUID.
 		FNetworkGUID NetGUID = AssignStaticActorNetGUID(Actor, FNetworkGUID(Pair.first));
-		Interop->OnResolveObject(Actor, GetUnrealObjectRefFromNetGUID(NetGUID));
+		Interop->ResolvePendingOperations(Actor, GetUnrealObjectRefFromNetGUID(NetGUID));
 
 		// Deal with sub-objects of static objects.
 		// TODO(David): Ensure that the NetGUID allocated in the snapshot generator (which are always > 0x7fffffff) ensures that there's enough space
@@ -214,7 +214,7 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 		{
 			SubobjectOffset++;
 			FNetworkGUID SubobjectNetGUID = AssignStaticActorNetGUID(Subobject, FNetworkGUID(Pair.first + SubobjectOffset));
-			Interop->OnResolveObject(Subobject, GetUnrealObjectRefFromNetGUID(SubobjectNetGUID));
+			Interop->ResolvePendingOperations(Subobject, GetUnrealObjectRefFromNetGUID(SubobjectNetGUID));
 		}
 	}
 }
@@ -288,12 +288,11 @@ FNetworkGUID FSpatialNetGUIDCache::AssignStaticActorNetGUID(const UObject* Objec
 	improbable::unreal::UnrealObjectRef ObjectRef{0, StaticNetGUID.Value};
 	RegisterObjectRef(StaticNetGUID, ObjectRef);
 
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: Registered static object %s. NetGUID %s (entity ID: %llu, offset: %u)."),
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: Registered static object %s. NetGUID: %s, Object Ref: %s."),
 		*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
 		*Object->GetName(),
 		*StaticNetGUID.ToString(),
-		ObjectRef.entity(),
-		ObjectRef.offset());
+		*ObjectRefToString(ObjectRef));
 
 	return StaticNetGUID;
 }

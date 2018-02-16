@@ -107,7 +107,6 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 
 			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(World->GetNetDriver());
 			AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityToSpawn);
-			USpatialPackageMapClient* PMC = nullptr;
 
 			UE_LOG(LogSpatialOSNUF, Warning, TEXT("Received add entity op for %d"), EntityToSpawn.ToSpatialEntityId());
 
@@ -143,19 +142,17 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 					EntityRegistry->AddToRegistry(EntityToSpawn, EntityActor);
 
 					//todo-giray: When we have multiple servers, this won't work. On which connection would we create the channel?
-					USpatialActorChannel* Ch = nullptr;
 					UNetConnection* Connection = Driver->GetSpatialOSNetConnection();
 
-					PMC = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-					Ch = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, false));
+					USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
+					USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, false));
 					
-					check(Ch);
-					Driver->GetSpatialInterop()->AddClientActorChannel(EntityToSpawn.ToSpatialEntityId(), Ch);
+					check(Channel);
 					
-					PMC->ResolveEntityActor(EntityActor, EntityToSpawn);
-					Ch->SetChannelActor(EntityActor);
+					PackageMap->ResolveEntityActor(EntityActor, EntityToSpawn);
+					Channel->SetChannelActor(EntityActor);
 
-					//This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
+					// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 					// a player index. For now we don't support split screen, so the number is always 0.
 					if (Driver->ServerConnection)
 					{
@@ -172,15 +169,8 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 						}
 					}
 
-					// Apply queued updates for this entity ID to the new actor channel.
-					USpatialTypeBinding* Binding = Driver->GetSpatialInterop()->GetTypeBindingByClass(EntityActor->GetClass());
-					if (Binding)
-					{
-						Binding->ApplyQueuedStateToChannel(Ch);
-					}
-
-					// Set up component interests to receive single client component updates (now that roles have been set up).
-					Driver->GetSpatialInterop()->SetComponentInterests(Ch, EntityToSpawn.ToSpatialEntityId());
+					// Inform USpatialInterop of this new client facing actor channel.
+					Driver->GetSpatialInterop()->AddActorChannel_Client(EntityToSpawn.ToSpatialEntityId(), Channel);
 				}
 				EntityActor->PostNetInit();				
 			}
@@ -201,8 +191,7 @@ void USpatialInteropPipelineBlock::AddComponents(const TWeakPtr<worker::View>& I
 	TArray<FComponentIdentifier> InitialisedComponents;
 
 	// Go through the add component ops that have been queued
-	// If the entity the component belongs to is already spawned, create component & apply initial
-	// state.
+	// If the entity the component belongs to is already spawned, create component & apply initial state.
 	// If not, try again later
 	for (auto& ComponentToAdd : ComponentsToAdd)
 	{

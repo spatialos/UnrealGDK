@@ -6,10 +6,11 @@
 #include "SpatialOS.h"
 #include "EntityBuilder.h"
 
+#include "../SpatialConstants.h"
+#include "../SpatialUnrealObjectRef.h"
 #include "../SpatialActorChannel.h"
 #include "../SpatialPackageMapClient.h"
 #include "../SpatialNetDriver.h"
-#include "../SpatialConstants.h"
 #include "../SpatialInterop.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_GameStateBase::GetHandlePropertyMap()
@@ -56,69 +57,75 @@ void USpatialTypeBinding_GameStateBase::Init(USpatialInterop* InInterop, USpatia
 void USpatialTypeBinding_GameStateBase::BindToView()
 {
 	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
-	SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>([this](
-		const worker::AddComponentOp<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>& Op)
+	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
 	{
-		auto Update = improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData::Update::FromInitialData(Op.Data);
-		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
-		if (ActorChannel)
+		SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>([this](
+			const worker::AddComponentOp<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>& Op)
 		{
-			ClientReceiveUpdate_SingleClient(ActorChannel, Update);
-		}
-		else
+			auto Update = improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData::Update::FromInitialData(Op.Data);
+			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+			if (ActorChannel)
+			{
+				ClientReceiveUpdate_SingleClient(ActorChannel, Update);
+			}
+			else
+			{
+				PendingSingleClientData.Add(Op.EntityId, Op.Data);
+			}
+		});
+		SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>& Op)
 		{
-			PendingSingleClientData.Add(Op.EntityId, Op.Data);
-		}
-	});
-	SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>([this](
-		const worker::ComponentUpdateOp<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>& Op)
-	{
-		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
-		if (ActorChannel)
+			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+			if (ActorChannel)
+			{
+				ClientReceiveUpdate_SingleClient(ActorChannel, Op.Update);
+			}
+			else
+			{
+				Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
+			}
+		});
+		MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>([this](
+			const worker::AddComponentOp<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>& Op)
 		{
-			ClientReceiveUpdate_SingleClient(ActorChannel, Op.Update);
-		}
-		else
+			auto Update = improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData::Update::FromInitialData(Op.Data);
+			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+			if (ActorChannel)
+			{
+				ClientReceiveUpdate_MultiClient(ActorChannel, Update);
+			}
+			else
+			{
+				PendingMultiClientData.Add(Op.EntityId, Op.Data);
+			}
+		});
+		MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>& Op)
 		{
-			Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
-		}
-	});
-	MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>([this](
-		const worker::AddComponentOp<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>& Op)
-	{
-		auto Update = improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData::Update::FromInitialData(Op.Data);
-		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
-		if (ActorChannel)
-		{
-			ClientReceiveUpdate_MultiClient(ActorChannel, Update);
-		}
-		else
-		{
-			PendingMultiClientData.Add(Op.EntityId, Op.Data);
-		}
-	});
-	MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>([this](
-		const worker::ComponentUpdateOp<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>& Op)
-	{
-		USpatialActorChannel* ActorChannel = Interop->GetClientActorChannel(Op.EntityId);
-		if (ActorChannel)
-		{
-			ClientReceiveUpdate_MultiClient(ActorChannel, Op.Update);
-		}
-		else
-		{
-			Op.Update.ApplyTo(PendingMultiClientData.FindOrAdd(Op.EntityId));
-		}
-	});
+			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+			if (ActorChannel)
+			{
+				ClientReceiveUpdate_MultiClient(ActorChannel, Op.Update);
+			}
+			else
+			{
+				Op.Update.ApplyTo(PendingMultiClientData.FindOrAdd(Op.EntityId));
+			}
+		});
+	}
 }
 
 void USpatialTypeBinding_GameStateBase::UnbindFromView()
 {
 	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
-	View->Remove(SingleClientAddCallback);
-	View->Remove(SingleClientUpdateCallback);
-	View->Remove(MultiClientAddCallback);
-	View->Remove(MultiClientUpdateCallback);
+	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
+	{
+		View->Remove(SingleClientAddCallback);
+		View->Remove(SingleClientUpdateCallback);
+		View->Remove(MultiClientAddCallback);
+		View->Remove(MultiClientUpdateCallback);
+	}
 	for (auto& Callback : RPCReceiverCallbacks)
 	{
 		View->Remove(Callback);
@@ -319,7 +326,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->AddPendingOutgoingObjectRefUpdate(Value, Channel, 5);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 5);
 				}
 				else
 				{
@@ -355,7 +362,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->AddPendingOutgoingObjectRefUpdate(Value, Channel, 7);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 7);
 				}
 				else
 				{
@@ -406,7 +413,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->AddPendingOutgoingObjectRefUpdate(Value, Channel, 12);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 12);
 				}
 				else
 				{
@@ -443,7 +450,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
-					Interop->AddPendingOutgoingObjectRefUpdate(Value, Channel, 15);
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 15);
 				}
 				else
 				{
@@ -460,14 +467,14 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 		{
 			TSubclassOf<AGameModeBase>  Value = *(reinterpret_cast<TSubclassOf<AGameModeBase>  const*>(Data));
 
-			// UNSUPPORTED UClass
+			// UNSUPPORTED UClassProperty OutUpdate.set_field_gamemodeclass(Value);
 			break;
 		}
 		case 17: // field_spectatorclass
 		{
 			TSubclassOf<ASpectatorPawn>  Value = *(reinterpret_cast<TSubclassOf<ASpectatorPawn>  const*>(Data));
 
-			// UNSUPPORTED UClass
+			// UNSUPPORTED UClassProperty OutUpdate.set_field_spectatorclass(Value);
 			break;
 		}
 		case 18: // field_breplicatedhasbegunplay
@@ -529,7 +536,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -555,7 +562,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -581,7 +588,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -608,7 +615,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -642,16 +649,15 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->AddPendingIncomingObjectRefUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -659,7 +665,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -687,7 +693,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -721,16 +727,15 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->AddPendingIncomingObjectRefUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -738,7 +743,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -764,7 +769,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -789,7 +794,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -814,7 +819,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -834,7 +839,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			Value = FName(((*Update.field_attachmentreplication_attachsocket().data())).data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -868,16 +873,15 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->AddPendingIncomingObjectRefUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -885,7 +889,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -906,7 +910,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_role().data())));
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -932,7 +936,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			}
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -966,16 +970,15 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: (entity: %llu, offset: %u). actor %s (%lld), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
-							ObjectRef.entity(),
-							ObjectRef.offset(),
+							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
 							*Data.Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->AddPendingIncomingObjectRefUpdate(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
 					}
 				}
 			}
@@ -983,7 +986,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1002,12 +1005,12 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			bool bWriteObjectProperty = true;
 			TSubclassOf<AGameModeBase>  Value;
 
-			// UNSUPPORTED UClass
+			// UNSUPPORTED UClassProperty Value (*Update.field_gamemodeclass().data())
 
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1026,12 +1029,12 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			bool bWriteObjectProperty = true;
 			TSubclassOf<ASpectatorPawn>  Value;
 
-			// UNSUPPORTED UClass
+			// UNSUPPORTED UClassProperty Value (*Update.field_spectatorclass().data())
 
 			if (bWriteObjectProperty)
 			{
 				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
@@ -1052,7 +1055,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_breplicatedhasbegunplay().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
@@ -1072,7 +1075,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			Value = (*Update.field_replicatedworldtimeseconds().data());
 
 			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
