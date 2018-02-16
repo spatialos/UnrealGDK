@@ -137,7 +137,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		AddClientConnection(Connection);
 		//Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
 		Connection->SetClientLoginState(EClientLoginState::Welcomed);
-		Interop->Init(false, SpatialOSInstance, this, TimerManager);
+		Interop->Init(SpatialOSInstance, this, TimerManager);
 	}
 }
 

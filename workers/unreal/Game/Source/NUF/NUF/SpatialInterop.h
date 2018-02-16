@@ -43,35 +43,40 @@ private:
 // An general version of worker::RequestId.
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
 
-// Stores the result of an attempt to call an RPC sender function. Either we have an unresolved object, or we
-// sent a command request.
-struct FRPCRequestResult
+// Stores the result of an attempt to call an RPC sender function. Either we have an unresolved object which needs
+// to be resolved before we can send this RPC, or we successfully sent a command request.
+struct FRPCCommandRequestResult
 {
 	UObject* UnresolvedObject;
 	FUntypedRequestId RequestId;
 
-	FRPCRequestResult() = delete;
-	FRPCRequestResult(UObject* UnresolvedObject) : UnresolvedObject{UnresolvedObject}, RequestId{0} {}
-	FRPCRequestResult(FUntypedRequestId RequestId) : UnresolvedObject{nullptr}, RequestId{RequestId} {}
+	FRPCCommandRequestResult() = delete;
+	FRPCCommandRequestResult(UObject* UnresolvedObject) : UnresolvedObject{UnresolvedObject}, RequestId{0} {}
+	FRPCCommandRequestResult(FUntypedRequestId RequestId) : UnresolvedObject{nullptr}, RequestId{RequestId} {}
 };
 
 // Function storing a command request operation, capturing all arguments by value.
-using FRPCRequestFunction = TFunction<FRPCRequestResult()>;
+using FRPCCommandRequestFunc = TFunction<FRPCCommandRequestResult()>;
+
+// Stores the result of attempting to receive an RPC command. We either return an unresolved object which needs
+// to be resolved before the RPC implementation can be called successfully, or nothing, which indicates that
+// the RPC implementation was called successfully.
+using FRPCCommandResponseResult = TOptional<improbable::unreal::UnrealObjectRef>;
 
 // Function storing a command response operation, capturing the command request op by value.
-using FRPCResponderFunction = TFunction<TOptional<improbable::unreal::UnrealObjectRef>()>;
+using FRPCCommandResponseFunc = TFunction<FRPCCommandResponseResult()>;
 
 // Stores the number of attempts when retrying failed commands.
 class FOutgoingReliableRPC
 {
 public:
-	FOutgoingReliableRPC(FRPCRequestFunction SendCommandRequest) :
+	FOutgoingReliableRPC(FRPCCommandRequestFunc SendCommandRequest) :
 		SendCommandRequest{SendCommandRequest},
 		NumAttempts{1}
 	{
 	}
 
-	FRPCRequestFunction SendCommandRequest;
+	FRPCCommandRequestFunc SendCommandRequest;
 	uint32 NumAttempts;
 };
 
@@ -88,11 +93,9 @@ class NUF_API USpatialInterop : public UObject
 public:
 	USpatialInterop();
 
-	void Init(bool bClient, USpatialOS* Instance, USpatialNetDriver* Driver, FTimerManager* TimerManager);
+	void Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTimerManager* TimerManager);
 
 	// Type bindings.
-	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
-	void UnregisterInteropType(UClass* Class);
 	USpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
 	// Sending component updates and RPCs.
@@ -112,15 +115,15 @@ public:
 	USpatialActorChannel* GetActorChannelByEntityId(const worker::EntityId& EntityId) const;
 
 	// RPC handlers. Used by generated type bindings.
-	void SendCommandRequest_Internal(FRPCRequestFunction Function, bool bReliable);
-	void SendCommandResponse_Internal(FRPCResponderFunction Function);
+	void SendCommandRequest_Internal(FRPCCommandRequestFunc Function, bool bReliable);
+	void SendCommandResponse_Internal(FRPCCommandResponseFunc Function);
 	void HandleCommandResponse_Internal(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
 
 	// Used to queue incoming/outgoing object updates/RPCs. Used by generated type bindings.
 	void QueueOutgoingObjectUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
-	void QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCRequestFunction CommandSender, bool bReliable);
+	void QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable);
 	void QueueIncomingObjectUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, UObjectPropertyBase* Property, uint16 Handle);
-	void QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCResponderFunction Responder);
+	void QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder);
 
 	// Accessors.
 	USpatialOS* GetSpatialOS() const
@@ -139,9 +142,6 @@ private:
 
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
-
-	UPROPERTY()
-	bool bIsClient;
 
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
@@ -164,15 +164,18 @@ private:
 	TMap<USpatialActorChannel*, TArray<uint16>> PendingOutgoingObjectRefHandles;
 
 	// Pending outgoing RPCs.
-	TMap<UObject*, TArray<TPair<FRPCRequestFunction, bool>>> PendingOutgoingRPCs;
+	TMap<UObject*, TArray<TPair<FRPCCommandRequestFunc, bool>>> PendingOutgoingRPCs;
 
 	// Pending incoming object ref property updates.
 	TMap<FHashableUnrealObjectRef, TMap<USpatialActorChannel*, TArray<FPendingIncomingObjectProperty>>> PendingIncomingObjectRefProperties;
 	
 	// Pending incoming RPCs.
-	TMap<FHashableUnrealObjectRef, TArray<FRPCResponderFunction>> PendingIncomingRPCs;
+	TMap<FHashableUnrealObjectRef, TArray<FRPCCommandResponseFunc>> PendingIncomingRPCs;
 
 private:
+	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
+	void UnregisterInteropType(UClass* Class);
+
 	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
 
 	void ResolvePendingOutgoingObjectUpdates(UObject* Object);

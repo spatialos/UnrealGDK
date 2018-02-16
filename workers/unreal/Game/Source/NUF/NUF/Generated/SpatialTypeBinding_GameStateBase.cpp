@@ -467,14 +467,14 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 		{
 			TSubclassOf<AGameModeBase>  Value = *(reinterpret_cast<TSubclassOf<AGameModeBase>  const*>(Data));
 
-			// UNSUPPORTED UClass
+			// UNSUPPORTED UClassProperty OutUpdate.set_field_gamemodeclass(Value);
 			break;
 		}
 		case 17: // field_spectatorclass
 		{
 			TSubclassOf<ASpectatorPawn>  Value = *(reinterpret_cast<TSubclassOf<ASpectatorPawn>  const*>(Data));
 
-			// UNSUPPORTED UClass
+			// UNSUPPORTED UClassProperty OutUpdate.set_field_spectatorclass(Value);
 			break;
 		}
 		case 18: // field_breplicatedhasbegunplay
@@ -1005,7 +1005,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			bool bWriteObjectProperty = true;
 			TSubclassOf<AGameModeBase>  Value;
 
-			// UNSUPPORTED UClass
+			// UNSUPPORTED UClassProperty Value (*Update.field_gamemodeclass().data())
 
 			if (bWriteObjectProperty)
 			{
@@ -1029,7 +1029,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 			bool bWriteObjectProperty = true;
 			TSubclassOf<ASpectatorPawn>  Value;
 
-			// UNSUPPORTED UClass
+			// UNSUPPORTED UClassProperty Value (*Update.field_spectatorclass().data())
 
 			if (bWriteObjectProperty)
 			{

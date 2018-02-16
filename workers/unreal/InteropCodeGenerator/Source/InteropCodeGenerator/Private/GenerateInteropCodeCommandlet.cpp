@@ -539,7 +539,7 @@ void GenerateUnrealToSchemaConversion(
 
 	if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
 	{
-		Writer.Printf("// UNSUPPORTED UEnumProperty - %s = %s;", *SpatialValueSetter, *PropertyValue);
+		Writer.Printf("// UNSUPPORTED UEnumProperty %s(%s);", *SpatialValueSetter, *PropertyValue);
 		//Writer.Print(FString::Printf(TEXT("auto Underlying = %s.GetValue()"), *PropertyValue));
 		//return GenerateUnrealToSchemaConversion(Writer, EnumProperty->GetUnderlyingProperty(), TEXT("Underlying"), ResultName, Handle);
 	}
@@ -608,7 +608,7 @@ void GenerateUnrealToSchemaConversion(
 	{
 		// todo David: UClasses are yet to be implemented. 
 		// this is above UObjectProperty to make sure it isn't caught there.
-		Writer.Print("// UNSUPPORTED UClass");
+		Writer.Printf("// UNSUPPORTED UClassProperty %s(%s);", *SpatialValueSetter, *PropertyValue);
 	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
@@ -651,7 +651,7 @@ void GenerateUnrealToSchemaConversion(
 	}
 	else
 	{
-		Writer.Print("// UNSUPPORTED");
+		Writer.Printf("// UNSUPPORTED U%s (unhandled) %s(%s)", *Property->GetClass()->GetName(), *SpatialValueSetter, *PropertyValue);
 	}
 }
 
@@ -681,7 +681,7 @@ void GeneratePropertyToUnrealConversion(
 	UProperty* Property = PropertyChain[PropertyChain.Num() - 1];
 	if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
 	{
-		Writer.Printf("// UNSUPPORTED (Enum) - %s %s;", *PropertyValue, *SpatialValue);
+		Writer.Printf("// UNSUPPORTED UEnumProperty %s %s", *PropertyValue, *SpatialValue);
 	}
 
 	// Try to special case to custom types we know about
@@ -776,7 +776,7 @@ void GeneratePropertyToUnrealConversion(
 	{
 		// todo David: UClasses are yet to be implemented. 
 		// this is above UObjectProperty to make sure it isn't caught there.
-		Writer.Print("// UNSUPPORTED UClass");
+		Writer.Printf("// UNSUPPORTED UClassProperty %s %s", *PropertyValue, *SpatialValue);
 	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
@@ -821,7 +821,7 @@ void GeneratePropertyToUnrealConversion(
 	}
 	else
 	{
-		Writer.Print("// UNSUPPORTED");
+		Writer.Printf("// UNSUPPORTED U%s (unhandled) %s %s", *Property->GetClass()->GetName(), *PropertyValue, *SpatialValue);
 	}
 }
 
@@ -1878,7 +1878,7 @@ void GenerateForwardingCodeFromLayout(
 			{
 				CapturedArguments.Add((*Param)->GetName());
 			}
-			SourceWriter.Printf("auto Sender = [this, Connection, %s]() mutable -> FRPCRequestResult", *FString::Join(CapturedArguments, TEXT(", ")));
+			SourceWriter.Printf("auto Sender = [this, Connection, %s]() mutable -> FRPCCommandRequestResult", *FString::Join(CapturedArguments, TEXT(", ")));
 			SourceWriter.Print("{").Indent();
 			SourceWriter.Printf(R"""(
 				// Resolve TargetObject.
@@ -1886,7 +1886,7 @@ void GenerateForwardingCodeFromLayout(
 				if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 				{
 					UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: RPC %s queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
-					return FRPCRequestResult{TargetObject};
+					return {TargetObject};
 				})""", *RPC.Function->GetName());
 			SourceWriter.Print();
 			SourceWriter.Print("// Build request.");
@@ -1901,7 +1901,7 @@ void GenerateForwardingCodeFromLayout(
 						SourceWriter.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"%%s: RPC %s queued. %s is unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
 							*RPC.Function->GetName(),
 							*PropertyValue);
-						SourceWriter.Printf("return FRPCRequestResult{%s};", *PropertyValue);
+						SourceWriter.Printf("return {%s};", *PropertyValue);
 					});
 			}
 			SourceWriter.Print();
@@ -1913,7 +1913,7 @@ void GenerateForwardingCodeFromLayout(
 					*TargetObject->GetName(),
 					*ObjectRefToString(TargetObjectRef));
 				auto RequestId = Connection->SendCommandRequest<improbable::unreal::%s::Commands::%s>(TargetObjectRef.entity(), Request, 0);
-				return FRPCRequestResult{RequestId.Id};)""",
+				return {RequestId.Id};)""",
 				*RPC.Function->GetName(),
 				*GetSchemaRPCComponentName(Group, Class),
 				*GetCommandNameFromFunction(RPC.Function));
@@ -1939,7 +1939,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Indent();
 
 			// Generate receiver function.
-			SourceWriter.Print("auto Receiver = [this, Op]() mutable -> TOptional<improbable::unreal::UnrealObjectRef>");
+			SourceWriter.Print("auto Receiver = [this, Op]() mutable -> FRPCCommandResponseResult");
 			SourceWriter.Print("{").Indent();
 
 			auto ObjectResolveFailureGenerator = [&SourceWriter, &RPC, Group, Class](const FString& PropertyName, const FString& ObjectRef)
@@ -1948,7 +1948,7 @@ void GenerateForwardingCodeFromLayout(
 					UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: %s_OnCommandRequest: %s %%s is not resolved on this worker."),
 						*Interop->GetSpatialOS()->GetWorkerId(),
 						*ObjectRefToString(%s));
-					return TOptional<improbable::unreal::UnrealObjectRef>(%s);)""",
+					return {%s};)""",
 					*RPC.Function->GetName(),
 					*PropertyName,
 					*ObjectRef,
