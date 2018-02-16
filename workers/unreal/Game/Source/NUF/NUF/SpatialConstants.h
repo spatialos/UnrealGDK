@@ -1,5 +1,8 @@
 #pragma once
 
+// Needed for improbable::Coordinates
+#include <improbable/standard_library.h>
+
 // Needed for UnrealObjectRef.
 #include <improbable/unreal/core_types.h>
 
@@ -18,5 +21,10 @@ namespace SpatialConstants
 		// Double the time to wait on each failure.
 		uint32 WaitTimeExponentialFactor = 1u << (NumAttempts - 1);
 		return FIRST_COMMAND_RETRY_WAIT_SECONDS * WaitTimeExponentialFactor;
+	}
+
+	FORCEINLINE improbable::Coordinates LocationToSpatialOSCoordinates(const FVector& Location)
+	{
+		return {Location.Y * 0.01f, Location.Z * 0.01f, Location.X * 0.01f};
 	}
 }

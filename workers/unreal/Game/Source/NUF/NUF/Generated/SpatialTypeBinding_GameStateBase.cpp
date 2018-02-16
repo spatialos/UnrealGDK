@@ -172,7 +172,7 @@ worker::Entity USpatialTypeBinding_GameStateBase::CreateActorEntity(const FStrin
 	improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
 	improbable::WorkerRequirementSet AnyUnrealWorkerOrOwningClient{{WorkerAttribute, OwningClientAttribute}};
 
-	const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);
+	const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);
 	return improbable::unreal::FEntityBuilder::Begin()
 		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, WorkersOnly)
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})

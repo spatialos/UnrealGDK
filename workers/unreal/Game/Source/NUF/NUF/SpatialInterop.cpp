@@ -83,7 +83,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 			improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
 			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
 
-			const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Actor->GetActorLocation());
+			const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Actor->GetActorLocation());
 			auto Entity = improbable::unreal::FEntityBuilder::Begin()
 				.AddPositionComponent(SpatialPosition, WorkersOnly)
 				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
@@ -114,7 +114,7 @@ void USpatialInterop::SendSpatialPositionUpdate(const worker::EntityId& EntityId
 		UE_LOG(LogSpatialOSInterop, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
 	}
 	improbable::Position::Update PositionUpdate;
-	PositionUpdate.set_coords(USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Location));
+	PositionUpdate.set_coords(SpatialConstants::LocationToSpatialOSCoordinates(Location));
 	PinnedConnection->SendComponentUpdate<improbable::Position>(EntityId, PositionUpdate);
 }
 

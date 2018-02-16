@@ -1522,7 +1522,7 @@ void GenerateForwardingCodeFromLayout(
 		improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
 		improbable::WorkerRequirementSet AnyUnrealWorkerOrOwningClient{{WorkerAttribute, OwningClientAttribute}};
 
-		const improbable::Coordinates SpatialPosition = USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(Position);)""");
+		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);)""");
 	SourceWriter.Print("return improbable::unreal::FEntityBuilder::Begin()");
 	SourceWriter.Indent();
 	SourceWriter.Printf(R"""(
