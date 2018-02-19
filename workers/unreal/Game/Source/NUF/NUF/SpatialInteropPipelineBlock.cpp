@@ -9,14 +9,17 @@
 #include "CallbackDispatcher.h"
 #include "EngineMinimal.h"
 #include "EntityRegistry.h"
-#include "MetadataAddComponentOp.h"
-#include "MetadataComponent.h"
 #include "GameFramework/PlayerController.h"
-#include "PositionAddComponentOp.h"
-#include "PositionComponent.h"
 #include "SpatialOSConversionFunctionLibrary.h"
 #include "improbable/view.h"
 #include "improbable/worker.h"
+
+#include "PositionAddComponentOp.h"
+#include "PositionComponent.h"
+#include "MetadataAddComponentOp.h"
+#include "MetadataComponent.h"
+#include "UnrealMetadataAddComponentOp.h"
+#include "UnrealMetadataComponent.h"
 #include "UnrealLevelComponent.h"
 
 void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry)
@@ -134,6 +137,15 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 				}
 				else
 				{
+					// We need to wait for UnrealMetadata.
+					// TODO(David): Hide this horrid code by adding a helper to "wait" for a component.
+					UAddComponentOpWrapperBase** UnrealMetadataBaseComponent = ComponentsToAdd.Find(FComponentIdentifier{EntityToSpawn.ToSpatialEntityId(), UUnrealMetadataComponent::ComponentId});
+					if (!(PositionBaseComponent && (*PositionBaseComponent)->IsValidLowLevel()))
+					{
+						continue;
+					}
+					UUnrealMetadataAddComponentOp* UnrealMetadataAddComponentOp = Cast<UUnrealMetadataAddComponentOp>(*UnrealMetadataBaseComponent);
+
 					// Option 3
 					ClassToSpawn = GetNativeEntityClass(MetadataAddComponentOp);
 					UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to spawn a native %s"), *ClassToSpawn->GetName());
@@ -341,7 +353,7 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(
 	return NewActor;
 }
 
-//This is for classes that we register explicitly with Unreal, currently used for "non-native" replication. This logic might change soon.
+// This is for classes that we register explicitly with Unreal, currently used for "non-native" replication. This logic might change soon.
 UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(UMetadataAddComponentOp* MetadataComponent)
 {
 	FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
@@ -363,13 +375,13 @@ UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(UMetadataAddCompo
 	return ClassToSpawn;
 }
 
-//This is for classes that we derive from meta name, mainly to spawn the corresponding actors on clients.
+// This is for classes that we derive from meta name, mainly to spawn the corresponding actors on clients.
 UClass* USpatialInteropPipelineBlock::GetNativeEntityClass(UMetadataAddComponentOp* MetadataComponent)
 {
-	FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
+	FString Metadata = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
 
 	// This is all horrendous, but assume it's a full CDO path if not registered	
-	return FindObject<UClass>(ANY_PACKAGE, *EntityTypeString);	
+	return FindObject<UClass>(ANY_PACKAGE, *Metadata);	
 }
 
 void USpatialInteropPipelineBlock::SetupComponentInterests(

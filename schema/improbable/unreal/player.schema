@@ -2,5 +2,5 @@ package improbable.unreal;
 
 component PlayerControlClient
 {
-    id = 1001;
+    id = 100005;
 }
