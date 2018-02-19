@@ -21,11 +21,6 @@ void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSock
 void USpatialNetConnection::InitLocalConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket, int32 InPacketOverhead)
 {
 	Super::InitLocalConnection(InDriver, InSocket, InURL, InState, InMaxPacket, InPacketOverhead);
-
-	// Set up the UpdateInterop on the client.
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(InDriver);
-	check(SpatialNetDriver);
-	SpatialNetDriver->GetSpatialInterop()->Init(SpatialNetDriver->GetSpatialOS(), SpatialNetDriver, &SpatialNetDriver->GetTimerManager());
 }
 
 void USpatialNetConnection::InitRemoteConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, const class FInternetAddr& InRemoteAddr, EConnectionState InState, int32 InMaxPacket, int32 InPacketOverhead)
