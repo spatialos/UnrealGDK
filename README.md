@@ -28,7 +28,7 @@ Unlike our `UnrealSDK` examples, SpatialOS initialization in NUF happens at the 
 
 ### `USpatialNetConnection`
 
-How we handle net connection presents a major change from Unreal's approach. In our project, there is only one connection as opposed to one connection per player. This connection simply communicates with SpatialOS, which does the heavy work of 
+How we handle net connections diverges somewhat from Unreal's approach. If a worker is managing N players, NUF will create N + 1 `USpatialNetConnection`'s. The first connection is a special "fall back" connection which is used to write the state of objects managed by the worker to SpatialOS, such as static objects or NPCs. The remaining connections are used by each `PlayerController` managed by the worker, and actors which are owned by each player controller are replicated via their player controllers `USpatialNetConnection`. On the client side, there is just one `USpatialNetConnection`, similar to Unreal's current approach.
 
 ### `USpatialInterop`
 
@@ -66,14 +66,15 @@ Note that a majority of the items below are on our short term roadmap.
 
 ## Engine changes:
 
-There is a small number of changes to UE4 source code we have to make. These changes are mostly limited in scope and they only consist of class access, polymorphism, and dll export related changes. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. Our changes can be seen in our `UnrealEngine` repo, `UnrealEngine416_NUF` branch. 
+There is a small number of changes to UE4 source code we have to make. These changes are mostly limited in scope and they only consist of class access, polymorphism, and dll export related changes. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. Our changes can be seen in our `UnrealEngine` repo, `UnrealEngine417_NUF` branch. 
 
 ## How to run:
 
-- Build the engine fork.
+- Build the engine fork, which can be found at `https://github.com/improbable/native-unreal-framework`. Make sure to check out the right branch.
 - Set the uproject to use the engine fork.
 - `spatial worker codegen`
 - `spatial worker build --target=local`
+- `spatial local launch manual.json`
 - Launch PIE with dedicated server + 1 player.
 
 The interop code and schema generated for marshalling updates/RPCs is committed directly to the source tree in `workers/unreal/Game/NUF/Generated` and `schema/unreal/generated` respectively, so the commandlet is not required to be re-run unless the code generator is changed.
