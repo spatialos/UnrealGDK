@@ -1523,7 +1523,12 @@ void GenerateForwardingCodeFromLayout(
 		improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
 		improbable::WorkerRequirementSet AnyUnrealWorkerOrOwningClient{{WorkerAttribute, OwningClientAttribute}};
 
-		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);)""");
+		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);
+		worker::Option<std::string> StaticPath;
+		if (Channel->Actor->IsFullNameStableForNetworking())
+		{
+			StaticPath = {std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}};
+		})""");
 	SourceWriter.Print("return improbable::unreal::FEntityBuilder::Begin()");
 	SourceWriter.Indent();
 	SourceWriter.Printf(R"""(
@@ -1531,7 +1536,7 @@ void GenerateForwardingCodeFromLayout(
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
 		.SetReadAcl(%s)
-		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{}, WorkersOnly))""",
+		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{StaticPath}, WorkersOnly))""",
 		Class->GetName() == TEXT("PlayerController") ? TEXT("AnyUnrealWorkerOrOwningClient") : TEXT("AnyUnrealWorkerOrClient"));
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{

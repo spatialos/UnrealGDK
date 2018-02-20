@@ -3,5 +3,5 @@ package improbable.unreal;
 component UnrealMetadata
 {
     id = 100004;
-    string path = 1;
+    option<string> static_path = 1;
 }

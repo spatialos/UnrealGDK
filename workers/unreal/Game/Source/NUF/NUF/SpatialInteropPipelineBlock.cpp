@@ -137,13 +137,17 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 
 					// Option 3
 					ClassToSpawn = GetNativeEntityClass(MetadataAddComponentOp);
-					FString FullPath = UTF8_TO_TCHAR((*UnrealMetadataAddComponentOp).Data.data()->path().c_str());
-					UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to find object %s of class %s"), *FullPath, *ClassToSpawn->GetName());
-					EntityActor = FindObject<AActor>(World, *FullPath);
-					if (!EntityActor)
+					improbable::unreal::UnrealMetadataData& UnrealMetadata = *(*UnrealMetadataAddComponentOp).Data.data();
+					if (UnrealMetadata.static_path().empty())
 					{
 						UE_LOG(LogSpatialOSNUF, Log, TEXT("Does not exist, attempting to spawn a native %s"), *ClassToSpawn->GetName());
 						EntityActor = SpawnNewEntity(PositionAddComponentOp, World, ClassToSpawn);
+					}
+					else
+					{
+						FString FullPath = UTF8_TO_TCHAR(UnrealMetadata.static_path().data()->c_str());
+						UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to find object %s of class %s"), *FullPath, *ClassToSpawn->GetName());
+						EntityActor = FindObject<AActor>(World, *FullPath);
 					}
 					check(EntityActor);
 					EntityRegistry->AddToRegistry(EntityToSpawn, EntityActor);
@@ -153,7 +157,7 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 
 					USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
 					USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, false));
-					
+
 					check(Channel);
 					
 					PackageMap->ResolveEntityActor(EntityActor, EntityToSpawn);

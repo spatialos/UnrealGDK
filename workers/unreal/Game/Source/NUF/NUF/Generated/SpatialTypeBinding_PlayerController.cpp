@@ -387,12 +387,17 @@ worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FSt
 	improbable::WorkerRequirementSet AnyUnrealWorkerOrOwningClient{{WorkerAttribute, OwningClientAttribute}};
 
 	const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);
+	worker::Option<std::string> StaticPath;
+	if (Channel->Actor->IsFullNameStableForNetworking())
+	{
+		StaticPath = {std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}};
+	}
 	return improbable::unreal::FEntityBuilder::Begin()
 		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, WorkersOnly)
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
 		.SetReadAcl(AnyUnrealWorkerOrOwningClient)
-		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{}, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{StaticPath}, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData>(SingleClientData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData>(MultiClientData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerControllerCompleteData>(improbable::unreal::UnrealPlayerControllerCompleteData::Data{}, WorkersOnly)

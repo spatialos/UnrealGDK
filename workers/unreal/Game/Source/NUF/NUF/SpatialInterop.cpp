@@ -85,12 +85,18 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
 
 			const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Actor->GetActorLocation());
+			worker::Option<std::string> StaticPath;
+			if (Channel->Actor->IsFullNameStableForNetworking())
+			{
+				StaticPath = {std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}};
+			}
+			FString PathName = Channel->Actor->GetPathName(Channel->GetWorld());
 			auto Entity = improbable::unreal::FEntityBuilder::Begin()
 				.AddPositionComponent(SpatialPosition, WorkersOnly)
 				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
 				.SetPersistence(true)
 				.SetReadAcl(AnyUnrealWorkerOrClient)
-				.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{}, WorkersOnly)
+				.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{StaticPath}, WorkersOnly)
 				// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
 				// todo-giray: Remove once we're using proper (generated) entity templates here.
 				.AddComponent<improbable::unreal::PlayerControlClient>(improbable::unreal::PlayerControlClient::Data{}, OwnClientOnly)
