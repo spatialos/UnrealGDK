@@ -13,6 +13,7 @@
 #include "NUFEditorToolbarStyle.h"
 #include "NUFEditorGenerateSnapshot.h"
 
+#include "HAL/FileManager.h"
 #include "Editor/EditorEngine.h"
 
 #include "LevelEditor.h"
@@ -126,7 +127,8 @@ void FNUFEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builder)
 
 void FNUFEditorToolbarModule::CreateSnapshotButtonClicked()
 {
-	FString CombinedPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../snapshots"));
+	FString ProjectFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::GetPath(FPaths::GetProjectFilePath()));
+	FString CombinedPath = FPaths::Combine(*ProjectFilePath, TEXT("../../../snapshots"));
 	UE_LOG(LogTemp, Display, TEXT("Combined path %s"), *CombinedPath);
 	if (FPaths::CollapseRelativeDirectories(CombinedPath))
 	{

@@ -178,6 +178,7 @@ worker::Entity USpatialTypeBinding_GameStateBase::CreateActorEntity(const FStrin
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
 		.SetReadAcl(AnyUnrealWorkerOrClient)
+		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{}, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>(SingleClientData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>(MultiClientData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealGameStateBaseCompleteData>(improbable::unreal::UnrealGameStateBaseCompleteData::Data{}, WorkersOnly)

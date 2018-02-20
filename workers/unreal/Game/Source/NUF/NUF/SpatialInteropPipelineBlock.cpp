@@ -93,21 +93,12 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 
 	for (auto& EntityToSpawn : EntitiesToSpawn)
 	{
-		UAddComponentOpWrapperBase** PositionBaseComponent = ComponentsToAdd.Find(
-			FComponentIdentifier{ EntityToSpawn.ToSpatialEntityId(), UPositionComponent::ComponentId });
-		UAddComponentOpWrapperBase** MetadataBaseComponent = ComponentsToAdd.Find(
-			FComponentIdentifier{ EntityToSpawn.ToSpatialEntityId(), UMetadataComponent::ComponentId });
+		UPositionAddComponentOp* PositionAddComponentOp = GetPendingAddComponent<UPositionAddComponentOp, UPositionComponent>(EntityToSpawn);
+		UMetadataAddComponentOp* MetadataAddComponentOp = GetPendingAddComponent<UMetadataAddComponentOp, UMetadataComponent>(EntityToSpawn);
 
 		// Only spawn entities for which we have received Position and Metadata components
-		if ((PositionBaseComponent && (*PositionBaseComponent)->IsValidLowLevel()) &&
-			(MetadataBaseComponent && (*MetadataBaseComponent)->IsValidLowLevel()))
+		if (PositionAddComponentOp && MetadataAddComponentOp)
 		{
-			// Retrieve the EntityType string from the Metadata component
-			UMetadataAddComponentOp* MetadataAddComponentOp =
-				Cast<UMetadataAddComponentOp>(*MetadataBaseComponent);
-			UPositionAddComponentOp* PositionAddComponentOp =
-				Cast<UPositionAddComponentOp>(*PositionBaseComponent);
-
 			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(World->GetNetDriver());
 			AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityToSpawn);
 
@@ -137,19 +128,23 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 				}
 				else
 				{
-					// We need to wait for UnrealMetadata.
-					// TODO(David): Hide this horrid code by adding a helper to "wait" for a component.
-					UAddComponentOpWrapperBase** UnrealMetadataBaseComponent = ComponentsToAdd.Find(FComponentIdentifier{EntityToSpawn.ToSpatialEntityId(), UUnrealMetadataComponent::ComponentId});
-					if (!(PositionBaseComponent && (*PositionBaseComponent)->IsValidLowLevel()))
+					// We need to wait for UnrealMetadataComponent here.
+					UUnrealMetadataAddComponentOp* UnrealMetadataAddComponentOp = GetPendingAddComponent<UUnrealMetadataAddComponentOp, UUnrealMetadataComponent>(EntityToSpawn);
+					if (!UnrealMetadataAddComponentOp)
 					{
 						continue;
 					}
-					UUnrealMetadataAddComponentOp* UnrealMetadataAddComponentOp = Cast<UUnrealMetadataAddComponentOp>(*UnrealMetadataBaseComponent);
 
 					// Option 3
 					ClassToSpawn = GetNativeEntityClass(MetadataAddComponentOp);
-					UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to spawn a native %s"), *ClassToSpawn->GetName());
-					EntityActor = SpawnNewEntity(PositionAddComponentOp, World, ClassToSpawn);
+					FString FullPath = UTF8_TO_TCHAR((*UnrealMetadataAddComponentOp).Data.data()->path().c_str());
+					UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to find object %s of class %s"), *FullPath, *ClassToSpawn->GetName());
+					EntityActor = FindObject<AActor>(World, *FullPath);
+					if (!EntityActor)
+					{
+						UE_LOG(LogSpatialOSNUF, Log, TEXT("Does not exist, attempting to spawn a native %s"), *ClassToSpawn->GetName());
+						EntityActor = SpawnNewEntity(PositionAddComponentOp, World, ClassToSpawn);
+					}
 					check(EntityActor);
 					EntityRegistry->AddToRegistry(EntityToSpawn, EntityActor);
 

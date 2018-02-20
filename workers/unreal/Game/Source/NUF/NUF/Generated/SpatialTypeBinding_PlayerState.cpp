@@ -185,6 +185,7 @@ worker::Entity USpatialTypeBinding_PlayerState::CreateActorEntity(const FString&
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
 		.SetReadAcl(AnyUnrealWorkerOrClient)
+		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{}, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerStateSingleClientReplicatedData>(SingleClientData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerStateMultiClientReplicatedData>(MultiClientData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerStateCompleteData>(improbable::unreal::UnrealPlayerStateCompleteData::Data{}, WorkersOnly)
