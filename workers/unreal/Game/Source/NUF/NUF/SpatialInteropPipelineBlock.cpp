@@ -140,7 +140,7 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 					improbable::unreal::UnrealMetadataData& UnrealMetadata = *(*UnrealMetadataAddComponentOp).Data.data();
 					if (UnrealMetadata.static_path().empty())
 					{
-						UE_LOG(LogSpatialOSNUF, Log, TEXT("Does not exist, attempting to spawn a native %s"), *ClassToSpawn->GetName());
+						UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to spawn a native %s"), *ClassToSpawn->GetName());
 						EntityActor = SpawnNewEntity(PositionAddComponentOp, World, ClassToSpawn);
 					}
 					else
