@@ -3,11 +3,21 @@
 	"EngineAssociation": "{CFEE08B6-4412-95C8-B390-13B476A0DC62}",
 	"Category": "",
 	"Description": "",
-	"Modules": [
-		{
-			"Name": "NUF",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		}
-	]
+  "Modules": [
+    {
+      "Name": "NUF",
+      "Type": "Runtime",
+      "LoadingPhase": "Default",
+      "AdditionalDependencies": [
+        "Engine"
+      ]
+    }
+  ],
+  "PostBuildSteps": {
+    "Win64": [
+      "cd /D \"$(ProjectDir)\"",
+      "spatial invoke unreal package --engineDir=\"$(EngineDir)\" --project=\"$(ProjectFile)\" --platform=\"$(TargetPlatform)\" --target=\"$(TargetType)\" --configuration=\"$(TargetConfiguration)\" -- -allmaps",
+      "exit /B %ERRORLEVEL%"
+    ]
+  }
 }

@@ -11,7 +11,7 @@
     },
     "entity_interest": {
       "range_entity_interest": {
-        "radius": 2
+        "radius": 0
       }
     },
     "streaming_query": [],
@@ -25,6 +25,7 @@
       "artifact_name": "UnrealEditor@Windows.zip",
       "command": "StartServer.bat",
       "arguments": [
+        "ThirdPersonExampleMap",
         "-server",
         "-stdout",
         "-nowrite",
