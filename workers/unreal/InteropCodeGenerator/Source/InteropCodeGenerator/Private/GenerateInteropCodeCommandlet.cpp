@@ -1027,15 +1027,22 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 	Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
 
 	int FieldCounter = 0;
-	for (auto& Prop : Layout.CompleteProperties)
-	{
-		FieldCounter++;
-		Writer.Printf("%s %s = %d;",
-			*RepLayoutTypeToSchemaType(Prop.Type),
-			*GetFullyQualifiedName(Prop.Chain),
-			FieldCounter
-		);
-	}
+
+	/*
+	* The VC++ Linker has a limit of INT16_MAX number of symbols in a DLL
+	* CompleteData dramatically increases the number of symbols and aren't
+	* nessessarily being used, so for now we skip them.
+	*/
+	//for (auto& Prop : Layout.CompleteProperties)
+	//{
+	//	FieldCounter++;
+	//	Writer.Printf("%s %s = %d;",
+	//		*RepLayoutTypeToSchemaType(Prop.Type),
+	//		*GetFullyQualifiedName(Prop.Chain),
+	//		FieldCounter
+	//	);
+	//}
+
 	Writer.Outdent().Print("}");
 
 	for (auto Group : GetRPCTypes())
@@ -1068,9 +1075,6 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 				);
 			}
 			Writer.Outdent().Print("}");
-
-			// RPC responses don't contain any parameters
-			Writer.Printf("type %s {}", *GetSchemaRPCResponseTypeFromUnreal(RPC.Function));
 		}
 	}
 	Writer.Print();
@@ -1083,8 +1087,7 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 		Writer.Printf("id = %i;", IdGenerator.GetNextAvailableId());
 		for (auto& RPC : Layout.RPCs[Group])
 		{		
-			Writer.Printf("command %s %s(%s);",
-				*GetSchemaRPCResponseTypeFromUnreal(RPC.Function),
+			Writer.Printf("command UnrealRPCCommandResponse %s(%s);",
 				*PropertyNameToSchemaName(RPC.Function->GetName()),
 				*GetSchemaRPCRequestTypeFromUnreal(RPC.Function));
 		}
@@ -2073,7 +2076,7 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/NUF/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 
-	TArray<FString> Classes = {TEXT("Character"), TEXT("PlayerController"), TEXT("PlayerState"), TEXT("GameStateBase")};
+	TArray<FString> Classes = {TEXT("PlayerController"), TEXT("PlayerState"), TEXT("GameStateBase"), TEXT("Character")};
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
 		// Component IDs 100000 to 100009 reserved for other NUF components.
