@@ -1,19 +1,30 @@
 // Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
 
 #include "NUFCharacter.h"
-#include "Kismet/HeadMountedDisplayFunctionLibrary.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Engine/World.h"
+#include "NUFGameStateBase.h"
 
 //////////////////////////////////////////////////////////////////////////
 // ANUFCharacter
 
 ANUFCharacter::ANUFCharacter()
 {
+	// Hack to ensure that the game state is created and set to tick on a client as we don't replicate it
+	UWorld* World = GetWorld();
+	if (World && World->GetGameState() == nullptr) 
+	{
+		AGameStateBase* GameState = World->SpawnActor<AGameStateBase>(ANUFGameStateBase::StaticClass());
+		World->SetGameState(GameState);
+		Cast<ANUFGameStateBase>(GameState)->FakeServerHasBegunPlay();
+	}
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
