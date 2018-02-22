@@ -15,6 +15,8 @@
 
 #include "NUF/Generated/SpatialTypeBinding_Character.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialOSSnapshot);
+
 using namespace improbable;
 
 const WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
@@ -57,7 +59,7 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 		FString PathName = Actor->GetPathName(World);
 		StaticActorMap.emplace(StaticObjectId, std::string(TCHAR_TO_UTF8(*PathName)));
 		worker::EntityId EntityId = 0;
-		UE_LOG(LogTemp, Log, TEXT("Static object in world: %s (entity ID: %llu, offset: %u)."), *PathName, EntityId, StaticObjectId);
+		UE_LOG(LogSpatialOSSnapshot, Log, TEXT("Found static object in persistent level, adding to level data entity. Path: %s, Object ref: (entity ID: %llu, offset: %u)."), *PathName, EntityId, StaticObjectId);
 		StaticObjectId++;
 	}
 
@@ -94,10 +96,10 @@ void NUFGenerateSnapshot(const FString& SavePath, UWorld* World)
 	if (!Result.empty())
 	{
 		std::string ErrorString = Result.value_or("");
-		UE_LOG(LogTemp, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(ErrorString.c_str()));
+		UE_LOG(LogSpatialOSSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(ErrorString.c_str()));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Display, TEXT("Snapshot exported to the path %s"), *FullPath);
+		UE_LOG(LogSpatialOSSnapshot, Display, TEXT("Snapshot exported to the path %s"), *FullPath);
 	}
 }

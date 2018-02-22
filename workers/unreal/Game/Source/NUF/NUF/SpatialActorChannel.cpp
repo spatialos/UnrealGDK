@@ -281,8 +281,6 @@ bool USpatialActorChannel::ReplicateActor()
 			}
 			InitialChanged.Add(0);
 			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, PlayerWorkerId, InitialChanged);
-
-			UE_LOG(LogTemp, Warning, TEXT("Actor Path: %s - Full Path: %s"), *Actor->GetPathName(Actor->GetWorld()), *Actor->GetPathName());
 		}
 		else
 		{

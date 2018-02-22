@@ -140,13 +140,13 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 					improbable::unreal::UnrealMetadataData& UnrealMetadata = *(*UnrealMetadataAddComponentOp).Data.data();
 					if (UnrealMetadata.static_path().empty())
 					{
-						UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to spawn a native %s"), *ClassToSpawn->GetName());
+						UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to spawn a native %s whilst checking out an entity."), *ClassToSpawn->GetName());
 						EntityActor = SpawnNewEntity(PositionAddComponentOp, World, ClassToSpawn);
 					}
 					else
 					{
 						FString FullPath = UTF8_TO_TCHAR(UnrealMetadata.static_path().data()->c_str());
-						UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to find object %s of class %s"), *FullPath, *ClassToSpawn->GetName());
+						UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to find static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ClassToSpawn->GetName());
 						EntityActor = FindObject<AActor>(World, *FullPath);
 					}
 					check(EntityActor);
@@ -378,8 +378,6 @@ UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(UMetadataAddCompo
 UClass* USpatialInteropPipelineBlock::GetNativeEntityClass(UMetadataAddComponentOp* MetadataComponent)
 {
 	FString Metadata = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
-
-	// This is all horrendous, but assume it's a full CDO path if not registered	
 	return FindObject<UClass>(ANY_PACKAGE, *Metadata);	
 }
 
