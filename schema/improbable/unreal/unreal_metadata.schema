@@ -1,0 +1,7 @@
+package improbable.unreal;
+
+component UnrealMetadata
+{
+    id = 100004;
+    option<string> static_path = 1;
+}

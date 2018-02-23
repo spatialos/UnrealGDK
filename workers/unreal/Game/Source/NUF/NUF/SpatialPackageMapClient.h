@@ -24,7 +24,6 @@ class NUF_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()		
 public:
-	//void ResolveStaticObjectGUID(FNetworkGUID& NetGUID, FString& Path);
 	FNetworkGUID ResolveEntityActor(AActor* Actor, FEntityId EntityId);
 	virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel *Channel, class AActor*& Actor) override;
 
@@ -49,7 +48,6 @@ public:
 	void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);
 
 private:
-	//FNetworkGUID AssignNewNetGUID(const UObject* Object);
 	FNetworkGUID GetOrAssignNetGUID_NUF(const UObject* Object);
 	void RegisterObjectRef(FNetworkGUID NetGUID, const improbable::unreal::UnrealObjectRef& ObjectRef);
 	FNetworkGUID AssignStaticActorNetGUID(const UObject* Object, const FNetworkGUID& StaticNetGUID);

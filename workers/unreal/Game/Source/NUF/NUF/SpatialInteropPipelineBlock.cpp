@@ -9,14 +9,17 @@
 #include "CallbackDispatcher.h"
 #include "EngineMinimal.h"
 #include "EntityRegistry.h"
-#include "MetadataAddComponentOp.h"
-#include "MetadataComponent.h"
 #include "GameFramework/PlayerController.h"
-#include "PositionAddComponentOp.h"
-#include "PositionComponent.h"
 #include "SpatialOSConversionFunctionLibrary.h"
 #include "improbable/view.h"
 #include "improbable/worker.h"
+
+#include "PositionAddComponentOp.h"
+#include "PositionComponent.h"
+#include "MetadataAddComponentOp.h"
+#include "MetadataComponent.h"
+#include "UnrealMetadataAddComponentOp.h"
+#include "UnrealMetadataComponent.h"
 #include "UnrealLevelComponent.h"
 
 void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry)
@@ -90,21 +93,12 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 
 	for (auto& EntityToSpawn : EntitiesToSpawn)
 	{
-		UAddComponentOpWrapperBase** PositionBaseComponent = ComponentsToAdd.Find(
-			FComponentIdentifier{ EntityToSpawn.ToSpatialEntityId(), UPositionComponent::ComponentId });
-		UAddComponentOpWrapperBase** MetadataBaseComponent = ComponentsToAdd.Find(
-			FComponentIdentifier{ EntityToSpawn.ToSpatialEntityId(), UMetadataComponent::ComponentId });
+		UPositionAddComponentOp* PositionAddComponentOp = GetPendingAddComponent<UPositionAddComponentOp, UPositionComponent>(EntityToSpawn);
+		UMetadataAddComponentOp* MetadataAddComponentOp = GetPendingAddComponent<UMetadataAddComponentOp, UMetadataComponent>(EntityToSpawn);
 
 		// Only spawn entities for which we have received Position and Metadata components
-		if ((PositionBaseComponent && (*PositionBaseComponent)->IsValidLowLevel()) &&
-			(MetadataBaseComponent && (*MetadataBaseComponent)->IsValidLowLevel()))
+		if (PositionAddComponentOp && MetadataAddComponentOp)
 		{
-			// Retrieve the EntityType string from the Metadata component
-			UMetadataAddComponentOp* MetadataAddComponentOp =
-				Cast<UMetadataAddComponentOp>(*MetadataBaseComponent);
-			UPositionAddComponentOp* PositionAddComponentOp =
-				Cast<UPositionAddComponentOp>(*PositionBaseComponent);
-
 			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(World->GetNetDriver());
 			AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityToSpawn);
 
@@ -134,10 +128,27 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 				}
 				else
 				{
+					// We need to wait for UnrealMetadataComponent here.
+					UUnrealMetadataAddComponentOp* UnrealMetadataAddComponentOp = GetPendingAddComponent<UUnrealMetadataAddComponentOp, UUnrealMetadataComponent>(EntityToSpawn);
+					if (!UnrealMetadataAddComponentOp)
+					{
+						continue;
+					}
+
 					// Option 3
 					ClassToSpawn = GetNativeEntityClass(MetadataAddComponentOp);
-					UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to spawn a native %s"), *ClassToSpawn->GetName());
-					EntityActor = SpawnNewEntity(PositionAddComponentOp, World, ClassToSpawn);
+					improbable::unreal::UnrealMetadataData& UnrealMetadata = *(*UnrealMetadataAddComponentOp).Data.data();
+					if (UnrealMetadata.static_path().empty())
+					{
+						UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to spawn a native %s whilst checking out an entity."), *ClassToSpawn->GetName());
+						EntityActor = SpawnNewEntity(PositionAddComponentOp, World, ClassToSpawn);
+					}
+					else
+					{
+						FString FullPath = UTF8_TO_TCHAR(UnrealMetadata.static_path().data()->c_str());
+						UE_LOG(LogSpatialOSNUF, Log, TEXT("Attempting to find static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ClassToSpawn->GetName());
+						EntityActor = FindObject<AActor>(World, *FullPath);
+					}
 					check(EntityActor);
 					EntityRegistry->AddToRegistry(EntityToSpawn, EntityActor);
 
@@ -146,7 +157,7 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 
 					USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
 					USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, false));
-					
+
 					check(Channel);
 					
 					PackageMap->ResolveEntityActor(EntityActor, EntityToSpawn);
@@ -341,7 +352,7 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(
 	return NewActor;
 }
 
-//This is for classes that we register explicitly with Unreal, currently used for "non-native" replication. This logic might change soon.
+// This is for classes that we register explicitly with Unreal, currently used for "non-native" replication. This logic might change soon.
 UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(UMetadataAddComponentOp* MetadataComponent)
 {
 	FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
@@ -363,13 +374,11 @@ UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(UMetadataAddCompo
 	return ClassToSpawn;
 }
 
-//This is for classes that we derive from meta name, mainly to spawn the corresponding actors on clients.
+// This is for classes that we derive from meta name, mainly to spawn the corresponding actors on clients.
 UClass* USpatialInteropPipelineBlock::GetNativeEntityClass(UMetadataAddComponentOp* MetadataComponent)
 {
-	FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
-
-	// This is all horrendous, but assume it's a full CDO path if not registered	
-	return FindObject<UClass>(ANY_PACKAGE, *EntityTypeString);	
+	FString Metadata = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
+	return FindObject<UClass>(ANY_PACKAGE, *Metadata);	
 }
 
 void USpatialInteropPipelineBlock::SetupComponentInterests(

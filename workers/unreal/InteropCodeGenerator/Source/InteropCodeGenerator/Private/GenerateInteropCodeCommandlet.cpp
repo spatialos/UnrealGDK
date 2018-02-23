@@ -1152,8 +1152,9 @@ void GenerateForwardingCodeFromLayout(
 
 		#include <improbable/worker.h>
 		#include <improbable/view.h>
-		#include <improbable/unreal/generated/%s.h>
 		#include <improbable/unreal/core_types.h>
+		#include <improbable/unreal/unreal_metadata.h>
+		#include <improbable/unreal/generated/%s.h>
 		#include "../SpatialHandlePropertyMap.h"
 		#include "../SpatialTypeBinding.h"
 		#include "SpatialTypeBinding_%s.generated.h")""", *SchemaFilename, *Class->GetName());
@@ -1525,14 +1526,20 @@ void GenerateForwardingCodeFromLayout(
 		improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
 		improbable::WorkerRequirementSet AnyUnrealWorkerOrOwningClient{{WorkerAttribute, OwningClientAttribute}};
 
-		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);)""");
+		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);
+		worker::Option<std::string> StaticPath;
+		if (Channel->Actor->IsFullNameStableForNetworking())
+		{
+			StaticPath = {std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}};
+		})""");
 	SourceWriter.Print("return improbable::unreal::FEntityBuilder::Begin()");
 	SourceWriter.Indent();
 	SourceWriter.Printf(R"""(
 		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, WorkersOnly)
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
-		.SetReadAcl(%s))""",
+		.SetReadAcl(%s)
+		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{StaticPath}, WorkersOnly))""",
 		Class->GetName() == TEXT("PlayerController") ? TEXT("AnyUnrealWorkerOrOwningClient") : TEXT("AnyUnrealWorkerOrClient"));
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{

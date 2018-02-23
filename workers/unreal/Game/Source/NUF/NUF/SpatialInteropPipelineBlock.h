@@ -72,4 +72,19 @@ private:
 	UClass* GetRegisteredEntityClass(UMetadataAddComponentOp * MetadataComponent);
 	
 	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection);
+
+	template <typename AddOpType, typename Metadata>
+	AddOpType* GetPendingAddComponent(const FEntityId& EntityId)
+	{
+		const auto ComponentId = Metadata::ComponentId;
+		UAddComponentOpWrapperBase** BaseAddComponent = ComponentsToAdd.Find(FComponentIdentifier{EntityId.ToSpatialEntityId(), ComponentId});
+		if (BaseAddComponent && (*BaseAddComponent)->IsValidLowLevel())
+		{
+			return Cast<AddOpType>(*BaseAddComponent);
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
 };
