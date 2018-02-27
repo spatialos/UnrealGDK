@@ -14,7 +14,13 @@
         "radius": 0
       }
     },
-    "streaming_query": [],
+    "streaming_query": [
+      {
+        "global_component_streaming_query": {
+          "component_name": "improbable.unreal.UnrealLevel"
+        }
+      }
+    ],
     "component_delivery": {
       "default": "RELIABLE_ORDERED",
       "checkout_all_initially": true
