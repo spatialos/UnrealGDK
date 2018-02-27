@@ -58,9 +58,15 @@ void USpatialInteropPipelineBlock::AddEntity(const worker::AddEntityOp& AddEntit
 void USpatialInteropPipelineBlock::RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp)
 {
 	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveEntityOp %llu"), RemoveEntityOp.EntityId);
-	check(bInCriticalSection);
 
-	PendingRemoveEntities.Emplace(RemoveEntityOp.EntityId);
+	if (bInCriticalSection)
+	{
+		PendingRemoveEntities.Emplace(RemoveEntityOp.EntityId);
+	}
+	else
+	{
+		RemoveEntityImpl(RemoveEntityOp.EntityId);
+	}
 
 	if (NextBlock)
 	{
@@ -75,27 +81,14 @@ void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddC
 
 	if (bInCriticalSection)
 	{
-		PendingAddComponents.Emplace(FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId}, AddComponentOp);
+		FPendingAddComponentWrapper Wrapper;
+		Wrapper.EntityComponent = FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId};
+		Wrapper.AddComponentOp = AddComponentOp;
+		PendingAddComponents.Emplace(Wrapper);
 	}
 	else
 	{
-		UClass* ComponentClass = KnownComponents.FindRef(FComponentId{AddComponentOp->ComponentId});
-		check(ComponentClass);
-
-		AActor* Actor = EntityRegistry->GetActorFromEntityId(AddComponentOp->EntityId);
-		if (Actor)
-		{
-			USpatialOsComponent* Component = Cast<USpatialOsComponent>(Actor->GetComponentByClass(ComponentClass));
-			if (Component)
-			{
-				Component->Init(
-					NetDriver->GetSpatialOS()->GetConnection(), 
-					NetDriver->GetSpatialOS()->GetView(),
-					AddComponentOp->EntityId,
-					NetDriver->GetSpatialOS()->GetCallbackDispatcher());
-				Component->ApplyInitialState(*AddComponentOp);
-			}
-		}
+		InitialiseNewComponentImpl(FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId}, AddComponentOp);
 	}
 
 	if (NextBlock)
@@ -116,18 +109,7 @@ void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId Com
 	}
 	else
 	{
-		UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentId});
-		check(ComponentClass);
-
-		AActor* Actor = EntityRegistry->GetActorFromEntityId(RemoveComponentOp.EntityId);
-		if (Actor)
-		{
-			USpatialOsComponent* Component = Cast<USpatialOsComponent>(Actor->GetComponentByClass(ComponentClass));
-			if (Component)
-			{
-				Component->Disable(RemoveComponentOp.EntityId, NetDriver->GetSpatialOS()->GetCallbackDispatcher());
-			}
-		}
+		DisableComponentImpl(FComponentIdentifier{RemoveComponentOp.EntityId, ComponentId});
 	}
 
 	if (NextBlock)
@@ -178,71 +160,25 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 	// Add entities.
 	for (auto& PendingAddEntity : PendingAddEntities)
 	{
-		// Create / get actor for this entity.
-		AActor* Actor = GetOrCreateActor(LockedConnection, LockedView, PendingAddEntity);
-
-		// TODO(David): Move this to the unreal level entity.
-		improbable::unreal::UnrealLevelData* LevelDataComponent = GetPendingComponentData<UUnrealLevelAddComponentOp, improbable::unreal::UnrealLevel>(PendingAddEntity);
-		if (LevelDataComponent)
-		{
-			check(Actor);
-			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver());
-			UNetConnection* Connection = Driver->GetSpatialOSNetConnection();
-			USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-			PMC->RegisterStaticObjects(*LevelDataComponent);
-		}
+		AddEntityImpl(PendingAddEntity);
 	}
 
-	// Apply queued add component ops.
+	// Apply queued add component ops and authority change ops.
 	for (auto& PendingAddComponent : PendingAddComponents)
 	{
-		UClass* ComponentClass = KnownComponents.FindRef(FComponentId{PendingAddComponent.Key.ComponentId});
-		check(ComponentClass);
-
-		// An actor might not be created for a particular entity ID if that entity doesn't have all of the required components.
-		AActor* Actor = EntityRegistry->GetActorFromEntityId(PendingAddComponent.Key.EntityId);
-		if (Actor)
-		{
-			USpatialOsComponent* Component = Cast<USpatialOsComponent>(Actor->GetComponentByClass(ComponentClass));
-			if (Component)
-			{
-				Component->Init(LockedConnection, LockedView, PendingAddComponent.Key.EntityId, NetDriver->GetSpatialOS()->GetCallbackDispatcher());
-				Component->ApplyInitialState(*PendingAddComponent.Value);
-				auto QueuedAuthChangeOp = PendingAuthorityChanges.Find(PendingAddComponent.Key);
-				if (QueuedAuthChangeOp)
-				{
-					Component->ApplyInitialAuthority(*QueuedAuthChangeOp);
-				}
-			}
-		}
+		InitialiseNewComponentImpl(PendingAddComponent.EntityComponent, PendingAddComponent.AddComponentOp);
 	}
 
 	// Apply queued remove component ops.
 	for (auto& PendingRemoveComponent : PendingRemoveComponents)
 	{
-		UClass* ComponentClass = KnownComponents.FindRef(FComponentId{PendingRemoveComponent.ComponentId});
-		check(ComponentClass);
-
-		AActor* Actor = EntityRegistry->GetActorFromEntityId(PendingRemoveComponent.EntityId);
-		if (Actor)
-		{
-			USpatialOsComponent* Component = Cast<USpatialOsComponent>(Actor->GetComponentByClass(ComponentClass));
-			if (Component)
-			{
-				Component->Disable(PendingRemoveComponent.EntityId, NetDriver->GetSpatialOS()->GetCallbackDispatcher());
-			}
-		}
+		DisableComponentImpl(PendingRemoveComponent);
 	}
 
-	// Remove entities
+	// Remove entities.
 	for (auto& PendingRemoveEntity : PendingRemoveEntities)
 	{
-		AActor* Actor = EntityRegistry->GetActorFromEntityId(PendingRemoveEntity);
-		if (Actor && !Actor->IsPendingKill())
-		{
-			EntityRegistry->RemoveFromRegistry(Actor);
-			Actor->GetWorld()->DestroyActor(Actor);
-		}
+		RemoveEntityImpl(PendingRemoveEntity);
 	}
 
 	// Mark that we've left the critical section.
@@ -257,6 +193,85 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 	{
 		NextBlock->LeaveCriticalSection();
 	}
+}
+
+void USpatialInteropPipelineBlock::AddEntityImpl(const FEntityId& EntityId)
+{
+	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
+	TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
+
+	// Create / get actor for this entity.
+	GetOrCreateActor(LockedConnection, LockedView, EntityId);
+}
+
+void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp)
+{
+	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
+	TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
+
+	UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
+	check(ComponentClass);
+
+	// An actor might not be created for a particular entity ID if that entity doesn't have all of the required components.
+	AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
+	if (Actor)
+	{
+		USpatialOsComponent* Component = Cast<USpatialOsComponent>(Actor->GetComponentByClass(ComponentClass));
+		if (Component)
+		{
+			Component->Init(LockedConnection, LockedView, ComponentIdentifier.EntityId, NetDriver->GetSpatialOS()->GetCallbackDispatcher());
+			Component->ApplyInitialState(*AddComponentOp);
+			worker::AuthorityChangeOp* QueuedAuthChangeOp = PendingAuthorityChanges.Find(ComponentIdentifier);
+			if (QueuedAuthChangeOp)
+			{
+				Component->ApplyInitialAuthority(*QueuedAuthChangeOp);
+			}
+		}
+
+		// Initialise the static objects when we check out the level data component.
+		auto LevelAddComponentOp = Cast<UUnrealLevelAddComponentOp>(AddComponentOp);
+		if (LevelAddComponentOp)
+		{
+			check(Actor);
+			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver());
+			UNetConnection* Connection = Driver->GetSpatialOSNetConnection();
+			USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(Connection->PackageMap);
+			PMC->RegisterStaticObjects(*LevelAddComponentOp->Data.data());
+		}
+	}
+}
+
+void USpatialInteropPipelineBlock::DisableComponentImpl(const FComponentIdentifier& ComponentIdentifier)
+{
+	UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
+	check(ComponentClass);
+
+	AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
+	if (Actor)
+	{
+		USpatialOsComponent* Component = Cast<USpatialOsComponent>(Actor->GetComponentByClass(ComponentClass));
+		if (Component)
+		{
+			Component->Disable(ComponentIdentifier.EntityId, NetDriver->GetSpatialOS()->GetCallbackDispatcher());
+		}
+	}
+}
+
+void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
+{
+	AActor* Actor = EntityRegistry->GetActorFromEntityId(EntityId);
+	if (Actor && !Actor->IsPendingKill())
+	{
+		EntityRegistry->RemoveFromRegistry(Actor);
+		Actor->GetWorld()->DestroyActor(Actor);
+	}
+}
+
+
+void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>& InView,
+	const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
+	UCallbackDispatcher* CallbackDispatcher)
+{
 }
 
 AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId)
@@ -350,8 +365,8 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			EntityRegistry->AddToRegistry(EntityId, EntityActor);
 
 			// Set up actor channel.
-			USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-			USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, false));
+			auto PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
+			auto Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, false));
 			check(Channel);
 
 			PackageMap->ResolveEntityActor(EntityActor, EntityId);
@@ -433,12 +448,6 @@ UClass* USpatialInteropPipelineBlock::GetNativeEntityClass(improbable::MetadataD
 {
 	FString Metadata = UTF8_TO_TCHAR(MetadataComponent->entity_type().c_str());
 	return FindObject<UClass>(ANY_PACKAGE, *Metadata);	
-}
-
-void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-	const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
-	::UCallbackDispatcher* CallbackDispatcher)
-{
 }
 
 void USpatialInteropPipelineBlock::SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection)

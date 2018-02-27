@@ -26,6 +26,19 @@ class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInteropPipelineBlock, Log, All);
 
+// Needed because UHT does not support nested types.
+USTRUCT()
+struct FPendingAddComponentWrapper
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FComponentIdentifier EntityComponent;
+
+	UPROPERTY()
+	UAddComponentOpWrapperBase* AddComponentOp;
+};
+
 UCLASS(BlueprintType)
 class NUF_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 {
@@ -49,18 +62,18 @@ private:
 	bool bInCriticalSection;
 
 	UPROPERTY()
-	TSet<FEntityId> PendingAddEntities;
+	TArray<FEntityId> PendingAddEntities;
 
 	UPROPERTY()
-	TMap<FComponentIdentifier, UAddComponentOpWrapperBase*> PendingAddComponents;
+	TArray<FPendingAddComponentWrapper> PendingAddComponents;
 
 	TMap<FComponentIdentifier, worker::AuthorityChangeOp> PendingAuthorityChanges;
 
 	UPROPERTY()
-	TSet<FComponentIdentifier> PendingRemoveComponents;
+	TArray<FComponentIdentifier> PendingRemoveComponents;
 
 	UPROPERTY()
-	TSet<FEntityId> PendingRemoveEntities;
+	TArray<FEntityId> PendingRemoveEntities;
 
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
@@ -73,15 +86,22 @@ private:
 	TMap<FComponentId, UClass*> KnownComponents;
 
 private:
+	void AddEntityImpl(const FEntityId& EntityId);
+	void InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp);
+	void DisableComponentImpl(const FComponentIdentifier& ComponentIdentifier);
+	void RemoveEntityImpl(const FEntityId& EntityId);
+
+	// Stub.
+	void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
+		const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
+		UCallbackDispatcher* CallbackDispatcher) override;
+
+private:
 	AActor* GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId);
 	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UWorld* World, UClass* ClassToSpawn);
 	
 	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);
 	UClass* GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent);
-
-	void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-		const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
-		::UCallbackDispatcher* CallbackDispatcher) override;
 	
 	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection);
 
@@ -90,27 +110,21 @@ private:
 	{
 		const auto ComponentId = Metaclass::ComponentId;
 		UAddComponentOpWrapperBase** BaseAddComponent = PendingAddComponents.Find(FComponentIdentifier{EntityId.ToSpatialEntityId(), ComponentId});
-		if (BaseAddComponent && (*BaseAddComponent)->IsValidLowLevel())
-		{
-			return Cast<AddOpType>(*BaseAddComponent)->Data.data();
-		}
-		else
+		if (!BaseAddComponent || !(*BaseAddComponent)->IsValidLowLevel())
 		{
 			return nullptr;
 		}
+		return Cast<AddOpType>(*BaseAddComponent)->Data.data();
 	}
 
 	template <typename Metaclass>
 	typename Metaclass::Data* GetComponentDataFromView(TSharedPtr<worker::View> LockedView, const FEntityId& EntityId)
 	{
 		auto EntityIterator = LockedView->Entities.find(EntityId.ToSpatialEntityId());
-		if (EntityIterator != LockedView->Entities.end())
-		{
-			return EntityIterator->second.Get<Metaclass>().data();
-		}
-		else
+		if (EntityIterator == LockedView->Entities.end())
 		{
 			return nullptr;
 		}
+		return EntityIterator->second.Get<Metaclass>().data();
 	}
 };
