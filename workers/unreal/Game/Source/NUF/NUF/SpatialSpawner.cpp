@@ -40,7 +40,7 @@ void ASpatialSpawner::BeginDestroy()
 	Super::BeginDestroy();	
 }
 
-void ASpatialSpawner::HandleSpawnRequest(USpawnPlayerCommandResponder * Responder)
+void ASpatialSpawner::HandleSpawnRequest(USpawnPlayerCommandResponder* Responder)
 {
 	check(GetWorld());	
 
@@ -56,6 +56,6 @@ void ASpatialSpawner::HandleSpawnRequest(USpawnPlayerCommandResponder * Responde
 	{
 		UE_LOG(LogTemp, Error, TEXT("Login failed. Spatial net driver is not setup correctly."));
 	}
-	auto Response = NewObject<USpawnPlayerResponse>()->Init(improbable::unreal::SpawnPlayerResponse{});
+	auto Response = NewObject<USpawnPlayerResponse>()->Init({});
 	Responder->SendResponse(Response);
 }

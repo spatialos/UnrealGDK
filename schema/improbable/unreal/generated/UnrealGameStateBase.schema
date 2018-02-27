@@ -6,10 +6,10 @@ import "improbable/vector3.schema";
 import "improbable/unreal/core_types.schema";
 
 component UnrealGameStateBaseSingleClientReplicatedData {
-	id = 100025;
+	id = 100020;
 }
 component UnrealGameStateBaseMultiClientReplicatedData {
-	id = 100026;
+	id = 100021;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
 	bool field_btearoff = 3; // COND_None
@@ -31,70 +31,12 @@ component UnrealGameStateBaseMultiClientReplicatedData {
 	float field_replicatedworldtimeseconds = 19; // COND_None
 }
 component UnrealGameStateBaseCompleteData {
-	id = 100027;
-	float field_serverworldtimesecondsupdatefrequency = 1;
-	UnrealObjectRef field_spritecomponent = 2;
-	uint32 field_primaryactortick_tickgroup = 3;
-	uint32 field_primaryactortick_endtickgroup = 4;
-	bool field_primaryactortick_btickevenwhenpaused = 5;
-	bool field_primaryactortick_bcanevertick = 6;
-	bool field_primaryactortick_bstartwithtickenabled = 7;
-	bool field_primaryactortick_ballowtickondedicatedserver = 8;
-	float field_primaryactortick_tickinterval = 9;
-	float field_customtimedilation = 10;
-	bool field_bnettemporary = 11;
-	bool field_bnetstartup = 12;
-	bool field_bonlyrelevanttoowner = 13;
-	bool field_balwaysrelevant = 14;
-	bool field_bnetloadonclient = 15;
-	bool field_bnetuseownerrelevancy = 16;
-	bool field_bblockinput = 17;
-	bool field_ballowtickbeforebeginplay = 18;
-	bool field_bactorenablecollision = 19;
-	bool field_breplicates = 20;
-	string field_netdrivername = 21;
-	uint32 field_autoreceiveinput = 22;
-	int32 field_inputpriority = 23;
-	UnrealObjectRef field_inputcomponent = 24;
-	uint32 field_inputconsumeoption = 25;
-	float field_netculldistancesquared = 26;
-	float field_netupdatefrequency = 27;
-	float field_minnetupdatefrequency = 28;
-	float field_netpriority = 29;
-	bool field_bautodestroywhenfinished = 30;
-	bool field_bcollidewhenplacing = 31;
-	bool field_bfindcameracomponentwhenviewtarget = 32;
-	bool field_brelevantfornetworkreplays = 33;
-	bool field_bgenerateoverlapeventsduringlevelstreaming = 34;
-	bool field_bcanbeincluster = 35;
-	uint32 field_spawncollisionhandlingmethod = 36;
-	UnrealObjectRef field_rootcomponent = 37;
-	improbable.Vector3f field_pivotoffset = 38;
-	float field_initiallifespan = 39;
-	bytes field_layers = 40;
-	UnrealObjectRef field_parentcomponentactor = 41;
-	UnrealObjectRef field_parentcomponent = 42;
-	float field_spritescale = 43;
-	string field_actorlabel = 44;
-	string field_folderpath = 45;
-	bool field_bactorlabeleditable = 46;
-	bool field_bhiddened = 47;
-	bool field_beditable = 48;
-	bool field_blistedinsceneoutliner = 49;
-	bool field_bhiddenedlayer = 50;
-	bool field_blocklocation = 51;
-	bool field_ballowreceivetickeventondedicatedserver = 52;
-	bool field_bactorseamlesstraveled = 53;
-	bool field_bignoresoriginshifting = 54;
-	bool field_benableautolodgeneration = 55;
-	bytes field_tags = 56;
-	bytes field_blueprintcreatedcomponents = 57;
-	bytes field_instancecomponents = 58;
+	id = 100022;
 }
 
 component UnrealGameStateBaseClientRPCs {
-	id = 100028;
+	id = 100023;
 }
 component UnrealGameStateBaseServerRPCs {
-	id = 100029;
+	id = 100024;
 }

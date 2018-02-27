@@ -99,7 +99,7 @@ public:
 	USpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
 	// Sending component updates and RPCs.
-	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FString& PlayerWorkerId, const TArray<uint16>& Changed);
+	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& Changed);
 	void SendSpatialPositionUpdate(const worker::EntityId& EntityId, const FVector& Location);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
 	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
@@ -110,7 +110,7 @@ public:
 	void ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
-	void AddActorChannel_Client(const worker::EntityId& EntityId, USpatialActorChannel* Channel);
+	void AddActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel);
 
 	// Used by generated type bindings to map an entity ID to its actor channel.
 	USpatialActorChannel* GetActorChannelByEntityId(const worker::EntityId& EntityId) const;
@@ -177,7 +177,7 @@ private:
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
 	void UnregisterInteropType(UClass* Class);
 
-	void SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
+	void SetComponentInterests_Client(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
 
 	void ResolvePendingOutgoingObjectUpdates(UObject* Object);
 	void ResolvePendingOutgoingRPCs(UObject* Object);

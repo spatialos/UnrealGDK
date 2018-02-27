@@ -18,8 +18,6 @@
 #include "SpatialPendingNetGame.h"
 #include "SpatialActorChannel.h"
 
-using namespace improbable;
-
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNUF);
@@ -90,7 +88,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	UE_LOG(LogSpatialOSNUF, Log, TEXT("Connected to SpatialOS."));
 
 	InteropPipelineBlock = NewObject<USpatialInteropPipelineBlock>();
-	InteropPipelineBlock->Init(EntityRegistry);
+	InteropPipelineBlock->Init(EntityRegistry, this);
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(InteropPipelineBlock);
 
 	TArray<FString> BlueprintPaths;
@@ -809,15 +807,9 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 	}
 }
 
-bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
+USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 {
-	check(GetNetMode() != NM_Client);
-
 	bool bOk = true;
-
-	// Commented out the code that creates a new connection per player controller. Leaving the code here for now in case it causes side effects.
-	// We instead use the "special" connection for everything.
-	//todo-giray: Remove the commented out code if connection setup looks stable.
 	
 	USpatialNetConnection* Connection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(Connection);
@@ -859,7 +851,8 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 		UE_LOG(LogNet, Log, TEXT("PreLogin failure: %s"), *ErrorMsg);
 		bOk = false;		
 	}
-	else
+
+	if (bOk)
 	{
 		FString LevelName = GetWorld()->GetCurrentLevel()->GetOutermost()->GetName();
 		Connection->ClientWorldPackageName = GetWorld()->GetCurrentLevel()->GetOutermost()->GetFName();
@@ -871,10 +864,7 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 			GameName = GameMode->GetClass()->GetPathName();
 			GameMode->GameWelcomePlayer(Connection, RedirectURL);
 		}
-	}
 
-	if (bOk)
-	{
 		Connection->PlayerController = World->SpawnPlayActor(Connection, ROLE_AutonomousProxy, InUrl, WorkerId, ErrorMsg);
 		if (Connection->PlayerController == NULL)
 		{
@@ -889,7 +879,12 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 		}
 	}
 
-	return bOk;
+	if (!bOk)
+	{
+		// TODO(David): Destroy connection.
+	}
+
+	return bOk ? Connection : nullptr;
 }
 
 USpatialPendingNetGame::USpatialPendingNetGame(const FObjectInitializer& ObjectInitializer)

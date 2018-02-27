@@ -12,10 +12,18 @@ void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSock
 {
 	Super::InitBase(InDriver, InSocket, InURL, InState, InMaxPacket, InPacketOverhead);
 
-	auto PackageMapClient = NewObject<USpatialPackageMapClient>(this);
-	PackageMapClient->Initialize(this, InDriver->GuidCache);
-
-	PackageMap = PackageMapClient;
+	if (Cast<USpatialNetDriver>(InDriver)->PackageMap == nullptr)
+	{
+		// This should only happen if we're setting up the special "SpatialOS" connection.
+		auto PackageMapClient = NewObject<USpatialPackageMapClient>(this);
+		PackageMapClient->Initialize(this, InDriver->GuidCache);
+		PackageMap = PackageMapClient;
+		Cast<USpatialNetDriver>(InDriver)->PackageMap = PackageMapClient;
+	}
+	else
+	{
+		PackageMap = Cast<USpatialNetDriver>(InDriver)->PackageMap;
+	}
 }
 
 void USpatialNetConnection::InitLocalConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket, int32 InPacketOverhead)

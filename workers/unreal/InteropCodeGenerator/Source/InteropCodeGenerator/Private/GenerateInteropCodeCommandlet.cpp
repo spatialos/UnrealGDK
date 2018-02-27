@@ -794,8 +794,11 @@ void GeneratePropertyToUnrealConversion(
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 			if (NetGUID.IsValid())
 			{
-				%s = static_cast<%s>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
-			})""", *PropertyValue, *PropertyType);
+				UObject* Object_Raw = PackageMap->GetObjectFromNetGUID(NetGUID, true);
+				checkf(Object_Raw, TEXT("An object ref %%s should map to a valid object."), *ObjectRefToString(ObjectRef));
+				%s = dynamic_cast<%s>(Object_Raw);
+				checkf(%s, TEXT("Object ref %%s maps to object %%s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
+			})""", *PropertyValue, *PropertyType, *PropertyValue);
 		Writer.Print("else");
 		Writer.Print("{").Indent();
 		ObjectResolveFailureGenerator(*PropertyValue);
@@ -1029,9 +1032,9 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 	int FieldCounter = 0;
 
 	/*
-	* The VC++ Linker has a limit of INT16_MAX number of symbols in a DLL
+	* The VC++ Linker has a limit of UINT16_MAX number of symbols in a DLL
 	* CompleteData dramatically increases the number of symbols and aren't
-	* nessessarily being used, so for now we skip them.
+	* necessarily being used, so for now we skip them.
 	*/
 	//for (auto& Prop : Layout.CompleteProperties)
 	//{
@@ -1170,6 +1173,8 @@ void GenerateForwardingCodeFromLayout(
 	HeaderWriter.Print(R"""(
 		static const FRepHandlePropertyMap& GetHandlePropertyMap();
 
+		UClass* GetBoundClass() const override;
+
 		void Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap) override;
 		void BindToView() override;
 		void UnbindFromView() override;
@@ -1178,7 +1183,6 @@ void GenerateForwardingCodeFromLayout(
 		worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 		void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
 		void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) override;
-
 		void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;)""");
 	HeaderWriter.Print();
 	HeaderWriter.Outdent().Print("private:").Indent();
@@ -1309,6 +1313,16 @@ void GenerateForwardingCodeFromLayout(
 	}
 	SourceWriter.Outdent().Print("}");
 	SourceWriter.Print("return HandleToPropertyMap;");
+	SourceWriter.Outdent();
+	SourceWriter.Print("}");
+
+	// GetBoundClass
+	// ===========================================
+	SourceWriter.Print();
+	SourceWriter.Printf("UClass* %s::GetBoundClass() const", *TypeBindingName);
+	SourceWriter.Print("{");
+	SourceWriter.Indent();
+	SourceWriter.Printf("return A%s::StaticClass();", *Class->GetName());
 	SourceWriter.Outdent();
 	SourceWriter.Print("}");
 
@@ -1526,12 +1540,19 @@ void GenerateForwardingCodeFromLayout(
 		improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
 		improbable::WorkerRequirementSet AnyUnrealWorkerOrOwningClient{{WorkerAttribute, OwningClientAttribute}};
 
-		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);
-		worker::Option<std::string> StaticPath;
+		// Set up unreal metadata.
+		improbable::unreal::UnrealMetadata::Data UnrealMetadata;
 		if (Channel->Actor->IsFullNameStableForNetworking())
 		{
-			StaticPath = {std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}};
-		})""");
+			UnrealMetadata.set_static_path({std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}});
+		}
+		if (!ClientWorkerIdString.empty())
+		{
+			UnrealMetadata.set_owner_worker_id({ClientWorkerIdString});
+		}
+		
+		// Build entity.
+		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);)""");
 	SourceWriter.Print("return improbable::unreal::FEntityBuilder::Begin()");
 	SourceWriter.Indent();
 	SourceWriter.Printf(R"""(
@@ -1539,7 +1560,7 @@ void GenerateForwardingCodeFromLayout(
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
 		.SetReadAcl(%s)
-		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{StaticPath}, WorkersOnly))""",
+		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly))""",
 		Class->GetName() == TEXT("PlayerController") ? TEXT("AnyUnrealWorkerOrOwningClient") : TEXT("AnyUnrealWorkerOrClient"));
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
@@ -1778,8 +1799,8 @@ void GenerateForwardingCodeFromLayout(
 			// Check if the property is relevant.
 			SourceWriter.Printf("// %s", *GetFullyQualifiedName(RepProp.Entry.Chain));
 			SourceWriter.Printf("uint32 Handle = %d;", Handle);
-			SourceWriter.Print("const FRepHandleData& Data = HandleToPropertyMap[Handle];");
-			SourceWriter.Print("if (ConditionMap.IsRelevant(Data.Condition))\n{");
+			SourceWriter.Print("const FRepHandleData* Data = &HandleToPropertyMap[Handle];");
+			SourceWriter.Print("if (ConditionMap.IsRelevant(Data->Condition))\n{");
 			SourceWriter.Indent();
 
 			if (Property->IsA<UObjectPropertyBase>())
@@ -1790,7 +1811,7 @@ void GenerateForwardingCodeFromLayout(
 			// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
 			FString PropertyValueName = TEXT("Value");
 			FString PropertyValueCppType = Property->GetCPPType();
-			FString PropertyName = TEXT("Data.Property");
+			FString PropertyName = TEXT("Data->Property");
 			SourceWriter.Printf("%s %s;", *PropertyValueCppType, *PropertyValueName);
 			SourceWriter.Print();
 			GeneratePropertyToUnrealConversion(
@@ -1803,10 +1824,10 @@ void GenerateForwardingCodeFromLayout(
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
-							*Data.Property->GetName(),
+							*Data->Property->GetName(),
 							Handle);)""");
 					SourceWriter.Print("bWriteObjectProperty = false;");
-					SourceWriter.Print("Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);");
+					SourceWriter.Print("Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data->Property), Handle);");
 				});
 
 			// If this is RemoteRole (which will get swapped to Role when the bunch is processed), make sure to downgrade if bAutonomousProxy is false.
@@ -1820,6 +1841,44 @@ void GenerateForwardingCodeFromLayout(
 					{
 						Value = ROLE_SimulatedProxy;
 					})""");
+			}
+
+			// If the property is Role or RemoteRole, handle "unswapping" on the server.
+			int SwappedHandleIndex = -1;
+			if (Property->GetFName() == NAME_RemoteRole)
+			{
+				// Find handle to role.
+				for (auto& OtherRepProp : Layout.ReplicatedProperties[Group])
+				{
+					if (OtherRepProp.Entry.Property->GetFName() == NAME_Role)
+					{
+						SwappedHandleIndex = OtherRepProp.Entry.Handle;
+						break;
+					}
+				}
+			}
+			if (Property->GetFName() == NAME_Role)
+			{
+				// Find handle to remote role.
+				for (auto& OtherRepProp : Layout.ReplicatedProperties[Group])
+				{
+					if (OtherRepProp.Entry.Property->GetFName() == NAME_RemoteRole)
+					{
+						SwappedHandleIndex = OtherRepProp.Entry.Handle;
+						break;
+					}
+				}
+			}
+			if (SwappedHandleIndex != -1)
+			{
+				SourceWriter.Print();
+				SourceWriter.Printf(R"""(
+					// On the server, we want to "undo" the swap which will be done automatically by the network system.
+					if (Interop->GetNetDriver()->IsServer())
+					{
+						Handle = %d;
+						Data = &HandleToPropertyMap[Handle];
+					})""", SwappedHandleIndex);
 			}
 
 			SourceWriter.Print();
@@ -1836,7 +1895,7 @@ void GenerateForwardingCodeFromLayout(
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
-					*Data.Property->GetName(),
+					*Data->Property->GetName(),
 					Handle);)""");
 
 			if (Property->IsA<UObjectPropertyBase>())
@@ -2073,7 +2132,50 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	GenerateForwardingCodeFromLayout(OutputHeader, OutputSource, SchemaFilename, TypeBindingFilename, Class, Layout);
 	OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *TypeBindingFilename));
 	OutputSource.WriteToFile(FString::Printf(TEXT("%s%s.cpp"), *ForwardingCodePath, *TypeBindingFilename));
+
 	return NumComponents;
+}
+
+void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FString>& Classes)
+{
+	FCodeWriter OutputListHeader;
+	FCodeWriter OutputListSource;
+
+	// Header.
+	OutputListHeader.Print(R"""(
+			// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+			// Note that this file has been generated automatically
+			#pragma once
+
+			TArray<UClass*> GetGeneratedTypeBindings();)""");
+
+	// Implementation.
+	OutputListSource.Print(R"""(
+			// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+			// Note that this file has been generated automatically
+
+			#include "SpatialTypeBindingList.h")""");
+	OutputListSource.Print();
+	for (auto& ClassName : Classes)
+	{
+		OutputListSource.Printf("#include \"SpatialTypeBinding_%s.h\"", *ClassName);
+	}
+	OutputListSource.Print();
+	OutputListSource.Print("TArray<UClass*> GetGeneratedTypeBindings()");
+	OutputListSource.Print("{").Indent();
+	OutputListSource.Print("return {");
+	OutputListSource.Indent();
+	for (int i = 0; i < Classes.Num(); ++i)
+	{
+		OutputListSource.Printf(TEXT("USpatialTypeBinding_%s::StaticClass()%s"), *Classes[i], i < (Classes.Num() - 1) ? TEXT(",") : TEXT(""));
+	}
+	OutputListSource.Outdent();
+	OutputListSource.Print("};");
+	OutputListSource.Outdent().Print("}");
+
+	// Write to files.
+	OutputListHeader.WriteToFile(FString::Printf(TEXT("%sSpatialTypeBindingList.h"), *ForwardingCodePath));
+	OutputListSource.WriteToFile(FString::Printf(TEXT("%sSpatialTypeBindingList.cpp"), *ForwardingCodePath));
 }
 } // ::
 
@@ -2093,6 +2195,7 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 			UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassName);
 			ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class);
 		}
+		GenerateTypeBindingList(CombinedForwardingCodePath, Classes);
 	}
 	else
 	{
