@@ -807,7 +807,7 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 	}
 }
 
-USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
+USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer)
 {
 	bool bOk = true;
 	
@@ -865,7 +865,33 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 			GameMode->GameWelcomePlayer(Connection, RedirectURL);
 		}
 
-		Connection->PlayerController = World->SpawnPlayActor(Connection, ROLE_AutonomousProxy, InUrl, WorkerId, ErrorMsg);
+		if (!bExistingPlayer)
+		{
+			Connection->PlayerController = World->SpawnPlayActor(Connection, ROLE_AutonomousProxy, InUrl, WorkerId, ErrorMsg);
+		}
+		else
+		{
+			// Most of this is taken from "World->SpawnPlayActor", excluding the logic to spawn a pawn which happens during
+			// GameMode->PostLogin(...).
+			AGameModeBase* GameMode = World->GetAuthGameMode();
+			APlayerController* NewPlayerController = GameMode->SpawnPlayerController(ROLE_AutonomousProxy, FVector::ZeroVector, FRotator::ZeroRotator);
+			
+			// Destroy the player state (as we'll be replacing it anyway).
+			NewPlayerController->CleanupPlayerState();
+
+			// Possess the newly-spawned player.
+			NewPlayerController->NetPlayerIndex = 0;
+			NewPlayerController->Role = ROLE_Authority;
+			NewPlayerController->SetReplicates(true);
+			NewPlayerController->SetAutonomousProxy(true);
+			NewPlayerController->SetPlayer(Connection);
+			// We explicitly don't call GameMode->PostLogin(NewPlayerController) here, to avoid the engine restarting the player.
+			// TODO: Should we call AGameSession::PostLogin?
+			// TODO: Should we trigger to blueprints that a player has "joined" via GameMode->K2_PostLogin(Connection)?
+
+			Connection->PlayerController = NewPlayerController;
+		}
+
 		if (Connection->PlayerController == NULL)
 		{
 			// Failed to connect.

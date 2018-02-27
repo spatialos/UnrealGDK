@@ -78,7 +78,7 @@ public:
 	USpatialOS* GetSpatialOS() { return SpatialOSInstance; }
 	
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
-	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl);
+	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer);
 
 	USpatialInterop* GetSpatialInterop() const
 	{
