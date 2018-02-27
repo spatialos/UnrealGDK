@@ -21,6 +21,8 @@
 #include "Generated/SpatialTypeBinding_PlayerController.h"
 #include "Generated/SpatialTypeBinding_GameStateBase.h"
 #include "Generated/SpatialTypeBinding_PlayerState.h"
+#include "Generated/SpatialTypeBinding_WheeledVehicle.h"
+#include "WheeledVehicle.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSInterop);
 
@@ -39,6 +41,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	RegisterInteropType(APlayerController::StaticClass(), NewObject<USpatialTypeBinding_PlayerController>(this));
 	RegisterInteropType(AGameStateBase::StaticClass(), NewObject<USpatialTypeBinding_GameStateBase>(this));
 	RegisterInteropType(APlayerState::StaticClass(), NewObject<USpatialTypeBinding_PlayerState>(this));
+	RegisterInteropType(AWheeledVehicle::StaticClass(), NewObject<USpatialTypeBinding_WheeledVehicle>(this));
 }
 
 USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const

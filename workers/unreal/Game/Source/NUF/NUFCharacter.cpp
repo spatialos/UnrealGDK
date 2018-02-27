@@ -8,6 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "VehicleCppPawn.h"
 
 //////////////////////////////////////////////////////////////////////////
 // ANUFCharacter
@@ -60,6 +61,8 @@ void ANUFCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 	PlayerInputComponent->BindAxis("MoveForward", this, &ANUFCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ANUFCharacter::MoveRight);
 
+	InputComponent->BindAction("SpawnCar", IE_Pressed, this, &ANUFCharacter::SpawnCar);
+
 	// We have 2 versions of the rotation bindings to handle different kinds of devices differently
 	// "turn" handles devices that provide an absolute delta, such as a mouse.
 	// "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
@@ -76,6 +79,11 @@ void ANUFCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ANUFCharacter::OnResetVR);
 }
 
+void ANUFCharacter::SpawnCar() {
+	if (HasAuthority()) {
+		//auto NewActor = GetWorld()->SpawnActor<AActor>(AVehicleCppPawn::StaticClass(), FVector(-580, -1130, 200), FRotator::ZeroRotator, FActorSpawnParameters());
+	}
+}
 
 void ANUFCharacter::OnResetVR()
 {

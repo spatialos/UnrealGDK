@@ -39,65 +39,6 @@ component UnrealPlayerStateMultiClientReplicatedData {
 }
 component UnrealPlayerStateCompleteData {
 	id = 100022;
-	UnrealObjectRef field_enginemessageclass = 1;
-	string field_savednetworkaddress = 2;
-	UnrealObjectRef field_spritecomponent = 3;
-	uint32 field_primaryactortick_tickgroup = 4;
-	uint32 field_primaryactortick_endtickgroup = 5;
-	bool field_primaryactortick_btickevenwhenpaused = 6;
-	bool field_primaryactortick_bcanevertick = 7;
-	bool field_primaryactortick_bstartwithtickenabled = 8;
-	bool field_primaryactortick_ballowtickondedicatedserver = 9;
-	float field_primaryactortick_tickinterval = 10;
-	float field_customtimedilation = 11;
-	bool field_bnettemporary = 12;
-	bool field_bnetstartup = 13;
-	bool field_bonlyrelevanttoowner = 14;
-	bool field_balwaysrelevant = 15;
-	bool field_bnetloadonclient = 16;
-	bool field_bnetuseownerrelevancy = 17;
-	bool field_bblockinput = 18;
-	bool field_ballowtickbeforebeginplay = 19;
-	bool field_bactorenablecollision = 20;
-	bool field_breplicates = 21;
-	string field_netdrivername = 22;
-	uint32 field_autoreceiveinput = 23;
-	int32 field_inputpriority = 24;
-	UnrealObjectRef field_inputcomponent = 25;
-	uint32 field_inputconsumeoption = 26;
-	float field_netculldistancesquared = 27;
-	float field_netupdatefrequency = 28;
-	float field_minnetupdatefrequency = 29;
-	float field_netpriority = 30;
-	bool field_bautodestroywhenfinished = 31;
-	bool field_bcollidewhenplacing = 32;
-	bool field_bfindcameracomponentwhenviewtarget = 33;
-	bool field_brelevantfornetworkreplays = 34;
-	bool field_bgenerateoverlapeventsduringlevelstreaming = 35;
-	bool field_bcanbeincluster = 36;
-	uint32 field_spawncollisionhandlingmethod = 37;
-	UnrealObjectRef field_rootcomponent = 38;
-	improbable.Vector3f field_pivotoffset = 39;
-	float field_initiallifespan = 40;
-	bytes field_layers = 41;
-	UnrealObjectRef field_parentcomponentactor = 42;
-	UnrealObjectRef field_parentcomponent = 43;
-	float field_spritescale = 44;
-	string field_actorlabel = 45;
-	string field_folderpath = 46;
-	bool field_bactorlabeleditable = 47;
-	bool field_bhiddened = 48;
-	bool field_beditable = 49;
-	bool field_blistedinsceneoutliner = 50;
-	bool field_bhiddenedlayer = 51;
-	bool field_blocklocation = 52;
-	bool field_ballowreceivetickeventondedicatedserver = 53;
-	bool field_bactorseamlesstraveled = 54;
-	bool field_bignoresoriginshifting = 55;
-	bool field_benableautolodgeneration = 56;
-	bytes field_tags = 57;
-	bytes field_blueprintcreatedcomponents = 58;
-	bytes field_instancecomponents = 59;
 }
 
 component UnrealPlayerStateClientRPCs {
