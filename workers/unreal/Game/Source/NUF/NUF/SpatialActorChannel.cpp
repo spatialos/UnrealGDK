@@ -450,9 +450,9 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	// the PlayerController at the same time as the pawn.
 
 	// Check that it has moved sufficiently far to be updated
-	constexpr float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
-	FVector ActorSpatialPosition = GetSpatialPosition();
-	if (!FVector::DistSquared(ActorSpatialPosition, LastSpatialPosition) > SpatialPositionThreshold)
+	const float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
+	FVector ActorSpatialPosition = GetActorSpatialPosition();
+	if (FVector::DistSquared(ActorSpatialPosition, LastSpatialPosition) < SpatialPositionThreshold)
 	{
 		return;
 	}

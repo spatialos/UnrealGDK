@@ -111,6 +111,7 @@ public:
 
 	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
 	void AddActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel);
+	void RemoveActorChannel(worker::EntityId EntityId);
 
 	// Used by generated type bindings to map an entity ID to its actor channel.
 	USpatialActorChannel* GetActorChannelByEntityId(const worker::EntityId& EntityId) const;
