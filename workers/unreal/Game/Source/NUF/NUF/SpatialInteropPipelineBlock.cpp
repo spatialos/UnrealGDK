@@ -151,7 +151,7 @@ void USpatialInteropPipelineBlock::EnterCriticalSection()
 
 void USpatialInteropPipelineBlock::LeaveCriticalSection()
 {
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: Leaving critical section. Creating entity."));
+	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: Leaving critical section."));
 	check(bInCriticalSection);
 
 	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
