@@ -212,14 +212,13 @@ void USpatialInterop::AddActorChannel(const worker::EntityId& EntityId, USpatial
 
 void USpatialInterop::RemoveActorChannel(worker::EntityId EntityId)
 {
-	auto ActorChannel = EntityToActorChannel[EntityId];
+	USpatialActorChannel* Channel = EntityToActorChannel.FindRef(EntityId);
+	// TODO(David): Purge stuff from queues.
 	EntityToActorChannel.Remove(EntityId);
 }
 
 USpatialActorChannel* USpatialInterop::GetActorChannelByEntityId(const worker::EntityId & EntityId) const
 {
-	checkf(NetDriver->GetNetMode() == NM_Client, TEXT("USpatialInterop currently only maintains actor channels on the client."));
-
 	// Get actor channel.
 	USpatialActorChannel* const* ActorChannelIt = EntityToActorChannel.Find(EntityId);
 	if (!ActorChannelIt)

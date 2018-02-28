@@ -72,6 +72,26 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 		.SetReadAcl(AnyWorkerReadPermission)
 		.AddComponent<unreal::UnrealLevel>(unreal::UnrealLevel::Data{StaticActorMap}, UnrealWorkerWritePermission)
 		.Build());
+
+	// Set up grid of "placeholder" entities to allow workers to be authoritative over _something_.
+	const int PLACEHOLDER_ENTITY_NUM = 3;
+	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
+	int PlaceholderEntityIdCounter = SpatialConstants::LEVEL_DATA_ENTITY_ID + 1;
+	for (int x = -PLACEHOLDER_ENTITY_NUM; x < PLACEHOLDER_ENTITY_NUM; x++)
+	{
+		for (int y = -PLACEHOLDER_ENTITY_NUM; y < PLACEHOLDER_ENTITY_NUM; y++)
+		{
+			const Coordinates PlaceholderPosition{x * CHUNK_SIZE + CHUNK_SIZE * 0.5f, 0, y * CHUNK_SIZE + CHUNK_SIZE * 0.5f};
+			LevelEntities.emplace(PlaceholderEntityIdCounter, improbable::unreal::FEntityBuilder::Begin()
+				.AddPositionComponent(Position::Data{PlaceholderPosition}, UnrealWorkerWritePermission)
+				.AddMetadataComponent(Metadata::Data("Placeholder"))
+				.SetPersistence(true)
+				.SetReadAcl(AnyWorkerReadPermission)
+				.AddComponent<unreal::UnrealLevelPlaceholder>(unreal::UnrealLevelPlaceholder::Data{}, UnrealWorkerWritePermission)
+				.Build());
+			PlaceholderEntityIdCounter++;
+		}
+	}
 	return LevelEntities;
 }
 } // ::
