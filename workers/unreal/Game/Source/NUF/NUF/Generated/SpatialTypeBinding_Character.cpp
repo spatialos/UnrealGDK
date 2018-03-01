@@ -3,6 +3,7 @@
 
 #include "SpatialTypeBinding_Character.h"
 #include "Engine.h"
+
 #include "SpatialOS.h"
 #include "EntityBuilder.h"
 
@@ -12,6 +13,9 @@
 #include "../SpatialPackageMapClient.h"
 #include "../SpatialNetDriver.h"
 #include "../SpatialInterop.h"
+
+#include "UnrealCharacterSingleClientReplicatedDataAddComponentOp.h"
+#include "UnrealCharacterMultiClientReplicatedDataAddComponentOp.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
 {
@@ -118,23 +122,11 @@ void USpatialTypeBinding_Character::Init(USpatialInterop* InInterop, USpatialPac
 void USpatialTypeBinding_Character::BindToView()
 {
 	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
+	ViewCallbacks.Init(View);
+
 	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
 	{
-		SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
-			const worker::AddComponentOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
-		{
-			auto Update = improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update::FromInitialData(Op.Data);
-			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
-			if (ActorChannel)
-			{
-				ClientReceiveUpdate_SingleClient(ActorChannel, Update);
-			}
-			else
-			{
-				PendingSingleClientData.Add(Op.EntityId, Op.Data);
-			}
-		});
-		SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
@@ -146,22 +138,8 @@ void USpatialTypeBinding_Character::BindToView()
 			{
 				Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
 			}
-		});
-		MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
-			const worker::AddComponentOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
-		{
-			auto Update = improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update::FromInitialData(Op.Data);
-			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
-			if (ActorChannel)
-			{
-				ClientReceiveUpdate_MultiClient(ActorChannel, Update);
-			}
-			else
-			{
-				PendingMultiClientData.Add(Op.EntityId, Op.Data);
-			}
-		});
-		MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
+		}));
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
@@ -173,54 +151,43 @@ void USpatialTypeBinding_Character::BindToView()
 			{
 				Op.Update.ApplyTo(PendingMultiClientData.FindOrAdd(Op.EntityId));
 			}
-		});
+		}));
 	}
 
 	using ClientRPCCommandTypes = improbable::unreal::UnrealCharacterClientRPCs::Commands;
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Rootmotiondebugclientprintonscreen>(std::bind(&USpatialTypeBinding_Character::RootMotionDebugClientPrintOnScreen_OnCommandRequest, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatwalk>(std::bind(&USpatialTypeBinding_Character::ClientCheatWalk_OnCommandRequest, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatghost>(std::bind(&USpatialTypeBinding_Character::ClientCheatGhost_OnCommandRequest, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatfly>(std::bind(&USpatialTypeBinding_Character::ClientCheatFly_OnCommandRequest, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientveryshortadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_OnCommandRequest, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientadjustrootmotionsourceposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_OnCommandRequest, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientadjustrootmotionposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_OnCommandRequest, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustPosition_OnCommandRequest, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ClientRPCCommandTypes::Clientackgoodmove>(std::bind(&USpatialTypeBinding_Character::ClientAckGoodMove_OnCommandRequest, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Rootmotiondebugclientprintonscreen>(std::bind(&USpatialTypeBinding_Character::RootMotionDebugClientPrintOnScreen_OnCommandResponse, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatwalk>(std::bind(&USpatialTypeBinding_Character::ClientCheatWalk_OnCommandResponse, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatghost>(std::bind(&USpatialTypeBinding_Character::ClientCheatGhost_OnCommandResponse, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatfly>(std::bind(&USpatialTypeBinding_Character::ClientCheatFly_OnCommandResponse, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientveryshortadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_OnCommandResponse, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientadjustrootmotionsourceposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_OnCommandResponse, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientadjustrootmotionposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_OnCommandResponse, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustPosition_OnCommandResponse, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ClientRPCCommandTypes::Clientackgoodmove>(std::bind(&USpatialTypeBinding_Character::ClientAckGoodMove_OnCommandResponse, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandRequest<ClientRPCCommandTypes::Rootmotiondebugclientprintonscreen>(std::bind(&USpatialTypeBinding_Character::RootMotionDebugClientPrintOnScreen_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatwalk>(std::bind(&USpatialTypeBinding_Character::ClientCheatWalk_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatghost>(std::bind(&USpatialTypeBinding_Character::ClientCheatGhost_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandRequest<ClientRPCCommandTypes::Clientcheatfly>(std::bind(&USpatialTypeBinding_Character::ClientCheatFly_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandRequest<ClientRPCCommandTypes::Clientveryshortadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandRequest<ClientRPCCommandTypes::Clientadjustrootmotionsourceposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandRequest<ClientRPCCommandTypes::Clientadjustrootmotionposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandRequest<ClientRPCCommandTypes::Clientadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustPosition_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandRequest<ClientRPCCommandTypes::Clientackgoodmove>(std::bind(&USpatialTypeBinding_Character::ClientAckGoodMove_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ClientRPCCommandTypes::Rootmotiondebugclientprintonscreen>(std::bind(&USpatialTypeBinding_Character::RootMotionDebugClientPrintOnScreen_OnCommandResponse, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatwalk>(std::bind(&USpatialTypeBinding_Character::ClientCheatWalk_OnCommandResponse, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatghost>(std::bind(&USpatialTypeBinding_Character::ClientCheatGhost_OnCommandResponse, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ClientRPCCommandTypes::Clientcheatfly>(std::bind(&USpatialTypeBinding_Character::ClientCheatFly_OnCommandResponse, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ClientRPCCommandTypes::Clientveryshortadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_OnCommandResponse, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ClientRPCCommandTypes::Clientadjustrootmotionsourceposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_OnCommandResponse, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ClientRPCCommandTypes::Clientadjustrootmotionposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_OnCommandResponse, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ClientRPCCommandTypes::Clientadjustposition>(std::bind(&USpatialTypeBinding_Character::ClientAdjustPosition_OnCommandResponse, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ClientRPCCommandTypes::Clientackgoodmove>(std::bind(&USpatialTypeBinding_Character::ClientAckGoodMove_OnCommandResponse, this, std::placeholders::_1)));
 
 	using ServerRPCCommandTypes = improbable::unreal::UnrealCharacterServerRPCs::Commands;
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermoveold>(std::bind(&USpatialTypeBinding_Character::ServerMoveOld_OnCommandRequest, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermovedualhybridrootmotion>(std::bind(&USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_OnCommandRequest, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermovedual>(std::bind(&USpatialTypeBinding_Character::ServerMoveDual_OnCommandRequest, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Servermove>(std::bind(&USpatialTypeBinding_Character::ServerMove_OnCommandRequest, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servermoveold>(std::bind(&USpatialTypeBinding_Character::ServerMoveOld_OnCommandResponse, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servermovedualhybridrootmotion>(std::bind(&USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_OnCommandResponse, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servermovedual>(std::bind(&USpatialTypeBinding_Character::ServerMoveDual_OnCommandResponse, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Servermove>(std::bind(&USpatialTypeBinding_Character::ServerMove_OnCommandResponse, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandRequest<ServerRPCCommandTypes::Servermoveold>(std::bind(&USpatialTypeBinding_Character::ServerMoveOld_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandRequest<ServerRPCCommandTypes::Servermovedualhybridrootmotion>(std::bind(&USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandRequest<ServerRPCCommandTypes::Servermovedual>(std::bind(&USpatialTypeBinding_Character::ServerMoveDual_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandRequest<ServerRPCCommandTypes::Servermove>(std::bind(&USpatialTypeBinding_Character::ServerMove_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ServerRPCCommandTypes::Servermoveold>(std::bind(&USpatialTypeBinding_Character::ServerMoveOld_OnCommandResponse, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ServerRPCCommandTypes::Servermovedualhybridrootmotion>(std::bind(&USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_OnCommandResponse, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ServerRPCCommandTypes::Servermovedual>(std::bind(&USpatialTypeBinding_Character::ServerMoveDual_OnCommandResponse, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ServerRPCCommandTypes::Servermove>(std::bind(&USpatialTypeBinding_Character::ServerMove_OnCommandResponse, this, std::placeholders::_1)));
 }
 
 void USpatialTypeBinding_Character::UnbindFromView()
 {
-	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
-	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
-	{
-		View->Remove(SingleClientAddCallback);
-		View->Remove(SingleClientUpdateCallback);
-		View->Remove(MultiClientAddCallback);
-		View->Remove(MultiClientUpdateCallback);
-	}
-	for (auto& Callback : RPCReceiverCallbacks)
-	{
-		View->Remove(Callback);
-	}
+	ViewCallbacks.Reset();
 }
 
 worker::ComponentId USpatialTypeBinding_Character::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
@@ -317,6 +284,22 @@ void USpatialTypeBinding_Character::SendRPCCommand(UObject* TargetObject, const 
 	auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
 	checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
 	(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetObject);
+}
+
+void USpatialTypeBinding_Character::ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const
+{
+	auto* SingleClientAddOp = Cast<UUnrealCharacterSingleClientReplicatedDataAddComponentOp>(AddComponentOp);
+	if (SingleClientAddOp)
+	{
+		auto Update = improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update::FromInitialData(*SingleClientAddOp->Data.data());
+		ClientReceiveUpdate_SingleClient(Channel, Update);
+	}
+	auto* MultiClientAddOp = Cast<UUnrealCharacterMultiClientReplicatedDataAddComponentOp>(AddComponentOp);
+	if (MultiClientAddOp)
+	{
+		auto Update = improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update::FromInitialData(*MultiClientAddOp->Data.data());
+		ClientReceiveUpdate_MultiClient(Channel, Update);
+	}
 }
 
 void USpatialTypeBinding_Character::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)
