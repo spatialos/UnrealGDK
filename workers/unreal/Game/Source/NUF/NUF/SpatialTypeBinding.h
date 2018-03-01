@@ -6,6 +6,7 @@
 
 #include "CoreMinimal.h"
 #include "Net/RepLayout.h"
+#include "AddComponentOpWrapperBase.h"
 #include "SpatialTypeBinding.generated.h"
 
 class USpatialInterop;
@@ -55,6 +56,7 @@ public:
 	virtual void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const PURE_VIRTUAL(USpatialTypeBinding::SendComponentUpdates, );
 	virtual void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) PURE_VIRTUAL(USpatialTypeBinding::SendRPCCommand, );
 	
+	virtual void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const PURE_VIRTUAL(USpatialTypeBinding::ReceiveAddComponent, );
 	virtual void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) PURE_VIRTUAL(USpatialTypeBinding::ApplyQueuedStateToActor, );
 
 protected:

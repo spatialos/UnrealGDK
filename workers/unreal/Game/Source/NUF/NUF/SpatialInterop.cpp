@@ -146,30 +146,6 @@ void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TAr
 	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), Channel, Channel->GetEntityId());
 }
 
-void USpatialInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)
-{
-	// Add null terminator to payload.
-	uint32 Terminator = 0;
-	IncomingPayload.SerializeIntPacked(Terminator);
-
-	// Build bunch data to send to the actor channel.
-	FNetBitWriter BunchData(nullptr, 0);
-	// Write header.
-	BunchData.WriteBit(1); // bHasRepLayout
-	BunchData.WriteBit(1); // bIsActor
-	// Write property info.
-	uint32 PayloadSize = IncomingPayload.GetNumBits();
-	BunchData.SerializeIntPacked(PayloadSize);
-	BunchData.SerializeBits(IncomingPayload.GetData(), IncomingPayload.GetNumBits());
-
-	// Create bunch and send to actor channel.
-	FInBunch Bunch(Channel->Connection, BunchData.GetData(), BunchData.GetNumBits());
-	Bunch.ChIndex = Channel->ChIndex;
-	Bunch.bHasMustBeMappedGUIDs = false;
-	Bunch.bIsReplicationPaused = false;
-	Channel->UActorChannel::ReceivedBunch(Bunch);
-}
-
 void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)
 {
 	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
@@ -181,6 +157,41 @@ void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Func
 	}
 
 	Binding->SendRPCCommand(Frame->Object, Function, Frame);
+}
+
+void USpatialInterop::ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp)
+{
+	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
+	if (!Binding)
+	{
+		return;
+	}
+	Binding->ReceiveAddComponent(Channel, AddComponentOp);
+}
+
+void USpatialInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)
+{
+	// Add null terminator to payload.
+	uint32 Terminator = 0;
+	IncomingPayload.SerializeIntPacked(Terminator);
+
+	// Build bunch data to send to the actor channel.
+	FNetBitWriter BunchData(nullptr, 0);
+	// Write header.
+	BunchData.WriteBit(1); // bHasRepLayout
+	BunchData.WriteBit(1); // bIsActor
+	
+	// Write property info.
+	uint32 PayloadSize = IncomingPayload.GetNumBits();
+	BunchData.SerializeIntPacked(PayloadSize);
+	BunchData.SerializeBits(IncomingPayload.GetData(), IncomingPayload.GetNumBits());
+
+	// Create bunch and send to actor channel.
+	FInBunch Bunch(Channel->Connection, BunchData.GetData(), BunchData.GetNumBits());
+	Bunch.ChIndex = Channel->ChIndex;
+	Bunch.bHasMustBeMappedGUIDs = false;
+	Bunch.bIsReplicationPaused = false;
+	Channel->UActorChannel::ReceivedBunch(Bunch);
 }
 
 void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)

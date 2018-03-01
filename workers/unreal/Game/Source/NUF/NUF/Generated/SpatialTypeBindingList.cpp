@@ -5,6 +5,7 @@
 
 #include "SpatialTypeBinding_PlayerController.h"
 #include "SpatialTypeBinding_PlayerState.h"
+#include "SpatialTypeBinding_GameStateBase.h"
 #include "SpatialTypeBinding_Character.h"
 
 TArray<UClass*> GetGeneratedTypeBindings()
@@ -12,6 +13,7 @@ TArray<UClass*> GetGeneratedTypeBindings()
 	return {
 		USpatialTypeBinding_PlayerController::StaticClass(),
 		USpatialTypeBinding_PlayerState::StaticClass(),
+		USpatialTypeBinding_GameStateBase::StaticClass(),
 		USpatialTypeBinding_Character::StaticClass()
 	};
 }

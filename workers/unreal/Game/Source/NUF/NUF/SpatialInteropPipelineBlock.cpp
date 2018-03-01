@@ -376,6 +376,12 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			// Inform USpatialInterop of this new actor channel.
 			NetDriver->GetSpatialInterop()->AddActorChannel(EntityId.ToSpatialEntityId(), Channel);
 
+			// Apply initial replicated properties.
+			for (FPendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+			{
+				NetDriver->GetSpatialInterop()->ReceiveAddComponent(Channel, PendingAddComponent.AddComponentOp);
+			}
+
 			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 			// a player index. For now we don't support split screen, so the number is always 0.
 			if (NetDriver->ServerConnection)
