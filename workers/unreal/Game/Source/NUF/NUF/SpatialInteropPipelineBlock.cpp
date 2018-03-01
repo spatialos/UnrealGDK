@@ -307,20 +307,20 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 	}
 	else
 	{
-		UClass* ActorClass = GetRegisteredEntityClass(MetadataComponent);
-		if (ActorClass)
+		UClass* ActorClass = nullptr;
+		if ((ActorClass = GetRegisteredEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 2
 			UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Spawning a registered %s"), *ActorClass->GetName());
 			EntityActor = SpawnNewEntity(PositionComponent, World, ActorClass);
 			EntityRegistry->AddToRegistry(EntityId, EntityActor);
 		}
-		else
+		else if ((ActorClass = GetNativeEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 3
 			UNetConnection* Connection = nullptr;
-			ActorClass = GetNativeEntityClass(MetadataComponent);
 			improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
+			check(UnrealMetadataComponent);
 
 			// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
 			if (NetDriver->IsServer() && ActorClass == APlayerController::StaticClass())

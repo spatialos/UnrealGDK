@@ -217,8 +217,6 @@ void USpatialInterop::RemoveActorChannel(worker::EntityId EntityId)
 
 USpatialActorChannel* USpatialInterop::GetActorChannelByEntityId(const worker::EntityId & EntityId) const
 {
-	checkf(NetDriver->GetNetMode() == NM_Client, TEXT("USpatialInterop currently only maintains actor channels on the client."));
-
 	// Get actor channel.
 	USpatialActorChannel* const* ActorChannelIt = EntityToActorChannel.Find(EntityId);
 	if (!ActorChannelIt)
