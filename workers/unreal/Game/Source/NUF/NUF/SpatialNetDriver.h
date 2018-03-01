@@ -7,6 +7,7 @@
 #include "SpatialInteropPipelineBlock.h"
 #include "SpatialInterop.h"
 #include "PlayerSpawnRequestSender.h"
+#include "SpatialOutputDevice.h"
 #include "SpatialNetDriver.generated.h"
 
 class UEntityPipeline;
@@ -88,6 +89,8 @@ public:
 protected:
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
+
+	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	UPROPERTY()
 	USpatialOSComponentUpdater* SpatialOSComponentUpdater;

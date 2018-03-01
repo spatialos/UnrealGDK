@@ -44,6 +44,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	UChannel::ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
 	SpatialOSInstance = NewObject<USpatialOS>(this);
+	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(SpatialOSInstance, TEXT("Unreal"));
 
 	SpatialOSInstance->OnConnectedDelegate.AddDynamic(this,
 		&USpatialNetDriver::OnSpatialOSConnected);
