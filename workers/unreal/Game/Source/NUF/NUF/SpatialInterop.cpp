@@ -23,10 +23,11 @@
 #include "Generated/SpatialTypeBinding_PlayerState.h"
 #include "Generated/SpatialTypeBinding_WheeledVehicle.h"
 #include "WheeledVehicle.h"
+#include "PossessPawnComponent.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSInterop);
 
-USpatialInterop::USpatialInterop() 
+USpatialInterop::USpatialInterop()
 {
 }
 
@@ -72,34 +73,49 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 		if (TypeBinding)
 		{
 			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Actor->GetActorLocation(), PathStr, Channel->GetChangeState(Changed), Channel);
+
+			//TODO: Replace with reasonable code to add components
+			if (Actor->GetName().Contains("NUFCharacter")) {
+				//improbable::WorkerAttributeSet kUnrealWorkerAttributeSet = worker::List<std::string>{ "UnrealWorker" };
+				//improbable::WorkerAttributeSet kUnrealClientAttributeSet = worker::List<std::string>{ "UnrealClient" };
+
+				//improbable::WorkerRequirementSet kAllWorkers = {{kUnrealWorkerAttributeSet, kUnrealClientAttributeSet }};
+
+				//worker::Map<std::uint32_t, improbable::WorkerRequirementSet> ComponentAuthority;
+				//ComponentAuthority.emplace(nuf::PossessPawn::ComponentId, kAllWorkers);
+
+				//Entity.Add<nuf::PossessPawn>(nuf::PossessPawn::Data());
+				//Entity.Add<improbable::EntityAcl>(improbable::EntityAcl::Data( kAllWorkers, ComponentAuthority ));
+			}
+
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId(), 0);
 		}
 		else
 		{
 			std::string ClientWorkerIdString = TCHAR_TO_UTF8(*PlayerWorkerId);
 
-			improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
-			improbable::WorkerAttributeSet ClientAttribute{{worker::List<std::string>{"UnrealClient"}}};
-			improbable::WorkerAttributeSet OwnClientAttribute{{"workerId:" + ClientWorkerIdString}};
+			improbable::WorkerAttributeSet WorkerAttribute{ { worker::List<std::string>{"UnrealWorker"} } };
+			improbable::WorkerAttributeSet ClientAttribute{ { worker::List<std::string>{"UnrealClient"} } };
+			improbable::WorkerAttributeSet OwnClientAttribute{ { "workerId:" + ClientWorkerIdString } };
 
-			improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
-			improbable::WorkerRequirementSet ClientsOnly{{ClientAttribute}};
-			improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
-			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
+			improbable::WorkerRequirementSet WorkersOnly{ { WorkerAttribute } };
+			improbable::WorkerRequirementSet ClientsOnly{ { ClientAttribute } };
+			improbable::WorkerRequirementSet OwnClientOnly{ { OwnClientAttribute } };
+			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{ { WorkerAttribute, ClientAttribute } };
 
 			const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Actor->GetActorLocation());
 			worker::Option<std::string> StaticPath;
 			if (Channel->Actor->IsFullNameStableForNetworking())
 			{
-				StaticPath = {std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}};
+				StaticPath = { std::string{ TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld())) } };
 			}
 			FString PathName = Channel->Actor->GetPathName(Channel->GetWorld());
 			auto Entity = improbable::unreal::FEntityBuilder::Begin()
 				.AddPositionComponent(SpatialPosition, WorkersOnly)
-				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
+				.AddMetadataComponent(improbable::Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
 				.SetPersistence(true)
 				.SetReadAcl(AnyUnrealWorkerOrClient)
-				.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{StaticPath}, WorkersOnly)
+				.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{ StaticPath }, WorkersOnly)
 				// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
 				// todo-giray: Remove once we're using proper (generated) entity templates here.
 				.AddComponent<improbable::unreal::PlayerControlClient>(improbable::unreal::PlayerControlClient::Data{}, OwnClientOnly)
@@ -152,7 +168,7 @@ void USpatialInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBi
 	// Write header.
 	BunchData.WriteBit(1); // bHasRepLayout
 	BunchData.WriteBit(1); // bIsActor
-	// Write property info.
+						   // Write property info.
 	uint32 PayloadSize = IncomingPayload.GetNumBits();
 	BunchData.SerializeIntPacked(PayloadSize);
 	BunchData.SerializeBits(IncomingPayload.GetData(), IncomingPayload.GetNumBits());
@@ -320,7 +336,7 @@ void USpatialInterop::QueueIncomingObjectUpdate_Internal(const improbable::unrea
 	check(Property);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref depending on object ref: %s, channel: %s, property: %s."),
 		*ObjectRefToString(UnresolvedObjectRef), *DependentChannel->GetName(), *Property->GetName());
-	PendingIncomingObjectRefProperties.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Add({Property, Handle});
+	PendingIncomingObjectRefProperties.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Add({ Property, Handle });
 }
 
 void USpatialInterop::QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder)
@@ -358,7 +374,7 @@ void USpatialInterop::SetComponentInterests(USpatialActorChannel* ActorChannel, 
 		if (Binding)
 		{
 			worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
-			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{true});
+			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{ true });
 			SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId, Interest);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: We are the owning client of %s (%llu), therefore we want single client updates."),
 				*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId(),
@@ -425,7 +441,7 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 		{
 			Writer.SerializeProperty(Property.Handle, Property.ObjectProperty, &Object);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object property update. actor %s (%llu), property %s (handle %d)"),
-				*SpatialOSInstance ->GetWorkerId(),
+				*SpatialOSInstance->GetWorkerId(),
 				*DependentChannel->Actor->GetName(),
 				DependentChannel->GetEntityId(),
 				*Property.ObjectProperty->GetName(),

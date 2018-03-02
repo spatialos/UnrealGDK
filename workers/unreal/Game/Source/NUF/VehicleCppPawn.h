@@ -72,9 +72,6 @@ public:
 	FVector InternalCameraOrigin;
 	// Begin Pawn interface
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
-
-	UFUNCTION()
-	void test();
 	// End Pawn interface
 
 	// Begin Actor interface
@@ -87,6 +84,8 @@ public:
 
 	/** Handle pressing forwards */
 	void MoveForward(float Val);
+
+	void Interact();
 
 	/** Update the physics material used by the vehicle mesh */
 	void UpdatePhysicsMaterial();

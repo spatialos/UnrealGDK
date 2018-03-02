@@ -19,8 +19,12 @@
 #include "MetadataAddComponentOp.h"
 #include "MetadataComponent.h"
 #include "UnrealMetadataAddComponentOp.h"
+#include "UnrealWheeledVehicleMultiClientReplicatedDataAddComponentOp.h"
+#include "UnrealWheeledVehicleMultiClientReplicatedDataComponent.h"
+#include "SpatialConstants.h"
 #include "UnrealMetadataComponent.h"
 #include "UnrealLevelComponent.h"
+#include "Generated/SpatialTypeBinding_WheeledVehicle.h"
 
 void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry)
 {
@@ -76,7 +80,7 @@ void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId Com
 		AuthChangeOp);
 	if (NextBlock)
 	{
-		NextBlock->ChangeAuthority(ComponentId, AuthChangeOp);	
+		NextBlock->ChangeAuthority(ComponentId, AuthChangeOp);
 	}
 }
 
@@ -135,6 +139,23 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 						continue;
 					}
 
+					//UUnrealWheeledVehicleMultiClientReplicatedDataAddComponentOp* temp = GetPendingAddComponent<UUnrealWheeledVehicleMultiClientReplicatedDataAddComponentOp, UUnrealWheeledVehicleMultiClientReplicatedDataComponent>(EntityToSpawn);
+					//if (temp)
+					//{
+					//	auto uobjectref = temp->Data.data()->field_controller();
+					//	if (uobjectref == SpatialConstants::NULL_OBJECT_REF) {
+					//		continue;
+					//	}
+
+					//	UNetConnection* Connection = Driver->GetSpatialOSNetConnection();
+					//	USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
+					//	auto netguid = PackageMap->GetNetGUIDFromUnrealObjectRef(uobjectref);
+					//	if (!netguid.IsValid()) {
+					//		UE_LOG(LogSpatialOSNUF, Warning, TEXT("Waiting for owner %s"), *ObjectRefToString(uobjectref));
+					//		continue;
+					//	}
+					//}
+
 					// Option 3
 					ClassToSpawn = GetNativeEntityClass(MetadataAddComponentOp);
 					improbable::unreal::UnrealMetadataData& UnrealMetadata = *(*UnrealMetadataAddComponentOp).Data.data();
@@ -159,7 +180,7 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 					USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, false));
 
 					check(Channel);
-					
+
 					PackageMap->ResolveEntityActor(EntityActor, EntityToSpawn);
 					Channel->SetChannelActor(EntityActor);
 
@@ -183,7 +204,7 @@ void USpatialInteropPipelineBlock::AddEntities(UWorld* World,
 					// Inform USpatialInterop of this new client facing actor channel.
 					Driver->GetSpatialInterop()->AddActorChannel_Client(EntityToSpawn.ToSpatialEntityId(), Channel);
 				}
-				EntityActor->PostNetInit();				
+				EntityActor->PostNetInit();
 			}
 			SpawnedEntities.Add(EntityToSpawn);
 		}
@@ -335,7 +356,7 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(
 		SpawnInfo.bNoFail = true;
 		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 		NewActor = World->SpawnActorAbsolute(ClassToSpawn, FTransform(FRotator::ZeroRotator, InitialLocation), SpawnInfo);
-			
+
 		check(NewActor);
 
 		TArray<UActorComponent*> SpatialOSComponents =
@@ -348,7 +369,7 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(
 				Component->GetClass());
 		}
 	}
-		
+
 	return NewActor;
 }
 
@@ -367,7 +388,7 @@ UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(UMetadataAddCompo
 		if (EntityTypeString.FindLastChar('/', LastSlash))
 		{
 			RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString.RightChop(LastSlash));
-		}		
+		}
 	}
 	UClass* ClassToSpawn = RegisteredClass ? *RegisteredClass : nullptr;
 
@@ -378,7 +399,7 @@ UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(UMetadataAddCompo
 UClass* USpatialInteropPipelineBlock::GetNativeEntityClass(UMetadataAddComponentOp* MetadataComponent)
 {
 	FString Metadata = UTF8_TO_TCHAR(MetadataComponent->Data->entity_type().c_str());
-	return FindObject<UClass>(ANY_PACKAGE, *Metadata);	
+	return FindObject<UClass>(ANY_PACKAGE, *Metadata);
 }
 
 void USpatialInteropPipelineBlock::SetupComponentInterests(
