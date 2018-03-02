@@ -417,7 +417,12 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 		PinnedView->Remove(ReserveEntityCallback);
 	}
 
+	USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
+	check(PackageMap);
 	ActorEntityId = *Op.EntityId;
+
+	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
+	PackageMap->ResolveEntityActor(Actor, ActorEntityId);
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
@@ -431,7 +436,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		UnbindFromSpatialView();
 		return;
 	}
-	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Created entity (%d) for: %s. Request id: %d"), Op.EntityId.value_or(0), *Actor->GetName(), ReserveEntityIdRequestId.Id);
+	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Created entity (%d) for: %s. Request id: %d"), ActorEntityId, *Actor->GetName(), ReserveEntityIdRequestId.Id);
 
 	auto PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
@@ -439,14 +444,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		PinnedView->Remove(CreateEntityCallback);
 	}
 
-	USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-	check(PackageMap);
-	
-	worker::EntityId SpatialEntityId = Op.EntityId.value_or(0);
-	FEntityId EntityId(SpatialEntityId);
-	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
-	FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(Actor, ActorEntityId);
-	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());	
+	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), ActorEntityId);	
 }	
 
 void USpatialActorChannel::UpdateSpatialPosition(bool SendComponentUpdate)
