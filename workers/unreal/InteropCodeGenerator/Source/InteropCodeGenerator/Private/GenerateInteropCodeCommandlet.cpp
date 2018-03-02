@@ -1772,7 +1772,8 @@ void GenerateForwardingCodeFromLayout(
 			FBunchPayloadWriter OutputWriter(PackageMap);
 
 			auto& HandleToPropertyMap = GetHandlePropertyMap();
-			const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::%s::ComponentId);
+			const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::%s::ComponentId);	
+			const bool bIsServer = Interop->GetNetDriver()->IsServer();
 			ConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);)""",
 			*GetSchemaRPCComponentName(ERPCType::RPC_Client, Class));
 		for (auto& RepProp : Layout.ReplicatedProperties[Group])
@@ -1790,7 +1791,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Printf("// %s", *GetFullyQualifiedName(RepProp.Entry.Chain));
 			SourceWriter.Printf("uint32 Handle = %d;", Handle);
 			SourceWriter.Print("const FRepHandleData* Data = &HandleToPropertyMap[Handle];");
-			SourceWriter.Print("if (ConditionMap.IsRelevant(Data->Condition))\n{");
+			SourceWriter.Print("if (bIsServer || ConditionMap.IsRelevant(Data->Condition))\n{");
 			SourceWriter.Indent();
 
 			if (Property->IsA<UObjectPropertyBase>())
@@ -1825,9 +1826,9 @@ void GenerateForwardingCodeFromLayout(
 			{
 				SourceWriter.Print();
 				SourceWriter.Print(R"""(
-					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
+					// If we're a client, downgrade the role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
 					// the server RPCs component.
-					if (Value == ROLE_AutonomousProxy && !bAutonomousProxy)
+					if (!bIsServer && Value == ROLE_AutonomousProxy && !bAutonomousProxy)
 					{
 						Value = ROLE_SimulatedProxy;
 					})""");
@@ -1863,8 +1864,8 @@ void GenerateForwardingCodeFromLayout(
 			{
 				SourceWriter.Print();
 				SourceWriter.Printf(R"""(
-					// On the server, we want to "undo" the swap which will be done automatically by the network system.
-					if (Interop->GetNetDriver()->IsServer())
+					// On the server, we want to "undo" the swap which will be done automatically when the bunch is processed.
+					if (bIsServer)
 					{
 						Handle = %d;
 						Data = &HandleToPropertyMap[Handle];

@@ -608,9 +608,9 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_remoterole().data())));
 
-			// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
+			// If we're a client, downgrade the role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
 			// the server RPCs component.
-			if (Value == ROLE_AutonomousProxy && !bAutonomousProxy)
+			if (!Interop->GetNetDriver()->IsServer() && Value == ROLE_AutonomousProxy && !bAutonomousProxy)
 			{
 				Value = ROLE_SimulatedProxy;
 			}
