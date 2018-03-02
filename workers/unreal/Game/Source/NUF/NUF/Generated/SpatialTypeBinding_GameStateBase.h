@@ -19,6 +19,8 @@ class USpatialTypeBinding_GameStateBase : public USpatialTypeBinding
 public:
 	static const FRepHandlePropertyMap& GetHandlePropertyMap();
 
+	UClass* GetBoundClass() const override;
+
 	void Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap) override;
 	void BindToView() override;
 	void UnbindFromView() override;
@@ -27,7 +29,6 @@ public:
 	worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 	void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
 	void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) override;
-
 	void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;
 
 private:

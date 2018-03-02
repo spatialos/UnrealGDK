@@ -152,9 +152,9 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 
 	// Match the above list with the static actor data.
 	auto& LevelDataActors = LevelData.static_actor_map();
-	uint32_t StaticObjectCounter = 2;
 	for (auto& Pair : LevelDataActors)
 	{
+		uint32_t StaticObjectId = Pair.first << 7; // Reserve 127 slots for static objects.
 		const char* LevelDataActorPath = Pair.second.c_str();
 		AActor* Actor = PersistentActorsInWorld.FindRef(UTF8_TO_TCHAR(LevelDataActorPath));
 
@@ -173,7 +173,7 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 
 		// Set up the NetGUID and ObjectRef for this actor.
 		FNetworkGUID NetGUID = GetOrAssignNetGUID_NUF(Actor);
-		improbable::unreal::UnrealObjectRef ObjectRef{0, StaticObjectCounter++};
+		improbable::unreal::UnrealObjectRef ObjectRef{0, StaticObjectId};
 		RegisterObjectRef(NetGUID, ObjectRef);
 		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new static object ref for actor: %s. NetGUID: %s, object ref: %s"),
 			*Actor->GetName(), *NetGUID.ToString(), *ObjectRefToString(ObjectRef));
@@ -182,11 +182,12 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 		// Deal with sub-objects of static objects.
 		TArray<UObject*> StaticSubobjects;
 		GetSubobjects(Actor, StaticSubobjects);
-		uint32 SubobjectOffset = 0;
+		uint32 SubobjectOffset = 1;
 		for (UObject* Subobject : StaticSubobjects)
 		{
+			checkf((SubobjectOffset >> 7) == 0, TEXT("Static object has exceeded 127 subobjects."));
 			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_NUF(Subobject);
-			improbable::unreal::UnrealObjectRef SubobjectRef{0, StaticObjectCounter++};
+			improbable::unreal::UnrealObjectRef SubobjectRef{0, StaticObjectId + SubobjectOffset++};
 			RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
 			UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new static object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
 				*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *ObjectRefToString(SubobjectRef));

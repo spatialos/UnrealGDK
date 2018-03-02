@@ -10,17 +10,14 @@
 #include "EntityRegistry.h"
 #include "SpatialPackageMapClient.h"
 
+#include "Generated/SpatialTypeBindingList.h"
+
 // Needed for the entity template stuff.
 #include <improbable/standard_library.h>
 #include <improbable/unreal/player.h>
 #include <improbable/unreal/unreal_metadata.h>
 #include "EntityBuilder.h"
 #include "EntityTemplate.h"
-
-#include "Generated/SpatialTypeBinding_Character.h"
-#include "Generated/SpatialTypeBinding_PlayerController.h"
-#include "Generated/SpatialTypeBinding_GameStateBase.h"
-#include "Generated/SpatialTypeBinding_PlayerState.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSInterop);
 
@@ -35,10 +32,14 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	TimerManager = InTimerManager;
 	PackageMap = Cast<USpatialPackageMapClient>(Driver->GetSpatialOSNetConnection()->PackageMap);
 
-	RegisterInteropType(ACharacter::StaticClass(), NewObject<USpatialTypeBinding_Character>(this));
-	RegisterInteropType(APlayerController::StaticClass(), NewObject<USpatialTypeBinding_PlayerController>(this));
-	RegisterInteropType(AGameStateBase::StaticClass(), NewObject<USpatialTypeBinding_GameStateBase>(this));
-	RegisterInteropType(APlayerState::StaticClass(), NewObject<USpatialTypeBinding_PlayerState>(this));
+	// Register type binding classes.
+	TArray<UClass*> TypeBindingClasses = GetGeneratedTypeBindings();
+	for (UClass* TypeBindingClass : TypeBindingClasses)
+	{
+		UClass* BoundClass = TypeBindingClass->GetDefaultObject<USpatialTypeBinding>()->GetBoundClass();
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("Registered type binding class %s handling replicated properties of %s."), *TypeBindingClass->GetName(), *BoundClass->GetName());
+		RegisterInteropType(BoundClass, NewObject<USpatialTypeBinding>(this, TypeBindingClass));
+	}
 }
 
 USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
@@ -54,7 +55,7 @@ USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 	return nullptr;
 }
 
-worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FString& PlayerWorkerId, const TArray<uint16>& Changed)
+worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& Changed)
 {
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
@@ -68,7 +69,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 
 		if (TypeBinding)
 		{
-			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Actor->GetActorLocation(), PathStr, Channel->GetChangeState(Changed), Channel);
+			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(Changed), Channel);
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId(), 0);
 		}
 		else
@@ -84,19 +85,25 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 			improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
 			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
 
-			const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Actor->GetActorLocation());
-			worker::Option<std::string> StaticPath;
+			// Set up unreal metadata.
+			improbable::unreal::UnrealMetadata::Data UnrealMetadata;
 			if (Channel->Actor->IsFullNameStableForNetworking())
 			{
-				StaticPath = {std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}};
+				UnrealMetadata.set_static_path({std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}});
 			}
-			FString PathName = Channel->Actor->GetPathName(Channel->GetWorld());
+			if (!ClientWorkerIdString.empty())
+			{
+				UnrealMetadata.set_owner_worker_id({ClientWorkerIdString});
+			}
+
+			// Build entity.
+			const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Location);
 			auto Entity = improbable::unreal::FEntityBuilder::Begin()
 				.AddPositionComponent(SpatialPosition, WorkersOnly)
 				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
 				.SetPersistence(true)
 				.SetReadAcl(AnyUnrealWorkerOrClient)
-				.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{StaticPath}, WorkersOnly)
+				.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
 				// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
 				// todo-giray: Remove once we're using proper (generated) entity templates here.
 				.AddComponent<improbable::unreal::PlayerControlClient>(improbable::unreal::PlayerControlClient::Data{}, OwnClientOnly)
@@ -184,10 +191,8 @@ void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable
 	ResolvePendingIncomingRPCs(ObjectRef);
 }
 
-void USpatialInterop::AddActorChannel_Client(const worker::EntityId& EntityId, USpatialActorChannel* Channel)
+void USpatialInterop::AddActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel)
 {
-	check(NetDriver->GetNetMode() == NM_Client);
-
 	EntityToActorChannel.Add(EntityId, Channel);
 
 	// Apply queued updates for this entity ID to the new actor channel.
@@ -198,7 +203,10 @@ void USpatialInterop::AddActorChannel_Client(const worker::EntityId& EntityId, U
 	}
 
 	// Set up component interests to receive single client component updates (now that roles have been set up).
-	SetComponentInterests(Channel, EntityId);
+	if (NetDriver->GetNetMode() == NM_Client)
+	{
+		SetComponentInterests_Client(Channel, EntityId);
+	}
 }
 
 USpatialActorChannel* USpatialInterop::GetActorChannelByEntityId(const worker::EntityId & EntityId) const
@@ -344,7 +352,7 @@ void USpatialInterop::UnregisterInteropType(UClass* Class)
 	}
 }
 
-void USpatialInterop::SetComponentInterests(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId)
+void USpatialInterop::SetComponentInterests_Client(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId)
 {
 	UClass* ActorClass = ActorChannel->Actor->GetClass();
 	// Are we the autonomous proxy?

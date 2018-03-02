@@ -1,6 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package improbable.unreal;
-import "improbable/standard_library.schema";
 
 type SpawnPlayerRequest
 {

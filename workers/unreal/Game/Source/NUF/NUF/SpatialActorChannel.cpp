@@ -57,6 +57,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, SpatialNetDriver(nullptr)
 {
 	bCoreActor = true;
+	bCreatingNewEntity = false;
 }
 
 void USpatialActorChannel::Init(UNetConnection* Connection, int32 ChannelIndex, bool bOpenedLocally)
@@ -237,7 +238,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 	if (RepFlags.bNetInitial || Changed.Num() > 0)
 	{		
-		if (RepFlags.bNetInitial)
+		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
 			// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
 			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
@@ -280,7 +281,11 @@ bool USpatialActorChannel::ReplicateActor()
 				}
 			}
 			InitialChanged.Add(0);
-			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, PlayerWorkerId, InitialChanged);
+
+			// Calculate initial spatial position (but don't send component update) and create the entity.
+			UpdateSpatialPosition(false);
+			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialChanged);
+			bCreatingNewEntity = false;
 		}
 		else
 		{
@@ -292,27 +297,13 @@ bool USpatialActorChannel::ReplicateActor()
 		UpdateChangelistHistory(ActorReplicator->RepState);
 	}
 
-	// Update SpatialOS position. PlayerController's are a special case here. To ensure that the PlayerController and its pawn is migrated
-	// between workers at the same time (which is not guaranteed), we ensure that we update the position component of the PlayerController
-	// at the same time as the pawn.
+	// Update SpatialOS position.
 	const float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
 	if (!PC)
 	{
 		if (FVector::DistSquared(Actor->GetActorLocation(), LastSpatialPosition) > SpatialPositionThreshold)
 		{
-			LastSpatialPosition = Actor->GetActorLocation();
-			Interop->SendSpatialPositionUpdate(GetEntityId(), LastSpatialPosition);
-
-			// If we're a pawn and are controlled by a player controller, update the player controllers position too.
-			APawn* Pawn = Cast<APawn>(Actor);
-			if (Pawn && Cast<APlayerController>(Pawn->GetController()))
-			{
-				USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Pawn->GetController()));
-				if (ControllerActorChannel)
-				{
-					Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
-				}
-			}
+			UpdateSpatialPosition(true);
 		}
 	}
 
@@ -382,23 +373,30 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		return;
 	}
 
-	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
+	check(SpatialNetDriver->GetEntityRegistry());
+	ActorEntityId = SpatialNetDriver->GetEntityRegistry()->GetEntityIdFromActor(InActor).ToSpatialEntityId();
 
-	if (SpatialConnection && SpatialConnection->Driver->IsServer())
+	// If the entity registry has no entry for this actor, this means we need to create it.
+	if (ActorEntityId == 0)
 	{
+		USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
+		check(SpatialConnection);
+
+		// Mark this channel as being responsible for creating this entity once we have an entity ID.
+		bCreatingNewEntity = true;
+
 		// Reserve an entity ID for this channel.
 		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
 		if (PinnedConnection.IsValid())
 		{
 			ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
 		}
-		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Initiated reserve entity process for: %s. Request id: %d"), *InActor->GetName(), ReserveEntityIdRequestId.Id);
+		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Opened channel for actor %s with no entity ID. Initiated reserve entity ID. Request id: %d"),
+			*InActor->GetName(), ReserveEntityIdRequestId.Id);
 	}
 	else
 	{
-		check(SpatialNetDriver->GetEntityRegistry());
-		ActorEntityId = SpatialNetDriver->GetEntityRegistry()->GetEntityIdFromActor(InActor).ToSpatialEntityId();
-		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Opened non-authoritative channel for actor %s."), *InActor->GetName());
+		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %llu."), *InActor->GetName(), ActorEntityId);
 	}
 }
 
@@ -450,3 +448,33 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 	FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(Actor, ActorEntityId);
 	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());	
 }	
+
+void USpatialActorChannel::UpdateSpatialPosition(bool SendComponentUpdate)
+{
+	// PlayerController's are a special case here. To ensure that the PlayerController and its pawn is migrated
+	// between workers at the same time (which is not guaranteed), we ensure that we update the position component of
+	// the PlayerController at the same time as the pawn.
+
+	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+
+	LastSpatialPosition = Actor->GetActorLocation();
+	if (SendComponentUpdate)
+	{
+		Interop->SendSpatialPositionUpdate(GetEntityId(), LastSpatialPosition);
+	}
+
+	// If we're a pawn and are controlled by a player controller, update the player controllers position too.
+	APawn* Pawn = Cast<APawn>(Actor);
+	if (Pawn && Cast<APlayerController>(Pawn->GetController()))
+	{
+		USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Pawn->GetController()));
+		if (ControllerActorChannel)
+		{
+			ControllerActorChannel->LastSpatialPosition = LastSpatialPosition;
+			if (SendComponentUpdate)
+			{
+				Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
+			}
+		}
+	}
+}

@@ -77,7 +77,8 @@ public:
 
 	USpatialOS* GetSpatialOS() { return SpatialOSInstance; }
 	
-	bool AcceptNewPlayer(const FURL& InUrl);
+	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
+	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer);
 
 	USpatialInterop* GetSpatialInterop() const
 	{
@@ -101,6 +102,10 @@ protected:
 	UPROPERTY()
 	USpatialInterop* Interop;
 
+	// Package map shared by all connections.
+	UPROPERTY()
+	USpatialPackageMapClient* PackageMap;
+
 	UFUNCTION()
 	void OnSpatialOSConnected();
 
@@ -120,4 +125,6 @@ protected:
 
 private:
 	FPlayerSpawnRequestSender PlayerSpawner;
+
+	friend class USpatialNetConnection;
 };
