@@ -145,28 +145,9 @@ void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TAr
 	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), Channel, Channel->GetEntityId());
 }
 
-void USpatialInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)
+void USpatialInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, const TArray<UProperty*>& RepNotifies)
 {
-	// Add null terminator to payload.
-	uint32 Terminator = 0;
-	IncomingPayload.SerializeIntPacked(Terminator);
-
-	// Build bunch data to send to the actor channel.
-	FNetBitWriter BunchData(nullptr, 0);
-	// Write header.
-	BunchData.WriteBit(1); // bHasRepLayout
-	BunchData.WriteBit(1); // bIsActor
-	// Write property info.
-	uint32 PayloadSize = IncomingPayload.GetNumBits();
-	BunchData.SerializeIntPacked(PayloadSize);
-	BunchData.SerializeBits(IncomingPayload.GetData(), IncomingPayload.GetNumBits());
-
-	// Create bunch and send to actor channel.
-	FInBunch Bunch(Channel->Connection, BunchData.GetData(), BunchData.GetNumBits());
-	Bunch.ChIndex = Channel->ChIndex;
-	Bunch.bHasMustBeMappedGUIDs = false;
-	Bunch.bIsReplicationPaused = false;
-	Channel->UActorChannel::ReceivedBunch(Bunch);
+	Channel->ReceiveSpatialUpdate(RepNotifies);
 }
 
 void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)
@@ -428,7 +409,7 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 		FBunchPayloadWriter Writer(PackageMap);
 		for (auto& Property : Properties)
 		{
-			Writer.SerializeProperty(Property.Handle, Property.ObjectProperty, &Object);
+			//Writer.SerializeProperty(Property.Handle, Property.ObjectProperty, &Object);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object property update. actor %s (%llu), property %s (handle %d)"),
 				*SpatialOSInstance ->GetWorkerId(),
 				*DependentChannel->Actor->GetName(),
@@ -436,7 +417,7 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 				*Property.ObjectProperty->GetName(),
 				Property.Handle);
 		}
-		ReceiveSpatialUpdate(DependentChannel, Writer.GetNetBitWriter());
+		//ReceiveSpatialUpdate(DependentChannel, Writer.GetNetBitWriter());
 	}
 
 	PendingIncomingObjectRefProperties.Remove(ObjectRef);

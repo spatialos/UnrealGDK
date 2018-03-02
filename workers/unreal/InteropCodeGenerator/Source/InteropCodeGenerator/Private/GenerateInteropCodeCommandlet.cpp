@@ -51,6 +51,7 @@ struct FRepLayoutEntry
 	UProperty* Parent;
 	TArray<UProperty*> Chain;
 	ELifetimeCondition Condition;
+	ELifetimeRepNotifyCondition RepNotifyCondition;
 	ERepLayoutCmdType Type;
 	int32 Handle;
 	int32 Offset;
@@ -100,6 +101,18 @@ FString GetLifetimeConditionAsString(ELifetimeCondition Condition)
 		return FString("Invalid");
 	}
 	return EnumPtr->GetNameByValue((int64)Condition).ToString();
+}
+
+FString GetRepNotifyLifetimeConditionAsString(ELifetimeRepNotifyCondition Condition)
+{
+	switch (Condition)
+	{
+	case REPNOTIFY_OnChanged: return FString(TEXT("REPNOTIFY_OnChanged"));
+	case REPNOTIFY_Always: return FString(TEXT("REPNOTIFY_Always"));
+	default:
+		checkNoEntry();
+	}
+	return FString();
 }
 
 TArray<ERPCType> GetRPCTypes()
@@ -893,6 +906,7 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 			ParentProperty,
 			PropertyChain,
 			RepLayout.Parents[Cmd.ParentIndex].Condition,
+			RepLayout.Parents[Cmd.ParentIndex].RepNotifyCondition,
 			(ERepLayoutCmdType)Cmd.Type,
 			Handle,
 			Cmd.Offset
@@ -1271,6 +1285,7 @@ void GenerateForwardingCodeFromLayout(
 		#include "EntityBuilder.h"
 
 		#include "../SpatialConstants.h"
+		#include "../SpatialConditionMapFilter.h"
 		#include "../SpatialUnrealObjectRef.h"
 		#include "../SpatialActorChannel.h"
 		#include "../SpatialPackageMapClient.h"
@@ -1300,15 +1315,23 @@ void GenerateForwardingCodeFromLayout(
 		auto Handle = RepProp.Entry.Handle;
 		if (RepProp.Entry.Parent)
 		{
-			SourceWriter.Printf("HandleToPropertyMap.Add(%d, FRepHandleData{Class->FindPropertyByName(\"%s\"), nullptr, %s});",
-				Handle, *RepProp.Entry.Parent->GetName(), *GetLifetimeConditionAsString(RepProp.Entry.Condition));
+			SourceWriter.Printf("HandleToPropertyMap.Add(%d, FRepHandleData{Class->FindPropertyByName(\"%s\"), nullptr, %s, %s});",
+				Handle,
+				*RepProp.Entry.Parent->GetName(),
+				*GetLifetimeConditionAsString(RepProp.Entry.Condition),
+				*GetRepNotifyLifetimeConditionAsString(RepProp.Entry.RepNotifyCondition));
 			SourceWriter.Printf("HandleToPropertyMap[%d].Property = Cast<UStructProperty>(HandleToPropertyMap[%d].Parent)->Struct->FindPropertyByName(\"%s\");",
-				Handle, Handle, *RepProp.Entry.Property->GetName());
+				Handle,
+				Handle,
+				*RepProp.Entry.Property->GetName());
 		}
 		else
 		{
-			SourceWriter.Printf("HandleToPropertyMap.Add(%d, FRepHandleData{nullptr, Class->FindPropertyByName(\"%s\"), %s});",
-				Handle, *RepProp.Entry.Property->GetName(), *GetLifetimeConditionAsString(RepProp.Entry.Condition));
+			SourceWriter.Printf("HandleToPropertyMap.Add(%d, FRepHandleData{nullptr, Class->FindPropertyByName(\"%s\"), %s, %s});",
+				Handle,
+				*RepProp.Entry.Property->GetName(),
+				*GetLifetimeConditionAsString(RepProp.Entry.Condition),
+				*GetRepNotifyLifetimeConditionAsString(RepProp.Entry.RepNotifyCondition));
 		}
 	}
 	SourceWriter.Outdent().Print("}");
@@ -1779,12 +1802,13 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Print("{");
 		SourceWriter.Indent();
 		SourceWriter.Printf(R"""(
-			FBunchPayloadWriter OutputWriter(PackageMap);
+			TArray<UProperty*> RepNotifies;
+			const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
 
-			auto& HandleToPropertyMap = GetHandlePropertyMap();
 			const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::%s::ComponentId);
-			ConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);)""",
+			FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);)""",
 			*GetSchemaRPCComponentName(ERPCType::RPC_Client, Class));
+		SourceWriter.Print();
 		for (auto& RepProp : Layout.ReplicatedProperties[Group])
 		{
 			auto Handle = RepProp.Entry.Handle;
@@ -1889,7 +1913,18 @@ void GenerateForwardingCodeFromLayout(
 				SourceWriter.Print("{").Indent();
 			}
 
-			SourceWriter.Printf("OutputWriter.SerializeProperty(Handle, %s, &%s);", *PropertyName, *PropertyValueName);
+			SourceWriter.Print(R"""(
+				// If value has changed, add to rep notify list.
+				uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+				if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+				{
+					RepNotifies.Add(Data.Property);
+				}
+
+				// Write value to property.
+				Data.Property->CopyCompleteValue(Dest, &Value);)""");
+			SourceWriter.Print();
+
 			SourceWriter.Print(R"""(
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
@@ -1911,7 +1946,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Outdent();
 			SourceWriter.Print("}");
 		}
-		SourceWriter.Print("Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter.GetNetBitWriter());");
+		SourceWriter.Print("Interop->ReceiveSpatialUpdate(ActorChannel, RepNotifies);");
 		SourceWriter.Outdent();
 		SourceWriter.Print("}");
 	}

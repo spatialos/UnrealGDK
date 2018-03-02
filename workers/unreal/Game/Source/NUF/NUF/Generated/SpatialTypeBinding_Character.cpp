@@ -7,6 +7,7 @@
 #include "EntityBuilder.h"
 
 #include "../SpatialConstants.h"
+#include "../SpatialConditionMapFilter.h"
 #include "../SpatialUnrealObjectRef.h"
 #include "../SpatialActorChannel.h"
 #include "../SpatialPackageMapClient.h"
@@ -19,73 +20,73 @@ const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap
 	if (HandleToPropertyMap.Num() == 0)
 	{
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("Character"));
-		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None});
-		HandleToPropertyMap.Add(2, FRepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), COND_None});
-		HandleToPropertyMap.Add(3, FRepHandleData{nullptr, Class->FindPropertyByName("bTearOff"), COND_None});
-		HandleToPropertyMap.Add(4, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteRole"), COND_None});
-		HandleToPropertyMap.Add(5, FRepHandleData{nullptr, Class->FindPropertyByName("Owner"), COND_None});
-		HandleToPropertyMap.Add(6, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovement"), COND_SimulatedOrPhysicsNoReplay});
-		HandleToPropertyMap.Add(7, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(2, FRepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), COND_None, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(3, FRepHandleData{nullptr, Class->FindPropertyByName("bTearOff"), COND_None, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(4, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteRole"), COND_None, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(5, FRepHandleData{nullptr, Class->FindPropertyByName("Owner"), COND_None, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(6, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovement"), COND_SimulatedOrPhysicsNoReplay, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(7, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[7].Property = Cast<UStructProperty>(HandleToPropertyMap[7].Parent)->Struct->FindPropertyByName("AttachParent");
-		HandleToPropertyMap.Add(8, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap.Add(8, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[8].Property = Cast<UStructProperty>(HandleToPropertyMap[8].Parent)->Struct->FindPropertyByName("LocationOffset");
-		HandleToPropertyMap.Add(9, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap.Add(9, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[9].Property = Cast<UStructProperty>(HandleToPropertyMap[9].Parent)->Struct->FindPropertyByName("RelativeScale3D");
-		HandleToPropertyMap.Add(10, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap.Add(10, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[10].Property = Cast<UStructProperty>(HandleToPropertyMap[10].Parent)->Struct->FindPropertyByName("RotationOffset");
-		HandleToPropertyMap.Add(11, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap.Add(11, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[11].Property = Cast<UStructProperty>(HandleToPropertyMap[11].Parent)->Struct->FindPropertyByName("AttachSocket");
-		HandleToPropertyMap.Add(12, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap.Add(12, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[12].Property = Cast<UStructProperty>(HandleToPropertyMap[12].Parent)->Struct->FindPropertyByName("AttachComponent");
-		HandleToPropertyMap.Add(13, FRepHandleData{nullptr, Class->FindPropertyByName("Role"), COND_None});
-		HandleToPropertyMap.Add(14, FRepHandleData{nullptr, Class->FindPropertyByName("bCanBeDamaged"), COND_None});
-		HandleToPropertyMap.Add(15, FRepHandleData{nullptr, Class->FindPropertyByName("Instigator"), COND_None});
-		HandleToPropertyMap.Add(16, FRepHandleData{nullptr, Class->FindPropertyByName("PlayerState"), COND_None});
-		HandleToPropertyMap.Add(17, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteViewPitch"), COND_SkipOwner});
-		HandleToPropertyMap.Add(18, FRepHandleData{nullptr, Class->FindPropertyByName("Controller"), COND_None});
-		HandleToPropertyMap.Add(19, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
+		HandleToPropertyMap.Add(13, FRepHandleData{nullptr, Class->FindPropertyByName("Role"), COND_None, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(14, FRepHandleData{nullptr, Class->FindPropertyByName("bCanBeDamaged"), COND_None, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(15, FRepHandleData{nullptr, Class->FindPropertyByName("Instigator"), COND_None, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(16, FRepHandleData{nullptr, Class->FindPropertyByName("PlayerState"), COND_None, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(17, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteViewPitch"), COND_SkipOwner, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(18, FRepHandleData{nullptr, Class->FindPropertyByName("Controller"), COND_None, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(19, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[19].Property = Cast<UStructProperty>(HandleToPropertyMap[19].Parent)->Struct->FindPropertyByName("MovementBase");
-		HandleToPropertyMap.Add(20, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
+		HandleToPropertyMap.Add(20, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[20].Property = Cast<UStructProperty>(HandleToPropertyMap[20].Parent)->Struct->FindPropertyByName("BoneName");
-		HandleToPropertyMap.Add(21, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
+		HandleToPropertyMap.Add(21, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[21].Property = Cast<UStructProperty>(HandleToPropertyMap[21].Parent)->Struct->FindPropertyByName("Location");
-		HandleToPropertyMap.Add(22, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
+		HandleToPropertyMap.Add(22, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[22].Property = Cast<UStructProperty>(HandleToPropertyMap[22].Parent)->Struct->FindPropertyByName("Rotation");
-		HandleToPropertyMap.Add(23, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
+		HandleToPropertyMap.Add(23, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[23].Property = Cast<UStructProperty>(HandleToPropertyMap[23].Parent)->Struct->FindPropertyByName("bServerHasBaseComponent");
-		HandleToPropertyMap.Add(24, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
+		HandleToPropertyMap.Add(24, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[24].Property = Cast<UStructProperty>(HandleToPropertyMap[24].Parent)->Struct->FindPropertyByName("bRelativeRotation");
-		HandleToPropertyMap.Add(25, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly});
+		HandleToPropertyMap.Add(25, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[25].Property = Cast<UStructProperty>(HandleToPropertyMap[25].Parent)->Struct->FindPropertyByName("bServerHasVelocity");
-		HandleToPropertyMap.Add(26, FRepHandleData{nullptr, Class->FindPropertyByName("AnimRootMotionTranslationScale"), COND_SimulatedOnly});
-		HandleToPropertyMap.Add(27, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedServerLastTransformUpdateTimeStamp"), COND_SimulatedOnlyNoReplay});
-		HandleToPropertyMap.Add(28, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovementMode"), COND_SimulatedOnly});
-		HandleToPropertyMap.Add(29, FRepHandleData{nullptr, Class->FindPropertyByName("bIsCrouched"), COND_SimulatedOnly});
-		HandleToPropertyMap.Add(30, FRepHandleData{nullptr, Class->FindPropertyByName("JumpMaxHoldTime"), COND_None});
-		HandleToPropertyMap.Add(31, FRepHandleData{nullptr, Class->FindPropertyByName("JumpMaxCount"), COND_None});
-		HandleToPropertyMap.Add(32, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap.Add(26, FRepHandleData{nullptr, Class->FindPropertyByName("AnimRootMotionTranslationScale"), COND_SimulatedOnly, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(27, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedServerLastTransformUpdateTimeStamp"), COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(28, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovementMode"), COND_SimulatedOnly, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(29, FRepHandleData{nullptr, Class->FindPropertyByName("bIsCrouched"), COND_SimulatedOnly, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(30, FRepHandleData{nullptr, Class->FindPropertyByName("JumpMaxHoldTime"), COND_None, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(31, FRepHandleData{nullptr, Class->FindPropertyByName("JumpMaxCount"), COND_None, REPNOTIFY_OnChanged});
+		HandleToPropertyMap.Add(32, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[32].Property = Cast<UStructProperty>(HandleToPropertyMap[32].Parent)->Struct->FindPropertyByName("bIsActive");
-		HandleToPropertyMap.Add(33, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap.Add(33, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[33].Property = Cast<UStructProperty>(HandleToPropertyMap[33].Parent)->Struct->FindPropertyByName("AnimMontage");
-		HandleToPropertyMap.Add(34, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap.Add(34, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[34].Property = Cast<UStructProperty>(HandleToPropertyMap[34].Parent)->Struct->FindPropertyByName("Position");
-		HandleToPropertyMap.Add(35, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap.Add(35, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[35].Property = Cast<UStructProperty>(HandleToPropertyMap[35].Parent)->Struct->FindPropertyByName("Location");
-		HandleToPropertyMap.Add(36, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap.Add(36, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[36].Property = Cast<UStructProperty>(HandleToPropertyMap[36].Parent)->Struct->FindPropertyByName("Rotation");
-		HandleToPropertyMap.Add(37, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap.Add(37, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[37].Property = Cast<UStructProperty>(HandleToPropertyMap[37].Parent)->Struct->FindPropertyByName("MovementBase");
-		HandleToPropertyMap.Add(38, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap.Add(38, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[38].Property = Cast<UStructProperty>(HandleToPropertyMap[38].Parent)->Struct->FindPropertyByName("MovementBaseBoneName");
-		HandleToPropertyMap.Add(39, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap.Add(39, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[39].Property = Cast<UStructProperty>(HandleToPropertyMap[39].Parent)->Struct->FindPropertyByName("bRelativePosition");
-		HandleToPropertyMap.Add(40, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap.Add(40, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[40].Property = Cast<UStructProperty>(HandleToPropertyMap[40].Parent)->Struct->FindPropertyByName("bRelativeRotation");
-		HandleToPropertyMap.Add(41, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap.Add(41, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[41].Property = Cast<UStructProperty>(HandleToPropertyMap[41].Parent)->Struct->FindPropertyByName("AuthoritativeRootMotion");
-		HandleToPropertyMap.Add(42, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap.Add(42, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[42].Property = Cast<UStructProperty>(HandleToPropertyMap[42].Parent)->Struct->FindPropertyByName("Acceleration");
-		HandleToPropertyMap.Add(43, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay});
+		HandleToPropertyMap.Add(43, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged});
 		HandleToPropertyMap[43].Property = Cast<UStructProperty>(HandleToPropertyMap[43].Parent)->Struct->FindPropertyByName("LinearVelocity");
 	}
 	return HandleToPropertyMap;
@@ -857,23 +858,25 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_SingleClient(
 	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update) const
 {
-	FBunchPayloadWriter OutputWriter(PackageMap);
+	TArray<UProperty*> RepNotifies;
+	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
 
-	auto& HandleToPropertyMap = GetHandlePropertyMap();
 	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealCharacterClientRPCs::ComponentId);
-	ConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
-	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter.GetNetBitWriter());
+	FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
+
+	Interop->ReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
 void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update) const
 {
-	FBunchPayloadWriter OutputWriter(PackageMap);
+	TArray<UProperty*> RepNotifies;
+	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
 
-	auto& HandleToPropertyMap = GetHandlePropertyMap();
 	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealCharacterClientRPCs::ComponentId);
-	ConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
+	FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
+
 	if (!Update.field_bhidden().empty())
 	{
 		// field_bhidden
@@ -891,7 +894,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -917,7 +929,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -943,7 +964,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -977,7 +1007,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Data = &HandleToPropertyMap[Handle];
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1030,7 +1069,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				// If value has changed, add to rep notify list.
+				uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+				if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+				{
+					RepNotifies.Add(Data.Property);
+				}
+
+				// Write value to property.
+				Data.Property->CopyCompleteValue(Dest, &Value);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
@@ -1058,7 +1106,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1111,7 +1168,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				// If value has changed, add to rep notify list.
+				uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+				if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+				{
+					RepNotifies.Add(Data.Property);
+				}
+
+				// Write value to property.
+				Data.Property->CopyCompleteValue(Dest, &Value);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
@@ -1137,7 +1203,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value.Z = Vector.z();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1162,7 +1237,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value.Z = Vector.z();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1187,7 +1271,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value.Roll = Rotator.roll();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1207,7 +1300,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = FName(((*Update.field_attachmentreplication_attachsocket().data())).data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1260,7 +1362,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				// If value has changed, add to rep notify list.
+				uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+				if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+				{
+					RepNotifies.Add(Data.Property);
+				}
+
+				// Write value to property.
+				Data.Property->CopyCompleteValue(Dest, &Value);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
@@ -1288,7 +1399,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Data = &HandleToPropertyMap[Handle];
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1314,7 +1434,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1367,7 +1496,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				// If value has changed, add to rep notify list.
+				uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+				if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+				{
+					RepNotifies.Add(Data.Property);
+				}
+
+				// Write value to property.
+				Data.Property->CopyCompleteValue(Dest, &Value);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
@@ -1421,7 +1559,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				// If value has changed, add to rep notify list.
+				uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+				if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+				{
+					RepNotifies.Add(Data.Property);
+				}
+
+				// Write value to property.
+				Data.Property->CopyCompleteValue(Dest, &Value);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
@@ -1442,7 +1589,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = uint8(uint8((*Update.field_remoteviewpitch().data())));
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1495,7 +1651,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				// If value has changed, add to rep notify list.
+				uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+				if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+				{
+					RepNotifies.Add(Data.Property);
+				}
+
+				// Write value to property.
+				Data.Property->CopyCompleteValue(Dest, &Value);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
@@ -1549,7 +1714,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				// If value has changed, add to rep notify list.
+				uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+				if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+				{
+					RepNotifies.Add(Data.Property);
+				}
+
+				// Write value to property.
+				Data.Property->CopyCompleteValue(Dest, &Value);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
@@ -1570,7 +1744,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = FName(((*Update.field_replicatedbasedmovement_bonename().data())).data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1595,7 +1778,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value.Z = Vector.z();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1620,7 +1812,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value.Roll = Rotator.roll();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1640,7 +1841,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = (*Update.field_replicatedbasedmovement_bserverhasbasecomponent().data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1660,7 +1870,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = (*Update.field_replicatedbasedmovement_brelativerotation().data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1680,7 +1899,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = (*Update.field_replicatedbasedmovement_bserverhasvelocity().data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1700,7 +1928,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = (*Update.field_animrootmotiontranslationscale().data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1720,7 +1957,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = (*Update.field_replicatedserverlasttransformupdatetimestamp().data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1740,7 +1986,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = uint8(uint8((*Update.field_replicatedmovementmode().data())));
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1766,7 +2021,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1786,7 +2050,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = (*Update.field_jumpmaxholdtime().data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1806,7 +2079,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = (*Update.field_jumpmaxcount().data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1826,7 +2108,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = (*Update.field_reprootmotion_bisactive().data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1879,7 +2170,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				// If value has changed, add to rep notify list.
+				uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+				if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+				{
+					RepNotifies.Add(Data.Property);
+				}
+
+				// Write value to property.
+				Data.Property->CopyCompleteValue(Dest, &Value);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
@@ -1900,7 +2200,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = (*Update.field_reprootmotion_position().data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1925,7 +2234,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value.Z = Vector.z();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -1950,7 +2268,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value.Roll = Rotator.roll();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -2003,7 +2330,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				// If value has changed, add to rep notify list.
+				uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+				if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+				{
+					RepNotifies.Add(Data.Property);
+				}
+
+				// Write value to property.
+				Data.Property->CopyCompleteValue(Dest, &Value);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
@@ -2024,7 +2360,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = FName(((*Update.field_reprootmotion_movementbasebonename().data())).data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -2044,7 +2389,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = (*Update.field_reprootmotion_brelativeposition().data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -2064,7 +2418,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 
 			Value = (*Update.field_reprootmotion_brelativerotation().data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -2093,7 +2456,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 			Value.bIsAdditiveVelocityApplied = (*Update.field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied().data());
 			Value.LastAccumulatedSettings.Flags = uint8(uint8((*Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -2118,7 +2490,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value.Z = Vector.z();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -2143,7 +2524,16 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Value.Z = Vector.z();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			// If value has changed, add to rep notify list.
+			uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
+			if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
+			{
+				RepNotifies.Add(Data.Property);
+			}
+
+			// Write value to property.
+			Data.Property->CopyCompleteValue(Dest, &Value);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
@@ -2152,7 +2542,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Handle);
 		}
 	}
-	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter.GetNetBitWriter());
+	Interop->ReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
 void USpatialTypeBinding_Character::RootMotionDebugClientPrintOnScreen_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)

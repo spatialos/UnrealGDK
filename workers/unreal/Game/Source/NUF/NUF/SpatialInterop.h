@@ -14,32 +14,6 @@ class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInterop, Log, All);
 
-// A helper class for creating an incoming payload consumed by ReceiveSpatialUpdate.
-class FBunchPayloadWriter
-{
-public:
-	FBunchPayloadWriter(UPackageMap* PackageMap) : Writer(PackageMap, 0)
-	{
-		// First bit is the "enable checksum" bit, which we set to 0.
-		Writer.WriteBit(0);
-	}
-
-	template <typename T>
-	void SerializeProperty(uint32 Handle, UProperty* Property, T* Value)
-	{
-		Writer.SerializeIntPacked(Handle);
-		Property->NetSerializeItem(Writer, Writer.PackageMap, Value);
-	}
-
-	FNetBitWriter& GetNetBitWriter()
-	{
-		return Writer;
-	}
-
-private:
-	FNetBitWriter Writer;
-};
-
 // An general version of worker::RequestId.
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
 
@@ -102,7 +76,7 @@ public:
 	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& Changed);
 	void SendSpatialPositionUpdate(const worker::EntityId& EntityId, const FVector& Location);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
-	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
+	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, const TArray<UProperty*>& RepNotifies);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
 
 	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.

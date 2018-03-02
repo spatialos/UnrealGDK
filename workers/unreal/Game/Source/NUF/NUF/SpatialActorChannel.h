@@ -73,6 +73,9 @@ public:
 	virtual bool ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
 
+	// Called by SpatialInterop when receiving an update.
+	void ReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies);
+
 	// Distinguishes between channels created for actors that went through the "old" pipeline vs actors that are triggered through SpawnActor() calls.
 	//In the future we may not use an actor channel for non-core actors.
 	UPROPERTY(transient)
