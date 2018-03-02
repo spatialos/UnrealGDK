@@ -42,6 +42,15 @@ FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntity
 	return NetGUID;
 }
 
+void USpatialPackageMapClient::RemoveEntityActor(FEntityId EntityId)
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	if (SpatialGuidCache->GetNetGUIDFromEntityId(EntityId.ToSpatialEntityId()).IsValid())
+	{
+		SpatialGuidCache->RemoveEntityNetGUID(EntityId.ToSpatialEntityId());
+	}
+}
+
 bool USpatialPackageMapClient::SerializeNewActor(FArchive & Ar, UActorChannel * Channel, AActor *& Actor)
 {
 	bool bResult = Super::SerializeNewActor(Ar, Channel, Actor);
@@ -114,6 +123,14 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	return NetGUID;
 }
 
+void FSpatialNetGUIDCache::RemoveEntityNetGUID(worker::EntityId EntityId)
+{
+	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
+	FHashableUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);
+	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
+	UnrealObjectRefToNetGUID.Remove(*ActorRef);
+}
+
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const
 {
 	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjectRef);
@@ -126,7 +143,7 @@ improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFrom
 	return ObjRef ? *ObjRef : SpatialConstants::UNRESOLVED_OBJECT_REF;
 }
 
-FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const
+FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(worker::EntityId EntityId) const
 {
 	improbable::unreal::UnrealObjectRef ObjRef{EntityId, 0};
 	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRef);
@@ -152,9 +169,9 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 
 	// Match the above list with the static actor data.
 	auto& LevelDataActors = LevelData.static_actor_map();
-	uint32_t StaticObjectCounter = 2;
 	for (auto& Pair : LevelDataActors)
 	{
+		uint32_t StaticObjectId = Pair.first << 7; // Reserve 127 slots for static objects.
 		const char* LevelDataActorPath = Pair.second.c_str();
 		AActor* Actor = PersistentActorsInWorld.FindRef(UTF8_TO_TCHAR(LevelDataActorPath));
 
@@ -173,7 +190,7 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 
 		// Set up the NetGUID and ObjectRef for this actor.
 		FNetworkGUID NetGUID = GetOrAssignNetGUID_NUF(Actor);
-		improbable::unreal::UnrealObjectRef ObjectRef{0, Pair.first * 100};
+		improbable::unreal::UnrealObjectRef ObjectRef{0, StaticObjectId};
 		RegisterObjectRef(NetGUID, ObjectRef);
 		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new static object ref for actor: %s. NetGUID: %s, object ref: %s"),
 			*Actor->GetName(), *NetGUID.ToString(), *ObjectRefToString(ObjectRef));
@@ -185,8 +202,9 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 		uint32 SubobjectOffset = 1;
 		for (UObject* Subobject : StaticSubobjects)
 		{
+			checkf((SubobjectOffset >> 7) == 0, TEXT("Static object has exceeded 127 subobjects."));
 			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_NUF(Subobject);
-			improbable::unreal::UnrealObjectRef SubobjectRef{ 0, Pair.first * 100 + SubobjectOffset++ };
+			improbable::unreal::UnrealObjectRef SubobjectRef{0, StaticObjectId + SubobjectOffset++};
 			RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
 			UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new static object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
 				*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *ObjectRefToString(SubobjectRef));

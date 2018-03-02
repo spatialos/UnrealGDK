@@ -7,8 +7,11 @@
 #include <improbable/unreal/core_types.h>
 #include <improbable/unreal/unreal_metadata.h>
 #include <improbable/unreal/generated/UnrealGameStateBase.h>
+#include "ScopedViewCallbacks.h"
+
 #include "../SpatialHandlePropertyMap.h"
 #include "../SpatialTypeBinding.h"
+
 #include "SpatialTypeBinding_GameStateBase.generated.h"
 
 UCLASS()
@@ -19,6 +22,8 @@ class USpatialTypeBinding_GameStateBase : public USpatialTypeBinding
 public:
 	static const FRepHandlePropertyMap& GetHandlePropertyMap();
 
+	UClass* GetBoundClass() const override;
+
 	void Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap) override;
 	void BindToView() override;
 	void UnbindFromView() override;
@@ -28,22 +33,19 @@ public:
 	void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
 	void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) override;
 
+	void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;
 	void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;
 
 private:
-	worker::Dispatcher::CallbackKey SingleClientAddCallback;
-	worker::Dispatcher::CallbackKey SingleClientUpdateCallback;
-	worker::Dispatcher::CallbackKey MultiClientAddCallback;
-	worker::Dispatcher::CallbackKey MultiClientUpdateCallback;
+	improbable::unreal::callbacks::FScopedViewCallbacks ViewCallbacks;
 
 	// Pending updates.
 	TMap<worker::EntityId, improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData::Data> PendingSingleClientData;
 	TMap<worker::EntityId, improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData::Data> PendingMultiClientData;
 
-	// RPC sender and receiver callbacks.
+	// RPC to sender map.
 	using FRPCSender = void (USpatialTypeBinding_GameStateBase::*)(worker::Connection* const, struct FFrame* const, UObject*);
 	TMap<FName, FRPCSender> RPCToSenderMap;
-	TArray<worker::Dispatcher::CallbackKey> RPCReceiverCallbacks;
 
 	// Component update helper functions.
 	void BuildSpatialComponentUpdate(

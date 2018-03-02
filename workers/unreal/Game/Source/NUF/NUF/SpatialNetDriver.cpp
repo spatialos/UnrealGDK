@@ -18,8 +18,6 @@
 #include "SpatialPendingNetGame.h"
 #include "SpatialActorChannel.h"
 
-using namespace improbable;
-
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNUF);
@@ -46,6 +44,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	UChannel::ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
 	SpatialOSInstance = NewObject<USpatialOS>(this);
+	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(SpatialOSInstance, TEXT("Unreal"));
 
 	SpatialOSInstance->OnConnectedDelegate.AddDynamic(this,
 		&USpatialNetDriver::OnSpatialOSConnected);
@@ -90,7 +89,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	UE_LOG(LogSpatialOSNUF, Log, TEXT("Connected to SpatialOS."));
 
 	InteropPipelineBlock = NewObject<USpatialInteropPipelineBlock>();
-	InteropPipelineBlock->Init(EntityRegistry);
+	InteropPipelineBlock->Init(EntityRegistry, this);
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(InteropPipelineBlock);
 
 	TArray<FString> BlueprintPaths;
@@ -809,15 +808,9 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 	}
 }
 
-bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
+USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer)
 {
-	check(GetNetMode() != NM_Client);
-
 	bool bOk = true;
-
-	// Commented out the code that creates a new connection per player controller. Leaving the code here for now in case it causes side effects.
-	// We instead use the "special" connection for everything.
-	//todo-giray: Remove the commented out code if connection setup looks stable.
 	
 	USpatialNetConnection* Connection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(Connection);
@@ -859,7 +852,8 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 		UE_LOG(LogNet, Log, TEXT("PreLogin failure: %s"), *ErrorMsg);
 		bOk = false;		
 	}
-	else
+
+	if (bOk)
 	{
 		FString LevelName = GetWorld()->GetCurrentLevel()->GetOutermost()->GetName();
 		Connection->ClientWorldPackageName = GetWorld()->GetCurrentLevel()->GetOutermost()->GetFName();
@@ -871,11 +865,34 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 			GameName = GameMode->GetClass()->GetPathName();
 			GameMode->GameWelcomePlayer(Connection, RedirectURL);
 		}
-	}
 
-	if (bOk)
-	{
-		Connection->PlayerController = World->SpawnPlayActor(Connection, ROLE_AutonomousProxy, InUrl, WorkerId, ErrorMsg);
+		if (!bExistingPlayer)
+		{
+			Connection->PlayerController = World->SpawnPlayActor(Connection, ROLE_AutonomousProxy, InUrl, WorkerId, ErrorMsg);
+		}
+		else
+		{
+			// Most of this is taken from "World->SpawnPlayActor", excluding the logic to spawn a pawn which happens during
+			// GameMode->PostLogin(...).
+			AGameModeBase* GameMode = World->GetAuthGameMode();
+			APlayerController* NewPlayerController = GameMode->SpawnPlayerController(ROLE_AutonomousProxy, FVector::ZeroVector, FRotator::ZeroRotator);
+			
+			// Destroy the player state (as we'll be replacing it anyway).
+			NewPlayerController->CleanupPlayerState();
+
+			// Possess the newly-spawned player.
+			NewPlayerController->NetPlayerIndex = 0;
+			NewPlayerController->Role = ROLE_Authority;
+			NewPlayerController->SetReplicates(true);
+			NewPlayerController->SetAutonomousProxy(true);
+			NewPlayerController->SetPlayer(Connection);
+			// We explicitly don't call GameMode->PostLogin(NewPlayerController) here, to avoid the engine restarting the player.
+			// TODO: Should we call AGameSession::PostLogin?
+			// TODO: Should we trigger to blueprints that a player has "joined" via GameMode->K2_PostLogin(Connection)?
+
+			Connection->PlayerController = NewPlayerController;
+		}
+
 		if (Connection->PlayerController == NULL)
 		{
 			// Failed to connect.
@@ -889,7 +906,12 @@ bool USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl)
 		}
 	}
 
-	return bOk;
+	if (!bOk)
+	{
+		// TODO(David): Destroy connection.
+	}
+
+	return bOk ? Connection : nullptr;
 }
 
 USpatialPendingNetGame::USpatialPendingNetGame(const FObjectInitializer& ObjectInitializer)

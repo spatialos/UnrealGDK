@@ -7,6 +7,7 @@
 #include "SpatialInteropPipelineBlock.h"
 #include "SpatialInterop.h"
 #include "PlayerSpawnRequestSender.h"
+#include "SpatialOutputDevice.h"
 #include "SpatialNetDriver.generated.h"
 
 class UEntityPipeline;
@@ -77,7 +78,8 @@ public:
 
 	USpatialOS* GetSpatialOS() { return SpatialOSInstance; }
 	
-	bool AcceptNewPlayer(const FURL& InUrl);
+	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
+	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer);
 
 	USpatialInterop* GetSpatialInterop() const
 	{
@@ -87,6 +89,8 @@ public:
 protected:
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
+
+	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	UPROPERTY()
 	USpatialOSComponentUpdater* SpatialOSComponentUpdater;
@@ -100,6 +104,10 @@ protected:
 	// Update/RPC interop with SpatialOS.
 	UPROPERTY()
 	USpatialInterop* Interop;
+
+	// Package map shared by all connections.
+	UPROPERTY()
+	USpatialPackageMapClient* PackageMap;
 
 	UFUNCTION()
 	void OnSpatialOSConnected();
@@ -120,4 +128,6 @@ protected:
 
 private:
 	FPlayerSpawnRequestSender PlayerSpawner;
+
+	friend class USpatialNetConnection;
 };

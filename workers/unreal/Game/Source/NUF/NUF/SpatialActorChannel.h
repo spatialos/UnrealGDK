@@ -42,7 +42,11 @@ public:
 	// Called on the client when receiving an update.
 	FORCEINLINE bool IsClientAutonomousProxy(worker::ComponentId ServerRPCsComponentId)
 	{
-		check(SpatialNetDriver->GetNetMode() == NM_Client);
+		if (SpatialNetDriver->GetNetMode() != NM_Client)
+		{
+			return false;
+		}
+
 		TSharedPtr<worker::View> View = WorkerView.Pin();
 		if (View.Get())
 		{
@@ -101,4 +105,12 @@ private:
 	USpatialNetDriver* SpatialNetDriver;
 
 	FVector LastSpatialPosition;
+
+	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
+	UPROPERTY(Transient)
+	bool bCreatingNewEntity;
+
+private:
+	void UpdateSpatialPosition();
+	FVector GetActorSpatialPosition();
 };
