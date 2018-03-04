@@ -54,12 +54,26 @@ public:
 	uint32 NumAttempts;
 };
 
-struct FPendingIncomingObjectProperty
+// Helper function to write incoming property data to an object.
+FORCEINLINE void ApplyIncomingPropertyUpdate(const FRepHandleData& RepHandleData, UObject* Object, const void* Value, TArray<UProperty*>& RepNotifies)
 {
-	UObjectPropertyBase* ObjectProperty;
-	uint16 Handle;
-};
+	uint8* Dest = (uint8*)Object + RepHandleData.Offset;
 
+	// If value has changed, add to rep notify list.
+	if (RepHandleData.Property->HasAnyPropertyFlags(CPF_RepNotify))
+	{
+		if (RepHandleData.RepNotifyCondition == REPNOTIFY_Always || !RepHandleData.Property->Identical(Dest, Value))
+		{
+			RepNotifies.Add(RepHandleData.Property);
+		}
+	}
+
+	// Write value to destination.
+	RepHandleData.Property->CopyCompleteValue(Dest, Value);
+}
+
+// The system which is responsible for converting and sending Unreal updates to SpatialOS, and receiving updates from SpatialOS and
+// applying them to Unreal objects.
 UCLASS()
 class NUF_API USpatialInterop : public UObject
 {
@@ -97,7 +111,7 @@ public:
 	// Used to queue incoming/outgoing object updates/RPCs. Used by generated type bindings.
 	void QueueOutgoingObjectUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable);
-	void QueueIncomingObjectUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, UObjectPropertyBase* Property, uint16 Handle);
+	void QueueIncomingObjectUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData);
 	void QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder);
 
 	// Accessors.
@@ -142,7 +156,7 @@ private:
 	TMap<UObject*, TArray<TPair<FRPCCommandRequestFunc, bool>>> PendingOutgoingRPCs;
 
 	// Pending incoming object ref property updates.
-	TMap<FHashableUnrealObjectRef, TMap<USpatialActorChannel*, TArray<FPendingIncomingObjectProperty>>> PendingIncomingObjectRefProperties;
+	TMap<FHashableUnrealObjectRef, TMap<USpatialActorChannel*, TArray<const FRepHandleData*>>> PendingIncomingObjectRefProperties;
 	
 	// Pending incoming RPCs.
 	TMap<FHashableUnrealObjectRef, TArray<FRPCCommandResponseFunc>> PendingIncomingRPCs;

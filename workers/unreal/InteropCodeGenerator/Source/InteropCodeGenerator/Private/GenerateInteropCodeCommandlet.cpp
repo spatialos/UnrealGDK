@@ -416,6 +416,11 @@ void VisitProperty(TArray<FPropertyInfo>& PropertyInfo, UObject* CDO, TArray<UPr
 		UE_LOG(LogTemp, Warning, TEXT("%s - multicast delegate, skipping"), *Property->GetName());
 		return;
 	}
+	if (Property->IsA<UArrayProperty>())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s - array property, skipping"), *Property->GetName());
+		return;
+	}
 	if (Property->GetPropertyFlags() & CPF_Transient && !(Property->GetPropertyFlags() & CPF_Net))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s - transient and not replicated, skipping"), *Property->GetName());
@@ -543,7 +548,6 @@ void GenerateUnrealToSchemaConversion(
 	TArray<UProperty*> PropertyChain,
 	const FString& PropertyValue,
 	const bool bIsUpdate,
-	//int32 Handle,
 	TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
 	// Get result type.
@@ -586,7 +590,7 @@ void GenerateUnrealToSchemaConversion(
 				TArray<uint8> ValueData;
 				FMemoryWriter ValueDataWriter(ValueData);
 				bool Success;
-				%s.NetSerialize(ValueDataWriter, nullptr, Success);
+				%s.NetSerialize(ValueDataWriter, PackageMap, Success);
 				%s(std::string((char*)ValueData.GetData(), ValueData.Num()));)""", *PropertyValue, *SpatialValueSetter);
 			Writer.Outdent().Print("}");
 		}
@@ -744,7 +748,7 @@ void GeneratePropertyToUnrealConversion(
 				ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
 				bool bSuccess;
-				%s.NetSerialize(ValueDataReader, nullptr, bSuccess);)"""), *SpatialValue, *PropertyValue));
+				%s.NetSerialize(ValueDataReader, PackageMap, bSuccess);)"""), *SpatialValue, *PropertyValue));
 			Writer.Outdent().Print("}");
 		}
 		else
@@ -762,8 +766,8 @@ void GeneratePropertyToUnrealConversion(
 		Writer.Printf("%s = %s;", *PropertyValue, *SpatialValue);
 		if (Property->GetCPPType() != TEXT("bool"))
 		{
-			Writer.Printf("// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.");
-			Writer.Printf("// We will soon move away from using bunches when receiving Spatial updates.");
+			Writer.Print();
+			Writer.Printf("// As Unreal will look for a specific bit in the bool when copying it to the property, we ensure that all bits are set.");
 			Writer.Printf("if (%s)", *PropertyValue);
 			Writer.Printf("{").Indent();
 			Writer.Printf("%s = 0xFF;", *PropertyValue);
@@ -1172,7 +1176,6 @@ void GenerateForwardingCodeFromLayout(
 		#include <improbable/unreal/core_types.h>
 		#include <improbable/unreal/unreal_metadata.h>
 		#include <improbable/unreal/generated/%s.h>
-		#include "../SpatialHandlePropertyMap.h"
 		#include "../SpatialTypeBinding.h"
 		#include "SpatialTypeBinding_%s.generated.h")""", *SchemaFilename, *Class->GetName());
 	HeaderWriter.Print();
@@ -1315,11 +1318,12 @@ void GenerateForwardingCodeFromLayout(
 		auto Handle = RepProp.Entry.Handle;
 		if (RepProp.Entry.Parent)
 		{
-			SourceWriter.Printf("HandleToPropertyMap.Add(%d, FRepHandleData{Class->FindPropertyByName(\"%s\"), nullptr, %s, %s});",
+			SourceWriter.Printf("HandleToPropertyMap.Add(%d, FRepHandleData{Class->FindPropertyByName(\"%s\"), nullptr, %s, %s, %d});",
 				Handle,
 				*RepProp.Entry.Parent->GetName(),
 				*GetLifetimeConditionAsString(RepProp.Entry.Condition),
-				*GetRepNotifyLifetimeConditionAsString(RepProp.Entry.RepNotifyCondition));
+				*GetRepNotifyLifetimeConditionAsString(RepProp.Entry.RepNotifyCondition),
+				RepProp.Entry.Offset);
 			SourceWriter.Printf("HandleToPropertyMap[%d].Property = Cast<UStructProperty>(HandleToPropertyMap[%d].Parent)->Struct->FindPropertyByName(\"%s\");",
 				Handle,
 				Handle,
@@ -1327,11 +1331,12 @@ void GenerateForwardingCodeFromLayout(
 		}
 		else
 		{
-			SourceWriter.Printf("HandleToPropertyMap.Add(%d, FRepHandleData{nullptr, Class->FindPropertyByName(\"%s\"), %s, %s});",
+			SourceWriter.Printf("HandleToPropertyMap.Add(%d, FRepHandleData{nullptr, Class->FindPropertyByName(\"%s\"), %s, %s, %d});",
 				Handle,
 				*RepProp.Entry.Property->GetName(),
 				*GetLifetimeConditionAsString(RepProp.Entry.Condition),
-				*GetRepNotifyLifetimeConditionAsString(RepProp.Entry.RepNotifyCondition));
+				*GetRepNotifyLifetimeConditionAsString(RepProp.Entry.RepNotifyCondition),
+				RepProp.Entry.Offset);
 		}
 	}
 	SourceWriter.Outdent().Print("}");
@@ -1805,6 +1810,7 @@ void GenerateForwardingCodeFromLayout(
 			TArray<UProperty*> RepNotifies;
 			const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
 
+			const bool bIsServer = Interop->GetNetDriver()->IsServer();
 			const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::%s::ComponentId);
 			FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);)""",
 			*GetSchemaRPCComponentName(ERPCType::RPC_Client, Class));
@@ -1851,23 +1857,10 @@ void GenerateForwardingCodeFromLayout(
 							*Data->Property->GetName(),
 							Handle);)""");
 					SourceWriter.Print("bWriteObjectProperty = false;");
-					SourceWriter.Print("Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data->Property), Handle);");
+					SourceWriter.Print("Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Data);");
 				});
 
-			// If this is RemoteRole (which will get swapped to Role when the bunch is processed), make sure to downgrade if bAutonomousProxy is false.
-			if (Property->GetFName() == NAME_RemoteRole)
-			{
-				SourceWriter.Print();
-				SourceWriter.Print(R"""(
-					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
-					// the server RPCs component.
-					if (Value == ROLE_AutonomousProxy && !bAutonomousProxy)
-					{
-						Value = ROLE_SimulatedProxy;
-					})""");
-			}
-
-			// If the property is Role or RemoteRole, handle "unswapping" on the server.
+			// If the property is Role or RemoteRole, ensure to swap on the client.
 			int SwappedHandleIndex = -1;
 			if (Property->GetFName() == NAME_RemoteRole)
 			{
@@ -1897,12 +1890,25 @@ void GenerateForwardingCodeFromLayout(
 			{
 				SourceWriter.Print();
 				SourceWriter.Printf(R"""(
-					// On the server, we want to "undo" the swap which will be done automatically by the network system.
-					if (Interop->GetNetDriver()->IsServer())
+					// On the client, we need to swap Role/RemoteRole.
+					if (!bIsServer)
 					{
 						Handle = %d;
 						Data = &HandleToPropertyMap[Handle];
 					})""", SwappedHandleIndex);
+			}
+
+			// If this is RemoteRole, make sure to downgrade if bAutonomousProxy is false.
+			if (Property->GetFName() == NAME_RemoteRole)
+			{
+				SourceWriter.Print();
+				SourceWriter.Print(R"""(
+					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
+					// the server RPCs component.
+					if (!bIsServer && Value == ROLE_AutonomousProxy && !bAutonomousProxy)
+					{
+						Value = ROLE_SimulatedProxy;
+					})""");
 			}
 
 			SourceWriter.Print();
@@ -1913,16 +1919,7 @@ void GenerateForwardingCodeFromLayout(
 				SourceWriter.Print("{").Indent();
 			}
 
-			SourceWriter.Print(R"""(
-				// If value has changed, add to rep notify list.
-				uint8* Dest = (uint8*)ActorChannel->Actor + Data.Property->GetOffset_ForInternal();
-				if (Data.Property->HasAnyPropertyFlags(CPF_RepNotify) && (Data.RepNotifyCondition == REPNOTIFY_Always || !Data.Property->Identical(Dest, &Value)))
-				{
-					RepNotifies.Add(Data.Property);
-				}
-
-				// Write value to property.
-				Data.Property->CopyCompleteValue(Dest, &Value);)""");
+			SourceWriter.Print("ApplyIncomingPropertyUpdate(*Data, ActorChannel->Actor, &Value, RepNotifies);");
 			SourceWriter.Print();
 
 			SourceWriter.Print(R"""(
