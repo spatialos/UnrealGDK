@@ -764,15 +764,6 @@ void GeneratePropertyToUnrealConversion(
 	else if (Property->IsA(UBoolProperty::StaticClass()))
 	{
 		Writer.Printf("%s = %s;", *PropertyValue, *SpatialValue);
-		if (Property->GetCPPType() != TEXT("bool"))
-		{
-			Writer.Print();
-			Writer.Printf("// As Unreal will look for a specific bit in the bool when copying it to the property, we ensure that all bits are set.");
-			Writer.Printf("if (%s)", *PropertyValue);
-			Writer.Printf("{").Indent();
-			Writer.Printf("%s = 0xFF;", *PropertyValue);
-			Writer.Outdent().Print("}");
-		}
 	}
 	else if (Property->IsA(UFloatProperty::StaticClass()))
 	{
@@ -1829,36 +1820,14 @@ void GenerateForwardingCodeFromLayout(
 			// Check if the property is relevant.
 			SourceWriter.Printf("// %s", *GetFullyQualifiedName(RepProp.Entry.Chain));
 			SourceWriter.Printf("uint32 Handle = %d;", Handle);
-			SourceWriter.Print("const FRepHandleData* Data = &HandleToPropertyMap[Handle];");
-			SourceWriter.Print("if (ConditionMap.IsRelevant(Data->Condition))\n{");
+			SourceWriter.Print("const FRepHandleData* RepData = &HandleToPropertyMap[Handle];");
+			SourceWriter.Print("if (ConditionMap.IsRelevant(RepData->Condition))\n{");
 			SourceWriter.Indent();
 
 			if (Property->IsA<UObjectPropertyBase>())
 			{
 				SourceWriter.Print("bool bWriteObjectProperty = true;");
 			}
-
-			// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
-			FString PropertyValueName = TEXT("Value");
-			FString PropertyValueCppType = Property->GetCPPType();
-			FString PropertyName = TEXT("Data->Property");
-			SourceWriter.Printf("%s %s;", *PropertyValueCppType, *PropertyValueName);
-			SourceWriter.Print();
-			GeneratePropertyToUnrealConversion(
-				SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName, true, PropertyValueCppType,
-				[&SourceWriter](const FString& PropertyValue)
-				{
-					SourceWriter.Print(R"""(
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
-							*Interop->GetSpatialOS()->GetWorkerId(),
-							*ObjectRefToString(ObjectRef),
-							*ActorChannel->Actor->GetName(),
-							ActorChannel->GetEntityId(),
-							*Data->Property->GetName(),
-							Handle);)""");
-					SourceWriter.Print("bWriteObjectProperty = false;");
-					SourceWriter.Print("Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Data);");
-				});
 
 			// If the property is Role or RemoteRole, ensure to swap on the client.
 			int SwappedHandleIndex = -1;
@@ -1888,15 +1857,46 @@ void GenerateForwardingCodeFromLayout(
 			}
 			if (SwappedHandleIndex != -1)
 			{
-				SourceWriter.Print();
 				SourceWriter.Printf(R"""(
 					// On the client, we need to swap Role/RemoteRole.
 					if (!bIsServer)
 					{
 						Handle = %d;
-						Data = &HandleToPropertyMap[Handle];
+						RepData = &HandleToPropertyMap[Handle];
 					})""", SwappedHandleIndex);
+				SourceWriter.Print();
 			}
+
+			// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
+			FString PropertyValueName = TEXT("Value");
+			FString PropertyValueCppType = Property->GetCPPType();
+			FString PropertyName = TEXT("RepData->Property");
+			//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
+			SourceWriter.Printf("uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;");
+			if (Property->IsA<UBoolProperty>())
+			{
+				SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(%s)->GetPropertyValue(PropertyData);", *PropertyValueName, *PropertyName);
+			}
+			else
+			{
+				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+			}
+			SourceWriter.Print();
+			GeneratePropertyToUnrealConversion(
+				SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName, true, PropertyValueCppType,
+				[&SourceWriter](const FString& PropertyValue)
+				{
+					SourceWriter.Print(R"""(
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
+							*Interop->GetSpatialOS()->GetWorkerId(),
+							*ObjectRefToString(ObjectRef),
+							*ActorChannel->Actor->GetName(),
+							ActorChannel->GetEntityId(),
+							*RepData->Property->GetName(),
+							Handle);)""");
+					SourceWriter.Print("bWriteObjectProperty = false;");
+					SourceWriter.Print("Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, RepData);");
+				});
 
 			// If this is RemoteRole, make sure to downgrade if bAutonomousProxy is false.
 			if (Property->GetFName() == NAME_RemoteRole)
@@ -1919,7 +1919,7 @@ void GenerateForwardingCodeFromLayout(
 				SourceWriter.Print("{").Indent();
 			}
 
-			SourceWriter.Print("ApplyIncomingPropertyUpdate(*Data, ActorChannel->Actor, &Value, RepNotifies);");
+			SourceWriter.Print("ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);");
 			SourceWriter.Print();
 
 			SourceWriter.Print(R"""(
@@ -1927,7 +1927,7 @@ void GenerateForwardingCodeFromLayout(
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
-					*Data->Property->GetName(),
+					*RepData->Property->GetName(),
 					Handle);)""");
 
 			if (Property->IsA<UObjectPropertyBase>())

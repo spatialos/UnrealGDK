@@ -69,7 +69,17 @@ FORCEINLINE void ApplyIncomingPropertyUpdate(const FRepHandleData& RepHandleData
 	}
 
 	// Write value to destination.
-	RepHandleData.Property->CopyCompleteValue(Dest, Value);
+	UBoolProperty* BoolProperty = Cast<UBoolProperty>(RepHandleData.Property);
+	if (BoolProperty)
+	{
+		// We use UBoolProperty::SetPropertyValue here explicitly to ensure that packed boolean properties
+		// are de-serialized correctly without clobbering neighboring boolean values in memory.
+		BoolProperty->SetPropertyValue(Dest, *static_cast<const bool*>(Value));
+	}
+	else
+	{
+		RepHandleData.Property->CopyCompleteValue(Dest, Value);
+	}
 }
 
 // The system which is responsible for converting and sending Unreal updates to SpatialOS, and receiving updates from SpatialOS and
