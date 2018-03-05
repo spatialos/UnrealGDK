@@ -283,7 +283,7 @@ bool USpatialActorChannel::ReplicateActor()
 			InitialChanged.Add(0);
 
 			// Calculate initial spatial position (but don't send component update) and create the entity.
-			LastSpatialPosition = GetActorSpatialPosition();
+			LastSpatialPosition = GetActorSpatialPosition(Actor);
 			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialChanged);
 			bCreatingNewEntity = false;
 		}
@@ -451,7 +451,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 
 	// Check that it has moved sufficiently far to be updated
 	const float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
-	FVector ActorSpatialPosition = GetActorSpatialPosition();
+	FVector ActorSpatialPosition = GetActorSpatialPosition(Actor);
 	if (FVector::DistSquared(ActorSpatialPosition, LastSpatialPosition) < SpatialPositionThreshold)
 	{
 		return;
@@ -483,9 +483,24 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	}
 }
 
-FVector USpatialActorChannel::GetActorSpatialPosition()
+FVector USpatialActorChannel::GetActorSpatialPosition(AActor* Actor)
 {
-	return Actor->GetOwner() 
-		? Actor->GetOwner()->GetActorLocation() 
-		: Actor->GetActorLocation();
+	// Preferentially uses the owner location over the origin
+	// This is to enable actors like PlayerState to follow their corresponding character
+
+	// If the actor has a well defined location then use that
+	// Otherwise if it has a parent use its location
+	// Otherwise use the origin
+	if (Actor->GetRootComponent()) 
+	{
+		return Actor->GetRootComponent()->GetComponentLocation();
+	}
+	else if (Actor->GetOwner())
+	{
+		return GetActorSpatialPosition(Actor->GetOwner());
+	}
+	else
+	{
+		return FVector::ZeroVector;
+	}
 }

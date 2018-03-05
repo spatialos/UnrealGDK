@@ -108,5 +108,6 @@ private:
 
 private:
 	void UpdateSpatialPosition();
-	FVector GetActorSpatialPosition();
+
+	static FVector GetActorSpatialPosition(AActor* Actor);
 };
