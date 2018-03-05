@@ -100,7 +100,8 @@ public:
 	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& Changed);
 	void SendSpatialPositionUpdate(const worker::EntityId& EntityId, const FVector& Location);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
-	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, const TArray<UProperty*>& RepNotifies);
+	void PreReceiveSpatialUpdate(USpatialActorChannel* Channel);
+	void PostReceiveSpatialUpdate(USpatialActorChannel* Channel, const TArray<UProperty*>& RepNotifies);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
 
 	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.

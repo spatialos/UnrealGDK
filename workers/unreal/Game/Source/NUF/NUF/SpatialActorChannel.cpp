@@ -400,8 +400,14 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 }
 
-void USpatialActorChannel::ReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies)
+void USpatialActorChannel::PreReceiveSpatialUpdate()
 {
+	Actor->PreNetReceive();
+}
+
+void USpatialActorChannel::PostReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies)
+{
+	Actor->PostNetReceive();
 	ActorReplicator->RepNotifies = RepNotifies;
 	ActorReplicator->CallRepNotifies(false);
 }

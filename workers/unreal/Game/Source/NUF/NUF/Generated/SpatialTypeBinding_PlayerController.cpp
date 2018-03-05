@@ -772,6 +772,8 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_SingleClient(
 	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update) const
 {
+	Interop->PreReceiveSpatialUpdate(ActorChannel);
+
 	TArray<UProperty*> RepNotifies;
 	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
 
@@ -833,13 +835,15 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_SingleClient(
 				Handle);
 		}
 	}
-	Interop->ReceiveSpatialUpdate(ActorChannel, RepNotifies);
+	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
 void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update) const
 {
+	Interop->PreReceiveSpatialUpdate(ActorChannel);
+
 	TArray<UProperty*> RepNotifies;
 	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
 
@@ -1468,7 +1472,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			}
 		}
 	}
-	Interop->ReceiveSpatialUpdate(ActorChannel, RepNotifies);
+	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
 void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)

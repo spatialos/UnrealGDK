@@ -520,6 +520,8 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_SingleClient(
 	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData::Update& Update) const
 {
+	Interop->PreReceiveSpatialUpdate(ActorChannel);
+
 	TArray<UProperty*> RepNotifies;
 	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
 
@@ -527,13 +529,15 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_SingleClient(
 	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealGameStateBaseClientRPCs::ComponentId);
 	FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
 
-	Interop->ReceiveSpatialUpdate(ActorChannel, RepNotifies);
+	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
 void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData::Update& Update) const
 {
+	Interop->PreReceiveSpatialUpdate(ActorChannel);
+
 	TArray<UProperty*> RepNotifies;
 	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
 
@@ -1146,5 +1150,5 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 				Handle);
 		}
 	}
-	Interop->ReceiveSpatialUpdate(ActorChannel, RepNotifies);
+	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }

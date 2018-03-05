@@ -1798,6 +1798,8 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Print("{");
 		SourceWriter.Indent();
 		SourceWriter.Printf(R"""(
+			Interop->PreReceiveSpatialUpdate(ActorChannel);
+
 			TArray<UProperty*> RepNotifies;
 			const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
 
@@ -1943,7 +1945,7 @@ void GenerateForwardingCodeFromLayout(
 			SourceWriter.Outdent();
 			SourceWriter.Print("}");
 		}
-		SourceWriter.Print("Interop->ReceiveSpatialUpdate(ActorChannel, RepNotifies);");
+		SourceWriter.Print("Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);");
 		SourceWriter.Outdent();
 		SourceWriter.Print("}");
 	}

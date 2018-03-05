@@ -145,9 +145,14 @@ void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TAr
 	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), Channel, Channel->GetEntityId());
 }
 
-void USpatialInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, const TArray<UProperty*>& RepNotifies)
+void USpatialInterop::PreReceiveSpatialUpdate(USpatialActorChannel* Channel)
 {
-	Channel->ReceiveSpatialUpdate(RepNotifies);
+	Channel->PreReceiveSpatialUpdate();
+}
+
+void USpatialInterop::PostReceiveSpatialUpdate(USpatialActorChannel* Channel, const TArray<UProperty*>& RepNotifies)
+{
+	Channel->PostReceiveSpatialUpdate(RepNotifies);
 }
 
 void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)
@@ -406,6 +411,7 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 		TArray<const FRepHandleData*>& Properties = ChannelProperties.Value;
 
 		// Trigger pending updates.
+		PreReceiveSpatialUpdate(DependentChannel);
 		TArray<UProperty*> RepNotifies;
 		for (const FRepHandleData* RepData : Properties)
 		{
@@ -416,7 +422,7 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 				DependentChannel->GetEntityId(),
 				*RepData->Property->GetName());
 		}
-		ReceiveSpatialUpdate(DependentChannel, RepNotifies);
+		PostReceiveSpatialUpdate(DependentChannel, RepNotifies);
 	}
 
 	PendingIncomingObjectRefProperties.Remove(ObjectRef);

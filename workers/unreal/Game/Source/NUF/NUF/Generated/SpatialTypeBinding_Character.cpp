@@ -858,6 +858,8 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_SingleClient(
 	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update) const
 {
+	Interop->PreReceiveSpatialUpdate(ActorChannel);
+
 	TArray<UProperty*> RepNotifies;
 	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
 
@@ -865,13 +867,15 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_SingleClient(
 	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealCharacterClientRPCs::ComponentId);
 	FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
 
-	Interop->ReceiveSpatialUpdate(ActorChannel, RepNotifies);
+	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
 void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update) const
 {
+	Interop->PreReceiveSpatialUpdate(ActorChannel);
+
 	TArray<UProperty*> RepNotifies;
 	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
 
@@ -2213,7 +2217,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 				Handle);
 		}
 	}
-	Interop->ReceiveSpatialUpdate(ActorChannel, RepNotifies);
+	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
 void USpatialTypeBinding_Character::RootMotionDebugClientPrintOnScreen_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
