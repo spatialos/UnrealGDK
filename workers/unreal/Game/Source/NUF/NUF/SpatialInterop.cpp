@@ -19,6 +19,13 @@
 #include "EntityBuilder.h"
 #include "EntityTemplate.h"
 
+#include "Generated/SpatialTypeBinding_Character.h"
+#include "Generated/SpatialTypeBinding_PlayerController.h"
+#include "Generated/SpatialTypeBinding_GameStateBase.h"
+#include "Generated/SpatialTypeBinding_PlayerState.h"
+#include "Generated/SpatialTypeBinding_WheeledVehicle.h"
+#include "WheeledVehicle.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialOSInterop);
 
 USpatialInterop::USpatialInterop() 

@@ -38,7 +38,11 @@ component UnrealPlayerStateMultiClientReplicatedData {
 	bytes field_uniqueid = 26; // COND_InitialOnly
 }
 component UnrealPlayerStateCompleteData {
+<<<<<<< HEAD
 	id = 100017;
+=======
+	id = 100022;
+>>>>>>> e222efe... Vehicle movement
 }
 
 component UnrealPlayerStateClientRPCs {

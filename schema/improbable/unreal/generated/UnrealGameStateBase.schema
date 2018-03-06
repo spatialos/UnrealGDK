@@ -31,7 +31,11 @@ component UnrealGameStateBaseMultiClientReplicatedData {
 	float field_replicatedworldtimeseconds = 19; // COND_None
 }
 component UnrealGameStateBaseCompleteData {
+<<<<<<< HEAD
 	id = 100022;
+=======
+	id = 100027;
+>>>>>>> e222efe... Vehicle movement
 }
 
 component UnrealGameStateBaseClientRPCs {

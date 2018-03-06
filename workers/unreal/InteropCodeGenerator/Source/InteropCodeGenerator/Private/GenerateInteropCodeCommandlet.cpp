@@ -974,6 +974,21 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 		}
 	}
 
+	// Vehicle: Add WheeledVehicleMovementComponent.
+	if (Class->GetName() == TEXT("WheeledVehicle"))
+	{
+		UClass* UWheeledVehicleMovementComponent = FindObject<UClass>(ANY_PACKAGE, TEXT("WheeledVehicleMovementComponent"));
+		for (TFieldIterator<UFunction> RemoteFunction(UWheeledVehicleMovementComponent); RemoteFunction; ++RemoteFunction)
+		{
+			if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
+				RemoteFunction->FunctionFlags & FUNC_NetServer)
+			{
+				bool bReliable = (RemoteFunction->FunctionFlags & FUNC_NetReliable) != 0;
+				Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{ UWheeledVehicleMovementComponent, *RemoteFunction, bReliable});
+			}
+		}
+	}
+
 	// Group replicated properties by single client (COND_AutonomousOnly and COND_OwnerOnly),
 	// and multi-client (everything else).
 	Layout.ReplicatedProperties.Add(REP_SingleClient);
@@ -2222,7 +2237,7 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/NUF/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 
-	TArray<FString> Classes = {TEXT("PlayerController"), TEXT("PlayerState"), TEXT("GameStateBase"), TEXT("Character")};
+	TArray<FString> Classes = {TEXT("WheeledVehicle"), TEXT("PlayerController"), TEXT("PlayerState"), TEXT("GameStateBase"), TEXT("Character")};
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
 		// Component IDs 100000 to 100009 reserved for other NUF components.
