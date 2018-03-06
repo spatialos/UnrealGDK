@@ -4,6 +4,11 @@
 
 void ANUFGameStateBase::FakeServerHasBegunPlay()
 {
+
+#if WITH_EDITOR
+	return;
+#endif
+
 	if (!GetWorld()) 
 	{
 		return;

@@ -21,6 +21,14 @@
 
 ANUFCharacter::ANUFCharacter()
 {
+	UWorld* World = GetWorld();
+	if (World && World->GetGameState() == nullptr)
+	{
+		AGameStateBase* GameState = World->SpawnActor<AGameStateBase>(ANUFGameStateBase::StaticClass());
+		World->SetGameState(GameState);
+		Cast<ANUFGameStateBase>(GameState)->FakeServerHasBegunPlay();
+	}
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 

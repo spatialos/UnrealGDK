@@ -27,7 +27,7 @@ class NUF_API USpatialPackageMapClient : public UPackageMapClient
 	GENERATED_BODY()		
 public:
 	FNetworkGUID ResolveEntityActor(AActor* Actor, FEntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
-	void RemoveEntityActor(FEntityId EntityId);
+	void RemoveEntityActor(const FEntityId& EntityId);
 	virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel *Channel, class AActor*& Actor) override;
 
 	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;

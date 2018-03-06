@@ -746,7 +746,7 @@ void GeneratePropertyToUnrealConversion(
 			Writer.Print(FString::Printf(TEXT(R"""(
 				auto& ValueDataStr = %s;
 				TArray<uint8> ValueData;
-				ValueData.Append(ValueDataStr.data(), ValueDataStr.size());
+				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
 				bool bSuccess;
 				%s.NetSerialize(ValueDataReader, PackageMap, bSuccess);)"""), *SpatialValue, *PropertyValue));
@@ -2319,7 +2319,7 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/NUF/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 
-	TArray<FString> Classes = {TEXT("WheeledVehicle"), TEXT("PlayerController"), TEXT("PlayerState"), TEXT("GameStateBase"), TEXT("Character")};
+	TArray<FString> Classes = {TEXT("PlayerController"), TEXT("PlayerState"), TEXT("Character"), TEXT("WheeledVehicle")};
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
 		// Component IDs 100000 to 100009 reserved for other NUF components.

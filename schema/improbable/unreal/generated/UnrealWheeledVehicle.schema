@@ -6,10 +6,10 @@ import "improbable/vector3.schema";
 import "improbable/unreal/core_types.schema";
 
 component UnrealWheeledVehicleSingleClientReplicatedData {
-	id = 100010;
+	id = 100025;
 }
 component UnrealWheeledVehicleMultiClientReplicatedData {
-	id = 100011;
+	id = 100026;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
 	bool field_btearoff = 3; // COND_None
@@ -30,7 +30,7 @@ component UnrealWheeledVehicleMultiClientReplicatedData {
 	UnrealObjectRef field_controller = 18; // COND_None
 }
 component UnrealWheeledVehicleCompleteData {
-	id = 100012;
+	id = 100027;
 }
 type UnrealServerUpdateStateRequest {
 	uint32 target_subobject_offset = 1;
@@ -42,9 +42,9 @@ type UnrealServerUpdateStateRequest {
 }
 
 component UnrealWheeledVehicleClientRPCs {
-	id = 100013;
+	id = 100028;
 }
 component UnrealWheeledVehicleServerRPCs {
-	id = 100014;
+	id = 100029;
 	command UnrealRPCCommandResponse serverupdatestate(UnrealServerUpdateStateRequest);
 }

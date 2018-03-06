@@ -752,7 +752,7 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 			{
 				auto& ValueDataStr = (*Update.field_replicatedmovement().data());
 				TArray<uint8> ValueData;
-				ValueData.Append(ValueDataStr.data(), ValueDataStr.size());
+				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
 				bool bSuccess;
 				Value.NetSerialize(ValueDataReader, PackageMap, bSuccess);

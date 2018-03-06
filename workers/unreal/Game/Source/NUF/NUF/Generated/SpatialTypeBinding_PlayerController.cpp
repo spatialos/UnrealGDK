@@ -1033,7 +1033,7 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 			{
 				auto& ValueDataStr = (*Update.field_replicatedmovement().data());
 				TArray<uint8> ValueData;
-				ValueData.Append(ValueDataStr.data(), ValueDataStr.size());
+				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
 				bool bSuccess;
 				Value.NetSerialize(ValueDataReader, PackageMap, bSuccess);
@@ -4259,7 +4259,7 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_OnCommandRequest(c
 		{
 			auto& ValueDataStr = Op.Request.field_playerid();
 			TArray<uint8> ValueData;
-			ValueData.Append(ValueDataStr.data(), ValueDataStr.size());
+			ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 			FMemoryReader ValueDataReader(ValueData);
 			bool bSuccess;
 			PlayerId.NetSerialize(ValueDataReader, PackageMap, bSuccess);
@@ -6135,7 +6135,7 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_OnCommandRequest(con
 		{
 			auto& ValueDataStr = Op.Request.field_playerid();
 			TArray<uint8> ValueData;
-			ValueData.Append(ValueDataStr.data(), ValueDataStr.size());
+			ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 			FMemoryReader ValueDataReader(ValueData);
 			bool bSuccess;
 			PlayerId.NetSerialize(ValueDataReader, PackageMap, bSuccess);
@@ -7207,7 +7207,7 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_OnCommandRequest(c
 		{
 			auto& ValueDataStr = Op.Request.field_playerid();
 			TArray<uint8> ValueData;
-			ValueData.Append(ValueDataStr.data(), ValueDataStr.size());
+			ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 			FMemoryReader ValueDataReader(ValueData);
 			bool bSuccess;
 			PlayerId.NetSerialize(ValueDataReader, PackageMap, bSuccess);
@@ -7564,7 +7564,7 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_OnCommandRequest(con
 		{
 			auto& ValueDataStr = Op.Request.field_playerid();
 			TArray<uint8> ValueData;
-			ValueData.Append(ValueDataStr.data(), ValueDataStr.size());
+			ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 			FMemoryReader ValueDataReader(ValueData);
 			bool bSuccess;
 			PlayerId.NetSerialize(ValueDataReader, PackageMap, bSuccess);

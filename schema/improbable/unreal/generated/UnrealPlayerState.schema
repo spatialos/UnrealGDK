@@ -6,10 +6,10 @@ import "improbable/vector3.schema";
 import "improbable/unreal/core_types.schema";
 
 component UnrealPlayerStateSingleClientReplicatedData {
-	id = 100020;
+	id = 100015;
 }
 component UnrealPlayerStateMultiClientReplicatedData {
-	id = 100021;
+	id = 100016;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
 	bool field_btearoff = 3; // COND_None
@@ -38,12 +38,12 @@ component UnrealPlayerStateMultiClientReplicatedData {
 	bytes field_uniqueid = 26; // COND_InitialOnly
 }
 component UnrealPlayerStateCompleteData {
-	id = 100022;
+	id = 100017;
 }
 
 component UnrealPlayerStateClientRPCs {
-	id = 100023;
+	id = 100018;
 }
 component UnrealPlayerStateServerRPCs {
-	id = 100024;
+	id = 100019;
 }
