@@ -90,7 +90,6 @@ private:
 	void UnbindFromSpatialView() const;
 
 	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
-	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
 	TWeakPtr<worker::Connection> WorkerConnection;
 	TWeakPtr<worker::View> WorkerView;
 	worker::EntityId ActorEntityId;

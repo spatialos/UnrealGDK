@@ -11,6 +11,7 @@
 #include "Components/ArrowComponent.h"
 #include "ComponentIdGenerator.h"
 #include "Net/RepLayout.h"
+#include "UObject/UObjectHash.h"
 
 namespace
 {
@@ -1115,6 +1116,54 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 	return IdGenerator.GetNumUsedIds();
 }
 
+void StartGeneratingFunction(
+	FCodeWriter& SourceWriter,
+	FString ReturnType,
+	FString FunctionNameAndParams,
+	FString TypeBindingName)
+{
+	SourceWriter.Print();
+	SourceWriter.Printf("%s %s::%s", *ReturnType, *TypeBindingName, *FunctionNameAndParams);
+	SourceWriter.Print("{");
+	SourceWriter.Indent();
+}
+
+void EndGeneratingFunction(FCodeWriter& SourceWriter) {
+	SourceWriter.EndScope();
+}
+
+void GenerateFunction_SubobjectNameToOffsetMap(
+	FCodeWriter& SourceWriter,
+	FString SchemaFilename,
+	FString InteropFilename,
+	UClass* Class,
+	const FPropertyLayout& Layout,
+	FString& TypeBindingName)
+{
+	StartGeneratingFunction(SourceWriter, FString("TMap<FString, uint32>&"), FString("GetSubobjectNameToOffsetMap()"), TypeBindingName);
+
+	SourceWriter.Print("static TMap<FString, uint32> SubobjectNameToOffsetMap;");
+	SourceWriter.Print("if (SubobjectNameToOffsetMap.Num() == 0)");
+
+	SourceWriter.StartScope();
+	uint32 CurrentOffset = 0;
+
+	ForEachObjectWithOuter(Class->ClassDefaultObject, [&SourceWriter, &CurrentOffset](UObject* Object)
+	{
+		// Objects can only be allocated NetGUIDs if this is true.
+		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+		{
+			SourceWriter.Printf("SubobjectNameToOffsetMap.Add(\"%s\", %d);", *(Object->GetName()), CurrentOffset);
+			CurrentOffset++;
+		}
+	});
+	SourceWriter.EndScope();
+
+	SourceWriter.Print("return SubobjectNameToOffsetMap");
+
+	EndGeneratingFunction(SourceWriter);
+}
+
 void GenerateForwardingCodeFromLayout(
 	FCodeWriter& HeaderWriter,
 	FCodeWriter& SourceWriter,
@@ -1177,8 +1226,16 @@ void GenerateForwardingCodeFromLayout(
 
 		#include "../SpatialHandlePropertyMap.h"
 		#include "../SpatialTypeBinding.h"
+		)""", *SchemaFilename);
 
-		#include "SpatialTypeBinding_%s.generated.h")""", *SchemaFilename, *Class->GetName());
+	if (Class->GetName().Contains("WheeledVehicle")) {
+		HeaderWriter.Printf(R"""(
+		#include "WheeledVehicle.h"
+		#include "WheeledVehicleMovementComponent.h"
+		)""");
+	}
+	HeaderWriter.Printf(R"""(#include "SpatialTypeBinding_%s.generated.h")""", *Class->GetName());
+
 	HeaderWriter.Print();
 
 	// Type binding class.
@@ -1204,6 +1261,8 @@ void GenerateForwardingCodeFromLayout(
 
 		void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;
 		void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;)""");
+
+		//void TMap<FString, uint32>& GetSubobjectNameToOffsetMap() override;)""");
 	HeaderWriter.Print();
 	HeaderWriter.Outdent().Print("private:").Indent();
 	HeaderWriter.Print("improbable::unreal::callbacks::FScopedViewCallbacks ViewCallbacks;");
@@ -1336,6 +1395,10 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Print("return HandleToPropertyMap;");
 	SourceWriter.Outdent();
 	SourceWriter.Print("}");
+
+	// SubobjectNameToOffsetMap
+	// ===========================================
+	//GenerateFunction_SubobjectNameToOffsetMap(SourceWriter, SchemaFilename, InteropFilename, Class, Layout, TypeBindingName);
 
 	// GetBoundClass
 	// ===========================================
@@ -1530,6 +1593,19 @@ void GenerateForwardingCodeFromLayout(
 		{
 			UnrealMetadata.set_owner_worker_id({ClientWorkerIdString});
 		}
+
+		uint32 CurrentOffset = 1;
+		worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
+		ForEachObjectWithOuter(Channel->Actor, [&UnrealMetadata, &CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+		{
+			// Objects can only be allocated NetGUIDs if this is true.
+			if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+			{
+				SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+				CurrentOffset++;
+			}
+		});
+		UnrealMetadata.set_subobject_name_to_offset(SubobjectNameToOffset);
 		
 		// Build entity.
 		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);)""");
@@ -1553,6 +1629,11 @@ void GenerateForwardingCodeFromLayout(
 		*GetSchemaRPCComponentName(ERPCType::RPC_Client, Class), *GetSchemaRPCComponentName(ERPCType::RPC_Client, Class));
 	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, WorkersOnly)",
 		*GetSchemaRPCComponentName(ERPCType::RPC_Server, Class), *GetSchemaRPCComponentName(ERPCType::RPC_Server, Class));
+
+	if (Class->GetName().Contains("WheeledVehicle") || Class->GetName().Contains("Character")) {
+		SourceWriter.Printf(".AddComponent<nuf::PossessPawn>(nuf::PossessPawn::Data{}, WorkersOnly)");
+	}
+
 	SourceWriter.Print(".Build();");
 	SourceWriter.Outdent();
 	SourceWriter.Outdent();

@@ -83,6 +83,18 @@ FCodeWriter& FCodeWriter::Outdent()
 	return *this;
 }
 
+FCodeWriter& FCodeWriter::StartScope() {
+	Print("{");
+	Indent();
+	return *this;
+}
+
+FCodeWriter& FCodeWriter::EndScope() {
+	Outdent();
+	Print("}");
+	return *this;
+}
+
 void FCodeWriter::WriteToFile(const FString& Filename)
 {
 	check(Scope == 0);

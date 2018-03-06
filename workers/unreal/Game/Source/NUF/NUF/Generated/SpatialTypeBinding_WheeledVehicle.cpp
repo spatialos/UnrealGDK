@@ -3,6 +3,7 @@
 
 #include "SpatialTypeBinding_WheeledVehicle.h"
 #include "Engine.h"
+
 #include "SpatialOS.h"
 #include "EntityBuilder.h"
 
@@ -13,7 +14,8 @@
 #include "../SpatialNetDriver.h"
 #include "../SpatialInterop.h"
 
-#include "WheeledVehicleMovementComponent.h"
+#include "UnrealWheeledVehicleSingleClientReplicatedDataAddComponentOp.h"
+#include "UnrealWheeledVehicleMultiClientReplicatedDataAddComponentOp.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_WheeledVehicle::GetHandlePropertyMap()
 {
@@ -49,6 +51,11 @@ const FRepHandlePropertyMap& USpatialTypeBinding_WheeledVehicle::GetHandleProper
 	return HandleToPropertyMap;
 }
 
+UClass* USpatialTypeBinding_WheeledVehicle::GetBoundClass() const
+{
+	return AWheeledVehicle::StaticClass();
+}
+
 void USpatialTypeBinding_WheeledVehicle::Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)
 {
 	Super::Init(InInterop, InPackageMap);
@@ -59,23 +66,11 @@ void USpatialTypeBinding_WheeledVehicle::Init(USpatialInterop* InInterop, USpati
 void USpatialTypeBinding_WheeledVehicle::BindToView()
 {
 	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
+	ViewCallbacks.Init(View);
+
 	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
 	{
-		SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData>([this](
-			const worker::AddComponentOp<improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData>& Op)
-		{
-			auto Update = improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData::Update::FromInitialData(Op.Data);
-			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
-			if (ActorChannel)
-			{
-				ClientReceiveUpdate_SingleClient(ActorChannel, Update);
-			}
-			else
-			{
-				PendingSingleClientData.Add(Op.EntityId, Op.Data);
-			}
-		});
-		SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData>([this](
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData>([this](
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
@@ -87,22 +82,8 @@ void USpatialTypeBinding_WheeledVehicle::BindToView()
 			{
 				Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
 			}
-		});
-		MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData>([this](
-			const worker::AddComponentOp<improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData>& Op)
-		{
-			auto Update = improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData::Update::FromInitialData(Op.Data);
-			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
-			if (ActorChannel)
-			{
-				ClientReceiveUpdate_MultiClient(ActorChannel, Update);
-			}
-			else
-			{
-				PendingMultiClientData.Add(Op.EntityId, Op.Data);
-			}
-		});
-		MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData>([this](
+		}));
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData>([this](
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
@@ -114,28 +95,17 @@ void USpatialTypeBinding_WheeledVehicle::BindToView()
 			{
 				Op.Update.ApplyTo(PendingMultiClientData.FindOrAdd(Op.EntityId));
 			}
-		});
+		}));
 	}
 
 	using ServerRPCCommandTypes = improbable::unreal::UnrealWheeledVehicleServerRPCs::Commands;
-	RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<ServerRPCCommandTypes::Serverupdatestate>(std::bind(&USpatialTypeBinding_WheeledVehicle::ServerUpdateState_OnCommandRequest, this, std::placeholders::_1)));
-	RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<ServerRPCCommandTypes::Serverupdatestate>(std::bind(&USpatialTypeBinding_WheeledVehicle::ServerUpdateState_OnCommandResponse, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandRequest<ServerRPCCommandTypes::Serverupdatestate>(std::bind(&USpatialTypeBinding_WheeledVehicle::ServerUpdateState_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ServerRPCCommandTypes::Serverupdatestate>(std::bind(&USpatialTypeBinding_WheeledVehicle::ServerUpdateState_OnCommandResponse, this, std::placeholders::_1)));
 }
 
 void USpatialTypeBinding_WheeledVehicle::UnbindFromView()
 {
-	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
-	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
-	{
-		View->Remove(SingleClientAddCallback);
-		View->Remove(SingleClientUpdateCallback);
-		View->Remove(MultiClientAddCallback);
-		View->Remove(MultiClientUpdateCallback);
-	}
-	for (auto& Callback : RPCReceiverCallbacks)
-	{
-		View->Remove(Callback);
-	}
+	ViewCallbacks.Reset();
 }
 
 worker::ComponentId USpatialTypeBinding_WheeledVehicle::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
@@ -178,23 +148,44 @@ worker::Entity USpatialTypeBinding_WheeledVehicle::CreateActorEntity(const FStri
 	improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
 	improbable::WorkerRequirementSet AnyUnrealWorkerOrOwningClient{{WorkerAttribute, OwningClientAttribute}};
 
-	const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);
-	worker::Option<std::string> StaticPath;
+	// Set up unreal metadata.
+	improbable::unreal::UnrealMetadata::Data UnrealMetadata;
 	if (Channel->Actor->IsFullNameStableForNetworking())
 	{
-		StaticPath = {std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}};
+		UnrealMetadata.set_static_path({std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}});
 	}
+	if (!ClientWorkerIdString.empty())
+	{
+		UnrealMetadata.set_owner_worker_id({ClientWorkerIdString});
+	}
+
+	uint32 CurrentOffset = 1;
+	worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
+	ForEachObjectWithOuter(Channel->Actor, [&UnrealMetadata, &CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+	{
+		// Objects can only be allocated NetGUIDs if this is true.
+		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+		{
+			SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+			CurrentOffset++;
+		}
+	});
+	UnrealMetadata.set_subobject_name_to_offset(SubobjectNameToOffset);
+
+	// Build entity.
+	const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);
 	return improbable::unreal::FEntityBuilder::Begin()
 		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, WorkersOnly)
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
 		.SetReadAcl(AnyUnrealWorkerOrClient)
-		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{StaticPath}, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData>(SingleClientData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData>(MultiClientData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealWheeledVehicleCompleteData>(improbable::unreal::UnrealWheeledVehicleCompleteData::Data{}, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealWheeledVehicleClientRPCs>(improbable::unreal::UnrealWheeledVehicleClientRPCs::Data{}, OwningClientOnly)
 		.AddComponent<improbable::unreal::UnrealWheeledVehicleServerRPCs>(improbable::unreal::UnrealWheeledVehicleServerRPCs::Data{}, WorkersOnly)
+		.AddComponent<nuf::PossessPawn>(nuf::PossessPawn::Data{}, WorkersOnly)
 		.Build();
 }
 
@@ -225,6 +216,22 @@ void USpatialTypeBinding_WheeledVehicle::SendRPCCommand(UObject* TargetObject, c
 	auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
 	checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
 	(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetObject);
+}
+
+void USpatialTypeBinding_WheeledVehicle::ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const
+{
+	auto* SingleClientAddOp = Cast<UUnrealWheeledVehicleSingleClientReplicatedDataAddComponentOp>(AddComponentOp);
+	if (SingleClientAddOp)
+	{
+		auto Update = improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData::Update::FromInitialData(*SingleClientAddOp->Data.data());
+		ClientReceiveUpdate_SingleClient(Channel, Update);
+	}
+	auto* MultiClientAddOp = Cast<UUnrealWheeledVehicleMultiClientReplicatedDataAddComponentOp>(AddComponentOp);
+	if (MultiClientAddOp)
+	{
+		auto Update = improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData::Update::FromInitialData(*MultiClientAddOp->Data.data());
+		ClientReceiveUpdate_MultiClient(Channel, Update);
+	}
 }
 
 void USpatialTypeBinding_WheeledVehicle::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)
@@ -559,8 +566,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_bhidden
 		uint32 Handle = 1;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			uint8 Value;
 
@@ -572,12 +579,12 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
+				*Data->Property->GetName(),
 				Handle);
 		}
 	}
@@ -585,8 +592,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_breplicatemovement
 		uint32 Handle = 2;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			uint8 Value;
 
@@ -598,12 +605,12 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
+				*Data->Property->GetName(),
 				Handle);
 		}
 	}
@@ -611,8 +618,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_btearoff
 		uint32 Handle = 3;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			uint8 Value;
 
@@ -624,12 +631,12 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
+				*Data->Property->GetName(),
 				Handle);
 		}
 	}
@@ -637,8 +644,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_remoterole
 		uint32 Handle = 4;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			TEnumAsByte<ENetRole> Value;
 
@@ -651,12 +658,19 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 				Value = ROLE_SimulatedProxy;
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+			// On the server, we want to "undo" the swap which will be done automatically by the network system.
+			if (Interop->GetNetDriver()->IsServer())
+			{
+				Handle = 13;
+				Data = &HandleToPropertyMap[Handle];
+			}
+
+			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
+				*Data->Property->GetName(),
 				Handle);
 		}
 	}
@@ -664,8 +678,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_owner
 		uint32 Handle = 5;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			bool bWriteObjectProperty = true;
 			AActor* Value;
@@ -682,7 +696,10 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 					FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 					if (NetGUID.IsValid())
 					{
-						Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+						UObject* Object_Raw = PackageMap->GetObjectFromNetGUID(NetGUID, true);
+						checkf(Object_Raw, TEXT("An object ref %s should map to a valid object."), *ObjectRefToString(ObjectRef));
+						Value = dynamic_cast<AActor*>(Object_Raw);
+						checkf(Value, TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
 					}
 					else
 					{
@@ -691,22 +708,22 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
-							*Data.Property->GetName(),
+							*Data->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data->Property), Handle);
 					}
 				}
 			}
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
-					*Data.Property->GetName(),
+					*Data->Property->GetName(),
 					Handle);
 			}
 		}
@@ -715,8 +732,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_replicatedmovement
 		uint32 Handle = 6;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			FRepMovement Value;
 
@@ -729,12 +746,12 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 				Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
+				*Data->Property->GetName(),
 				Handle);
 		}
 	}
@@ -742,8 +759,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_attachmentreplication_attachparent
 		uint32 Handle = 7;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			bool bWriteObjectProperty = true;
 			AActor* Value;
@@ -760,7 +777,10 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 					FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 					if (NetGUID.IsValid())
 					{
-						Value = static_cast<AActor*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+						UObject* Object_Raw = PackageMap->GetObjectFromNetGUID(NetGUID, true);
+						checkf(Object_Raw, TEXT("An object ref %s should map to a valid object."), *ObjectRefToString(ObjectRef));
+						Value = dynamic_cast<AActor*>(Object_Raw);
+						checkf(Value, TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
 					}
 					else
 					{
@@ -769,22 +789,22 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
-							*Data.Property->GetName(),
+							*Data->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data->Property), Handle);
 					}
 				}
 			}
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
-					*Data.Property->GetName(),
+					*Data->Property->GetName(),
 					Handle);
 			}
 		}
@@ -793,8 +813,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_attachmentreplication_locationoffset
 		uint32 Handle = 8;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			FVector_NetQuantize100 Value;
 
@@ -805,12 +825,12 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 				Value.Z = Vector.z();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
+				*Data->Property->GetName(),
 				Handle);
 		}
 	}
@@ -818,8 +838,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_attachmentreplication_relativescale3d
 		uint32 Handle = 9;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			FVector_NetQuantize100 Value;
 
@@ -830,12 +850,12 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 				Value.Z = Vector.z();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
+				*Data->Property->GetName(),
 				Handle);
 		}
 	}
@@ -843,8 +863,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_attachmentreplication_rotationoffset
 		uint32 Handle = 10;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			FRotator Value;
 
@@ -855,12 +875,12 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 				Value.Roll = Rotator.roll();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
+				*Data->Property->GetName(),
 				Handle);
 		}
 	}
@@ -868,19 +888,19 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_attachmentreplication_attachsocket
 		uint32 Handle = 11;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			FName Value;
 
 			Value = FName(((*Update.field_attachmentreplication_attachsocket().data())).data());
 
-			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
+				*Data->Property->GetName(),
 				Handle);
 		}
 	}
@@ -888,8 +908,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_attachmentreplication_attachcomponent
 		uint32 Handle = 12;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			bool bWriteObjectProperty = true;
 			USceneComponent* Value;
@@ -906,7 +926,10 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 					FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 					if (NetGUID.IsValid())
 					{
-						Value = static_cast<USceneComponent*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+						UObject* Object_Raw = PackageMap->GetObjectFromNetGUID(NetGUID, true);
+						checkf(Object_Raw, TEXT("An object ref %s should map to a valid object."), *ObjectRefToString(ObjectRef));
+						Value = dynamic_cast<USceneComponent*>(Object_Raw);
+						checkf(Value, TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
 					}
 					else
 					{
@@ -915,22 +938,22 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
-							*Data.Property->GetName(),
+							*Data->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data->Property), Handle);
 					}
 				}
 			}
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
-					*Data.Property->GetName(),
+					*Data->Property->GetName(),
 					Handle);
 			}
 		}
@@ -939,19 +962,26 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_role
 		uint32 Handle = 13;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			TEnumAsByte<ENetRole> Value;
 
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_role().data())));
 
-			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+			// On the server, we want to "undo" the swap which will be done automatically by the network system.
+			if (Interop->GetNetDriver()->IsServer())
+			{
+				Handle = 4;
+				Data = &HandleToPropertyMap[Handle];
+			}
+
+			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
+				*Data->Property->GetName(),
 				Handle);
 		}
 	}
@@ -959,8 +989,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_bcanbedamaged
 		uint32 Handle = 14;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			uint8 Value;
 
@@ -972,12 +1002,12 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 				Value = 0xFF;
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
+				*Data->Property->GetName(),
 				Handle);
 		}
 	}
@@ -985,8 +1015,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_instigator
 		uint32 Handle = 15;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			bool bWriteObjectProperty = true;
 			APawn* Value;
@@ -1003,7 +1033,10 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 					FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 					if (NetGUID.IsValid())
 					{
-						Value = static_cast<APawn*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+						UObject* Object_Raw = PackageMap->GetObjectFromNetGUID(NetGUID, true);
+						checkf(Object_Raw, TEXT("An object ref %s should map to a valid object."), *ObjectRefToString(ObjectRef));
+						Value = dynamic_cast<APawn*>(Object_Raw);
+						checkf(Value, TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
 					}
 					else
 					{
@@ -1012,22 +1045,22 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
-							*Data.Property->GetName(),
+							*Data->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data->Property), Handle);
 					}
 				}
 			}
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
-					*Data.Property->GetName(),
+					*Data->Property->GetName(),
 					Handle);
 			}
 		}
@@ -1036,8 +1069,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_playerstate
 		uint32 Handle = 16;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			bool bWriteObjectProperty = true;
 			APlayerState* Value;
@@ -1054,7 +1087,10 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 					FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 					if (NetGUID.IsValid())
 					{
-						Value = static_cast<APlayerState*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+						UObject* Object_Raw = PackageMap->GetObjectFromNetGUID(NetGUID, true);
+						checkf(Object_Raw, TEXT("An object ref %s should map to a valid object."), *ObjectRefToString(ObjectRef));
+						Value = dynamic_cast<APlayerState*>(Object_Raw);
+						checkf(Value, TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
 					}
 					else
 					{
@@ -1063,22 +1099,22 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
-							*Data.Property->GetName(),
+							*Data->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data->Property), Handle);
 					}
 				}
 			}
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
-					*Data.Property->GetName(),
+					*Data->Property->GetName(),
 					Handle);
 			}
 		}
@@ -1087,19 +1123,19 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_remoteviewpitch
 		uint32 Handle = 17;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			uint8 Value;
 
 			Value = uint8(uint8((*Update.field_remoteviewpitch().data())));
 
-			OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data.Property->GetName(),
+				*Data->Property->GetName(),
 				Handle);
 		}
 	}
@@ -1107,8 +1143,8 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	{
 		// field_controller
 		uint32 Handle = 18;
-		const FRepHandleData& Data = HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data.Condition))
+		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(Data->Condition))
 		{
 			bool bWriteObjectProperty = true;
 			AController* Value;
@@ -1125,7 +1161,10 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 					FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 					if (NetGUID.IsValid())
 					{
-						Value = static_cast<AController*>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+						UObject* Object_Raw = PackageMap->GetObjectFromNetGUID(NetGUID, true);
+						checkf(Object_Raw, TEXT("An object ref %s should map to a valid object."), *ObjectRefToString(ObjectRef));
+						Value = dynamic_cast<AController*>(Object_Raw);
+						checkf(Value, TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
 					}
 					else
 					{
@@ -1134,22 +1173,22 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
-							*Data.Property->GetName(),
+							*Data->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data.Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data->Property), Handle);
 					}
 				}
 			}
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data.Property, &Value);
+				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
-					*Data.Property->GetName(),
+					*Data->Property->GetName(),
 					Handle);
 			}
 		}

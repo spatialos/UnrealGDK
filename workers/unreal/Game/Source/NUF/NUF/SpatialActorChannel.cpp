@@ -91,13 +91,6 @@ void USpatialActorChannel::BindToSpatialView()
 				OnReserveEntityIdResponse(Op);
 			}			
 		});
-		CreateEntityCallback = PinnedView->OnCreateEntityResponse([this](const worker::CreateEntityResponseOp& Op)
-		{
-			if (Op.RequestId == CreateEntityRequestId)
-			{
-				OnCreateEntityResponse(Op);
-			}
-		});
 	}
 }
 
@@ -414,36 +407,9 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	}
 
 	ActorEntityId = *Op.EntityId;
-}
 
-void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
-{
-	check(SpatialNetDriver->GetNetMode() < NM_Client);
-
-	if (Op.StatusCode != worker::StatusCode::kSuccess)
-	{
-		UE_LOG(LogSpatialOSActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
-		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
-		UnbindFromSpatialView();
-		return;
-	}
-	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Created entity (%d) for: %s. Request id: %d"), Op.EntityId.value_or(0), *Actor->GetName(), ReserveEntityIdRequestId.Id);
-
-	auto PinnedView = WorkerView.Pin();
-	if (PinnedView.IsValid())
-	{
-		PinnedView->Remove(CreateEntityCallback);
-	}
-
-	USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-	check(PackageMap);
-	
-	worker::EntityId SpatialEntityId = Op.EntityId.value_or(0);
-	FEntityId EntityId(SpatialEntityId);
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
-	FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(Actor, ActorEntityId);
-	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());	
-}	
+}
 
 void USpatialActorChannel::UpdateSpatialPosition()
 {

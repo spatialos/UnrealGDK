@@ -3,7 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Commander.h"
+#include "EntityRegistry.h"
 #include "WheeledVehicle.h"
+#include "PossessPawnComponent.h"
 #include "VehicleCppPawn.generated.h"
 
 class UCameraComponent;
@@ -67,6 +70,16 @@ public:
 	/** Are we in reverse gear */
 	UPROPERTY(Category = Camera, VisibleDefaultsOnly, BlueprintReadOnly)
 	bool bInReverseGear;
+	
+	UPROPERTY()
+	UPossessPawnComponent* PossessPawnComponent;
+
+	FPossessPawnCommandResultDelegate OnPossessPawnAckDelegate;
+
+	UPROPERTY()
+	UEntityRegistry* EntityRegistry;
+	UPROPERTY()
+	UCommander* Commander;
 
 	/** Initial offset of incar camera */
 	FVector InternalCameraOrigin;
@@ -97,6 +110,12 @@ public:
 	void OnHandbrakeReleased();
 	/** Switch between cameras */
 	void OnToggleCamera();
+
+	UFUNCTION()
+	void OnPossessPawnRequest(UPossessPawnCommandResponder* Request);
+
+	UFUNCTION()
+	void OnPossessPawnRequestAck(const FSpatialOSCommandResult& Result, UPossessPawnResponse* Response);
 
 	static const FName LookUpBinding;
 	static const FName LookRightBinding;

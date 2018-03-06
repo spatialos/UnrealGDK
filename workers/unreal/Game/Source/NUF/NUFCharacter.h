@@ -78,7 +78,6 @@ protected:
 
 	UPROPERTY()
 	UPossessPawnComponent* PossessPawnComponent;
-
 	FPossessPawnCommandResultDelegate OnPossessPawnAckDelegate;
 
 	UPROPERTY()
