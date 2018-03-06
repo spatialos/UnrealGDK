@@ -19,8 +19,12 @@
 #include "MetadataAddComponentOp.h"
 #include "MetadataComponent.h"
 #include "UnrealMetadataAddComponentOp.h"
+#include "UnrealWheeledVehicleMultiClientReplicatedDataAddComponentOp.h"
+#include "UnrealWheeledVehicleMultiClientReplicatedDataComponent.h"
+#include "SpatialConstants.h"
 #include "UnrealMetadataComponent.h"
 #include "UnrealLevelComponent.h"
+#include "Generated/SpatialTypeBinding_WheeledVehicle.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSInteropPipelineBlock);
 
@@ -133,7 +137,7 @@ void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId Com
 
 	if (NextBlock)
 	{
-		NextBlock->ChangeAuthority(ComponentId, AuthChangeOp);	
+		NextBlock->ChangeAuthority(ComponentId, AuthChangeOp);
 	}
 }
 
@@ -413,11 +417,11 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* P
 		SpawnInfo.bRemoteOwned = true;
 		SpawnInfo.bNoFail = true;
 		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
-		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(FRotator::ZeroRotator, InitialLocation), SpawnInfo);
 
+		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(FRotator::ZeroRotator, InitialLocation), SpawnInfo);
 		check(NewActor);
 	}
-		
+
 	return NewActor;
 }
 
@@ -436,7 +440,7 @@ UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(improbable::Metad
 		if (EntityTypeString.FindLastChar('/', LastSlash))
 		{
 			RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString.RightChop(LastSlash));
-		}		
+		}
 	}
 	UClass* ClassToSpawn = RegisteredClass ? *RegisteredClass : nullptr;
 

@@ -126,12 +126,11 @@ void AVehicleCppPawn::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 	PlayerInputComponent->BindAction("Handbrake", IE_Pressed, this, &AVehicleCppPawn::OnHandbrakePressed);
 	PlayerInputComponent->BindAction("Handbrake", IE_Released, this, &AVehicleCppPawn::OnHandbrakeReleased);
 	PlayerInputComponent->BindAction("SwitchCamera", IE_Pressed, this, &AVehicleCppPawn::OnToggleCamera);
-	PlayerInputComponent->BindAction("SpawnCar", IE_Pressed, this, &AVehicleCppPawn::test);
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AVehicleCppPawn::Interact);
 }
 
-void AVehicleCppPawn::test() {
+void AVehicleCppPawn::Interact() {
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("This is an on screen message!"));
-	ReregisterAllComponents();
 }
 
 void AVehicleCppPawn::MoveForward(float Val)
@@ -186,7 +185,7 @@ void AVehicleCppPawn::Tick(float Delta)
 {
 	Super::Tick(Delta);
 
-	//GetVehicleMovementComponent()->DrawDebugLines();
+	GetVehicleMovementComponent()->DrawDebugLines();
 
 	// Setup the flag to say we are in reverse gear
 	bInReverseGear = GetVehicleMovement()->GetCurrentGear() < 0;

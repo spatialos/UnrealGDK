@@ -3,7 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Commander.h"
+#include "EntityRegistry.h"
 #include "GameFramework/Character.h"
+#include "PossessPawnComponent.h"
 #include "NUFCharacter.generated.h"
 
 UCLASS(config=Game)
@@ -20,6 +23,8 @@ class ANUFCharacter : public ACharacter
 	class UCameraComponent* FollowCamera;
 public:
 	ANUFCharacter();
+
+	virtual void BeginPlay() override;
 
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
@@ -63,7 +68,23 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
 
-	void SpawnCar();
+	void Interact();
+
+	UFUNCTION()
+	void OnPossessPawnRequest(UPossessPawnCommandResponder* Request);
+
+	UFUNCTION()
+	void OnPossessPawnRequestAck(const FSpatialOSCommandResult& Result, UPossessPawnResponse* Response);
+
+	UPROPERTY()
+	UPossessPawnComponent* PossessPawnComponent;
+
+	FPossessPawnCommandResultDelegate OnPossessPawnAckDelegate;
+
+	UPROPERTY()
+	UEntityRegistry* EntityRegistry;
+	UPROPERTY()
+	UCommander* Commander;
 
 public:
 	/** Returns CameraBoom subobject **/

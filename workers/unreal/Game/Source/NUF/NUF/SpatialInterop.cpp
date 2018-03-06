@@ -25,10 +25,11 @@
 #include "Generated/SpatialTypeBinding_PlayerState.h"
 #include "Generated/SpatialTypeBinding_WheeledVehicle.h"
 #include "WheeledVehicle.h"
+#include "PossessPawnComponent.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSInterop);
 
-USpatialInterop::USpatialInterop() 
+USpatialInterop::USpatialInterop()
 {
 }
 
@@ -83,14 +84,14 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 		{
 			std::string ClientWorkerIdString = TCHAR_TO_UTF8(*PlayerWorkerId);
 
-			improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
-			improbable::WorkerAttributeSet ClientAttribute{{worker::List<std::string>{"UnrealClient"}}};
-			improbable::WorkerAttributeSet OwnClientAttribute{{"workerId:" + ClientWorkerIdString}};
+			improbable::WorkerAttributeSet WorkerAttribute{ { worker::List<std::string>{"UnrealWorker"} } };
+			improbable::WorkerAttributeSet ClientAttribute{ { worker::List<std::string>{"UnrealClient"} } };
+			improbable::WorkerAttributeSet OwnClientAttribute{ { "workerId:" + ClientWorkerIdString } };
 
-			improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
-			improbable::WorkerRequirementSet ClientsOnly{{ClientAttribute}};
-			improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
-			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
+			improbable::WorkerRequirementSet WorkersOnly{ { WorkerAttribute } };
+			improbable::WorkerRequirementSet ClientsOnly{ { ClientAttribute } };
+			improbable::WorkerRequirementSet OwnClientOnly{ { OwnClientAttribute } };
+			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{ { WorkerAttribute, ClientAttribute } };
 
 			// Set up unreal metadata.
 			improbable::unreal::UnrealMetadata::Data UnrealMetadata;
@@ -108,7 +109,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 
 			auto Entity = improbable::unreal::FEntityBuilder::Begin()
 				.AddPositionComponent(SpatialPosition, WorkersOnly)
-				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
+				.AddMetadataComponent(improbable::Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
 				.SetPersistence(true)
 				.SetReadAcl(AnyUnrealWorkerOrClient)
 				.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
@@ -365,7 +366,7 @@ void USpatialInterop::SetComponentInterests_Client(USpatialActorChannel* ActorCh
 		if (Binding)
 		{
 			worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
-			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{true});
+			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{ true });
 			SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId, Interest);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: We are the owning client of %s (%llu), therefore we want single client updates."),
 				*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId(),
