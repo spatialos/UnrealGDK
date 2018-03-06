@@ -98,6 +98,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 
 			// Build entity.
 			const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Location);
+
 			auto Entity = improbable::unreal::FEntityBuilder::Begin()
 				.AddPositionComponent(SpatialPosition, WorkersOnly)
 				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
@@ -207,6 +208,11 @@ void USpatialInterop::AddActorChannel(const worker::EntityId& EntityId, USpatial
 	{
 		SetComponentInterests_Client(Channel, EntityId);
 	}
+}
+
+void USpatialInterop::RemoveActorChannel(worker::EntityId EntityId)
+{
+	EntityToActorChannel.Remove(EntityId);
 }
 
 USpatialActorChannel* USpatialInterop::GetActorChannelByEntityId(const worker::EntityId & EntityId) const

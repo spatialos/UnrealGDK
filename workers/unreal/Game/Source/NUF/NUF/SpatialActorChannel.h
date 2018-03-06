@@ -107,5 +107,7 @@ private:
 	bool bCreatingNewEntity;
 
 private:
-	void UpdateSpatialPosition(bool SendComponentUpdate);
+	void UpdateSpatialPosition();
+
+	static FVector GetActorSpatialPosition(AActor* Actor);
 };

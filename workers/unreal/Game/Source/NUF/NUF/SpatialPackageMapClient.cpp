@@ -29,7 +29,7 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 	});
 }
 
-FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntityId EntityId)
+FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, const FEntityId& EntityId)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	FNetworkGUID NetGUID = SpatialGuidCache->GetNetGUIDFromEntityId(EntityId.ToSpatialEntityId());
@@ -40,6 +40,12 @@ FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntity
 		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor);
 	}
 	return NetGUID;
+}
+
+void USpatialPackageMapClient::RemoveEntityActor(const FEntityId& EntityId)
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	SpatialGuidCache->RemoveEntityNetGUID(EntityId.ToSpatialEntityId());
 }
 
 bool USpatialPackageMapClient::SerializeNewActor(FArchive & Ar, UActorChannel * Channel, AActor *& Actor)
@@ -114,6 +120,14 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	return NetGUID;
 }
 
+void FSpatialNetGUIDCache::RemoveEntityNetGUID(worker::EntityId EntityId)
+{
+	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
+	FHashableUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);
+	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
+	UnrealObjectRefToNetGUID.Remove(*ActorRef);
+}
+
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const
 {
 	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjectRef);
@@ -126,7 +140,7 @@ improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFrom
 	return ObjRef ? *ObjRef : SpatialConstants::UNRESOLVED_OBJECT_REF;
 }
 
-FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const
+FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(worker::EntityId EntityId) const
 {
 	improbable::unreal::UnrealObjectRef ObjRef{EntityId, 0};
 	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRef);
