@@ -38,15 +38,7 @@ component UnrealPlayerStateMultiClientReplicatedData {
 	bytes field_uniqueid = 26; // COND_InitialOnly
 }
 component UnrealPlayerStateCompleteData {
-<<<<<<< HEAD
-<<<<<<< HEAD
-	id = 100017;
-=======
 	id = 100022;
->>>>>>> e222efe... Vehicle movement
-=======
-	id = 100022;
->>>>>>> 71e731d... Added SubobjectNameToOffset map and correct commands to possess pawns
 }
 
 component UnrealPlayerStateClientRPCs {

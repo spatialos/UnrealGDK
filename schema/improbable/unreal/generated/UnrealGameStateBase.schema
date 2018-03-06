@@ -31,15 +31,7 @@ component UnrealGameStateBaseMultiClientReplicatedData {
 	float field_replicatedworldtimeseconds = 19; // COND_None
 }
 component UnrealGameStateBaseCompleteData {
-<<<<<<< HEAD
-<<<<<<< HEAD
-	id = 100022;
-=======
 	id = 100027;
->>>>>>> e222efe... Vehicle movement
-=======
-	id = 100027;
->>>>>>> 71e731d... Added SubobjectNameToOffset map and correct commands to possess pawns
 }
 
 component UnrealGameStateBaseClientRPCs {

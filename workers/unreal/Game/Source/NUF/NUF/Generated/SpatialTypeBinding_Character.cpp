@@ -14,8 +14,6 @@
 #include "../SpatialNetDriver.h"
 #include "../SpatialInterop.h"
 
-#include "PossessPawnComponent.h"
-
 const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
 {
 	static FRepHandlePropertyMap HandleToPropertyMap;
@@ -293,8 +291,8 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FString& C
 	// Build entity.
 	const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);
 	return improbable::unreal::FEntityBuilder::Begin()
-		.AddPositionComponent(improbable::Position::Data{ SpatialPosition }, WorkersOnly)
-		.AddMetadataComponent(improbable::Metadata::Data{ TCHAR_TO_UTF8(*Metadata) })
+		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, WorkersOnly)
+		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
 		.SetReadAcl(AnyUnrealWorkerOrClient)
 		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)

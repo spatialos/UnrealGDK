@@ -31,15 +31,7 @@ component UnrealPlayerControllerMultiClientReplicatedData {
 	UnrealObjectRef field_playerstate = 17; // COND_None
 }
 component UnrealPlayerControllerCompleteData {
-<<<<<<< HEAD
-<<<<<<< HEAD
-	id = 100012;
-=======
 	id = 100017;
->>>>>>> e222efe... Vehicle movement
-=======
-	id = 100017;
->>>>>>> 71e731d... Added SubobjectNameToOffset map and correct commands to possess pawns
 }
 type UnrealOnServerStartedVisualLoggerRequest {
 	uint32 target_subobject_offset = 1;
@@ -376,15 +368,7 @@ type UnrealServerAcknowledgePossessionRequest {
 }
 
 component UnrealPlayerControllerClientRPCs {
-<<<<<<< HEAD
-<<<<<<< HEAD
-	id = 100013;
-=======
 	id = 100018;
->>>>>>> e222efe... Vehicle movement
-=======
-	id = 100018;
->>>>>>> 71e731d... Added SubobjectNameToOffset map and correct commands to possess pawns
 	command UnrealRPCCommandResponse onserverstartedvisuallogger(UnrealOnServerStartedVisualLoggerRequest);
 	command UnrealRPCCommandResponse clientwaskicked(UnrealClientWasKickedRequest);
 	command UnrealRPCCommandResponse clientvoicehandshakecomplete(UnrealClientVoiceHandshakeCompleteRequest);
@@ -437,15 +421,7 @@ component UnrealPlayerControllerClientRPCs {
 	command UnrealRPCCommandResponse clientsetlocation(UnrealClientSetLocationRequest);
 }
 component UnrealPlayerControllerServerRPCs {
-<<<<<<< HEAD
-<<<<<<< HEAD
-	id = 100014;
-=======
 	id = 100019;
->>>>>>> e222efe... Vehicle movement
-=======
-	id = 100019;
->>>>>>> 71e731d... Added SubobjectNameToOffset map and correct commands to possess pawns
 	command UnrealRPCCommandResponse serverviewself(UnrealServerViewSelfRequest);
 	command UnrealRPCCommandResponse serverviewprevplayer(UnrealServerViewPrevPlayerRequest);
 	command UnrealRPCCommandResponse serverviewnextplayer(UnrealServerViewNextPlayerRequest);

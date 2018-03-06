@@ -8,6 +8,7 @@
 #include <improbable/unreal/unreal_metadata.h>
 #include <improbable/unreal/generated/UnrealCharacter.h>
 #include "../SpatialTypeBinding.h"
+
 #include "SpatialTypeBinding_Character.generated.h"
 
 UCLASS()
