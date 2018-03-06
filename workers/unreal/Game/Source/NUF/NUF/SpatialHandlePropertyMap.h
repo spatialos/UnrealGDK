@@ -2,16 +2,28 @@
 
 #pragma once
 
+struct FRepHandleData
+{
+	UProperty* Parent;
+	UProperty* Property;
+	ELifetimeCondition Condition;
+};
+
+using FRepHandlePropertyMap = TMap<int32, FRepHandleData>;
+
+
+// TODO(david): Move the below class to the right location.
+
 #include "Net/RepLayout.h"
 #include "SpatialActorChannel.h"
 #include "SpatialNetDriver.h"
 #include "Engine/NetConnection.h"
 #include "SpatialOS.h"
 
-class FSpatialConditionMapFilter
+class ConditionMapFilter
 {
 public:
-	FSpatialConditionMapFilter(USpatialActorChannel* ActorChannel, bool bAuthoritative)
+	ConditionMapFilter(USpatialActorChannel* ActorChannel, bool bAuthoritative)
 	{
 		// Reconstruct replication flags on the client side.
 		FReplicationFlags RepFlags;

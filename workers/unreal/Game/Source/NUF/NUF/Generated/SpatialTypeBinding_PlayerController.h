@@ -7,6 +7,7 @@
 #include <improbable/unreal/core_types.h>
 #include <improbable/unreal/unreal_metadata.h>
 #include <improbable/unreal/generated/UnrealPlayerController.h>
+#include "../SpatialHandlePropertyMap.h"
 #include "../SpatialTypeBinding.h"
 #include "SpatialTypeBinding_PlayerController.generated.h"
 
