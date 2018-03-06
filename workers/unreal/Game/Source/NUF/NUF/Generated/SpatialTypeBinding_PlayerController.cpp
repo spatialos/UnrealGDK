@@ -7,6 +7,7 @@
 #include "EntityBuilder.h"
 
 #include "../SpatialConstants.h"
+#include "../SpatialConditionMapFilter.h"
 #include "../SpatialUnrealObjectRef.h"
 #include "../SpatialActorChannel.h"
 #include "../SpatialPackageMapClient.h"
@@ -19,31 +20,31 @@ const FRepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetHandleProp
 	if (HandleToPropertyMap.Num() == 0)
 	{
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("PlayerController"));
-		HandleToPropertyMap.Add(18, FRepHandleData{nullptr, Class->FindPropertyByName("TargetViewRotation"), COND_OwnerOnly});
-		HandleToPropertyMap.Add(19, FRepHandleData{nullptr, Class->FindPropertyByName("SpawnLocation"), COND_OwnerOnly});
-		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None});
-		HandleToPropertyMap.Add(2, FRepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), COND_None});
-		HandleToPropertyMap.Add(3, FRepHandleData{nullptr, Class->FindPropertyByName("bTearOff"), COND_None});
-		HandleToPropertyMap.Add(4, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteRole"), COND_None});
-		HandleToPropertyMap.Add(5, FRepHandleData{nullptr, Class->FindPropertyByName("Owner"), COND_None});
-		HandleToPropertyMap.Add(6, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovement"), COND_SimulatedOrPhysics});
-		HandleToPropertyMap.Add(7, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap.Add(18, FRepHandleData{nullptr, Class->FindPropertyByName("TargetViewRotation"), COND_OwnerOnly, REPNOTIFY_OnChanged, 1244});
+		HandleToPropertyMap.Add(19, FRepHandleData{nullptr, Class->FindPropertyByName("SpawnLocation"), COND_OwnerOnly, REPNOTIFY_OnChanged, 1920});
+		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None, REPNOTIFY_OnChanged, 148});
+		HandleToPropertyMap.Add(2, FRepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), COND_None, REPNOTIFY_OnChanged, 148});
+		HandleToPropertyMap.Add(3, FRepHandleData{nullptr, Class->FindPropertyByName("bTearOff"), COND_None, REPNOTIFY_OnChanged, 148});
+		HandleToPropertyMap.Add(4, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteRole"), COND_None, REPNOTIFY_OnChanged, 164});
+		HandleToPropertyMap.Add(5, FRepHandleData{nullptr, Class->FindPropertyByName("Owner"), COND_None, REPNOTIFY_OnChanged, 168});
+		HandleToPropertyMap.Add(6, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovement"), COND_SimulatedOrPhysics, REPNOTIFY_OnChanged, 176});
+		HandleToPropertyMap.Add(7, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 232});
 		HandleToPropertyMap[7].Property = Cast<UStructProperty>(HandleToPropertyMap[7].Parent)->Struct->FindPropertyByName("AttachParent");
-		HandleToPropertyMap.Add(8, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap.Add(8, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 240});
 		HandleToPropertyMap[8].Property = Cast<UStructProperty>(HandleToPropertyMap[8].Parent)->Struct->FindPropertyByName("LocationOffset");
-		HandleToPropertyMap.Add(9, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap.Add(9, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 252});
 		HandleToPropertyMap[9].Property = Cast<UStructProperty>(HandleToPropertyMap[9].Parent)->Struct->FindPropertyByName("RelativeScale3D");
-		HandleToPropertyMap.Add(10, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap.Add(10, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 264});
 		HandleToPropertyMap[10].Property = Cast<UStructProperty>(HandleToPropertyMap[10].Parent)->Struct->FindPropertyByName("RotationOffset");
-		HandleToPropertyMap.Add(11, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap.Add(11, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 276});
 		HandleToPropertyMap[11].Property = Cast<UStructProperty>(HandleToPropertyMap[11].Parent)->Struct->FindPropertyByName("AttachSocket");
-		HandleToPropertyMap.Add(12, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom});
+		HandleToPropertyMap.Add(12, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 288});
 		HandleToPropertyMap[12].Property = Cast<UStructProperty>(HandleToPropertyMap[12].Parent)->Struct->FindPropertyByName("AttachComponent");
-		HandleToPropertyMap.Add(13, FRepHandleData{nullptr, Class->FindPropertyByName("Role"), COND_None});
-		HandleToPropertyMap.Add(14, FRepHandleData{nullptr, Class->FindPropertyByName("bCanBeDamaged"), COND_None});
-		HandleToPropertyMap.Add(15, FRepHandleData{nullptr, Class->FindPropertyByName("Instigator"), COND_None});
-		HandleToPropertyMap.Add(16, FRepHandleData{nullptr, Class->FindPropertyByName("Pawn"), COND_None});
-		HandleToPropertyMap.Add(17, FRepHandleData{nullptr, Class->FindPropertyByName("PlayerState"), COND_None});
+		HandleToPropertyMap.Add(13, FRepHandleData{nullptr, Class->FindPropertyByName("Role"), COND_None, REPNOTIFY_OnChanged, 296});
+		HandleToPropertyMap.Add(14, FRepHandleData{nullptr, Class->FindPropertyByName("bCanBeDamaged"), COND_None, REPNOTIFY_OnChanged, 344});
+		HandleToPropertyMap.Add(15, FRepHandleData{nullptr, Class->FindPropertyByName("Instigator"), COND_None, REPNOTIFY_OnChanged, 352});
+		HandleToPropertyMap.Add(16, FRepHandleData{nullptr, Class->FindPropertyByName("Pawn"), COND_None, REPNOTIFY_Always, 1080});
+		HandleToPropertyMap.Add(17, FRepHandleData{nullptr, Class->FindPropertyByName("PlayerState"), COND_None, REPNOTIFY_OnChanged, 1104});
 	}
 	return HandleToPropertyMap;
 }
@@ -599,8 +600,8 @@ void USpatialTypeBinding_PlayerController::ServerSendUpdate_MultiClient(
 				TArray<uint8> ValueData;
 				FMemoryWriter ValueDataWriter(ValueData);
 				bool Success;
-				Value.NetSerialize(ValueDataWriter, nullptr, Success);
-				OutUpdate.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
+				Value.NetSerialize(ValueDataWriter, PackageMap, Success);
+				OutUpdate.set_field_replicatedmovement(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));
 			}
 			break;
 		}
@@ -771,19 +772,23 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_SingleClient(
 	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update) const
 {
-	FBunchPayloadWriter OutputWriter(PackageMap);
+	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
-	auto& HandleToPropertyMap = GetHandlePropertyMap();
+	TArray<UProperty*> RepNotifies;
+	const bool bIsServer = Interop->GetNetDriver()->IsServer();
 	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealPlayerControllerClientRPCs::ComponentId);
-	ConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
+	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
+	FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
+
 	if (!Update.field_targetviewrotation().empty())
 	{
 		// field_targetviewrotation
-		uint32 Handle = 18;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 18;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			FRotator Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			FRotator Value = *(reinterpret_cast<FRotator const*>(PropertyData));
 
 			{
 				auto& Rotator = (*Update.field_targetviewrotation().data());
@@ -792,23 +797,25 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_SingleClient(
 				Value.Roll = Rotator.roll();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data->Property->GetName(),
+				*RepData->Property->GetName(),
 				Handle);
 		}
 	}
 	if (!Update.field_spawnlocation().empty())
 	{
 		// field_spawnlocation
-		uint32 Handle = 19;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 19;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			FVector Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			FVector Value = *(reinterpret_cast<FVector const*>(PropertyData));
 
 			{
 				auto& Vector = (*Update.field_spawnlocation().data());
@@ -817,148 +824,143 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_SingleClient(
 				Value.Z = Vector.z();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data->Property->GetName(),
+				*RepData->Property->GetName(),
 				Handle);
 		}
 	}
-	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter.GetNetBitWriter());
+	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
 void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 	USpatialActorChannel* ActorChannel,
 	const improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update) const
 {
-	FBunchPayloadWriter OutputWriter(PackageMap);
+	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
-	auto& HandleToPropertyMap = GetHandlePropertyMap();
+	TArray<UProperty*> RepNotifies;
+	const bool bIsServer = Interop->GetNetDriver()->IsServer();
 	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealPlayerControllerClientRPCs::ComponentId);
-	ConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
+	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
+	FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
+
 	if (!Update.field_bhidden().empty())
 	{
 		// field_bhidden
-		uint32 Handle = 1;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 1;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8 Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
 
 			Value = (*Update.field_bhidden().data());
-			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
-			// We will soon move away from using bunches when receiving Spatial updates.
-			if (Value)
-			{
-				Value = 0xFF;
-			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data->Property->GetName(),
+				*RepData->Property->GetName(),
 				Handle);
 		}
 	}
 	if (!Update.field_breplicatemovement().empty())
 	{
 		// field_breplicatemovement
-		uint32 Handle = 2;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 2;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8 Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
 
 			Value = (*Update.field_breplicatemovement().data());
-			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
-			// We will soon move away from using bunches when receiving Spatial updates.
-			if (Value)
-			{
-				Value = 0xFF;
-			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data->Property->GetName(),
+				*RepData->Property->GetName(),
 				Handle);
 		}
 	}
 	if (!Update.field_btearoff().empty())
 	{
 		// field_btearoff
-		uint32 Handle = 3;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 3;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8 Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
 
 			Value = (*Update.field_btearoff().data());
-			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
-			// We will soon move away from using bunches when receiving Spatial updates.
-			if (Value)
-			{
-				Value = 0xFF;
-			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data->Property->GetName(),
+				*RepData->Property->GetName(),
 				Handle);
 		}
 	}
 	if (!Update.field_remoterole().empty())
 	{
 		// field_remoterole
-		uint32 Handle = 4;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 4;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			TEnumAsByte<ENetRole> Value;
+			// On the client, we need to swap Role/RemoteRole.
+			if (!bIsServer)
+			{
+				Handle = 13;
+				RepData = &HandleToPropertyMap[Handle];
+			}
+
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			TEnumAsByte<ENetRole> Value = *(reinterpret_cast<TEnumAsByte<ENetRole> const*>(PropertyData));
 
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_remoterole().data())));
 
 			// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
 			// the server RPCs component.
-			if (Value == ROLE_AutonomousProxy && !bAutonomousProxy)
+			if (!bIsServer && Value == ROLE_AutonomousProxy && !bAutonomousProxy)
 			{
 				Value = ROLE_SimulatedProxy;
 			}
 
-			// On the server, we want to "undo" the swap which will be done automatically by the network system.
-			if (Interop->GetNetDriver()->IsServer())
-			{
-				Handle = 13;
-				Data = &HandleToPropertyMap[Handle];
-			}
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data->Property->GetName(),
+				*RepData->Property->GetName(),
 				Handle);
 		}
 	}
 	if (!Update.field_owner().empty())
 	{
 		// field_owner
-		uint32 Handle = 5;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 5;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
 			bool bWriteObjectProperty = true;
-			AActor* Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			AActor* Value = *(reinterpret_cast<AActor* const*>(PropertyData));
 
 			{
 				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_owner().data());
@@ -984,22 +986,23 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
-							*Data->Property->GetName(),
+							*RepData->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data->Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, RepData);
 					}
 				}
 			}
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
-					*Data->Property->GetName(),
+					*RepData->Property->GetName(),
 					Handle);
 			}
 		}
@@ -1007,39 +1010,42 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_replicatedmovement().empty())
 	{
 		// field_replicatedmovement
-		uint32 Handle = 6;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 6;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			FRepMovement Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			FRepMovement Value = *(reinterpret_cast<FRepMovement const*>(PropertyData));
 
 			{
 				auto& ValueDataStr = (*Update.field_replicatedmovement().data());
 				TArray<uint8> ValueData;
-				ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+				ValueData.Append(ValueDataStr.data(), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
 				bool bSuccess;
-				Value.NetSerialize(ValueDataReader, nullptr, bSuccess);
+				Value.NetSerialize(ValueDataReader, PackageMap, bSuccess);
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data->Property->GetName(),
+				*RepData->Property->GetName(),
 				Handle);
 		}
 	}
 	if (!Update.field_attachmentreplication_attachparent().empty())
 	{
 		// field_attachmentreplication_attachparent
-		uint32 Handle = 7;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 7;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
 			bool bWriteObjectProperty = true;
-			AActor* Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			AActor* Value = *(reinterpret_cast<AActor* const*>(PropertyData));
 
 			{
 				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_attachmentreplication_attachparent().data());
@@ -1065,22 +1071,23 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
-							*Data->Property->GetName(),
+							*RepData->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data->Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, RepData);
 					}
 				}
 			}
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
-					*Data->Property->GetName(),
+					*RepData->Property->GetName(),
 					Handle);
 			}
 		}
@@ -1088,11 +1095,12 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_attachmentreplication_locationoffset().empty())
 	{
 		// field_attachmentreplication_locationoffset
-		uint32 Handle = 8;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 8;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			FVector_NetQuantize100 Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			FVector_NetQuantize100 Value = *(reinterpret_cast<FVector_NetQuantize100 const*>(PropertyData));
 
 			{
 				auto& Vector = (*Update.field_attachmentreplication_locationoffset().data());
@@ -1101,23 +1109,25 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 				Value.Z = Vector.z();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data->Property->GetName(),
+				*RepData->Property->GetName(),
 				Handle);
 		}
 	}
 	if (!Update.field_attachmentreplication_relativescale3d().empty())
 	{
 		// field_attachmentreplication_relativescale3d
-		uint32 Handle = 9;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 9;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			FVector_NetQuantize100 Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			FVector_NetQuantize100 Value = *(reinterpret_cast<FVector_NetQuantize100 const*>(PropertyData));
 
 			{
 				auto& Vector = (*Update.field_attachmentreplication_relativescale3d().data());
@@ -1126,23 +1136,25 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 				Value.Z = Vector.z();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data->Property->GetName(),
+				*RepData->Property->GetName(),
 				Handle);
 		}
 	}
 	if (!Update.field_attachmentreplication_rotationoffset().empty())
 	{
 		// field_attachmentreplication_rotationoffset
-		uint32 Handle = 10;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 10;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			FRotator Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			FRotator Value = *(reinterpret_cast<FRotator const*>(PropertyData));
 
 			{
 				auto& Rotator = (*Update.field_attachmentreplication_rotationoffset().data());
@@ -1151,44 +1163,48 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 				Value.Roll = Rotator.roll();
 			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data->Property->GetName(),
+				*RepData->Property->GetName(),
 				Handle);
 		}
 	}
 	if (!Update.field_attachmentreplication_attachsocket().empty())
 	{
 		// field_attachmentreplication_attachsocket
-		uint32 Handle = 11;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 11;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			FName Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			FName Value = *(reinterpret_cast<FName const*>(PropertyData));
 
 			Value = FName(((*Update.field_attachmentreplication_attachsocket().data())).data());
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data->Property->GetName(),
+				*RepData->Property->GetName(),
 				Handle);
 		}
 	}
 	if (!Update.field_attachmentreplication_attachcomponent().empty())
 	{
 		// field_attachmentreplication_attachcomponent
-		uint32 Handle = 12;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 12;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
 			bool bWriteObjectProperty = true;
-			USceneComponent* Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			USceneComponent* Value = *(reinterpret_cast<USceneComponent* const*>(PropertyData));
 
 			{
 				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_attachmentreplication_attachcomponent().data());
@@ -1214,22 +1230,23 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
-							*Data->Property->GetName(),
+							*RepData->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data->Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, RepData);
 					}
 				}
 			}
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
-					*Data->Property->GetName(),
+					*RepData->Property->GetName(),
 					Handle);
 			}
 		}
@@ -1237,65 +1254,64 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_role().empty())
 	{
 		// field_role
-		uint32 Handle = 13;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 13;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			TEnumAsByte<ENetRole> Value;
+			// On the client, we need to swap Role/RemoteRole.
+			if (!bIsServer)
+			{
+				Handle = 4;
+				RepData = &HandleToPropertyMap[Handle];
+			}
+
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			TEnumAsByte<ENetRole> Value = *(reinterpret_cast<TEnumAsByte<ENetRole> const*>(PropertyData));
 
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_role().data())));
 
-			// On the server, we want to "undo" the swap which will be done automatically by the network system.
-			if (Interop->GetNetDriver()->IsServer())
-			{
-				Handle = 4;
-				Data = &HandleToPropertyMap[Handle];
-			}
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data->Property->GetName(),
+				*RepData->Property->GetName(),
 				Handle);
 		}
 	}
 	if (!Update.field_bcanbedamaged().empty())
 	{
 		// field_bcanbedamaged
-		uint32 Handle = 14;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 14;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8 Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
 
 			Value = (*Update.field_bcanbedamaged().data());
-			// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
-			// We will soon move away from using bunches when receiving Spatial updates.
-			if (Value)
-			{
-				Value = 0xFF;
-			}
 
-			OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				ActorChannel->GetEntityId(),
-				*Data->Property->GetName(),
+				*RepData->Property->GetName(),
 				Handle);
 		}
 	}
 	if (!Update.field_instigator().empty())
 	{
 		// field_instigator
-		uint32 Handle = 15;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 15;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
 			bool bWriteObjectProperty = true;
-			APawn* Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			APawn* Value = *(reinterpret_cast<APawn* const*>(PropertyData));
 
 			{
 				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_instigator().data());
@@ -1321,22 +1337,23 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
-							*Data->Property->GetName(),
+							*RepData->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data->Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, RepData);
 					}
 				}
 			}
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
-					*Data->Property->GetName(),
+					*RepData->Property->GetName(),
 					Handle);
 			}
 		}
@@ -1344,12 +1361,13 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_pawn().empty())
 	{
 		// field_pawn
-		uint32 Handle = 16;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 16;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
 			bool bWriteObjectProperty = true;
-			APawn* Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			APawn* Value = *(reinterpret_cast<APawn* const*>(PropertyData));
 
 			{
 				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_pawn().data());
@@ -1375,22 +1393,23 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
-							*Data->Property->GetName(),
+							*RepData->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data->Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, RepData);
 					}
 				}
 			}
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
-					*Data->Property->GetName(),
+					*RepData->Property->GetName(),
 					Handle);
 			}
 		}
@@ -1398,12 +1417,13 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_playerstate().empty())
 	{
 		// field_playerstate
-		uint32 Handle = 17;
-		const FRepHandleData* Data = &HandleToPropertyMap[Handle];
-		if (ConditionMap.IsRelevant(Data->Condition))
+		uint16 Handle = 17;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
 			bool bWriteObjectProperty = true;
-			APlayerState* Value;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			APlayerState* Value = *(reinterpret_cast<APlayerState* const*>(PropertyData));
 
 			{
 				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_playerstate().data());
@@ -1429,27 +1449,28 @@ void USpatialTypeBinding_PlayerController::ClientReceiveUpdate_MultiClient(
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
 							ActorChannel->GetEntityId(),
-							*Data->Property->GetName(),
+							*RepData->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
-						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, Cast<UObjectPropertyBase>(Data->Property), Handle);
+						Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, RepData);
 					}
 				}
 			}
 
 			if (bWriteObjectProperty)
 			{
-				OutputWriter.SerializeProperty(Handle, Data->Property, &Value);
+				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId(),
-					*Data->Property->GetName(),
+					*RepData->Property->GetName(),
 					Handle);
 			}
 		}
 	}
-	Interop->ReceiveSpatialUpdate(ActorChannel, OutputWriter.GetNetBitWriter());
+	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
 void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
@@ -1601,8 +1622,8 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_SendCommand(worker
 			TArray<uint8> ValueData;
 			FMemoryWriter ValueDataWriter(ValueData);
 			bool Success;
-			PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
-			Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+			PlayerId.NetSerialize(ValueDataWriter, PackageMap, Success);
+			Request.set_field_playerid(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));
 		}
 
 		// Send command request.
@@ -2866,8 +2887,8 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_SendCommand(worker::
 			TArray<uint8> ValueData;
 			FMemoryWriter ValueDataWriter(ValueData);
 			bool Success;
-			PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
-			Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+			PlayerId.NetSerialize(ValueDataWriter, PackageMap, Success);
+			Request.set_field_playerid(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));
 		}
 
 		// Send command request.
@@ -3587,8 +3608,8 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_SendCommand(worker
 			TArray<uint8> ValueData;
 			FMemoryWriter ValueDataWriter(ValueData);
 			bool Success;
-			PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
-			Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+			PlayerId.NetSerialize(ValueDataWriter, PackageMap, Success);
+			Request.set_field_playerid(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));
 		}
 
 		// Send command request.
@@ -3827,8 +3848,8 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_SendCommand(worker::
 			TArray<uint8> ValueData;
 			FMemoryWriter ValueDataWriter(ValueData);
 			bool Success;
-			PlayerId.NetSerialize(ValueDataWriter, nullptr, Success);
-			Request.set_field_playerid(std::string((char*)ValueData.GetData(), ValueData.Num()));
+			PlayerId.NetSerialize(ValueDataWriter, PackageMap, Success);
+			Request.set_field_playerid(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));
 		}
 
 		// Send command request.
@@ -4225,10 +4246,10 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_OnCommandRequest(c
 		{
 			auto& ValueDataStr = Op.Request.field_playerid();
 			TArray<uint8> ValueData;
-			ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+			ValueData.Append(ValueDataStr.data(), ValueDataStr.size());
 			FMemoryReader ValueDataReader(ValueData);
 			bool bSuccess;
-			PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
+			PlayerId.NetSerialize(ValueDataReader, PackageMap, bSuccess);
 		}
 
 		// Call implementation.
@@ -4720,12 +4741,6 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_OnCommandRequest(
 		TransitionParams.BlendFunction = TEnumAsByte<EViewTargetBlendFunction>(uint8(Op.Request.field_transitionparams_blendfunction()));
 		TransitionParams.BlendExp = Op.Request.field_transitionparams_blendexp();
 		TransitionParams.bLockOutgoing = Op.Request.field_transitionparams_blockoutgoing();
-		// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
-		// We will soon move away from using bunches when receiving Spatial updates.
-		if (TransitionParams.bLockOutgoing)
-		{
-			TransitionParams.bLockOutgoing = 0xFF;
-		}
 
 		// Call implementation.
 		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ClientSetViewTarget, target: %s %s"),
@@ -6107,10 +6122,10 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_OnCommandRequest(con
 		{
 			auto& ValueDataStr = Op.Request.field_playerid();
 			TArray<uint8> ValueData;
-			ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+			ValueData.Append(ValueDataStr.data(), ValueDataStr.size());
 			FMemoryReader ValueDataReader(ValueData);
 			bool bSuccess;
-			PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
+			PlayerId.NetSerialize(ValueDataReader, PackageMap, bSuccess);
 		}
 
 		// Call implementation.
@@ -6912,12 +6927,6 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_OnCommandRequest(const
 		TransitionParams.BlendFunction = TEnumAsByte<EViewTargetBlendFunction>(uint8(Op.Request.field_transitionparams_blendfunction()));
 		TransitionParams.BlendExp = Op.Request.field_transitionparams_blendexp();
 		TransitionParams.bLockOutgoing = Op.Request.field_transitionparams_blockoutgoing();
-		// Because Unreal will look for a specific bit in the serialization function below, we simply set all bits.
-		// We will soon move away from using bunches when receiving Spatial updates.
-		if (TransitionParams.bLockOutgoing)
-		{
-			TransitionParams.bLockOutgoing = 0xFF;
-		}
 
 		// Call implementation.
 		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerViewSelf, target: %s %s"),
@@ -7185,10 +7194,10 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_OnCommandRequest(c
 		{
 			auto& ValueDataStr = Op.Request.field_playerid();
 			TArray<uint8> ValueData;
-			ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+			ValueData.Append(ValueDataStr.data(), ValueDataStr.size());
 			FMemoryReader ValueDataReader(ValueData);
 			bool bSuccess;
-			PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
+			PlayerId.NetSerialize(ValueDataReader, PackageMap, bSuccess);
 		}
 
 		// Call implementation.
@@ -7542,10 +7551,10 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_OnCommandRequest(con
 		{
 			auto& ValueDataStr = Op.Request.field_playerid();
 			TArray<uint8> ValueData;
-			ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+			ValueData.Append(ValueDataStr.data(), ValueDataStr.size());
 			FMemoryReader ValueDataReader(ValueData);
 			bool bSuccess;
-			PlayerId.NetSerialize(ValueDataReader, nullptr, bSuccess);
+			PlayerId.NetSerialize(ValueDataReader, PackageMap, bSuccess);
 		}
 
 		// Call implementation.
