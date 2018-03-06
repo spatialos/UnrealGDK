@@ -42,7 +42,11 @@ public:
 	// Called on the client when receiving an update.
 	FORCEINLINE bool IsClientAutonomousProxy(worker::ComponentId ServerRPCsComponentId)
 	{
-		check(SpatialNetDriver->GetNetMode() == NM_Client);
+		if (SpatialNetDriver->GetNetMode() != NM_Client)
+		{
+			return false;
+		}
+
 		TSharedPtr<worker::View> View = WorkerView.Pin();
 		if (View.Get())
 		{
@@ -86,7 +90,6 @@ private:
 	void UnbindFromSpatialView() const;
 
 	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
-	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
 	TWeakPtr<worker::Connection> WorkerConnection;
 	TWeakPtr<worker::View> WorkerView;
 	worker::EntityId ActorEntityId;
@@ -107,5 +110,6 @@ private:
 	bool bCreatingNewEntity;
 
 private:
-	void UpdateSpatialPosition(bool SendComponentUpdate);
+	void UpdateSpatialPosition();
+	FVector GetActorSpatialPosition();
 };

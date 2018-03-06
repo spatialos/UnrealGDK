@@ -3,6 +3,7 @@
 
 #include "SpatialTypeBinding_GameStateBase.h"
 #include "Engine.h"
+
 #include "SpatialOS.h"
 #include "EntityBuilder.h"
 
@@ -12,6 +13,9 @@
 #include "../SpatialPackageMapClient.h"
 #include "../SpatialNetDriver.h"
 #include "../SpatialInterop.h"
+
+#include "UnrealGameStateBaseSingleClientReplicatedDataAddComponentOp.h"
+#include "UnrealGameStateBaseMultiClientReplicatedDataAddComponentOp.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_GameStateBase::GetHandlePropertyMap()
 {
@@ -62,23 +66,11 @@ void USpatialTypeBinding_GameStateBase::Init(USpatialInterop* InInterop, USpatia
 void USpatialTypeBinding_GameStateBase::BindToView()
 {
 	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
+	ViewCallbacks.Init(View);
+
 	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
 	{
-		SingleClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>([this](
-			const worker::AddComponentOp<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>& Op)
-		{
-			auto Update = improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData::Update::FromInitialData(Op.Data);
-			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
-			if (ActorChannel)
-			{
-				ClientReceiveUpdate_SingleClient(ActorChannel, Update);
-			}
-			else
-			{
-				PendingSingleClientData.Add(Op.EntityId, Op.Data);
-			}
-		});
-		SingleClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>([this](
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>([this](
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
@@ -90,22 +82,8 @@ void USpatialTypeBinding_GameStateBase::BindToView()
 			{
 				Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
 			}
-		});
-		MultiClientAddCallback = View->OnAddComponent<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>([this](
-			const worker::AddComponentOp<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>& Op)
-		{
-			auto Update = improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData::Update::FromInitialData(Op.Data);
-			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
-			if (ActorChannel)
-			{
-				ClientReceiveUpdate_MultiClient(ActorChannel, Update);
-			}
-			else
-			{
-				PendingMultiClientData.Add(Op.EntityId, Op.Data);
-			}
-		});
-		MultiClientUpdateCallback = View->OnComponentUpdate<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>([this](
+		}));
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>([this](
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
@@ -117,24 +95,13 @@ void USpatialTypeBinding_GameStateBase::BindToView()
 			{
 				Op.Update.ApplyTo(PendingMultiClientData.FindOrAdd(Op.EntityId));
 			}
-		});
+		}));
 	}
 }
 
 void USpatialTypeBinding_GameStateBase::UnbindFromView()
 {
-	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
-	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
-	{
-		View->Remove(SingleClientAddCallback);
-		View->Remove(SingleClientUpdateCallback);
-		View->Remove(MultiClientAddCallback);
-		View->Remove(MultiClientUpdateCallback);
-	}
-	for (auto& Callback : RPCReceiverCallbacks)
-	{
-		View->Remove(Callback);
-	}
+	ViewCallbacks.Reset();
 }
 
 worker::ComponentId USpatialTypeBinding_GameStateBase::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
@@ -188,6 +155,19 @@ worker::Entity USpatialTypeBinding_GameStateBase::CreateActorEntity(const FStrin
 		UnrealMetadata.set_owner_worker_id({ClientWorkerIdString});
 	}
 
+	uint32 CurrentOffset = 1;
+	worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
+	ForEachObjectWithOuter(Channel->Actor, [&UnrealMetadata, &CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+	{
+		// Objects can only be allocated NetGUIDs if this is true.
+		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+		{
+			SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+			CurrentOffset++;
+		}
+	});
+	UnrealMetadata.set_subobject_name_to_offset(SubobjectNameToOffset);
+
 	// Build entity.
 	const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);
 	return improbable::unreal::FEntityBuilder::Begin()
@@ -231,6 +211,22 @@ void USpatialTypeBinding_GameStateBase::SendRPCCommand(UObject* TargetObject, co
 	auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
 	checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
 	(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetObject);
+}
+
+void USpatialTypeBinding_GameStateBase::ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const
+{
+	auto* SingleClientAddOp = Cast<UUnrealGameStateBaseSingleClientReplicatedDataAddComponentOp>(AddComponentOp);
+	if (SingleClientAddOp)
+	{
+		auto Update = improbable::unreal::UnrealGameStateBaseSingleClientReplicatedData::Update::FromInitialData(*SingleClientAddOp->Data.data());
+		ClientReceiveUpdate_SingleClient(Channel, Update);
+	}
+	auto* MultiClientAddOp = Cast<UUnrealGameStateBaseMultiClientReplicatedDataAddComponentOp>(AddComponentOp);
+	if (MultiClientAddOp)
+	{
+		auto Update = improbable::unreal::UnrealGameStateBaseMultiClientReplicatedData::Update::FromInitialData(*MultiClientAddOp->Data.data());
+		ClientReceiveUpdate_MultiClient(Channel, Update);
+	}
 }
 
 void USpatialTypeBinding_GameStateBase::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)

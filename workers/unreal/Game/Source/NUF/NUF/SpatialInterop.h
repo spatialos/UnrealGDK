@@ -102,8 +102,9 @@ public:
 	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& Changed);
 	void SendSpatialPositionUpdate(const worker::EntityId& EntityId, const FVector& Location);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
-	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
+	void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp);
+	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
 
 	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.
 	// This will dequeue pending object ref updates and RPCs which depend on this UObject existing in the package map.
@@ -111,6 +112,7 @@ public:
 
 	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
 	void AddActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel);
+	void RemoveActorChannel(worker::EntityId EntityId);
 
 	// Used by generated type bindings to map an entity ID to its actor channel.
 	USpatialActorChannel* GetActorChannelByEntityId(const worker::EntityId& EntityId) const;

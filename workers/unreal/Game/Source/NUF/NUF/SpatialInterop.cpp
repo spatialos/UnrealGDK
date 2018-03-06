@@ -96,8 +96,22 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 				UnrealMetadata.set_owner_worker_id({ClientWorkerIdString});
 			}
 
+			uint32 CurrentOffset = 0;
+			worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
+			ForEachObjectWithOuter(Channel->Actor, [&UnrealMetadata, &CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+			{
+				// Objects can only be allocated NetGUIDs if this is true.
+				if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+				{
+					SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+					CurrentOffset++;
+				}
+			});
+			UnrealMetadata.set_subobject_name_to_offset(SubobjectNameToOffset);
+
 			// Build entity.
 			const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Location);
+
 			auto Entity = improbable::unreal::FEntityBuilder::Begin()
 				.AddPositionComponent(SpatialPosition, WorkersOnly)
 				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
@@ -145,30 +159,6 @@ void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TAr
 	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), Channel, Channel->GetEntityId());
 }
 
-void USpatialInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)
-{
-	// Add null terminator to payload.
-	uint32 Terminator = 0;
-	IncomingPayload.SerializeIntPacked(Terminator);
-
-	// Build bunch data to send to the actor channel.
-	FNetBitWriter BunchData(nullptr, 0);
-	// Write header.
-	BunchData.WriteBit(1); // bHasRepLayout
-	BunchData.WriteBit(1); // bIsActor
-	// Write property info.
-	uint32 PayloadSize = IncomingPayload.GetNumBits();
-	BunchData.SerializeIntPacked(PayloadSize);
-	BunchData.SerializeBits(IncomingPayload.GetData(), IncomingPayload.GetNumBits());
-
-	// Create bunch and send to actor channel.
-	FInBunch Bunch(Channel->Connection, BunchData.GetData(), BunchData.GetNumBits());
-	Bunch.ChIndex = Channel->ChIndex;
-	Bunch.bHasMustBeMappedGUIDs = false;
-	Bunch.bIsReplicationPaused = false;
-	Channel->UActorChannel::ReceivedBunch(Bunch);
-}
-
 void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)
 {
 	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
@@ -180,6 +170,41 @@ void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Func
 	}
 
 	Binding->SendRPCCommand(Frame->Object, Function, Frame);
+}
+
+void USpatialInterop::ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp)
+{
+	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
+	if (!Binding)
+	{
+		return;
+	}
+	Binding->ReceiveAddComponent(Channel, AddComponentOp);
+}
+
+void USpatialInterop::ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload)
+{
+	// Add null terminator to payload.
+	uint32 Terminator = 0;
+	IncomingPayload.SerializeIntPacked(Terminator);
+
+	// Build bunch data to send to the actor channel.
+	FNetBitWriter BunchData(nullptr, 0);
+	// Write header.
+	BunchData.WriteBit(1); // bHasRepLayout
+	BunchData.WriteBit(1); // bIsActor
+	
+	// Write property info.
+	uint32 PayloadSize = IncomingPayload.GetNumBits();
+	BunchData.SerializeIntPacked(PayloadSize);
+	BunchData.SerializeBits(IncomingPayload.GetData(), IncomingPayload.GetNumBits());
+
+	// Create bunch and send to actor channel.
+	FInBunch Bunch(Channel->Connection, BunchData.GetData(), BunchData.GetNumBits());
+	Bunch.ChIndex = Channel->ChIndex;
+	Bunch.bHasMustBeMappedGUIDs = false;
+	Bunch.bIsReplicationPaused = false;
+	Channel->UActorChannel::ReceivedBunch(Bunch);
 }
 
 void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
@@ -209,10 +234,15 @@ void USpatialInterop::AddActorChannel(const worker::EntityId& EntityId, USpatial
 	}
 }
 
+void USpatialInterop::RemoveActorChannel(worker::EntityId EntityId)
+{
+	USpatialActorChannel* Channel = EntityToActorChannel.FindRef(EntityId);
+	// TODO(David): Purge stuff from queues.
+	EntityToActorChannel.Remove(EntityId);
+}
+
 USpatialActorChannel* USpatialInterop::GetActorChannelByEntityId(const worker::EntityId & EntityId) const
 {
-	checkf(NetDriver->GetNetMode() == NM_Client, TEXT("USpatialInterop currently only maintains actor channels on the client."));
-
 	// Get actor channel.
 	USpatialActorChannel* const* ActorChannelIt = EntityToActorChannel.Find(EntityId);
 	if (!ActorChannelIt)

@@ -263,8 +263,11 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 	if (Actor && !Actor->IsPendingKill())
 	{
 		EntityRegistry->RemoveFromRegistry(Actor);
-		Actor->GetWorld()->DestroyActor(Actor);
+		Actor->GetWorld()->DestroyActor(Actor, true);
 	}
+	NetDriver->GetSpatialInterop()->RemoveActorChannel(EntityId.ToSpatialEntityId());
+	auto PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
+	PackageMap->RemoveEntityActor(EntityId);
 }
 
 
@@ -302,23 +305,32 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		// Option 1
 		UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 		SetupComponentInterests(EntityActor, EntityId, LockedConnection);
+
+		improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
+		check(UnrealMetadataComponent);
+
+		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
+		check(PackageMap);
+
+		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
+		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());	
 	}
 	else
 	{
-		UClass* ActorClass = GetRegisteredEntityClass(MetadataComponent);
-		if (ActorClass)
+		UClass* ActorClass = nullptr;
+		if ((ActorClass = GetRegisteredEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 2
 			UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Spawning a registered %s"), *ActorClass->GetName());
 			EntityActor = SpawnNewEntity(PositionComponent, World, ActorClass);
 			EntityRegistry->AddToRegistry(EntityId, EntityActor);
 		}
-		else
+		else if ((ActorClass = GetNativeEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 3
 			UNetConnection* Connection = nullptr;
-			ActorClass = GetNativeEntityClass(MetadataComponent);
 			improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
+			check(UnrealMetadataComponent);
 
 			// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
 			if (NetDriver->IsServer() && ActorClass == APlayerController::StaticClass())
@@ -367,11 +379,17 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			auto Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, false));
 			check(Channel);
 
-			PackageMap->ResolveEntityActor(EntityActor, EntityId);
+			PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
 			Channel->SetChannelActor(EntityActor);
 
 			// Inform USpatialInterop of this new actor channel.
 			NetDriver->GetSpatialInterop()->AddActorChannel(EntityId.ToSpatialEntityId(), Channel);
+
+			// Apply initial replicated properties.
+			for (FPendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+			{
+				NetDriver->GetSpatialInterop()->ReceiveAddComponent(Channel, PendingAddComponent.AddComponentOp);
+			}
 
 			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 			// a player index. For now we don't support split screen, so the number is always 0.

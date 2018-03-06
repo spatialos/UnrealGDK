@@ -91,13 +91,6 @@ void USpatialActorChannel::BindToSpatialView()
 				OnReserveEntityIdResponse(Op);
 			}			
 		});
-		CreateEntityCallback = PinnedView->OnCreateEntityResponse([this](const worker::CreateEntityResponseOp& Op)
-		{
-			if (Op.RequestId == CreateEntityRequestId)
-			{
-				OnCreateEntityResponse(Op);
-			}
-		});
 	}
 }
 
@@ -283,7 +276,7 @@ bool USpatialActorChannel::ReplicateActor()
 			InitialChanged.Add(0);
 
 			// Calculate initial spatial position (but don't send component update) and create the entity.
-			UpdateSpatialPosition(false);
+			LastSpatialPosition = GetActorSpatialPosition();
 			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialChanged);
 			bCreatingNewEntity = false;
 		}
@@ -298,13 +291,9 @@ bool USpatialActorChannel::ReplicateActor()
 	}
 
 	// Update SpatialOS position.
-	const float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
 	if (!PC)
 	{
-		if (FVector::DistSquared(Actor->GetActorLocation(), LastSpatialPosition) > SpatialPositionThreshold)
-		{
-			UpdateSpatialPosition(true);
-		}
+		UpdateSpatialPosition();
 	}
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
@@ -422,57 +411,51 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	ActorEntityId = *Op.EntityId;
 
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
-	PackageMap->ResolveEntityActor(Actor, ActorEntityId);
 }
 
-void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
-{
-	check(SpatialNetDriver->GetNetMode() < NM_Client);
-
-	if (Op.StatusCode != worker::StatusCode::kSuccess)
-	{
-		UE_LOG(LogSpatialOSActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
-		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
-		UnbindFromSpatialView();
-		return;
-	}
-	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Created entity (%d) for: %s. Request id: %d"), ActorEntityId, *Actor->GetName(), ReserveEntityIdRequestId.Id);
-
-	auto PinnedView = WorkerView.Pin();
-	if (PinnedView.IsValid())
-	{
-		PinnedView->Remove(CreateEntityCallback);
-	}
-
-	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), ActorEntityId);	
-}	
-
-void USpatialActorChannel::UpdateSpatialPosition(bool SendComponentUpdate)
+void USpatialActorChannel::UpdateSpatialPosition()
 {
 	// PlayerController's are a special case here. To ensure that the PlayerController and its pawn is migrated
 	// between workers at the same time (which is not guaranteed), we ensure that we update the position component of
 	// the PlayerController at the same time as the pawn.
 
-	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
-
-	LastSpatialPosition = Actor->GetActorLocation();
-	if (SendComponentUpdate)
+	// Check that it has moved sufficiently far to be updated
+	const float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
+	FVector ActorSpatialPosition = GetActorSpatialPosition();
+	if (FVector::DistSquared(ActorSpatialPosition, LastSpatialPosition) < SpatialPositionThreshold)
 	{
-		Interop->SendSpatialPositionUpdate(GetEntityId(), LastSpatialPosition);
+		return;
 	}
 
-	// If we're a pawn and are controlled by a player controller, update the player controllers position too.
+	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+
+	LastSpatialPosition = ActorSpatialPosition;
+	Interop->SendSpatialPositionUpdate(GetEntityId(), LastSpatialPosition);
+
+	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
 	APawn* Pawn = Cast<APawn>(Actor);
 	if (Pawn && Cast<APlayerController>(Pawn->GetController()))
 	{
-		USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Pawn->GetController()));
-		if (ControllerActorChannel)
-		{
-			ControllerActorChannel->LastSpatialPosition = LastSpatialPosition;
-			if (SendComponentUpdate)
+			AController* Controller = Pawn->GetController();
+			if (Pawn->GetController()) 
 			{
-				Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
+					USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Pawn->GetController()));
+					if (ControllerActorChannel)
+					{
+							Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
+					}
+					USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Pawn->GetController()->PlayerState));
+					if (PlayerStateActorChannel)
+					{
+							Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
+					}
 			}
-		}
 	}
+}
+
+FVector USpatialActorChannel::GetActorSpatialPosition()
+{
+	return Actor->GetOwner() 
+		? Actor->GetOwner()->GetActorLocation() 
+		: Actor->GetActorLocation();
 }

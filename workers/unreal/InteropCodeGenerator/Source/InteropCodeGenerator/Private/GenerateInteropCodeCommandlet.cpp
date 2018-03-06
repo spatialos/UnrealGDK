@@ -11,6 +11,7 @@
 #include "Components/ArrowComponent.h"
 #include "ComponentIdGenerator.h"
 #include "Net/RepLayout.h"
+#include "UObject/UObjectHash.h"
 
 namespace
 {
@@ -965,6 +966,21 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 		}
 	}
 
+	// Vehicle: Add WheeledVehicleMovementComponent.
+	if (Class->GetName() == TEXT("WheeledVehicle"))
+	{
+		UClass* UWheeledVehicleMovementComponent = FindObject<UClass>(ANY_PACKAGE, TEXT("WheeledVehicleMovementComponent"));
+		for (TFieldIterator<UFunction> RemoteFunction(UWheeledVehicleMovementComponent); RemoteFunction; ++RemoteFunction)
+		{
+			if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
+				RemoteFunction->FunctionFlags & FUNC_NetServer)
+			{
+				bool bReliable = (RemoteFunction->FunctionFlags & FUNC_NetReliable) != 0;
+				Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{ UWheeledVehicleMovementComponent, *RemoteFunction, bReliable});
+			}
+		}
+	}
+
 	// Group replicated properties by single client (COND_AutonomousOnly and COND_OwnerOnly),
 	// and multi-client (everything else).
 	Layout.ReplicatedProperties.Add(REP_SingleClient);
@@ -1100,6 +1116,54 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 	return IdGenerator.GetNumUsedIds();
 }
 
+void StartGeneratingFunction(
+	FCodeWriter& SourceWriter,
+	FString ReturnType,
+	FString FunctionNameAndParams,
+	FString TypeBindingName)
+{
+	SourceWriter.Print();
+	SourceWriter.Printf("%s %s::%s", *ReturnType, *TypeBindingName, *FunctionNameAndParams);
+	SourceWriter.Print("{");
+	SourceWriter.Indent();
+}
+
+void EndGeneratingFunction(FCodeWriter& SourceWriter) {
+	SourceWriter.EndScope();
+}
+
+void GenerateFunction_SubobjectNameToOffsetMap(
+	FCodeWriter& SourceWriter,
+	FString SchemaFilename,
+	FString InteropFilename,
+	UClass* Class,
+	const FPropertyLayout& Layout,
+	FString& TypeBindingName)
+{
+	StartGeneratingFunction(SourceWriter, FString("TMap<FString, uint32>&"), FString("GetSubobjectNameToOffsetMap()"), TypeBindingName);
+
+	SourceWriter.Print("static TMap<FString, uint32> SubobjectNameToOffsetMap;");
+	SourceWriter.Print("if (SubobjectNameToOffsetMap.Num() == 0)");
+
+	SourceWriter.StartScope();
+	uint32 CurrentOffset = 0;
+
+	ForEachObjectWithOuter(Class->ClassDefaultObject, [&SourceWriter, &CurrentOffset](UObject* Object)
+	{
+		// Objects can only be allocated NetGUIDs if this is true.
+		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+		{
+			SourceWriter.Printf("SubobjectNameToOffsetMap.Add(\"%s\", %d);", *(Object->GetName()), CurrentOffset);
+			CurrentOffset++;
+		}
+	});
+	SourceWriter.EndScope();
+
+	SourceWriter.Print("return SubobjectNameToOffsetMap");
+
+	EndGeneratingFunction(SourceWriter);
+}
+
 void GenerateForwardingCodeFromLayout(
 	FCodeWriter& HeaderWriter,
 	FCodeWriter& SourceWriter,
@@ -1158,9 +1222,20 @@ void GenerateForwardingCodeFromLayout(
 		#include <improbable/unreal/core_types.h>
 		#include <improbable/unreal/unreal_metadata.h>
 		#include <improbable/unreal/generated/%s.h>
+		#include "ScopedViewCallbacks.h"
+
 		#include "../SpatialHandlePropertyMap.h"
 		#include "../SpatialTypeBinding.h"
-		#include "SpatialTypeBinding_%s.generated.h")""", *SchemaFilename, *Class->GetName());
+		)""", *SchemaFilename);
+
+	if (Class->GetName().Contains("WheeledVehicle")) {
+		HeaderWriter.Printf(R"""(
+		#include "WheeledVehicle.h"
+		#include "WheeledVehicleMovementComponent.h"
+		)""");
+	}
+	HeaderWriter.Printf(R"""(#include "SpatialTypeBinding_%s.generated.h")""", *Class->GetName());
+
 	HeaderWriter.Print();
 
 	// Type binding class.
@@ -1183,14 +1258,14 @@ void GenerateForwardingCodeFromLayout(
 		worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 		void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
 		void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) override;
+
+		void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;
 		void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;)""");
+
+		//void TMap<FString, uint32>& GetSubobjectNameToOffsetMap() override;)""");
 	HeaderWriter.Print();
 	HeaderWriter.Outdent().Print("private:").Indent();
-	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
-	{
-		HeaderWriter.Printf("worker::Dispatcher::CallbackKey %sAddCallback;", *GetReplicatedPropertyGroupName(Group));
-		HeaderWriter.Printf("worker::Dispatcher::CallbackKey %sUpdateCallback;", *GetReplicatedPropertyGroupName(Group));
-	}
+	HeaderWriter.Print("improbable::unreal::callbacks::FScopedViewCallbacks ViewCallbacks;");
 	HeaderWriter.Print();
 	HeaderWriter.Print("// Pending updates.");
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
@@ -1201,10 +1276,9 @@ void GenerateForwardingCodeFromLayout(
 	}
 	HeaderWriter.Print();
 	HeaderWriter.Printf(R"""(
-		// RPC sender and receiver callbacks.
+		// RPC to sender map.
 		using FRPCSender = void (%s::*)(worker::Connection* const, struct FFrame* const, UObject*);
-		TMap<FName, FRPCSender> RPCToSenderMap;
-		TArray<worker::Dispatcher::CallbackKey> RPCReceiverCallbacks;)""", *TypeBindingName);
+		TMap<FName, FRPCSender> RPCToSenderMap;)""", *TypeBindingName);
 	HeaderWriter.Print();
 	HeaderWriter.Print("// Component update helper functions.");
 	HeaderWriter.Print(*BuildComponentUpdateSignature.Declaration());
@@ -1267,6 +1341,7 @@ void GenerateForwardingCodeFromLayout(
 
 		#include "%s.h"
 		#include "Engine.h"
+
 		#include "SpatialOS.h"
 		#include "EntityBuilder.h"
 
@@ -1276,6 +1351,11 @@ void GenerateForwardingCodeFromLayout(
 		#include "../SpatialPackageMapClient.h"
 		#include "../SpatialNetDriver.h"
 		#include "../SpatialInterop.h")""", *InteropFilename);
+	SourceWriter.Print();
+	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
+	{
+		SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *GetSchemaReplicatedDataName(Group, Class));
+	}
 
 	// Handle to Property map.
 	// ===========================================
@@ -1316,6 +1396,10 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Outdent();
 	SourceWriter.Print("}");
 
+	// SubobjectNameToOffsetMap
+	// ===========================================
+	//GenerateFunction_SubobjectNameToOffsetMap(SourceWriter, SchemaFilename, InteropFilename, Class, Layout, TypeBindingName);
+
 	// GetBoundClass
 	// ===========================================
 	SourceWriter.Print();
@@ -1352,40 +1436,13 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Print("{");
 	SourceWriter.Indent();
 	SourceWriter.Print("TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();");
+	SourceWriter.Print("ViewCallbacks.Init(View);");
+	SourceWriter.Print();
 	SourceWriter.Print("if (Interop->GetNetDriver()->GetNetMode() == NM_Client)");
 	SourceWriter.Print("{").Indent();
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
-		// OnAddComponent.
-		SourceWriter.Printf("%sAddCallback = View->OnAddComponent<improbable::unreal::%s>([this](",
-			*GetReplicatedPropertyGroupName(Group),
-			*GetSchemaReplicatedDataName(Group, Class));
-		SourceWriter.Indent();
-		SourceWriter.Printf("const worker::AddComponentOp<improbable::unreal::%s>& Op)",
-			*GetSchemaReplicatedDataName(Group, Class));
-		SourceWriter.Outdent();
-		SourceWriter.Print("{");
-		SourceWriter.Indent();
-		SourceWriter.Printf("auto Update = improbable::unreal::%s::Update::FromInitialData(Op.Data);",
-			*GetSchemaReplicatedDataName(Group, Class));
-		SourceWriter.Printf(R"""(
-			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
-			if (ActorChannel)
-			{
-				ClientReceiveUpdate_%s(ActorChannel, Update);
-			}
-			else
-			{
-				Pending%sData.Add(Op.EntityId, Op.Data);
-			})""",
-			*GetReplicatedPropertyGroupName(Group),
-			*GetReplicatedPropertyGroupName(Group));
-		SourceWriter.Outdent();
-		SourceWriter.Print("});");
-
-		// OnComponentUpdate.
-		SourceWriter.Printf("%sUpdateCallback = View->OnComponentUpdate<improbable::unreal::%s>([this](",
-			*GetReplicatedPropertyGroupName(Group),
+		SourceWriter.Printf("ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::%s>([this](",
 			*GetSchemaReplicatedDataName(Group, Class));
 		SourceWriter.Indent();
 		SourceWriter.Printf("const worker::ComponentUpdateOp<improbable::unreal::%s>& Op)",
@@ -1406,7 +1463,7 @@ void GenerateForwardingCodeFromLayout(
 			*GetReplicatedPropertyGroupName(Group),
 			*GetReplicatedPropertyGroupName(Group));
 		SourceWriter.Outdent();
-		SourceWriter.Print("});");
+		SourceWriter.Print("}));");
 	}
 	SourceWriter.Outdent().Print("}");
 
@@ -1421,7 +1478,7 @@ void GenerateForwardingCodeFromLayout(
 				*GetSchemaRPCComponentName(Group, Class));
 			for (auto& RPC : Layout.RPCs[Group])
 			{
-				SourceWriter.Printf("RPCReceiverCallbacks.AddUnique(View->OnCommandRequest<%sRPCCommandTypes::%s>(std::bind(&%s::%s_OnCommandRequest, this, std::placeholders::_1)));",
+				SourceWriter.Printf("ViewCallbacks.Add(View->OnCommandRequest<%sRPCCommandTypes::%s>(std::bind(&%s::%s_OnCommandRequest, this, std::placeholders::_1)));",
 					*GetRPCTypeString(Group),
 					*GetCommandNameFromFunction(RPC.Function),
 					*TypeBindingName,
@@ -1429,7 +1486,7 @@ void GenerateForwardingCodeFromLayout(
 			}
 			for (auto& RPC : Layout.RPCs[Group])
 			{
-				SourceWriter.Printf("RPCReceiverCallbacks.AddUnique(View->OnCommandResponse<%sRPCCommandTypes::%s>(std::bind(&%s::%s_OnCommandResponse, this, std::placeholders::_1)));",
+				SourceWriter.Printf("ViewCallbacks.Add(View->OnCommandResponse<%sRPCCommandTypes::%s>(std::bind(&%s::%s_OnCommandResponse, this, std::placeholders::_1)));",
 					*GetRPCTypeString(Group),
 					*GetCommandNameFromFunction(RPC.Function),
 					*TypeBindingName,
@@ -1446,21 +1503,7 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Printf("void %s::UnbindFromView()", *TypeBindingName);
 	SourceWriter.Print("{");
 	SourceWriter.Indent();
-	SourceWriter.Print("TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();");
-	SourceWriter.Print("if (Interop->GetNetDriver()->GetNetMode() == NM_Client)");
-	SourceWriter.Print("{").Indent();
-	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
-	{
-		SourceWriter.Printf("View->Remove(%sAddCallback);", *GetReplicatedPropertyGroupName(Group));
-		SourceWriter.Printf("View->Remove(%sUpdateCallback);", *GetReplicatedPropertyGroupName(Group));
-	}
-	SourceWriter.Outdent().Print("}");
-	SourceWriter.Print(R"""(
-		for (auto& Callback : RPCReceiverCallbacks)
-		{
-			View->Remove(Callback);
-		})""");
-
+	SourceWriter.Print("ViewCallbacks.Reset();");
 	SourceWriter.Outdent();
 	SourceWriter.Print("}");
 
@@ -1550,6 +1593,19 @@ void GenerateForwardingCodeFromLayout(
 		{
 			UnrealMetadata.set_owner_worker_id({ClientWorkerIdString});
 		}
+
+		uint32 CurrentOffset = 1;
+		worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
+		ForEachObjectWithOuter(Channel->Actor, [&UnrealMetadata, &CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+		{
+			// Objects can only be allocated NetGUIDs if this is true.
+			if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+			{
+				SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+				CurrentOffset++;
+			}
+		});
+		UnrealMetadata.set_subobject_name_to_offset(SubobjectNameToOffset);
 		
 		// Build entity.
 		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);)""");
@@ -1573,6 +1629,11 @@ void GenerateForwardingCodeFromLayout(
 		*GetSchemaRPCComponentName(ERPCType::RPC_Client, Class), *GetSchemaRPCComponentName(ERPCType::RPC_Client, Class));
 	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, WorkersOnly)",
 		*GetSchemaRPCComponentName(ERPCType::RPC_Server, Class), *GetSchemaRPCComponentName(ERPCType::RPC_Server, Class));
+
+	if (Class->GetName().Contains("WheeledVehicle") || Class->GetName().Contains("Character")) {
+		SourceWriter.Printf(".AddComponent<nuf::PossessPawn>(nuf::PossessPawn::Data{}, WorkersOnly)");
+	}
+
 	SourceWriter.Print(".Build();");
 	SourceWriter.Outdent();
 	SourceWriter.Outdent();
@@ -1637,6 +1698,31 @@ void GenerateForwardingCodeFromLayout(
 		checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
 		(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetObject);)""");
 	SourceWriter.Outdent().Print("}");
+
+	// ReceiveAddComponent
+	// ==================================
+	SourceWriter.Print();
+	SourceWriter.Printf("void %s::ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const", *TypeBindingName);
+	SourceWriter.Print("{");
+	SourceWriter.Indent();
+	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
+	{
+		SourceWriter.Printf(R"""(
+			auto* %sAddOp = Cast<U%sAddComponentOp>(AddComponentOp);
+			if (%sAddOp)
+			{
+				auto Update = improbable::unreal::%s::Update::FromInitialData(*%sAddOp->Data.data());
+				ClientReceiveUpdate_%s(Channel, Update);
+			})""",
+			*GetReplicatedPropertyGroupName(Group),
+			*GetSchemaReplicatedDataName(Group, Class),
+			*GetReplicatedPropertyGroupName(Group),
+			*GetSchemaReplicatedDataName(Group, Class),
+			*GetReplicatedPropertyGroupName(Group),
+			*GetReplicatedPropertyGroupName(Group));
+	}
+	SourceWriter.Outdent();
+	SourceWriter.Print("}");
 
 	// ApplyQueuedStateToChannel
 	// ==================================
@@ -2185,7 +2271,7 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/NUF/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 
-	TArray<FString> Classes = {TEXT("PlayerController"), TEXT("PlayerState"), TEXT("GameStateBase"), TEXT("Character")};
+	TArray<FString> Classes = {TEXT("WheeledVehicle"), TEXT("PlayerController"), TEXT("PlayerState"), TEXT("GameStateBase"), TEXT("Character")};
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
 		// Component IDs 100000 to 100009 reserved for other NUF components.

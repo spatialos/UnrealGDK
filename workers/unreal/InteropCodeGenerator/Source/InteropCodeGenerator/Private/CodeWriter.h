@@ -17,6 +17,8 @@ public:
 	FCodeWriter& Print(const FString& String);
 	FCodeWriter& Indent();
 	FCodeWriter& Outdent();
+	FCodeWriter& StartScope();
+	FCodeWriter& EndScope();
 
 	void WriteToFile(const FString& Filename);
 	void Dump();
