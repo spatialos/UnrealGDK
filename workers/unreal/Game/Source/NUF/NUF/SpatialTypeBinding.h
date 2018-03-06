@@ -19,7 +19,7 @@ enum EReplicatedPropertyGroup
 	GROUP_MultiClient
 };
 
-inline EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Condition)
+FORCEINLINE EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Condition)
 {
 	switch (Condition)
 	{
@@ -31,7 +31,7 @@ inline EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Conditi
 	}
 }
 
-// Storage for a changelist created by the replication system.
+// Storage for a changelist created by the replication system when replicating from the server.
 struct FPropertyChangeState
 {
 	const TArray<uint16>& Changed;
@@ -39,6 +39,19 @@ struct FPropertyChangeState
 	TArray<FRepLayoutCmd>& Cmds;
 	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex;
 };
+
+// A structure containing information about a replicated property.
+struct FRepHandleData
+{
+	UProperty* Parent;
+	UProperty* Property;
+	ELifetimeCondition Condition;
+	ELifetimeRepNotifyCondition RepNotifyCondition;
+	int32 Offset;
+};
+
+// A map from rep handle to rep handle data.
+using FRepHandlePropertyMap = TMap<int32, FRepHandleData>;
 
 UCLASS()
 class NUF_API USpatialTypeBinding : public UObject

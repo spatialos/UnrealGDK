@@ -9,9 +9,7 @@
 #include <improbable/unreal/generated/UnrealPlayerController.h>
 #include "ScopedViewCallbacks.h"
 
-#include "../SpatialHandlePropertyMap.h"
 #include "../SpatialTypeBinding.h"
-
 #include "SpatialTypeBinding_PlayerController.generated.h"
 
 UCLASS()

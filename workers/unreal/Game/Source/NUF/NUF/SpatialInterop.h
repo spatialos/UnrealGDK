@@ -14,32 +14,6 @@ class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInterop, Log, All);
 
-// A helper class for creating an incoming payload consumed by ReceiveSpatialUpdate.
-class FBunchPayloadWriter
-{
-public:
-	FBunchPayloadWriter(UPackageMap* PackageMap) : Writer(PackageMap, 0)
-	{
-		// First bit is the "enable checksum" bit, which we set to 0.
-		Writer.WriteBit(0);
-	}
-
-	template <typename T>
-	void SerializeProperty(uint32 Handle, UProperty* Property, T* Value)
-	{
-		Writer.SerializeIntPacked(Handle);
-		Property->NetSerializeItem(Writer, Writer.PackageMap, Value);
-	}
-
-	FNetBitWriter& GetNetBitWriter()
-	{
-		return Writer;
-	}
-
-private:
-	FNetBitWriter Writer;
-};
-
 // An general version of worker::RequestId.
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
 
@@ -80,12 +54,44 @@ public:
 	uint32 NumAttempts;
 };
 
-struct FPendingIncomingObjectProperty
-{
-	UObjectPropertyBase* ObjectProperty;
-	uint16 Handle;
-};
+// Map types for pending objects/RPCs. For pending updates, they store a map from an unresolved object to a map of channels to properties
+// within those channels which depend on the unresolved object. For pending RPCs, they store a map from an unresolved object to a list of
+// RPC functor objects which need to be re-executed when the object is resolved.
+using FPendingOutgoingObjectUpdateMap = TMap<UObject*, TMap<USpatialActorChannel*, TArray<uint16>>>;
+using FPendingOutgoingRPCMap = TMap<UObject*, TArray<TPair<FRPCCommandRequestFunc, bool>>>;
+using FPendingIncomingObjectUpdateMap = TMap<FHashableUnrealObjectRef, TMap<USpatialActorChannel*, TArray<const FRepHandleData*>>>;
+using FPendingIncomingRPCMap = TMap<FHashableUnrealObjectRef, TArray<FRPCCommandResponseFunc>>;
 
+// Helper function to write incoming property data to an object.
+FORCEINLINE void ApplyIncomingPropertyUpdate(const FRepHandleData& RepHandleData, UObject* Object, const void* Value, TArray<UProperty*>& RepNotifies)
+{
+	uint8* Dest = reinterpret_cast<uint8*>(Object) + RepHandleData.Offset;
+
+	// If value has changed, add to rep notify list.
+	if (RepHandleData.Property->HasAnyPropertyFlags(CPF_RepNotify))
+	{
+		if (RepHandleData.RepNotifyCondition == REPNOTIFY_Always || !RepHandleData.Property->Identical(Dest, Value))
+		{
+			RepNotifies.Add(RepHandleData.Property);
+		}
+	}
+
+	// Write value to destination.
+	UBoolProperty* BoolProperty = Cast<UBoolProperty>(RepHandleData.Property);
+	if (BoolProperty)
+	{
+		// We use UBoolProperty::SetPropertyValue here explicitly to ensure that packed boolean properties
+		// are de-serialized correctly without clobbering neighboring boolean values in memory.
+		BoolProperty->SetPropertyValue(Dest, *static_cast<const bool*>(Value));
+	}
+	else
+	{
+		RepHandleData.Property->CopyCompleteValue(Dest, Value);
+	}
+}
+
+// The system which is responsible for converting and sending Unreal updates to SpatialOS, and receiving updates from SpatialOS and
+// applying them to Unreal objects.
 UCLASS()
 class NUF_API USpatialInterop : public UObject
 {
@@ -104,7 +110,8 @@ public:
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
 	void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp);
-	void ReceiveSpatialUpdate(USpatialActorChannel* Channel, FNetBitWriter& IncomingPayload);
+	void PreReceiveSpatialUpdate(USpatialActorChannel* Channel);
+	void PostReceiveSpatialUpdate(USpatialActorChannel* Channel, const TArray<UProperty*>& RepNotifies);
 
 	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.
 	// This will dequeue pending object ref updates and RPCs which depend on this UObject existing in the package map.
@@ -125,7 +132,7 @@ public:
 	// Used to queue incoming/outgoing object updates/RPCs. Used by generated type bindings.
 	void QueueOutgoingObjectUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable);
-	void QueueIncomingObjectUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, UObjectPropertyBase* Property, uint16 Handle);
+	void QueueIncomingObjectUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData);
 	void QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder);
 
 	// Accessors.
@@ -163,17 +170,20 @@ private:
 	TMap<FUntypedRequestId, TSharedPtr<FOutgoingReliableRPC>> OutgoingReliableRPCs;
 
 	// Pending outgoing object ref property updates.
+	/*
 	TMap<UObject*, TArray<USpatialActorChannel*>> ChannelsAwaitingOutgoingObjectResolve;
 	TMap<USpatialActorChannel*, TArray<uint16>> PendingOutgoingObjectRefHandles;
+	*/
+	FPendingOutgoingObjectUpdateMap PendingOutgoingObjectUpdates;
 
 	// Pending outgoing RPCs.
-	TMap<UObject*, TArray<TPair<FRPCCommandRequestFunc, bool>>> PendingOutgoingRPCs;
+	FPendingOutgoingRPCMap PendingOutgoingRPCs;
 
 	// Pending incoming object ref property updates.
-	TMap<FHashableUnrealObjectRef, TMap<USpatialActorChannel*, TArray<FPendingIncomingObjectProperty>>> PendingIncomingObjectRefProperties;
+	FPendingIncomingObjectUpdateMap PendingIncomingObjectUpdates;
 	
 	// Pending incoming RPCs.
-	TMap<FHashableUnrealObjectRef, TArray<FRPCCommandResponseFunc>> PendingIncomingRPCs;
+	FPendingIncomingRPCMap PendingIncomingRPCs;
 
 private:
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
