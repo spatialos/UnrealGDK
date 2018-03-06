@@ -396,6 +396,18 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 }
 
+void USpatialActorChannel::PreReceiveSpatialUpdate()
+{
+	Actor->PreNetReceive();
+}
+
+void USpatialActorChannel::PostReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies)
+{
+	Actor->PostNetReceive();
+	ActorReplicator->RepNotifies = RepNotifies;
+	ActorReplicator->CallRepNotifies(false);
+}
+
 void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op)
 {
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
