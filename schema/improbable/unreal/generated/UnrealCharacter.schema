@@ -6,10 +6,10 @@ import "improbable/vector3.schema";
 import "improbable/unreal/core_types.schema";
 
 component UnrealCharacterSingleClientReplicatedData {
-	id = 100025;
+	id = 100020;
 }
 component UnrealCharacterMultiClientReplicatedData {
-	id = 100026;
+	id = 100021;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
 	bool field_btearoff = 3; // COND_None
@@ -59,7 +59,7 @@ component UnrealCharacterMultiClientReplicatedData {
 	improbable.Vector3f field_reprootmotion_linearvelocity = 47; // COND_SimulatedOnlyNoReplay
 }
 component UnrealCharacterCompleteData {
-	id = 100027;
+	id = 100022;
 }
 type UnrealRootMotionDebugClientPrintOnScreenRequest {
 	uint32 target_subobject_offset = 1;
@@ -183,7 +183,7 @@ type UnrealServerMoveRequest {
 }
 
 component UnrealCharacterClientRPCs {
-	id = 100028;
+	id = 100023;
 	command UnrealRPCCommandResponse rootmotiondebugclientprintonscreen(UnrealRootMotionDebugClientPrintOnScreenRequest);
 	command UnrealRPCCommandResponse clientcheatwalk(UnrealClientCheatWalkRequest);
 	command UnrealRPCCommandResponse clientcheatghost(UnrealClientCheatGhostRequest);
@@ -195,7 +195,7 @@ component UnrealCharacterClientRPCs {
 	command UnrealRPCCommandResponse clientackgoodmove(UnrealClientAckGoodMoveRequest);
 }
 component UnrealCharacterServerRPCs {
-	id = 100029;
+	id = 100024;
 	command UnrealRPCCommandResponse servermoveold(UnrealServerMoveOldRequest);
 	command UnrealRPCCommandResponse servermovedualhybridrootmotion(UnrealServerMoveDualHybridRootMotionRequest);
 	command UnrealRPCCommandResponse servermovedual(UnrealServerMoveDualRequest);

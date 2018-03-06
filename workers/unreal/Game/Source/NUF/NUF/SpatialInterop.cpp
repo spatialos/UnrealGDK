@@ -423,7 +423,7 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 		TArray<UProperty*> RepNotifies;
 		for (const FRepHandleData* RepData : Properties)
 		{
-			ApplyIncomingPropertyUpdate(*RepData, DependentChannel, &Object, RepNotifies);
+			ApplyIncomingPropertyUpdate(*RepData, DependentChannel->Actor, &Object, RepNotifies);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object property update. actor %s (%llu), property %s"),
 				*SpatialOSInstance ->GetWorkerId(),
 				*DependentChannel->Actor->GetName(),
