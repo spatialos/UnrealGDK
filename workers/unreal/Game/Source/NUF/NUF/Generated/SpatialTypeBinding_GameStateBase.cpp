@@ -367,7 +367,7 @@ void USpatialTypeBinding_GameStateBase::ServerSendUpdate_MultiClient(
 				FMemoryWriter ValueDataWriter(ValueData);
 				bool Success;
 				Value.NetSerialize(ValueDataWriter, PackageMap, Success);
-				OutUpdate.set_field_replicatedmovement(std::string((char*)ValueData.GetData(), ValueData.Num()));
+				OutUpdate.set_field_replicatedmovement(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));
 			}
 			break;
 		}
@@ -523,12 +523,6 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_SingleClient(
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
 	TArray<UProperty*> RepNotifies;
-	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
-
-	const bool bIsServer = Interop->GetNetDriver()->IsServer();
-	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealGameStateBaseClientRPCs::ComponentId);
-	FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
-
 	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
@@ -539,25 +533,24 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
 	TArray<UProperty*> RepNotifies;
-	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
-
 	const bool bIsServer = Interop->GetNetDriver()->IsServer();
 	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealGameStateBaseClientRPCs::ComponentId);
+	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
 	FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
 
 	if (!Update.field_bhidden().empty())
 	{
 		// field_bhidden
-		uint32 Handle = 1;
+		uint16 Handle = 1;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
 
 			Value = (*Update.field_bhidden().data());
 
-			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
@@ -570,16 +563,16 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_breplicatemovement().empty())
 	{
 		// field_breplicatemovement
-		uint32 Handle = 2;
+		uint16 Handle = 2;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
 
 			Value = (*Update.field_breplicatemovement().data());
 
-			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
@@ -592,16 +585,16 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_btearoff().empty())
 	{
 		// field_btearoff
-		uint32 Handle = 3;
+		uint16 Handle = 3;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
 
 			Value = (*Update.field_btearoff().data());
 
-			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
@@ -614,7 +607,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_remoterole().empty())
 	{
 		// field_remoterole
-		uint32 Handle = 4;
+		uint16 Handle = 4;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
@@ -625,7 +618,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 				RepData = &HandleToPropertyMap[Handle];
 			}
 
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			TEnumAsByte<ENetRole> Value = *(reinterpret_cast<TEnumAsByte<ENetRole> const*>(PropertyData));
 
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_remoterole().data())));
@@ -637,7 +630,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 				Value = ROLE_SimulatedProxy;
 			}
 
-			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
@@ -650,12 +643,12 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_owner().empty())
 	{
 		// field_owner
-		uint32 Handle = 5;
+		uint16 Handle = 5;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
 			bool bWriteObjectProperty = true;
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			AActor* Value = *(reinterpret_cast<AActor* const*>(PropertyData));
 
 			{
@@ -692,7 +685,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 
 			if (bWriteObjectProperty)
 			{
-				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
@@ -706,23 +699,23 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_replicatedmovement().empty())
 	{
 		// field_replicatedmovement
-		uint32 Handle = 6;
+		uint16 Handle = 6;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			FRepMovement Value = *(reinterpret_cast<FRepMovement const*>(PropertyData));
 
 			{
 				auto& ValueDataStr = (*Update.field_replicatedmovement().data());
 				TArray<uint8> ValueData;
-				ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+				ValueData.Append(ValueDataStr.data(), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
 				bool bSuccess;
 				Value.NetSerialize(ValueDataReader, PackageMap, bSuccess);
 			}
 
-			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
@@ -735,12 +728,12 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_attachmentreplication_attachparent().empty())
 	{
 		// field_attachmentreplication_attachparent
-		uint32 Handle = 7;
+		uint16 Handle = 7;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
 			bool bWriteObjectProperty = true;
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			AActor* Value = *(reinterpret_cast<AActor* const*>(PropertyData));
 
 			{
@@ -777,7 +770,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 
 			if (bWriteObjectProperty)
 			{
-				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
@@ -791,11 +784,11 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_attachmentreplication_locationoffset().empty())
 	{
 		// field_attachmentreplication_locationoffset
-		uint32 Handle = 8;
+		uint16 Handle = 8;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			FVector_NetQuantize100 Value = *(reinterpret_cast<FVector_NetQuantize100 const*>(PropertyData));
 
 			{
@@ -805,7 +798,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 				Value.Z = Vector.z();
 			}
 
-			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
@@ -818,11 +811,11 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_attachmentreplication_relativescale3d().empty())
 	{
 		// field_attachmentreplication_relativescale3d
-		uint32 Handle = 9;
+		uint16 Handle = 9;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			FVector_NetQuantize100 Value = *(reinterpret_cast<FVector_NetQuantize100 const*>(PropertyData));
 
 			{
@@ -832,7 +825,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 				Value.Z = Vector.z();
 			}
 
-			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
@@ -845,11 +838,11 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_attachmentreplication_rotationoffset().empty())
 	{
 		// field_attachmentreplication_rotationoffset
-		uint32 Handle = 10;
+		uint16 Handle = 10;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			FRotator Value = *(reinterpret_cast<FRotator const*>(PropertyData));
 
 			{
@@ -859,7 +852,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 				Value.Roll = Rotator.roll();
 			}
 
-			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
@@ -872,16 +865,16 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_attachmentreplication_attachsocket().empty())
 	{
 		// field_attachmentreplication_attachsocket
-		uint32 Handle = 11;
+		uint16 Handle = 11;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			FName Value = *(reinterpret_cast<FName const*>(PropertyData));
 
 			Value = FName(((*Update.field_attachmentreplication_attachsocket().data())).data());
 
-			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
@@ -894,12 +887,12 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_attachmentreplication_attachcomponent().empty())
 	{
 		// field_attachmentreplication_attachcomponent
-		uint32 Handle = 12;
+		uint16 Handle = 12;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
 			bool bWriteObjectProperty = true;
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			USceneComponent* Value = *(reinterpret_cast<USceneComponent* const*>(PropertyData));
 
 			{
@@ -936,7 +929,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 
 			if (bWriteObjectProperty)
 			{
-				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
@@ -950,7 +943,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_role().empty())
 	{
 		// field_role
-		uint32 Handle = 13;
+		uint16 Handle = 13;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
@@ -961,12 +954,12 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 				RepData = &HandleToPropertyMap[Handle];
 			}
 
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			TEnumAsByte<ENetRole> Value = *(reinterpret_cast<TEnumAsByte<ENetRole> const*>(PropertyData));
 
 			Value = TEnumAsByte<ENetRole>(uint8((*Update.field_role().data())));
 
-			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
@@ -979,16 +972,16 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_bcanbedamaged().empty())
 	{
 		// field_bcanbedamaged
-		uint32 Handle = 14;
+		uint16 Handle = 14;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
 
 			Value = (*Update.field_bcanbedamaged().data());
 
-			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
@@ -1001,12 +994,12 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_instigator().empty())
 	{
 		// field_instigator
-		uint32 Handle = 15;
+		uint16 Handle = 15;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
 			bool bWriteObjectProperty = true;
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			APawn* Value = *(reinterpret_cast<APawn* const*>(PropertyData));
 
 			{
@@ -1043,7 +1036,7 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 
 			if (bWriteObjectProperty)
 			{
-				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
@@ -1057,19 +1050,19 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_gamemodeclass().empty())
 	{
 		// field_gamemodeclass
-		uint32 Handle = 16;
+		uint16 Handle = 16;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
 			bool bWriteObjectProperty = true;
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			TSubclassOf<AGameModeBase>  Value = *(reinterpret_cast<TSubclassOf<AGameModeBase>  const*>(PropertyData));
 
 			// UNSUPPORTED UClassProperty Value (*Update.field_gamemodeclass().data())
 
 			if (bWriteObjectProperty)
 			{
-				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
@@ -1083,19 +1076,19 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_spectatorclass().empty())
 	{
 		// field_spectatorclass
-		uint32 Handle = 17;
+		uint16 Handle = 17;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
 			bool bWriteObjectProperty = true;
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			TSubclassOf<ASpectatorPawn>  Value = *(reinterpret_cast<TSubclassOf<ASpectatorPawn>  const*>(PropertyData));
 
 			// UNSUPPORTED UClassProperty Value (*Update.field_spectatorclass().data())
 
 			if (bWriteObjectProperty)
 			{
-				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
@@ -1109,16 +1102,16 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_breplicatedhasbegunplay().empty())
 	{
 		// field_breplicatedhasbegunplay
-		uint32 Handle = 18;
+		uint16 Handle = 18;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
 
 			Value = (*Update.field_breplicatedhasbegunplay().data());
 
-			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
@@ -1131,16 +1124,16 @@ void USpatialTypeBinding_GameStateBase::ClientReceiveUpdate_MultiClient(
 	if (!Update.field_replicatedworldtimeseconds().empty())
 	{
 		// field_replicatedworldtimeseconds
-		uint32 Handle = 19;
+		uint16 Handle = 19;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (ConditionMap.IsRelevant(RepData->Condition))
 		{
-			uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			float Value = *(reinterpret_cast<float const*>(PropertyData));
 
 			Value = (*Update.field_replicatedworldtimeseconds().data());
 
-			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),

@@ -291,11 +291,14 @@ void USpatialInterop::QueueOutgoingObjectUpdate_Internal(UObject* UnresolvedObje
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing object ref depending on object: %s, channel: %s, handle: %d."),
 		*UnresolvedObject->GetName(), *DependentChannel->GetName(), Handle);
 
+	/*
 	TArray<USpatialActorChannel*>& Channels = ChannelsAwaitingOutgoingObjectResolve.FindOrAdd(UnresolvedObject);
 	Channels.AddUnique(DependentChannel);
 
 	TArray<uint16>& Handles = PendingOutgoingObjectRefHandles.FindOrAdd(DependentChannel);
 	Handles.AddUnique(Handle);
+	*/
+	PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel).Add(Handle);
 }
 
 void USpatialInterop::QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable)
@@ -311,7 +314,7 @@ void USpatialInterop::QueueIncomingObjectUpdate_Internal(const improbable::unrea
 	check(RepHandleData);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref depending on object ref: %s, channel: %s, property: %s."),
 		*ObjectRefToString(UnresolvedObjectRef), *DependentChannel->GetName(), *RepHandleData->Property->GetName());
-	PendingIncomingObjectRefProperties.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Add(RepHandleData);
+	PendingIncomingObjectUpdates.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Add(RepHandleData);
 }
 
 void USpatialInterop::QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder)
@@ -361,30 +364,29 @@ void USpatialInterop::SetComponentInterests_Client(USpatialActorChannel* ActorCh
 
 void USpatialInterop::ResolvePendingOutgoingObjectUpdates(UObject* Object)
 {
-	TArray<USpatialActorChannel*>* DependentChannels = ChannelsAwaitingOutgoingObjectResolve.Find(Object);
+	auto* DependentChannels = PendingOutgoingObjectUpdates.Find(Object);
 	if (DependentChannels == nullptr)
 	{
 		return;
 	}
 
-	for (auto DependentChannel : *DependentChannels)
+	for (auto& ChannelProperties : *DependentChannels)
 	{
-		TArray<uint16>* Handles = PendingOutgoingObjectRefHandles.Find(DependentChannel);
-		if (Handles && Handles->Num() > 0)
+		USpatialActorChannel* DependentChannel = ChannelProperties.Key;
+		TArray<uint16>& Properties = ChannelProperties.Value;
+		if (Properties.Num() > 0)
 		{
 			// Changelists always have a 0 at the end.
-			Handles->Add(0);
-
-			SendSpatialUpdate(DependentChannel, *Handles);
-			PendingOutgoingObjectRefHandles.Remove(DependentChannel);
+			Properties.Add(0);
+			SendSpatialUpdate(DependentChannel, Properties);
 		}
 	}
-	ChannelsAwaitingOutgoingObjectResolve.Remove(Object);
+	PendingOutgoingObjectUpdates.Remove(Object);
 }
 
 void USpatialInterop::ResolvePendingOutgoingRPCs(UObject* Object)
 {
-	TArray<TPair<FRPCCommandRequestFunc, bool>>* RPCList = PendingOutgoingRPCs.Find(Object);
+	auto* RPCList = PendingOutgoingRPCs.Find(Object);
 	if (RPCList)
 	{
 		for (auto& RequestFuncPair : *RPCList)
@@ -399,7 +401,7 @@ void USpatialInterop::ResolvePendingOutgoingRPCs(UObject* Object)
 
 void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
-	TMap<USpatialActorChannel*, TArray<const FRepHandleData*>>* DependentChannels = PendingIncomingObjectRefProperties.Find(ObjectRef);
+	auto* DependentChannels = PendingIncomingObjectUpdates.Find(ObjectRef);
 	if (DependentChannels == nullptr)
 	{
 		return;
@@ -425,12 +427,12 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 		PostReceiveSpatialUpdate(DependentChannel, RepNotifies);
 	}
 
-	PendingIncomingObjectRefProperties.Remove(ObjectRef);
+	PendingIncomingObjectUpdates.Remove(ObjectRef);
 }
 
 void USpatialInterop::ResolvePendingIncomingRPCs(const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
-	TArray<FRPCCommandResponseFunc>* RPCList = PendingIncomingRPCs.Find(ObjectRef);
+	auto* RPCList = PendingIncomingRPCs.Find(ObjectRef);
 	if (RPCList)
 	{
 		for (auto& Responder : *RPCList)

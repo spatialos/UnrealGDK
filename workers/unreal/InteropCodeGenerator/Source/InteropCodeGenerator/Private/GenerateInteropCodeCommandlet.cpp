@@ -53,7 +53,7 @@ struct FRepLayoutEntry
 	ELifetimeCondition Condition;
 	ELifetimeRepNotifyCondition RepNotifyCondition;
 	ERepLayoutCmdType Type;
-	int32 Handle;
+	uint16 Handle;
 	int32 Offset;
 };
 
@@ -591,7 +591,7 @@ void GenerateUnrealToSchemaConversion(
 				FMemoryWriter ValueDataWriter(ValueData);
 				bool Success;
 				%s.NetSerialize(ValueDataWriter, PackageMap, Success);
-				%s(std::string((char*)ValueData.GetData(), ValueData.Num()));)""", *PropertyValue, *SpatialValueSetter);
+				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *PropertyValue, *SpatialValueSetter);
 			Writer.Outdent().Print("}");
 		}
 		else
@@ -745,7 +745,7 @@ void GeneratePropertyToUnrealConversion(
 			Writer.Print(FString::Printf(TEXT(R"""(
 				auto& ValueDataStr = %s;
 				TArray<uint8> ValueData;
-				ValueData.Append((uint8*)ValueDataStr.data(), ValueDataStr.size());
+				ValueData.Append(ValueDataStr.data(), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
 				bool bSuccess;
 				%s.NetSerialize(ValueDataReader, PackageMap, bSuccess);)"""), *SpatialValue, *PropertyValue));
@@ -867,7 +867,7 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 	// Read the RepLayout for the class into a data structure.
 	FRepLayout RepLayout;
 	RepLayout.InitFromObjectClass(Class);
-	TArray<TPair<int, FRepLayoutEntry>> RepLayoutProperties;
+	TArray<TPair<uint16, FRepLayoutEntry>> RepLayoutProperties;
 	for (int CmdIndex = 0; CmdIndex < RepLayout.Cmds.Num(); ++CmdIndex)
 	{
 		auto& Cmd = RepLayout.Cmds[CmdIndex];
@@ -888,14 +888,14 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 		TArray<UProperty*> PropertyChain;
 		if (ParentProperty)
 		{
-			PropertyChain = { ParentProperty, Property };
+			PropertyChain = {ParentProperty, Property};
 		}
 		else
 		{
-			PropertyChain = { Property };
+			PropertyChain = {Property};
 		}
 
-		int32 Handle = Cmd.RelativeHandle;
+		uint16 Handle = Cmd.RelativeHandle;
 		RepLayoutProperties.Add(MakeTuple(Handle, FRepLayoutEntry{
 			Property,
 			ParentProperty,
@@ -1800,93 +1800,95 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Printf(R"""(
 			Interop->PreReceiveSpatialUpdate(ActorChannel);
 
-			TArray<UProperty*> RepNotifies;
-			const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
-
+			TArray<UProperty*> RepNotifies;)""");
+		if (Layout.ReplicatedProperties[Group].Num() > 0)
+		{
+			SourceWriter.Printf(R"""(
 			const bool bIsServer = Interop->GetNetDriver()->IsServer();
 			const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::%s::ComponentId);
+			const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
 			FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);)""",
-			*GetSchemaRPCComponentName(ERPCType::RPC_Client, Class));
-		SourceWriter.Print();
-		for (auto& RepProp : Layout.ReplicatedProperties[Group])
-		{
-			auto Handle = RepProp.Entry.Handle;
-			UProperty* Property = RepProp.Entry.Property;
-
-			// Check if only the first property is in the property list. This implies that the rest is also in the update, as
-			// they are sent together atomically.
-			SourceWriter.Printf("if (!Update.%s().empty())", *GetFullyQualifiedName(RepProp.PropertyList[0].Chain));
-			SourceWriter.Print("{");
-			SourceWriter.Indent();
-
-			// Check if the property is relevant.
-			SourceWriter.Printf("// %s", *GetFullyQualifiedName(RepProp.Entry.Chain));
-			SourceWriter.Printf("uint32 Handle = %d;", Handle);
-			SourceWriter.Print("const FRepHandleData* RepData = &HandleToPropertyMap[Handle];");
-			SourceWriter.Print("if (ConditionMap.IsRelevant(RepData->Condition))\n{");
-			SourceWriter.Indent();
-
-			if (Property->IsA<UObjectPropertyBase>())
+				*GetSchemaRPCComponentName(ERPCType::RPC_Client, Class));
+			SourceWriter.Print();
+			for (auto& RepProp : Layout.ReplicatedProperties[Group])
 			{
-				SourceWriter.Print("bool bWriteObjectProperty = true;");
-			}
+				auto Handle = RepProp.Entry.Handle;
+				UProperty* Property = RepProp.Entry.Property;
 
-			// If the property is Role or RemoteRole, ensure to swap on the client.
-			int SwappedHandleIndex = -1;
-			if (Property->GetFName() == NAME_RemoteRole)
-			{
-				// Find handle to role.
-				for (auto& OtherRepProp : Layout.ReplicatedProperties[Group])
+				// Check if only the first property is in the property list. This implies that the rest is also in the update, as
+				// they are sent together atomically.
+				SourceWriter.Printf("if (!Update.%s().empty())", *GetFullyQualifiedName(RepProp.PropertyList[0].Chain));
+				SourceWriter.Print("{");
+				SourceWriter.Indent();
+
+				// Check if the property is relevant.
+				SourceWriter.Printf("// %s", *GetFullyQualifiedName(RepProp.Entry.Chain));
+				SourceWriter.Printf("uint16 Handle = %d;", Handle);
+				SourceWriter.Print("const FRepHandleData* RepData = &HandleToPropertyMap[Handle];");
+				SourceWriter.Print("if (ConditionMap.IsRelevant(RepData->Condition))\n{");
+				SourceWriter.Indent();
+
+				if (Property->IsA<UObjectPropertyBase>())
 				{
-					if (OtherRepProp.Entry.Property->GetFName() == NAME_Role)
+					SourceWriter.Print("bool bWriteObjectProperty = true;");
+				}
+
+				// If the property is Role or RemoteRole, ensure to swap on the client.
+				int SwappedHandleIndex = -1;
+				if (Property->GetFName() == NAME_RemoteRole)
+				{
+					// Find handle to role.
+					for (auto& OtherRepProp : Layout.ReplicatedProperties[Group])
 					{
-						SwappedHandleIndex = OtherRepProp.Entry.Handle;
-						break;
+						if (OtherRepProp.Entry.Property->GetFName() == NAME_Role)
+						{
+							SwappedHandleIndex = OtherRepProp.Entry.Handle;
+							break;
+						}
 					}
 				}
-			}
-			if (Property->GetFName() == NAME_Role)
-			{
-				// Find handle to remote role.
-				for (auto& OtherRepProp : Layout.ReplicatedProperties[Group])
+				if (Property->GetFName() == NAME_Role)
 				{
-					if (OtherRepProp.Entry.Property->GetFName() == NAME_RemoteRole)
+					// Find handle to remote role.
+					for (auto& OtherRepProp : Layout.ReplicatedProperties[Group])
 					{
-						SwappedHandleIndex = OtherRepProp.Entry.Handle;
-						break;
+						if (OtherRepProp.Entry.Property->GetFName() == NAME_RemoteRole)
+						{
+							SwappedHandleIndex = OtherRepProp.Entry.Handle;
+							break;
+						}
 					}
 				}
-			}
-			if (SwappedHandleIndex != -1)
-			{
-				SourceWriter.Printf(R"""(
+				if (SwappedHandleIndex != -1)
+				{
+					SourceWriter.Printf(R"""(
 					// On the client, we need to swap Role/RemoteRole.
 					if (!bIsServer)
 					{
 						Handle = %d;
 						RepData = &HandleToPropertyMap[Handle];
 					})""", SwappedHandleIndex);
-				SourceWriter.Print();
-			}
+					SourceWriter.Print();
+				}
 
-			// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
-			FString PropertyValueName = TEXT("Value");
-			FString PropertyValueCppType = Property->GetCPPType();
-			FString PropertyName = TEXT("RepData->Property");
-			//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
-			SourceWriter.Printf("uint8* PropertyData = (uint8*)ActorChannel->Actor + RepData->Offset;");
-			if (Property->IsA<UBoolProperty>())
-			{
-				SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(%s)->GetPropertyValue(PropertyData);", *PropertyValueName, *PropertyName);
-			}
-			else
-			{
-				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
-			}
-			SourceWriter.Print();
-			GeneratePropertyToUnrealConversion(
-				SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName, true, PropertyValueCppType,
-				[&SourceWriter](const FString& PropertyValue)
+				// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
+				FString PropertyValueName = TEXT("Value");
+				FString PropertyValueCppType = Property->GetCPPType();
+				FString PropertyName = TEXT("RepData->Property");
+				//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
+				SourceWriter.Printf("uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;");
+				if (Property->IsA<UBoolProperty>())
+				{
+					SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(%s)->GetPropertyValue(PropertyData);", *PropertyValueName, *PropertyName);
+				}
+				else
+				{
+					SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+				}
+				SourceWriter.Print();
+				GeneratePropertyToUnrealConversion(
+					SourceWriter, TEXT("Update"), RepProp.Entry.Chain, PropertyValueName, true, PropertyValueCppType,
+					[&SourceWriter](const FString& PropertyValue)
 				{
 					SourceWriter.Print(R"""(
 						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
@@ -1900,31 +1902,31 @@ void GenerateForwardingCodeFromLayout(
 					SourceWriter.Print("Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, RepData);");
 				});
 
-			// If this is RemoteRole, make sure to downgrade if bAutonomousProxy is false.
-			if (Property->GetFName() == NAME_RemoteRole)
-			{
-				SourceWriter.Print();
-				SourceWriter.Print(R"""(
+				// If this is RemoteRole, make sure to downgrade if bAutonomousProxy is false.
+				if (Property->GetFName() == NAME_RemoteRole)
+				{
+					SourceWriter.Print();
+					SourceWriter.Print(R"""(
 					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
 					// the server RPCs component.
 					if (!bIsServer && Value == ROLE_AutonomousProxy && !bAutonomousProxy)
 					{
 						Value = ROLE_SimulatedProxy;
 					})""");
-			}
+				}
 
-			SourceWriter.Print();
+				SourceWriter.Print();
 
-			if (Property->IsA<UObjectPropertyBase>())
-			{
-				SourceWriter.Print("if (bWriteObjectProperty)");
-				SourceWriter.Print("{").Indent();
-			}
+				if (Property->IsA<UObjectPropertyBase>())
+				{
+					SourceWriter.Print("if (bWriteObjectProperty)");
+					SourceWriter.Print("{").Indent();
+				}
 
-			SourceWriter.Print("ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, &Value, RepNotifies);");
-			SourceWriter.Print();
+				SourceWriter.Print("ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);");
+				SourceWriter.Print();
 
-			SourceWriter.Print(R"""(
+				SourceWriter.Print(R"""(
 				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
@@ -1932,18 +1934,19 @@ void GenerateForwardingCodeFromLayout(
 					*RepData->Property->GetName(),
 					Handle);)""");
 
-			if (Property->IsA<UObjectPropertyBase>())
-			{
-				SourceWriter.Outdent().Print("}");
+				if (Property->IsA<UObjectPropertyBase>())
+				{
+					SourceWriter.Outdent().Print("}");
+				}
+
+				// End condition map check block.
+				SourceWriter.Outdent();
+				SourceWriter.Print("}");
+
+				// End property block.
+				SourceWriter.Outdent();
+				SourceWriter.Print("}");
 			}
-
-			// End condition map check block.
-			SourceWriter.Outdent();
-			SourceWriter.Print("}");
-
-			// End property block.
-			SourceWriter.Outdent();
-			SourceWriter.Print("}");
 		}
 		SourceWriter.Print("Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);");
 		SourceWriter.Outdent();

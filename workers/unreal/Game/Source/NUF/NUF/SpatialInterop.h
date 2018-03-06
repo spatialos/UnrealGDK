@@ -54,10 +54,18 @@ public:
 	uint32 NumAttempts;
 };
 
+// Map types for pending objects/RPCs. For pending updates, they store a map from an unresolved object to a map of channels to properties
+// within those channels which depend on the unresolved object. For pending RPCs, they store a map from an unresolved object to a list of
+// RPC functor objects which need to be re-executed when the object is resolved.
+using FPendingOutgoingObjectUpdateMap = TMap<UObject*, TMap<USpatialActorChannel*, TArray<uint16>>>;
+using FPendingOutgoingRPCMap = TMap<UObject*, TArray<TPair<FRPCCommandRequestFunc, bool>>>;
+using FPendingIncomingObjectUpdateMap = TMap<FHashableUnrealObjectRef, TMap<USpatialActorChannel*, TArray<const FRepHandleData*>>>;
+using FPendingIncomingRPCMap = TMap<FHashableUnrealObjectRef, TArray<FRPCCommandResponseFunc>>;
+
 // Helper function to write incoming property data to an object.
 FORCEINLINE void ApplyIncomingPropertyUpdate(const FRepHandleData& RepHandleData, UObject* Object, const void* Value, TArray<UProperty*>& RepNotifies)
 {
-	uint8* Dest = (uint8*)Object + RepHandleData.Offset;
+	uint8* Dest = reinterpret_cast<uint8*>(Object) + RepHandleData.Offset;
 
 	// If value has changed, add to rep notify list.
 	if (RepHandleData.Property->HasAnyPropertyFlags(CPF_RepNotify))
@@ -160,17 +168,20 @@ private:
 	TMap<FUntypedRequestId, TSharedPtr<FOutgoingReliableRPC>> OutgoingReliableRPCs;
 
 	// Pending outgoing object ref property updates.
+	/*
 	TMap<UObject*, TArray<USpatialActorChannel*>> ChannelsAwaitingOutgoingObjectResolve;
 	TMap<USpatialActorChannel*, TArray<uint16>> PendingOutgoingObjectRefHandles;
+	*/
+	FPendingOutgoingObjectUpdateMap PendingOutgoingObjectUpdates;
 
 	// Pending outgoing RPCs.
-	TMap<UObject*, TArray<TPair<FRPCCommandRequestFunc, bool>>> PendingOutgoingRPCs;
+	FPendingOutgoingRPCMap PendingOutgoingRPCs;
 
 	// Pending incoming object ref property updates.
-	TMap<FHashableUnrealObjectRef, TMap<USpatialActorChannel*, TArray<const FRepHandleData*>>> PendingIncomingObjectRefProperties;
+	FPendingIncomingObjectUpdateMap PendingIncomingObjectUpdates;
 	
 	// Pending incoming RPCs.
-	TMap<FHashableUnrealObjectRef, TArray<FRPCCommandResponseFunc>> PendingIncomingRPCs;
+	FPendingIncomingRPCMap PendingIncomingRPCs;
 
 private:
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
