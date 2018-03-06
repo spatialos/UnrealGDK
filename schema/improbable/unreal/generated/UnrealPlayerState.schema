@@ -6,10 +6,10 @@ import "improbable/vector3.schema";
 import "improbable/unreal/core_types.schema";
 
 component UnrealPlayerStateSingleClientReplicatedData {
-	id = 100015;
+	id = 100020;
 }
 component UnrealPlayerStateMultiClientReplicatedData {
-	id = 100016;
+	id = 100021;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
 	bool field_btearoff = 3; // COND_None
@@ -39,15 +39,19 @@ component UnrealPlayerStateMultiClientReplicatedData {
 }
 component UnrealPlayerStateCompleteData {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	id = 100017;
 =======
 	id = 100022;
 >>>>>>> e222efe... Vehicle movement
+=======
+	id = 100022;
+>>>>>>> 71e731d... Added SubobjectNameToOffset map and correct commands to possess pawns
 }
 
 component UnrealPlayerStateClientRPCs {
-	id = 100018;
+	id = 100023;
 }
 component UnrealPlayerStateServerRPCs {
-	id = 100019;
+	id = 100024;
 }

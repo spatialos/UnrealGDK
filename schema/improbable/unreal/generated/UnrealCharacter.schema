@@ -7,6 +7,7 @@ import "improbable/unreal/core_types.schema";
 
 component UnrealCharacterSingleClientReplicatedData {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	id = 100025;
 }
 component UnrealCharacterMultiClientReplicatedData {
@@ -17,6 +18,12 @@ component UnrealCharacterMultiClientReplicatedData {
 component UnrealCharacterMultiClientReplicatedData {
 	id = 100031;
 >>>>>>> e222efe... Vehicle movement
+=======
+	id = 100030;
+}
+component UnrealCharacterMultiClientReplicatedData {
+	id = 100031;
+>>>>>>> 71e731d... Added SubobjectNameToOffset map and correct commands to possess pawns
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
 	bool field_btearoff = 3; // COND_None
@@ -67,10 +74,14 @@ component UnrealCharacterMultiClientReplicatedData {
 }
 component UnrealCharacterCompleteData {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	id = 100027;
 =======
 	id = 100032;
 >>>>>>> e222efe... Vehicle movement
+=======
+	id = 100032;
+>>>>>>> 71e731d... Added SubobjectNameToOffset map and correct commands to possess pawns
 }
 type UnrealRootMotionDebugClientPrintOnScreenRequest {
 	uint32 target_subobject_offset = 1;
@@ -195,10 +206,14 @@ type UnrealServerMoveRequest {
 
 component UnrealCharacterClientRPCs {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	id = 100028;
 =======
 	id = 100033;
 >>>>>>> e222efe... Vehicle movement
+=======
+	id = 100033;
+>>>>>>> 71e731d... Added SubobjectNameToOffset map and correct commands to possess pawns
 	command UnrealRPCCommandResponse rootmotiondebugclientprintonscreen(UnrealRootMotionDebugClientPrintOnScreenRequest);
 	command UnrealRPCCommandResponse clientcheatwalk(UnrealClientCheatWalkRequest);
 	command UnrealRPCCommandResponse clientcheatghost(UnrealClientCheatGhostRequest);
@@ -211,10 +226,14 @@ component UnrealCharacterClientRPCs {
 }
 component UnrealCharacterServerRPCs {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	id = 100029;
 =======
 	id = 100034;
 >>>>>>> e222efe... Vehicle movement
+=======
+	id = 100034;
+>>>>>>> 71e731d... Added SubobjectNameToOffset map and correct commands to possess pawns
 	command UnrealRPCCommandResponse servermoveold(UnrealServerMoveOldRequest);
 	command UnrealRPCCommandResponse servermovedualhybridrootmotion(UnrealServerMoveDualHybridRootMotionRequest);
 	command UnrealRPCCommandResponse servermovedual(UnrealServerMoveDualRequest);

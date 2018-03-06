@@ -6,12 +6,12 @@ import "improbable/vector3.schema";
 import "improbable/unreal/core_types.schema";
 
 component UnrealPlayerControllerSingleClientReplicatedData {
-	id = 100010;
+	id = 100015;
 	UnrealFRotator field_targetviewrotation = 1; // COND_OwnerOnly
 	improbable.Vector3f field_spawnlocation = 2; // COND_OwnerOnly
 }
 component UnrealPlayerControllerMultiClientReplicatedData {
-	id = 100011;
+	id = 100016;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
 	bool field_btearoff = 3; // COND_None
@@ -32,10 +32,14 @@ component UnrealPlayerControllerMultiClientReplicatedData {
 }
 component UnrealPlayerControllerCompleteData {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	id = 100012;
 =======
 	id = 100017;
 >>>>>>> e222efe... Vehicle movement
+=======
+	id = 100017;
+>>>>>>> 71e731d... Added SubobjectNameToOffset map and correct commands to possess pawns
 }
 type UnrealOnServerStartedVisualLoggerRequest {
 	uint32 target_subobject_offset = 1;
@@ -373,10 +377,14 @@ type UnrealServerAcknowledgePossessionRequest {
 
 component UnrealPlayerControllerClientRPCs {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	id = 100013;
 =======
 	id = 100018;
 >>>>>>> e222efe... Vehicle movement
+=======
+	id = 100018;
+>>>>>>> 71e731d... Added SubobjectNameToOffset map and correct commands to possess pawns
 	command UnrealRPCCommandResponse onserverstartedvisuallogger(UnrealOnServerStartedVisualLoggerRequest);
 	command UnrealRPCCommandResponse clientwaskicked(UnrealClientWasKickedRequest);
 	command UnrealRPCCommandResponse clientvoicehandshakecomplete(UnrealClientVoiceHandshakeCompleteRequest);
@@ -430,10 +438,14 @@ component UnrealPlayerControllerClientRPCs {
 }
 component UnrealPlayerControllerServerRPCs {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	id = 100014;
 =======
 	id = 100019;
 >>>>>>> e222efe... Vehicle movement
+=======
+	id = 100019;
+>>>>>>> 71e731d... Added SubobjectNameToOffset map and correct commands to possess pawns
 	command UnrealRPCCommandResponse serverviewself(UnrealServerViewSelfRequest);
 	command UnrealRPCCommandResponse serverviewprevplayer(UnrealServerViewPrevPlayerRequest);
 	command UnrealRPCCommandResponse serverviewnextplayer(UnrealServerViewNextPlayerRequest);

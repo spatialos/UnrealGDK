@@ -14,6 +14,10 @@
 #include "Components/TextRenderComponent.h"
 #include "Materials/Material.h"
 #include "GameFramework/Controller.h"
+#include "PossessPawnRequest.h"
+#include "PossessPawnResponse.h"
+#include "NUFCharacter.h"
+#include "NUF/SpatialNetDriver.h"
 
 const FName AVehicleCppPawn::LookUpBinding("LookUp");
 const FName AVehicleCppPawn::LookRightBinding("LookRight");
@@ -109,6 +113,9 @@ AVehicleCppPawn::AVehicleCppPawn()
 	GearDisplayColor = FColor(255, 255, 255, 255);
 
 	bInReverseGear = false;
+
+	PossessPawnComponent = CreateDefaultSubobject<UPossessPawnComponent>(TEXT("PossessPawn"));
+   	OnPossessPawnAckDelegate.BindUFunction(this, "OnPossessPawnRequestAck");
 }
 
 void AVehicleCppPawn::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -131,6 +138,19 @@ void AVehicleCppPawn::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 
 void AVehicleCppPawn::Interact() {
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("This is an on screen message!"));
+
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANUFCharacter::StaticClass(), FoundActors);
+
+	nuf::PossessPawnRequest Request{ EntityRegistry->GetEntityIdFromActor(FoundActors[0]).ToSpatialEntityId() };
+
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
+
+	Commander->PossessPawn(
+		EntityRegistry->GetEntityIdFromActor(this),
+		NewObject<UPossessPawnRequest>()->Init(Request),
+		OnPossessPawnAckDelegate,
+		0);
 }
 
 void AVehicleCppPawn::MoveForward(float Val)
@@ -156,6 +176,26 @@ void AVehicleCppPawn::OnHandbrakeReleased()
 void AVehicleCppPawn::OnToggleCamera()
 {
 	EnableIncarView(!bInCarCameraActive);
+}
+
+void AVehicleCppPawn::OnPossessPawnRequest(UPossessPawnCommandResponder* Responder)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Command recieved"));
+	FEntityId CharacterId = Responder->GetRequest()->GetPawnId();
+	ANUFCharacter* Character = Cast<ANUFCharacter>(EntityRegistry->GetActorFromEntityId(CharacterId));
+	GetController()->Possess(Character);
+
+	UPossessPawnResponse* Response = NewObject<UPossessPawnResponse>(this);
+	Responder->SendResponse(Response);
+}
+
+void AVehicleCppPawn::OnPossessPawnRequestAck(const FSpatialOSCommandResult& Result, UPossessPawnResponse* Response)
+{
+	if (Result.StatusCode != ECommandResponseCode::Success) {
+		UE_LOG(LogTemp, Warning,
+			TEXT("PossessPawn command failed from entity %d with message %s"),
+			PossessPawnComponent->GetEntityId(), *Result.ErrorMessage);
+	}
 }
 
 void AVehicleCppPawn::EnableIncarView(const bool bState, const bool bForce)
@@ -185,8 +225,6 @@ void AVehicleCppPawn::Tick(float Delta)
 {
 	Super::Tick(Delta);
 
-	GetVehicleMovementComponent()->DrawDebugLines();
-
 	// Setup the flag to say we are in reverse gear
 	bInReverseGear = GetVehicleMovement()->GetCurrentGear() < 0;
 
@@ -205,6 +243,18 @@ void AVehicleCppPawn::BeginPlay()
 
 	bool bEnableInCar = false;
 	EnableIncarView(bEnableInCar,true);
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Begin play for Car"));
+
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
+	EntityRegistry = SpatialNetDriver->GetEntityRegistry();
+	Commander = NewObject<UCommander>(this, UCommander::StaticClass())->Init(nullptr, SpatialNetDriver->GetSpatialOS()->GetConnection(), SpatialNetDriver->GetSpatialOS()->GetView());
+	auto View = SpatialNetDriver->GetSpatialOS()->GetView();
+	auto Connection = SpatialNetDriver->GetSpatialOS()->GetConnection();
+
+	if (PossessPawnComponent) {
+		PossessPawnComponent->OnPossessPawnCommandRequest.AddDynamic(this, &AVehicleCppPawn::OnPossessPawnRequest);
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

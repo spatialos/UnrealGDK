@@ -1,7 +1,7 @@
 // Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
 
 #include "NUFCharacter.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
+#include "Kismet/HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -13,7 +13,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "NUF/SpatialNetDriver.h"
 #include "VehicleCppPawn.h"
-
 #include "PossessPawnRequest.h"
 #include "PossessPawnResponse.h"
 
@@ -22,15 +21,6 @@
 
 ANUFCharacter::ANUFCharacter()
 {
-	// Hack to ensure that the game state is created and set to tick on a client as we don't replicate it
-	UWorld* World = GetWorld();
-	if (World && World->GetGameState() == nullptr) 
-	{
-		AGameStateBase* GameState = World->SpawnActor<AGameStateBase>(ANUFGameStateBase::StaticClass());
-		World->SetGameState(GameState);
-		Cast<ANUFGameStateBase>(GameState)->FakeServerHasBegunPlay();
-	}
-
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -61,7 +51,6 @@ ANUFCharacter::ANUFCharacter()
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 	PossessPawnComponent = CreateDefaultSubobject<UPossessPawnComponent>(TEXT("PossessPawn"));
-
    	OnPossessPawnAckDelegate.BindUFunction(this, "OnPossessPawnRequestAck");
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
@@ -79,18 +68,7 @@ void ANUFCharacter::BeginPlay()
 	auto Connection = SpatialNetDriver->GetSpatialOS()->GetConnection();
 
 	if (PossessPawnComponent) {
-		View.Pin()->OnCommandRequest<nuf::PossessPawn::Commands::PossessPawn>([&](const worker::CommandRequestOp<nuf::PossessPawn::Commands::PossessPawn>& Request) {
-			UE_LOG(LogTemp, Warning, TEXT("Command recieved"));
-
-			FEntityId CarId = Request.Request.pawn_id();
-			AVehicleCppPawn* Car = Cast<AVehicleCppPawn>(EntityRegistry->GetActorFromEntityId(CarId));
-			Car->PossessedBy(GetController());
-
-			//nuf::PossessPawnResponse Response;
-			//(SpatialNetDriver->GetSpatialOS()->GetConnection().Pin())->SendCommandResponse(Request.RequestId, Response);
-		});
-
-		//PossessPawnComponent->OnPossessPawnCommandRequest.AddDynamic(this, &ANUFCharacter::OnPossessPawnRequest);
+		PossessPawnComponent->OnPossessPawnCommandRequest.AddDynamic(this, &ANUFCharacter::OnPossessPawnRequest);
 	}
 }
 
@@ -136,7 +114,7 @@ void ANUFCharacter::Interact() {
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
 
 	Commander->PossessPawn(
-		PossessPawnComponent->GetEntityId(),
+		EntityRegistry->GetEntityIdFromActor(this),
 		NewObject<UPossessPawnRequest>()->Init(Request),
 		OnPossessPawnAckDelegate,
 		0);
@@ -144,20 +122,21 @@ void ANUFCharacter::Interact() {
 
 void ANUFCharacter::OnPossessPawnRequest(UPossessPawnCommandResponder* Responder)
 {
-	//FEntityId CarId = Request->GetRequest()->GetPawnId();
-	//AVehicleCppPawn* Car = Cast<AVehicleCppPawn>(EntityRegistry->GetActorFromEntityId(CarId));
-	//Car->PossessedBy(GetController());
 	UE_LOG(LogTemp, Warning, TEXT("Command recieved"));
+	FEntityId CarId = Responder->GetRequest()->GetPawnId();
+	AVehicleCppPawn* Car = Cast<AVehicleCppPawn>(EntityRegistry->GetActorFromEntityId(CarId));
+	GetController()->Possess(Car);
 
 	UPossessPawnResponse* Response = NewObject<UPossessPawnResponse>(this);
 	Responder->SendResponse(Response);
 }
 
 void ANUFCharacter::OnPossessPawnRequestAck(const FSpatialOSCommandResult& Result, UPossessPawnResponse* Response) {
-	UE_LOG(LogTemp, Warning,
-		TEXT("BuildEntity command failed from entity %d with message %s"),
-		PossessPawnComponent->GetEntityId(), *Result.ErrorMessage);
-
+	if (Result.StatusCode != ECommandResponseCode::Success) {
+		UE_LOG(LogTemp, Warning,
+			TEXT("PossessPawn command failed from entity %d with message %s"),
+			PossessPawnComponent->GetEntityId(), *Result.ErrorMessage);
+	}
 }
 
 void ANUFCharacter::OnResetVR()
