@@ -8,7 +8,6 @@
 #include <improbable/unreal/unreal_metadata.h>
 #include <improbable/unreal/generated/UnrealPlayerState.h>
 #include "../SpatialTypeBinding.h"
-
 #include "SpatialTypeBinding_PlayerState.generated.h"
 
 UCLASS()

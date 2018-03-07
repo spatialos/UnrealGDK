@@ -8,10 +8,8 @@
 #include <improbable/unreal/unreal_metadata.h>
 #include <improbable/unreal/generated/UnrealWheeledVehicle.h>
 #include "../SpatialTypeBinding.h"
-
 #include "WheeledVehicle.h"
 #include "WheeledVehicleMovementComponent.h"
-
 #include "SpatialTypeBinding_WheeledVehicle.generated.h"
 
 UCLASS()

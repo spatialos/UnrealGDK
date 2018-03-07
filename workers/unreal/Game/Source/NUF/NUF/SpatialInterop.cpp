@@ -83,14 +83,14 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 		{
 			std::string ClientWorkerIdString = TCHAR_TO_UTF8(*PlayerWorkerId);
 
-			improbable::WorkerAttributeSet WorkerAttribute{ { worker::List<std::string>{"UnrealWorker"} } };
-			improbable::WorkerAttributeSet ClientAttribute{ { worker::List<std::string>{"UnrealClient"} } };
-			improbable::WorkerAttributeSet OwnClientAttribute{ { "workerId:" + ClientWorkerIdString } };
+			improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
+			improbable::WorkerAttributeSet ClientAttribute{{worker::List<std::string>{"UnrealClient"}}};
+			improbable::WorkerAttributeSet OwnClientAttribute{{"workerId:" + ClientWorkerIdString}};
 
-			improbable::WorkerRequirementSet WorkersOnly{ { WorkerAttribute } };
-			improbable::WorkerRequirementSet ClientsOnly{ { ClientAttribute } };
-			improbable::WorkerRequirementSet OwnClientOnly{ { OwnClientAttribute } };
-			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{ { WorkerAttribute, ClientAttribute } };
+			improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
+			improbable::WorkerRequirementSet ClientsOnly{{ClientAttribute}};
+			improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
+			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
 
 			// Set up unreal metadata.
 			improbable::unreal::UnrealMetadata::Data UnrealMetadata;
@@ -121,7 +121,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 
 			auto Entity = improbable::unreal::FEntityBuilder::Begin()
 				.AddPositionComponent(SpatialPosition, WorkersOnly)
-				.AddMetadataComponent(improbable::Metadata::Data{ TCHAR_TO_UTF8(*PathStr) })
+				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
 				.SetPersistence(true)
 				.SetReadAcl(AnyUnrealWorkerOrClient)
 				.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)

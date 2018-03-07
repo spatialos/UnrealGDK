@@ -1231,16 +1231,15 @@ void GenerateForwardingCodeFromLayout(
 		#include <improbable/unreal/core_types.h>
 		#include <improbable/unreal/unreal_metadata.h>
 		#include <improbable/unreal/generated/%s.h>
-		#include "../SpatialTypeBinding.h"
-		)""", *SchemaFilename);
+		#include "../SpatialTypeBinding.h")""", *SchemaFilename);
 
 	if (Class->GetName().Contains("WheeledVehicle")) {
 		HeaderWriter.Printf(R"""(
 		#include "WheeledVehicle.h"
-		#include "WheeledVehicleMovementComponent.h"
-		)""");
+		#include "WheeledVehicleMovementComponent.h")""");
 	}
-	HeaderWriter.Printf(R"""(#include "SpatialTypeBinding_%s.generated.h")""", *Class->GetName());
+	HeaderWriter.Printf(R"""(
+		#include "SpatialTypeBinding_%s.generated.h")""", *Class->GetName());
 
 	HeaderWriter.Print();
 
@@ -1685,6 +1684,8 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, WorkersOnly)",
 		*GetSchemaRPCComponentName(ERPCType::RPC_Server, Class), *GetSchemaRPCComponentName(ERPCType::RPC_Server, Class));
 
+	//This adds a custom component called PossessPawn which is added the the Character and Vehicle. It allows
+	//these two classes to call an RPC which is intended to let the player possess a different pawn.
 	if (Class->GetName().Contains("WheeledVehicle") || Class->GetName().Contains("Character")) {
 		SourceWriter.Printf(".AddComponent<nuf::PossessPawn>(nuf::PossessPawn::Data{}, WorkersOnly)");
 	}

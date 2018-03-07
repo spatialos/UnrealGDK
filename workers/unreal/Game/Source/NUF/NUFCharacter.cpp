@@ -1,20 +1,20 @@
 // Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
 
 #include "NUFCharacter.h"
-#include "Kismet/HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Engine/World.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "Engine/World.h"
-#include "NUFGameStateBase.h"
 #include "Kismet/GameplayStatics.h"
-#include "NUF/SpatialNetDriver.h"
-#include "VehicleCppPawn.h"
 #include "PossessPawnRequest.h"
 #include "PossessPawnResponse.h"
+#include "NUFGameStateBase.h"
+#include "NUF/SpatialNetDriver.h"
+#include "VehicleCppPawn.h"
 
 //////////////////////////////////////////////////////////////////////////
 // ANUFCharacter

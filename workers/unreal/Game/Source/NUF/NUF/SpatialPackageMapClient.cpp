@@ -22,11 +22,10 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 		}
 	});
 
-	// Sort to ensure stable order.
-	//InSubobjects.StableSort([](UObject& A, UObject& B)
-	//{
-	//	return A.GetName() < B.GetName();
-	//});
+	InSubobjects.StableSort([](UObject& A, UObject& B)
+	{
+		return A.GetName() < B.GetName();
+	});
 }
 
 FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset)
@@ -109,15 +108,16 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 	for (UObject* Subobject : ActorSubobjects)
 	{
 		auto OffsetIterator = SubobjectToOffset.find(std::string(TCHAR_TO_UTF8(*(Subobject->GetName()))));
-		check(OffsetIterator != SubobjectToOffset.end());
-		std::uint32_t Offset = OffsetIterator->second;
+		if (OffsetIterator != SubobjectToOffset.end()) {
+			std::uint32_t Offset = OffsetIterator->second;
 
-		FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_NUF(Subobject);
-		improbable::unreal::UnrealObjectRef SubobjectRef{EntityId.ToSpatialEntityId(), Offset};
-		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
-		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
-			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *ObjectRefToString(SubobjectRef));
-		Interop->ResolvePendingOperations(Subobject, SubobjectRef);
+			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_NUF(Subobject);
+			improbable::unreal::UnrealObjectRef SubobjectRef{EntityId.ToSpatialEntityId(), Offset};
+			RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
+			UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
+				*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *ObjectRefToString(SubobjectRef));
+			Interop->ResolvePendingOperations(Subobject, SubobjectRef);
+		}
 	}
 
 	return NetGUID;
