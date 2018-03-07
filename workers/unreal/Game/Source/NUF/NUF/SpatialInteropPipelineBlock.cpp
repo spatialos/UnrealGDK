@@ -366,7 +366,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 
 			// Set up actor channel.
 			auto PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-			auto Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, false));
+			auto Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
 			check(Channel);
 
 			PackageMap->ResolveEntityActor(EntityActor, EntityId);
