@@ -1349,6 +1349,12 @@ void GenerateForwardingCodeFromLayout(
 		#include "../SpatialPackageMapClient.h"
 		#include "../SpatialNetDriver.h"
 		#include "../SpatialInterop.h")""", *InteropFilename);
+		// TODO: Come up with a generic solution to include the right headers.
+	if (Class->GetName().Contains("WheeledVehicle")) {
+		SourceWriter.Printf(R"""(
+		#include "WheeledVehicle.h"
+		#include "WheeledVehicleMovementComponent.h")""");
+	}
 	SourceWriter.Print();
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{

@@ -8,7 +8,6 @@
 #include <improbable/unreal/unreal_metadata.h>
 #include <improbable/unreal/generated/UnrealPlayerController.h>
 #include "ScopedViewCallbacks.h"
-
 #include "../SpatialTypeBinding.h"
 #include "SpatialTypeBinding_PlayerController.generated.h"
 
