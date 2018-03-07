@@ -117,6 +117,8 @@ AVehicleCppPawn::AVehicleCppPawn()
 
 	PossessPawnComponent = CreateDefaultSubobject<UPossessPawnComponent>(TEXT("PossessPawn"));
    	OnPossessPawnAckDelegate.BindUFunction(this, "OnPossessPawnRequestAck");
+
+	bHasReset = false;
 }
 
 void AVehicleCppPawn::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -226,6 +228,11 @@ void AVehicleCppPawn::Tick(float Delta)
 {
 	Super::Tick(Delta);
 
+	if (!bHasReset) {
+		ReregisterAllComponents();
+		bHasReset = true;
+	}
+
 	// Setup the flag to say we are in reverse gear
 	bInReverseGear = GetVehicleMovement()->GetCurrentGear() < 0;
 
@@ -257,6 +264,7 @@ void AVehicleCppPawn::BeginPlay()
 		if (PossessPawnComponent) {
 			PossessPawnComponent->OnPossessPawnCommandRequest.AddDynamic(this, &AVehicleCppPawn::OnPossessPawnRequest);
 		}
+
 	}
 }
 
