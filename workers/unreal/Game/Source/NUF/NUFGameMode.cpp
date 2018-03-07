@@ -12,6 +12,4 @@ ANUFGameMode::ANUFGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
-
-	//DefaultPawnClass = AVehicleCppPawn::StaticClass();
 }
