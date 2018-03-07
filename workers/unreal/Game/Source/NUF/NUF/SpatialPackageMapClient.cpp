@@ -22,14 +22,13 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 		}
 	});
 
-	// Sort to ensure stable order.
 	InSubobjects.StableSort([](UObject& A, UObject& B)
 	{
 		return A.GetName() < B.GetName();
 	});
 }
 
-FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, const FEntityId& EntityId)
+FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	FNetworkGUID NetGUID = SpatialGuidCache->GetNetGUIDFromEntityId(EntityId.ToSpatialEntityId());
@@ -37,7 +36,7 @@ FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, const F
 	// check we haven't already assigned a NetGUID to this object
 	if (!NetGUID.IsValid())
 	{
-		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor);
+		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor, SubobjectToOffset);
 	}
 	return NetGUID;
 }
@@ -85,7 +84,7 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 {
 }
 
-FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
+FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, const ::worker::Map< std::string, std::uint32_t >& SubobjectToOffset)
 {
 	FEntityId EntityId = Cast<USpatialNetDriver>(Driver)->GetEntityRegistry()->GetEntityIdFromActor(Actor);
 	check(EntityId.ToSpatialEntityId() > 0);
@@ -105,16 +104,20 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	// Allocate NetGUIDs for each subobject, sorting alphabetically to ensure stable references.
 	TArray<UObject*> ActorSubobjects;
 	GetSubobjects(Actor, ActorSubobjects);
-	uint32 SubobjectOffset = 0;
+
 	for (UObject* Subobject : ActorSubobjects)
 	{
-		SubobjectOffset++;
-		FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_NUF(Subobject);
-		improbable::unreal::UnrealObjectRef SubobjectRef{EntityId.ToSpatialEntityId(), SubobjectOffset};
-		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
-		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
-			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *ObjectRefToString(SubobjectRef));
-		Interop->ResolvePendingOperations(Subobject, SubobjectRef);
+		auto OffsetIterator = SubobjectToOffset.find(std::string(TCHAR_TO_UTF8(*(Subobject->GetName()))));
+		if (OffsetIterator != SubobjectToOffset.end()) {
+			std::uint32_t Offset = OffsetIterator->second;
+
+			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_NUF(Subobject);
+			improbable::unreal::UnrealObjectRef SubobjectRef{EntityId.ToSpatialEntityId(), Offset};
+			RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
+			UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
+				*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *ObjectRefToString(SubobjectRef));
+			Interop->ResolvePendingOperations(Subobject, SubobjectRef);
+		}
 	}
 
 	return NetGUID;

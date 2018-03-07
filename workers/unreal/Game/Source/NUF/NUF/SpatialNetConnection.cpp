@@ -4,6 +4,8 @@
 #include "SpatialNetDriver.h"
 #include "SpatialPackageMapClient.h"
 
+#include "NUFGameStateBase.h"
+
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 }
@@ -37,6 +39,7 @@ void USpatialNetConnection::InitRemoteConnection(UNetDriver* InDriver, class FSo
 	// InternalAck set to 0. This avoids a crash. Once we remove bunch handling, we can move InternalAck = 1 back to the constructor.
 	InternalAck = 1;
 	Super::InitRemoteConnection(InDriver, InSocket, InURL, InRemoteAddr, InState, InMaxPacket, InPacketOverhead);
+
 }
 
 bool USpatialNetConnection::ClientHasInitializedLevelFor(const UObject* TestObject) const

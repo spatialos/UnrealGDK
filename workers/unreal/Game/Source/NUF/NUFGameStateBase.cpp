@@ -9,6 +9,7 @@ void ANUFGameStateBase::FakeServerHasBegunPlay()
 		return;
 	}
 	Role = ROLE_SimulatedProxy;
+	
 	bReplicatedHasBegunPlay = true;
 	OnRep_ReplicatedHasBegunPlay();
 }

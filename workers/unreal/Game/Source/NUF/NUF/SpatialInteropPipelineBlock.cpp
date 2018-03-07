@@ -19,8 +19,12 @@
 #include "MetadataAddComponentOp.h"
 #include "MetadataComponent.h"
 #include "UnrealMetadataAddComponentOp.h"
+#include "UnrealWheeledVehicleMultiClientReplicatedDataAddComponentOp.h"
+#include "UnrealWheeledVehicleMultiClientReplicatedDataComponent.h"
+#include "SpatialConstants.h"
 #include "UnrealMetadataComponent.h"
 #include "UnrealLevelComponent.h"
+#include "Generated/SpatialTypeBinding_WheeledVehicle.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSInteropPipelineBlock);
 
@@ -133,7 +137,7 @@ void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId Com
 
 	if (NextBlock)
 	{
-		NextBlock->ChangeAuthority(ComponentId, AuthChangeOp);	
+		NextBlock->ChangeAuthority(ComponentId, AuthChangeOp);
 	}
 }
 
@@ -304,6 +308,15 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		// Option 1
 		UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 		SetupComponentInterests(EntityActor, EntityId, LockedConnection);
+
+		improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
+		check(UnrealMetadataComponent);
+
+		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
+		check(PackageMap);
+
+		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
+		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());	
 	}
 	else
 	{
@@ -369,7 +382,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			auto Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, false));
 			check(Channel);
 
-			PackageMap->ResolveEntityActor(EntityActor, EntityId);
+			PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
 			Channel->SetChannelActor(EntityActor);
 
 			// Inform USpatialInterop of this new actor channel.
@@ -413,11 +426,11 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* P
 		SpawnInfo.bRemoteOwned = true;
 		SpawnInfo.bNoFail = true;
 		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
-		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(FRotator::ZeroRotator, InitialLocation), SpawnInfo);
 
+		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(FRotator::ZeroRotator, InitialLocation), SpawnInfo);
 		check(NewActor);
 	}
-		
+
 	return NewActor;
 }
 
@@ -436,7 +449,7 @@ UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(improbable::Metad
 		if (EntityTypeString.FindLastChar('/', LastSlash))
 		{
 			RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString.RightChop(LastSlash));
-		}		
+		}
 	}
 	UClass* ClassToSpawn = RegisteredClass ? *RegisteredClass : nullptr;
 
