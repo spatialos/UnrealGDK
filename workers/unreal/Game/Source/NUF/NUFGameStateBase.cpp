@@ -4,16 +4,12 @@
 
 void ANUFGameStateBase::FakeServerHasBegunPlay()
 {
-
-#if WITH_EDITOR
-	return;
-#endif
-
 	if (!GetWorld()) 
 	{
 		return;
 	}
 	Role = ROLE_SimulatedProxy;
+	
 	bReplicatedHasBegunPlay = true;
 	OnRep_ReplicatedHasBegunPlay();
 }

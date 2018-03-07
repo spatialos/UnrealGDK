@@ -21,6 +21,7 @@
 
 ANUFCharacter::ANUFCharacter()
 {
+	// Hack to ensure that the game state is created and set to tick on a client as we don't replicate it
 	UWorld* World = GetWorld();
 	if (World && World->GetGameState() == nullptr)
 	{
@@ -70,13 +71,15 @@ void ANUFCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
-	EntityRegistry = SpatialNetDriver->GetEntityRegistry();
-	Commander = NewObject<UCommander>(this, UCommander::StaticClass())->Init(nullptr, SpatialNetDriver->GetSpatialOS()->GetConnection(), SpatialNetDriver->GetSpatialOS()->GetView());
-	auto View = SpatialNetDriver->GetSpatialOS()->GetView();
-	auto Connection = SpatialNetDriver->GetSpatialOS()->GetConnection();
+	if (SpatialNetDriver != nullptr) {
+		EntityRegistry = SpatialNetDriver->GetEntityRegistry();
+		Commander = NewObject<UCommander>(this, UCommander::StaticClass(), TEXT("NUFCharacterCommander"))->Init(nullptr, SpatialNetDriver->GetSpatialOS()->GetConnection(), SpatialNetDriver->GetSpatialOS()->GetView());
+		auto View = SpatialNetDriver->GetSpatialOS()->GetView();
+		auto Connection = SpatialNetDriver->GetSpatialOS()->GetConnection();
 
-	if (PossessPawnComponent) {
-		PossessPawnComponent->OnPossessPawnCommandRequest.AddDynamic(this, &ANUFCharacter::OnPossessPawnRequest);
+		if (PossessPawnComponent) {
+			PossessPawnComponent->OnPossessPawnCommandRequest.AddDynamic(this, &ANUFCharacter::OnPossessPawnRequest);
+		}
 	}
 }
 

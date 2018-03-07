@@ -18,6 +18,7 @@
 #include "PossessPawnResponse.h"
 #include "NUFCharacter.h"
 #include "NUF/SpatialNetDriver.h"
+#include "NUFGameStateBase.h"
 
 const FName AVehicleCppPawn::LookUpBinding("LookUp");
 const FName AVehicleCppPawn::LookRightBinding("LookRight");
@@ -242,18 +243,20 @@ void AVehicleCppPawn::BeginPlay()
 	Super::BeginPlay();
 
 	bool bEnableInCar = false;
-	EnableIncarView(bEnableInCar,true);
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Begin play for Car"));
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
-	EntityRegistry = SpatialNetDriver->GetEntityRegistry();
-	Commander = NewObject<UCommander>(this, UCommander::StaticClass())->Init(nullptr, SpatialNetDriver->GetSpatialOS()->GetConnection(), SpatialNetDriver->GetSpatialOS()->GetView());
-	auto View = SpatialNetDriver->GetSpatialOS()->GetView();
-	auto Connection = SpatialNetDriver->GetSpatialOS()->GetConnection();
+	if (SpatialNetDriver) {
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Begin play for Car"));
 
-	if (PossessPawnComponent) {
-		PossessPawnComponent->OnPossessPawnCommandRequest.AddDynamic(this, &AVehicleCppPawn::OnPossessPawnRequest);
+		EntityRegistry = SpatialNetDriver->GetEntityRegistry();
+		Commander = NewObject<UCommander>(this, UCommander::StaticClass(), TEXT("VehicleCommander"))->Init(nullptr, SpatialNetDriver->GetSpatialOS()->GetConnection(), SpatialNetDriver->GetSpatialOS()->GetView());
+		auto View = SpatialNetDriver->GetSpatialOS()->GetView();
+		auto Connection = SpatialNetDriver->GetSpatialOS()->GetConnection();
+
+		if (PossessPawnComponent) {
+			PossessPawnComponent->OnPossessPawnCommandRequest.AddDynamic(this, &AVehicleCppPawn::OnPossessPawnRequest);
+		}
 	}
 }
 
