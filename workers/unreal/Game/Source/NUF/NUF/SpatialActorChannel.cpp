@@ -430,7 +430,6 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	ActorEntityId = *Op.EntityId;
 
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
-	PackageMap->ResolveEntityActor(Actor, ActorEntityId);
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
@@ -452,8 +451,8 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		PinnedView->Remove(CreateEntityCallback);
 	}
 
-	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), ActorEntityId);	
-}	
+	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), ActorEntityId);
+}
 
 void USpatialActorChannel::UpdateSpatialPosition()
 {

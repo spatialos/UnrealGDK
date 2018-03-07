@@ -19,9 +19,16 @@
 #include "EntityBuilder.h"
 #include "EntityTemplate.h"
 
+#include "Generated/SpatialTypeBinding_Character.h"
+#include "Generated/SpatialTypeBinding_PlayerController.h"
+#include "Generated/SpatialTypeBinding_PlayerState.h"
+#include "Generated/SpatialTypeBinding_WheeledVehicle.h"
+#include "WheeledVehicle.h"
+#include "PossessPawnComponent.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialOSInterop);
 
-USpatialInterop::USpatialInterop() 
+USpatialInterop::USpatialInterop()
 {
 }
 
@@ -95,6 +102,19 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 			{
 				UnrealMetadata.set_owner_worker_id({ClientWorkerIdString});
 			}
+
+			uint32 CurrentOffset = 0;
+			worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
+			ForEachObjectWithOuter(Channel->Actor, [&UnrealMetadata, &CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+			{
+				// Objects can only be allocated NetGUIDs if this is true.
+				if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+				{
+					SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+					CurrentOffset++;
+				}
+			});
+			UnrealMetadata.set_subobject_name_to_offset(SubobjectNameToOffset);
 
 			// Build entity.
 			const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Location);
@@ -366,7 +386,7 @@ void USpatialInterop::SetComponentInterests_Client(USpatialActorChannel* ActorCh
 		if (Binding)
 		{
 			worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
-			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{true});
+			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{ true });
 			SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId, Interest);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: We are the owning client of %s (%llu), therefore we want single client updates."),
 				*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId(),

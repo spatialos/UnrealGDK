@@ -242,6 +242,19 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FString& C
 		UnrealMetadata.set_owner_worker_id({ClientWorkerIdString});
 	}
 
+	uint32 CurrentOffset = 1;
+	worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
+	ForEachObjectWithOuter(Channel->Actor, [&UnrealMetadata, &CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+	{
+		// Objects can only be allocated NetGUIDs if this is true.
+		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+		{
+			SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+			CurrentOffset++;
+		}
+	});
+	UnrealMetadata.set_subobject_name_to_offset(SubobjectNameToOffset);
+
 	// Build entity.
 	const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);
 	return improbable::unreal::FEntityBuilder::Begin()
@@ -255,6 +268,7 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FString& C
 		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealCharacterClientRPCs>(improbable::unreal::UnrealCharacterClientRPCs::Data{}, OwningClientOnly)
 		.AddComponent<improbable::unreal::UnrealCharacterServerRPCs>(improbable::unreal::UnrealCharacterServerRPCs::Data{}, WorkersOnly)
+		.AddComponent<nuf::PossessPawn>(nuf::PossessPawn::Data{}, WorkersOnly)
 		.Build();
 }
 

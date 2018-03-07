@@ -2,10 +2,11 @@
 
 #include "NUFGameMode.h"
 #include "UObject/ConstructorHelpers.h"
+#include "VehicleCppPawn.h"
 
 ANUFGameMode::ANUFGameMode()
 {
-	// set default pawn class to our Blueprinted character
+	//set default pawn class to our Blueprinted character
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/EntityBlueprints/NUFCharacter_BP"));
 	if (PlayerPawnBPClass.Class != NULL)
 	{

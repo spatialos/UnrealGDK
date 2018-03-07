@@ -4,6 +4,8 @@
 #include "SpatialNetDriver.h"
 #include "SpatialPackageMapClient.h"
 
+#include "NUFGameStateBase.h"
+
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	InternalAck = 1;
@@ -35,6 +37,7 @@ void USpatialNetConnection::InitLocalConnection(UNetDriver* InDriver, class FSoc
 void USpatialNetConnection::InitRemoteConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, const class FInternetAddr& InRemoteAddr, EConnectionState InState, int32 InMaxPacket, int32 InPacketOverhead)
 {
 	Super::InitRemoteConnection(InDriver, InSocket, InURL, InRemoteAddr, InState, InMaxPacket, InPacketOverhead);
+
 }
 
 bool USpatialNetConnection::ClientHasInitializedLevelFor(const UObject* TestObject) const

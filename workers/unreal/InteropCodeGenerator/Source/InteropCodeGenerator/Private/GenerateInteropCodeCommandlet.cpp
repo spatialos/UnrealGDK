@@ -11,6 +11,7 @@
 #include "Components/ArrowComponent.h"
 #include "ComponentIdGenerator.h"
 #include "Net/RepLayout.h"
+#include "UObject/UObjectHash.h"
 
 namespace
 {
@@ -974,6 +975,21 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 		}
 	}
 
+	// Vehicle: Add WheeledVehicleMovementComponent.
+	if (Class->GetName() == TEXT("WheeledVehicle"))
+	{
+		UClass* UWheeledVehicleMovementComponent = FindObject<UClass>(ANY_PACKAGE, TEXT("WheeledVehicleMovementComponent"));
+		for (TFieldIterator<UFunction> RemoteFunction(UWheeledVehicleMovementComponent); RemoteFunction; ++RemoteFunction)
+		{
+			if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
+				RemoteFunction->FunctionFlags & FUNC_NetServer)
+			{
+				bool bReliable = (RemoteFunction->FunctionFlags & FUNC_NetReliable) != 0;
+				Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{ UWheeledVehicleMovementComponent, *RemoteFunction, bReliable});
+			}
+		}
+	}
+
 	// Group replicated properties by single client (COND_AutonomousOnly and COND_OwnerOnly),
 	// and multi-client (everything else).
 	Layout.ReplicatedProperties.Add(REP_SingleClient);
@@ -1109,6 +1125,54 @@ int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class
 	return IdGenerator.GetNumUsedIds();
 }
 
+void StartGeneratingFunction(
+	FCodeWriter& SourceWriter,
+	FString ReturnType,
+	FString FunctionNameAndParams,
+	FString TypeBindingName)
+{
+	SourceWriter.Print();
+	SourceWriter.Printf("%s %s::%s", *ReturnType, *TypeBindingName, *FunctionNameAndParams);
+	SourceWriter.Print("{");
+	SourceWriter.Indent();
+}
+
+void EndGeneratingFunction(FCodeWriter& SourceWriter) {
+	SourceWriter.EndScope();
+}
+
+void GenerateFunction_SubobjectNameToOffsetMap(
+	FCodeWriter& SourceWriter,
+	FString SchemaFilename,
+	FString InteropFilename,
+	UClass* Class,
+	const FPropertyLayout& Layout,
+	FString& TypeBindingName)
+{
+	StartGeneratingFunction(SourceWriter, FString("TMap<FString, uint32>&"), FString("GetSubobjectNameToOffsetMap()"), TypeBindingName);
+
+	SourceWriter.Print("static TMap<FString, uint32> SubobjectNameToOffsetMap;");
+	SourceWriter.Print("if (SubobjectNameToOffsetMap.Num() == 0)");
+
+	SourceWriter.StartScope();
+	uint32 CurrentOffset = 0;
+
+	ForEachObjectWithOuter(Class->ClassDefaultObject, [&SourceWriter, &CurrentOffset](UObject* Object)
+	{
+		// Objects can only be allocated NetGUIDs if this is true.
+		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+		{
+			SourceWriter.Printf("SubobjectNameToOffsetMap.Add(\"%s\", %d);", *(Object->GetName()), CurrentOffset);
+			CurrentOffset++;
+		}
+	});
+	SourceWriter.EndScope();
+
+	SourceWriter.Print("return SubobjectNameToOffsetMap");
+
+	EndGeneratingFunction(SourceWriter);
+}
+
 void GenerateForwardingCodeFromLayout(
 	FCodeWriter& HeaderWriter,
 	FCodeWriter& SourceWriter,
@@ -1168,9 +1232,9 @@ void GenerateForwardingCodeFromLayout(
 		#include <improbable/unreal/unreal_metadata.h>
 		#include <improbable/unreal/generated/%s.h>
 		#include "ScopedViewCallbacks.h"
-
 		#include "../SpatialTypeBinding.h"
 		#include "SpatialTypeBinding_%s.generated.h")""", *SchemaFilename, *Class->GetName());
+
 	HeaderWriter.Print();
 
 	// Type binding class.
@@ -1533,6 +1597,19 @@ void GenerateForwardingCodeFromLayout(
 		{
 			UnrealMetadata.set_owner_worker_id({ClientWorkerIdString});
 		}
+
+		uint32 CurrentOffset = 1;
+		worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
+		ForEachObjectWithOuter(Channel->Actor, [&UnrealMetadata, &CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+		{
+			// Objects can only be allocated NetGUIDs if this is true.
+			if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+			{
+				SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+				CurrentOffset++;
+			}
+		});
+		UnrealMetadata.set_subobject_name_to_offset(SubobjectNameToOffset);
 		
 		// Build entity.
 		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);)""");
@@ -1556,6 +1633,13 @@ void GenerateForwardingCodeFromLayout(
 		*GetSchemaRPCComponentName(ERPCType::RPC_Client, Class), *GetSchemaRPCComponentName(ERPCType::RPC_Client, Class));
 	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, WorkersOnly)",
 		*GetSchemaRPCComponentName(ERPCType::RPC_Server, Class), *GetSchemaRPCComponentName(ERPCType::RPC_Server, Class));
+
+	//This adds a custom component called PossessPawn which is added the the Character and Vehicle. It allows
+	//these two classes to call an RPC which is intended to let the player possess a different pawn.
+	if (Class->GetName().Contains("WheeledVehicle") || Class->GetName().Contains("Character")) {
+		SourceWriter.Printf(".AddComponent<nuf::PossessPawn>(nuf::PossessPawn::Data{}, WorkersOnly)");
+	}
+
 	SourceWriter.Print(".Build();");
 	SourceWriter.Outdent();
 	SourceWriter.Outdent();
@@ -2211,7 +2295,7 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/NUF/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 
-	TArray<FString> Classes = {TEXT("PlayerController"), TEXT("PlayerState"), TEXT("Character")};
+	TArray<FString> Classes = {TEXT("PlayerController"), TEXT("PlayerState"), TEXT("Character"), TEXT("WheeledVehicle")};
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
 		// Component IDs 100000 to 100009 reserved for other NUF components.
