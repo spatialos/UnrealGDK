@@ -7,6 +7,7 @@
 #include "CoreMinimal.h"
 #include "Net/RepLayout.h"
 #include "AddComponentOpWrapperBase.h"
+#include "SpatialEntityId.h"
 #include "SpatialTypeBinding.generated.h"
 
 class USpatialInterop;

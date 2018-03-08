@@ -53,7 +53,7 @@ USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 {
 	for (const UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
 	{
-		USpatialTypeBinding* const* BindingIterator = TypeBinding.Find(CurrentClass);
+		USpatialTypeBinding* const* BindingIterator = TypeBindings.Find(CurrentClass);
 		if (BindingIterator)
 		{
 			return *BindingIterator;
@@ -361,17 +361,17 @@ void USpatialInterop::RegisterInteropType(UClass* Class, USpatialTypeBinding* Bi
 {
 	Binding->Init(this, PackageMap);
 	Binding->BindToView();
-	TypeBinding.Add(Class, Binding);
+	TypeBindings.Add(Class, Binding);
 }
 
 void USpatialInterop::UnregisterInteropType(UClass* Class)
 {
-	USpatialTypeBinding** BindingIterator = TypeBinding.Find(Class);
+	USpatialTypeBinding** BindingIterator = TypeBindings.Find(Class);
 	if (BindingIterator != nullptr)
 	{
 		USpatialTypeBinding* Binding = *BindingIterator;
 		Binding->UnbindFromView();
-		TypeBinding.Remove(Class);
+		TypeBindings.Remove(Class);
 	}
 }
 

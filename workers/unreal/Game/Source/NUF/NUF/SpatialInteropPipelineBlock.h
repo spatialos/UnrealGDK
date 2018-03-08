@@ -4,7 +4,7 @@
 #include "EntityId.h"
 #include "EntityPipelineBlock.h"
 #include "ComponentId.h"
-
+#include "AddComponentOpWrapperBase.h"
 #include "SpatialInteropPipelineBlock.generated.h"
 
 namespace worker
@@ -109,12 +109,14 @@ private:
 	typename Metaclass::Data* GetPendingComponentData(const FEntityId& EntityId)
 	{
 		const auto ComponentId = Metaclass::ComponentId;
-		UAddComponentOpWrapperBase** BaseAddComponent = PendingAddComponents.Find(FComponentIdentifier{EntityId.ToSpatialEntityId(), ComponentId});
-		if (!BaseAddComponent || !(*BaseAddComponent)->IsValidLowLevel())
+		for (FPendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 		{
-			return nullptr;
+			if (PendingAddComponent.EntityComponent == FComponentIdentifier{EntityId.ToSpatialEntityId(), ComponentId})
+			{
+				return PendingAddComponent.AddComponentOp->IsValidLowLevel() ? Cast<AddOpType>(*PendingAddComponent.AddComponentOp)->Data.data() : nullptr;
+			}
 		}
-		return Cast<AddOpType>(*BaseAddComponent)->Data.data();
+		return nullptr;
 	}
 
 	template <typename Metaclass>

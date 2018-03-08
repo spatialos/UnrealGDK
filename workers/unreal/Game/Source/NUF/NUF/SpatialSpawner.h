@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "SpatialOSCommandResult.h"
-#include "SpatialOSComponent.h"
+#include "SpatialOsComponent.h"
 #include "SpatialSpawner.generated.h"
 
 class UPlayerSpawnerComponent;

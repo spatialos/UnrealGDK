@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "SpatialTypeBinding.h"
 #include "SpatialUnrealObjectRef.h"
+#include "ComponentIdentifier.h"
+#include "SpatialEntityId.h"
 #include "SpatialInterop.generated.h"
 
 class USpatialOS;
@@ -161,7 +163,7 @@ private:
 
 	// Type interop bindings.
 	UPROPERTY()
-	TMap<UClass*, USpatialTypeBinding*> TypeBinding;
+	TMap<UClass*, USpatialTypeBinding*> TypeBindings;
 
 	// A map from Entity ID to actor channel.
 	TMap<worker::EntityId, USpatialActorChannel*> EntityToActorChannel;
