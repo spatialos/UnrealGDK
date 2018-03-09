@@ -303,8 +303,15 @@ void USpatialInterop::HandleCommandResponse_Internal(const FString& RPCName, FUn
 			{
 				auto Result = RetryContext->SendCommandRequest();
 				RetryContext->NumAttempts++;
-				check(Result.UnresolvedObject == nullptr);
-				OutgoingReliableRPCs.Emplace(Result.RequestId, RetryContext);
+				if (Result.UnresolvedObject == nullptr)
+				{
+					// Add to pending RPCs if any actors were unresolved.
+					QueueOutgoingRPC_Internal(Result.UnresolvedObject, RetryContext->SendCommandRequest, true);
+				}
+				else
+				{
+					OutgoingReliableRPCs.Emplace(Result.RequestId, RetryContext);
+				}
 			});
 			TimerManager->SetTimer(RetryTimer, TimerCallback, WaitTime, false);
 		}

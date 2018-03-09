@@ -1900,11 +1900,11 @@ void GenerateForwardingCodeFromLayout(
 				SourceWriter.Print("{");
 				SourceWriter.Indent();
 
-				// Check if the property is relevant.
+				// Check if the property is relevant on the client.
 				SourceWriter.Printf("// %s", *GetFullyQualifiedName(RepProp.Entry.Chain));
 				SourceWriter.Printf("uint16 Handle = %d;", Handle);
 				SourceWriter.Print("const FRepHandleData* RepData = &HandleToPropertyMap[Handle];");
-				SourceWriter.Print("if (ConditionMap.IsRelevant(RepData->Condition))\n{");
+				SourceWriter.Print("if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))\n{");
 				SourceWriter.Indent();
 
 				if (Property->IsA<UObjectPropertyBase>())

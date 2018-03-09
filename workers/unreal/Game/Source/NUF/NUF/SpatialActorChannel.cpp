@@ -114,6 +114,7 @@ void USpatialActorChannel::UnbindFromSpatialView() const
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 	//todo-giray: This logic will not hold up when we have worker migration, needs to be revisited.
+	/*
 	if (Connection->Driver->IsServer())
 	{
 		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
@@ -122,6 +123,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 			PinnedConnection->SendDeleteEntityRequest(ActorEntityId, 0);
 		}
 	}
+	*/
 
 	UnbindFromSpatialView();
 	return UActorChannel::CleanUp(bForDestroy);
@@ -477,20 +479,20 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	APawn* Pawn = Cast<APawn>(Actor);
 	if (Pawn && Cast<APlayerController>(Pawn->GetController()))
 	{
-			AController* Controller = Pawn->GetController();
-			if (Pawn->GetController()) 
+		APlayerController* Controller = Cast<APlayerController>(Pawn->GetController());
+		if (Controller) 
+		{
+			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Controller));
+			if (ControllerActorChannel)
 			{
-					USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Pawn->GetController()));
-					if (ControllerActorChannel)
-					{
-							Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
-					}
-					USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Pawn->GetController()->PlayerState));
-					if (PlayerStateActorChannel)
-					{
-							Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
-					}
+				Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
 			}
+			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Controller->PlayerState));
+			if (PlayerStateActorChannel)
+			{
+				Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
+			}
+		}
 	}
 }
 
