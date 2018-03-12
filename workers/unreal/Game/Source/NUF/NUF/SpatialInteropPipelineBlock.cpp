@@ -28,10 +28,11 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialOSInteropPipelineBlock);
 
-void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDriver* Driver)
+void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDriver* Driver, UWorld* LoadedWorld)
 {
 	EntityRegistry = Registry;
 	NetDriver = Driver;
+	World = LoadedWorld;
 
 	bInCriticalSection = false;
 
@@ -282,7 +283,6 @@ void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>& InV
 
 AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId)
 {
-	UWorld* World = GEngine->GetWorldFromContextObject(NetDriver, EGetWorldErrorMode::LogAndReturnNull);
 	checkf(World, TEXT("We should have a world whilst processing ops."));
 
 	improbable::PositionData* PositionComponent = GetComponentDataFromView<improbable::Position>(LockedView, EntityId);
@@ -365,7 +365,10 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 				// Get the net connection for this actor.
 				if (NetDriver->IsServer())
 				{
-					//todo-giray: When we have multiple servers, this won't work. On which connection would we create the channel?
+					// TODO(David): Currently, we just create an actor channel on the "catch-all" connection, then create a new actor channel once we check out the player controller
+					// and create a new connection. This is fine due to lazy actor channel creation in USpatialNetDriver::ServerReplicateActors. However, the "right" thing to do
+					// would be to make sure to create anything which depends on the PlayerController _after_ the PlayerController's connection is set up so we can use the right
+					// one here.
 					Connection = NetDriver->GetSpatialOSNetConnection();
 				}
 				else

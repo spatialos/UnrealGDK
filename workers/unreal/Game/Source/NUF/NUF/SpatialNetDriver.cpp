@@ -29,46 +29,36 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	// Set the timer manager.
-	UWorld* World = GetWorld();
-	if (World == nullptr)
+	// We do this here straight away to trigger LoadMap.
+	if (bInitAsClient)
 	{
-		// This means we're not a listen server, grab the world from the pending net game instead.
 		FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this);
 		check(WorldContext);
-		World = WorldContext->World();
-	}
-	TimerManager = &World->GetTimerManager();
 
-	// make absolutely sure that the actor channel that we are using is our Spatial actor channel
+		// Here we need to fake a few things to start ticking the level travel on client.
+		if (WorldContext->PendingNetGame)
+		{
+			WorldContext->PendingNetGame->bSuccessfullyConnected = true;
+			WorldContext->PendingNetGame->bSentJoinRequest = false;
+		}
+	}
+
+	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
+
+	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	UChannel::ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
+	// Create SpatialOS instance and setup callbacks.
 	SpatialOSInstance = NewObject<USpatialOS>(this);
+	SpatialOSInstance->OnConnectedDelegate.AddDynamic(this, &USpatialNetDriver::OnSpatialOSConnected);
+	SpatialOSInstance->OnConnectionFailedDelegate.AddDynamic(this, &USpatialNetDriver::OnSpatialOSConnectFailed);
+	SpatialOSInstance->OnDisconnectedDelegate.AddDynamic(this, &USpatialNetDriver::OnSpatialOSDisconnected);
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(SpatialOSInstance, TEXT("Unreal"));
 
-	SpatialOSInstance->OnConnectedDelegate.AddDynamic(this,
-		&USpatialNetDriver::OnSpatialOSConnected);
-	SpatialOSInstance->OnConnectionFailedDelegate.AddDynamic(
-		this, &USpatialNetDriver::OnSpatialOSConnectFailed);
-	SpatialOSInstance->OnDisconnectedDelegate.AddDynamic(
-		this, &USpatialNetDriver::OnSpatialOSDisconnected);
-
-	auto WorkerConfig = FSOSWorkerConfigurationData();
-
-	//todo-giray: Give this the correct value
+	// Set up the worker config.
+	// todo-giray: Give this the correct value
 	WorkerConfig.Networking.UseExternalIp = false;
-
-	WorkerConfig.SpatialOSApplication.WorkerPlatform =
-		bInitAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
-
-	SpatialOSInstance->ApplyConfiguration(WorkerConfig);
-	SpatialOSInstance->Connect();
-
-	SpatialOSComponentUpdater = NewObject<USpatialOSComponentUpdater>(this);
-
-	EntityRegistry = NewObject<UEntityRegistry>(this);
-
-	Interop = NewObject<USpatialInterop>(this);
+	WorkerConfig.SpatialOSApplication.WorkerPlatform = bInitAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
 
 	return true;
 }
@@ -84,12 +74,29 @@ void USpatialNetDriver::PostInitProperties()
 	}
 }
 
+void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
+{
+	UE_LOG(LogSpatialOSNUF, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
+
+	// Set the timer manager.
+	TimerManager = &LoadedWorld->GetTimerManager();
+
+	// Connect to SpatialOS.
+	SpatialOSInstance->ApplyConfiguration(WorkerConfig);
+	SpatialOSInstance->Connect();
+
+	// Set up manager objects.
+	SpatialOSComponentUpdater = NewObject<USpatialOSComponentUpdater>(this);
+	EntityRegistry = NewObject<UEntityRegistry>(this);
+	Interop = NewObject<USpatialInterop>(this);
+}
+
 void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogSpatialOSNUF, Log, TEXT("Connected to SpatialOS."));
 
 	InteropPipelineBlock = NewObject<USpatialInteropPipelineBlock>();
-	InteropPipelineBlock->Init(EntityRegistry, this);
+	InteropPipelineBlock->Init(EntityRegistry, this, GetWorld());
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(InteropPipelineBlock);
 
 	TArray<FString> BlueprintPaths;
@@ -106,19 +113,8 @@ void USpatialNetDriver::OnSpatialOSConnected()
 
 	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
 	// There may be more than one of these connections in the future for different replication conditions.
-
 	if (ServerConnection)
 	{
-		FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this);
-		check(WorldContext);
-
-		// Here we need to fake a few things to start ticking the level travel on client.
-		if (WorldContext && WorldContext->PendingNetGame)
-		{
-			WorldContext->PendingNetGame->bSuccessfullyConnected = true;
-			WorldContext->PendingNetGame->bSentJoinRequest = false;
-		}
-
 		// Send the player spawn commands with retries
 		PlayerSpawner.RequestPlayer(SpatialOSInstance, TimerManager, DummyURL);
 	}
@@ -789,11 +785,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	}
 
 	Super::TickFlush(DeltaTime);
-}
-
-void USpatialNetDriver::SetTimerManager(FTimerManager* InTimerManager)
-{
-	TimerManager = InTimerManager;
 }
 
 USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const

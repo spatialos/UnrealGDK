@@ -45,7 +45,7 @@ class NUF_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 	GENERATED_BODY()
 
 public:
-	void Init(UEntityRegistry* Registry, USpatialNetDriver* Driver);
+	void Init(UEntityRegistry* Registry, USpatialNetDriver* Driver, UWorld* LoadedWorld);
 
 	void AddEntity(const worker::AddEntityOp& AddEntityOp) override;
 	void RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp) override;
@@ -80,6 +80,8 @@ private:
 
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
+
+	UWorld* World;
 
 	// Maps ComponentId to USpatialOsComponent* class name
 	UPROPERTY()

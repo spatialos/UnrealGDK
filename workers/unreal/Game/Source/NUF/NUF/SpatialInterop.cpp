@@ -303,7 +303,7 @@ void USpatialInterop::HandleCommandResponse_Internal(const FString& RPCName, FUn
 			{
 				auto Result = RetryContext->SendCommandRequest();
 				RetryContext->NumAttempts++;
-				if (Result.UnresolvedObject == nullptr)
+				if (Result.UnresolvedObject != nullptr)
 				{
 					// Add to pending RPCs if any actors were unresolved.
 					QueueOutgoingRPC_Internal(Result.UnresolvedObject, RetryContext->SendCommandRequest, true);
@@ -331,14 +331,6 @@ void USpatialInterop::QueueOutgoingObjectUpdate_Internal(UObject* UnresolvedObje
 
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing object ref depending on object: %s, channel: %s, handle: %d."),
 		*UnresolvedObject->GetName(), *DependentChannel->GetName(), Handle);
-
-	/*
-	TArray<USpatialActorChannel*>& Channels = ChannelsAwaitingOutgoingObjectResolve.FindOrAdd(UnresolvedObject);
-	Channels.AddUnique(DependentChannel);
-
-	TArray<uint16>& Handles = PendingOutgoingObjectRefHandles.FindOrAdd(DependentChannel);
-	Handles.AddUnique(Handle);
-	*/
 	PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel).Add(Handle);
 }
 
