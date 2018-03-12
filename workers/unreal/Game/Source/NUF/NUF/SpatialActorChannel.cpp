@@ -394,7 +394,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 	else
 	{
-		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %llu."), *InActor->GetName(), ActorEntityId);
+		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %llu."), *InActor->GetName(), ActorEntityId.ToSpatialEntityId());
 	}
 }
 
@@ -445,7 +445,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		UnbindFromSpatialView();
 		return;
 	}
-	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Created entity (%d) for: %s. Request id: %d"), ActorEntityId, *Actor->GetName(), ReserveEntityIdRequestId.Id);
+	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Created entity (%lld) for: %s. Request id: %d"), ActorEntityId.ToSpatialEntityId(), *Actor->GetName(), ReserveEntityIdRequestId.Id);
 
 	auto PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
@@ -453,7 +453,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		PinnedView->Remove(CreateEntityCallback);
 	}
 
-	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), ActorEntityId);
+	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %lld"), ActorEntityId.ToSpatialEntityId());
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()

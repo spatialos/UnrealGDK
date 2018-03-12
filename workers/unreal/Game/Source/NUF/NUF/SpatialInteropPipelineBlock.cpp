@@ -275,9 +275,7 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 	PackageMap->RemoveEntityActor(EntityId);
 }
 
-void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-	const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
-	UCallbackDispatcher* CallbackDispatcher)
+void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>&, const TWeakPtr<SpatialOSConnection>&, UWorld*, UCallbackDispatcher*)
 {
 }
 
@@ -325,7 +323,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		{
 			// Option 2
 			UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Spawning a registered %s"), *ActorClass->GetName());
-			EntityActor = SpawnNewEntity(PositionComponent, World, ActorClass);
+			EntityActor = SpawnNewEntity(PositionComponent, ActorClass);
 			EntityRegistry->AddToRegistry(EntityId, EntityActor);
 		}
 		else if ((ActorClass = GetNativeEntityClass(MetadataComponent)) != nullptr)
@@ -352,7 +350,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 				if (UnrealMetadataComponent->static_path().empty())
 				{
 					UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
-					EntityActor = SpawnNewEntity(PositionComponent, World, ActorClass);
+					EntityActor = SpawnNewEntity(PositionComponent, ActorClass);
 				}
 				else
 				{
@@ -453,7 +451,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 
 // Note that in NUF, this function will not be called on the spawning worker.
 // It's only for client, and in the future, other workers.
-AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* PositionComponent, UWorld* World, UClass* ActorClass)
+AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ActorClass)
 {
 	FVector InitialLocation = SpatialConstants::SpatialOSCoordinatesToLocation(PositionComponent->coords());
 	AActor* NewActor = nullptr;

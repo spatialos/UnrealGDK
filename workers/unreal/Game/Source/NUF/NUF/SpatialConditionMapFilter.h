@@ -21,13 +21,15 @@ public:
 		RepFlags.bNetOwner = bAuthoritative;// ActorChannel->Actor->IsOwnedBy(ActorChannel->Connection->PlayerController);
 		RepFlags.bRepPhysics = ActorChannel->Actor->ReplicatedMovement.bRepPhysics;
 
+#if 0
 		UE_LOG(LogTemp, Verbose, TEXT("CMF Actor %s (%lld) NetOwner %d Simulated %d RepPhysics %d Client %s"),
 			*ActorChannel->Actor->GetName(),
-			ActorChannel->GetEntityId(),
+			ActorChannel->GetEntityId().ToSpatialEntityId(),
 			RepFlags.bNetOwner,
 			RepFlags.bNetSimulated,
 			RepFlags.bRepPhysics,
 			*Cast<USpatialNetDriver>(ActorChannel->Connection->Driver)->GetSpatialOS()->GetWorkerId());
+#endif
 
 		// Build a ConditionMap. This code is taken directly from FRepLayout::RebuildConditionalProperties
 		static_assert(COND_Max == 14, "We are expecting 14 rep conditions"); // Guard in case more are added.

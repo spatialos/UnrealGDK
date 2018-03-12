@@ -77,7 +77,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 		if (TypeBinding)
 		{
 			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(Changed), Channel);
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId(), 0);
+			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
 		}
 		else
 		{
@@ -130,10 +130,10 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 				.AddComponent<improbable::unreal::PlayerControlClient>(improbable::unreal::PlayerControlClient::Data{}, OwnClientOnly)
 				.Build();
 
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId(), 0);
+			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
 		}
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Creating entity for actor %s (%llu) using initial changelist. Request ID: %d"),
-			*SpatialOSInstance->GetWorkerId(), *Actor->GetName(), Channel->GetEntityId(), CreateEntityRequestId.Id);
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
+			*SpatialOSInstance->GetWorkerId(), *Actor->GetName(), Channel->GetEntityId().ToSpatialEntityId(), CreateEntityRequestId.Id);
 	}
 	else
 	{
@@ -142,7 +142,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 	return CreateEntityRequestId;
 }
 
-void USpatialInterop::SendSpatialPositionUpdate(const worker::EntityId& EntityId, const FVector& Location)
+void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location)
 {
 	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
 	if (!PinnedConnection.IsValid())
@@ -151,7 +151,7 @@ void USpatialInterop::SendSpatialPositionUpdate(const worker::EntityId& EntityId
 	}
 	improbable::Position::Update PositionUpdate;
 	PositionUpdate.set_coords(SpatialConstants::LocationToSpatialOSCoordinates(Location));
-	PinnedConnection->SendComponentUpdate<improbable::Position>(EntityId, PositionUpdate);
+	PinnedConnection->SendComponentUpdate<improbable::Position>(EntityId.ToSpatialEntityId(), PositionUpdate);
 }
 
 void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed)
@@ -208,7 +208,7 @@ void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable
 	ResolvePendingIncomingRPCs(ObjectRef);
 }
 
-void USpatialInterop::AddActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel)
+void USpatialInterop::AddActorChannel(const FEntityId& EntityId, USpatialActorChannel* Channel)
 {
 	EntityToActorChannel.Add(EntityId, Channel);
 
@@ -226,12 +226,12 @@ void USpatialInterop::AddActorChannel(const worker::EntityId& EntityId, USpatial
 	}
 }
 
-void USpatialInterop::RemoveActorChannel(worker::EntityId EntityId)
+void USpatialInterop::RemoveActorChannel(const FEntityId& EntityId)
 {
 	EntityToActorChannel.Remove(EntityId);
 }
 
-USpatialActorChannel* USpatialInterop::GetActorChannelByEntityId(const worker::EntityId & EntityId) const
+USpatialActorChannel* USpatialInterop::GetActorChannelByEntityId(const FEntityId& EntityId) const
 {
 	// Get actor channel.
 	USpatialActorChannel* const* ActorChannelIt = EntityToActorChannel.Find(EntityId);
@@ -278,7 +278,7 @@ void USpatialInterop::SendCommandResponse_Internal(FRPCCommandResponseFunc Funct
 	}
 }
 
-void USpatialInterop::HandleCommandResponse_Internal(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message)
+void USpatialInterop::HandleCommandResponse_Internal(const FString& RPCName, FUntypedRequestId RequestId, const FEntityId&, const worker::StatusCode& StatusCode, const FString& Message)
 {
 	TSharedPtr<FOutgoingReliableRPC>* RequestContextIterator = OutgoingReliableRPCs.Find(RequestId);
 	if (!RequestContextIterator)
@@ -374,7 +374,7 @@ void USpatialInterop::UnregisterInteropType(UClass* Class)
 	}
 }
 
-void USpatialInterop::SetComponentInterests_Client(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId)
+void USpatialInterop::SetComponentInterests_Client(USpatialActorChannel* ActorChannel, const FEntityId& EntityId)
 {
 	UClass* ActorClass = ActorChannel->Actor->GetClass();
 	// Are we the autonomous proxy?
@@ -385,12 +385,12 @@ void USpatialInterop::SetComponentInterests_Client(USpatialActorChannel* ActorCh
 		if (Binding)
 		{
 			worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
-			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{ true });
-			SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId, Interest);
+			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{true});
+			SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId.ToSpatialEntityId(), Interest);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: We are the owning client of %s (%llu), therefore we want single client updates."),
 				*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				EntityId);
+				EntityId.ToSpatialEntityId());
 		}
 	}
 }
@@ -451,10 +451,10 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 		for (const FRepHandleData* RepData : Properties)
 		{
 			ApplyIncomingPropertyUpdate(*RepData, DependentChannel->Actor, &Object, RepNotifies);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object property update. actor %s (%llu), property %s"),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object property update. actor %s (%lld), property %s"),
 				*SpatialOSInstance ->GetWorkerId(),
 				*DependentChannel->Actor->GetName(),
-				DependentChannel->GetEntityId(),
+				DependentChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName());
 		}
 		PostReceiveSpatialUpdate(DependentChannel, RepNotifies);

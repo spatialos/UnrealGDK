@@ -100,7 +100,7 @@ private:
 
 private:
 	AActor* GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId);
-	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UWorld* World, UClass* ClassToSpawn);
+	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ClassToSpawn);
 	
 	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);
 	UClass* GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent);

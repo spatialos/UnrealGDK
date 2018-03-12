@@ -1255,7 +1255,7 @@ void GenerateForwardingCodeFromLayout(
 		worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
 
 		worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
-		void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
+		void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const override;
 		void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) override;
 
 		void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;
@@ -1267,7 +1267,7 @@ void GenerateForwardingCodeFromLayout(
 	HeaderWriter.Print("// Pending updates.");
 	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
 	{
-		HeaderWriter.Printf("TMap<worker::EntityId, improbable::unreal::%s::Data> Pending%sData;",
+		HeaderWriter.Printf("TMap<FEntityId, improbable::unreal::%s::Data> Pending%sData;",
 			*GetSchemaReplicatedDataName(Group, Class),
 			*GetReplicatedPropertyGroupName(Group));
 	}
@@ -1654,7 +1654,7 @@ void GenerateForwardingCodeFromLayout(
 	// SendComponentUpdates
 	// ===========================================
 	SourceWriter.Print();
-	SourceWriter.Printf("void %s::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const",
+	SourceWriter.Printf("void %s::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const",
 		*TypeBindingName);
 	SourceWriter.Print("{");
 	SourceWriter.Indent();
@@ -1687,7 +1687,7 @@ void GenerateForwardingCodeFromLayout(
 		SourceWriter.Printf(R"""(
 			if (b%sUpdateChanged)
 			{
-				Connection->SendComponentUpdate<improbable::unreal::%s>(EntityId, %sUpdate);
+				Connection->SendComponentUpdate<improbable::unreal::%s>(EntityId.ToSpatialEntityId(), %sUpdate);
 			})""",
 			*GetReplicatedPropertyGroupName(Group),
 			*GetSchemaReplicatedDataName(Group, Class),
@@ -1785,7 +1785,7 @@ void GenerateForwardingCodeFromLayout(
 		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*Channel->Actor->GetName(),
-			Channel->GetEntityId(),
+			Channel->GetEntityId().ToSpatialEntityId(),
 			*Cmd.Property->GetName(),
 			HandleIterator.Handle);)""");
 
@@ -1970,11 +1970,11 @@ void GenerateForwardingCodeFromLayout(
 					[&SourceWriter](const FString& PropertyValue)
 				{
 					SourceWriter.Print(R"""(
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
-							ActorChannel->GetEntityId(),
+							ActorChannel->GetEntityId().ToSpatialEntityId(),
 							*RepData->Property->GetName(),
 							Handle);)""");
 					SourceWriter.Print("bWriteObjectProperty = false;");
@@ -2006,10 +2006,10 @@ void GenerateForwardingCodeFromLayout(
 				SourceWriter.Print();
 
 				SourceWriter.Print(R"""(
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
-					ActorChannel->GetEntityId(),
+					ActorChannel->GetEntityId().ToSpatialEntityId(),
 					*RepData->Property->GetName(),
 					Handle);)""");
 

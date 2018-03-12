@@ -27,7 +27,7 @@ public:
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
 
 	worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
-	void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
+	void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const override;
 	void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) override;
 
 	void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;
@@ -37,8 +37,8 @@ private:
 	improbable::unreal::callbacks::FScopedViewCallbacks ViewCallbacks;
 
 	// Pending updates.
-	TMap<worker::EntityId, improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData::Data> PendingSingleClientData;
-	TMap<worker::EntityId, improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData::Data> PendingMultiClientData;
+	TMap<FEntityId, improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData::Data> PendingSingleClientData;
+	TMap<FEntityId, improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData::Data> PendingMultiClientData;
 
 	// RPC to sender map.
 	using FRPCSender = void (USpatialTypeBinding_WheeledVehicle::*)(worker::Connection* const, struct FFrame* const, UObject*);

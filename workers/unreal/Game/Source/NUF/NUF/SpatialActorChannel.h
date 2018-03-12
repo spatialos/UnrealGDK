@@ -28,7 +28,7 @@ public:
 	USpatialActorChannel(const FObjectInitializer & ObjectInitializer = FObjectInitializer::Get());
 
 	// SpatialOS Entity ID.
-	FORCEINLINE worker::EntityId GetEntityId() const
+	FORCEINLINE FEntityId GetEntityId() const
 	{
 		return ActorEntityId;
 	}
@@ -36,7 +36,7 @@ public:
 	FORCEINLINE bool IsReadyForReplication() const
 	{
 		// Wait until we've reserved an entity ID.		
-		return ActorEntityId != worker::EntityId{};
+		return ActorEntityId != FEntityId{};
 	}
 
 	// Called on the client when receiving an update.
@@ -51,7 +51,7 @@ public:
 		if (View.Get())
 		{
 			// This will never fail because we can't have an actor channel without having checked out the entity.
-			auto& EntityAuthority = View->ComponentAuthority[ActorEntityId];
+			auto& EntityAuthority = View->ComponentAuthority[ActorEntityId.ToSpatialEntityId()];
 			auto ComponentIterator = EntityAuthority.find(ServerRPCsComponentId);
 			if (ComponentIterator != EntityAuthority.end())
 			{
@@ -98,7 +98,7 @@ private:
 
 	TWeakPtr<worker::Connection> WorkerConnection;
 	TWeakPtr<worker::View> WorkerView;
-	worker::EntityId ActorEntityId;
+	FEntityId ActorEntityId;
 
 	worker::Dispatcher::CallbackKey ReserveEntityCallback;
 	worker::Dispatcher::CallbackKey CreateEntityCallback;

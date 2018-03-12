@@ -192,7 +192,7 @@ worker::Entity USpatialTypeBinding_PlayerState::CreateActorEntity(const FString&
 		.Build();
 }
 
-void USpatialTypeBinding_PlayerState::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const
+void USpatialTypeBinding_PlayerState::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const
 {
 	// Build SpatialOS updates.
 	improbable::unreal::UnrealPlayerStateSingleClientReplicatedData::Update SingleClientUpdate;
@@ -205,11 +205,11 @@ void USpatialTypeBinding_PlayerState::SendComponentUpdates(const FPropertyChange
 	TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();
 	if (bSingleClientUpdateChanged)
 	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerStateSingleClientReplicatedData>(EntityId, SingleClientUpdate);
+		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerStateSingleClientReplicatedData>(EntityId.ToSpatialEntityId(), SingleClientUpdate);
 	}
 	if (bMultiClientUpdateChanged)
 	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerStateMultiClientReplicatedData>(EntityId, MultiClientUpdate);
+		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerStateMultiClientReplicatedData>(EntityId.ToSpatialEntityId(), MultiClientUpdate);
 	}
 }
 
@@ -275,7 +275,7 @@ void USpatialTypeBinding_PlayerState::BuildSpatialComponentUpdate(
 		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*Channel->Actor->GetName(),
-			Channel->GetEntityId(),
+			Channel->GetEntityId().ToSpatialEntityId(),
 			*Cmd.Property->GetName(),
 			HandleIterator.Handle);
 		switch (GetGroupFromCondition(PropertyMapData.Condition))
@@ -610,10 +610,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -632,10 +632,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -654,10 +654,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -690,10 +690,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -728,11 +728,11 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
-							ActorChannel->GetEntityId(),
+							ActorChannel->GetEntityId().ToSpatialEntityId(),
 							*RepData->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
@@ -745,10 +745,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 			{
 				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
-					ActorChannel->GetEntityId(),
+					ActorChannel->GetEntityId().ToSpatialEntityId(),
 					*RepData->Property->GetName(),
 					Handle);
 			}
@@ -775,10 +775,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -813,11 +813,11 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
-							ActorChannel->GetEntityId(),
+							ActorChannel->GetEntityId().ToSpatialEntityId(),
 							*RepData->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
@@ -830,10 +830,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 			{
 				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
-					ActorChannel->GetEntityId(),
+					ActorChannel->GetEntityId().ToSpatialEntityId(),
 					*RepData->Property->GetName(),
 					Handle);
 			}
@@ -858,10 +858,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -885,10 +885,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -912,10 +912,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -934,10 +934,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -972,11 +972,11 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
-							ActorChannel->GetEntityId(),
+							ActorChannel->GetEntityId().ToSpatialEntityId(),
 							*RepData->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
@@ -989,10 +989,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 			{
 				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
-					ActorChannel->GetEntityId(),
+					ActorChannel->GetEntityId().ToSpatialEntityId(),
 					*RepData->Property->GetName(),
 					Handle);
 			}
@@ -1019,10 +1019,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -1041,10 +1041,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -1079,11 +1079,11 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 					}
 					else
 					{
-						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%llu), property %s (handle %d)"),
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
 							*Interop->GetSpatialOS()->GetWorkerId(),
 							*ObjectRefToString(ObjectRef),
 							*ActorChannel->Actor->GetName(),
-							ActorChannel->GetEntityId(),
+							ActorChannel->GetEntityId().ToSpatialEntityId(),
 							*RepData->Property->GetName(),
 							Handle);
 						bWriteObjectProperty = false;
@@ -1096,10 +1096,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 			{
 				ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
-					ActorChannel->GetEntityId(),
+					ActorChannel->GetEntityId().ToSpatialEntityId(),
 					*RepData->Property->GetName(),
 					Handle);
 			}
@@ -1119,10 +1119,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -1141,10 +1141,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -1163,10 +1163,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -1185,10 +1185,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -1207,10 +1207,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -1229,10 +1229,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -1251,10 +1251,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -1273,10 +1273,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -1295,10 +1295,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -1317,10 +1317,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}
@@ -1346,10 +1346,10 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%llu), property %s (handle %d)"),
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);
 		}

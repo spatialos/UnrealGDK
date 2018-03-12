@@ -108,7 +108,7 @@ public:
 
 	// Sending component updates and RPCs.
 	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& Changed);
-	void SendSpatialPositionUpdate(const worker::EntityId& EntityId, const FVector& Location);
+	void SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
 	void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp);
@@ -120,16 +120,16 @@ public:
 	void ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
-	void AddActorChannel(const worker::EntityId& EntityId, USpatialActorChannel* Channel);
-	void RemoveActorChannel(worker::EntityId EntityId);
+	void AddActorChannel(const FEntityId& EntityId, USpatialActorChannel* Channel);
+	void RemoveActorChannel(const FEntityId& EntityId);
 
 	// Used by generated type bindings to map an entity ID to its actor channel.
-	USpatialActorChannel* GetActorChannelByEntityId(const worker::EntityId& EntityId) const;
+	USpatialActorChannel* GetActorChannelByEntityId(const FEntityId& EntityId) const;
 
 	// RPC handlers. Used by generated type bindings.
 	void SendCommandRequest_Internal(FRPCCommandRequestFunc Function, bool bReliable);
 	void SendCommandResponse_Internal(FRPCCommandResponseFunc Function);
-	void HandleCommandResponse_Internal(const FString& RPCName, FUntypedRequestId RequestId, const worker::EntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
+	void HandleCommandResponse_Internal(const FString& RPCName, FUntypedRequestId RequestId, const FEntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
 
 	// Used to queue incoming/outgoing object updates/RPCs. Used by generated type bindings.
 	void QueueOutgoingObjectUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
@@ -166,7 +166,7 @@ private:
 	TMap<UClass*, USpatialTypeBinding*> TypeBindings;
 
 	// A map from Entity ID to actor channel.
-	TMap<worker::EntityId, USpatialActorChannel*> EntityToActorChannel;
+	TMap<FEntityId, USpatialActorChannel*> EntityToActorChannel;
 
 	// Outgoing RPCs (for retry logic).
 	TMap<FUntypedRequestId, TSharedPtr<FOutgoingReliableRPC>> OutgoingReliableRPCs;
@@ -191,7 +191,7 @@ private:
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
 	void UnregisterInteropType(UClass* Class);
 
-	void SetComponentInterests_Client(USpatialActorChannel* ActorChannel, const worker::EntityId& EntityId);
+	void SetComponentInterests_Client(USpatialActorChannel* ActorChannel, const FEntityId& EntityId);
 
 	void ResolvePendingOutgoingObjectUpdates(UObject* Object);
 	void ResolvePendingOutgoingRPCs(UObject* Object);
