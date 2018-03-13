@@ -54,8 +54,8 @@ struct FRepLayoutEntry
 	ELifetimeCondition Condition;
 	ELifetimeRepNotifyCondition RepNotifyCondition;
 	ERepLayoutCmdType Type;
+	int CmdIndex;
 	uint16 Handle;
-	int32 Offset;
 };
 
 struct FReplicatedPropertyInfo
@@ -874,10 +874,14 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 		auto& Cmd = RepLayout.Cmds[CmdIndex];
 
 		if (Cmd.Type == REPCMD_Return || Cmd.Type == REPCMD_DynamicArray)
+		{
 			continue;
+		}
 
 		if (Cmd.Property == nullptr)
+		{
 			continue;
+		}
 
 		// Get property and parent property from RepLayout.
 		UProperty* Property = Cmd.Property;
@@ -904,8 +908,8 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 			RepLayout.Parents[Cmd.ParentIndex].Condition,
 			RepLayout.Parents[Cmd.ParentIndex].RepNotifyCondition,
 			(ERepLayoutCmdType)Cmd.Type,
-			Handle,
-			Cmd.Offset
+			CmdIndex,
+			Handle
 			}));
 	}
 
@@ -1370,7 +1374,6 @@ void GenerateForwardingCodeFromLayout(
 	SourceWriter.Print("static FRepHandlePropertyMap HandleToPropertyMap;");
 	SourceWriter.Print("if (HandleToPropertyMap.Num() == 0)");
 	SourceWriter.Print("{").Indent();
-	SourceWriter.Printf("UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));", *Class->GetName());
 
 	// Reduce into single list of properties.
 	TArray<FReplicatedPropertyInfo> ReplicatedProperties;
@@ -1379,17 +1382,26 @@ void GenerateForwardingCodeFromLayout(
 		ReplicatedProperties.Append(Layout.ReplicatedProperties[Group]);
 	}
 
+	// Create rep layout.
+	SourceWriter.Printf(R"""(
+		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("%s"));
+		FRepLayout RepLayout;
+		RepLayout.InitFromObjectClass(Class);
+		checkf(RepLayout.Cmds.Num() == %d, TEXT("RepLayout here does not match the RepLayout used when generating interop code."));)""",
+		*Class->GetName(),
+		ReplicatedProperties.Num() + 1); // Need to add one here, because RepLayout.Cmds will contain the null terminator at the end.
+
+	// Populate HandleToPropertyMap.
 	for (auto& RepProp : ReplicatedProperties)
 	{
 		auto Handle = RepProp.Entry.Handle;
 		if (RepProp.Entry.Parent)
 		{
-			SourceWriter.Printf("HandleToPropertyMap.Add(%d, FRepHandleData{Class->FindPropertyByName(\"%s\"), nullptr, %s, %s, %d});",
+			SourceWriter.Printf("HandleToPropertyMap.Add(%d, FRepHandleData{Class->FindPropertyByName(\"%s\"), nullptr, %s, %s, 0});",
 				Handle,
 				*RepProp.Entry.Parent->GetName(),
 				*GetLifetimeConditionAsString(RepProp.Entry.Condition),
-				*GetRepNotifyLifetimeConditionAsString(RepProp.Entry.RepNotifyCondition),
-				RepProp.Entry.Offset);
+				*GetRepNotifyLifetimeConditionAsString(RepProp.Entry.RepNotifyCondition));
 			SourceWriter.Printf("HandleToPropertyMap[%d].Property = Cast<UStructProperty>(HandleToPropertyMap[%d].Parent)->Struct->FindPropertyByName(\"%s\");",
 				Handle,
 				Handle,
@@ -1397,13 +1409,13 @@ void GenerateForwardingCodeFromLayout(
 		}
 		else
 		{
-			SourceWriter.Printf("HandleToPropertyMap.Add(%d, FRepHandleData{nullptr, Class->FindPropertyByName(\"%s\"), %s, %s, %d});",
+			SourceWriter.Printf("HandleToPropertyMap.Add(%d, FRepHandleData{nullptr, Class->FindPropertyByName(\"%s\"), %s, %s, 0});",
 				Handle,
 				*RepProp.Entry.Property->GetName(),
 				*GetLifetimeConditionAsString(RepProp.Entry.Condition),
-				*GetRepNotifyLifetimeConditionAsString(RepProp.Entry.RepNotifyCondition),
-				RepProp.Entry.Offset);
+				*GetRepNotifyLifetimeConditionAsString(RepProp.Entry.RepNotifyCondition));
 		}
+		SourceWriter.Printf("HandleToPropertyMap[%d].Offset = RepLayout.Cmds[%d].Offset;", Handle, RepProp.Entry.CmdIndex);
 	}
 	SourceWriter.Outdent().Print("}");
 	SourceWriter.Print("return HandleToPropertyMap;");
