@@ -2,7 +2,6 @@
 
 #include "NUFGameMode.h"
 #include "UObject/ConstructorHelpers.h"
-#include "VehicleCppPawn.h"
 
 ANUFGameMode::ANUFGameMode()
 {
