@@ -5,10 +5,10 @@ package improbable.unreal;
 import "improbable/vector3.schema";
 import "improbable/unreal/core_types.schema";
 
-component UnrealWheeledVehicleSingleClientReplicatedData {
+component UnrealWheeledVehicleSingleClientRepData {
 	id = 100025;
 }
-component UnrealWheeledVehicleMultiClientReplicatedData {
+component UnrealWheeledVehicleMultiClientRepData {
 	id = 100026;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
@@ -29,7 +29,7 @@ component UnrealWheeledVehicleMultiClientReplicatedData {
 	uint32 field_remoteviewpitch = 17; // COND_SkipOwner
 	UnrealObjectRef field_controller = 18; // COND_None
 }
-component UnrealWheeledVehicleCompleteData {
+component UnrealWheeledVehicleWorkerRepData {
 	id = 100027;
 }
 type UnrealServerUpdateStateRequest {

@@ -5,12 +5,12 @@ package improbable.unreal;
 import "improbable/vector3.schema";
 import "improbable/unreal/core_types.schema";
 
-component UnrealPlayerControllerSingleClientReplicatedData {
+component UnrealPlayerControllerSingleClientRepData {
 	id = 100010;
 	UnrealFRotator field_targetviewrotation = 1; // COND_OwnerOnly
 	improbable.Vector3f field_spawnlocation = 2; // COND_OwnerOnly
 }
-component UnrealPlayerControllerMultiClientReplicatedData {
+component UnrealPlayerControllerMultiClientRepData {
 	id = 100011;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
@@ -30,7 +30,7 @@ component UnrealPlayerControllerMultiClientReplicatedData {
 	UnrealObjectRef field_pawn = 16; // COND_None
 	UnrealObjectRef field_playerstate = 17; // COND_None
 }
-component UnrealPlayerControllerCompleteData {
+component UnrealPlayerControllerWorkerRepData {
 	id = 100012;
 }
 type UnrealOnServerStartedVisualLoggerRequest {

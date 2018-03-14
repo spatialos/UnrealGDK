@@ -5,10 +5,10 @@ package improbable.unreal;
 import "improbable/vector3.schema";
 import "improbable/unreal/core_types.schema";
 
-component UnrealPlayerStateSingleClientReplicatedData {
+component UnrealPlayerStateSingleClientRepData {
 	id = 100015;
 }
-component UnrealPlayerStateMultiClientReplicatedData {
+component UnrealPlayerStateMultiClientRepData {
 	id = 100016;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
@@ -37,7 +37,7 @@ component UnrealPlayerStateMultiClientReplicatedData {
 	int32 field_starttime = 25; // COND_None
 	bytes field_uniqueid = 26; // COND_InitialOnly
 }
-component UnrealPlayerStateCompleteData {
+component UnrealPlayerStateWorkerRepData {
 	id = 100017;
 }
 

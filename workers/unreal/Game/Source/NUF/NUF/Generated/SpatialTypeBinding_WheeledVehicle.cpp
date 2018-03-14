@@ -17,8 +17,8 @@
 #include "WheeledVehicle.h"
 #include "WheeledVehicleMovementComponent.h"
 
-#include "UnrealWheeledVehicleSingleClientReplicatedDataAddComponentOp.h"
-#include "UnrealWheeledVehicleMultiClientReplicatedDataAddComponentOp.h"
+#include "UnrealWheeledVehicleSingleClientRepDataAddComponentOp.h"
+#include "UnrealWheeledVehicleMultiClientRepDataAddComponentOp.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_WheeledVehicle::GetHandlePropertyMap()
 {
@@ -94,8 +94,8 @@ void USpatialTypeBinding_WheeledVehicle::BindToView()
 
 	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
 	{
-		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData>([this](
-			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData>& Op)
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealWheeledVehicleSingleClientRepData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleSingleClientRepData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			if (ActorChannel)
@@ -107,8 +107,8 @@ void USpatialTypeBinding_WheeledVehicle::BindToView()
 				Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
 			}
 		}));
-		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData>([this](
-			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData>& Op)
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealWheeledVehicleMultiClientRepData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleMultiClientRepData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			if (ActorChannel)
@@ -137,9 +137,9 @@ worker::ComponentId USpatialTypeBinding_WheeledVehicle::GetReplicatedGroupCompon
 	switch (Group)
 	{
 	case GROUP_SingleClient:
-		return improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData::ComponentId;
+		return improbable::unreal::UnrealWheeledVehicleSingleClientRepData::ComponentId;
 	case GROUP_MultiClient:
-		return improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData::ComponentId;
+		return improbable::unreal::UnrealWheeledVehicleMultiClientRepData::ComponentId;
 	default:
 		checkNoEntry();
 		return 0;
@@ -149,11 +149,11 @@ worker::ComponentId USpatialTypeBinding_WheeledVehicle::GetReplicatedGroupCompon
 worker::Entity USpatialTypeBinding_WheeledVehicle::CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const
 {
 	// Setup initial data.
-	improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData::Data SingleClientData;
-	improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData::Update SingleClientUpdate;
+	improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Data SingleClientData;
+	improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update SingleClientUpdate;
 	bool bSingleClientUpdateChanged = false;
-	improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData::Data MultiClientData;
-	improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData::Update MultiClientUpdate;
+	improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Data MultiClientData;
+	improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update MultiClientUpdate;
 	bool bMultiClientUpdateChanged = false;
 	BuildSpatialComponentUpdate(InitialChanges, Channel, SingleClientUpdate, bSingleClientUpdateChanged, MultiClientUpdate, bMultiClientUpdateChanged);
 	SingleClientUpdate.ApplyTo(SingleClientData);
@@ -204,9 +204,9 @@ worker::Entity USpatialTypeBinding_WheeledVehicle::CreateActorEntity(const FStri
 		.SetPersistence(true)
 		.SetReadAcl(AnyUnrealWorkerOrClient)
 		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData>(SingleClientData, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData>(MultiClientData, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealWheeledVehicleCompleteData>(improbable::unreal::UnrealWheeledVehicleCompleteData::Data{}, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealWheeledVehicleSingleClientRepData>(SingleClientData, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealWheeledVehicleMultiClientRepData>(MultiClientData, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealWheeledVehicleWorkerRepData>(improbable::unreal::UnrealWheeledVehicleWorkerRepData::Data{}, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealWheeledVehicleClientRPCs>(improbable::unreal::UnrealWheeledVehicleClientRPCs::Data{}, OwningClientOnly)
 		.AddComponent<improbable::unreal::UnrealWheeledVehicleServerRPCs>(improbable::unreal::UnrealWheeledVehicleServerRPCs::Data{}, WorkersOnly)
 		.AddComponent<nuf::PossessPawn>(nuf::PossessPawn::Data{}, WorkersOnly)
@@ -216,9 +216,9 @@ worker::Entity USpatialTypeBinding_WheeledVehicle::CreateActorEntity(const FStri
 void USpatialTypeBinding_WheeledVehicle::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const
 {
 	// Build SpatialOS updates.
-	improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData::Update SingleClientUpdate;
+	improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update SingleClientUpdate;
 	bool bSingleClientUpdateChanged = false;
-	improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData::Update MultiClientUpdate;
+	improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update MultiClientUpdate;
 	bool bMultiClientUpdateChanged = false;
 	BuildSpatialComponentUpdate(Changes, Channel, SingleClientUpdate, bSingleClientUpdateChanged, MultiClientUpdate, bMultiClientUpdateChanged);
 
@@ -226,11 +226,11 @@ void USpatialTypeBinding_WheeledVehicle::SendComponentUpdates(const FPropertyCha
 	TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();
 	if (bSingleClientUpdateChanged)
 	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData>(EntityId.ToSpatialEntityId(), SingleClientUpdate);
+		Connection->SendComponentUpdate<improbable::unreal::UnrealWheeledVehicleSingleClientRepData>(EntityId.ToSpatialEntityId(), SingleClientUpdate);
 	}
 	if (bMultiClientUpdateChanged)
 	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData>(EntityId.ToSpatialEntityId(), MultiClientUpdate);
+		Connection->SendComponentUpdate<improbable::unreal::UnrealWheeledVehicleMultiClientRepData>(EntityId.ToSpatialEntityId(), MultiClientUpdate);
 	}
 }
 
@@ -244,33 +244,33 @@ void USpatialTypeBinding_WheeledVehicle::SendRPCCommand(UObject* TargetObject, c
 
 void USpatialTypeBinding_WheeledVehicle::ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const
 {
-	auto* SingleClientAddOp = Cast<UUnrealWheeledVehicleSingleClientReplicatedDataAddComponentOp>(AddComponentOp);
+	auto* SingleClientAddOp = Cast<UUnrealWheeledVehicleSingleClientRepDataAddComponentOp>(AddComponentOp);
 	if (SingleClientAddOp)
 	{
-		auto Update = improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData::Update::FromInitialData(*SingleClientAddOp->Data.data());
+		auto Update = improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update::FromInitialData(*SingleClientAddOp->Data.data());
 		ClientReceiveUpdate_SingleClient(Channel, Update);
 	}
-	auto* MultiClientAddOp = Cast<UUnrealWheeledVehicleMultiClientReplicatedDataAddComponentOp>(AddComponentOp);
+	auto* MultiClientAddOp = Cast<UUnrealWheeledVehicleMultiClientRepDataAddComponentOp>(AddComponentOp);
 	if (MultiClientAddOp)
 	{
-		auto Update = improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData::Update::FromInitialData(*MultiClientAddOp->Data.data());
+		auto Update = improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update::FromInitialData(*MultiClientAddOp->Data.data());
 		ClientReceiveUpdate_MultiClient(Channel, Update);
 	}
 }
 
 void USpatialTypeBinding_WheeledVehicle::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)
 {
-	improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData::Data* SingleClientData = PendingSingleClientData.Find(ActorChannel->GetEntityId());
+	improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Data* SingleClientData = PendingSingleClientData.Find(ActorChannel->GetEntityId());
 	if (SingleClientData)
 	{
-		auto Update = improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData::Update::FromInitialData(*SingleClientData);
+		auto Update = improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update::FromInitialData(*SingleClientData);
 		PendingSingleClientData.Remove(ActorChannel->GetEntityId());
 		ClientReceiveUpdate_SingleClient(ActorChannel, Update);
 	}
-	improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
+	improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
 	if (MultiClientData)
 	{
-		auto Update = improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData::Update::FromInitialData(*MultiClientData);
+		auto Update = improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update::FromInitialData(*MultiClientData);
 		PendingMultiClientData.Remove(ActorChannel->GetEntityId());
 		ClientReceiveUpdate_MultiClient(ActorChannel, Update);
 	}
@@ -279,9 +279,9 @@ void USpatialTypeBinding_WheeledVehicle::ApplyQueuedStateToChannel(USpatialActor
 void USpatialTypeBinding_WheeledVehicle::BuildSpatialComponentUpdate(
 	const FPropertyChangeState& Changes,
 	USpatialActorChannel* Channel,
-	improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData::Update& SingleClientUpdate,
+	improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& SingleClientUpdate,
 	bool& bSingleClientUpdateChanged,
-	improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData::Update& MultiClientUpdate,
+	improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& MultiClientUpdate,
 	bool& bMultiClientUpdateChanged) const
 {
 	// Build up SpatialOS component updates.
@@ -318,7 +318,7 @@ void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_SingleClient(
 	int32 Handle,
 	UProperty* Property,
 	USpatialActorChannel* Channel,
-	improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData::Update& OutUpdate) const
+	improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& OutUpdate) const
 {
 }
 
@@ -327,7 +327,7 @@ void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_MultiClient(
 	int32 Handle,
 	UProperty* Property,
 	USpatialActorChannel* Channel,
-	improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData::Update& OutUpdate) const
+	improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& OutUpdate) const
 {
 	switch (Handle)
 	{
@@ -567,7 +567,7 @@ void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_MultiClient(
 
 void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_SingleClient(
 	USpatialActorChannel* ActorChannel,
-	const improbable::unreal::UnrealWheeledVehicleSingleClientReplicatedData::Update& Update) const
+	const improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
@@ -577,7 +577,7 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_SingleClient(
 
 void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
 	USpatialActorChannel* ActorChannel,
-	const improbable::unreal::UnrealWheeledVehicleMultiClientReplicatedData::Update& Update) const
+	const improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 

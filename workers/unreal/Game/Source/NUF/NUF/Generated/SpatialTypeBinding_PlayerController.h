@@ -37,8 +37,8 @@ private:
 	improbable::unreal::callbacks::FScopedViewCallbacks ViewCallbacks;
 
 	// Pending updates.
-	TMap<FEntityId, improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Data> PendingSingleClientData;
-	TMap<FEntityId, improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Data> PendingMultiClientData;
+	TMap<FEntityId, improbable::unreal::UnrealPlayerControllerSingleClientRepData::Data> PendingSingleClientData;
+	TMap<FEntityId, improbable::unreal::UnrealPlayerControllerMultiClientRepData::Data> PendingMultiClientData;
 
 	// RPC to sender map.
 	using FRPCSender = void (USpatialTypeBinding_PlayerController::*)(worker::Connection* const, struct FFrame* const, UObject*);
@@ -48,28 +48,28 @@ private:
 	void BuildSpatialComponentUpdate(
 		const FPropertyChangeState& Changes,
 		USpatialActorChannel* Channel,
-		improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& SingleClientUpdate,
+		improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update& SingleClientUpdate,
 		bool& bSingleClientUpdateChanged,
-		improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& MultiClientUpdate,
+		improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update& MultiClientUpdate,
 		bool& bMultiClientUpdateChanged) const;
 	void ServerSendUpdate_SingleClient(
 		const uint8* RESTRICT Data,
 		int32 Handle,
 		UProperty* Property,
 		USpatialActorChannel* Channel,
-		improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& OutUpdate) const;
+		improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update& OutUpdate) const;
 	void ServerSendUpdate_MultiClient(
 		const uint8* RESTRICT Data,
 		int32 Handle,
 		UProperty* Property,
 		USpatialActorChannel* Channel,
-		improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& OutUpdate) const;
+		improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update& OutUpdate) const;
 	void ClientReceiveUpdate_SingleClient(
 		USpatialActorChannel* ActorChannel,
-		const improbable::unreal::UnrealPlayerControllerSingleClientReplicatedData::Update& Update) const;
+		const improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update& Update) const;
 	void ClientReceiveUpdate_MultiClient(
 		USpatialActorChannel* ActorChannel,
-		const improbable::unreal::UnrealPlayerControllerMultiClientReplicatedData::Update& Update) const;
+		const improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update& Update) const;
 
 	// RPC command sender functions.
 	void OnServerStartedVisualLogger_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject);

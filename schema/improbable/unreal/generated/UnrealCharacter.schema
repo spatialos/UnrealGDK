@@ -5,10 +5,10 @@ package improbable.unreal;
 import "improbable/vector3.schema";
 import "improbable/unreal/core_types.schema";
 
-component UnrealCharacterSingleClientReplicatedData {
+component UnrealCharacterSingleClientRepData {
 	id = 100020;
 }
-component UnrealCharacterMultiClientReplicatedData {
+component UnrealCharacterMultiClientRepData {
 	id = 100021;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
@@ -58,7 +58,7 @@ component UnrealCharacterMultiClientReplicatedData {
 	improbable.Vector3f field_reprootmotion_acceleration = 46; // COND_SimulatedOnlyNoReplay
 	improbable.Vector3f field_reprootmotion_linearvelocity = 47; // COND_SimulatedOnlyNoReplay
 }
-component UnrealCharacterCompleteData {
+component UnrealCharacterWorkerRepData {
 	id = 100022;
 }
 type UnrealRootMotionDebugClientPrintOnScreenRequest {

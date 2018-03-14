@@ -15,8 +15,8 @@
 #include "../SpatialNetDriver.h"
 #include "../SpatialInterop.h"
 
-#include "UnrealCharacterSingleClientReplicatedDataAddComponentOp.h"
-#include "UnrealCharacterMultiClientReplicatedDataAddComponentOp.h"
+#include "UnrealCharacterSingleClientRepDataAddComponentOp.h"
+#include "UnrealCharacterMultiClientRepDataAddComponentOp.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
 {
@@ -173,8 +173,8 @@ void USpatialTypeBinding_Character::BindToView()
 
 	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
 	{
-		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>([this](
-			const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientReplicatedData>& Op)
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientRepData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientRepData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			if (ActorChannel)
@@ -186,8 +186,8 @@ void USpatialTypeBinding_Character::BindToView()
 				Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
 			}
 		}));
-		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>([this](
-			const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientReplicatedData>& Op)
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientRepData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientRepData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			if (ActorChannel)
@@ -242,9 +242,9 @@ worker::ComponentId USpatialTypeBinding_Character::GetReplicatedGroupComponentId
 	switch (Group)
 	{
 	case GROUP_SingleClient:
-		return improbable::unreal::UnrealCharacterSingleClientReplicatedData::ComponentId;
+		return improbable::unreal::UnrealCharacterSingleClientRepData::ComponentId;
 	case GROUP_MultiClient:
-		return improbable::unreal::UnrealCharacterMultiClientReplicatedData::ComponentId;
+		return improbable::unreal::UnrealCharacterMultiClientRepData::ComponentId;
 	default:
 		checkNoEntry();
 		return 0;
@@ -254,11 +254,11 @@ worker::ComponentId USpatialTypeBinding_Character::GetReplicatedGroupComponentId
 worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const
 {
 	// Setup initial data.
-	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data SingleClientData;
-	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
+	improbable::unreal::UnrealCharacterSingleClientRepData::Data SingleClientData;
+	improbable::unreal::UnrealCharacterSingleClientRepData::Update SingleClientUpdate;
 	bool bSingleClientUpdateChanged = false;
-	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data MultiClientData;
-	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
+	improbable::unreal::UnrealCharacterMultiClientRepData::Data MultiClientData;
+	improbable::unreal::UnrealCharacterMultiClientRepData::Update MultiClientUpdate;
 	bool bMultiClientUpdateChanged = false;
 	BuildSpatialComponentUpdate(InitialChanges, Channel, SingleClientUpdate, bSingleClientUpdateChanged, MultiClientUpdate, bMultiClientUpdateChanged);
 	SingleClientUpdate.ApplyTo(SingleClientData);
@@ -309,9 +309,9 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FString& C
 		.SetPersistence(true)
 		.SetReadAcl(AnyUnrealWorkerOrClient)
 		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(SingleClientData, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(MultiClientData, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealCharacterCompleteData>(improbable::unreal::UnrealCharacterCompleteData::Data{}, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealCharacterSingleClientRepData>(SingleClientData, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealCharacterMultiClientRepData>(MultiClientData, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealCharacterWorkerRepData>(improbable::unreal::UnrealCharacterWorkerRepData::Data{}, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealCharacterClientRPCs>(improbable::unreal::UnrealCharacterClientRPCs::Data{}, OwningClientOnly)
 		.AddComponent<improbable::unreal::UnrealCharacterServerRPCs>(improbable::unreal::UnrealCharacterServerRPCs::Data{}, WorkersOnly)
 		.AddComponent<nuf::PossessPawn>(nuf::PossessPawn::Data{}, WorkersOnly)
@@ -321,9 +321,9 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FString& C
 void USpatialTypeBinding_Character::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const
 {
 	// Build SpatialOS updates.
-	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update SingleClientUpdate;
+	improbable::unreal::UnrealCharacterSingleClientRepData::Update SingleClientUpdate;
 	bool bSingleClientUpdateChanged = false;
-	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update MultiClientUpdate;
+	improbable::unreal::UnrealCharacterMultiClientRepData::Update MultiClientUpdate;
 	bool bMultiClientUpdateChanged = false;
 	BuildSpatialComponentUpdate(Changes, Channel, SingleClientUpdate, bSingleClientUpdateChanged, MultiClientUpdate, bMultiClientUpdateChanged);
 
@@ -331,11 +331,11 @@ void USpatialTypeBinding_Character::SendComponentUpdates(const FPropertyChangeSt
 	TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();
 	if (bSingleClientUpdateChanged)
 	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterSingleClientReplicatedData>(EntityId.ToSpatialEntityId(), SingleClientUpdate);
+		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterSingleClientRepData>(EntityId.ToSpatialEntityId(), SingleClientUpdate);
 	}
 	if (bMultiClientUpdateChanged)
 	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientReplicatedData>(EntityId.ToSpatialEntityId(), MultiClientUpdate);
+		Connection->SendComponentUpdate<improbable::unreal::UnrealCharacterMultiClientRepData>(EntityId.ToSpatialEntityId(), MultiClientUpdate);
 	}
 }
 
@@ -349,33 +349,33 @@ void USpatialTypeBinding_Character::SendRPCCommand(UObject* TargetObject, const 
 
 void USpatialTypeBinding_Character::ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const
 {
-	auto* SingleClientAddOp = Cast<UUnrealCharacterSingleClientReplicatedDataAddComponentOp>(AddComponentOp);
+	auto* SingleClientAddOp = Cast<UUnrealCharacterSingleClientRepDataAddComponentOp>(AddComponentOp);
 	if (SingleClientAddOp)
 	{
-		auto Update = improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update::FromInitialData(*SingleClientAddOp->Data.data());
+		auto Update = improbable::unreal::UnrealCharacterSingleClientRepData::Update::FromInitialData(*SingleClientAddOp->Data.data());
 		ClientReceiveUpdate_SingleClient(Channel, Update);
 	}
-	auto* MultiClientAddOp = Cast<UUnrealCharacterMultiClientReplicatedDataAddComponentOp>(AddComponentOp);
+	auto* MultiClientAddOp = Cast<UUnrealCharacterMultiClientRepDataAddComponentOp>(AddComponentOp);
 	if (MultiClientAddOp)
 	{
-		auto Update = improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update::FromInitialData(*MultiClientAddOp->Data.data());
+		auto Update = improbable::unreal::UnrealCharacterMultiClientRepData::Update::FromInitialData(*MultiClientAddOp->Data.data());
 		ClientReceiveUpdate_MultiClient(Channel, Update);
 	}
 }
 
 void USpatialTypeBinding_Character::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)
 {
-	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Data* SingleClientData = PendingSingleClientData.Find(ActorChannel->GetEntityId());
+	improbable::unreal::UnrealCharacterSingleClientRepData::Data* SingleClientData = PendingSingleClientData.Find(ActorChannel->GetEntityId());
 	if (SingleClientData)
 	{
-		auto Update = improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update::FromInitialData(*SingleClientData);
+		auto Update = improbable::unreal::UnrealCharacterSingleClientRepData::Update::FromInitialData(*SingleClientData);
 		PendingSingleClientData.Remove(ActorChannel->GetEntityId());
 		ClientReceiveUpdate_SingleClient(ActorChannel, Update);
 	}
-	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
+	improbable::unreal::UnrealCharacterMultiClientRepData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
 	if (MultiClientData)
 	{
-		auto Update = improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update::FromInitialData(*MultiClientData);
+		auto Update = improbable::unreal::UnrealCharacterMultiClientRepData::Update::FromInitialData(*MultiClientData);
 		PendingMultiClientData.Remove(ActorChannel->GetEntityId());
 		ClientReceiveUpdate_MultiClient(ActorChannel, Update);
 	}
@@ -384,9 +384,9 @@ void USpatialTypeBinding_Character::ApplyQueuedStateToChannel(USpatialActorChann
 void USpatialTypeBinding_Character::BuildSpatialComponentUpdate(
 	const FPropertyChangeState& Changes,
 	USpatialActorChannel* Channel,
-	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& SingleClientUpdate,
+	improbable::unreal::UnrealCharacterSingleClientRepData::Update& SingleClientUpdate,
 	bool& bSingleClientUpdateChanged,
-	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& MultiClientUpdate,
+	improbable::unreal::UnrealCharacterMultiClientRepData::Update& MultiClientUpdate,
 	bool& bMultiClientUpdateChanged) const
 {
 	// Build up SpatialOS component updates.
@@ -423,7 +423,7 @@ void USpatialTypeBinding_Character::ServerSendUpdate_SingleClient(
 	int32 Handle,
 	UProperty* Property,
 	USpatialActorChannel* Channel,
-	improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& OutUpdate) const
+	improbable::unreal::UnrealCharacterSingleClientRepData::Update& OutUpdate) const
 {
 }
 
@@ -432,7 +432,7 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 	int32 Handle,
 	UProperty* Property,
 	USpatialActorChannel* Channel,
-	improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& OutUpdate) const
+	improbable::unreal::UnrealCharacterMultiClientRepData::Update& OutUpdate) const
 {
 	switch (Handle)
 	{
@@ -899,7 +899,7 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 
 void USpatialTypeBinding_Character::ClientReceiveUpdate_SingleClient(
 	USpatialActorChannel* ActorChannel,
-	const improbable::unreal::UnrealCharacterSingleClientReplicatedData::Update& Update) const
+	const improbable::unreal::UnrealCharacterSingleClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
@@ -909,7 +909,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_SingleClient(
 
 void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
 	USpatialActorChannel* ActorChannel,
-	const improbable::unreal::UnrealCharacterMultiClientReplicatedData::Update& Update) const
+	const improbable::unreal::UnrealCharacterMultiClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
