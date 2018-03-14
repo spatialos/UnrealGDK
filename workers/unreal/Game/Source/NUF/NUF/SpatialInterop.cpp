@@ -303,12 +303,10 @@ void USpatialInterop::HandleCommandResponse_Internal(const FString& RPCName, FUn
 			{
 				auto Result = RetryContext->SendCommandRequest();
 				RetryContext->NumAttempts++;
-				if (Result.UnresolvedObject != nullptr)
-				{
-					// Add to pending RPCs if any actors were unresolved.
-					QueueOutgoingRPC_Internal(Result.UnresolvedObject, RetryContext->SendCommandRequest, true);
-				}
-				else
+				// As it's possible for an entity to leave a workers checkout radius (and thus become unresolved again), we cannot
+				// take for granted that retrying the command will mean that the object is always resolved. In that case, just
+				// give up and drop the command as it doesn't make sense to retry it anymore.
+				if (Result.UnresolvedObject == nullptr)
 				{
 					OutgoingReliableRPCs.Emplace(Result.RequestId, RetryContext);
 				}

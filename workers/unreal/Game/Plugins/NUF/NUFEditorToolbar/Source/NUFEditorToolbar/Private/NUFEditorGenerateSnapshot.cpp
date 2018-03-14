@@ -74,12 +74,15 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 		.Build());
 
 	// Set up grid of "placeholder" entities to allow workers to be authoritative over _something_.
-	const int PLACEHOLDER_ENTITY_NUM = 3;
+	int PlaceholderCount = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST - SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST + 1;
+	int PlaceholderCountAxis = sqrt(PlaceholderCount);
+	checkf(PlaceholderCountAxis * PlaceholderCountAxis == PlaceholderCount, TEXT("The number of placeholders must be a square number."));
+	checkf(PlaceholderCountAxis % 2 == 0, TEXT("The number of placeholders on each axis must be even."));
 	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
-	int PlaceholderEntityIdCounter = SpatialConstants::LEVEL_DATA_ENTITY_ID + 1;
-	for (int x = -PLACEHOLDER_ENTITY_NUM; x < PLACEHOLDER_ENTITY_NUM; x++)
+	int PlaceholderEntityIdCounter = SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST;
+	for (int x = -PlaceholderCountAxis / 2; x < PlaceholderCountAxis / 2; x++)
 	{
-		for (int y = -PLACEHOLDER_ENTITY_NUM; y < PLACEHOLDER_ENTITY_NUM; y++)
+		for (int y = -PlaceholderCountAxis / 2; y < PlaceholderCountAxis / 2; y++)
 		{
 			const Coordinates PlaceholderPosition{x * CHUNK_SIZE + CHUNK_SIZE * 0.5f, 0, y * CHUNK_SIZE + CHUNK_SIZE * 0.5f};
 			LevelEntities.emplace(PlaceholderEntityIdCounter, improbable::unreal::FEntityBuilder::Begin()
@@ -92,6 +95,8 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 			PlaceholderEntityIdCounter++;
 		}
 	}
+	// Sanity check.
+	check(PlaceholderEntityIdCounter == SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1);
 	return LevelEntities;
 }
 } // ::
