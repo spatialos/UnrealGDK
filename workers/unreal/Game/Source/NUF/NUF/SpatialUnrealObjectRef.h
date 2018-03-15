@@ -24,9 +24,9 @@ public:
 		return ObjectRef == Other.ObjectRef;
 	}
 
-	friend uint32 GetTypeHash(const FHashableUnrealObjectRef& ObjectRef)
+	friend FORCEINLINE uint32 GetTypeHash(const FHashableUnrealObjectRef& HashableObjectRef)
 	{
-		return std::hash<improbable::unreal::UnrealObjectRef>{}(ObjectRef.ObjectRef);
+		return std::hash<improbable::unreal::UnrealObjectRef>{}(HashableObjectRef.ObjectRef);
 	}
 
 private:

@@ -113,16 +113,6 @@ void USpatialActorChannel::UnbindFromSpatialView() const
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
-	//todo-giray: This logic will not hold up when we have worker migration, needs to be revisited.
-	if (Connection->Driver->IsServer())
-	{
-		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
-		if (PinnedConnection.IsValid())
-		{
-			PinnedConnection->SendDeleteEntityRequest(ActorEntityId, 0);
-		}
-	}
-
 	UnbindFromSpatialView();
 	return UActorChannel::CleanUp(bForDestroy);
 }
@@ -392,7 +382,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 	else
 	{
-		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %llu."), *InActor->GetName(), ActorEntityId);
+		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), ActorEntityId.ToSpatialEntityId());
 	}
 }
 
@@ -443,7 +433,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		UnbindFromSpatialView();
 		return;
 	}
-	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Created entity (%d) for: %s. Request id: %d"), ActorEntityId, *Actor->GetName(), ReserveEntityIdRequestId.Id);
+	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Created entity (%lld) for: %s. Request id: %d"), ActorEntityId.ToSpatialEntityId(), *Actor->GetName(), ReserveEntityIdRequestId.Id);
 
 	auto PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
@@ -451,7 +441,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		PinnedView->Remove(CreateEntityCallback);
 	}
 
-	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), ActorEntityId);
+	UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %lld"), ActorEntityId.ToSpatialEntityId());
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()
@@ -475,22 +465,19 @@ void USpatialActorChannel::UpdateSpatialPosition()
 
 	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
 	APawn* Pawn = Cast<APawn>(Actor);
-	if (Pawn && Cast<APlayerController>(Pawn->GetController()))
+	APlayerController* PlayerController = Cast<APlayerController>(Pawn->GetController());
+	if (Pawn && PlayerController)
 	{
-			AController* Controller = Pawn->GetController();
-			if (Pawn->GetController()) 
-			{
-					USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Pawn->GetController()));
-					if (ControllerActorChannel)
-					{
-							Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
-					}
-					USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(Pawn->GetController()->PlayerState));
-					if (PlayerStateActorChannel)
-					{
-							Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
-					}
-			}
+		USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController));
+		if (ControllerActorChannel)
+		{
+			Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
+		}
+		USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController->PlayerState));
+		if (PlayerStateActorChannel)
+		{
+			Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
+		}
 	}
 }
 

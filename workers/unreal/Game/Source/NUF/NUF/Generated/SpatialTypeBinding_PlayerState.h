@@ -7,6 +7,7 @@
 #include <improbable/unreal/core_types.h>
 #include <improbable/unreal/unreal_metadata.h>
 #include <improbable/unreal/generated/UnrealPlayerState.h>
+#include "ScopedViewCallbacks.h"
 #include "../SpatialTypeBinding.h"
 #include "SpatialTypeBinding_PlayerState.generated.h"
 
@@ -26,24 +27,22 @@ public:
 	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
 
 	worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
-	void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const worker::EntityId& EntityId) const override;
+	void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const override;
 	void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) override;
+
+	void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;
 	void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;
 
 private:
-	worker::Dispatcher::CallbackKey SingleClientAddCallback;
-	worker::Dispatcher::CallbackKey SingleClientUpdateCallback;
-	worker::Dispatcher::CallbackKey MultiClientAddCallback;
-	worker::Dispatcher::CallbackKey MultiClientUpdateCallback;
+	improbable::unreal::callbacks::FScopedViewCallbacks ViewCallbacks;
 
 	// Pending updates.
-	TMap<worker::EntityId, improbable::unreal::UnrealPlayerStateSingleClientReplicatedData::Data> PendingSingleClientData;
-	TMap<worker::EntityId, improbable::unreal::UnrealPlayerStateMultiClientReplicatedData::Data> PendingMultiClientData;
+	TMap<FEntityId, improbable::unreal::UnrealPlayerStateSingleClientReplicatedData::Data> PendingSingleClientData;
+	TMap<FEntityId, improbable::unreal::UnrealPlayerStateMultiClientReplicatedData::Data> PendingMultiClientData;
 
-	// RPC sender and receiver callbacks.
+	// RPC to sender map.
 	using FRPCSender = void (USpatialTypeBinding_PlayerState::*)(worker::Connection* const, struct FFrame* const, UObject*);
 	TMap<FName, FRPCSender> RPCToSenderMap;
-	TArray<worker::Dispatcher::CallbackKey> RPCReceiverCallbacks;
 
 	// Component update helper functions.
 	void BuildSpatialComponentUpdate(

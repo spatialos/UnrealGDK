@@ -44,7 +44,10 @@ FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntity
 void USpatialPackageMapClient::RemoveEntityActor(const FEntityId& EntityId)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	SpatialGuidCache->RemoveEntityNetGUID(EntityId.ToSpatialEntityId());
+	if (SpatialGuidCache->GetNetGUIDFromEntityId(EntityId.ToSpatialEntityId()).IsValid())
+	{
+		SpatialGuidCache->RemoveEntityNetGUID(EntityId.ToSpatialEntityId());
+	}
 }
 
 bool USpatialPackageMapClient::SerializeNewActor(FArchive & Ar, UActorChannel * Channel, AActor *& Actor)
@@ -140,7 +143,7 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbabl
 improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
 {
 	const FHashableUnrealObjectRef* ObjRef = NetGUIDToUnrealObjectRef.Find(NetGUID);
-	return ObjRef ? *ObjRef : SpatialConstants::UNRESOLVED_OBJECT_REF;
+	return ObjRef ? (improbable::unreal::UnrealObjectRef)*ObjRef : SpatialConstants::UNRESOLVED_OBJECT_REF;
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(worker::EntityId EntityId) const

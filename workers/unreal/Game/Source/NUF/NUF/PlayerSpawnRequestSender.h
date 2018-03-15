@@ -9,8 +9,8 @@
 
 namespace worker 
 { 
-class worker::Connection;
-class worker::View;
+class Connection;
+class View;
 }  // ::worker
 
 class USpatialOS;

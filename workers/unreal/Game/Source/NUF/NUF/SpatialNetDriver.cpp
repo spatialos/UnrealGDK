@@ -29,45 +29,41 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	// Set the timer manager.
-	UWorld* World = GetWorld();
-	if (World == nullptr)
-	{
-		// This means we're not a listen server, grab the world from the pending net game instead.
-		FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this);
-		check(WorldContext);
-		World = WorldContext->World();
-	}
-	TimerManager = &World->GetTimerManager();
+	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
-	// make absolutely sure that the actor channel that we are using is our Spatial actor channel
+	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	UChannel::ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
+	// Create SpatialOS instance and setup callbacks.
 	SpatialOSInstance = NewObject<USpatialOS>(this);
+	SpatialOSInstance->OnConnectedDelegate.AddDynamic(this, &USpatialNetDriver::OnSpatialOSConnected);
+	SpatialOSInstance->OnConnectionFailedDelegate.AddDynamic(this, &USpatialNetDriver::OnSpatialOSConnectFailed);
+	SpatialOSInstance->OnDisconnectedDelegate.AddDynamic(this, &USpatialNetDriver::OnSpatialOSDisconnected);
+	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(SpatialOSInstance, TEXT("Unreal"));
 
-	SpatialOSInstance->OnConnectedDelegate.AddDynamic(this,
-		&USpatialNetDriver::OnSpatialOSConnected);
-	SpatialOSInstance->OnConnectionFailedDelegate.AddDynamic(
-		this, &USpatialNetDriver::OnSpatialOSConnectFailed);
-	SpatialOSInstance->OnDisconnectedDelegate.AddDynamic(
-		this, &USpatialNetDriver::OnSpatialOSDisconnected);
-
-	auto WorkerConfig = FSOSWorkerConfigurationData();
-
-	//todo-giray: Give this the correct value
+	// Set up the worker config.
+	// todo-giray: Give this the correct value
 	WorkerConfig.Networking.UseExternalIp = false;
+	WorkerConfig.SpatialOSApplication.WorkerPlatform = bInitAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
 
-	WorkerConfig.SpatialOSApplication.WorkerPlatform =
-		bInitAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
+	// We do this here straight away to trigger LoadMap.
+	if (bInitAsClient)
+	{
+		FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this);
+		check(WorldContext);
 
-	SpatialOSInstance->ApplyConfiguration(WorkerConfig);
-	SpatialOSInstance->Connect();
-
-	SpatialOSComponentUpdater = NewObject<USpatialOSComponentUpdater>(this);
-
-	EntityRegistry = NewObject<UEntityRegistry>(this);
-
-	Interop = NewObject<USpatialInterop>(this);
+		// Here we need to fake a few things to start ticking the level travel on client.
+		if (WorldContext->PendingNetGame)
+		{
+			WorldContext->PendingNetGame->bSuccessfullyConnected = true;
+			WorldContext->PendingNetGame->bSentJoinRequest = false;
+		}
+	}
+	else
+	{
+		// The server should already have a world.
+		OnMapLoaded(GetWorld());
+	}
 
 	return true;
 }
@@ -83,12 +79,39 @@ void USpatialNetDriver::PostInitProperties()
 	}
 }
 
+void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
+{
+	if (LoadedWorld->GetNetDriver() != this)
+	{
+		// In PIE, if we have more than 2 clients, then OnMapLoaded is going to be triggered once each client loads the world.
+		// As the delegate is a global variable, it triggers all 3 USpatialNetDriver::OnMapLoaded callbacks. As a result, we should
+		// make sure that the net driver of this world is in fact us.
+		return;
+	}
+
+	UE_LOG(LogSpatialOSNUF, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
+
+	checkf(!SpatialOSInstance->IsConnected(), TEXT("SpatialOS should not be connected already. This is probably because we attempted to travel to a different level, which current isn't supported."));
+
+	// Set the timer manager.
+	TimerManager = &LoadedWorld->GetTimerManager();
+
+	// Connect to SpatialOS.
+	SpatialOSInstance->ApplyConfiguration(WorkerConfig);
+	SpatialOSInstance->Connect();
+
+	// Set up manager objects.
+	SpatialOSComponentUpdater = NewObject<USpatialOSComponentUpdater>(this);
+	EntityRegistry = NewObject<UEntityRegistry>(this);
+	Interop = NewObject<USpatialInterop>(this);
+}
+
 void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogSpatialOSNUF, Log, TEXT("Connected to SpatialOS."));
 
 	InteropPipelineBlock = NewObject<USpatialInteropPipelineBlock>();
-	InteropPipelineBlock->Init(EntityRegistry, this);
+	InteropPipelineBlock->Init(EntityRegistry, this, GetWorld());
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(InteropPipelineBlock);
 
 	TArray<FString> BlueprintPaths;
@@ -105,19 +128,8 @@ void USpatialNetDriver::OnSpatialOSConnected()
 
 	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
 	// There may be more than one of these connections in the future for different replication conditions.
-
 	if (ServerConnection)
 	{
-		FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this);
-		check(WorldContext);
-
-		// Here we need to fake a few things to start ticking the level travel on client.
-		if (WorldContext && WorldContext->PendingNetGame)
-		{
-			WorldContext->PendingNetGame->bSuccessfullyConnected = true;
-			WorldContext->PendingNetGame->bSentJoinRequest = false;
-		}
-
 		// Send the player spawn commands with retries
 		PlayerSpawner.RequestPlayer(SpatialOSInstance, TimerManager, DummyURL);
 	}
@@ -790,11 +802,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	Super::TickFlush(DeltaTime);
 }
 
-void USpatialNetDriver::SetTimerManager(FTimerManager* InTimerManager)
-{
-	TimerManager = InTimerManager;
-}
-
 USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 {
 	if (ServerConnection)
@@ -873,7 +880,6 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 		{
 			// Most of this is taken from "World->SpawnPlayActor", excluding the logic to spawn a pawn which happens during
 			// GameMode->PostLogin(...).
-			AGameModeBase* GameMode = World->GetAuthGameMode();
 			APlayerController* NewPlayerController = GameMode->SpawnPlayerController(ROLE_AutonomousProxy, FVector::ZeroVector, FRotator::ZeroRotator);
 			
 			// Destroy the player state (as we'll be replacing it anyway).

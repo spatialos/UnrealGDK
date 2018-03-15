@@ -4,7 +4,7 @@
 #include "EntityId.h"
 #include "EntityPipelineBlock.h"
 #include "ComponentId.h"
-
+#include "AddComponentOpWrapperBase.h"
 #include "SpatialInteropPipelineBlock.generated.h"
 
 namespace worker
@@ -45,7 +45,7 @@ class NUF_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 	GENERATED_BODY()
 
 public:
-	void Init(UEntityRegistry* Registry, USpatialNetDriver* Driver);
+	void Init(UEntityRegistry* Registry, USpatialNetDriver* Driver, UWorld* LoadedWorld);
 
 	void AddEntity(const worker::AddEntityOp& AddEntityOp) override;
 	void RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp) override;
@@ -81,6 +81,8 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
+	UWorld* World;
+
 	// Maps ComponentId to USpatialOsComponent* class name
 	UPROPERTY()
 	TMap<FComponentId, UClass*> KnownComponents;
@@ -98,7 +100,7 @@ private:
 
 private:
 	AActor* GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId);
-	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UWorld* World, UClass* ClassToSpawn);
+	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ClassToSpawn);
 	
 	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);
 	UClass* GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent);
@@ -109,12 +111,14 @@ private:
 	typename Metaclass::Data* GetPendingComponentData(const FEntityId& EntityId)
 	{
 		const auto ComponentId = Metaclass::ComponentId;
-		UAddComponentOpWrapperBase** BaseAddComponent = PendingAddComponents.Find(FComponentIdentifier{EntityId.ToSpatialEntityId(), ComponentId});
-		if (!BaseAddComponent || !(*BaseAddComponent)->IsValidLowLevel())
+		for (FPendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 		{
-			return nullptr;
+			if (PendingAddComponent.EntityComponent == FComponentIdentifier{EntityId.ToSpatialEntityId(), ComponentId})
+			{
+				return PendingAddComponent.AddComponentOp->IsValidLowLevel() ? Cast<AddOpType>(*PendingAddComponent.AddComponentOp)->Data.data() : nullptr;
+			}
 		}
-		return Cast<AddOpType>(*BaseAddComponent)->Data.data();
+		return nullptr;
 	}
 
 	template <typename Metaclass>

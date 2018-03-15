@@ -8,19 +8,19 @@
     "chunk_edge_length_meters": 5,
     "streaming_query_interval": 4,
     "legacy_flags": [
-        {
-          "name": "streaming_query_refresh",
-          "value": "true"
-        },
-        {
-          "name": "streaming_query_diff",
-          "value": "true"
-        },
-        {
-            "name": "bridge_qos_max_timeout",
-            "value": "0"
-        }
-      ],
+      {
+        "name": "streaming_query_diff",
+        "value": "true"
+      },
+      {
+        "name": "bridge_qos_max_timeout",
+        "value": "0"
+      },
+      {
+        "name": "worker_start_connection_timeout_ms",
+        "value": "60000"
+      }
+    ],
     "snapshots": {
       "snapshot_write_period_seconds": 0
     }

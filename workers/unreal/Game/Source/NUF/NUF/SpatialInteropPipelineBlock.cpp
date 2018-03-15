@@ -19,19 +19,20 @@
 #include "MetadataAddComponentOp.h"
 #include "MetadataComponent.h"
 #include "UnrealMetadataAddComponentOp.h"
-#include "UnrealWheeledVehicleMultiClientReplicatedDataAddComponentOp.h"
-#include "UnrealWheeledVehicleMultiClientReplicatedDataComponent.h"
 #include "SpatialConstants.h"
 #include "UnrealMetadataComponent.h"
 #include "UnrealLevelComponent.h"
-#include "Generated/SpatialTypeBinding_WheeledVehicle.h"
+
+// TODO(David): Needed for ApplyNetworkMovementMode hack below.
+#include "GameFramework/CharacterMovementComponent.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSInteropPipelineBlock);
 
-void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDriver* Driver)
+void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDriver* Driver, UWorld* LoadedWorld)
 {
 	EntityRegistry = Registry;
 	NetDriver = Driver;
+	World = LoadedWorld;
 
 	bInCriticalSection = false;
 
@@ -274,15 +275,12 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 	PackageMap->RemoveEntityActor(EntityId);
 }
 
-void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-	const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
-	UCallbackDispatcher* CallbackDispatcher)
+void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>&, const TWeakPtr<SpatialOSConnection>&, UWorld*, UCallbackDispatcher*)
 {
 }
 
 AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId)
 {
-	UWorld* World = GEngine->GetWorldFromContextObject(NetDriver, EGetWorldErrorMode::LogAndReturnNull);
 	checkf(World, TEXT("We should have a world whilst processing ops."));
 
 	improbable::PositionData* PositionComponent = GetComponentDataFromView<improbable::Position>(LockedView, EntityId);
@@ -320,20 +318,20 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 	}
 	else
 	{
-		UClass* ActorClass = GetRegisteredEntityClass(MetadataComponent);
-		if (ActorClass)
+		UClass* ActorClass = nullptr;
+		if ((ActorClass = GetRegisteredEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 2
 			UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Spawning a registered %s"), *ActorClass->GetName());
-			EntityActor = SpawnNewEntity(PositionComponent, World, ActorClass);
+			EntityActor = SpawnNewEntity(PositionComponent, ActorClass);
 			EntityRegistry->AddToRegistry(EntityId, EntityActor);
 		}
-		else
+		else if ((ActorClass = GetNativeEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 3
 			UNetConnection* Connection = nullptr;
-			ActorClass = GetNativeEntityClass(MetadataComponent);
 			improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
+			check(UnrealMetadataComponent);
 
 			// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
 			if (NetDriver->IsServer() && ActorClass == APlayerController::StaticClass())
@@ -352,7 +350,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 				if (UnrealMetadataComponent->static_path().empty())
 				{
 					UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
-					EntityActor = SpawnNewEntity(PositionComponent, World, ActorClass);
+					EntityActor = SpawnNewEntity(PositionComponent, ActorClass);
 				}
 				else
 				{
@@ -365,7 +363,10 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 				// Get the net connection for this actor.
 				if (NetDriver->IsServer())
 				{
-					//todo-giray: When we have multiple servers, this won't work. On which connection would we create the channel?
+					// TODO(David): Currently, we just create an actor channel on the "catch-all" connection, then create a new actor channel once we check out the player controller
+					// and create a new connection. This is fine due to lazy actor channel creation in USpatialNetDriver::ServerReplicateActors. However, the "right" thing to do
+					// would be to make sure to create anything which depends on the PlayerController _after_ the PlayerController's connection is set up so we can use the right
+					// one here.
 					Connection = NetDriver->GetSpatialOSNetConnection();
 				}
 				else
@@ -379,7 +380,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 
 			// Set up actor channel.
 			auto PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-			auto Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, false));
+			auto Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
 			check(Channel);
 
 			PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
@@ -387,6 +388,12 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 
 			// Inform USpatialInterop of this new actor channel.
 			NetDriver->GetSpatialInterop()->AddActorChannel(EntityId.ToSpatialEntityId(), Channel);
+
+			// Apply initial replicated properties.
+			for (FPendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+			{
+				NetDriver->GetSpatialInterop()->ReceiveAddComponent(Channel, PendingAddComponent.AddComponentOp);
+			}
 
 			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 			// a player index. For now we don't support split screen, so the number is always 0.
@@ -407,6 +414,36 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 				// Call PostNetInit on client only.
 				EntityActor->PostNetInit();
 			}
+
+			// TODO(David): remove dirty hacks here to deal with repairing non-replicated state.
+			{
+				// Fix up player controller (if checked out _after_ character).
+				APlayerController* ActorController = Cast<APlayerController>(EntityActor);
+				if (ActorController)
+				{
+					APawn* ControlledPawn = ActorController->GetPawn();
+					if (ControlledPawn)
+					{
+						ActorController->ServerAcknowledgePossession_Implementation(ControlledPawn);
+					}
+				}
+
+				// Fix up pawns/characters.
+				APawn* Pawn = Cast<APawn>(EntityActor);
+				if (Pawn)
+				{
+					APlayerController* Controller = Cast<APlayerController>(Pawn->GetController());
+					if (Controller)
+					{
+						Controller->ServerAcknowledgePossession_Implementation(Pawn);
+					}
+					ACharacter* Character = Cast<ACharacter>(Pawn);
+					if (Character)
+					{
+						Cast<UCharacterMovementComponent>(Character->GetMovementComponent())->ApplyNetworkMovementMode(Character->GetReplicatedMovementMode());
+					}
+				}
+			}
 		}
 	}
 	return EntityActor;
@@ -414,7 +451,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 
 // Note that in NUF, this function will not be called on the spawning worker.
 // It's only for client, and in the future, other workers.
-AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* PositionComponent, UWorld* World, UClass* ActorClass)
+AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ActorClass)
 {
 	FVector InitialLocation = SpatialConstants::SpatialOSCoordinatesToLocation(PositionComponent->coords());
 	AActor* NewActor = nullptr;
@@ -423,7 +460,7 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* P
 		//bRemoteOwned needs to be public in source code. This might be a controversial change.
 		FActorSpawnParameters SpawnInfo;
 		SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		SpawnInfo.bRemoteOwned = true;
+		SpawnInfo.bRemoteOwned = !NetDriver->IsServer();
 		SpawnInfo.bNoFail = true;
 		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 

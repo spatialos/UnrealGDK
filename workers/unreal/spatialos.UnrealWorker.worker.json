@@ -62,7 +62,8 @@
       "command": "StartServer.sh",
       "arguments": [
         "${IMPROBABLE_WORKER_ID}",
-        "BridgeDemo",
+        "NUF",
+        "ThirdPersonExampleMap",
         "+appName",
         "${IMPROBABLE_PROJECT_NAME}",
         "+receptionistIp",
@@ -85,7 +86,7 @@
       "windows": {
         "command": "${UNREAL_HOME}\\Engine\\Binaries\\Win64\\UE4Editor.exe",
         "arguments": [
-          "${IMPROBABLE_WORKER_DIR}/Game/<PROJECT_NAME>.uproject",
+          "${IMPROBABLE_WORKER_DIR}/Game/NUF.uproject",
           "-server",
           "-stdout",
           "-nowrite",

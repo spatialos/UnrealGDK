@@ -7,6 +7,7 @@
 #include "SpatialInteropPipelineBlock.h"
 #include "SpatialInterop.h"
 #include "PlayerSpawnRequestSender.h"
+#include "SpatialOutputDevice.h"
 #include "SpatialNetDriver.generated.h"
 
 class UEntityPipeline;
@@ -52,14 +53,6 @@ public:
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	// End UNetDriver interface.
 
-	// Set the timer manager.
-	void SetTimerManager(FTimerManager* InTimerManager);
-
-	FTimerManager& GetTimerManager() const
-	{
-		return *TimerManager;
-	}
-
 	USpatialOS* GetSpatialOS() const
 	{
 		return SpatialOSInstance;
@@ -86,8 +79,12 @@ public:
 	}
 
 protected:
+	FSOSWorkerConfigurationData WorkerConfig;
+
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
+
+	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	UPROPERTY()
 	USpatialOSComponentUpdater* SpatialOSComponentUpdater;
@@ -105,6 +102,9 @@ protected:
 	// Package map shared by all connections.
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
+
+	UFUNCTION()
+	void OnMapLoaded(UWorld* LoadedWorld);
 
 	UFUNCTION()
 	void OnSpatialOSConnected();
