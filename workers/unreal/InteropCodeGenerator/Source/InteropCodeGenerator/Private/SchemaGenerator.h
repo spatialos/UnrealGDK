@@ -36,7 +36,7 @@ FString SchemaFieldName(TArray<UProperty*> Chain);
 FString SchemaCommandName(UFunction* Function);
 
 // Given a UFunction, generates the c++ command name. Identical to the schema name with the first letter being uppercase.
-FString CppCommandClassName(UFunction* Function);
+FString CPPCommandClassName(UFunction* Function);
 
 ////////////////////////
 
@@ -45,4 +45,4 @@ FString CppCommandClassName(UFunction* Function);
 FString RepLayoutTypeToSchemaType(ERepLayoutCmdType Type);
 
 // Generates a schema file, given an output code writer, component ID, Unreal type and property layout.
-int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class, const FPropertyLayout& Layout);
+int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, const FPropertyLayout& Layout);

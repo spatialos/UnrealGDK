@@ -70,7 +70,7 @@ FString SchemaCommandName(UFunction* Function)
 	return Function->GetName().ToLower();
 }
 
-FString CppCommandClassName(UFunction* Function)
+FString CPPCommandClassName(UFunction* Function)
 {
 	FString SchemaName = SchemaCommandName(Function);
 	SchemaName[0] = FChar::ToUpper(SchemaName[0]);
@@ -139,7 +139,7 @@ FString RepLayoutTypeToSchemaType(ERepLayoutCmdType Type)
 	return DataType;
 }
 
-int GenerateSchemaFromLayout(FCodeWriter& Writer, int ComponentId, UClass* Class, const FPropertyLayout& Layout)
+int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, const FPropertyLayout& Layout)
 {
 	FComponentIdGenerator IdGenerator(ComponentId);
 

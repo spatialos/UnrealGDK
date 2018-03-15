@@ -418,21 +418,11 @@ void USpatialTypeBinding_Character::BuildSpatialComponentUpdate(
 	}
 }
 
-void USpatialTypeBinding_Character::ServerSendUpdate_SingleClient(
-	const uint8* RESTRICT Data,
-	int32 Handle,
-	UProperty* Property,
-	USpatialActorChannel* Channel,
-	improbable::unreal::UnrealCharacterSingleClientRepData::Update& OutUpdate) const
+void USpatialTypeBinding_Character::ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealCharacterSingleClientRepData::Update& OutUpdate) const;
 {
 }
 
-void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
-	const uint8* RESTRICT Data,
-	int32 Handle,
-	UProperty* Property,
-	USpatialActorChannel* Channel,
-	improbable::unreal::UnrealCharacterMultiClientRepData::Update& OutUpdate) const
+void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealCharacterMultiClientRepData::Update& OutUpdate) const;
 {
 	switch (Handle)
 	{
@@ -897,9 +887,7 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(
 	}
 }
 
-void USpatialTypeBinding_Character::ClientReceiveUpdate_SingleClient(
-	USpatialActorChannel* ActorChannel,
-	const improbable::unreal::UnrealCharacterSingleClientRepData::Update& Update) const
+void USpatialTypeBinding_Character::ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealCharacterSingleClientRepData::Update& Update) const;
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
@@ -907,9 +895,7 @@ void USpatialTypeBinding_Character::ClientReceiveUpdate_SingleClient(
 	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
-void USpatialTypeBinding_Character::ClientReceiveUpdate_MultiClient(
-	USpatialActorChannel* ActorChannel,
-	const improbable::unreal::UnrealCharacterMultiClientRepData::Update& Update) const
+void USpatialTypeBinding_Character::ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealCharacterMultiClientRepData::Update& Update) const;
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 

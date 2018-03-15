@@ -3,9 +3,13 @@
 #pragma once
 
 #include "EngineMinimal.h"
+#include "TypeStructure.h"
 
-struct FPropertyLayout;
 class FCodeWriter;
+
+// Given an Unreal class, generates the name of the type binding class.
+// For example: USpatialTypeBinding_Character.
+FString TypeBindingName(UClass* Class);
 
 // Generates code to copy an Unreal PropertyValue into a SpatialOS component update.
 void GenerateUnrealToSchemaConversion(
@@ -28,19 +32,34 @@ void GeneratePropertyToUnrealConversion(
 
 FString GeneratePropertyReader(UProperty* Property);
 
-
-void GenerateFunction_SubobjectNameToOffsetMap(
-	FCodeWriter& SourceWriter,
+void GenerateTypeBindingHeader(
+	FCodeWriter& HeaderWriter,
 	FString SchemaFilename,
 	FString InteropFilename,
 	UClass* Class,
-	const FPropertyLayout& Layout,
-	FString& TypeBindingName);
+	const FPropertyLayout& Layout);
 
-void GenerateForwardingCodeFromLayout(
-	FCodeWriter& HeaderWriter,
+void GenerateTypeBindingSource(
 	FCodeWriter& SourceWriter,
 	FString SchemaFilename,
 	FString InteropFilename,
 	UClass* Class,
 	const FPropertyLayout& Layout);
+
+void GenerateFunction_GetHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout& Layout);
+void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class);
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout& Layout);
+void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout& Layout);
+void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class);
+void GenerateFunction_GetReplicatedGroupComponentId(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout& Layout);
+void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout& Layout);
+void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Class);
+void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class);
+void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class);
+void GenerateFunction_ApplyQueuedStateToChannel(FCodeWriter& SourceWriter, UClass* Class);
+void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UClass* Class);
+void GenerateFunction_ServerSendUpdate(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout& Layout, EReplicatedPropertyGroup Group);
+void GenerateFunction_ReceiveUpdate(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout& Layout, EReplicatedPropertyGroup Group);
+void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, const FRPCDefinition& RPC);
+void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Class, const FRPCDefinition& RPC);
+void GenerateFunction_RPCOnCommandResponse(FCodeWriter& SourceWriter, UClass* Class, const FRPCDefinition& RPC);

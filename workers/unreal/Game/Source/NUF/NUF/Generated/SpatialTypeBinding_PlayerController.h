@@ -52,24 +52,10 @@ private:
 		bool& bSingleClientUpdateChanged,
 		improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update& MultiClientUpdate,
 		bool& bMultiClientUpdateChanged) const;
-	void ServerSendUpdate_SingleClient(
-		const uint8* RESTRICT Data,
-		int32 Handle,
-		UProperty* Property,
-		USpatialActorChannel* Channel,
-		improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update& OutUpdate) const;
-	void ServerSendUpdate_MultiClient(
-		const uint8* RESTRICT Data,
-		int32 Handle,
-		UProperty* Property,
-		USpatialActorChannel* Channel,
-		improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update& OutUpdate) const;
-	void ClientReceiveUpdate_SingleClient(
-		USpatialActorChannel* ActorChannel,
-		const improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update& Update) const;
-	void ClientReceiveUpdate_MultiClient(
-		USpatialActorChannel* ActorChannel,
-		const improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update& Update) const;
+	void ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update& OutUpdate) const;
+	void ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update& OutUpdate) const;
+	void ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update& Update) const;
+	void ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update& Update) const;
 
 	// RPC command sender functions.
 	void OnServerStartedVisualLogger_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject);

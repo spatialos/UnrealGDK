@@ -313,21 +313,11 @@ void USpatialTypeBinding_WheeledVehicle::BuildSpatialComponentUpdate(
 	}
 }
 
-void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_SingleClient(
-	const uint8* RESTRICT Data,
-	int32 Handle,
-	UProperty* Property,
-	USpatialActorChannel* Channel,
-	improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& OutUpdate) const
+void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& OutUpdate) const;
 {
 }
 
-void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_MultiClient(
-	const uint8* RESTRICT Data,
-	int32 Handle,
-	UProperty* Property,
-	USpatialActorChannel* Channel,
-	improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& OutUpdate) const
+void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& OutUpdate) const;
 {
 	switch (Handle)
 	{
@@ -565,9 +555,7 @@ void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_MultiClient(
 	}
 }
 
-void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_SingleClient(
-	USpatialActorChannel* ActorChannel,
-	const improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& Update) const
+void USpatialTypeBinding_WheeledVehicle::ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& Update) const;
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
@@ -575,9 +563,7 @@ void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_SingleClient(
 	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
-void USpatialTypeBinding_WheeledVehicle::ClientReceiveUpdate_MultiClient(
-	USpatialActorChannel* ActorChannel,
-	const improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& Update) const
+void USpatialTypeBinding_WheeledVehicle::ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& Update) const;
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 

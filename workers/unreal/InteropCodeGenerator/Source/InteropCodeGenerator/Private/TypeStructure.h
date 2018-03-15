@@ -61,6 +61,7 @@ struct FRPCDefinition
 {
 	UClass* CallerType;
 	UFunction* Function;
+	ERPCType Type;
 	bool bReliable;
 };
 
@@ -77,6 +78,9 @@ FString GetFullCPPName(UClass* Class);
 // Utility functions to convert certain enum values to strings.
 FString GetLifetimeConditionAsString(ELifetimeCondition Condition);
 FString GetRepNotifyLifetimeConditionAsString(ELifetimeRepNotifyCondition Condition);
+
+// Get an array of all replicated property groups
+TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups();
 
 // Convert a replicated property group to a string. Used to generate component names.
 FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group);

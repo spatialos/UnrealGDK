@@ -36,6 +36,12 @@ FString GetRepNotifyLifetimeConditionAsString(ELifetimeRepNotifyCondition Condit
 	return FString();
 }
 
+TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups()
+{
+	static TArray<EReplicatedPropertyGroup> Groups = {REP_SingleClient, REP_MultiClient};
+	return Groups;
+}
+
 FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 {
 	return Group == REP_SingleClient ? TEXT("SingleClient") : TEXT("MultiClient");
@@ -415,7 +421,7 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 			RemoteFunction->FunctionFlags & FUNC_NetServer)
 		{
 			bool bReliable = (RemoteFunction->FunctionFlags & FUNC_NetReliable) != 0;
-			Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{Class, *RemoteFunction, bReliable});
+			Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{Class, *RemoteFunction, GetRPCTypeFromFunction(*RemoteFunction), bReliable});
 		}
 	}
 
@@ -429,7 +435,7 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 				RemoteFunction->FunctionFlags & FUNC_NetServer)
 			{
 				bool bReliable = (RemoteFunction->FunctionFlags & FUNC_NetReliable) != 0;
-				Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{CharacterMovementComponentClass, *RemoteFunction, bReliable});
+				Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{CharacterMovementComponentClass, *RemoteFunction, GetRPCTypeFromFunction(*RemoteFunction), bReliable});
 			}
 		}
 	}
@@ -444,7 +450,7 @@ FPropertyLayout CreatePropertyLayout(UClass* Class)
 				RemoteFunction->FunctionFlags & FUNC_NetServer)
 			{
 				bool bReliable = (RemoteFunction->FunctionFlags & FUNC_NetReliable) != 0;
-				Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{UWheeledVehicleMovementComponent, *RemoteFunction, bReliable});
+				Layout.RPCs[GetRPCTypeFromFunction(*RemoteFunction)].Emplace(FRPCDefinition{UWheeledVehicleMovementComponent, *RemoteFunction, GetRPCTypeFromFunction(*RemoteFunction), bReliable});
 			}
 		}
 	}

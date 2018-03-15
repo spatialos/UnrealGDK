@@ -5,17 +5,21 @@
 struct FFunctionSignature
 {
 	FString Type;
-	FString Name;
-	FString Params;
+	FString NameAndParams;
 
-	FString Declaration()
+	FString Declaration() const
 	{
-		return FString::Printf(TEXT("%s %s%s;"), *Type, *Name, *Params);
+		return FString::Printf(TEXT("%s %s;"), *Type, *NameAndParams);
 	}
 
-	FString Definition(const FString& TypeName)
+	FString Definition() const
 	{
-		return FString::Printf(TEXT("%s %s::%s%s"), *Type, *TypeName, *Name, *Params);
+		return FString::Printf(TEXT("%s %s"), *Type, *NameAndParams);
+	}
+
+	FString Definition(const FString& TypeName) const
+	{
+		return FString::Printf(TEXT("%s %s::%s"), *Type, *TypeName, *NameAndParams);
 	}
 };
 
@@ -34,8 +38,9 @@ public:
 	FCodeWriter& Print(const FString& String);
 	FCodeWriter& Indent();
 	FCodeWriter& Outdent();
-	FCodeWriter& StartScope();
-	FCodeWriter& EndScope();
+
+	FCodeWriter& BeginScope();
+	FCodeWriter& End();
 
 	void WriteToFile(const FString& Filename);
 	void Dump();
@@ -45,21 +50,45 @@ private:
 	int Scope;
 };
 
-// TODO: Roll these into `FCodeWriter`.
-
-FORCEINLINE void StartGeneratingFunction(
-	FCodeWriter& SourceWriter,
-	FString ReturnType,
-	FString FunctionNameAndParams,
-	FString TypeBindingName)
+class FFunctionWriter
 {
-	SourceWriter.Print();
-	SourceWriter.Printf("%s %s::%s", *ReturnType, *TypeBindingName, *FunctionNameAndParams);
-	SourceWriter.Print("{");
-	SourceWriter.Indent();
-}
+public:
+	FFunctionWriter(FCodeWriter& Writer, const FString& Definition) : Writer(Writer)
+	{
+		Writer.Print(Definition);
+		Writer.BeginScope();
+	}
 
-FORCEINLINE void EndGeneratingFunction(FCodeWriter& SourceWriter)
+	FFunctionWriter(FCodeWriter& Writer, const FFunctionSignature& Signature) : FFunctionWriter(Writer, Signature.Definition())
+	{
+	}
+
+	FFunctionWriter(FCodeWriter& Writer, const FFunctionSignature& Signature, const FString& TypeName) : FFunctionWriter(Writer, Signature.Definition(TypeName))
+	{
+	}
+
+	~FFunctionWriter()
+	{
+		Writer.End();
+	}
+
+private:
+	FCodeWriter& Writer;
+};
+
+class FScopeWriter
 {
-	SourceWriter.EndScope();
-}
+public:
+	FScopeWriter(FCodeWriter& Writer) : Writer(Writer)
+	{
+		Writer.BeginScope();
+	}
+
+	~FScopeWriter()
+	{
+		Writer.End();
+	}
+
+private:
+	FCodeWriter& Writer;
+};

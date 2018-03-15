@@ -24,11 +24,12 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	FPropertyLayout Layout = CreatePropertyLayout(Class);
 
 	// Generate schema.
-	int NumComponents = GenerateSchemaFromLayout(OutputSchema, ComponentId, Class, Layout);
+	int NumComponents = GenerateTypeBindingSchema(OutputSchema, ComponentId, Class, Layout);
 	OutputSchema.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFilename));
 
 	// Generate forwarding code.
-	GenerateForwardingCodeFromLayout(OutputHeader, OutputSource, SchemaFilename, TypeBindingFilename, Class, Layout);
+	GenerateTypeBindingHeader(OutputHeader, SchemaFilename, TypeBindingFilename, Class, Layout);
+	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, Layout);
 	OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *TypeBindingFilename));
 	OutputSource.WriteToFile(FString::Printf(TEXT("%s%s.cpp"), *ForwardingCodePath, *TypeBindingFilename));
 
@@ -60,17 +61,19 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 		OutputListSource.Printf("#include \"SpatialTypeBinding_%s.h\"", *ClassName);
 	}
 	OutputListSource.Print();
-	OutputListSource.Print("TArray<UClass*> GetGeneratedTypeBindings()");
-	OutputListSource.Print("{").Indent();
-	OutputListSource.Print("return {");
-	OutputListSource.Indent();
-	for (int i = 0; i < Classes.Num(); ++i)
+
+	// GetGeneratedTypeBindings.
 	{
-		OutputListSource.Printf(TEXT("USpatialTypeBinding_%s::StaticClass()%s"), *Classes[i], i < (Classes.Num() - 1) ? TEXT(",") : TEXT(""));
+		FFunctionWriter Func(OutputListSource, "TArray<UClass*> GetGeneratedTypeBindings()");
+		OutputListSource.Print("return {");
+		OutputListSource.Indent();
+		for (int i = 0; i < Classes.Num(); ++i)
+		{
+			OutputListSource.Printf(TEXT("USpatialTypeBinding_%s::StaticClass()%s"), *Classes[i], i < (Classes.Num() - 1) ? TEXT(",") : TEXT(""));
+		}
+		OutputListSource.Outdent();
+		OutputListSource.Print("};");
 	}
-	OutputListSource.Outdent();
-	OutputListSource.Print("};");
-	OutputListSource.Outdent().Print("}");
 
 	// Write to files.
 	OutputListHeader.WriteToFile(FString::Printf(TEXT("%sSpatialTypeBindingList.h"), *ForwardingCodePath));

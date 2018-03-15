@@ -83,13 +83,13 @@ FCodeWriter& FCodeWriter::Outdent()
 	return *this;
 }
 
-FCodeWriter& FCodeWriter::StartScope() {
+FCodeWriter& FCodeWriter::BeginScope() {
 	Print("{");
 	Indent();
 	return *this;
 }
 
-FCodeWriter& FCodeWriter::EndScope() {
+FCodeWriter& FCodeWriter::End() {
 	Outdent();
 	Print("}");
 	return *this;

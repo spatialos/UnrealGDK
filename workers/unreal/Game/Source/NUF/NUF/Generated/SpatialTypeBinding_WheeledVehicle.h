@@ -52,24 +52,10 @@ private:
 		bool& bSingleClientUpdateChanged,
 		improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& MultiClientUpdate,
 		bool& bMultiClientUpdateChanged) const;
-	void ServerSendUpdate_SingleClient(
-		const uint8* RESTRICT Data,
-		int32 Handle,
-		UProperty* Property,
-		USpatialActorChannel* Channel,
-		improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& OutUpdate) const;
-	void ServerSendUpdate_MultiClient(
-		const uint8* RESTRICT Data,
-		int32 Handle,
-		UProperty* Property,
-		USpatialActorChannel* Channel,
-		improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& OutUpdate) const;
-	void ClientReceiveUpdate_SingleClient(
-		USpatialActorChannel* ActorChannel,
-		const improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& Update) const;
-	void ClientReceiveUpdate_MultiClient(
-		USpatialActorChannel* ActorChannel,
-		const improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& Update) const;
+	void ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& OutUpdate) const;
+	void ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& OutUpdate) const;
+	void ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& Update) const;
+	void ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& Update) const;
 
 	// RPC command sender functions.
 	void ServerUpdateState_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject);
