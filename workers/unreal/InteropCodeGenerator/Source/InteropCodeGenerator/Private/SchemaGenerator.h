@@ -32,6 +32,9 @@ FString SchemaRPCResponseType(UFunction* Function);
 // Given a property chain, generates the schema field name.
 FString SchemaFieldName(TArray<UProperty*> Chain);
 
+// Given a property node, generates the schema field name.
+FString SchemaFieldName(TSharedPtr<FUnrealProperty> Property);
+
 // Given a UFunction, generates the schema command name. Currently just returns the function name in lowercase.
 FString SchemaCommandName(UFunction* Function);
 
@@ -44,5 +47,5 @@ FString CPPCommandClassName(UFunction* Function);
 // type used in schema.
 FString RepLayoutTypeToSchemaType(ERepLayoutCmdType Type);
 
-// Generates a schema file, given an output code writer, component ID, Unreal type and property layout.
-int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, const FPropertyLayout& Layout);
+// Generates a schema file, given an output code writer, component ID, Unreal type and type info.
+int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo);

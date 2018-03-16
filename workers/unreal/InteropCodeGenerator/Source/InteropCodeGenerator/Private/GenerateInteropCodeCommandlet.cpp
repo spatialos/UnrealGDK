@@ -21,10 +21,12 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	FString SchemaFilename = FString::Printf(TEXT("Unreal%s"), *Class->GetName());
 	FString TypeBindingFilename = FString::Printf(TEXT("SpatialTypeBinding_%s"), *Class->GetName());
 
-	FPropertyLayout Layout = CreatePropertyLayout(Class);
+	FPropertyLayout_OLD Layout = CreatePropertyLayout(Class);
+
+	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class);
 
 	// Generate schema.
-	int NumComponents = GenerateTypeBindingSchema(OutputSchema, ComponentId, Class, Layout);
+	int NumComponents = GenerateTypeBindingSchema(OutputSchema, ComponentId, Class, TypeInfo);
 	OutputSchema.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFilename));
 
 	// Generate forwarding code.

@@ -5,7 +5,56 @@
 #include "EngineMinimal.h"
 #include "Net/RepLayout.h"
 
-struct FPropertyInfo
+/*
+
+Example AST generated from Character:
+
+FUnrealType
+	+ Type: Character
+	+ Properties:
+		[0] FUnrealProperty
+			+ Property: "MovementComp"
+			+ Type: FUnrealType
+				+ Type: CharacterMovementComponent
+				+ Properties:
+					[0] ....
+					...
+				+ RPCs:
+					[0] FUnrealRPC
+						+ CallerType: CharacterMovementComponent
+						+ Function: "ServerMove"
+						+ Type: RPC_Server
+						+ bReliable: false
+					[1] ....
+			+ ReplicationData: FUnrealRepData
+				+ RepLayoutType: REPCMD_PropertyObject
+				+ Handle: 29
+				+ ...
+		[1] FUnrealProperty
+			+ Property: "bIsCrouched"
+			+ Type: nullptr
+			+ ReplicationData: FUnrealRepData
+				+ RepLayoutType: REPCMD_PropertyBool
+				+ Handle: 15
+				...
+		[2] FUnrealProperty
+			+ Property: "Controller":
+			+ Type: nullptr						<- weak reference so not set.
+			+ ReplicationData: FUnrealRepData
+				+ RepLayoutType: REPCMD_PropertyObject
+				+ Handle: 19
+				...
+	+ RPCs:
+		[0] FUnrealRPC
+			+ CallerType: Character
+			+ Function: ClientRestart
+			+ Type: RPC_Client
+			+ bReliable: true
+		[1] ....
+
+*/
+
+struct FPropertyInfo_OLD
 {
 	UProperty* Property;
 	ERepLayoutCmdType Type;
@@ -16,13 +65,13 @@ struct FPropertyInfo
 	// Properties that were traversed to reach this property, including the property itself.
 	TArray<UProperty*> Chain;
 
-	bool operator==(const FPropertyInfo& Other) const
+	bool operator==(const FPropertyInfo_OLD& Other) const
 	{
 		return Property == Other.Property && Type == Other.Type && Chain == Other.Chain;
 	}
 };
 
-struct FRepLayoutEntry
+struct FRepLayoutEntry_OLD
 {
 	UProperty* Property;
 	UProperty* Parent;
@@ -34,12 +83,12 @@ struct FRepLayoutEntry
 	uint16 Handle;
 };
 
-struct FReplicatedPropertyInfo
+struct FReplicatedPropertyInfo_OLD
 {
-	FRepLayoutEntry Entry;
+	FRepLayoutEntry_OLD Entry;
 	// Usually a singleton list containing the PropertyInfo this RepLayoutEntry refers to.
 	// In some cases (such as a struct within a struct), this can refer to many properties in schema.
-	TArray<FPropertyInfo> PropertyList;
+	TArray<FPropertyInfo_OLD> PropertyList;
 };
 
 enum EReplicatedPropertyGroup
@@ -57,7 +106,7 @@ enum ERPCType
 	RPC_Unknown
 };
 
-struct FRPCDefinition
+struct FRPCDefinition_OLD
 {
 	UClass* CallerType;
 	UFunction* Function;
@@ -65,11 +114,49 @@ struct FRPCDefinition
 	bool bReliable;
 };
 
-struct FPropertyLayout
+struct FPropertyLayout_OLD
 {
-	TMap<EReplicatedPropertyGroup, TArray<FReplicatedPropertyInfo>> ReplicatedProperties;
-	TArray<FPropertyInfo> CompleteProperties;
-	TMap<ERPCType, TArray<FRPCDefinition>> RPCs;
+	TMap<EReplicatedPropertyGroup, TArray<FReplicatedPropertyInfo_OLD>> ReplicatedProperties;
+	TArray<FPropertyInfo_OLD> CompleteProperties;
+	TMap<ERPCType, TArray<FRPCDefinition_OLD>> RPCs;
+};
+
+struct FUnrealProperty;
+struct FUnrealRPC;
+struct FUnrealRepData;
+
+struct FUnrealType
+{
+	UStruct* Type;
+	TMap<UProperty*, TSharedPtr<FUnrealProperty>> Properties;
+	TMap<UFunction*, TSharedPtr<FUnrealRPC>> RPCs;
+	TWeakPtr<FUnrealProperty> ParentProperty;
+};
+
+struct FUnrealProperty
+{
+	UProperty* Property;
+	TSharedPtr<FUnrealType> Type; // Only set if strong reference to object/struct property.
+	TSharedPtr<FUnrealRepData> ReplicationData; // Only set if property is replicated.
+	TWeakPtr<FUnrealType> ContainerType;
+};
+
+struct FUnrealRPC
+{
+	UClass* CallerType;
+	UFunction* Function;
+	ERPCType Type;
+	TMap<UProperty*, TSharedPtr<FUnrealProperty>> Parameters;
+	bool bReliable;
+};
+
+struct FUnrealRepData
+{
+	ERepLayoutCmdType RepLayoutType;
+	ELifetimeCondition Condition;
+	ELifetimeRepNotifyCondition RepNotifyCondition;
+	int CmdIndex;
+	uint16 Handle;
 };
 
 // Given a UClass, returns either "AFoo" or "UFoo" depending on whether it is a subclass of actor.
@@ -98,6 +185,15 @@ FString GetRPCTypeName(ERPCType RPCType);
 ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property);
 
 // CDO - Class default object which contains Property
-void VisitProperty(TArray<FPropertyInfo>& PropertyInfo, UObject* CDO, TArray<UProperty*> Stack, UProperty* Property);
+void VisitProperty(TArray<FPropertyInfo_OLD>& PropertyInfo, UObject* CDO, TArray<UProperty*> Stack, UProperty* Property);
 
-FPropertyLayout CreatePropertyLayout(UClass* Class);
+FPropertyLayout_OLD CreatePropertyLayout(UClass* Class);
+
+void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor, bool bRecurseIntoSubobjects);
+void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor, bool bRecurseIntoSubobjects);
+void VisitAllProperties(TSharedPtr<FUnrealRPC> TypeNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor, bool bRecurseIntoSubobjects);
+
+TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type);
+
+TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPtr<FUnrealProperty>>> GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo);
+TMap<ERPCType, TArray<TSharedPtr<FUnrealRPC>>> GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo);

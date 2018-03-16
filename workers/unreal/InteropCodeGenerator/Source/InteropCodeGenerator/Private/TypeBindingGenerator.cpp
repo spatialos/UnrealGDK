@@ -318,7 +318,7 @@ FString GeneratePropertyReader(UProperty* Property)
 		*Property->GetName());
 }
 
-void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const FPropertyLayout& Layout)
+void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const FPropertyLayout_OLD& Layout)
 {
 	HeaderWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -444,7 +444,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	HeaderWriter.Print("};");
 }
 
-void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const FPropertyLayout& Layout)
+void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const FPropertyLayout_OLD& Layout)
 {
 	SourceWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -554,7 +554,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	}
 }
 
-void GenerateFunction_GetHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout& Layout)
+void GenerateFunction_GetHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout_OLD& Layout)
 {
 	FFunctionWriter Func(SourceWriter, {"const FRepHandlePropertyMap&", "GetHandlePropertyMap()"}, TypeBindingName(Class));
 
@@ -564,7 +564,7 @@ void GenerateFunction_GetHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Cl
 		FScopeWriter PropertyMapInitScope(SourceWriter);
 
 		// Reduce into single list of properties.
-		TArray<FReplicatedPropertyInfo> ReplicatedProperties;
+		TArray<FReplicatedPropertyInfo_OLD> ReplicatedProperties;
 		for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 		{
 			ReplicatedProperties.Append(Layout.ReplicatedProperties[Group]);
@@ -615,7 +615,7 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.Printf("return %s::StaticClass();", *GetFullCPPName(Class));
 }
 
-void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout& Layout)
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout_OLD& Layout)
 {
 	FFunctionWriter Init(SourceWriter, {"void", "Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)"}, TypeBindingName(Class));
 
@@ -630,7 +630,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FProp
 	}
 }
 
-void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout& Layout)
+void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout_OLD& Layout)
 {
 	FFunctionWriter BindToView(SourceWriter, {"void", "BindToView()"}, TypeBindingName(Class));
 
@@ -703,7 +703,7 @@ void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.Print("ViewCallbacks.Reset();");
 }
 
-void GenerateFunction_GetReplicatedGroupComponentId(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout& Layout)
+void GenerateFunction_GetReplicatedGroupComponentId(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout_OLD& Layout)
 {
 	FFunctionWriter GetReplicatedGroupComponentId(
 		SourceWriter,
@@ -727,7 +727,7 @@ void GenerateFunction_GetReplicatedGroupComponentId(FCodeWriter& SourceWriter, U
 	}
 }
 
-void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout& Layout)
+void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout_OLD& Layout)
 {
 	FFunctionWriter CreateActorEntity(
 		SourceWriter,
@@ -996,7 +996,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 	}
 }
 
-void GenerateFunction_ServerSendUpdate(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout& Layout, EReplicatedPropertyGroup Group)
+void GenerateFunction_ServerSendUpdate(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout_OLD& Layout, EReplicatedPropertyGroup Group)
 {
 	FFunctionSignature ServerSendUpdateSignature
 	{
@@ -1052,7 +1052,7 @@ void GenerateFunction_ServerSendUpdate(FCodeWriter& SourceWriter, UClass* Class,
 	}
 }
 
-void GenerateFunction_ReceiveUpdate(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout& Layout, EReplicatedPropertyGroup Group)
+void GenerateFunction_ReceiveUpdate(FCodeWriter& SourceWriter, UClass* Class, const FPropertyLayout_OLD& Layout, EReplicatedPropertyGroup Group)
 {
 	FFunctionSignature ReceiveUpdateSignature{"void",
 		FString::Printf(TEXT("ReceiveUpdate_%s(USpatialActorChannel* ActorChannel, const improbable::unreal::%s::Update& Update) const;"),
@@ -1211,7 +1211,7 @@ void GenerateFunction_ReceiveUpdate(FCodeWriter& SourceWriter, UClass* Class, co
 	SourceWriter.Print("Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);");
 }
 
-void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, const FRPCDefinition& RPC)
+void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, const FRPCDefinition_OLD& RPC)
 {
 	FFunctionSignature SendCommandSignature{
 		"void",
@@ -1283,7 +1283,7 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 	SourceWriter.Printf("Interop->SendCommandRequest_Internal(Sender, %s);", RPC.bReliable ? TEXT("/*bReliable*/ true") : TEXT("/*bReliable*/ false"));
 }
 
-void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Class, const FRPCDefinition& RPC)
+void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Class, const FRPCDefinition_OLD& RPC)
 {
 	FString RequestFuncName = FString::Printf(TEXT("%s_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::%s::Commands::%s>& Op)"),
 		*RPC.Function->GetName(),
@@ -1375,7 +1375,7 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 	SourceWriter.Print("Interop->SendCommandResponse_Internal(Receiver);");
 }
 
-void GenerateFunction_RPCOnCommandResponse(FCodeWriter& SourceWriter, UClass* Class, const FRPCDefinition& RPC)
+void GenerateFunction_RPCOnCommandResponse(FCodeWriter& SourceWriter, UClass* Class, const FRPCDefinition_OLD& RPC)
 {
 	FString ResponseFuncName = FString::Printf(TEXT("%s_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::%s::Commands::%s>& Op)"),
 		*RPC.Function->GetName(),

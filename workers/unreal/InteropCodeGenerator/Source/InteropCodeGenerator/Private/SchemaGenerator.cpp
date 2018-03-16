@@ -2,6 +2,8 @@
 
 #include "SchemaGenerator.h"
 
+#include "Algo/Reverse.h"
+
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 
@@ -60,6 +62,31 @@ FString SchemaFieldName(TArray<UProperty*> Chain)
 	{
 		ChainNames.Add(Prop->GetName().ToLower());
 	}
+	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
+	// which the generated code extends :troll:.
+	return TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
+}
+
+FString SchemaFieldName(TSharedPtr<FUnrealProperty> Property)
+{
+	// Go up the chain of properties starting at this one, and get their names.
+	TArray<FString> ChainNames;
+	TSharedPtr<FUnrealProperty> CurrentProperty = Property;
+	while (CurrentProperty.IsValid())
+	{
+		ChainNames.Add(CurrentProperty->Property->GetName().ToLower());
+		if (CurrentProperty->ContainerType.IsValid())
+		{
+			TSharedPtr<FUnrealType> EnclosingType = CurrentProperty->ContainerType.Pin();
+			CurrentProperty = EnclosingType->ParentProperty.Pin();
+		}
+		else
+		{
+			CurrentProperty.Reset();
+		}
+	}
+	Algo::Reverse(ChainNames);
+
 	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
 	// which the generated code extends :troll:.
 	return TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
@@ -139,7 +166,7 @@ FString RepLayoutTypeToSchemaType(ERepLayoutCmdType Type)
 	return DataType;
 }
 
-int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, const FPropertyLayout& Layout)
+int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo)
 {
 	FComponentIdGenerator IdGenerator(ComponentId);
 
@@ -152,33 +179,29 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		import "improbable/unreal/core_types.schema";)""");
 	Writer.Print();
 
-	TArray<EReplicatedPropertyGroup> RepPropertyGroups;
-	Layout.ReplicatedProperties.GetKeys(RepPropertyGroups);
+	TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPtr<FUnrealProperty>>> RepData = GetFlatRepData(TypeInfo);
 
-	// Replicated properties.
-	for (EReplicatedPropertyGroup Group : RepPropertyGroups)
+	// Client-server replicated properties.
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
 		Writer.Printf("component %s {", *SchemaReplicatedDataName(Group, Class));
 		Writer.Indent();
 		Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
 		int FieldCounter = 0;
-		for (auto& RepProp : Layout.ReplicatedProperties[Group])
+		for (auto& RepProp : RepData[Group])
 		{
-			for (auto& Prop : RepProp.PropertyList)
-			{
-				FieldCounter++;
-				Writer.Printf("%s %s = %d; // %s",
-					*RepLayoutTypeToSchemaType(Prop.Type),
-					*SchemaFieldName(Prop.Chain),
-					FieldCounter,
-					*GetLifetimeConditionAsString(RepProp.Entry.Condition)
-				);
-			}
+			FieldCounter++;
+			Writer.Printf("%s %s = %d; // %s",
+				*RepLayoutTypeToSchemaType(RepProp.Value->ReplicationData->RepLayoutType),
+				*SchemaFieldName(RepProp.Value),
+				FieldCounter,
+				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition)
+			);
 		}
 		Writer.Outdent().Print("}");
 	}
 
-	// Complete properties.
+	// Worker-worker replicated properties.
 	Writer.Printf("component %s {", *SchemaWorkerReplicatedDataName(Class));
 	Writer.Indent();
 	Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
@@ -202,22 +225,33 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 	Writer.Outdent().Print("}");
 
+	TMap<ERPCType, TArray<TSharedPtr<FUnrealRPC>>> RPCsByType = GetAllRPCsByType(TypeInfo);
+
 	for (auto Group : GetRPCTypes())
 	{
 		// Generate schema RPC command types
-		for (auto& RPC : (Layout.RPCs[Group]))
+		for (auto& RPC : RPCsByType[Group])
 		{
-			FString TypeStr = SchemaRPCRequestType(RPC.Function);
+			FString TypeStr = SchemaRPCRequestType(RPC->Function);
 
 			Writer.Printf("type %s {", *TypeStr);
 			Writer.Indent();
 
 			// Recurse into functions properties and build a complete transitive property list.
-			TArray<FPropertyInfo> ParamList;
-			for (TFieldIterator<UProperty> It(RPC.Function); It; ++It)
+			TArray<TSharedPtr<FUnrealProperty>> ParamList;
+			VisitAllProperties(RPC, [&ParamList](TSharedPtr<FUnrealProperty> Property)
 			{
-				VisitProperty(ParamList, nullptr, {}, *It);
-			}
+				// If the RepType is not a generic struct (REPCMD_Property), such as Vector3f or Plane, add to ParamList.
+				ERepLayoutCmdType RepType = PropertyToRepLayoutType(Property->Property);
+				if (RepType != REPCMD_Property)
+				{
+					ParamList.Add(Property);
+					return false;
+				}
+				// Generic struct. Recurse further.
+				// TODO: Add to ParamList if can't recurse further.
+				return true;
+			}, false);
 
 			// RPC target subobject offset.
 			Writer.Printf("uint32 target_subobject_offset = 1;");
@@ -226,8 +260,8 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			{
 				FieldCounter++;
 				Writer.Printf("%s %s = %d;",
-					*RepLayoutTypeToSchemaType(Param.Type),
-					*SchemaFieldName(Param.Chain),
+					*RepLayoutTypeToSchemaType(PropertyToRepLayoutType(Param->Property)),
+					*SchemaFieldName(Param),
 					FieldCounter
 				);
 			}
@@ -242,11 +276,11 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		Writer.Printf("component %s {", *SchemaRPCComponentName(Group, Class));
 		Writer.Indent();
 		Writer.Printf("id = %i;", IdGenerator.GetNextAvailableId());
-		for (auto& RPC : Layout.RPCs[Group])
+		for (auto& RPC : RPCsByType[Group])
 		{
 			Writer.Printf("command UnrealRPCCommandResponse %s(%s);",
-				*SchemaCommandName(RPC.Function),
-				*SchemaRPCRequestType(RPC.Function));
+				*SchemaCommandName(RPC->Function),
+				*SchemaRPCRequestType(RPC->Function));
 		}
 		Writer.Outdent().Print("}");
 	}
