@@ -3,6 +3,7 @@
 #include "SchemaGenerator.h"
 
 #include "Algo/Reverse.h"
+#include "Algo/Transform.h"
 
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
@@ -55,37 +56,14 @@ FString SchemaRPCResponseType(UFunction* Function)
 	return TEXT("Unreal") + Function->GetName() + TEXT("Response");
 }
 
-FString SchemaFieldName(TArray<UProperty*> Chain)
+FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 {
+	// Transform the property chain into a chain of names.
 	TArray<FString> ChainNames;
-	for (auto Prop : Chain)
+	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
 	{
-		ChainNames.Add(Prop->GetName().ToLower());
-	}
-	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
-	// which the generated code extends :troll:.
-	return TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
-}
-
-FString SchemaFieldName(TSharedPtr<FUnrealProperty> Property)
-{
-	// Go up the chain of properties starting at this one, and get their names.
-	TArray<FString> ChainNames;
-	TSharedPtr<FUnrealProperty> CurrentProperty = Property;
-	while (CurrentProperty.IsValid())
-	{
-		ChainNames.Add(CurrentProperty->Property->GetName().ToLower());
-		if (CurrentProperty->ContainerType.IsValid())
-		{
-			TSharedPtr<FUnrealType> EnclosingType = CurrentProperty->ContainerType.Pin();
-			CurrentProperty = EnclosingType->ParentProperty.Pin();
-		}
-		else
-		{
-			CurrentProperty.Reset();
-		}
-	}
-	Algo::Reverse(ChainNames);
+		return Property->Property->GetName().ToLower();
+	});
 
 	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
 	// which the generated code extends :troll:.
@@ -179,7 +157,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		import "improbable/unreal/core_types.schema";)""");
 	Writer.Print();
 
-	TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPtr<FUnrealProperty>>> RepData = GetFlatRepData(TypeInfo);
+	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
 	// Client-server replicated properties.
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
@@ -225,7 +203,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 	Writer.Outdent().Print("}");
 
-	TMap<ERPCType, TArray<TSharedPtr<FUnrealRPC>>> RPCsByType = GetAllRPCsByType(TypeInfo);
+	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
 
 	for (auto Group : GetRPCTypes())
 	{
@@ -238,20 +216,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			Writer.Indent();
 
 			// Recurse into functions properties and build a complete transitive property list.
-			TArray<TSharedPtr<FUnrealProperty>> ParamList;
-			VisitAllProperties(RPC, [&ParamList](TSharedPtr<FUnrealProperty> Property)
-			{
-				// If the RepType is not a generic struct (REPCMD_Property), such as Vector3f or Plane, add to ParamList.
-				ERepLayoutCmdType RepType = PropertyToRepLayoutType(Property->Property);
-				if (RepType != REPCMD_Property)
-				{
-					ParamList.Add(Property);
-					return false;
-				}
-				// Generic struct. Recurse further.
-				// TODO: Add to ParamList if can't recurse further.
-				return true;
-			}, false);
+			TArray<TSharedPtr<FUnrealProperty>> ParamList = GetFlatRPCParameters(RPC);
 
 			// RPC target subobject offset.
 			Writer.Printf("uint32 target_subobject_offset = 1;");

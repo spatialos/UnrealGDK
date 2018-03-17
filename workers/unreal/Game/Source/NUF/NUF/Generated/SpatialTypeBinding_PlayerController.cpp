@@ -24,53 +24,25 @@ const FRepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetHandleProp
 	if (HandleToPropertyMap.Num() == 0)
 	{
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("PlayerController"));
-		FRepLayout RepLayout;
-		RepLayout.InitFromObjectClass(Class);
-		checkf(RepLayout.Cmds.Num() == 20, TEXT("RepLayout here does not match the RepLayout used when generating interop code."));
-		HandleToPropertyMap.Add(18, FRepHandleData{nullptr, Class->FindPropertyByName("TargetViewRotation"), COND_OwnerOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[18].Offset = RepLayout.Cmds[17].Offset;
-		HandleToPropertyMap.Add(19, FRepHandleData{nullptr, Class->FindPropertyByName("SpawnLocation"), COND_OwnerOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[19].Offset = RepLayout.Cmds[18].Offset;
-		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[1].Offset = RepLayout.Cmds[0].Offset;
-		HandleToPropertyMap.Add(2, FRepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[2].Offset = RepLayout.Cmds[1].Offset;
-		HandleToPropertyMap.Add(3, FRepHandleData{nullptr, Class->FindPropertyByName("bTearOff"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[3].Offset = RepLayout.Cmds[2].Offset;
-		HandleToPropertyMap.Add(4, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteRole"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[4].Offset = RepLayout.Cmds[3].Offset;
-		HandleToPropertyMap.Add(5, FRepHandleData{nullptr, Class->FindPropertyByName("Owner"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[5].Offset = RepLayout.Cmds[4].Offset;
-		HandleToPropertyMap.Add(6, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovement"), COND_SimulatedOrPhysics, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[6].Offset = RepLayout.Cmds[5].Offset;
-		HandleToPropertyMap.Add(7, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[7].Property = Cast<UStructProperty>(HandleToPropertyMap[7].Parent)->Struct->FindPropertyByName("AttachParent");
-		HandleToPropertyMap[7].Offset = RepLayout.Cmds[6].Offset;
-		HandleToPropertyMap.Add(8, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[8].Property = Cast<UStructProperty>(HandleToPropertyMap[8].Parent)->Struct->FindPropertyByName("LocationOffset");
-		HandleToPropertyMap[8].Offset = RepLayout.Cmds[7].Offset;
-		HandleToPropertyMap.Add(9, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[9].Property = Cast<UStructProperty>(HandleToPropertyMap[9].Parent)->Struct->FindPropertyByName("RelativeScale3D");
-		HandleToPropertyMap[9].Offset = RepLayout.Cmds[8].Offset;
-		HandleToPropertyMap.Add(10, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[10].Property = Cast<UStructProperty>(HandleToPropertyMap[10].Parent)->Struct->FindPropertyByName("RotationOffset");
-		HandleToPropertyMap[10].Offset = RepLayout.Cmds[9].Offset;
-		HandleToPropertyMap.Add(11, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[11].Property = Cast<UStructProperty>(HandleToPropertyMap[11].Parent)->Struct->FindPropertyByName("AttachSocket");
-		HandleToPropertyMap[11].Offset = RepLayout.Cmds[10].Offset;
-		HandleToPropertyMap.Add(12, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[12].Property = Cast<UStructProperty>(HandleToPropertyMap[12].Parent)->Struct->FindPropertyByName("AttachComponent");
-		HandleToPropertyMap[12].Offset = RepLayout.Cmds[11].Offset;
-		HandleToPropertyMap.Add(13, FRepHandleData{nullptr, Class->FindPropertyByName("Role"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[13].Offset = RepLayout.Cmds[12].Offset;
-		HandleToPropertyMap.Add(14, FRepHandleData{nullptr, Class->FindPropertyByName("bCanBeDamaged"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[14].Offset = RepLayout.Cmds[13].Offset;
-		HandleToPropertyMap.Add(15, FRepHandleData{nullptr, Class->FindPropertyByName("Instigator"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[15].Offset = RepLayout.Cmds[14].Offset;
-		HandleToPropertyMap.Add(16, FRepHandleData{nullptr, Class->FindPropertyByName("Pawn"), COND_None, REPNOTIFY_Always, 0});
-		HandleToPropertyMap[16].Offset = RepLayout.Cmds[15].Offset;
-		HandleToPropertyMap.Add(17, FRepHandleData{nullptr, Class->FindPropertyByName("PlayerState"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[17].Offset = RepLayout.Cmds[16].Offset;
+		HandleToPropertyMap.Add(1, FRepHandleData(Class, {"bHidden"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(2, FRepHandleData(Class, {"bReplicateMovement"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(3, FRepHandleData(Class, {"bTearOff"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(4, FRepHandleData(Class, {"RemoteRole"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(5, FRepHandleData(Class, {"Owner"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(6, FRepHandleData(Class, {"ReplicatedMovement"}, COND_SimulatedOrPhysics, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(7, FRepHandleData(Class, {"AttachmentReplication", "AttachParent"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(8, FRepHandleData(Class, {"AttachmentReplication", "LocationOffset"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(9, FRepHandleData(Class, {"AttachmentReplication", "RelativeScale3D"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(10, FRepHandleData(Class, {"AttachmentReplication", "RotationOffset"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(11, FRepHandleData(Class, {"AttachmentReplication", "AttachSocket"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(12, FRepHandleData(Class, {"AttachmentReplication", "AttachComponent"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(13, FRepHandleData(Class, {"Role"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(14, FRepHandleData(Class, {"bCanBeDamaged"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(15, FRepHandleData(Class, {"Instigator"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(16, FRepHandleData(Class, {"Pawn"}, COND_None, REPNOTIFY_Always));
+		HandleToPropertyMap.Add(17, FRepHandleData(Class, {"PlayerState"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(18, FRepHandleData(Class, {"TargetViewRotation"}, COND_OwnerOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(19, FRepHandleData(Class, {"SpawnLocation"}, COND_OwnerOnly, REPNOTIFY_OnChanged));
 	}
 	return HandleToPropertyMap;
 }
@@ -169,7 +141,7 @@ void USpatialTypeBinding_PlayerController::BindToView()
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			if (ActorChannel)
 			{
-				ClientReceiveUpdate_SingleClient(ActorChannel, Op.Update);
+				ReceiveUpdate_SingleClient(ActorChannel, Op.Update);
 			}
 			else
 			{
@@ -182,7 +154,7 @@ void USpatialTypeBinding_PlayerController::BindToView()
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			if (ActorChannel)
 			{
-				ClientReceiveUpdate_MultiClient(ActorChannel, Op.Update);
+				ReceiveUpdate_MultiClient(ActorChannel, Op.Update);
 			}
 			else
 			{
@@ -456,13 +428,13 @@ void USpatialTypeBinding_PlayerController::ReceiveAddComponent(USpatialActorChan
 	if (SingleClientAddOp)
 	{
 		auto Update = improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update::FromInitialData(*SingleClientAddOp->Data.data());
-		ClientReceiveUpdate_SingleClient(Channel, Update);
+		ReceiveUpdate_SingleClient(Channel, Update);
 	}
 	auto* MultiClientAddOp = Cast<UUnrealPlayerControllerMultiClientRepDataAddComponentOp>(AddComponentOp);
 	if (MultiClientAddOp)
 	{
 		auto Update = improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update::FromInitialData(*MultiClientAddOp->Data.data());
-		ClientReceiveUpdate_MultiClient(Channel, Update);
+		ReceiveUpdate_MultiClient(Channel, Update);
 	}
 }
 
@@ -473,14 +445,14 @@ void USpatialTypeBinding_PlayerController::ApplyQueuedStateToChannel(USpatialAct
 	{
 		auto Update = improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update::FromInitialData(*SingleClientData);
 		PendingSingleClientData.Remove(ActorChannel->GetEntityId());
-		ClientReceiveUpdate_SingleClient(ActorChannel, Update);
+		ReceiveUpdate_SingleClient(ActorChannel, Update);
 	}
 	improbable::unreal::UnrealPlayerControllerMultiClientRepData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
 	if (MultiClientData)
 	{
 		auto Update = improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update::FromInitialData(*MultiClientData);
 		PendingMultiClientData.Remove(ActorChannel->GetEntityId());
-		ClientReceiveUpdate_MultiClient(ActorChannel, Update);
+		ReceiveUpdate_MultiClient(ActorChannel, Update);
 	}
 }
 
@@ -521,7 +493,7 @@ void USpatialTypeBinding_PlayerController::BuildSpatialComponentUpdate(
 	}
 }
 
-void USpatialTypeBinding_PlayerController::ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update& OutUpdate) const;
+void USpatialTypeBinding_PlayerController::ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update& OutUpdate) const
 {
 	switch (Handle)
 	{
@@ -545,7 +517,7 @@ void USpatialTypeBinding_PlayerController::ServerSendUpdate_SingleClient(const u
 	}
 }
 
-void USpatialTypeBinding_PlayerController::ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update& OutUpdate) const;
+void USpatialTypeBinding_PlayerController::ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update& OutUpdate) const
 {
 	switch (Handle)
 	{
@@ -776,7 +748,7 @@ void USpatialTypeBinding_PlayerController::ServerSendUpdate_MultiClient(const ui
 	}
 }
 
-void USpatialTypeBinding_PlayerController::ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update& Update) const;
+void USpatialTypeBinding_PlayerController::ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
@@ -843,7 +815,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdate_SingleClient(USpatialAc
 	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
-void USpatialTypeBinding_PlayerController::ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update& Update) const;
+void USpatialTypeBinding_PlayerController::ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
@@ -4057,8 +4029,10 @@ void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_OnCommand
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract bIsLogging
+		// Declare parameters.
 		bool bIsLogging;
+
+		// Extract from request data.
 		bIsLogging = Op.Request.field_bislogging();
 
 		// Call implementation.
@@ -4101,8 +4075,10 @@ void USpatialTypeBinding_PlayerController::ClientWasKicked_OnCommandRequest(cons
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract KickReason
+		// Declare parameters.
 		FText KickReason;
+
+		// Extract from request data.
 		// UNSUPPORTED UTextProperty (unhandled) KickReason Op.Request.field_kickreason()
 
 		// Call implementation.
@@ -4185,24 +4161,18 @@ void USpatialTypeBinding_PlayerController::ClientUpdateLevelStreamingStatus_OnCo
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract PackageName
+		// Declare parameters.
 		FName PackageName;
-		PackageName = FName((Op.Request.field_packagename()).data());
-
-		// Extract bNewShouldBeLoaded
 		bool bNewShouldBeLoaded;
-		bNewShouldBeLoaded = Op.Request.field_bnewshouldbeloaded();
-
-		// Extract bNewShouldBeVisible
 		bool bNewShouldBeVisible;
-		bNewShouldBeVisible = Op.Request.field_bnewshouldbevisible();
-
-		// Extract bNewShouldBlockOnLoad
 		bool bNewShouldBlockOnLoad;
-		bNewShouldBlockOnLoad = Op.Request.field_bnewshouldblockonload();
-
-		// Extract LODIndex
 		int32 LODIndex;
+
+		// Extract from request data.
+		PackageName = FName((Op.Request.field_packagename()).data());
+		bNewShouldBeLoaded = Op.Request.field_bnewshouldbeloaded();
+		bNewShouldBeVisible = Op.Request.field_bnewshouldbevisible();
+		bNewShouldBlockOnLoad = Op.Request.field_bnewshouldblockonload();
 		LODIndex = Op.Request.field_lodindex();
 
 		// Call implementation.
@@ -4245,8 +4215,10 @@ void USpatialTypeBinding_PlayerController::ClientUnmutePlayer_OnCommandRequest(c
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract PlayerId
+		// Declare parameters.
 		FUniqueNetIdRepl PlayerId;
+
+		// Extract from request data.
 		{
 			auto& ValueDataStr = Op.Request.field_playerid();
 			TArray<uint8> ValueData;
@@ -4296,20 +4268,16 @@ void USpatialTypeBinding_PlayerController::ClientTravelInternal_OnCommandRequest
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract URL
+		// Declare parameters.
 		FString URL;
-		URL = FString(UTF8_TO_TCHAR(Op.Request.field_url().c_str()));
-
-		// Extract TravelType
 		TEnumAsByte<ETravelType> TravelType;
-		TravelType = TEnumAsByte<ETravelType>(uint8(Op.Request.field_traveltype()));
-
-		// Extract bSeamless
 		bool bSeamless;
-		bSeamless = Op.Request.field_bseamless();
-
-		// Extract MapPackageGuid
 		FGuid MapPackageGuid;
+
+		// Extract from request data.
+		URL = FString(UTF8_TO_TCHAR(Op.Request.field_url().c_str()));
+		TravelType = TEnumAsByte<ETravelType>(uint8(Op.Request.field_traveltype()));
+		bSeamless = Op.Request.field_bseamless();
 		MapPackageGuid.A = Op.Request.field_mappackageguid_a();
 		MapPackageGuid.B = Op.Request.field_mappackageguid_b();
 		MapPackageGuid.C = Op.Request.field_mappackageguid_c();
@@ -4355,8 +4323,13 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_OnCommandRequest(co
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract SenderPlayerState
+		// Declare parameters.
 		APlayerState* SenderPlayerState;
+		FString S;
+		FName Type;
+		float MsgLifeTime;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_senderplayerstate();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -4383,17 +4356,8 @@ void USpatialTypeBinding_PlayerController::ClientTeamMessage_OnCommandRequest(co
 				}
 			}
 		}
-
-		// Extract S
-		FString S;
 		S = FString(UTF8_TO_TCHAR(Op.Request.field_s().c_str()));
-
-		// Extract Type
-		FName Type;
 		Type = FName((Op.Request.field_type()).data());
-
-		// Extract MsgLifeTime
-		float MsgLifeTime;
 		MsgLifeTime = Op.Request.field_msglifetime();
 
 		// Call implementation.
@@ -4436,8 +4400,11 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_OnCommandRequ
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract ForceFeedbackEffect
+		// Declare parameters.
 		UForceFeedbackEffect* ForceFeedbackEffect;
+		FName Tag;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_forcefeedbackeffect();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -4464,9 +4431,6 @@ void USpatialTypeBinding_PlayerController::ClientStopForceFeedback_OnCommandRequ
 				}
 			}
 		}
-
-		// Extract Tag
-		FName Tag;
 		Tag = FName((Op.Request.field_tag()).data());
 
 		// Call implementation.
@@ -4509,12 +4473,12 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraShake_OnCommandReques
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract Shake
+		// Declare parameters.
 		TSubclassOf<UCameraShake>  Shake;
-		// UNSUPPORTED UClassProperty Shake Op.Request.field_shake()
-
-		// Extract bImmediately
 		bool bImmediately;
+
+		// Extract from request data.
+		// UNSUPPORTED UClassProperty Shake Op.Request.field_shake()
 		bImmediately = Op.Request.field_bimmediately();
 
 		// Call implementation.
@@ -4557,8 +4521,10 @@ void USpatialTypeBinding_PlayerController::ClientStopCameraAnim_OnCommandRequest
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract AnimToStop
+		// Declare parameters.
 		UCameraAnim* AnimToStop;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_animtostop();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -4666,8 +4632,10 @@ void USpatialTypeBinding_PlayerController::ClientSpawnCameraLensEffect_OnCommand
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract LensEffectEmitterClass
+		// Declare parameters.
 		TSubclassOf<AEmitterCameraLensEffectBase>  LensEffectEmitterClass;
+
+		// Extract from request data.
 		// UNSUPPORTED UClassProperty LensEffectEmitterClass Op.Request.field_lenseffectemitterclass()
 
 		// Call implementation.
@@ -4710,8 +4678,11 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_OnCommandRequest(
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract A
+		// Declare parameters.
 		AActor* A;
+		FViewTargetTransitionParams TransitionParams;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_a();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -4738,9 +4709,6 @@ void USpatialTypeBinding_PlayerController::ClientSetViewTarget_OnCommandRequest(
 				}
 			}
 		}
-
-		// Extract TransitionParams
-		FViewTargetTransitionParams TransitionParams;
 		TransitionParams.BlendTime = Op.Request.field_transitionparams_blendtime();
 		TransitionParams.BlendFunction = TEnumAsByte<EViewTargetBlendFunction>(uint8(Op.Request.field_transitionparams_blendfunction()));
 		TransitionParams.BlendExp = Op.Request.field_transitionparams_blendexp();
@@ -4786,8 +4754,10 @@ void USpatialTypeBinding_PlayerController::ClientSetSpectatorWaiting_OnCommandRe
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract bWaiting
+		// Declare parameters.
 		bool bWaiting;
+
+		// Extract from request data.
 		bWaiting = Op.Request.field_bwaiting();
 
 		// Call implementation.
@@ -4830,8 +4800,10 @@ void USpatialTypeBinding_PlayerController::ClientSetHUD_OnCommandRequest(const w
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract NewHUDClass
+		// Declare parameters.
 		TSubclassOf<AHUD>  NewHUDClass;
+
+		// Extract from request data.
 		// UNSUPPORTED UClassProperty NewHUDClass Op.Request.field_newhudclass()
 
 		// Call implementation.
@@ -4874,8 +4846,12 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_O
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract Material
+		// Declare parameters.
 		UMaterialInterface* Material;
+		float ForceDuration;
+		int32 CinematicTextureGroups;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_material();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -4902,13 +4878,7 @@ void USpatialTypeBinding_PlayerController::ClientSetForceMipLevelsToBeResident_O
 				}
 			}
 		}
-
-		// Extract ForceDuration
-		float ForceDuration;
 		ForceDuration = Op.Request.field_forceduration();
-
-		// Extract CinematicTextureGroups
-		int32 CinematicTextureGroups;
 		CinematicTextureGroups = Op.Request.field_cinematictexturegroups();
 
 		// Call implementation.
@@ -4951,20 +4921,16 @@ void USpatialTypeBinding_PlayerController::ClientSetCinematicMode_OnCommandReque
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract bInCinematicMode
+		// Declare parameters.
 		bool bInCinematicMode;
-		bInCinematicMode = Op.Request.field_bincinematicmode();
-
-		// Extract bAffectsMovement
 		bool bAffectsMovement;
-		bAffectsMovement = Op.Request.field_baffectsmovement();
-
-		// Extract bAffectsTurning
 		bool bAffectsTurning;
-		bAffectsTurning = Op.Request.field_baffectsturning();
-
-		// Extract bAffectsHUD
 		bool bAffectsHUD;
+
+		// Extract from request data.
+		bInCinematicMode = Op.Request.field_bincinematicmode();
+		bAffectsMovement = Op.Request.field_baffectsmovement();
+		bAffectsTurning = Op.Request.field_baffectsturning();
 		bAffectsHUD = Op.Request.field_baffectshud();
 
 		// Call implementation.
@@ -5007,8 +4973,10 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraMode_OnCommandRequest(
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract NewCamMode
+		// Declare parameters.
 		FName NewCamMode;
+
+		// Extract from request data.
 		NewCamMode = FName((Op.Request.field_newcammode()).data());
 
 		// Call implementation.
@@ -5051,28 +5019,22 @@ void USpatialTypeBinding_PlayerController::ClientSetCameraFade_OnCommandRequest(
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract bEnableFading
+		// Declare parameters.
 		bool bEnableFading;
-		bEnableFading = Op.Request.field_benablefading();
-
-		// Extract FadeColor
 		FColor FadeColor;
+		FVector2D FadeAlpha;
+		float FadeTime;
+		bool bFadeAudio;
+
+		// Extract from request data.
+		bEnableFading = Op.Request.field_benablefading();
 		FadeColor.B = uint8(uint8(Op.Request.field_fadecolor_b()));
 		FadeColor.G = uint8(uint8(Op.Request.field_fadecolor_g()));
 		FadeColor.R = uint8(uint8(Op.Request.field_fadecolor_r()));
 		FadeColor.A = uint8(uint8(Op.Request.field_fadecolor_a()));
-
-		// Extract FadeAlpha
-		FVector2D FadeAlpha;
 		FadeAlpha.X = Op.Request.field_fadealpha_x();
 		FadeAlpha.Y = Op.Request.field_fadealpha_y();
-
-		// Extract FadeTime
-		float FadeTime;
 		FadeTime = Op.Request.field_fadetime();
-
-		// Extract bFadeAudio
-		bool bFadeAudio;
 		bFadeAudio = Op.Request.field_bfadeaudio();
 
 		// Call implementation.
@@ -5155,8 +5117,10 @@ void USpatialTypeBinding_PlayerController::ClientReturnToMainMenu_OnCommandReque
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract ReturnReason
+		// Declare parameters.
 		FString ReturnReason;
+
+		// Extract from request data.
 		ReturnReason = FString(UTF8_TO_TCHAR(Op.Request.field_returnreason().c_str()));
 
 		// Call implementation.
@@ -5199,8 +5163,10 @@ void USpatialTypeBinding_PlayerController::ClientRetryClientRestart_OnCommandReq
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract NewPawn
+		// Declare parameters.
 		APawn* NewPawn;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_newpawn();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -5268,8 +5234,10 @@ void USpatialTypeBinding_PlayerController::ClientRestart_OnCommandRequest(const 
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract NewPawn
+		// Declare parameters.
 		APawn* NewPawn;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_newpawn();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -5377,8 +5345,10 @@ void USpatialTypeBinding_PlayerController::ClientRepObjRef_OnCommandRequest(cons
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract Object
+		// Declare parameters.
 		UObject* Object;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_object();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -5446,16 +5416,16 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_OnComma
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract Message
+		// Declare parameters.
 		TSubclassOf<ULocalMessage>  Message;
-		// UNSUPPORTED UClassProperty Message Op.Request.field_message()
-
-		// Extract Switch
 		int32 Switch;
-		Switch = Op.Request.field_switch();
-
-		// Extract RelatedPlayerState_1
 		APlayerState* RelatedPlayerState_1;
+		APlayerState* RelatedPlayerState_2;
+		UObject* OptionalObject;
+
+		// Extract from request data.
+		// UNSUPPORTED UClassProperty Message Op.Request.field_message()
+		Switch = Op.Request.field_switch();
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_relatedplayerstate_1();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -5482,9 +5452,6 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_OnComma
 				}
 			}
 		}
-
-		// Extract RelatedPlayerState_2
-		APlayerState* RelatedPlayerState_2;
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_relatedplayerstate_2();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -5511,9 +5478,6 @@ void USpatialTypeBinding_PlayerController::ClientReceiveLocalizedMessage_OnComma
 				}
 			}
 		}
-
-		// Extract OptionalObject
-		UObject* OptionalObject;
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_optionalobject();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -5581,8 +5545,13 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_OnCommandRequ
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract ForcedActor
+		// Declare parameters.
 		AActor* ForcedActor;
+		float ForceDuration;
+		bool bEnableStreaming;
+		int32 CinematicTextureGroups;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_forcedactor();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -5609,17 +5578,8 @@ void USpatialTypeBinding_PlayerController::ClientPrestreamTextures_OnCommandRequ
 				}
 			}
 		}
-
-		// Extract ForceDuration
-		float ForceDuration;
 		ForceDuration = Op.Request.field_forceduration();
-
-		// Extract bEnableStreaming
-		bool bEnableStreaming;
 		bEnableStreaming = Op.Request.field_benablestreaming();
-
-		// Extract CinematicTextureGroups
-		int32 CinematicTextureGroups;
 		CinematicTextureGroups = Op.Request.field_cinematictexturegroups();
 
 		// Call implementation.
@@ -5662,16 +5622,14 @@ void USpatialTypeBinding_PlayerController::ClientPrepareMapChange_OnCommandReque
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract LevelName
+		// Declare parameters.
 		FName LevelName;
-		LevelName = FName((Op.Request.field_levelname()).data());
-
-		// Extract bFirst
 		bool bFirst;
-		bFirst = Op.Request.field_bfirst();
-
-		// Extract bLast
 		bool bLast;
+
+		// Extract from request data.
+		LevelName = FName((Op.Request.field_levelname()).data());
+		bFirst = Op.Request.field_bfirst();
 		bLast = Op.Request.field_blast();
 
 		// Call implementation.
@@ -5714,8 +5672,13 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_OnCommandRe
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract Sound
+		// Declare parameters.
 		USoundBase* Sound;
+		FVector Location;
+		float VolumeMultiplier;
+		float PitchMultiplier;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_sound();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -5742,22 +5705,13 @@ void USpatialTypeBinding_PlayerController::ClientPlaySoundAtLocation_OnCommandRe
 				}
 			}
 		}
-
-		// Extract Location
-		FVector Location;
 		{
 			auto& Vector = Op.Request.field_location();
 			Location.X = Vector.x();
 			Location.Y = Vector.y();
 			Location.Z = Vector.z();
 		}
-
-		// Extract VolumeMultiplier
-		float VolumeMultiplier;
 		VolumeMultiplier = Op.Request.field_volumemultiplier();
-
-		// Extract PitchMultiplier
-		float PitchMultiplier;
 		PitchMultiplier = Op.Request.field_pitchmultiplier();
 
 		// Call implementation.
@@ -5800,8 +5754,12 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_OnCommandRequest(cons
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract Sound
+		// Declare parameters.
 		USoundBase* Sound;
+		float VolumeMultiplier;
+		float PitchMultiplier;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_sound();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -5828,13 +5786,7 @@ void USpatialTypeBinding_PlayerController::ClientPlaySound_OnCommandRequest(cons
 				}
 			}
 		}
-
-		// Extract VolumeMultiplier
-		float VolumeMultiplier;
 		VolumeMultiplier = Op.Request.field_volumemultiplier();
-
-		// Extract PitchMultiplier
-		float PitchMultiplier;
 		PitchMultiplier = Op.Request.field_pitchmultiplier();
 
 		// Call implementation.
@@ -5877,8 +5829,12 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_OnCommandRequ
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract ForceFeedbackEffect
+		// Declare parameters.
 		UForceFeedbackEffect* ForceFeedbackEffect;
+		bool bLooping;
+		FName Tag;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_forcefeedbackeffect();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -5905,13 +5861,7 @@ void USpatialTypeBinding_PlayerController::ClientPlayForceFeedback_OnCommandRequ
 				}
 			}
 		}
-
-		// Extract bLooping
-		bool bLooping;
 		bLooping = Op.Request.field_blooping();
-
-		// Extract Tag
-		FName Tag;
 		Tag = FName((Op.Request.field_tag()).data());
 
 		// Call implementation.
@@ -5954,20 +5904,16 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraShake_OnCommandReques
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract Shake
+		// Declare parameters.
 		TSubclassOf<UCameraShake>  Shake;
-		// UNSUPPORTED UClassProperty Shake Op.Request.field_shake()
-
-		// Extract Scale
 		float Scale;
-		Scale = Op.Request.field_scale();
-
-		// Extract PlaySpace
 		TEnumAsByte<ECameraAnimPlaySpace::Type> PlaySpace;
-		PlaySpace = TEnumAsByte<ECameraAnimPlaySpace::Type>(uint8(Op.Request.field_playspace()));
-
-		// Extract UserPlaySpaceRot
 		FRotator UserPlaySpaceRot;
+
+		// Extract from request data.
+		// UNSUPPORTED UClassProperty Shake Op.Request.field_shake()
+		Scale = Op.Request.field_scale();
+		PlaySpace = TEnumAsByte<ECameraAnimPlaySpace::Type>(uint8(Op.Request.field_playspace()));
 		{
 			auto& Rotator = Op.Request.field_userplayspacerot();
 			UserPlaySpaceRot.Yaw = Rotator.yaw();
@@ -6015,8 +5961,18 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_OnCommandRequest
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract AnimToPlay
+		// Declare parameters.
 		UCameraAnim* AnimToPlay;
+		float Scale;
+		float Rate;
+		float BlendInTime;
+		float BlendOutTime;
+		bool bLoop;
+		bool bRandomStartTime;
+		TEnumAsByte<ECameraAnimPlaySpace::Type> Space;
+		FRotator CustomPlaySpace;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_animtoplay();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -6043,37 +5999,13 @@ void USpatialTypeBinding_PlayerController::ClientPlayCameraAnim_OnCommandRequest
 				}
 			}
 		}
-
-		// Extract Scale
-		float Scale;
 		Scale = Op.Request.field_scale();
-
-		// Extract Rate
-		float Rate;
 		Rate = Op.Request.field_rate();
-
-		// Extract BlendInTime
-		float BlendInTime;
 		BlendInTime = Op.Request.field_blendintime();
-
-		// Extract BlendOutTime
-		float BlendOutTime;
 		BlendOutTime = Op.Request.field_blendouttime();
-
-		// Extract bLoop
-		bool bLoop;
 		bLoop = Op.Request.field_bloop();
-
-		// Extract bRandomStartTime
-		bool bRandomStartTime;
 		bRandomStartTime = Op.Request.field_brandomstarttime();
-
-		// Extract Space
-		TEnumAsByte<ECameraAnimPlaySpace::Type> Space;
 		Space = TEnumAsByte<ECameraAnimPlaySpace::Type>(uint8(Op.Request.field_space()));
-
-		// Extract CustomPlaySpace
-		FRotator CustomPlaySpace;
 		{
 			auto& Rotator = Op.Request.field_customplayspace();
 			CustomPlaySpace.Yaw = Rotator.yaw();
@@ -6121,8 +6053,10 @@ void USpatialTypeBinding_PlayerController::ClientMutePlayer_OnCommandRequest(con
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract PlayerId
+		// Declare parameters.
 		FUniqueNetIdRepl PlayerId;
+
+		// Extract from request data.
 		{
 			auto& ValueDataStr = Op.Request.field_playerid();
 			TArray<uint8> ValueData;
@@ -6172,16 +6106,14 @@ void USpatialTypeBinding_PlayerController::ClientMessage_OnCommandRequest(const 
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract S
+		// Declare parameters.
 		FString S;
-		S = FString(UTF8_TO_TCHAR(Op.Request.field_s().c_str()));
-
-		// Extract Type
 		FName Type;
-		Type = FName((Op.Request.field_type()).data());
-
-		// Extract MsgLifeTime
 		float MsgLifeTime;
+
+		// Extract from request data.
+		S = FString(UTF8_TO_TCHAR(Op.Request.field_s().c_str()));
+		Type = FName((Op.Request.field_type()).data());
 		MsgLifeTime = Op.Request.field_msglifetime();
 
 		// Call implementation.
@@ -6224,8 +6156,10 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreMoveInput_OnCommandReques
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract bIgnore
+		// Declare parameters.
 		bool bIgnore;
+
+		// Extract from request data.
 		bIgnore = Op.Request.field_bignore();
 
 		// Call implementation.
@@ -6268,8 +6202,10 @@ void USpatialTypeBinding_PlayerController::ClientIgnoreLookInput_OnCommandReques
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract bIgnore
+		// Declare parameters.
 		bool bIgnore;
+
+		// Extract from request data.
 		bIgnore = Op.Request.field_bignore();
 
 		// Call implementation.
@@ -6312,8 +6248,10 @@ void USpatialTypeBinding_PlayerController::ClientGotoState_OnCommandRequest(cons
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract NewState
+		// Declare parameters.
 		FName NewState;
+
+		// Extract from request data.
 		NewState = FName((Op.Request.field_newstate()).data());
 
 		// Call implementation.
@@ -6356,8 +6294,11 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_OnCommandRequest(cons
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract EndGameFocus
+		// Declare parameters.
 		AActor* EndGameFocus;
+		bool bIsWinner;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_endgamefocus();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -6384,9 +6325,6 @@ void USpatialTypeBinding_PlayerController::ClientGameEnded_OnCommandRequest(cons
 				}
 			}
 		}
-
-		// Extract bIsWinner
-		bool bIsWinner;
 		bIsWinner = Op.Request.field_biswinner();
 
 		// Call implementation.
@@ -6549,8 +6487,10 @@ void USpatialTypeBinding_PlayerController::ClientEnableNetworkVoice_OnCommandReq
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract bEnable
+		// Declare parameters.
 		bool bEnable;
+
+		// Extract from request data.
 		bEnable = Op.Request.field_benable();
 
 		// Call implementation.
@@ -6673,8 +6613,10 @@ void USpatialTypeBinding_PlayerController::ClientCapBandwidth_OnCommandRequest(c
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract Cap
+		// Declare parameters.
 		int32 Cap;
+
+		// Extract from request data.
 		Cap = Op.Request.field_cap();
 
 		// Call implementation.
@@ -6757,21 +6699,19 @@ void USpatialTypeBinding_PlayerController::ClientAddTextureStreamingLoc_OnComman
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract InLoc
+		// Declare parameters.
 		FVector InLoc;
+		float Duration;
+		bool bOverrideLocation;
+
+		// Extract from request data.
 		{
 			auto& Vector = Op.Request.field_inloc();
 			InLoc.X = Vector.x();
 			InLoc.Y = Vector.y();
 			InLoc.Z = Vector.z();
 		}
-
-		// Extract Duration
-		float Duration;
 		Duration = Op.Request.field_duration();
-
-		// Extract bOverrideLocation
-		bool bOverrideLocation;
 		bOverrideLocation = Op.Request.field_boverridelocation();
 
 		// Call implementation.
@@ -6814,17 +6754,17 @@ void USpatialTypeBinding_PlayerController::ClientSetRotation_OnCommandRequest(co
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract NewRotation
+		// Declare parameters.
 		FRotator NewRotation;
+		bool bResetCamera;
+
+		// Extract from request data.
 		{
 			auto& Rotator = Op.Request.field_newrotation();
 			NewRotation.Yaw = Rotator.yaw();
 			NewRotation.Pitch = Rotator.pitch();
 			NewRotation.Roll = Rotator.roll();
 		}
-
-		// Extract bResetCamera
-		bool bResetCamera;
 		bResetCamera = Op.Request.field_bresetcamera();
 
 		// Call implementation.
@@ -6867,17 +6807,17 @@ void USpatialTypeBinding_PlayerController::ClientSetLocation_OnCommandRequest(co
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract NewLocation
+		// Declare parameters.
 		FVector NewLocation;
+		FRotator NewRotation;
+
+		// Extract from request data.
 		{
 			auto& Vector = Op.Request.field_newlocation();
 			NewLocation.X = Vector.x();
 			NewLocation.Y = Vector.y();
 			NewLocation.Z = Vector.z();
 		}
-
-		// Extract NewRotation
-		FRotator NewRotation;
 		{
 			auto& Rotator = Op.Request.field_newrotation();
 			NewRotation.Yaw = Rotator.yaw();
@@ -6925,8 +6865,10 @@ void USpatialTypeBinding_PlayerController::ServerViewSelf_OnCommandRequest(const
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract TransitionParams
+		// Declare parameters.
 		FViewTargetTransitionParams TransitionParams;
+
+		// Extract from request data.
 		TransitionParams.BlendTime = Op.Request.field_transitionparams_blendtime();
 		TransitionParams.BlendFunction = TEnumAsByte<EViewTargetBlendFunction>(uint8(Op.Request.field_transitionparams_blendfunction()));
 		TransitionParams.BlendExp = Op.Request.field_transitionparams_blendexp();
@@ -7092,12 +7034,12 @@ void USpatialTypeBinding_PlayerController::ServerUpdateLevelVisibility_OnCommand
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract PackageName
+		// Declare parameters.
 		FName PackageName;
-		PackageName = FName((Op.Request.field_packagename()).data());
-
-		// Extract bIsVisible
 		bool bIsVisible;
+
+		// Extract from request data.
+		PackageName = FName((Op.Request.field_packagename()).data());
 		bIsVisible = Op.Request.field_bisvisible();
 
 		// Call implementation.
@@ -7140,17 +7082,17 @@ void USpatialTypeBinding_PlayerController::ServerUpdateCamera_OnCommandRequest(c
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract CamLoc
+		// Declare parameters.
 		FVector_NetQuantize CamLoc;
+		int32 CamPitchAndYaw;
+
+		// Extract from request data.
 		{
 			auto& Vector = Op.Request.field_camloc();
 			CamLoc.X = Vector.x();
 			CamLoc.Y = Vector.y();
 			CamLoc.Z = Vector.z();
 		}
-
-		// Extract CamPitchAndYaw
-		int32 CamPitchAndYaw;
 		CamPitchAndYaw = Op.Request.field_campitchandyaw();
 
 		// Call implementation.
@@ -7193,8 +7135,10 @@ void USpatialTypeBinding_PlayerController::ServerUnmutePlayer_OnCommandRequest(c
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract PlayerId
+		// Declare parameters.
 		FUniqueNetIdRepl PlayerId;
+
+		// Extract from request data.
 		{
 			auto& ValueDataStr = Op.Request.field_playerid();
 			TArray<uint8> ValueData;
@@ -7324,8 +7268,10 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorWaiting_OnCommandRe
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract bWaiting
+		// Declare parameters.
 		bool bWaiting;
+
+		// Extract from request data.
 		bWaiting = Op.Request.field_bwaiting();
 
 		// Call implementation.
@@ -7368,17 +7314,17 @@ void USpatialTypeBinding_PlayerController::ServerSetSpectatorLocation_OnCommandR
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract NewLoc
+		// Declare parameters.
 		FVector NewLoc;
+		FRotator NewRot;
+
+		// Extract from request data.
 		{
 			auto& Vector = Op.Request.field_newloc();
 			NewLoc.X = Vector.x();
 			NewLoc.Y = Vector.y();
 			NewLoc.Z = Vector.z();
 		}
-
-		// Extract NewRot
-		FRotator NewRot;
 		{
 			auto& Rotator = Op.Request.field_newrot();
 			NewRot.Yaw = Rotator.yaw();
@@ -7506,8 +7452,10 @@ void USpatialTypeBinding_PlayerController::ServerNotifyLoadedWorld_OnCommandRequ
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract WorldPackageName
+		// Declare parameters.
 		FName WorldPackageName;
+
+		// Extract from request data.
 		WorldPackageName = FName((Op.Request.field_worldpackagename()).data());
 
 		// Call implementation.
@@ -7550,8 +7498,10 @@ void USpatialTypeBinding_PlayerController::ServerMutePlayer_OnCommandRequest(con
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract PlayerId
+		// Declare parameters.
 		FUniqueNetIdRepl PlayerId;
+
+		// Extract from request data.
 		{
 			auto& ValueDataStr = Op.Request.field_playerid();
 			TArray<uint8> ValueData;
@@ -7681,8 +7631,10 @@ void USpatialTypeBinding_PlayerController::ServerChangeName_OnCommandRequest(con
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract S
+		// Declare parameters.
 		FString S;
+
+		// Extract from request data.
 		S = FString(UTF8_TO_TCHAR(Op.Request.field_s().c_str()));
 
 		// Call implementation.
@@ -7725,8 +7677,10 @@ void USpatialTypeBinding_PlayerController::ServerCamera_OnCommandRequest(const w
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract NewMode
+		// Declare parameters.
 		FName NewMode;
+
+		// Extract from request data.
 		NewMode = FName((Op.Request.field_newmode()).data());
 
 		// Call implementation.
@@ -7769,8 +7723,10 @@ void USpatialTypeBinding_PlayerController::ServerAcknowledgePossession_OnCommand
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract P
+		// Declare parameters.
 		APawn* P;
+
+		// Extract from request data.
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_p();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);

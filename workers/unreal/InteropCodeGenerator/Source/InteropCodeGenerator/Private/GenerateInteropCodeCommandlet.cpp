@@ -21,8 +21,6 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	FString SchemaFilename = FString::Printf(TEXT("Unreal%s"), *Class->GetName());
 	FString TypeBindingFilename = FString::Printf(TEXT("SpatialTypeBinding_%s"), *Class->GetName());
 
-	FPropertyLayout_OLD Layout = CreatePropertyLayout(Class);
-
 	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class);
 
 	// Generate schema.
@@ -30,8 +28,8 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	OutputSchema.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFilename));
 
 	// Generate forwarding code.
-	GenerateTypeBindingHeader(OutputHeader, SchemaFilename, TypeBindingFilename, Class, Layout);
-	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, Layout);
+	GenerateTypeBindingHeader(OutputHeader, SchemaFilename, TypeBindingFilename, Class, TypeInfo);
+	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo);
 	OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *TypeBindingFilename));
 	OutputSource.WriteToFile(FString::Printf(TEXT("%s%s.cpp"), *ForwardingCodePath, *TypeBindingFilename));
 

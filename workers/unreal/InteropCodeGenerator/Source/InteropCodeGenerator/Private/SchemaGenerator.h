@@ -29,19 +29,14 @@ FString SchemaRPCRequestType(UFunction* Function);
 // For example: UnrealServerMoveResponse.
 FString SchemaRPCResponseType(UFunction* Function);
 
-// Given a property chain, generates the schema field name.
-FString SchemaFieldName(TArray<UProperty*> Chain);
-
 // Given a property node, generates the schema field name.
-FString SchemaFieldName(TSharedPtr<FUnrealProperty> Property);
+FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property);
 
 // Given a UFunction, generates the schema command name. Currently just returns the function name in lowercase.
 FString SchemaCommandName(UFunction* Function);
 
 // Given a UFunction, generates the c++ command name. Identical to the schema name with the first letter being uppercase.
 FString CPPCommandClassName(UFunction* Function);
-
-////////////////////////
 
 // Given a RepLayout cmd type (a data type supported by the replication system). Generates the corresponding
 // type used in schema.

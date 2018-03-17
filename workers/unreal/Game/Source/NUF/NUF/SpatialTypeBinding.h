@@ -44,7 +44,35 @@ struct FPropertyChangeState
 // A structure containing information about a replicated property.
 struct FRepHandleData
 {
-	UProperty* Parent;
+	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, ELifetimeCondition Condition, ELifetimeRepNotifyCondition RepNotifyCondition) :
+		Condition(Condition),
+		RepNotifyCondition(RepNotifyCondition),
+		Offset(0)
+	{
+		// Build property chain.
+		check(PropertyNames.Num() > 0);
+		UStruct* CurrentContainerType = Class;
+		for (FName PropertyName : PropertyNames)
+		{
+			checkf(CurrentContainerType, TEXT("A property in the chain (except the leaf) is not a struct property."));
+			UProperty* Property = CurrentContainerType->FindPropertyByName(PropertyName);
+			PropertyChain.Add(Property);
+			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
+			if (StructProperty)
+			{
+				CurrentContainerType = StructProperty->Struct;
+			}
+		}
+		Property = PropertyChain[PropertyChain.Num() - 1];
+
+		// Calculate offset by summing the offsets of each property in the chain.
+		for (UProperty* Property : PropertyChain)
+		{
+			Offset += Property->GetOffset_ForInternal();
+		}
+	}
+
+	TArray<UProperty*> PropertyChain;
 	UProperty* Property;
 	ELifetimeCondition Condition;
 	ELifetimeRepNotifyCondition RepNotifyCondition;

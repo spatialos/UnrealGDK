@@ -50,13 +50,9 @@ component UnrealCharacterMultiClientRepData {
 	string field_reprootmotion_movementbasebonename = 38; // COND_SimulatedOnlyNoReplay
 	bool field_reprootmotion_brelativeposition = 39; // COND_SimulatedOnlyNoReplay
 	bool field_reprootmotion_brelativerotation = 40; // COND_SimulatedOnlyNoReplay
-	bool field_reprootmotion_authoritativerootmotion_bhasadditivesources = 41; // COND_SimulatedOnlyNoReplay
-	bool field_reprootmotion_authoritativerootmotion_bhasoverridesources = 42; // COND_SimulatedOnlyNoReplay
-	improbable.Vector3f field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity = 43; // COND_SimulatedOnlyNoReplay
-	bool field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied = 44; // COND_SimulatedOnlyNoReplay
-	uint32 field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags = 45; // COND_SimulatedOnlyNoReplay
-	improbable.Vector3f field_reprootmotion_acceleration = 46; // COND_SimulatedOnlyNoReplay
-	improbable.Vector3f field_reprootmotion_linearvelocity = 47; // COND_SimulatedOnlyNoReplay
+	bytes field_reprootmotion_authoritativerootmotion = 41; // COND_SimulatedOnlyNoReplay
+	improbable.Vector3f field_reprootmotion_acceleration = 42; // COND_SimulatedOnlyNoReplay
+	improbable.Vector3f field_reprootmotion_linearvelocity = 43; // COND_SimulatedOnlyNoReplay
 }
 component UnrealCharacterWorkerRepData {
 	id = 100022;

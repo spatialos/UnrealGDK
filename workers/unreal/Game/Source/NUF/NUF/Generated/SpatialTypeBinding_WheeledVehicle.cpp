@@ -26,51 +26,24 @@ const FRepHandlePropertyMap& USpatialTypeBinding_WheeledVehicle::GetHandleProper
 	if (HandleToPropertyMap.Num() == 0)
 	{
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("WheeledVehicle"));
-		FRepLayout RepLayout;
-		RepLayout.InitFromObjectClass(Class);
-		checkf(RepLayout.Cmds.Num() == 19, TEXT("RepLayout here does not match the RepLayout used when generating interop code."));
-		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[1].Offset = RepLayout.Cmds[0].Offset;
-		HandleToPropertyMap.Add(2, FRepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[2].Offset = RepLayout.Cmds[1].Offset;
-		HandleToPropertyMap.Add(3, FRepHandleData{nullptr, Class->FindPropertyByName("bTearOff"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[3].Offset = RepLayout.Cmds[2].Offset;
-		HandleToPropertyMap.Add(4, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteRole"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[4].Offset = RepLayout.Cmds[3].Offset;
-		HandleToPropertyMap.Add(5, FRepHandleData{nullptr, Class->FindPropertyByName("Owner"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[5].Offset = RepLayout.Cmds[4].Offset;
-		HandleToPropertyMap.Add(6, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovement"), COND_SimulatedOrPhysics, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[6].Offset = RepLayout.Cmds[5].Offset;
-		HandleToPropertyMap.Add(7, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[7].Property = Cast<UStructProperty>(HandleToPropertyMap[7].Parent)->Struct->FindPropertyByName("AttachParent");
-		HandleToPropertyMap[7].Offset = RepLayout.Cmds[6].Offset;
-		HandleToPropertyMap.Add(8, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[8].Property = Cast<UStructProperty>(HandleToPropertyMap[8].Parent)->Struct->FindPropertyByName("LocationOffset");
-		HandleToPropertyMap[8].Offset = RepLayout.Cmds[7].Offset;
-		HandleToPropertyMap.Add(9, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[9].Property = Cast<UStructProperty>(HandleToPropertyMap[9].Parent)->Struct->FindPropertyByName("RelativeScale3D");
-		HandleToPropertyMap[9].Offset = RepLayout.Cmds[8].Offset;
-		HandleToPropertyMap.Add(10, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[10].Property = Cast<UStructProperty>(HandleToPropertyMap[10].Parent)->Struct->FindPropertyByName("RotationOffset");
-		HandleToPropertyMap[10].Offset = RepLayout.Cmds[9].Offset;
-		HandleToPropertyMap.Add(11, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[11].Property = Cast<UStructProperty>(HandleToPropertyMap[11].Parent)->Struct->FindPropertyByName("AttachSocket");
-		HandleToPropertyMap[11].Offset = RepLayout.Cmds[10].Offset;
-		HandleToPropertyMap.Add(12, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[12].Property = Cast<UStructProperty>(HandleToPropertyMap[12].Parent)->Struct->FindPropertyByName("AttachComponent");
-		HandleToPropertyMap[12].Offset = RepLayout.Cmds[11].Offset;
-		HandleToPropertyMap.Add(13, FRepHandleData{nullptr, Class->FindPropertyByName("Role"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[13].Offset = RepLayout.Cmds[12].Offset;
-		HandleToPropertyMap.Add(14, FRepHandleData{nullptr, Class->FindPropertyByName("bCanBeDamaged"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[14].Offset = RepLayout.Cmds[13].Offset;
-		HandleToPropertyMap.Add(15, FRepHandleData{nullptr, Class->FindPropertyByName("Instigator"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[15].Offset = RepLayout.Cmds[14].Offset;
-		HandleToPropertyMap.Add(16, FRepHandleData{nullptr, Class->FindPropertyByName("PlayerState"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[16].Offset = RepLayout.Cmds[15].Offset;
-		HandleToPropertyMap.Add(17, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteViewPitch"), COND_SkipOwner, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[17].Offset = RepLayout.Cmds[16].Offset;
-		HandleToPropertyMap.Add(18, FRepHandleData{nullptr, Class->FindPropertyByName("Controller"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[18].Offset = RepLayout.Cmds[17].Offset;
+		HandleToPropertyMap.Add(1, FRepHandleData(Class, {"bHidden"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(2, FRepHandleData(Class, {"bReplicateMovement"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(3, FRepHandleData(Class, {"bTearOff"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(4, FRepHandleData(Class, {"RemoteRole"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(5, FRepHandleData(Class, {"Owner"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(6, FRepHandleData(Class, {"ReplicatedMovement"}, COND_SimulatedOrPhysics, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(7, FRepHandleData(Class, {"AttachmentReplication", "AttachParent"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(8, FRepHandleData(Class, {"AttachmentReplication", "LocationOffset"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(9, FRepHandleData(Class, {"AttachmentReplication", "RelativeScale3D"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(10, FRepHandleData(Class, {"AttachmentReplication", "RotationOffset"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(11, FRepHandleData(Class, {"AttachmentReplication", "AttachSocket"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(12, FRepHandleData(Class, {"AttachmentReplication", "AttachComponent"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(13, FRepHandleData(Class, {"Role"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(14, FRepHandleData(Class, {"bCanBeDamaged"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(15, FRepHandleData(Class, {"Instigator"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(16, FRepHandleData(Class, {"PlayerState"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(17, FRepHandleData(Class, {"RemoteViewPitch"}, COND_SkipOwner, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(18, FRepHandleData(Class, {"Controller"}, COND_None, REPNOTIFY_OnChanged));
 	}
 	return HandleToPropertyMap;
 }
@@ -100,7 +73,7 @@ void USpatialTypeBinding_WheeledVehicle::BindToView()
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			if (ActorChannel)
 			{
-				ClientReceiveUpdate_SingleClient(ActorChannel, Op.Update);
+				ReceiveUpdate_SingleClient(ActorChannel, Op.Update);
 			}
 			else
 			{
@@ -113,7 +86,7 @@ void USpatialTypeBinding_WheeledVehicle::BindToView()
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			if (ActorChannel)
 			{
-				ClientReceiveUpdate_MultiClient(ActorChannel, Op.Update);
+				ReceiveUpdate_MultiClient(ActorChannel, Op.Update);
 			}
 			else
 			{
@@ -248,13 +221,13 @@ void USpatialTypeBinding_WheeledVehicle::ReceiveAddComponent(USpatialActorChanne
 	if (SingleClientAddOp)
 	{
 		auto Update = improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update::FromInitialData(*SingleClientAddOp->Data.data());
-		ClientReceiveUpdate_SingleClient(Channel, Update);
+		ReceiveUpdate_SingleClient(Channel, Update);
 	}
 	auto* MultiClientAddOp = Cast<UUnrealWheeledVehicleMultiClientRepDataAddComponentOp>(AddComponentOp);
 	if (MultiClientAddOp)
 	{
 		auto Update = improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update::FromInitialData(*MultiClientAddOp->Data.data());
-		ClientReceiveUpdate_MultiClient(Channel, Update);
+		ReceiveUpdate_MultiClient(Channel, Update);
 	}
 }
 
@@ -265,14 +238,14 @@ void USpatialTypeBinding_WheeledVehicle::ApplyQueuedStateToChannel(USpatialActor
 	{
 		auto Update = improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update::FromInitialData(*SingleClientData);
 		PendingSingleClientData.Remove(ActorChannel->GetEntityId());
-		ClientReceiveUpdate_SingleClient(ActorChannel, Update);
+		ReceiveUpdate_SingleClient(ActorChannel, Update);
 	}
 	improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
 	if (MultiClientData)
 	{
 		auto Update = improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update::FromInitialData(*MultiClientData);
 		PendingMultiClientData.Remove(ActorChannel->GetEntityId());
-		ClientReceiveUpdate_MultiClient(ActorChannel, Update);
+		ReceiveUpdate_MultiClient(ActorChannel, Update);
 	}
 }
 
@@ -313,11 +286,11 @@ void USpatialTypeBinding_WheeledVehicle::BuildSpatialComponentUpdate(
 	}
 }
 
-void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& OutUpdate) const;
+void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& OutUpdate) const
 {
 }
 
-void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& OutUpdate) const;
+void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& OutUpdate) const
 {
 	switch (Handle)
 	{
@@ -555,7 +528,7 @@ void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_MultiClient(const uint
 	}
 }
 
-void USpatialTypeBinding_WheeledVehicle::ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& Update) const;
+void USpatialTypeBinding_WheeledVehicle::ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
@@ -563,7 +536,7 @@ void USpatialTypeBinding_WheeledVehicle::ReceiveUpdate_SingleClient(USpatialActo
 	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
-void USpatialTypeBinding_WheeledVehicle::ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& Update) const;
+void USpatialTypeBinding_WheeledVehicle::ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
@@ -1283,24 +1256,18 @@ void USpatialTypeBinding_WheeledVehicle::ServerUpdateState_OnCommandRequest(cons
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract InSteeringInput
+		// Declare parameters.
 		float InSteeringInput;
-		InSteeringInput = Op.Request.field_insteeringinput();
-
-		// Extract InThrottleInput
 		float InThrottleInput;
-		InThrottleInput = Op.Request.field_inthrottleinput();
-
-		// Extract InBrakeInput
 		float InBrakeInput;
-		InBrakeInput = Op.Request.field_inbrakeinput();
-
-		// Extract InHandbrakeInput
 		float InHandbrakeInput;
-		InHandbrakeInput = Op.Request.field_inhandbrakeinput();
-
-		// Extract CurrentGear
 		int32 CurrentGear;
+
+		// Extract from request data.
+		InSteeringInput = Op.Request.field_insteeringinput();
+		InThrottleInput = Op.Request.field_inthrottleinput();
+		InBrakeInput = Op.Request.field_inbrakeinput();
+		InHandbrakeInput = Op.Request.field_inhandbrakeinput();
 		CurrentGear = Op.Request.field_currentgear();
 
 		// Call implementation.

@@ -387,7 +387,7 @@ void USpatialInterop::SetComponentInterests_Client(USpatialActorChannel* ActorCh
 			worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
 			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{true});
 			SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId.ToSpatialEntityId(), Interest);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: We are the owning client of %s (%llu), therefore we want single client updates."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: We are the owning client of %s (%lld), therefore we want single client updates."),
 				*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId(),
 				*ActorChannel->Actor->GetName(),
 				EntityId.ToSpatialEntityId());

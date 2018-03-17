@@ -394,7 +394,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 	else
 	{
-		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %llu."), *InActor->GetName(), ActorEntityId.ToSpatialEntityId());
+		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), ActorEntityId.ToSpatialEntityId());
 	}
 }
 

@@ -49,7 +49,7 @@ void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDr
 
 void USpatialInteropPipelineBlock::AddEntity(const worker::AddEntityOp& AddEntityOp)
 {
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::AddEntityOp %llu"), AddEntityOp.EntityId);
+	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::AddEntityOp %lld"), AddEntityOp.EntityId);
 	check(bInCriticalSection);
 
 	PendingAddEntities.Emplace(AddEntityOp.EntityId);
@@ -62,7 +62,7 @@ void USpatialInteropPipelineBlock::AddEntity(const worker::AddEntityOp& AddEntit
 
 void USpatialInteropPipelineBlock::RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp)
 {
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveEntityOp %llu"), RemoveEntityOp.EntityId);
+	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveEntityOp %lld"), RemoveEntityOp.EntityId);
 
 	if (bInCriticalSection)
 	{
@@ -81,7 +81,7 @@ void USpatialInteropPipelineBlock::RemoveEntity(const worker::RemoveEntityOp& Re
 
 void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddComponentOp)
 {
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::AddComponentOp component ID: %u entity ID: %llu inCriticalSection: %d"),
+	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::AddComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"),
 		AddComponentOp->ComponentId, AddComponentOp->EntityId, (int)bInCriticalSection);
 
 	if (bInCriticalSection)
@@ -105,7 +105,7 @@ void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddC
 void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId ComponentId,
 	const worker::RemoveComponentOp& RemoveComponentOp)
 {
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveComponentOp component ID: %u entity ID: %llu inCriticalSection: %d"),
+	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"),
 		ComponentId, RemoveComponentOp.EntityId, (int)bInCriticalSection);
 
 	if (bInCriticalSection)
@@ -126,7 +126,7 @@ void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId Com
 void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId ComponentId,
 	const worker::AuthorityChangeOp& AuthChangeOp)
 {
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::ChangeAuthorityOp component ID: %u entity ID: %llu inCriticalSection: %d"),
+	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::ChangeAuthorityOp component ID: %u entity ID: %lld inCriticalSection: %d"),
 		ComponentId, AuthChangeOp.EntityId, (int)bInCriticalSection);
 
 	// When a component is initialised, the callback dispatcher will automatically deal with authority changes. Therefore, we need
@@ -292,7 +292,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 	}
 
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Checked out entity with entity ID %llu"), EntityId.ToSpatialEntityId());
+	UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Checked out entity with entity ID %lld"), EntityId.ToSpatialEntityId());
 
 	// There are 3 main options when we get here with regards to how this entity was created:
 	// 1) A SpawnActor() call (through interop) on this worker, which means it already has an actor associated with it.

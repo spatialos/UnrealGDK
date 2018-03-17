@@ -24,120 +24,49 @@ const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap
 	if (HandleToPropertyMap.Num() == 0)
 	{
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("Character"));
-		FRepLayout RepLayout;
-		RepLayout.InitFromObjectClass(Class);
-		checkf(RepLayout.Cmds.Num() == 44, TEXT("RepLayout here does not match the RepLayout used when generating interop code."));
-		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[1].Offset = RepLayout.Cmds[0].Offset;
-		HandleToPropertyMap.Add(2, FRepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[2].Offset = RepLayout.Cmds[1].Offset;
-		HandleToPropertyMap.Add(3, FRepHandleData{nullptr, Class->FindPropertyByName("bTearOff"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[3].Offset = RepLayout.Cmds[2].Offset;
-		HandleToPropertyMap.Add(4, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteRole"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[4].Offset = RepLayout.Cmds[3].Offset;
-		HandleToPropertyMap.Add(5, FRepHandleData{nullptr, Class->FindPropertyByName("Owner"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[5].Offset = RepLayout.Cmds[4].Offset;
-		HandleToPropertyMap.Add(6, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovement"), COND_SimulatedOrPhysicsNoReplay, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[6].Offset = RepLayout.Cmds[5].Offset;
-		HandleToPropertyMap.Add(7, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[7].Property = Cast<UStructProperty>(HandleToPropertyMap[7].Parent)->Struct->FindPropertyByName("AttachParent");
-		HandleToPropertyMap[7].Offset = RepLayout.Cmds[6].Offset;
-		HandleToPropertyMap.Add(8, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[8].Property = Cast<UStructProperty>(HandleToPropertyMap[8].Parent)->Struct->FindPropertyByName("LocationOffset");
-		HandleToPropertyMap[8].Offset = RepLayout.Cmds[7].Offset;
-		HandleToPropertyMap.Add(9, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[9].Property = Cast<UStructProperty>(HandleToPropertyMap[9].Parent)->Struct->FindPropertyByName("RelativeScale3D");
-		HandleToPropertyMap[9].Offset = RepLayout.Cmds[8].Offset;
-		HandleToPropertyMap.Add(10, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[10].Property = Cast<UStructProperty>(HandleToPropertyMap[10].Parent)->Struct->FindPropertyByName("RotationOffset");
-		HandleToPropertyMap[10].Offset = RepLayout.Cmds[9].Offset;
-		HandleToPropertyMap.Add(11, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[11].Property = Cast<UStructProperty>(HandleToPropertyMap[11].Parent)->Struct->FindPropertyByName("AttachSocket");
-		HandleToPropertyMap[11].Offset = RepLayout.Cmds[10].Offset;
-		HandleToPropertyMap.Add(12, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[12].Property = Cast<UStructProperty>(HandleToPropertyMap[12].Parent)->Struct->FindPropertyByName("AttachComponent");
-		HandleToPropertyMap[12].Offset = RepLayout.Cmds[11].Offset;
-		HandleToPropertyMap.Add(13, FRepHandleData{nullptr, Class->FindPropertyByName("Role"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[13].Offset = RepLayout.Cmds[12].Offset;
-		HandleToPropertyMap.Add(14, FRepHandleData{nullptr, Class->FindPropertyByName("bCanBeDamaged"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[14].Offset = RepLayout.Cmds[13].Offset;
-		HandleToPropertyMap.Add(15, FRepHandleData{nullptr, Class->FindPropertyByName("Instigator"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[15].Offset = RepLayout.Cmds[14].Offset;
-		HandleToPropertyMap.Add(16, FRepHandleData{nullptr, Class->FindPropertyByName("PlayerState"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[16].Offset = RepLayout.Cmds[15].Offset;
-		HandleToPropertyMap.Add(17, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteViewPitch"), COND_SkipOwner, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[17].Offset = RepLayout.Cmds[16].Offset;
-		HandleToPropertyMap.Add(18, FRepHandleData{nullptr, Class->FindPropertyByName("Controller"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[18].Offset = RepLayout.Cmds[17].Offset;
-		HandleToPropertyMap.Add(19, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[19].Property = Cast<UStructProperty>(HandleToPropertyMap[19].Parent)->Struct->FindPropertyByName("MovementBase");
-		HandleToPropertyMap[19].Offset = RepLayout.Cmds[18].Offset;
-		HandleToPropertyMap.Add(20, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[20].Property = Cast<UStructProperty>(HandleToPropertyMap[20].Parent)->Struct->FindPropertyByName("BoneName");
-		HandleToPropertyMap[20].Offset = RepLayout.Cmds[19].Offset;
-		HandleToPropertyMap.Add(21, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[21].Property = Cast<UStructProperty>(HandleToPropertyMap[21].Parent)->Struct->FindPropertyByName("Location");
-		HandleToPropertyMap[21].Offset = RepLayout.Cmds[20].Offset;
-		HandleToPropertyMap.Add(22, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[22].Property = Cast<UStructProperty>(HandleToPropertyMap[22].Parent)->Struct->FindPropertyByName("Rotation");
-		HandleToPropertyMap[22].Offset = RepLayout.Cmds[21].Offset;
-		HandleToPropertyMap.Add(23, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[23].Property = Cast<UStructProperty>(HandleToPropertyMap[23].Parent)->Struct->FindPropertyByName("bServerHasBaseComponent");
-		HandleToPropertyMap[23].Offset = RepLayout.Cmds[22].Offset;
-		HandleToPropertyMap.Add(24, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[24].Property = Cast<UStructProperty>(HandleToPropertyMap[24].Parent)->Struct->FindPropertyByName("bRelativeRotation");
-		HandleToPropertyMap[24].Offset = RepLayout.Cmds[23].Offset;
-		HandleToPropertyMap.Add(25, FRepHandleData{Class->FindPropertyByName("ReplicatedBasedMovement"), nullptr, COND_SimulatedOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[25].Property = Cast<UStructProperty>(HandleToPropertyMap[25].Parent)->Struct->FindPropertyByName("bServerHasVelocity");
-		HandleToPropertyMap[25].Offset = RepLayout.Cmds[24].Offset;
-		HandleToPropertyMap.Add(26, FRepHandleData{nullptr, Class->FindPropertyByName("AnimRootMotionTranslationScale"), COND_SimulatedOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[26].Offset = RepLayout.Cmds[25].Offset;
-		HandleToPropertyMap.Add(27, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedServerLastTransformUpdateTimeStamp"), COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[27].Offset = RepLayout.Cmds[26].Offset;
-		HandleToPropertyMap.Add(28, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovementMode"), COND_SimulatedOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[28].Offset = RepLayout.Cmds[27].Offset;
-		HandleToPropertyMap.Add(29, FRepHandleData{nullptr, Class->FindPropertyByName("bIsCrouched"), COND_SimulatedOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[29].Offset = RepLayout.Cmds[28].Offset;
-		HandleToPropertyMap.Add(30, FRepHandleData{nullptr, Class->FindPropertyByName("JumpMaxHoldTime"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[30].Offset = RepLayout.Cmds[29].Offset;
-		HandleToPropertyMap.Add(31, FRepHandleData{nullptr, Class->FindPropertyByName("JumpMaxCount"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[31].Offset = RepLayout.Cmds[30].Offset;
-		HandleToPropertyMap.Add(32, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[32].Property = Cast<UStructProperty>(HandleToPropertyMap[32].Parent)->Struct->FindPropertyByName("bIsActive");
-		HandleToPropertyMap[32].Offset = RepLayout.Cmds[31].Offset;
-		HandleToPropertyMap.Add(33, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[33].Property = Cast<UStructProperty>(HandleToPropertyMap[33].Parent)->Struct->FindPropertyByName("AnimMontage");
-		HandleToPropertyMap[33].Offset = RepLayout.Cmds[32].Offset;
-		HandleToPropertyMap.Add(34, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[34].Property = Cast<UStructProperty>(HandleToPropertyMap[34].Parent)->Struct->FindPropertyByName("Position");
-		HandleToPropertyMap[34].Offset = RepLayout.Cmds[33].Offset;
-		HandleToPropertyMap.Add(35, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[35].Property = Cast<UStructProperty>(HandleToPropertyMap[35].Parent)->Struct->FindPropertyByName("Location");
-		HandleToPropertyMap[35].Offset = RepLayout.Cmds[34].Offset;
-		HandleToPropertyMap.Add(36, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[36].Property = Cast<UStructProperty>(HandleToPropertyMap[36].Parent)->Struct->FindPropertyByName("Rotation");
-		HandleToPropertyMap[36].Offset = RepLayout.Cmds[35].Offset;
-		HandleToPropertyMap.Add(37, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[37].Property = Cast<UStructProperty>(HandleToPropertyMap[37].Parent)->Struct->FindPropertyByName("MovementBase");
-		HandleToPropertyMap[37].Offset = RepLayout.Cmds[36].Offset;
-		HandleToPropertyMap.Add(38, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[38].Property = Cast<UStructProperty>(HandleToPropertyMap[38].Parent)->Struct->FindPropertyByName("MovementBaseBoneName");
-		HandleToPropertyMap[38].Offset = RepLayout.Cmds[37].Offset;
-		HandleToPropertyMap.Add(39, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[39].Property = Cast<UStructProperty>(HandleToPropertyMap[39].Parent)->Struct->FindPropertyByName("bRelativePosition");
-		HandleToPropertyMap[39].Offset = RepLayout.Cmds[38].Offset;
-		HandleToPropertyMap.Add(40, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[40].Property = Cast<UStructProperty>(HandleToPropertyMap[40].Parent)->Struct->FindPropertyByName("bRelativeRotation");
-		HandleToPropertyMap[40].Offset = RepLayout.Cmds[39].Offset;
-		HandleToPropertyMap.Add(41, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[41].Property = Cast<UStructProperty>(HandleToPropertyMap[41].Parent)->Struct->FindPropertyByName("AuthoritativeRootMotion");
-		HandleToPropertyMap[41].Offset = RepLayout.Cmds[40].Offset;
-		HandleToPropertyMap.Add(42, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[42].Property = Cast<UStructProperty>(HandleToPropertyMap[42].Parent)->Struct->FindPropertyByName("Acceleration");
-		HandleToPropertyMap[42].Offset = RepLayout.Cmds[41].Offset;
-		HandleToPropertyMap.Add(43, FRepHandleData{Class->FindPropertyByName("RepRootMotion"), nullptr, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[43].Property = Cast<UStructProperty>(HandleToPropertyMap[43].Parent)->Struct->FindPropertyByName("LinearVelocity");
-		HandleToPropertyMap[43].Offset = RepLayout.Cmds[42].Offset;
+		HandleToPropertyMap.Add(1, FRepHandleData(Class, {"bHidden"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(2, FRepHandleData(Class, {"bReplicateMovement"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(3, FRepHandleData(Class, {"bTearOff"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(4, FRepHandleData(Class, {"RemoteRole"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(5, FRepHandleData(Class, {"Owner"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(6, FRepHandleData(Class, {"ReplicatedMovement"}, COND_SimulatedOrPhysicsNoReplay, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(7, FRepHandleData(Class, {"AttachmentReplication", "AttachParent"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(8, FRepHandleData(Class, {"AttachmentReplication", "LocationOffset"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(9, FRepHandleData(Class, {"AttachmentReplication", "RelativeScale3D"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(10, FRepHandleData(Class, {"AttachmentReplication", "RotationOffset"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(11, FRepHandleData(Class, {"AttachmentReplication", "AttachSocket"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(12, FRepHandleData(Class, {"AttachmentReplication", "AttachComponent"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(13, FRepHandleData(Class, {"Role"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(14, FRepHandleData(Class, {"bCanBeDamaged"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(15, FRepHandleData(Class, {"Instigator"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(16, FRepHandleData(Class, {"PlayerState"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(17, FRepHandleData(Class, {"RemoteViewPitch"}, COND_SkipOwner, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(18, FRepHandleData(Class, {"Controller"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(19, FRepHandleData(Class, {"ReplicatedBasedMovement", "MovementBase"}, COND_SimulatedOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(20, FRepHandleData(Class, {"ReplicatedBasedMovement", "BoneName"}, COND_SimulatedOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(21, FRepHandleData(Class, {"ReplicatedBasedMovement", "Location"}, COND_SimulatedOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(22, FRepHandleData(Class, {"ReplicatedBasedMovement", "Rotation"}, COND_SimulatedOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(23, FRepHandleData(Class, {"ReplicatedBasedMovement", "bServerHasBaseComponent"}, COND_SimulatedOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(24, FRepHandleData(Class, {"ReplicatedBasedMovement", "bRelativeRotation"}, COND_SimulatedOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(25, FRepHandleData(Class, {"ReplicatedBasedMovement", "bServerHasVelocity"}, COND_SimulatedOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(26, FRepHandleData(Class, {"AnimRootMotionTranslationScale"}, COND_SimulatedOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(27, FRepHandleData(Class, {"ReplicatedServerLastTransformUpdateTimeStamp"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(28, FRepHandleData(Class, {"ReplicatedMovementMode"}, COND_SimulatedOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(29, FRepHandleData(Class, {"bIsCrouched"}, COND_SimulatedOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(30, FRepHandleData(Class, {"JumpMaxHoldTime"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(31, FRepHandleData(Class, {"JumpMaxCount"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(32, FRepHandleData(Class, {"RepRootMotion", "bIsActive"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(33, FRepHandleData(Class, {"RepRootMotion", "AnimMontage"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(34, FRepHandleData(Class, {"RepRootMotion", "Position"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(35, FRepHandleData(Class, {"RepRootMotion", "Location"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(36, FRepHandleData(Class, {"RepRootMotion", "Rotation"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(37, FRepHandleData(Class, {"RepRootMotion", "MovementBase"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(38, FRepHandleData(Class, {"RepRootMotion", "MovementBaseBoneName"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(39, FRepHandleData(Class, {"RepRootMotion", "bRelativePosition"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(40, FRepHandleData(Class, {"RepRootMotion", "bRelativeRotation"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(41, FRepHandleData(Class, {"RepRootMotion", "AuthoritativeRootMotion"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(42, FRepHandleData(Class, {"RepRootMotion", "Acceleration"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(43, FRepHandleData(Class, {"RepRootMotion", "LinearVelocity"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
 	}
 	return HandleToPropertyMap;
 }
@@ -179,7 +108,7 @@ void USpatialTypeBinding_Character::BindToView()
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			if (ActorChannel)
 			{
-				ClientReceiveUpdate_SingleClient(ActorChannel, Op.Update);
+				ReceiveUpdate_SingleClient(ActorChannel, Op.Update);
 			}
 			else
 			{
@@ -192,7 +121,7 @@ void USpatialTypeBinding_Character::BindToView()
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			if (ActorChannel)
 			{
-				ClientReceiveUpdate_MultiClient(ActorChannel, Op.Update);
+				ReceiveUpdate_MultiClient(ActorChannel, Op.Update);
 			}
 			else
 			{
@@ -353,13 +282,13 @@ void USpatialTypeBinding_Character::ReceiveAddComponent(USpatialActorChannel* Ch
 	if (SingleClientAddOp)
 	{
 		auto Update = improbable::unreal::UnrealCharacterSingleClientRepData::Update::FromInitialData(*SingleClientAddOp->Data.data());
-		ClientReceiveUpdate_SingleClient(Channel, Update);
+		ReceiveUpdate_SingleClient(Channel, Update);
 	}
 	auto* MultiClientAddOp = Cast<UUnrealCharacterMultiClientRepDataAddComponentOp>(AddComponentOp);
 	if (MultiClientAddOp)
 	{
 		auto Update = improbable::unreal::UnrealCharacterMultiClientRepData::Update::FromInitialData(*MultiClientAddOp->Data.data());
-		ClientReceiveUpdate_MultiClient(Channel, Update);
+		ReceiveUpdate_MultiClient(Channel, Update);
 	}
 }
 
@@ -370,14 +299,14 @@ void USpatialTypeBinding_Character::ApplyQueuedStateToChannel(USpatialActorChann
 	{
 		auto Update = improbable::unreal::UnrealCharacterSingleClientRepData::Update::FromInitialData(*SingleClientData);
 		PendingSingleClientData.Remove(ActorChannel->GetEntityId());
-		ClientReceiveUpdate_SingleClient(ActorChannel, Update);
+		ReceiveUpdate_SingleClient(ActorChannel, Update);
 	}
 	improbable::unreal::UnrealCharacterMultiClientRepData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
 	if (MultiClientData)
 	{
 		auto Update = improbable::unreal::UnrealCharacterMultiClientRepData::Update::FromInitialData(*MultiClientData);
 		PendingMultiClientData.Remove(ActorChannel->GetEntityId());
-		ClientReceiveUpdate_MultiClient(ActorChannel, Update);
+		ReceiveUpdate_MultiClient(ActorChannel, Update);
 	}
 }
 
@@ -418,11 +347,11 @@ void USpatialTypeBinding_Character::BuildSpatialComponentUpdate(
 	}
 }
 
-void USpatialTypeBinding_Character::ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealCharacterSingleClientRepData::Update& OutUpdate) const;
+void USpatialTypeBinding_Character::ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealCharacterSingleClientRepData::Update& OutUpdate) const
 {
 }
 
-void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealCharacterMultiClientRepData::Update& OutUpdate) const;
+void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealCharacterMultiClientRepData::Update& OutUpdate) const
 {
 	switch (Handle)
 	{
@@ -860,11 +789,13 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(const uint8* RE
 		{
 			FRootMotionSourceGroup Value = *(reinterpret_cast<FRootMotionSourceGroup const*>(Data));
 
-			OutUpdate.set_field_reprootmotion_authoritativerootmotion_bhasadditivesources(Value.bHasAdditiveSources);
-			OutUpdate.set_field_reprootmotion_authoritativerootmotion_bhasoverridesources(Value.bHasOverrideSources);
-			OutUpdate.set_field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity(improbable::Vector3f(Value.LastPreAdditiveVelocity.X, Value.LastPreAdditiveVelocity.Y, Value.LastPreAdditiveVelocity.Z));
-			OutUpdate.set_field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied(Value.bIsAdditiveVelocityApplied);
-			OutUpdate.set_field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags(uint32_t(Value.LastAccumulatedSettings.Flags));
+			{
+				TArray<uint8> ValueData;
+				FMemoryWriter ValueDataWriter(ValueData);
+				bool Success;
+				Value.NetSerialize(ValueDataWriter, PackageMap, Success);
+				OutUpdate.set_field_reprootmotion_authoritativerootmotion(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));
+			}
 			break;
 		}
 		case 42: // field_reprootmotion_acceleration
@@ -887,7 +818,7 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(const uint8* RE
 	}
 }
 
-void USpatialTypeBinding_Character::ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealCharacterSingleClientRepData::Update& Update) const;
+void USpatialTypeBinding_Character::ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealCharacterSingleClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
@@ -895,7 +826,7 @@ void USpatialTypeBinding_Character::ReceiveUpdate_SingleClient(USpatialActorChan
 	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
-void USpatialTypeBinding_Character::ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealCharacterMultiClientRepData::Update& Update) const;
+void USpatialTypeBinding_Character::ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealCharacterMultiClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
@@ -2154,7 +2085,7 @@ void USpatialTypeBinding_Character::ReceiveUpdate_MultiClient(USpatialActorChann
 				Handle);
 		}
 	}
-	if (!Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().empty())
+	if (!Update.field_reprootmotion_authoritativerootmotion().empty())
 	{
 		// field_reprootmotion_authoritativerootmotion
 		uint16 Handle = 41;
@@ -2164,16 +2095,14 @@ void USpatialTypeBinding_Character::ReceiveUpdate_MultiClient(USpatialActorChann
 			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
 			FRootMotionSourceGroup Value = *(reinterpret_cast<FRootMotionSourceGroup const*>(PropertyData));
 
-			Value.bHasAdditiveSources = (*Update.field_reprootmotion_authoritativerootmotion_bhasadditivesources().data());
-			Value.bHasOverrideSources = (*Update.field_reprootmotion_authoritativerootmotion_bhasoverridesources().data());
 			{
-				auto& Vector = (*Update.field_reprootmotion_authoritativerootmotion_lastpreadditivevelocity().data());
-				Value.LastPreAdditiveVelocity.X = Vector.x();
-				Value.LastPreAdditiveVelocity.Y = Vector.y();
-				Value.LastPreAdditiveVelocity.Z = Vector.z();
+				auto& ValueDataStr = (*Update.field_reprootmotion_authoritativerootmotion().data());
+				TArray<uint8> ValueData;
+				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
+				FMemoryReader ValueDataReader(ValueData);
+				bool bSuccess;
+				Value.NetSerialize(ValueDataReader, PackageMap, bSuccess);
 			}
-			Value.bIsAdditiveVelocityApplied = (*Update.field_reprootmotion_authoritativerootmotion_bisadditivevelocityapplied().data());
-			Value.LastAccumulatedSettings.Flags = uint8(uint8((*Update.field_reprootmotion_authoritativerootmotion_lastaccumulatedsettings_flags().data())));
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
@@ -2915,8 +2844,10 @@ void USpatialTypeBinding_Character::RootMotionDebugClientPrintOnScreen_OnCommand
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract InString
+		// Declare parameters.
 		FString InString;
+
+		// Extract from request data.
 		InString = FString(UTF8_TO_TCHAR(Op.Request.field_instring().c_str()));
 
 		// Call implementation.
@@ -3079,21 +3010,23 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_OnCommandReque
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract TimeStamp
+		// Declare parameters.
 		float TimeStamp;
-		TimeStamp = Op.Request.field_timestamp();
-
-		// Extract NewLoc
 		FVector NewLoc;
+		UPrimitiveComponent* NewBase;
+		FName NewBaseBoneName;
+		bool bHasBase;
+		bool bBaseRelativePosition;
+		uint8 ServerMovementMode;
+
+		// Extract from request data.
+		TimeStamp = Op.Request.field_timestamp();
 		{
 			auto& Vector = Op.Request.field_newloc();
 			NewLoc.X = Vector.x();
 			NewLoc.Y = Vector.y();
 			NewLoc.Z = Vector.z();
 		}
-
-		// Extract NewBase
-		UPrimitiveComponent* NewBase;
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_newbase();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -3120,21 +3053,9 @@ void USpatialTypeBinding_Character::ClientVeryShortAdjustPosition_OnCommandReque
 				}
 			}
 		}
-
-		// Extract NewBaseBoneName
-		FName NewBaseBoneName;
 		NewBaseBoneName = FName((Op.Request.field_newbasebonename()).data());
-
-		// Extract bHasBase
-		bool bHasBase;
 		bHasBase = Op.Request.field_bhasbase();
-
-		// Extract bBaseRelativePosition
-		bool bBaseRelativePosition;
 		bBaseRelativePosition = Op.Request.field_bbaserelativeposition();
-
-		// Extract ServerMovementMode
-		uint8 ServerMovementMode;
 		ServerMovementMode = uint8(uint8(Op.Request.field_servermovementmode()));
 
 		// Call implementation.
@@ -3177,12 +3098,22 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_OnComma
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract TimeStamp
+		// Declare parameters.
 		float TimeStamp;
-		TimeStamp = Op.Request.field_timestamp();
-
-		// Extract ServerRootMotion
 		FRootMotionSourceGroup ServerRootMotion;
+		bool bHasAnimRootMotion;
+		float ServerMontageTrackPosition;
+		FVector ServerLoc;
+		FVector_NetQuantizeNormal ServerRotation;
+		float ServerVelZ;
+		UPrimitiveComponent* ServerBase;
+		FName ServerBoneName;
+		bool bHasBase;
+		bool bBaseRelativePosition;
+		uint8 ServerMovementMode;
+
+		// Extract from request data.
+		TimeStamp = Op.Request.field_timestamp();
 		ServerRootMotion.bHasAdditiveSources = Op.Request.field_serverrootmotion_bhasadditivesources();
 		ServerRootMotion.bHasOverrideSources = Op.Request.field_serverrootmotion_bhasoverridesources();
 		{
@@ -3193,39 +3124,21 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_OnComma
 		}
 		ServerRootMotion.bIsAdditiveVelocityApplied = Op.Request.field_serverrootmotion_bisadditivevelocityapplied();
 		ServerRootMotion.LastAccumulatedSettings.Flags = uint8(uint8(Op.Request.field_serverrootmotion_lastaccumulatedsettings_flags()));
-
-		// Extract bHasAnimRootMotion
-		bool bHasAnimRootMotion;
 		bHasAnimRootMotion = Op.Request.field_bhasanimrootmotion();
-
-		// Extract ServerMontageTrackPosition
-		float ServerMontageTrackPosition;
 		ServerMontageTrackPosition = Op.Request.field_servermontagetrackposition();
-
-		// Extract ServerLoc
-		FVector ServerLoc;
 		{
 			auto& Vector = Op.Request.field_serverloc();
 			ServerLoc.X = Vector.x();
 			ServerLoc.Y = Vector.y();
 			ServerLoc.Z = Vector.z();
 		}
-
-		// Extract ServerRotation
-		FVector_NetQuantizeNormal ServerRotation;
 		{
 			auto& Vector = Op.Request.field_serverrotation();
 			ServerRotation.X = Vector.x();
 			ServerRotation.Y = Vector.y();
 			ServerRotation.Z = Vector.z();
 		}
-
-		// Extract ServerVelZ
-		float ServerVelZ;
 		ServerVelZ = Op.Request.field_servervelz();
-
-		// Extract ServerBase
-		UPrimitiveComponent* ServerBase;
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_serverbase();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -3252,21 +3165,9 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionSourcePosition_OnComma
 				}
 			}
 		}
-
-		// Extract ServerBoneName
-		FName ServerBoneName;
 		ServerBoneName = FName((Op.Request.field_serverbonename()).data());
-
-		// Extract bHasBase
-		bool bHasBase;
 		bHasBase = Op.Request.field_bhasbase();
-
-		// Extract bBaseRelativePosition
-		bool bBaseRelativePosition;
 		bBaseRelativePosition = Op.Request.field_bbaserelativeposition();
-
-		// Extract ServerMovementMode
-		uint8 ServerMovementMode;
 		ServerMovementMode = uint8(uint8(Op.Request.field_servermovementmode()));
 
 		// Call implementation.
@@ -3309,38 +3210,34 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_OnCommandRequ
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract TimeStamp
+		// Declare parameters.
 		float TimeStamp;
-		TimeStamp = Op.Request.field_timestamp();
-
-		// Extract ServerMontageTrackPosition
 		float ServerMontageTrackPosition;
-		ServerMontageTrackPosition = Op.Request.field_servermontagetrackposition();
-
-		// Extract ServerLoc
 		FVector ServerLoc;
+		FVector_NetQuantizeNormal ServerRotation;
+		float ServerVelZ;
+		UPrimitiveComponent* ServerBase;
+		FName ServerBoneName;
+		bool bHasBase;
+		bool bBaseRelativePosition;
+		uint8 ServerMovementMode;
+
+		// Extract from request data.
+		TimeStamp = Op.Request.field_timestamp();
+		ServerMontageTrackPosition = Op.Request.field_servermontagetrackposition();
 		{
 			auto& Vector = Op.Request.field_serverloc();
 			ServerLoc.X = Vector.x();
 			ServerLoc.Y = Vector.y();
 			ServerLoc.Z = Vector.z();
 		}
-
-		// Extract ServerRotation
-		FVector_NetQuantizeNormal ServerRotation;
 		{
 			auto& Vector = Op.Request.field_serverrotation();
 			ServerRotation.X = Vector.x();
 			ServerRotation.Y = Vector.y();
 			ServerRotation.Z = Vector.z();
 		}
-
-		// Extract ServerVelZ
-		float ServerVelZ;
 		ServerVelZ = Op.Request.field_servervelz();
-
-		// Extract ServerBase
-		UPrimitiveComponent* ServerBase;
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_serverbase();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -3367,21 +3264,9 @@ void USpatialTypeBinding_Character::ClientAdjustRootMotionPosition_OnCommandRequ
 				}
 			}
 		}
-
-		// Extract ServerBoneName
-		FName ServerBoneName;
 		ServerBoneName = FName((Op.Request.field_serverbonename()).data());
-
-		// Extract bHasBase
-		bool bHasBase;
 		bHasBase = Op.Request.field_bhasbase();
-
-		// Extract bBaseRelativePosition
-		bool bBaseRelativePosition;
 		bBaseRelativePosition = Op.Request.field_bbaserelativeposition();
-
-		// Extract ServerMovementMode
-		uint8 ServerMovementMode;
 		ServerMovementMode = uint8(uint8(Op.Request.field_servermovementmode()));
 
 		// Call implementation.
@@ -3424,30 +3309,30 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_OnCommandRequest(const 
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract TimeStamp
+		// Declare parameters.
 		float TimeStamp;
-		TimeStamp = Op.Request.field_timestamp();
-
-		// Extract NewLoc
 		FVector NewLoc;
+		FVector NewVel;
+		UPrimitiveComponent* NewBase;
+		FName NewBaseBoneName;
+		bool bHasBase;
+		bool bBaseRelativePosition;
+		uint8 ServerMovementMode;
+
+		// Extract from request data.
+		TimeStamp = Op.Request.field_timestamp();
 		{
 			auto& Vector = Op.Request.field_newloc();
 			NewLoc.X = Vector.x();
 			NewLoc.Y = Vector.y();
 			NewLoc.Z = Vector.z();
 		}
-
-		// Extract NewVel
-		FVector NewVel;
 		{
 			auto& Vector = Op.Request.field_newvel();
 			NewVel.X = Vector.x();
 			NewVel.Y = Vector.y();
 			NewVel.Z = Vector.z();
 		}
-
-		// Extract NewBase
-		UPrimitiveComponent* NewBase;
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_newbase();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -3474,21 +3359,9 @@ void USpatialTypeBinding_Character::ClientAdjustPosition_OnCommandRequest(const 
 				}
 			}
 		}
-
-		// Extract NewBaseBoneName
-		FName NewBaseBoneName;
 		NewBaseBoneName = FName((Op.Request.field_newbasebonename()).data());
-
-		// Extract bHasBase
-		bool bHasBase;
 		bHasBase = Op.Request.field_bhasbase();
-
-		// Extract bBaseRelativePosition
-		bool bBaseRelativePosition;
 		bBaseRelativePosition = Op.Request.field_bbaserelativeposition();
-
-		// Extract ServerMovementMode
-		uint8 ServerMovementMode;
 		ServerMovementMode = uint8(uint8(Op.Request.field_servermovementmode()));
 
 		// Call implementation.
@@ -3531,8 +3404,10 @@ void USpatialTypeBinding_Character::ClientAckGoodMove_OnCommandRequest(const wor
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract TimeStamp
+		// Declare parameters.
 		float TimeStamp;
+
+		// Extract from request data.
 		TimeStamp = Op.Request.field_timestamp();
 
 		// Call implementation.
@@ -3575,21 +3450,19 @@ void USpatialTypeBinding_Character::ServerMoveOld_OnCommandRequest(const worker:
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract OldTimeStamp
+		// Declare parameters.
 		float OldTimeStamp;
-		OldTimeStamp = Op.Request.field_oldtimestamp();
-
-		// Extract OldAccel
 		FVector_NetQuantize10 OldAccel;
+		uint8 OldMoveFlags;
+
+		// Extract from request data.
+		OldTimeStamp = Op.Request.field_oldtimestamp();
 		{
 			auto& Vector = Op.Request.field_oldaccel();
 			OldAccel.X = Vector.x();
 			OldAccel.Y = Vector.y();
 			OldAccel.Z = Vector.z();
 		}
-
-		// Extract OldMoveFlags
-		uint8 OldMoveFlags;
 		OldMoveFlags = uint8(uint8(Op.Request.field_oldmoveflags()));
 
 		// Call implementation.
@@ -3632,63 +3505,47 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_OnCommandRequ
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract TimeStamp0
+		// Declare parameters.
 		float TimeStamp0;
-		TimeStamp0 = Op.Request.field_timestamp0();
-
-		// Extract InAccel0
 		FVector_NetQuantize10 InAccel0;
+		uint8 PendingFlags;
+		uint32 View0;
+		float TimeStamp;
+		FVector_NetQuantize10 InAccel;
+		FVector_NetQuantize100 ClientLoc;
+		uint8 NewFlags;
+		uint8 ClientRoll;
+		uint32 View;
+		UPrimitiveComponent* ClientMovementBase;
+		FName ClientBaseBoneName;
+		uint8 ClientMovementMode;
+
+		// Extract from request data.
+		TimeStamp0 = Op.Request.field_timestamp0();
 		{
 			auto& Vector = Op.Request.field_inaccel0();
 			InAccel0.X = Vector.x();
 			InAccel0.Y = Vector.y();
 			InAccel0.Z = Vector.z();
 		}
-
-		// Extract PendingFlags
-		uint8 PendingFlags;
 		PendingFlags = uint8(uint8(Op.Request.field_pendingflags()));
-
-		// Extract View0
-		uint32 View0;
 		View0 = uint32(Op.Request.field_view0());
-
-		// Extract TimeStamp
-		float TimeStamp;
 		TimeStamp = Op.Request.field_timestamp();
-
-		// Extract InAccel
-		FVector_NetQuantize10 InAccel;
 		{
 			auto& Vector = Op.Request.field_inaccel();
 			InAccel.X = Vector.x();
 			InAccel.Y = Vector.y();
 			InAccel.Z = Vector.z();
 		}
-
-		// Extract ClientLoc
-		FVector_NetQuantize100 ClientLoc;
 		{
 			auto& Vector = Op.Request.field_clientloc();
 			ClientLoc.X = Vector.x();
 			ClientLoc.Y = Vector.y();
 			ClientLoc.Z = Vector.z();
 		}
-
-		// Extract NewFlags
-		uint8 NewFlags;
 		NewFlags = uint8(uint8(Op.Request.field_newflags()));
-
-		// Extract ClientRoll
-		uint8 ClientRoll;
 		ClientRoll = uint8(uint8(Op.Request.field_clientroll()));
-
-		// Extract View
-		uint32 View;
 		View = uint32(Op.Request.field_view());
-
-		// Extract ClientMovementBase
-		UPrimitiveComponent* ClientMovementBase;
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_clientmovementbase();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -3715,13 +3572,7 @@ void USpatialTypeBinding_Character::ServerMoveDualHybridRootMotion_OnCommandRequ
 				}
 			}
 		}
-
-		// Extract ClientBaseBoneName
-		FName ClientBaseBoneName;
 		ClientBaseBoneName = FName((Op.Request.field_clientbasebonename()).data());
-
-		// Extract ClientMovementMode
-		uint8 ClientMovementMode;
 		ClientMovementMode = uint8(uint8(Op.Request.field_clientmovementmode()));
 
 		// Call implementation.
@@ -3764,63 +3615,47 @@ void USpatialTypeBinding_Character::ServerMoveDual_OnCommandRequest(const worker
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract TimeStamp0
+		// Declare parameters.
 		float TimeStamp0;
-		TimeStamp0 = Op.Request.field_timestamp0();
-
-		// Extract InAccel0
 		FVector_NetQuantize10 InAccel0;
+		uint8 PendingFlags;
+		uint32 View0;
+		float TimeStamp;
+		FVector_NetQuantize10 InAccel;
+		FVector_NetQuantize100 ClientLoc;
+		uint8 NewFlags;
+		uint8 ClientRoll;
+		uint32 View;
+		UPrimitiveComponent* ClientMovementBase;
+		FName ClientBaseBoneName;
+		uint8 ClientMovementMode;
+
+		// Extract from request data.
+		TimeStamp0 = Op.Request.field_timestamp0();
 		{
 			auto& Vector = Op.Request.field_inaccel0();
 			InAccel0.X = Vector.x();
 			InAccel0.Y = Vector.y();
 			InAccel0.Z = Vector.z();
 		}
-
-		// Extract PendingFlags
-		uint8 PendingFlags;
 		PendingFlags = uint8(uint8(Op.Request.field_pendingflags()));
-
-		// Extract View0
-		uint32 View0;
 		View0 = uint32(Op.Request.field_view0());
-
-		// Extract TimeStamp
-		float TimeStamp;
 		TimeStamp = Op.Request.field_timestamp();
-
-		// Extract InAccel
-		FVector_NetQuantize10 InAccel;
 		{
 			auto& Vector = Op.Request.field_inaccel();
 			InAccel.X = Vector.x();
 			InAccel.Y = Vector.y();
 			InAccel.Z = Vector.z();
 		}
-
-		// Extract ClientLoc
-		FVector_NetQuantize100 ClientLoc;
 		{
 			auto& Vector = Op.Request.field_clientloc();
 			ClientLoc.X = Vector.x();
 			ClientLoc.Y = Vector.y();
 			ClientLoc.Z = Vector.z();
 		}
-
-		// Extract NewFlags
-		uint8 NewFlags;
 		NewFlags = uint8(uint8(Op.Request.field_newflags()));
-
-		// Extract ClientRoll
-		uint8 ClientRoll;
 		ClientRoll = uint8(uint8(Op.Request.field_clientroll()));
-
-		// Extract View
-		uint32 View;
 		View = uint32(Op.Request.field_view());
-
-		// Extract ClientMovementBase
-		UPrimitiveComponent* ClientMovementBase;
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_clientmovementbase();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -3847,13 +3682,7 @@ void USpatialTypeBinding_Character::ServerMoveDual_OnCommandRequest(const worker
 				}
 			}
 		}
-
-		// Extract ClientBaseBoneName
-		FName ClientBaseBoneName;
 		ClientBaseBoneName = FName((Op.Request.field_clientbasebonename()).data());
-
-		// Extract ClientMovementMode
-		uint8 ClientMovementMode;
 		ClientMovementMode = uint8(uint8(Op.Request.field_clientmovementmode()));
 
 		// Call implementation.
@@ -3896,42 +3725,34 @@ void USpatialTypeBinding_Character::ServerMove_OnCommandRequest(const worker::Co
 			*TargetNetGUID.ToString(),
 			*TargetObjectUntyped->GetName());
 
-		// Extract TimeStamp
+		// Declare parameters.
 		float TimeStamp;
-		TimeStamp = Op.Request.field_timestamp();
-
-		// Extract InAccel
 		FVector_NetQuantize10 InAccel;
+		FVector_NetQuantize100 ClientLoc;
+		uint8 CompressedMoveFlags;
+		uint8 ClientRoll;
+		uint32 View;
+		UPrimitiveComponent* ClientMovementBase;
+		FName ClientBaseBoneName;
+		uint8 ClientMovementMode;
+
+		// Extract from request data.
+		TimeStamp = Op.Request.field_timestamp();
 		{
 			auto& Vector = Op.Request.field_inaccel();
 			InAccel.X = Vector.x();
 			InAccel.Y = Vector.y();
 			InAccel.Z = Vector.z();
 		}
-
-		// Extract ClientLoc
-		FVector_NetQuantize100 ClientLoc;
 		{
 			auto& Vector = Op.Request.field_clientloc();
 			ClientLoc.X = Vector.x();
 			ClientLoc.Y = Vector.y();
 			ClientLoc.Z = Vector.z();
 		}
-
-		// Extract CompressedMoveFlags
-		uint8 CompressedMoveFlags;
 		CompressedMoveFlags = uint8(uint8(Op.Request.field_compressedmoveflags()));
-
-		// Extract ClientRoll
-		uint8 ClientRoll;
 		ClientRoll = uint8(uint8(Op.Request.field_clientroll()));
-
-		// Extract View
-		uint32 View;
 		View = uint32(Op.Request.field_view());
-
-		// Extract ClientMovementBase
-		UPrimitiveComponent* ClientMovementBase;
 		{
 			improbable::unreal::UnrealObjectRef ObjectRef = Op.Request.field_clientmovementbase();
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
@@ -3958,13 +3779,7 @@ void USpatialTypeBinding_Character::ServerMove_OnCommandRequest(const worker::Co
 				}
 			}
 		}
-
-		// Extract ClientBaseBoneName
-		FName ClientBaseBoneName;
 		ClientBaseBoneName = FName((Op.Request.field_clientbasebonename()).data());
-
-		// Extract ClientMovementMode
-		uint8 ClientMovementMode;
 		ClientMovementMode = uint8(uint8(Op.Request.field_clientmovementmode()));
 
 		// Call implementation.
