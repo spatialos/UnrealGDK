@@ -6,7 +6,6 @@
 #include "SpatialTypeBinding.h"
 #include "SpatialUnrealObjectRef.h"
 #include "ComponentIdentifier.h"
-#include "SpatialEntityId.h"
 #include "SpatialInterop.generated.h"
 
 class USpatialOS;

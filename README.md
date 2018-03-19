@@ -57,12 +57,9 @@ The focus of this project is de-risking SpatialOS interoperability with native c
 
 Note that a majority of the items below are on our short term roadmap.
 
-- Re-connecting to an existing deployment is quite buggy. We recommend restarting the deployment before reconnecting for the time being.
-- We only support connecting through PIE instances.
 - `FName`s are not supported.
 - Listen servers haven't been tested extensively. Please use dedicated servers for now.
-- Connecting a single player is more stable than multiple players.
-- Link to caveats doc
+- For more miscellaneous caveats, see [this](https://docs.google.com/document/d/1dOpA0I2jBNgnxUuFFXtmtu_J1vIPBrlC8r1hAFWHF5I/edit) doc.
 
 ## Engine changes:
 
@@ -79,5 +76,5 @@ There is a small number of changes to UE4 source code we have to make. These cha
 
 The interop code and schema generated for marshalling updates/RPCs is committed directly to the source tree in `workers/unreal/Game/NUF/Generated` and `schema/unreal/generated` respectively, so the commandlet is not required to be re-run unless the code generator is changed.
 
-## Future work:
-- Move away from using `FArchive`s when converting a Spatial update to Unreal.
+## Current focus:
+We are currently implementing cross-server actor transfers.

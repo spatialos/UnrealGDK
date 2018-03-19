@@ -29,20 +29,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	// We do this here straight away to trigger LoadMap.
-	if (bInitAsClient)
-	{
-		FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this);
-		check(WorldContext);
-
-		// Here we need to fake a few things to start ticking the level travel on client.
-		if (WorldContext->PendingNetGame)
-		{
-			WorldContext->PendingNetGame->bSuccessfullyConnected = true;
-			WorldContext->PendingNetGame->bSentJoinRequest = false;
-		}
-	}
-
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
@@ -60,6 +46,25 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	WorkerConfig.Networking.UseExternalIp = false;
 	WorkerConfig.SpatialOSApplication.WorkerPlatform = bInitAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
 
+	// We do this here straight away to trigger LoadMap.
+	if (bInitAsClient)
+	{
+		FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this);
+		check(WorldContext);
+
+		// Here we need to fake a few things to start ticking the level travel on client.
+		if (WorldContext->PendingNetGame)
+		{
+			WorldContext->PendingNetGame->bSuccessfullyConnected = true;
+			WorldContext->PendingNetGame->bSentJoinRequest = false;
+		}
+	}
+	else
+	{
+		// The server should already have a world.
+		OnMapLoaded(GetWorld());
+	}
+
 	return true;
 }
 
@@ -76,7 +81,17 @@ void USpatialNetDriver::PostInitProperties()
 
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
+	if (LoadedWorld->GetNetDriver() != this)
+	{
+		// In PIE, if we have more than 2 clients, then OnMapLoaded is going to be triggered once each client loads the world.
+		// As the delegate is a global variable, it triggers all 3 USpatialNetDriver::OnMapLoaded callbacks. As a result, we should
+		// make sure that the net driver of this world is in fact us.
+		return;
+	}
+
 	UE_LOG(LogSpatialOSNUF, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
+
+	checkf(!SpatialOSInstance->IsConnected(), TEXT("SpatialOS should not be connected already. This is probably because we attempted to travel to a different level, which current isn't supported."));
 
 	// Set the timer manager.
 	TimerManager = &LoadedWorld->GetTimerManager();
