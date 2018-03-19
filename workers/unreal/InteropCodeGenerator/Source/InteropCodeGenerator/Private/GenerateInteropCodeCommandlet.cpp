@@ -63,17 +63,16 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 	OutputListSource.Print();
 
 	// GetGeneratedTypeBindings.
+	OutputListSource.BeginFunction({"TArray<UClass*>", "GetGeneratedTypeBindings()"});
+	OutputListSource.Print("return {");
+	OutputListSource.Indent();
+	for (int i = 0; i < Classes.Num(); ++i)
 	{
-		FFunctionWriter Func(OutputListSource, "TArray<UClass*> GetGeneratedTypeBindings()");
-		OutputListSource.Print("return {");
-		OutputListSource.Indent();
-		for (int i = 0; i < Classes.Num(); ++i)
-		{
-			OutputListSource.Printf(TEXT("USpatialTypeBinding_%s::StaticClass()%s"), *Classes[i], i < (Classes.Num() - 1) ? TEXT(",") : TEXT(""));
-		}
-		OutputListSource.Outdent();
-		OutputListSource.Print("};");
+		OutputListSource.Printf(TEXT("USpatialTypeBinding_%s::StaticClass()%s"), *Classes[i], i < (Classes.Num() - 1) ? TEXT(",") : TEXT(""));
 	}
+	OutputListSource.Outdent();
+	OutputListSource.Print("};");
+	OutputListSource.End();
 
 	// Write to files.
 	OutputListHeader.WriteToFile(FString::Printf(TEXT("%sSpatialTypeBindingList.h"), *ForwardingCodePath));

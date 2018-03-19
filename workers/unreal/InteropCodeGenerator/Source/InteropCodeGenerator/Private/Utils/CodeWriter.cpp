@@ -83,9 +83,24 @@ FCodeWriter& FCodeWriter::Outdent()
 	return *this;
 }
 
-FCodeWriter& FCodeWriter::BeginScope() {
+FCodeWriter& FCodeWriter::BeginScope()
+{
 	Print("{");
 	Indent();
+	return *this;
+}
+
+FCodeWriter& FCodeWriter::BeginFunction(const FFunctionSignature& Signature)
+{
+	Print(Signature.Definition());
+	BeginScope();
+	return *this;
+}
+
+FCodeWriter& FCodeWriter::BeginFunction(const FFunctionSignature& Signature, const FString& TypeName)
+{
+	Print(Signature.Definition(TypeName));
+	BeginScope();
 	return *this;
 }
 

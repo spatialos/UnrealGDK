@@ -40,6 +40,8 @@ public:
 	FCodeWriter& Outdent();
 
 	FCodeWriter& BeginScope();
+	FCodeWriter& BeginFunction(const FFunctionSignature& Signature);
+	FCodeWriter& BeginFunction(const FFunctionSignature& Signature, const FString& TypeName);
 	FCodeWriter& End();
 
 	void WriteToFile(const FString& Filename);
@@ -48,47 +50,4 @@ public:
 private:
 	FString OutputSource;
 	int Scope;
-};
-
-class FFunctionWriter
-{
-public:
-	FFunctionWriter(FCodeWriter& Writer, const FString& Definition) : Writer(Writer)
-	{
-		Writer.Print(Definition);
-		Writer.BeginScope();
-	}
-
-	FFunctionWriter(FCodeWriter& Writer, const FFunctionSignature& Signature) : FFunctionWriter(Writer, Signature.Definition())
-	{
-	}
-
-	FFunctionWriter(FCodeWriter& Writer, const FFunctionSignature& Signature, const FString& TypeName) : FFunctionWriter(Writer, Signature.Definition(TypeName))
-	{
-	}
-
-	~FFunctionWriter()
-	{
-		Writer.End();
-	}
-
-private:
-	FCodeWriter& Writer;
-};
-
-class FScopeWriter
-{
-public:
-	FScopeWriter(FCodeWriter& Writer) : Writer(Writer)
-	{
-		Writer.BeginScope();
-	}
-
-	~FScopeWriter()
-	{
-		Writer.End();
-	}
-
-private:
-	FCodeWriter& Writer;
 };

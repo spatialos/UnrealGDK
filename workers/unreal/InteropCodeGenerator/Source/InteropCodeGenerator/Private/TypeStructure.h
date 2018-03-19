@@ -122,8 +122,9 @@ struct FUnrealRepData
 	ERepLayoutCmdType RepLayoutType;
 	ELifetimeCondition Condition;
 	ELifetimeRepNotifyCondition RepNotifyCondition;
-	int CmdIndex;
+	int32 CmdIndex;
 	uint16 Handle;
+	int32 RoleSwapHandle;
 };
 
 using FUnrealFlatRepData = TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPtr<FUnrealProperty>>>;

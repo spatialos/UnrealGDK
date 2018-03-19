@@ -8,29 +8,6 @@
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 
-// TODO(David): Not sure if these are needed anywhere.
-/*
-FORCEINLINE FString PropertyGeneratedName(UProperty* Property)
-{
-	FString SchemaName = PropertyNameToSchemaName(Property->GetFullGroupName(false));
-	SchemaName[0] = FChar::ToUpper(SchemaName[0]);
-	return SchemaName;
-}
-
-FORCEINLINE FString PropertyGeneratedName(const FString& SchemaName)
-{
-	TArray<FString> ScopeNames;
-	SchemaName.ParseIntoArray(ScopeNames, TEXT("_"), false);
-	FString GeneratedName;
-	for (auto Scope : ScopeNames)
-	{
-		Scope[0] = FChar::ToUpper(Scope[0]);
-		GeneratedName += Scope;
-	}
-	return GeneratedName;
-}
-*/
-
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type)
 {
 	return FString::Printf(TEXT("Unreal%s%sRepData"), *Type->GetName(), *GetReplicatedPropertyGroupName(Group));
@@ -48,12 +25,12 @@ FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type)
 
 FString SchemaRPCRequestType(UFunction* Function)
 {
-	return TEXT("Unreal") + Function->GetName() + TEXT("Request");
+	return FString::Printf(TEXT("Unreal%sRequest"), *Function->GetName());
 }
 
 FString SchemaRPCResponseType(UFunction* Function)
 {
-	return TEXT("Unreal") + Function->GetName() + TEXT("Response");
+	return FString::Printf(TEXT("Unreal%sResponse"), *Function->GetName());
 }
 
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
