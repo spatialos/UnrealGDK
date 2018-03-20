@@ -100,7 +100,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 	FNetworkGUID NetGUID = GetOrAssignNetGUID_NUF(Actor);
 	improbable::unreal::UnrealObjectRef ObjectRef{EntityId.ToSpatialEntityId(), 0};
 	RegisterObjectRef(NetGUID, ObjectRef);
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %llu"),
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"),
 		*Actor->GetName(), *NetGUID.ToString(), EntityId.ToSpatialEntityId());
 	Interop->ResolvePendingOperations(Actor, ObjectRef);
 

@@ -15,8 +15,8 @@
 #include "../SpatialNetDriver.h"
 #include "../SpatialInterop.h"
 
-#include "UnrealPlayerStateSingleClientReplicatedDataAddComponentOp.h"
-#include "UnrealPlayerStateMultiClientReplicatedDataAddComponentOp.h"
+#include "UnrealPlayerStateSingleClientRepDataAddComponentOp.h"
+#include "UnrealPlayerStateMultiClientRepDataAddComponentOp.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_PlayerState::GetHandlePropertyMap()
 {
@@ -24,67 +24,32 @@ const FRepHandlePropertyMap& USpatialTypeBinding_PlayerState::GetHandlePropertyM
 	if (HandleToPropertyMap.Num() == 0)
 	{
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("PlayerState"));
-		FRepLayout RepLayout;
-		RepLayout.InitFromObjectClass(Class);
-		checkf(RepLayout.Cmds.Num() == 27, TEXT("RepLayout here does not match the RepLayout used when generating interop code."));
-		HandleToPropertyMap.Add(1, FRepHandleData{nullptr, Class->FindPropertyByName("bHidden"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[1].Offset = RepLayout.Cmds[0].Offset;
-		HandleToPropertyMap.Add(2, FRepHandleData{nullptr, Class->FindPropertyByName("bReplicateMovement"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[2].Offset = RepLayout.Cmds[1].Offset;
-		HandleToPropertyMap.Add(3, FRepHandleData{nullptr, Class->FindPropertyByName("bTearOff"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[3].Offset = RepLayout.Cmds[2].Offset;
-		HandleToPropertyMap.Add(4, FRepHandleData{nullptr, Class->FindPropertyByName("RemoteRole"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[4].Offset = RepLayout.Cmds[3].Offset;
-		HandleToPropertyMap.Add(5, FRepHandleData{nullptr, Class->FindPropertyByName("Owner"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[5].Offset = RepLayout.Cmds[4].Offset;
-		HandleToPropertyMap.Add(6, FRepHandleData{nullptr, Class->FindPropertyByName("ReplicatedMovement"), COND_SimulatedOrPhysics, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[6].Offset = RepLayout.Cmds[5].Offset;
-		HandleToPropertyMap.Add(7, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[7].Property = Cast<UStructProperty>(HandleToPropertyMap[7].Parent)->Struct->FindPropertyByName("AttachParent");
-		HandleToPropertyMap[7].Offset = RepLayout.Cmds[6].Offset;
-		HandleToPropertyMap.Add(8, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[8].Property = Cast<UStructProperty>(HandleToPropertyMap[8].Parent)->Struct->FindPropertyByName("LocationOffset");
-		HandleToPropertyMap[8].Offset = RepLayout.Cmds[7].Offset;
-		HandleToPropertyMap.Add(9, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[9].Property = Cast<UStructProperty>(HandleToPropertyMap[9].Parent)->Struct->FindPropertyByName("RelativeScale3D");
-		HandleToPropertyMap[9].Offset = RepLayout.Cmds[8].Offset;
-		HandleToPropertyMap.Add(10, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[10].Property = Cast<UStructProperty>(HandleToPropertyMap[10].Parent)->Struct->FindPropertyByName("RotationOffset");
-		HandleToPropertyMap[10].Offset = RepLayout.Cmds[9].Offset;
-		HandleToPropertyMap.Add(11, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[11].Property = Cast<UStructProperty>(HandleToPropertyMap[11].Parent)->Struct->FindPropertyByName("AttachSocket");
-		HandleToPropertyMap[11].Offset = RepLayout.Cmds[10].Offset;
-		HandleToPropertyMap.Add(12, FRepHandleData{Class->FindPropertyByName("AttachmentReplication"), nullptr, COND_Custom, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[12].Property = Cast<UStructProperty>(HandleToPropertyMap[12].Parent)->Struct->FindPropertyByName("AttachComponent");
-		HandleToPropertyMap[12].Offset = RepLayout.Cmds[11].Offset;
-		HandleToPropertyMap.Add(13, FRepHandleData{nullptr, Class->FindPropertyByName("Role"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[13].Offset = RepLayout.Cmds[12].Offset;
-		HandleToPropertyMap.Add(14, FRepHandleData{nullptr, Class->FindPropertyByName("bCanBeDamaged"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[14].Offset = RepLayout.Cmds[13].Offset;
-		HandleToPropertyMap.Add(15, FRepHandleData{nullptr, Class->FindPropertyByName("Instigator"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[15].Offset = RepLayout.Cmds[14].Offset;
-		HandleToPropertyMap.Add(16, FRepHandleData{nullptr, Class->FindPropertyByName("Score"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[16].Offset = RepLayout.Cmds[15].Offset;
-		HandleToPropertyMap.Add(17, FRepHandleData{nullptr, Class->FindPropertyByName("Ping"), COND_SkipOwner, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[17].Offset = RepLayout.Cmds[16].Offset;
-		HandleToPropertyMap.Add(18, FRepHandleData{nullptr, Class->FindPropertyByName("PlayerName"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[18].Offset = RepLayout.Cmds[17].Offset;
-		HandleToPropertyMap.Add(19, FRepHandleData{nullptr, Class->FindPropertyByName("PlayerId"), COND_InitialOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[19].Offset = RepLayout.Cmds[18].Offset;
-		HandleToPropertyMap.Add(20, FRepHandleData{nullptr, Class->FindPropertyByName("bFromPreviousLevel"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[20].Offset = RepLayout.Cmds[19].Offset;
-		HandleToPropertyMap.Add(21, FRepHandleData{nullptr, Class->FindPropertyByName("bIsABot"), COND_InitialOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[21].Offset = RepLayout.Cmds[20].Offset;
-		HandleToPropertyMap.Add(22, FRepHandleData{nullptr, Class->FindPropertyByName("bIsInactive"), COND_InitialOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[22].Offset = RepLayout.Cmds[21].Offset;
-		HandleToPropertyMap.Add(23, FRepHandleData{nullptr, Class->FindPropertyByName("bIsSpectator"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[23].Offset = RepLayout.Cmds[22].Offset;
-		HandleToPropertyMap.Add(24, FRepHandleData{nullptr, Class->FindPropertyByName("bOnlySpectator"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[24].Offset = RepLayout.Cmds[23].Offset;
-		HandleToPropertyMap.Add(25, FRepHandleData{nullptr, Class->FindPropertyByName("StartTime"), COND_None, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[25].Offset = RepLayout.Cmds[24].Offset;
-		HandleToPropertyMap.Add(26, FRepHandleData{nullptr, Class->FindPropertyByName("UniqueId"), COND_InitialOnly, REPNOTIFY_OnChanged, 0});
-		HandleToPropertyMap[26].Offset = RepLayout.Cmds[25].Offset;
+		HandleToPropertyMap.Add(1, FRepHandleData(Class, {"bHidden"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(2, FRepHandleData(Class, {"bReplicateMovement"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(3, FRepHandleData(Class, {"bTearOff"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(4, FRepHandleData(Class, {"RemoteRole"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(5, FRepHandleData(Class, {"Owner"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(6, FRepHandleData(Class, {"ReplicatedMovement"}, COND_SimulatedOrPhysics, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(7, FRepHandleData(Class, {"AttachmentReplication", "AttachParent"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(8, FRepHandleData(Class, {"AttachmentReplication", "LocationOffset"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(9, FRepHandleData(Class, {"AttachmentReplication", "RelativeScale3D"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(10, FRepHandleData(Class, {"AttachmentReplication", "RotationOffset"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(11, FRepHandleData(Class, {"AttachmentReplication", "AttachSocket"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(12, FRepHandleData(Class, {"AttachmentReplication", "AttachComponent"}, COND_Custom, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(13, FRepHandleData(Class, {"Role"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(14, FRepHandleData(Class, {"bCanBeDamaged"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(15, FRepHandleData(Class, {"Instigator"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(16, FRepHandleData(Class, {"Score"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(17, FRepHandleData(Class, {"Ping"}, COND_SkipOwner, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(18, FRepHandleData(Class, {"PlayerName"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(19, FRepHandleData(Class, {"PlayerId"}, COND_InitialOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(20, FRepHandleData(Class, {"bFromPreviousLevel"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(21, FRepHandleData(Class, {"bIsABot"}, COND_InitialOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(22, FRepHandleData(Class, {"bIsInactive"}, COND_InitialOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(23, FRepHandleData(Class, {"bIsSpectator"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(24, FRepHandleData(Class, {"bOnlySpectator"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(25, FRepHandleData(Class, {"StartTime"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(26, FRepHandleData(Class, {"UniqueId"}, COND_InitialOnly, REPNOTIFY_OnChanged));
 	}
 	return HandleToPropertyMap;
 }
@@ -107,26 +72,26 @@ void USpatialTypeBinding_PlayerState::BindToView()
 
 	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
 	{
-		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealPlayerStateSingleClientReplicatedData>([this](
-			const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerStateSingleClientReplicatedData>& Op)
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealPlayerStateSingleClientRepData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerStateSingleClientRepData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			if (ActorChannel)
 			{
-				ClientReceiveUpdate_SingleClient(ActorChannel, Op.Update);
+				ReceiveUpdate_SingleClient(ActorChannel, Op.Update);
 			}
 			else
 			{
 				Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
 			}
 		}));
-		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealPlayerStateMultiClientReplicatedData>([this](
-			const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerStateMultiClientReplicatedData>& Op)
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealPlayerStateMultiClientRepData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerStateMultiClientRepData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			if (ActorChannel)
 			{
-				ClientReceiveUpdate_MultiClient(ActorChannel, Op.Update);
+				ReceiveUpdate_MultiClient(ActorChannel, Op.Update);
 			}
 			else
 			{
@@ -146,9 +111,9 @@ worker::ComponentId USpatialTypeBinding_PlayerState::GetReplicatedGroupComponent
 	switch (Group)
 	{
 	case GROUP_SingleClient:
-		return improbable::unreal::UnrealPlayerStateSingleClientReplicatedData::ComponentId;
+		return improbable::unreal::UnrealPlayerStateSingleClientRepData::ComponentId;
 	case GROUP_MultiClient:
-		return improbable::unreal::UnrealPlayerStateMultiClientReplicatedData::ComponentId;
+		return improbable::unreal::UnrealPlayerStateMultiClientRepData::ComponentId;
 	default:
 		checkNoEntry();
 		return 0;
@@ -158,11 +123,11 @@ worker::ComponentId USpatialTypeBinding_PlayerState::GetReplicatedGroupComponent
 worker::Entity USpatialTypeBinding_PlayerState::CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const
 {
 	// Setup initial data.
-	improbable::unreal::UnrealPlayerStateSingleClientReplicatedData::Data SingleClientData;
-	improbable::unreal::UnrealPlayerStateSingleClientReplicatedData::Update SingleClientUpdate;
+	improbable::unreal::UnrealPlayerStateSingleClientRepData::Data SingleClientData;
+	improbable::unreal::UnrealPlayerStateSingleClientRepData::Update SingleClientUpdate;
 	bool bSingleClientUpdateChanged = false;
-	improbable::unreal::UnrealPlayerStateMultiClientReplicatedData::Data MultiClientData;
-	improbable::unreal::UnrealPlayerStateMultiClientReplicatedData::Update MultiClientUpdate;
+	improbable::unreal::UnrealPlayerStateMultiClientRepData::Data MultiClientData;
+	improbable::unreal::UnrealPlayerStateMultiClientRepData::Update MultiClientUpdate;
 	bool bMultiClientUpdateChanged = false;
 	BuildSpatialComponentUpdate(InitialChanges, Channel, SingleClientUpdate, bSingleClientUpdateChanged, MultiClientUpdate, bMultiClientUpdateChanged);
 	SingleClientUpdate.ApplyTo(SingleClientData);
@@ -213,9 +178,9 @@ worker::Entity USpatialTypeBinding_PlayerState::CreateActorEntity(const FString&
 		.SetPersistence(true)
 		.SetReadAcl(AnyUnrealWorkerOrClient)
 		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealPlayerStateSingleClientReplicatedData>(SingleClientData, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealPlayerStateMultiClientReplicatedData>(MultiClientData, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealPlayerStateCompleteData>(improbable::unreal::UnrealPlayerStateCompleteData::Data{}, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealPlayerStateSingleClientRepData>(SingleClientData, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealPlayerStateMultiClientRepData>(MultiClientData, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealPlayerStateWorkerRepData>(improbable::unreal::UnrealPlayerStateWorkerRepData::Data{}, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerStateClientRPCs>(improbable::unreal::UnrealPlayerStateClientRPCs::Data{}, OwningClientOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerStateServerRPCs>(improbable::unreal::UnrealPlayerStateServerRPCs::Data{}, WorkersOnly)
 		.Build();
@@ -224,9 +189,9 @@ worker::Entity USpatialTypeBinding_PlayerState::CreateActorEntity(const FString&
 void USpatialTypeBinding_PlayerState::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const
 {
 	// Build SpatialOS updates.
-	improbable::unreal::UnrealPlayerStateSingleClientReplicatedData::Update SingleClientUpdate;
+	improbable::unreal::UnrealPlayerStateSingleClientRepData::Update SingleClientUpdate;
 	bool bSingleClientUpdateChanged = false;
-	improbable::unreal::UnrealPlayerStateMultiClientReplicatedData::Update MultiClientUpdate;
+	improbable::unreal::UnrealPlayerStateMultiClientRepData::Update MultiClientUpdate;
 	bool bMultiClientUpdateChanged = false;
 	BuildSpatialComponentUpdate(Changes, Channel, SingleClientUpdate, bSingleClientUpdateChanged, MultiClientUpdate, bMultiClientUpdateChanged);
 
@@ -234,11 +199,11 @@ void USpatialTypeBinding_PlayerState::SendComponentUpdates(const FPropertyChange
 	TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();
 	if (bSingleClientUpdateChanged)
 	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerStateSingleClientReplicatedData>(EntityId.ToSpatialEntityId(), SingleClientUpdate);
+		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerStateSingleClientRepData>(EntityId.ToSpatialEntityId(), SingleClientUpdate);
 	}
 	if (bMultiClientUpdateChanged)
 	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerStateMultiClientReplicatedData>(EntityId.ToSpatialEntityId(), MultiClientUpdate);
+		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerStateMultiClientRepData>(EntityId.ToSpatialEntityId(), MultiClientUpdate);
 	}
 }
 
@@ -252,44 +217,44 @@ void USpatialTypeBinding_PlayerState::SendRPCCommand(UObject* TargetObject, cons
 
 void USpatialTypeBinding_PlayerState::ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const
 {
-	auto* SingleClientAddOp = Cast<UUnrealPlayerStateSingleClientReplicatedDataAddComponentOp>(AddComponentOp);
+	auto* SingleClientAddOp = Cast<UUnrealPlayerStateSingleClientRepDataAddComponentOp>(AddComponentOp);
 	if (SingleClientAddOp)
 	{
-		auto Update = improbable::unreal::UnrealPlayerStateSingleClientReplicatedData::Update::FromInitialData(*SingleClientAddOp->Data.data());
-		ClientReceiveUpdate_SingleClient(Channel, Update);
+		auto Update = improbable::unreal::UnrealPlayerStateSingleClientRepData::Update::FromInitialData(*SingleClientAddOp->Data.data());
+		ReceiveUpdate_SingleClient(Channel, Update);
 	}
-	auto* MultiClientAddOp = Cast<UUnrealPlayerStateMultiClientReplicatedDataAddComponentOp>(AddComponentOp);
+	auto* MultiClientAddOp = Cast<UUnrealPlayerStateMultiClientRepDataAddComponentOp>(AddComponentOp);
 	if (MultiClientAddOp)
 	{
-		auto Update = improbable::unreal::UnrealPlayerStateMultiClientReplicatedData::Update::FromInitialData(*MultiClientAddOp->Data.data());
-		ClientReceiveUpdate_MultiClient(Channel, Update);
+		auto Update = improbable::unreal::UnrealPlayerStateMultiClientRepData::Update::FromInitialData(*MultiClientAddOp->Data.data());
+		ReceiveUpdate_MultiClient(Channel, Update);
 	}
 }
 
 void USpatialTypeBinding_PlayerState::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)
 {
-	improbable::unreal::UnrealPlayerStateSingleClientReplicatedData::Data* SingleClientData = PendingSingleClientData.Find(ActorChannel->GetEntityId());
+	improbable::unreal::UnrealPlayerStateSingleClientRepData::Data* SingleClientData = PendingSingleClientData.Find(ActorChannel->GetEntityId());
 	if (SingleClientData)
 	{
-		auto Update = improbable::unreal::UnrealPlayerStateSingleClientReplicatedData::Update::FromInitialData(*SingleClientData);
+		auto Update = improbable::unreal::UnrealPlayerStateSingleClientRepData::Update::FromInitialData(*SingleClientData);
 		PendingSingleClientData.Remove(ActorChannel->GetEntityId());
-		ClientReceiveUpdate_SingleClient(ActorChannel, Update);
+		ReceiveUpdate_SingleClient(ActorChannel, Update);
 	}
-	improbable::unreal::UnrealPlayerStateMultiClientReplicatedData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
+	improbable::unreal::UnrealPlayerStateMultiClientRepData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
 	if (MultiClientData)
 	{
-		auto Update = improbable::unreal::UnrealPlayerStateMultiClientReplicatedData::Update::FromInitialData(*MultiClientData);
+		auto Update = improbable::unreal::UnrealPlayerStateMultiClientRepData::Update::FromInitialData(*MultiClientData);
 		PendingMultiClientData.Remove(ActorChannel->GetEntityId());
-		ClientReceiveUpdate_MultiClient(ActorChannel, Update);
+		ReceiveUpdate_MultiClient(ActorChannel, Update);
 	}
 }
 
 void USpatialTypeBinding_PlayerState::BuildSpatialComponentUpdate(
 	const FPropertyChangeState& Changes,
 	USpatialActorChannel* Channel,
-	improbable::unreal::UnrealPlayerStateSingleClientReplicatedData::Update& SingleClientUpdate,
+	improbable::unreal::UnrealPlayerStateSingleClientRepData::Update& SingleClientUpdate,
 	bool& bSingleClientUpdateChanged,
-	improbable::unreal::UnrealPlayerStateMultiClientReplicatedData::Update& MultiClientUpdate,
+	improbable::unreal::UnrealPlayerStateMultiClientRepData::Update& MultiClientUpdate,
 	bool& bMultiClientUpdateChanged) const
 {
 	// Build up SpatialOS component updates.
@@ -321,21 +286,11 @@ void USpatialTypeBinding_PlayerState::BuildSpatialComponentUpdate(
 	}
 }
 
-void USpatialTypeBinding_PlayerState::ServerSendUpdate_SingleClient(
-	const uint8* RESTRICT Data,
-	int32 Handle,
-	UProperty* Property,
-	USpatialActorChannel* Channel,
-	improbable::unreal::UnrealPlayerStateSingleClientReplicatedData::Update& OutUpdate) const
+void USpatialTypeBinding_PlayerState::ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerStateSingleClientRepData::Update& OutUpdate) const
 {
 }
 
-void USpatialTypeBinding_PlayerState::ServerSendUpdate_MultiClient(
-	const uint8* RESTRICT Data,
-	int32 Handle,
-	UProperty* Property,
-	USpatialActorChannel* Channel,
-	improbable::unreal::UnrealPlayerStateMultiClientReplicatedData::Update& OutUpdate) const
+void USpatialTypeBinding_PlayerState::ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerStateMultiClientRepData::Update& OutUpdate) const
 {
 	switch (Handle)
 	{
@@ -603,9 +558,7 @@ void USpatialTypeBinding_PlayerState::ServerSendUpdate_MultiClient(
 	}
 }
 
-void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_SingleClient(
-	USpatialActorChannel* ActorChannel,
-	const improbable::unreal::UnrealPlayerStateSingleClientReplicatedData::Update& Update) const
+void USpatialTypeBinding_PlayerState::ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerStateSingleClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
@@ -613,9 +566,7 @@ void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_SingleClient(
 	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
-void USpatialTypeBinding_PlayerState::ClientReceiveUpdate_MultiClient(
-	USpatialActorChannel* ActorChannel,
-	const improbable::unreal::UnrealPlayerStateMultiClientReplicatedData::Update& Update) const
+void USpatialTypeBinding_PlayerState::ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerStateMultiClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 

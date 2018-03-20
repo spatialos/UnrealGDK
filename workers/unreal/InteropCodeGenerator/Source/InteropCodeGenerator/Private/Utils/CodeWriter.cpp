@@ -7,7 +7,7 @@ FCodeWriter::FCodeWriter() : Scope(0)
 {
 }
 
-FCodeWriter& FCodeWriter::Print()
+FCodeWriter& FCodeWriter::PrintNewLine()
 {
 	OutputSource += TEXT("\r\n");
 	return *this;
@@ -83,13 +83,28 @@ FCodeWriter& FCodeWriter::Outdent()
 	return *this;
 }
 
-FCodeWriter& FCodeWriter::StartScope() {
+FCodeWriter& FCodeWriter::BeginScope()
+{
 	Print("{");
 	Indent();
 	return *this;
 }
 
-FCodeWriter& FCodeWriter::EndScope() {
+FCodeWriter& FCodeWriter::BeginFunction(const FFunctionSignature& Signature)
+{
+	Print(Signature.Definition());
+	BeginScope();
+	return *this;
+}
+
+FCodeWriter& FCodeWriter::BeginFunction(const FFunctionSignature& Signature, const FString& TypeName)
+{
+	Print(Signature.Definition(TypeName));
+	BeginScope();
+	return *this;
+}
+
+FCodeWriter& FCodeWriter::End() {
 	Outdent();
 	Print("}");
 	return *this;

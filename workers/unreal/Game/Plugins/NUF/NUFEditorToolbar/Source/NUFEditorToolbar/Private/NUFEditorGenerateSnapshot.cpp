@@ -59,7 +59,7 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 		FString PathName = Actor->GetPathName(World);
 		StaticActorMap.emplace(StaticObjectId, std::string(TCHAR_TO_UTF8(*PathName)));
 		worker::EntityId EntityId = 0;
-		UE_LOG(LogSpatialOSSnapshot, Log, TEXT("Found static object in persistent level, adding to level data entity. Path: %s, Object ref: (entity ID: %llu, offset: %u)."), *PathName, EntityId, StaticObjectId);
+		UE_LOG(LogSpatialOSSnapshot, Log, TEXT("Found static object in persistent level, adding to level data entity. Path: %s, Object ref: (entity ID: %lld, offset: %u)."), *PathName, EntityId, StaticObjectId);
 		StaticObjectId++;
 	}
 
