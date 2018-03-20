@@ -73,7 +73,7 @@ There is a small number of changes to UE4 source code we have to make. These cha
 - `spatial local launch one_worker_test.json`
 - Launch PIE with dedicated server + 1 player.
 
-The interop code and schema generated for marshalling updates/RPCs is committed directly to the source tree in `workers/unreal/Game/NUF/Generated` and `schema/improbable/unreal/generated` respectively, so the commandlet is not required to be re-run unless the code generator is changed.
+The interop code and schema generated for marshalling updates/RPCs is committed directly to the source tree in `workers/unreal/Game/Source/NUF/NUF/Generated` and `schema/improbable/unreal/generated` respectively, so the commandlet is not required to be re-run unless the code generator is changed.
 
 ## Current focus:
 We are currently implementing cross-server actor transfers.
