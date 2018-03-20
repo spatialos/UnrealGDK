@@ -132,7 +132,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 		import "improbable/vector3.schema";
 		import "improbable/unreal/core_types.schema";)""");
-	Writer.Print();
+	Writer.PrintNewLine();
 
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
@@ -210,7 +210,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			Writer.Outdent().Print("}");
 		}
 	}
-	Writer.Print();
+	Writer.PrintNewLine();
 
 	for (auto Group : GetRPCTypes())
 	{

@@ -55,12 +55,12 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 			// Note that this file has been generated automatically
 
 			#include "SpatialTypeBindingList.h")""");
-	OutputListSource.Print();
+	OutputListSource.PrintNewLine();
 	for (auto& ClassName : Classes)
 	{
 		OutputListSource.Printf("#include \"SpatialTypeBinding_%s.h\"", *ClassName);
 	}
-	OutputListSource.Print();
+	OutputListSource.PrintNewLine();
 
 	// GetGeneratedTypeBindings.
 	OutputListSource.BeginFunction({"TArray<UClass*>", "GetGeneratedTypeBindings()"});

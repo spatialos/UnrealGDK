@@ -34,7 +34,7 @@ public:
 		return Print(FString::Printf(*Format, Args...));
 	}
 
-	FCodeWriter& Print();
+	FCodeWriter& PrintNewLine();
 	FCodeWriter& Print(const FString& String);
 	FCodeWriter& Indent();
 	FCodeWriter& Outdent();

@@ -7,7 +7,7 @@ FCodeWriter::FCodeWriter() : Scope(0)
 {
 }
 
-FCodeWriter& FCodeWriter::Print()
+FCodeWriter& FCodeWriter::PrintNewLine()
 {
 	OutputSource += TEXT("\r\n");
 	return *this;
