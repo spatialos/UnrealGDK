@@ -67,14 +67,13 @@ There is a small number of changes to UE4 source code we have to make. These cha
 
 ## How to run:
 
-- Build the engine fork, which can be found at `https://github.com/improbable/native-unreal-framework`. Make sure to check out the right branch.
+- Build the engine fork, which can be found at `https://github.com/improbable/UnrealEngine`. Make sure to check out the right branch.
 - Set the uproject to use the engine fork.
-- `spatial worker codegen`
 - `spatial worker build --target=local`
-- `spatial local launch manual.json`
+- `spatial local launch one_worker_test.json`
 - Launch PIE with dedicated server + 1 player.
 
-The interop code and schema generated for marshalling updates/RPCs is committed directly to the source tree in `workers/unreal/Game/NUF/Generated` and `schema/unreal/generated` respectively, so the commandlet is not required to be re-run unless the code generator is changed.
+The interop code and schema generated for marshalling updates/RPCs is committed directly to the source tree in `workers/unreal/Game/NUF/Generated` and `schema/improbable/unreal/generated` respectively, so the commandlet is not required to be re-run unless the code generator is changed.
 
 ## Current focus:
 We are currently implementing cross-server actor transfers.
