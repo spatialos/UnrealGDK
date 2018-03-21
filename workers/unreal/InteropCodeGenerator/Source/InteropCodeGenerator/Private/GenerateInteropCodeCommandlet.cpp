@@ -43,18 +43,18 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 
 	// Header.
 	OutputListHeader.Print(R"""(
-			// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-			// Note that this file has been generated automatically
-			#pragma once
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		#pragma once
 
-			TArray<UClass*> GetGeneratedTypeBindings();)""");
+		TArray<UClass*> GetGeneratedTypeBindings();)""");
 
 	// Implementation.
 	OutputListSource.Print(R"""(
-			// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-			// Note that this file has been generated automatically
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
 
-			#include "SpatialTypeBindingList.h")""");
+		#include "SpatialTypeBindingList.h")""");
 	OutputListSource.PrintNewLine();
 	for (auto& ClassName : Classes)
 	{

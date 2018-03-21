@@ -35,10 +35,11 @@ FORCEINLINE EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Co
 // Storage for a changelist created by the replication system when replicating from the server.
 struct FPropertyChangeState
 {
-	const TArray<uint16>& Changed;
 	const uint8* RESTRICT SourceData;
-	TArray<FRepLayoutCmd>& Cmds;
-	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex;
+	const TArray<uint16>& RepChanged; // changed replicated properties
+	TArray<FRepLayoutCmd>& RepCmds;
+	TArray<FHandleToCmdIndex>& RepBaseHandleToCmdIndex;
+	const TArray<uint16>& MigChanged; // changed migratable properties
 };
 
 // A structure containing information about a replicated property.
@@ -79,8 +80,45 @@ struct FRepHandleData
 	int32 Offset;
 };
 
+// A structure containing information about a migratable property.
+struct FMigratableHandleData
+{
+	FMigratableHandleData(UClass* Class, TArray<FName> PropertyNames) :
+		Offset(0)
+	{
+		// Build property chain.
+		check(PropertyNames.Num() > 0);
+		UStruct* CurrentContainerType = Class;
+		for (FName PropertyName : PropertyNames)
+		{
+			checkf(CurrentContainerType, TEXT("A property in the chain (except the leaf) is not a struct property."));
+			UProperty* Property = CurrentContainerType->FindPropertyByName(PropertyName);
+			PropertyChain.Add(Property);
+			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
+			if (StructProperty)
+			{
+				CurrentContainerType = StructProperty->Struct;
+			}
+		}
+		Property = PropertyChain[PropertyChain.Num() - 1];
+
+		// Calculate offset by summing the offsets of each property in the chain.
+		for (UProperty* Property : PropertyChain)
+		{
+			Offset += Property->GetOffset_ForInternal();
+		}
+	}
+
+	TArray<UProperty*> PropertyChain;
+	UProperty* Property;
+	int32 Offset;
+};
+
 // A map from rep handle to rep handle data.
-using FRepHandlePropertyMap = TMap<int32, FRepHandleData>;
+using FRepHandlePropertyMap = TMap<uint16, FRepHandleData>;
+
+// A map from migratable handle to migratable handle data.
+using FMigratableHandlePropertyMap = TMap<uint16, FMigratableHandleData>;
 
 UCLASS()
 class NUF_API USpatialTypeBinding : public UObject
@@ -88,6 +126,11 @@ class NUF_API USpatialTypeBinding : public UObject
 	GENERATED_BODY()
 
 public:
+	virtual const FRepHandlePropertyMap& GetRepHandlePropertyMap()
+		PURE_VIRTUAL(USpatialTypeBinding::GetRepHandlePropertyMap, static FRepHandlePropertyMap Map; return Map; );
+	virtual const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap()
+		PURE_VIRTUAL(USpatialTypeBinding::GetMigratableHandlePropertyMap, static FMigratableHandlePropertyMap Map; return Map; );
+
 	virtual void Init(USpatialInterop* Interop, USpatialPackageMapClient* PackageMap);
 	virtual void BindToView() PURE_VIRTUAL(USpatialTypeBinding::BindToView, );
 	virtual void UnbindFromView() PURE_VIRTUAL(USpatialTypeBinding::UnbindFromView, );

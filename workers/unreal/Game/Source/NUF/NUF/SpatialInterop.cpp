@@ -62,7 +62,7 @@ USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 	return nullptr;
 }
 
-worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& Changed)
+worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
 {
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
@@ -76,7 +76,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 
 		if (TypeBinding)
 		{
-			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(Changed), Channel);
+			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, MigChanged), Channel);
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
 		}
 		else
@@ -154,7 +154,7 @@ void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const
 	PinnedConnection->SendComponentUpdate<improbable::Position>(EntityId.ToSpatialEntityId(), PositionUpdate);
 }
 
-void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed)
+void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
 {
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
@@ -163,7 +163,7 @@ void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TAr
 		//	*Channel->Actor->GetClass()->GetName());
 		return;
 	}
-	Binding->SendComponentUpdates(Channel->GetChangeState(Changed), Channel, Channel->GetEntityId());
+	Binding->SendComponentUpdates(Channel->GetChangeState(RepChanged, MigChanged), Channel, Channel->GetEntityId());
 }
 
 void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)

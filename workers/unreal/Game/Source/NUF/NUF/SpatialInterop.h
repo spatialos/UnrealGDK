@@ -106,9 +106,9 @@ public:
 	USpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
 	// Sending component updates and RPCs.
-	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& Changed);
+	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged);
 	void SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location);
-	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& Changed);
+	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
 	void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp);
 	void PreReceiveSpatialUpdate(USpatialActorChannel* Channel);

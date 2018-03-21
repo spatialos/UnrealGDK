@@ -18,7 +18,7 @@
 #include "UnrealCharacterSingleClientRepDataAddComponentOp.h"
 #include "UnrealCharacterMultiClientRepDataAddComponentOp.h"
 
-const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
+const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetRepHandlePropertyMap()
 {
 	static FRepHandlePropertyMap HandleToPropertyMap;
 	if (HandleToPropertyMap.Num() == 0)
@@ -67,6 +67,19 @@ const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap
 		HandleToPropertyMap.Add(41, FRepHandleData(Class, {"RepRootMotion", "AuthoritativeRootMotion"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
 		HandleToPropertyMap.Add(42, FRepHandleData(Class, {"RepRootMotion", "Acceleration"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
 		HandleToPropertyMap.Add(43, FRepHandleData(Class, {"RepRootMotion", "LinearVelocity"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
+	}
+	return HandleToPropertyMap;
+}
+
+const FMigratableHandlePropertyMap& USpatialTypeBinding_Character::GetMigratableHandlePropertyMap()
+{
+	static FMigratableHandlePropertyMap HandleToPropertyMap;
+	if (HandleToPropertyMap.Num() == 0)
+	{
+		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("Character"));
+		HandleToPropertyMap.Add(2, FMigratableHandleData(Class, {"CharacterMovement", "MovementMode"}));
+		HandleToPropertyMap.Add(3, FMigratableHandleData(Class, {"CharacterMovement", "CustomMovementMode"}));
+		HandleToPropertyMap.Add(1, FMigratableHandleData(Class, {"CharacterMovement", "GroundMovementMode"}));
 	}
 	return HandleToPropertyMap;
 }
@@ -240,7 +253,7 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FString& C
 		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealCharacterSingleClientRepData>(SingleClientData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealCharacterMultiClientRepData>(MultiClientData, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealCharacterWorkerRepData>(improbable::unreal::UnrealCharacterWorkerRepData::Data{}, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealCharacterMigratableData>(improbable::unreal::UnrealCharacterMigratableData::Data{}, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealCharacterClientRPCs>(improbable::unreal::UnrealCharacterClientRPCs::Data{}, OwningClientOnly)
 		.AddComponent<improbable::unreal::UnrealCharacterServerRPCs>(improbable::unreal::UnrealCharacterServerRPCs::Data{}, WorkersOnly)
 		.AddComponent<nuf::PossessPawn>(nuf::PossessPawn::Data{}, WorkersOnly)
@@ -316,17 +329,21 @@ void USpatialTypeBinding_Character::BuildSpatialComponentUpdate(
 	improbable::unreal::UnrealCharacterSingleClientRepData::Update& SingleClientUpdate,
 	bool& bSingleClientUpdateChanged,
 	improbable::unreal::UnrealCharacterMultiClientRepData::Update& MultiClientUpdate,
-	bool& bMultiClientUpdateChanged) const
+	bool& bMultiClientUpdateChanged
+	improbable::unreal::UnrealCharacterMigratableData::Update& MigratedDataUpdate,
+	bool& bMigratedDataUpdateChanged) const
 {
-	// Build up SpatialOS component updates.
-	auto& PropertyMap = GetHandlePropertyMap();
-	FChangelistIterator ChangelistIterator(Changes.Changed, 0);
-	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.Cmds, Changes.BaseHandleToCmdIndex, 0, 1, 0, Changes.Cmds.Num() - 1);
+	const FRepHandlePropertyMap& RepPropertyMap = GetRepHandlePropertyMap();
+	const FMigratableHandlePropertyMap& MigPropertyMap = GetMigratableHandlePropertyMap();
+
+	// Populate the replicated data component updates from the replicated property changelist.
+	FChangelistIterator ChangelistIterator(Changes.RepChanged, 0);
+	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.RepCmds, Changes.RepBaseHandleToCmdIndex, 0, 1, 0, Changes.RepCmds.Num() - 1);
 	while (HandleIterator.NextHandle())
 	{
-		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
+		const FRepLayoutCmd& Cmd = Changes.RepCmds[HandleIterator.CmdIndex];
 		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
-		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
+		const FRepHandleData& PropertyMapData = RepPropertyMap[HandleIterator.Handle];
 		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*Channel->Actor->GetName(),
@@ -344,6 +361,19 @@ void USpatialTypeBinding_Character::BuildSpatialComponentUpdate(
 			bMultiClientUpdateChanged = true;
 			break;
 		}
+	}
+	// Populate the migrated data component update from the migrated property changelist.
+	for (uint16 ChangedHandle : Changes.MigChanged)
+	{
+		const FMigratableHandleData& PropertyMapData = MigPropertyMap[ChangedHandle];
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending migratable property update. actor %s (%lld), property %s (handle %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*Channel->Actor->GetName(),
+			Channel->GetEntityId().ToSpatialEntityId(),
+			*PropertyMapData.Property.Property->GetName(),
+			HandleIterator.Handle);
+		ServerSendUpdate_Migratable(Data, ChangedHandle, PropertyMapData.Property, Channel, MigratableDataUpdate);
+		bMigratableDataChanged = true;
 	}
 }
 
@@ -818,6 +848,37 @@ void USpatialTypeBinding_Character::ServerSendUpdate_MultiClient(const uint8* RE
 	}
 }
 
+void USpatialTypeBinding_Character::ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealCharacterMigratableData::Update& OutUpdate) const
+{
+	switch (Handle)
+	{
+		case 2: // field_charactermovement_movementmode
+		{
+			TEnumAsByte<EMovementMode> Value = *(reinterpret_cast<TEnumAsByte<EMovementMode> const*>(Data));
+
+			OutUpdate.set_field_charactermovement_movementmode(uint32_t(Value));
+			break;
+		}
+		case 3: // field_charactermovement_custommovementmode
+		{
+			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
+
+			OutUpdate.set_field_charactermovement_custommovementmode(uint32_t(Value));
+			break;
+		}
+		case 1: // field_charactermovement_groundmovementmode
+		{
+			TEnumAsByte<EMovementMode> Value = *(reinterpret_cast<TEnumAsByte<EMovementMode> const*>(Data));
+
+			OutUpdate.set_field_charactermovement_groundmovementmode(uint32_t(Value));
+			break;
+		}
+	default:
+		checkf(false, TEXT("Unknown migration property handle %d encountered when creating a SpatialOS update."));
+		break;
+	}
+}
+
 void USpatialTypeBinding_Character::ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealCharacterSingleClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
@@ -833,7 +894,7 @@ void USpatialTypeBinding_Character::ReceiveUpdate_MultiClient(USpatialActorChann
 	TArray<UProperty*> RepNotifies;
 	const bool bIsServer = Interop->GetNetDriver()->IsServer();
 	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealCharacterClientRPCs::ComponentId);
-	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
+	const FRepHandlePropertyMap& HandleToPropertyMap = GetRepHandlePropertyMap();
 	FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
 
 	if (!Update.field_bhidden().empty())
@@ -2169,6 +2230,10 @@ void USpatialTypeBinding_Character::ReceiveUpdate_MultiClient(USpatialActorChann
 		}
 	}
 	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
+}
+
+void USpatialTypeBinding_Character::ReceiveUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealCharacterMigratableData::Update& OutUpdate) const
+{
 }
 
 void USpatialTypeBinding_Character::RootMotionDebugClientPrintOnScreen_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)

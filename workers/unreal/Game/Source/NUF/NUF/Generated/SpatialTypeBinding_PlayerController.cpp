@@ -18,7 +18,7 @@
 #include "UnrealPlayerControllerSingleClientRepDataAddComponentOp.h"
 #include "UnrealPlayerControllerMultiClientRepDataAddComponentOp.h"
 
-const FRepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetHandlePropertyMap()
+const FRepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetRepHandlePropertyMap()
 {
 	static FRepHandlePropertyMap HandleToPropertyMap;
 	if (HandleToPropertyMap.Num() == 0)
@@ -43,6 +43,17 @@ const FRepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetHandleProp
 		HandleToPropertyMap.Add(17, FRepHandleData(Class, {"PlayerState"}, COND_None, REPNOTIFY_OnChanged));
 		HandleToPropertyMap.Add(18, FRepHandleData(Class, {"TargetViewRotation"}, COND_OwnerOnly, REPNOTIFY_OnChanged));
 		HandleToPropertyMap.Add(19, FRepHandleData(Class, {"SpawnLocation"}, COND_OwnerOnly, REPNOTIFY_OnChanged));
+	}
+	return HandleToPropertyMap;
+}
+
+const FMigratableHandlePropertyMap& USpatialTypeBinding_PlayerController::GetMigratableHandlePropertyMap()
+{
+	static FMigratableHandlePropertyMap HandleToPropertyMap;
+	if (HandleToPropertyMap.Num() == 0)
+	{
+		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("PlayerController"));
+		HandleToPropertyMap.Add(1, FMigratableHandleData(Class, {"AcknowledgedPawn"}));
 	}
 	return HandleToPropertyMap;
 }
@@ -387,7 +398,7 @@ worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FSt
 		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerControllerSingleClientRepData>(SingleClientData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerControllerMultiClientRepData>(MultiClientData, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealPlayerControllerWorkerRepData>(improbable::unreal::UnrealPlayerControllerWorkerRepData::Data{}, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealPlayerControllerMigratableData>(improbable::unreal::UnrealPlayerControllerMigratableData::Data{}, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerControllerClientRPCs>(improbable::unreal::UnrealPlayerControllerClientRPCs::Data{}, OwningClientOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerControllerServerRPCs>(improbable::unreal::UnrealPlayerControllerServerRPCs::Data{}, WorkersOnly)
 		.Build();
@@ -462,17 +473,21 @@ void USpatialTypeBinding_PlayerController::BuildSpatialComponentUpdate(
 	improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update& SingleClientUpdate,
 	bool& bSingleClientUpdateChanged,
 	improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update& MultiClientUpdate,
-	bool& bMultiClientUpdateChanged) const
+	bool& bMultiClientUpdateChanged
+	improbable::unreal::UnrealPlayerControllerMigratableData::Update& MigratedDataUpdate,
+	bool& bMigratedDataUpdateChanged) const
 {
-	// Build up SpatialOS component updates.
-	auto& PropertyMap = GetHandlePropertyMap();
-	FChangelistIterator ChangelistIterator(Changes.Changed, 0);
-	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.Cmds, Changes.BaseHandleToCmdIndex, 0, 1, 0, Changes.Cmds.Num() - 1);
+	const FRepHandlePropertyMap& RepPropertyMap = GetRepHandlePropertyMap();
+	const FMigratableHandlePropertyMap& MigPropertyMap = GetMigratableHandlePropertyMap();
+
+	// Populate the replicated data component updates from the replicated property changelist.
+	FChangelistIterator ChangelistIterator(Changes.RepChanged, 0);
+	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.RepCmds, Changes.RepBaseHandleToCmdIndex, 0, 1, 0, Changes.RepCmds.Num() - 1);
 	while (HandleIterator.NextHandle())
 	{
-		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
+		const FRepLayoutCmd& Cmd = Changes.RepCmds[HandleIterator.CmdIndex];
 		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
-		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
+		const FRepHandleData& PropertyMapData = RepPropertyMap[HandleIterator.Handle];
 		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*Channel->Actor->GetName(),
@@ -490,6 +505,19 @@ void USpatialTypeBinding_PlayerController::BuildSpatialComponentUpdate(
 			bMultiClientUpdateChanged = true;
 			break;
 		}
+	}
+	// Populate the migrated data component update from the migrated property changelist.
+	for (uint16 ChangedHandle : Changes.MigChanged)
+	{
+		const FMigratableHandleData& PropertyMapData = MigPropertyMap[ChangedHandle];
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending migratable property update. actor %s (%lld), property %s (handle %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*Channel->Actor->GetName(),
+			Channel->GetEntityId().ToSpatialEntityId(),
+			*PropertyMapData.Property.Property->GetName(),
+			HandleIterator.Handle);
+		ServerSendUpdate_Migratable(Data, ChangedHandle, PropertyMapData.Property, Channel, MigratableDataUpdate);
+		bMigratableDataChanged = true;
 	}
 }
 
@@ -748,6 +776,39 @@ void USpatialTypeBinding_PlayerController::ServerSendUpdate_MultiClient(const ui
 	}
 }
 
+void USpatialTypeBinding_PlayerController::ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerControllerMigratableData::Update& OutUpdate) const
+{
+	switch (Handle)
+	{
+		case 1: // field_acknowledgedpawn
+		{
+			APawn* Value = *(reinterpret_cast<APawn* const*>(Data));
+
+			if (Value != nullptr)
+			{
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+				{
+					Interop->QueueOutgoingObjectUpdate_Internal(Value, Channel, 1);
+				}
+				else
+				{
+					OutUpdate.set_field_acknowledgedpawn(ObjectRef);
+				}
+			}
+			else
+			{
+				OutUpdate.set_field_acknowledgedpawn(SpatialConstants::NULL_OBJECT_REF);
+			}
+			break;
+		}
+	default:
+		checkf(false, TEXT("Unknown migration property handle %d encountered when creating a SpatialOS update."));
+		break;
+	}
+}
+
 void USpatialTypeBinding_PlayerController::ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
@@ -755,7 +816,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdate_SingleClient(USpatialAc
 	TArray<UProperty*> RepNotifies;
 	const bool bIsServer = Interop->GetNetDriver()->IsServer();
 	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealPlayerControllerClientRPCs::ComponentId);
-	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
+	const FRepHandlePropertyMap& HandleToPropertyMap = GetRepHandlePropertyMap();
 	FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
 
 	if (!Update.field_targetviewrotation().empty())
@@ -822,7 +883,7 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdate_MultiClient(USpatialAct
 	TArray<UProperty*> RepNotifies;
 	const bool bIsServer = Interop->GetNetDriver()->IsServer();
 	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealPlayerControllerClientRPCs::ComponentId);
-	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
+	const FRepHandlePropertyMap& HandleToPropertyMap = GetRepHandlePropertyMap();
 	FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
 
 	if (!Update.field_bhidden().empty())
@@ -1447,6 +1508,10 @@ void USpatialTypeBinding_PlayerController::ReceiveUpdate_MultiClient(USpatialAct
 		}
 	}
 	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
+}
+
+void USpatialTypeBinding_PlayerController::ReceiveUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerControllerMigratableData::Update& OutUpdate) const
+{
 }
 
 void USpatialTypeBinding_PlayerController::OnServerStartedVisualLogger_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)

@@ -15,7 +15,7 @@ FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type);
 
 // Given an unreal type, generates the name of the component which stores worker to worker replication data.
 // For example: UnrealCharacterWorkerRepData
-FString SchemaWorkerReplicatedDataName(UStruct* Type);
+FString SchemaMigratableDataName(UStruct* Type);
 
 // Given an RPC type and Unreal type, generates the name of the corresponding RPC container component.
 // For example: UnrealCharacterClientRPCs

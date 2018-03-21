@@ -17,7 +17,8 @@ class USpatialTypeBinding_Character : public USpatialTypeBinding
 	GENERATED_BODY()
 
 public:
-	static const FRepHandlePropertyMap& GetHandlePropertyMap();
+	const FRepHandlePropertyMap& GetRepHandlePropertyMap() override;
+	const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() override;
 
 	UClass* GetBoundClass() const override;
 
@@ -51,11 +52,15 @@ private:
 		improbable::unreal::UnrealCharacterSingleClientRepData::Update& SingleClientUpdate,
 		bool& bSingleClientUpdateChanged,
 		improbable::unreal::UnrealCharacterMultiClientRepData::Update& MultiClientUpdate,
-		bool& bMultiClientUpdateChanged) const;
+		bool& bMultiClientUpdateChanged,
+		improbable::unreal::UnrealCharacterMigratableData::Update& MigratedDataUpdate,
+		bool& bMigratedDataUpdateChanged) const;
 	void ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealCharacterSingleClientRepData::Update& OutUpdate) const;
 	void ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealCharacterMultiClientRepData::Update& OutUpdate) const;
+	void ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealCharacterMigratableData::Update& OutUpdate) const;
 	void ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealCharacterSingleClientRepData::Update& Update) const;
 	void ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealCharacterMultiClientRepData::Update& Update) const;
+	void ReceiveUpdate_Migratable(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealCharacterMigratableData::Update& Update) const;
 
 	// RPC command sender functions.
 	void RootMotionDebugClientPrintOnScreen_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject);

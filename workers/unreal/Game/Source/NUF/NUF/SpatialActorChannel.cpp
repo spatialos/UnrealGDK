@@ -11,6 +11,7 @@
 #include "SpatialNetConnection.h"
 #include "SpatialOS.h"
 #include "SpatialInterop.h"
+#include "SpatialTypeBinding.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSActorChannel);
 
@@ -192,9 +193,9 @@ bool USpatialActorChannel::ReplicateActor()
 		PC->SendClientAdjustment();
 	}
 	
+	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
-
 	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame, ActorReplicator->RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
 
 	const int32 PossibleNewHistoryIndex = ActorReplicator->RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
@@ -205,15 +206,38 @@ bool USpatialActorChannel::ReplicateActor()
 	for (int32 i = ActorReplicator->RepState->LastChangelistIndex; i < ChangelistState->HistoryEnd; i++)
 	{
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
-
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
-
 		TArray<uint16> Temp = Changed;
 		ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, Changed);
 	}
 
 	const bool bCompareIndexSame = ActorReplicator->RepState->LastCompareIndex == ChangelistState->CompareIndex;
 	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
+
+	// Update the migratable property change list.
+	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(Actor->GetClass());
+	TArray<uint16> MigChanged;
+	if (Binding)
+	{
+		uint32 MigOffset = 0;
+		if (RepFlags.bNetInitial)
+		{
+			Binding->GetMigratableHandlePropertyMap().GetKeys(MigChanged);
+		}
+		else
+		{
+			for (auto& Property : Binding->GetMigratableHandlePropertyMap())
+			{
+				uint8* Data = (uint8*)Actor + Property.Value.Offset;
+				if (!Property.Value.Property->Identical(MigratablePropertyShadowData.GetData() + MigOffset, Data))
+				{
+					MigChanged.Add(Property.Key);
+					Property.Value.Property->CopyCompleteValue(MigratablePropertyShadowData.GetData() + MigOffset, Data);
+				}
+				MigOffset += Property.Value.Property->GetSize();
+			}
+		}
+	}
 
 	// We can early out if we know for sure there are no new changelists to send
 	if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
@@ -226,7 +250,8 @@ bool USpatialActorChannel::ReplicateActor()
 	//todo-giray: We currently don't take replication of custom delta properties into account here because it doesn't use changelists.
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
-	if (RepFlags.bNetInitial || Changed.Num() > 0)
+	// If any properties have changed, send a component update.
+	if (RepFlags.bNetInitial || Changed.Num() > 0 || MigChanged.Num() > 0)
 	{		
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
@@ -274,12 +299,12 @@ bool USpatialActorChannel::ReplicateActor()
 
 			// Calculate initial spatial position (but don't send component update) and create the entity.
 			LastSpatialPosition = GetActorSpatialPosition(Actor);
-			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialChanged);
+			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialChanged, MigChanged);
 			bCreatingNewEntity = false;
 		}
 		else
 		{
-			Interop->SendSpatialUpdate(this, Changed);
+			Interop->SendSpatialUpdate(this, Changed, MigChanged);
 		}
 
 		bWroteSomethingImportant = true;
@@ -359,6 +384,29 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		return;
 	}
 
+	// Set up the shadow data for the migratable properties. This is used later to compare the properties and send only changed ones.
+	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+	check(Interop);
+	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(InActor->GetClass());
+	if (Binding)
+	{
+		const FMigratableHandlePropertyMap& MigratableProperties = Binding->GetMigratableHandlePropertyMap();
+		uint32 Size = 0;
+		for (auto& Property : MigratableProperties)
+		{
+			Size += Property.Value.Property->GetSize();
+		}
+		MigratablePropertyShadowData.Empty();
+		MigratablePropertyShadowData.AddZeroed(Size);
+		uint32 Offset = 0;
+		for (auto& Property : MigratableProperties)
+		{
+			Property.Value.Property->InitializeValue(MigratablePropertyShadowData.GetData() + Offset);
+			Offset += Property.Value.Property->GetSize();
+		}
+	}
+
+	// Get the entity ID from the entity registry (or return 0 if it doesn't exist).
 	check(SpatialNetDriver->GetEntityRegistry());
 	ActorEntityId = SpatialNetDriver->GetEntityRegistry()->GetEntityIdFromActor(InActor).ToSpatialEntityId();
 

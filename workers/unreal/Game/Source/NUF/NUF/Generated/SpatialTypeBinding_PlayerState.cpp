@@ -18,7 +18,7 @@
 #include "UnrealPlayerStateSingleClientRepDataAddComponentOp.h"
 #include "UnrealPlayerStateMultiClientRepDataAddComponentOp.h"
 
-const FRepHandlePropertyMap& USpatialTypeBinding_PlayerState::GetHandlePropertyMap()
+const FRepHandlePropertyMap& USpatialTypeBinding_PlayerState::GetRepHandlePropertyMap()
 {
 	static FRepHandlePropertyMap HandleToPropertyMap;
 	if (HandleToPropertyMap.Num() == 0)
@@ -51,6 +51,12 @@ const FRepHandlePropertyMap& USpatialTypeBinding_PlayerState::GetHandlePropertyM
 		HandleToPropertyMap.Add(25, FRepHandleData(Class, {"StartTime"}, COND_None, REPNOTIFY_OnChanged));
 		HandleToPropertyMap.Add(26, FRepHandleData(Class, {"UniqueId"}, COND_InitialOnly, REPNOTIFY_OnChanged));
 	}
+	return HandleToPropertyMap;
+}
+
+const FMigratableHandlePropertyMap& USpatialTypeBinding_PlayerState::GetMigratableHandlePropertyMap()
+{
+	static FMigratableHandlePropertyMap HandleToPropertyMap;
 	return HandleToPropertyMap;
 }
 
@@ -180,7 +186,7 @@ worker::Entity USpatialTypeBinding_PlayerState::CreateActorEntity(const FString&
 		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerStateSingleClientRepData>(SingleClientData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerStateMultiClientRepData>(MultiClientData, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealPlayerStateWorkerRepData>(improbable::unreal::UnrealPlayerStateWorkerRepData::Data{}, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealPlayerStateMigratableData>(improbable::unreal::UnrealPlayerStateMigratableData::Data{}, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerStateClientRPCs>(improbable::unreal::UnrealPlayerStateClientRPCs::Data{}, OwningClientOnly)
 		.AddComponent<improbable::unreal::UnrealPlayerStateServerRPCs>(improbable::unreal::UnrealPlayerStateServerRPCs::Data{}, WorkersOnly)
 		.Build();
@@ -255,17 +261,21 @@ void USpatialTypeBinding_PlayerState::BuildSpatialComponentUpdate(
 	improbable::unreal::UnrealPlayerStateSingleClientRepData::Update& SingleClientUpdate,
 	bool& bSingleClientUpdateChanged,
 	improbable::unreal::UnrealPlayerStateMultiClientRepData::Update& MultiClientUpdate,
-	bool& bMultiClientUpdateChanged) const
+	bool& bMultiClientUpdateChanged
+	improbable::unreal::UnrealPlayerStateMigratableData::Update& MigratedDataUpdate,
+	bool& bMigratedDataUpdateChanged) const
 {
-	// Build up SpatialOS component updates.
-	auto& PropertyMap = GetHandlePropertyMap();
-	FChangelistIterator ChangelistIterator(Changes.Changed, 0);
-	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.Cmds, Changes.BaseHandleToCmdIndex, 0, 1, 0, Changes.Cmds.Num() - 1);
+	const FRepHandlePropertyMap& RepPropertyMap = GetRepHandlePropertyMap();
+	const FMigratableHandlePropertyMap& MigPropertyMap = GetMigratableHandlePropertyMap();
+
+	// Populate the replicated data component updates from the replicated property changelist.
+	FChangelistIterator ChangelistIterator(Changes.RepChanged, 0);
+	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.RepCmds, Changes.RepBaseHandleToCmdIndex, 0, 1, 0, Changes.RepCmds.Num() - 1);
 	while (HandleIterator.NextHandle())
 	{
-		const FRepLayoutCmd& Cmd = Changes.Cmds[HandleIterator.CmdIndex];
+		const FRepLayoutCmd& Cmd = Changes.RepCmds[HandleIterator.CmdIndex];
 		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
-		auto& PropertyMapData = PropertyMap[HandleIterator.Handle];
+		const FRepHandleData& PropertyMapData = RepPropertyMap[HandleIterator.Handle];
 		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*Channel->Actor->GetName(),
@@ -283,6 +293,19 @@ void USpatialTypeBinding_PlayerState::BuildSpatialComponentUpdate(
 			bMultiClientUpdateChanged = true;
 			break;
 		}
+	}
+	// Populate the migrated data component update from the migrated property changelist.
+	for (uint16 ChangedHandle : Changes.MigChanged)
+	{
+		const FMigratableHandleData& PropertyMapData = MigPropertyMap[ChangedHandle];
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending migratable property update. actor %s (%lld), property %s (handle %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*Channel->Actor->GetName(),
+			Channel->GetEntityId().ToSpatialEntityId(),
+			*PropertyMapData.Property.Property->GetName(),
+			HandleIterator.Handle);
+		ServerSendUpdate_Migratable(Data, ChangedHandle, PropertyMapData.Property, Channel, MigratableDataUpdate);
+		bMigratableDataChanged = true;
 	}
 }
 
@@ -558,6 +581,10 @@ void USpatialTypeBinding_PlayerState::ServerSendUpdate_MultiClient(const uint8* 
 	}
 }
 
+void USpatialTypeBinding_PlayerState::ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerStateMigratableData::Update& OutUpdate) const
+{
+}
+
 void USpatialTypeBinding_PlayerState::ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerStateSingleClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
@@ -573,7 +600,7 @@ void USpatialTypeBinding_PlayerState::ReceiveUpdate_MultiClient(USpatialActorCha
 	TArray<UProperty*> RepNotifies;
 	const bool bIsServer = Interop->GetNetDriver()->IsServer();
 	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealPlayerStateClientRPCs::ComponentId);
-	const FRepHandlePropertyMap& HandleToPropertyMap = GetHandlePropertyMap();
+	const FRepHandlePropertyMap& HandleToPropertyMap = GetRepHandlePropertyMap();
 	FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
 
 	if (!Update.field_bhidden().empty())
@@ -1335,4 +1362,8 @@ void USpatialTypeBinding_PlayerState::ReceiveUpdate_MultiClient(USpatialActorCha
 		}
 	}
 	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
+}
+
+void USpatialTypeBinding_PlayerState::ReceiveUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerStateMigratableData::Update& OutUpdate) const
+{
 }

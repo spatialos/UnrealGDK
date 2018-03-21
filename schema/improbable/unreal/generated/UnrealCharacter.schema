@@ -54,7 +54,7 @@ component UnrealCharacterMultiClientRepData {
 	improbable.Vector3f field_reprootmotion_acceleration = 42; // COND_SimulatedOnlyNoReplay
 	improbable.Vector3f field_reprootmotion_linearvelocity = 43; // COND_SimulatedOnlyNoReplay
 }
-component UnrealCharacterWorkerRepData {
+component UnrealCharacterMigratableData {
 	id = 100022;
 	uint32 field_charactermovement_movementmode = 1;
 	uint32 field_charactermovement_custommovementmode = 2;

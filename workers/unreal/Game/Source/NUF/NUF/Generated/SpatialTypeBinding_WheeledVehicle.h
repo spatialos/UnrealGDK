@@ -17,7 +17,8 @@ class USpatialTypeBinding_WheeledVehicle : public USpatialTypeBinding
 	GENERATED_BODY()
 
 public:
-	static const FRepHandlePropertyMap& GetHandlePropertyMap();
+	const FRepHandlePropertyMap& GetRepHandlePropertyMap() override;
+	const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() override;
 
 	UClass* GetBoundClass() const override;
 
@@ -51,11 +52,15 @@ private:
 		improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& SingleClientUpdate,
 		bool& bSingleClientUpdateChanged,
 		improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& MultiClientUpdate,
-		bool& bMultiClientUpdateChanged) const;
+		bool& bMultiClientUpdateChanged,
+		improbable::unreal::UnrealWheeledVehicleMigratableData::Update& MigratedDataUpdate,
+		bool& bMigratedDataUpdateChanged) const;
 	void ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& OutUpdate) const;
 	void ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& OutUpdate) const;
+	void ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleMigratableData::Update& OutUpdate) const;
 	void ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& Update) const;
 	void ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& Update) const;
+	void ReceiveUpdate_Migratable(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealWheeledVehicleMigratableData::Update& Update) const;
 
 	// RPC command sender functions.
 	void ServerUpdateState_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject);
