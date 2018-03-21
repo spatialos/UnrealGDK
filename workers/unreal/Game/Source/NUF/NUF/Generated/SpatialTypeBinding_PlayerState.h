@@ -17,8 +17,8 @@ class USpatialTypeBinding_PlayerState : public USpatialTypeBinding
 	GENERATED_BODY()
 
 public:
-	const FRepHandlePropertyMap& GetRepHandlePropertyMap() override;
-	const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() override;
+	const FRepHandlePropertyMap& GetRepHandlePropertyMap() const override;
+	const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() const override;
 
 	UClass* GetBoundClass() const override;
 

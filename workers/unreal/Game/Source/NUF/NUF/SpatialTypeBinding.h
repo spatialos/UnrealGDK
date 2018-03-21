@@ -126,9 +126,9 @@ class NUF_API USpatialTypeBinding : public UObject
 	GENERATED_BODY()
 
 public:
-	virtual const FRepHandlePropertyMap& GetRepHandlePropertyMap()
+	virtual const FRepHandlePropertyMap& GetRepHandlePropertyMap() const
 		PURE_VIRTUAL(USpatialTypeBinding::GetRepHandlePropertyMap, static FRepHandlePropertyMap Map; return Map; );
-	virtual const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap()
+	virtual const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() const
 		PURE_VIRTUAL(USpatialTypeBinding::GetMigratableHandlePropertyMap, static FMigratableHandlePropertyMap Map; return Map; );
 
 	virtual void Init(USpatialInterop* Interop, USpatialPackageMapClient* PackageMap);
