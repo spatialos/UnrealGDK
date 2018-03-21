@@ -12,7 +12,7 @@
 
 namespace
 {
-int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class)
+int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<TArray<FName>>& MigratableProperties)
 {
 	FCodeWriter OutputSchema;
 	FCodeWriter OutputHeader;
@@ -21,7 +21,7 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	FString SchemaFilename = FString::Printf(TEXT("Unreal%s"), *Class->GetName());
 	FString TypeBindingFilename = FString::Printf(TEXT("SpatialTypeBinding_%s"), *Class->GetName());
 
-	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class);
+	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, MigratableProperties);
 
 	// Generate schema.
 	int NumComponents = GenerateTypeBindingSchema(OutputSchema, ComponentId, Class, TypeInfo);
@@ -86,7 +86,18 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/NUF/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 
-	TArray<FString> Classes = {TEXT("PlayerController"), TEXT("PlayerState"), TEXT("Character"), TEXT("WheeledVehicle")};
+	// Hard coded class information.
+	TArray<FString> Classes = {"PlayerController", "PlayerState", "Character", "WheeledVehicle"};
+	TMap<FString, TArray<TArray<FName>>> MigratableProperties;
+	MigratableProperties.Add("PlayerController", {
+		{"AcknowledgedPawn"}
+	});
+	MigratableProperties.Add("Character", {
+		{"CharacterMovement", "GroundMovementMode"},
+		{"CharacterMovement", "MovementMode"},
+		{"CharacterMovement", "CustomMovementMode"}
+	});
+
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
 		// Component IDs 100000 to 100009 reserved for other NUF components.
@@ -94,7 +105,8 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 		for (auto& ClassName : Classes)
 		{
 			UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassName);
-			ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class);
+			TArray<TArray<FName>> ClassMigratableProperties = MigratableProperties.FindRef(ClassName);
+			ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, ClassMigratableProperties);
 		}
 		GenerateTypeBindingList(CombinedForwardingCodePath, Classes);
 	}

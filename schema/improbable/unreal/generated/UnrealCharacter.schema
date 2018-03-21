@@ -56,6 +56,9 @@ component UnrealCharacterMultiClientRepData {
 }
 component UnrealCharacterWorkerRepData {
 	id = 100022;
+	uint32 field_charactermovement_movementmode = 1;
+	uint32 field_charactermovement_custommovementmode = 2;
+	uint32 field_charactermovement_groundmovementmode = 3;
 }
 type UnrealRootMotionDebugClientPrintOnScreenRequest {
 	uint32 target_subobject_offset = 1;

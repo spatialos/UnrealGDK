@@ -32,6 +32,7 @@ component UnrealPlayerControllerMultiClientRepData {
 }
 component UnrealPlayerControllerWorkerRepData {
 	id = 100012;
+	UnrealObjectRef field_acknowledgedpawn = 1;
 }
 type UnrealOnServerStartedVisualLoggerRequest {
 	uint32 target_subobject_offset = 1;

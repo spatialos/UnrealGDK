@@ -160,28 +160,20 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	Writer.Printf("component %s {", *SchemaWorkerReplicatedDataName(Class));
 	Writer.Indent();
 	Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
-
 	int FieldCounter = 0;
-
-	/*
-	* The VC++ Linker has a limit of UINT16_MAX number of symbols in a DLL
-	* CompleteData dramatically increases the number of symbols and aren't
-	* necessarily being used, so for now we skip them.
-	*/
-	//for (auto& Prop : Layout.CompleteProperties)
-	//{
-	//	FieldCounter++;
-	//	Writer.Printf("%s %s = %d;",
-	//		*RepLayoutTypeToSchemaType(Prop.Type),
-	//		*GetFullyQualifiedName(Prop.Chain),
-	//		FieldCounter
-	//	);
-	//}
-
+	for (auto& Prop : GetFlatMigratableData(TypeInfo))
+	{
+		FieldCounter++;
+		Writer.Printf("%s %s = %d;",
+			*RepLayoutTypeToSchemaType(Prop.Value->MigratableData->RepLayoutType),
+			*SchemaFieldName(Prop.Value),
+			FieldCounter
+		);
+	}
 	Writer.Outdent().Print("}");
 
+	// RPC components.
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
-
 	for (auto Group : GetRPCTypes())
 	{
 		// Generate schema RPC command types
