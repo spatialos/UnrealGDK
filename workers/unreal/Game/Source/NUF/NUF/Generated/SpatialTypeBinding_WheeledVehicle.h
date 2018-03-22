@@ -32,14 +32,9 @@ public:
 	void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) override;
 
 	void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;
-	void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;
 
 private:
 	improbable::unreal::callbacks::FScopedViewCallbacks ViewCallbacks;
-
-	// Pending updates.
-	TMap<FEntityId, improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Data> PendingSingleClientData;
-	TMap<FEntityId, improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Data> PendingMultiClientData;
 
 	// RPC to sender map.
 	using FRPCSender = void (USpatialTypeBinding_WheeledVehicle::*)(worker::Connection* const, struct FFrame* const, UObject*);

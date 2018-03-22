@@ -17,6 +17,7 @@
 
 #include "UnrealPlayerControllerSingleClientRepDataAddComponentOp.h"
 #include "UnrealPlayerControllerMultiClientRepDataAddComponentOp.h"
+#include "UnrealPlayerControllerMigratableDataAddComponentOp.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_PlayerController::GetRepHandlePropertyMap() const
 {
@@ -150,27 +151,22 @@ void USpatialTypeBinding_PlayerController::BindToView()
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerSingleClientRepData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
-			if (ActorChannel)
-			{
-				ReceiveUpdate_SingleClient(ActorChannel, Op.Update);
-			}
-			else
-			{
-				Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
-			}
+			check(ActorChannel);
+			ReceiveUpdate_SingleClient(ActorChannel, Op.Update);
 		}));
 		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerMultiClientRepData>([this](
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerMultiClientRepData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
-			if (ActorChannel)
-			{
-				ReceiveUpdate_MultiClient(ActorChannel, Op.Update);
-			}
-			else
-			{
-				Op.Update.ApplyTo(PendingMultiClientData.FindOrAdd(Op.EntityId));
-			}
+			check(ActorChannel);
+			ReceiveUpdate_MultiClient(ActorChannel, Op.Update);
+		}));
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealPlayerControllerMigratableData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerControllerMigratableData>& Op)
+		{
+			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+			check(ActorChannel);
+			ReceiveUpdate_Migratable(ActorChannel, Op.Update);
 		}));
 	}
 
@@ -457,23 +453,11 @@ void USpatialTypeBinding_PlayerController::ReceiveAddComponent(USpatialActorChan
 		auto Update = improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update::FromInitialData(*MultiClientAddOp->Data.data());
 		ReceiveUpdate_MultiClient(Channel, Update);
 	}
-}
-
-void USpatialTypeBinding_PlayerController::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)
-{
-	improbable::unreal::UnrealPlayerControllerSingleClientRepData::Data* SingleClientData = PendingSingleClientData.Find(ActorChannel->GetEntityId());
-	if (SingleClientData)
+	auto* MigratableDataAddOp = Cast<UUnrealPlayerControllerMigratableDataAddComponentOp>(AddComponentOp);
+	if (MigratableDataAddOp)
 	{
-		auto Update = improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update::FromInitialData(*SingleClientData);
-		PendingSingleClientData.Remove(ActorChannel->GetEntityId());
-		ReceiveUpdate_SingleClient(ActorChannel, Update);
-	}
-	improbable::unreal::UnrealPlayerControllerMultiClientRepData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
-	if (MultiClientData)
-	{
-		auto Update = improbable::unreal::UnrealPlayerControllerMultiClientRepData::Update::FromInitialData(*MultiClientData);
-		PendingMultiClientData.Remove(ActorChannel->GetEntityId());
-		ReceiveUpdate_MultiClient(ActorChannel, Update);
+		auto Update = improbable::unreal::UnrealPlayerControllerMigratableData::Update::FromInitialData(*MigratableDataAddOp->Data.data());
+		ReceiveUpdate_Migratable(Channel, Update);
 	}
 }
 
@@ -489,10 +473,9 @@ void USpatialTypeBinding_PlayerController::BuildSpatialComponentUpdate(
 {
 	const FRepHandlePropertyMap& RepPropertyMap = GetRepHandlePropertyMap();
 	const FMigratableHandlePropertyMap& MigPropertyMap = GetMigratableHandlePropertyMap();
-
-	// Populate the replicated data component updates from the replicated property changelist.
 	if (Changes.RepChanged.Num() > 0)
 	{
+		// Populate the replicated data component updates from the replicated property changelist.
 		FChangelistIterator ChangelistIterator(Changes.RepChanged, 0);
 		FRepHandleIterator HandleIterator(ChangelistIterator, Changes.RepCmds, Changes.RepBaseHandleToCmdIndex, 0, 1, 0, Changes.RepCmds.Num() - 1);
 		while (HandleIterator.NextHandle())
@@ -530,7 +513,7 @@ void USpatialTypeBinding_PlayerController::BuildSpatialComponentUpdate(
 			*Channel->Actor->GetName(),
 			Channel->GetEntityId().ToSpatialEntityId(),
 			*PropertyMapData.Property->GetName(),
-			HandleIterator.Handle);
+			ChangedHandle);
 		ServerSendUpdate_Migratable(Data, ChangedHandle, PropertyMapData.Property, Channel, MigratableDataUpdate);
 		bMigratableDataUpdateChanged = true;
 	}

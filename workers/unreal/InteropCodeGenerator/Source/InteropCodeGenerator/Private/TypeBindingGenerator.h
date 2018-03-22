@@ -61,7 +61,6 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class);
-void GenerateFunction_ApplyQueuedStateToChannel(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData, EReplicatedPropertyGroup Group);
 void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData);

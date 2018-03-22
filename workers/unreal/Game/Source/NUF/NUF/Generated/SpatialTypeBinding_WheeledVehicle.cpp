@@ -19,6 +19,7 @@
 
 #include "UnrealWheeledVehicleSingleClientRepDataAddComponentOp.h"
 #include "UnrealWheeledVehicleMultiClientRepDataAddComponentOp.h"
+#include "UnrealWheeledVehicleMigratableDataAddComponentOp.h"
 
 const FRepHandlePropertyMap& USpatialTypeBinding_WheeledVehicle::GetRepHandlePropertyMap() const
 {
@@ -77,27 +78,22 @@ void USpatialTypeBinding_WheeledVehicle::BindToView()
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleSingleClientRepData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
-			if (ActorChannel)
-			{
-				ReceiveUpdate_SingleClient(ActorChannel, Op.Update);
-			}
-			else
-			{
-				Op.Update.ApplyTo(PendingSingleClientData.FindOrAdd(Op.EntityId));
-			}
+			check(ActorChannel);
+			ReceiveUpdate_SingleClient(ActorChannel, Op.Update);
 		}));
 		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealWheeledVehicleMultiClientRepData>([this](
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleMultiClientRepData>& Op)
 		{
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
-			if (ActorChannel)
-			{
-				ReceiveUpdate_MultiClient(ActorChannel, Op.Update);
-			}
-			else
-			{
-				Op.Update.ApplyTo(PendingMultiClientData.FindOrAdd(Op.EntityId));
-			}
+			check(ActorChannel);
+			ReceiveUpdate_MultiClient(ActorChannel, Op.Update);
+		}));
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealWheeledVehicleMigratableData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleMigratableData>& Op)
+		{
+			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+			check(ActorChannel);
+			ReceiveUpdate_Migratable(ActorChannel, Op.Update);
 		}));
 	}
 
@@ -245,23 +241,11 @@ void USpatialTypeBinding_WheeledVehicle::ReceiveAddComponent(USpatialActorChanne
 		auto Update = improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update::FromInitialData(*MultiClientAddOp->Data.data());
 		ReceiveUpdate_MultiClient(Channel, Update);
 	}
-}
-
-void USpatialTypeBinding_WheeledVehicle::ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)
-{
-	improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Data* SingleClientData = PendingSingleClientData.Find(ActorChannel->GetEntityId());
-	if (SingleClientData)
+	auto* MigratableDataAddOp = Cast<UUnrealWheeledVehicleMigratableDataAddComponentOp>(AddComponentOp);
+	if (MigratableDataAddOp)
 	{
-		auto Update = improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update::FromInitialData(*SingleClientData);
-		PendingSingleClientData.Remove(ActorChannel->GetEntityId());
-		ReceiveUpdate_SingleClient(ActorChannel, Update);
-	}
-	improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Data* MultiClientData = PendingMultiClientData.Find(ActorChannel->GetEntityId());
-	if (MultiClientData)
-	{
-		auto Update = improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update::FromInitialData(*MultiClientData);
-		PendingMultiClientData.Remove(ActorChannel->GetEntityId());
-		ReceiveUpdate_MultiClient(ActorChannel, Update);
+		auto Update = improbable::unreal::UnrealWheeledVehicleMigratableData::Update::FromInitialData(*MigratableDataAddOp->Data.data());
+		ReceiveUpdate_Migratable(Channel, Update);
 	}
 }
 
@@ -277,31 +261,33 @@ void USpatialTypeBinding_WheeledVehicle::BuildSpatialComponentUpdate(
 {
 	const FRepHandlePropertyMap& RepPropertyMap = GetRepHandlePropertyMap();
 	const FMigratableHandlePropertyMap& MigPropertyMap = GetMigratableHandlePropertyMap();
-
-	// Populate the replicated data component updates from the replicated property changelist.
-	FChangelistIterator ChangelistIterator(Changes.RepChanged, 0);
-	FRepHandleIterator HandleIterator(ChangelistIterator, Changes.RepCmds, Changes.RepBaseHandleToCmdIndex, 0, 1, 0, Changes.RepCmds.Num() - 1);
-	while (HandleIterator.NextHandle())
+	if (Changes.RepChanged.Num() > 0)
 	{
-		const FRepLayoutCmd& Cmd = Changes.RepCmds[HandleIterator.CmdIndex];
-		const FRepHandleData& PropertyMapData = RepPropertyMap[HandleIterator.Handle];
-		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
-			*Interop->GetSpatialOS()->GetWorkerId(),
-			*Channel->Actor->GetName(),
-			Channel->GetEntityId().ToSpatialEntityId(),
-			*Cmd.Property->GetName(),
-			HandleIterator.Handle);
-		switch (GetGroupFromCondition(PropertyMapData.Condition))
+		// Populate the replicated data component updates from the replicated property changelist.
+		FChangelistIterator ChangelistIterator(Changes.RepChanged, 0);
+		FRepHandleIterator HandleIterator(ChangelistIterator, Changes.RepCmds, Changes.RepBaseHandleToCmdIndex, 0, 1, 0, Changes.RepCmds.Num() - 1);
+		while (HandleIterator.NextHandle())
 		{
-		case GROUP_SingleClient:
-			ServerSendUpdate_SingleClient(Data, HandleIterator.Handle, Cmd.Property, Channel, SingleClientUpdate);
-			bSingleClientUpdateChanged = true;
-			break;
-		case GROUP_MultiClient:
-			ServerSendUpdate_MultiClient(Data, HandleIterator.Handle, Cmd.Property, Channel, MultiClientUpdate);
-			bMultiClientUpdateChanged = true;
-			break;
+			const FRepLayoutCmd& Cmd = Changes.RepCmds[HandleIterator.CmdIndex];
+			const FRepHandleData& PropertyMapData = RepPropertyMap[HandleIterator.Handle];
+			const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*Channel->Actor->GetName(),
+				Channel->GetEntityId().ToSpatialEntityId(),
+				*Cmd.Property->GetName(),
+				HandleIterator.Handle);
+			switch (GetGroupFromCondition(PropertyMapData.Condition))
+			{
+			case GROUP_SingleClient:
+				ServerSendUpdate_SingleClient(Data, HandleIterator.Handle, Cmd.Property, Channel, SingleClientUpdate);
+				bSingleClientUpdateChanged = true;
+				break;
+			case GROUP_MultiClient:
+				ServerSendUpdate_MultiClient(Data, HandleIterator.Handle, Cmd.Property, Channel, MultiClientUpdate);
+				bMultiClientUpdateChanged = true;
+				break;
+			}
 		}
 	}
 
@@ -315,7 +301,7 @@ void USpatialTypeBinding_WheeledVehicle::BuildSpatialComponentUpdate(
 			*Channel->Actor->GetName(),
 			Channel->GetEntityId().ToSpatialEntityId(),
 			*PropertyMapData.Property->GetName(),
-			HandleIterator.Handle);
+			ChangedHandle);
 		ServerSendUpdate_Migratable(Data, ChangedHandle, PropertyMapData.Property, Channel, MigratableDataUpdate);
 		bMigratableDataUpdateChanged = true;
 	}

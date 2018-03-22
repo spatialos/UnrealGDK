@@ -366,19 +366,10 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const override;
 		void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) override;
 
-		void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;
-		void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;)""");
+		void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;)""");
 	HeaderWriter.PrintNewLine();
 	HeaderWriter.Outdent().Print("private:").Indent();
 	HeaderWriter.Print("improbable::unreal::callbacks::FScopedViewCallbacks ViewCallbacks;");
-	HeaderWriter.PrintNewLine();
-	HeaderWriter.Print("// Pending updates.");
-	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
-	{
-		HeaderWriter.Printf("TMap<FEntityId, improbable::unreal::%s::Data> Pending%sData;",
-			*SchemaReplicatedDataName(Group, Class),
-			*GetReplicatedPropertyGroupName(Group));
-	}
 	HeaderWriter.PrintNewLine();
 	HeaderWriter.Printf(R"""(
 		// RPC to sender map.
@@ -494,6 +485,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	{
 		SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaReplicatedDataName(Group, Class));
 	}
+	SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaMigratableDataName(Class));
 
 	// Get replicated data and RPCs.
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
@@ -534,9 +526,6 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_ReceiveAddComponent(SourceWriter, Class);
-
-	SourceWriter.PrintNewLine();
-	GenerateFunction_ApplyQueuedStateToChannel(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_BuildSpatialComponentUpdate(SourceWriter, Class);
@@ -723,19 +712,24 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 		SourceWriter.Indent();
 		SourceWriter.Printf(R"""(
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
-			if (ActorChannel)
-			{
-				ReceiveUpdate_%s(ActorChannel, Op.Update);
-			}
-			else
-			{
-				Op.Update.ApplyTo(Pending%sData.FindOrAdd(Op.EntityId));
-			})""",
-			*GetReplicatedPropertyGroupName(Group),
+			check(ActorChannel);
+			ReceiveUpdate_%s(ActorChannel, Op.Update);)""",
 			*GetReplicatedPropertyGroupName(Group));
 		SourceWriter.Outdent();
 		SourceWriter.Print("}));");
 	}
+	SourceWriter.Printf("ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::%s>([this](", *SchemaMigratableDataName(Class));
+	SourceWriter.Indent();
+	SourceWriter.Printf("const worker::ComponentUpdateOp<improbable::unreal::%s>& Op)", *SchemaMigratableDataName(Class));
+	SourceWriter.Outdent();
+	SourceWriter.Print("{");
+	SourceWriter.Indent();
+	SourceWriter.Print(R"""(
+		USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
+		check(ActorChannel);
+		ReceiveUpdate_Migratable(ActorChannel, Op.Update);)""");
+	SourceWriter.Outdent();
+	SourceWriter.Print("}));");
 	SourceWriter.End();
 
 	for (auto Group : GetRPCTypes())
@@ -982,47 +976,28 @@ void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Cla
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
 		SourceWriter.Printf(R"""(
-				auto* %sAddOp = Cast<U%sAddComponentOp>(AddComponentOp);
-				if (%sAddOp)
-				{
-					auto Update = improbable::unreal::%s::Update::FromInitialData(*%sAddOp->Data.data());
-					ReceiveUpdate_%s(Channel, Update);
-				})""",
-			*GetReplicatedPropertyGroupName(Group),
-			*SchemaReplicatedDataName(Group, Class),
-			*GetReplicatedPropertyGroupName(Group),
-			*SchemaReplicatedDataName(Group, Class),
-			*GetReplicatedPropertyGroupName(Group),
-			*GetReplicatedPropertyGroupName(Group));
-	}
-	SourceWriter.End();
-}
-
-void GenerateFunction_ApplyQueuedStateToChannel(FCodeWriter& SourceWriter, UClass* Class)
-{
-	SourceWriter.BeginFunction(
-		{"void", "ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel)"},
-		TypeBindingName(Class));
-	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
-	{
-		SourceWriter.Printf(R"""(
-			improbable::unreal::%s::Data* %sData = Pending%sData.Find(ActorChannel->GetEntityId());
-			if (%sData)
+			auto* %sAddOp = Cast<U%sAddComponentOp>(AddComponentOp);
+			if (%sAddOp)
 			{
-				auto Update = improbable::unreal::%s::Update::FromInitialData(*%sData);
-				Pending%sData.Remove(ActorChannel->GetEntityId());
-				ReceiveUpdate_%s(ActorChannel, Update);
+				auto Update = improbable::unreal::%s::Update::FromInitialData(*%sAddOp->Data.data());
+				ReceiveUpdate_%s(Channel, Update);
 			})""",
-			*SchemaReplicatedDataName(Group, Class),
-			*GetReplicatedPropertyGroupName(Group),
-			*GetReplicatedPropertyGroupName(Group),
 			*GetReplicatedPropertyGroupName(Group),
 			*SchemaReplicatedDataName(Group, Class),
 			*GetReplicatedPropertyGroupName(Group),
+			*SchemaReplicatedDataName(Group, Class),
 			*GetReplicatedPropertyGroupName(Group),
 			*GetReplicatedPropertyGroupName(Group));
 	}
-
+	SourceWriter.Printf(R"""(
+		auto* MigratableDataAddOp = Cast<U%sAddComponentOp>(AddComponentOp);
+		if (MigratableDataAddOp)
+		{
+			auto Update = improbable::unreal::%s::Update::FromInitialData(*MigratableDataAddOp->Data.data());
+			ReceiveUpdate_Migratable(Channel, Update);
+		})""",
+		*SchemaMigratableDataName(Class),
+		*SchemaMigratableDataName(Class));
 	SourceWriter.End();
 }
 
@@ -1044,11 +1019,12 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 	BuildComponentUpdateSignature.NameAndParams += ") const";
 
 	SourceWriter.BeginFunction(BuildComponentUpdateSignature, TypeBindingName(Class));
+	SourceWriter.Print("const FRepHandlePropertyMap& RepPropertyMap = GetRepHandlePropertyMap();");
+	SourceWriter.Print("const FMigratableHandlePropertyMap& MigPropertyMap = GetMigratableHandlePropertyMap();"); 
+	SourceWriter.Print("if (Changes.RepChanged.Num() > 0)");
+	SourceWriter.BeginScope();
 
 	SourceWriter.Print(R"""(
-		const FRepHandlePropertyMap& RepPropertyMap = GetRepHandlePropertyMap();
-		const FMigratableHandlePropertyMap& MigPropertyMap = GetMigratableHandlePropertyMap();
-
 		// Populate the replicated data component updates from the replicated property changelist.
 		FChangelistIterator ChangelistIterator(Changes.RepChanged, 0);
 		FRepHandleIterator HandleIterator(ChangelistIterator, Changes.RepCmds, Changes.RepBaseHandleToCmdIndex, 0, 1, 0, Changes.RepCmds.Num() - 1);
@@ -1081,6 +1057,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 	}
 	SourceWriter.End();
 	SourceWriter.End();
+	SourceWriter.End();
 
 	SourceWriter.PrintNewLine();
 	SourceWriter.Print(R"""(
@@ -1094,7 +1071,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 				*Channel->Actor->GetName(),
 				Channel->GetEntityId().ToSpatialEntityId(),
 				*PropertyMapData.Property->GetName(),
-				HandleIterator.Handle);
+				ChangedHandle);
 			ServerSendUpdate_Migratable(Data, ChangedHandle, PropertyMapData.Property, Channel, MigratableDataUpdate);
 			bMigratableDataUpdateChanged = true;
 		})""");

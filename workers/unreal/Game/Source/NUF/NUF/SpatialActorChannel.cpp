@@ -306,7 +306,10 @@ bool USpatialActorChannel::ReplicateActor()
 		}
 
 		bWroteSomethingImportant = true;
-		ActorReplicator->RepState->HistoryEnd++;
+		if (RepChanged.Num() > 0)
+		{
+			ActorReplicator->RepState->HistoryEnd++;
+		}
 		UpdateChangelistHistory(ActorReplicator->RepState);
 	}
 
@@ -328,7 +331,6 @@ bool USpatialActorChannel::ReplicateActor()
 	//todo-giray: Implement subobject replication
 	// The SubObjects
 	WroteSomethingImportant |= Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
-*/
 
 	// Look for deleted subobjects
 	for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
@@ -360,6 +362,7 @@ bool USpatialActorChannel::ReplicateActor()
 		}
 		SentBunch = true;
 	}
+	*/
 
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
 	LastUpdateTime = Connection->Driver->Time;

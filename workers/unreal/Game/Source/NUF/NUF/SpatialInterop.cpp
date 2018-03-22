@@ -212,13 +212,6 @@ void USpatialInterop::AddActorChannel(const FEntityId& EntityId, USpatialActorCh
 {
 	EntityToActorChannel.Add(EntityId, Channel);
 
-	// Apply queued updates for this entity ID to the new actor channel.
-	USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
-	if (Binding)
-	{
-		Binding->ApplyQueuedStateToChannel(Channel);
-	}
-
 	// Set up component interests to receive single client component updates (now that roles have been set up).
 	if (NetDriver->GetNetMode() == NM_Client)
 	{

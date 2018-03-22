@@ -2,8 +2,8 @@
   "template": "small",
   "world": {
     "dimensions": {
-      "x_meters": 100,
-      "z_meters": 100
+      "x_meters": 200,
+      "z_meters": 200
     },
     "chunk_edge_length_meters": 5,
     "streaming_query_interval": 4,
