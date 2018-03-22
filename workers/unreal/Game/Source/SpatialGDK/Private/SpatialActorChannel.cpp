@@ -513,19 +513,20 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	Interop->SendSpatialPositionUpdate(GetEntityId(), LastSpatialPosition);
 
 	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
-	APawn* Pawn = Cast<APawn>(Actor);
-	APlayerController* PlayerController = Cast<APlayerController>(Pawn->GetController());
-	if (Pawn && PlayerController)
+	if (APawn* Pawn = Cast<APawn>(Actor))
 	{
-		USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController));
-		if (ControllerActorChannel)
+		if (APlayerController* PlayerController = Cast<APlayerController>(Pawn->GetController()))
 		{
-			Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
-		}
-		USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController->PlayerState));
-		if (PlayerStateActorChannel)
-		{
-			Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
+			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController));
+			if (ControllerActorChannel)
+			{
+				Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
+			}
+			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController->PlayerState));
+			if (PlayerStateActorChannel)
+			{
+				Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
+			}
 		}
 	}
 }
