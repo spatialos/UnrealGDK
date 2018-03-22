@@ -5,10 +5,10 @@ package improbable.unreal;
 import "improbable/vector3.schema";
 import "improbable/unreal/core_types.schema";
 
-component UnrealCharacterSingleClientRepData {
+component UnrealNUFCharacterSingleClientRepData {
 	id = 100020;
 }
-component UnrealCharacterMultiClientRepData {
+component UnrealNUFCharacterMultiClientRepData {
 	id = 100021;
 	bool field_bhidden = 1; // COND_None
 	bool field_breplicatemovement = 2; // COND_None
@@ -53,8 +53,9 @@ component UnrealCharacterMultiClientRepData {
 	bytes field_reprootmotion_authoritativerootmotion = 41; // COND_SimulatedOnlyNoReplay
 	improbable.Vector3f field_reprootmotion_acceleration = 42; // COND_SimulatedOnlyNoReplay
 	improbable.Vector3f field_reprootmotion_linearvelocity = 43; // COND_SimulatedOnlyNoReplay
+	list<improbable.Vector3f> field_myarray = 44; // COND_None
 }
-component UnrealCharacterWorkerRepData {
+component UnrealNUFCharacterWorkerRepData {
 	id = 100022;
 }
 type UnrealRootMotionDebugClientPrintOnScreenRequest {
@@ -127,6 +128,9 @@ type UnrealClientAckGoodMoveRequest {
 	uint32 target_subobject_offset = 1;
 	float field_timestamp = 2;
 }
+type UnrealTestRPCRequest {
+	uint32 target_subobject_offset = 1;
+}
 type UnrealServerMoveOldRequest {
 	uint32 target_subobject_offset = 1;
 	float field_oldtimestamp = 2;
@@ -178,7 +182,7 @@ type UnrealServerMoveRequest {
 	uint32 field_clientmovementmode = 10;
 }
 
-component UnrealCharacterClientRPCs {
+component UnrealNUFCharacterClientRPCs {
 	id = 100023;
 	command UnrealRPCCommandResponse rootmotiondebugclientprintonscreen(UnrealRootMotionDebugClientPrintOnScreenRequest);
 	command UnrealRPCCommandResponse clientcheatwalk(UnrealClientCheatWalkRequest);
@@ -190,8 +194,9 @@ component UnrealCharacterClientRPCs {
 	command UnrealRPCCommandResponse clientadjustposition(UnrealClientAdjustPositionRequest);
 	command UnrealRPCCommandResponse clientackgoodmove(UnrealClientAckGoodMoveRequest);
 }
-component UnrealCharacterServerRPCs {
+component UnrealNUFCharacterServerRPCs {
 	id = 100024;
+	command UnrealRPCCommandResponse testrpc(UnrealTestRPCRequest);
 	command UnrealRPCCommandResponse servermoveold(UnrealServerMoveOldRequest);
 	command UnrealRPCCommandResponse servermovedualhybridrootmotion(UnrealServerMoveDualHybridRootMotionRequest);
 	command UnrealRPCCommandResponse servermovedual(UnrealServerMoveDualRequest);

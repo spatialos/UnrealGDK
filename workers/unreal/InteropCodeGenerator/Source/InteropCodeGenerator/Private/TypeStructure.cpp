@@ -381,12 +381,6 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type)
 			continue;
 		}
 
-		if (Cmd.Type == REPCMD_DynamicArray || Parent.Property->IsA<UArrayProperty>())
-		{
-			// Skip dynamic array commands.
-			continue;
-		}
-
 		// In a FRepLayout, all the root level replicated properties in a class are stored in the Parents array.
 		// The Cmds array is an expanded version of the Parents array. This usually maps 1:1 with the Parents array (as most properties
 		// don't contain other properties). The main exception are structs which don't have a native serialize function. In this case
@@ -415,6 +409,9 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type)
 		if (Parent.Property == Cmd.Property)
 		{
 			PropertyNode = TypeNode->Properties[Cmd.Property];
+			if (Cmd.Type == 0) {
+				CmdIndex += 2;
+			}
 		}
 		else
 		{

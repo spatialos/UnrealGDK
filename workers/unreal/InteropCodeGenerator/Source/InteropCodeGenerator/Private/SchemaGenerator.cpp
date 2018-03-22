@@ -59,65 +59,75 @@ FString CPPCommandClassName(UFunction* Function)
 	return SchemaName;
 }
 
-FString RepLayoutTypeToSchemaType(ERepLayoutCmdType Type)
+FString PropertyToSchemaType(UProperty* Property)
 {
 	FString DataType;
-	switch (Type)
+
+	if (Property->IsA(UStructProperty::StaticClass()))
 	{
-	case REPCMD_DynamicArray:
-		UE_LOG(LogTemp, Error, TEXT("RepLayoutTypeToSchemaType: Encountered a dynamic array REPCMD type."));
-		break;
-	case REPCMD_Return:
-		UE_LOG(LogTemp, Error, TEXT("RepLayoutTypeToSchemaType: Encountered a return REPCMD type."));
-		break;
-	case REPCMD_PropertyBool:
-		DataType = TEXT("bool");
-		break;
-	case REPCMD_PropertyInt:
-		DataType = TEXT("int32");
-		break;
-	case REPCMD_PropertyFloat:
-		DataType = TEXT("float");
-		break;
-	case REPCMD_PropertyByte:
-		DataType = TEXT("uint32"); // uint8 not supported in schema.
-		break;
-	case REPCMD_PropertyString:
-	case REPCMD_PropertyName:
-		DataType = TEXT("string");
-		break;
-	case REPCMD_PropertyUInt32:
-		DataType = TEXT("uint32");
-		break;
-	case REPCMD_PropertyRotator:
-		DataType = TEXT("UnrealFRotator");
-		break;
-	case REPCMD_PropertyPlane:
-		DataType = TEXT("UnrealFPlane");
-		break;
-	case REPCMD_PropertyVector:
-	case REPCMD_PropertyVector100:
-	case REPCMD_PropertyVectorNormal:
-	case REPCMD_PropertyVector10:
-	case REPCMD_PropertyVectorQ:
-		DataType = TEXT("improbable.Vector3f"); // not well supported
-		break;
-	case REPCMD_PropertyObject:
-		DataType = TEXT("UnrealObjectRef");
-		break;
-	case REPCMD_PropertyNetId:
-	case REPCMD_Property:
-		DataType = TEXT("bytes");
-		break;
-	case REPCMD_PropertyUInt64:
-		DataType = TEXT("bytes"); // uint64 not supported in Unreal codegen.
-		break;
-	case REPCMD_RepMovement:
-		DataType = TEXT("bytes");
-		break;
-	default:
-		UE_LOG(LogTemp, Error, TEXT("RepLayoutTypeToSchemaType: Unhandled REPCMD Type: %d"), (int)Type);
+		UStructProperty * StructProp = Cast<UStructProperty>(Property);
+		UScriptStruct * Struct = StructProp->Struct;
+		if (Struct->GetFName() == NAME_Vector ||
+			Struct->GetName() == TEXT("Vector_NetQuantize100") ||
+			Struct->GetName() == TEXT("Vector_NetQuantize10") ||
+			Struct->GetName() == TEXT("Vector_NetQuantizeNormal") ||
+			Struct->GetName() == TEXT("Vector_NetQuantize"))
+		{
+			DataType = TEXT("improbable.Vector3f"); // not well supported
+		}
+		else if (Struct->GetFName() == NAME_Rotator)
+		{
+			DataType = TEXT("UnrealFRotator");
+		}
+		else if (Struct->GetFName() == NAME_Plane)
+		{
+			DataType = TEXT("UnrealFPlane");
+		}
+		else {
+			DataType = TEXT("bytes"); //this includes RepMovement and UniqueNetId
+		}
 	}
+	else if (Property->IsA(UBoolProperty::StaticClass()))
+	{
+		DataType = TEXT("bool");
+	}
+	else if (Property->IsA(UFloatProperty::StaticClass()))
+	{
+		DataType = TEXT("float");
+	}
+	else if (Property->IsA(UIntProperty::StaticClass()))
+	{
+		DataType = TEXT("int32");
+	}
+	else if (Property->IsA(UByteProperty::StaticClass()))
+	{
+		DataType = TEXT("uint32"); // uint8 not supported in schema.
+	}
+	else if (Property->IsA(UNameProperty::StaticClass()) || Property->IsA(UStrProperty::StaticClass()))
+	{
+		DataType = TEXT("string");
+	}
+	else if (Property->IsA(UUInt32Property::StaticClass()))
+	{
+		DataType = TEXT("uint32");
+	}
+	else if (Property->IsA(UUInt64Property::StaticClass()))
+	{
+		DataType = TEXT("bytes");
+	}
+	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
+	{
+		DataType = TEXT("UnrealObjectRef");
+	}
+	else if (Property->IsA(UArrayProperty::StaticClass()))
+	{
+		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner);
+		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
+	}
+	else {
+		DataType = TEXT("bytes");
+	}
+
 	return DataType;
 }
 
@@ -147,7 +157,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		{
 			FieldCounter++;
 			Writer.Printf("%s %s = %d; // %s",
-				*RepLayoutTypeToSchemaType(RepProp.Value->ReplicationData->RepLayoutType),
+				*PropertyToSchemaType(RepProp.Value->Property),
 				*SchemaFieldName(RepProp.Value),
 				FieldCounter,
 				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition)
@@ -202,7 +212,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			{
 				FieldCounter++;
 				Writer.Printf("%s %s = %d;",
-					*RepLayoutTypeToSchemaType(PropertyToRepLayoutType(Param->Property)),
+					*PropertyToSchemaType(Param->Property),
 					*SchemaFieldName(Param),
 					FieldCounter
 				);

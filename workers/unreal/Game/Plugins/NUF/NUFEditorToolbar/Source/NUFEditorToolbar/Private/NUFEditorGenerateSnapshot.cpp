@@ -13,7 +13,7 @@
 #include <improbable/unreal/spawner.h>
 #include <improbable/unreal/level_data.h>
 
-#include "NUF/Generated/SpatialTypeBinding_Character.h"
+#include "NUF/Generated/SpatialTypeBinding_NUFCharacter.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSSnapshot);
 

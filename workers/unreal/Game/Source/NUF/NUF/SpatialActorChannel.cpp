@@ -265,7 +265,7 @@ bool USpatialActorChannel::ReplicateActor()
 			TArray<uint16> InitialChanged;
 			for (auto& Cmd : ActorReplicator->RepLayout->Cmds)
 			{
-				if (Cmd.Type != REPCMD_DynamicArray && Cmd.Type != REPCMD_Return)
+				if (Cmd.Type != REPCMD_Return)
 				{
 					InitialChanged.Add(Cmd.RelativeHandle);
 				}

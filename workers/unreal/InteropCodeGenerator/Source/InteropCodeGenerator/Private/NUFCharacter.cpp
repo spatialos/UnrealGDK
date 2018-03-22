@@ -10,11 +10,6 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "PossessPawnRequest.h"
-#include "PossessPawnResponse.h"
-#include "NUFGameStateBase.h"
-#include "NUF/SpatialNetDriver.h"
-#include "VehicleCppPawn.h"
 
 #include "UnrealNetwork.h"
 
@@ -24,14 +19,6 @@
 ANUFCharacter::ANUFCharacter()
 {
 	// Hack to ensure that the game state is created and set to tick on a client as we don't replicate it
-	UWorld* World = GetWorld();
-	if (World && World->GetGameState() == nullptr)
-	{
-		AGameStateBase* GameState = World->SpawnActor<AGameStateBase>(ANUFGameStateBase::StaticClass());
-		World->SetGameState(GameState);
-		Cast<ANUFGameStateBase>(GameState)->FakeServerHasBegunPlay();
-	}
-
 	bReplicates = true;
 
 	PrimaryActorTick.bCanEverTick = true;
@@ -65,9 +52,6 @@ ANUFCharacter::ANUFCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	PossessPawnComponent = CreateDefaultSubobject<UPossessPawnComponent>(TEXT("PossessPawn"));
-   	OnPossessPawnAckDelegate.BindUFunction(this, "OnPossessPawnRequestAck");
-
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 
@@ -92,18 +76,6 @@ void ANUFCharacter::Tick(float DeltaTime)
 void ANUFCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
-	if (SpatialNetDriver != nullptr) {
-		EntityRegistry = SpatialNetDriver->GetEntityRegistry();
-		Commander = NewObject<UCommander>(this, UCommander::StaticClass(), TEXT("NUFCharacterCommander"))->Init(nullptr, SpatialNetDriver->GetSpatialOS()->GetConnection(), SpatialNetDriver->GetSpatialOS()->GetView());
-		auto View = SpatialNetDriver->GetSpatialOS()->GetView();
-		auto Connection = SpatialNetDriver->GetSpatialOS()->GetConnection();
-
-		if (PossessPawnComponent) {
-			PossessPawnComponent->OnPossessPawnCommandRequest.AddDynamic(this, &ANUFCharacter::OnPossessPawnRequest);
-		}
-	}
 }
 
 void ANUFCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
@@ -159,28 +131,8 @@ void ANUFCharacter::Interact() {
 	TestRPC();
 }
 
-void ANUFCharacter::OnPossessPawnRequest(UPossessPawnCommandResponder* Responder)
-{
-	UE_LOG(LogTemp, Warning, TEXT("Command recieved"));
-	FEntityId CarId = Responder->GetRequest()->GetPawnId();
-	AVehicleCppPawn* Car = Cast<AVehicleCppPawn>(EntityRegistry->GetActorFromEntityId(CarId));
-	GetController()->Possess(Car);
-
-	UPossessPawnResponse* Response = NewObject<UPossessPawnResponse>(this);
-	Responder->SendResponse(Response);
-}
-
-void ANUFCharacter::OnPossessPawnRequestAck(const FSpatialOSCommandResult& Result, UPossessPawnResponse* Response) {
-	if (Result.StatusCode != ECommandResponseCode::Success) {
-		UE_LOG(LogTemp, Warning,
-			TEXT("PossessPawn command failed from entity %d with message %s"),
-			PossessPawnComponent->GetEntityId(), *Result.ErrorMessage);
-	}
-}
-
 void ANUFCharacter::OnResetVR()
 {
-	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }
 
 void ANUFCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
