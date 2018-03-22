@@ -43,8 +43,9 @@ struct FPropertyChangeState
 };
 
 // A structure containing information about a replicated property.
-struct FRepHandleData
+class FRepHandleData
 {
+public:
 	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, ELifetimeCondition Condition, ELifetimeRepNotifyCondition RepNotifyCondition) :
 		Condition(Condition),
 		RepNotifyCondition(RepNotifyCondition),
@@ -73,6 +74,16 @@ struct FRepHandleData
 		}
 	}
 
+	FORCEINLINE uint8* GetPropertyData(uint8* Container) const
+	{
+		return Container + Offset;
+	}
+
+	FORCEINLINE const uint8* GetPropertyData(const uint8* Container) const
+	{
+		return Container + Offset;
+	}
+
 	TArray<UProperty*> PropertyChain;
 	UProperty* Property;
 	ELifetimeCondition Condition;
@@ -81,10 +92,10 @@ struct FRepHandleData
 };
 
 // A structure containing information about a migratable property.
-struct FMigratableHandleData
+class FMigratableHandleData
 {
-	FMigratableHandleData(UClass* Class, TArray<FName> PropertyNames) :
-		Offset(0)
+public:
+	FMigratableHandleData(UClass* Class, TArray<FName> PropertyNames)
 	{
 		// Build property chain.
 		check(PropertyNames.Num() > 0);
@@ -93,25 +104,71 @@ struct FMigratableHandleData
 		{
 			checkf(CurrentContainerType, TEXT("A property in the chain (except the leaf) is not a struct property."));
 			UProperty* Property = CurrentContainerType->FindPropertyByName(PropertyName);
+			check(Property);
 			PropertyChain.Add(Property);
 			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
 			if (StructProperty)
 			{
 				CurrentContainerType = StructProperty->Struct;
 			}
+			else
+			{
+				UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property);
+				if (ObjectProperty)
+				{
+					CurrentContainerType = ObjectProperty->PropertyClass;
+				}
+			}
 		}
 		Property = PropertyChain[PropertyChain.Num() - 1];
+	}
 
-		// Calculate offset by summing the offsets of each property in the chain.
-		for (UProperty* Property : PropertyChain)
+	uint8* GetPropertyData(uint8* Container) const
+	{
+		uint8* Data = Container;
+		for (int i = 0; i < PropertyChain.Num(); ++i)
 		{
-			Offset += Property->GetOffset_ForInternal();
+			Data += PropertyChain[i]->GetOffset_ForInternal();
+
+			// If we're not the last property in the chain.
+			if (i < (PropertyChain.Num() - 1))
+			{
+				// Migratable property chains can cross into subobjects, so we will need to deal with objects which are not inlined into the container.
+				UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyChain[i]);
+				if (ObjectProperty)
+				{
+					UObject* PropertyValue = ObjectProperty->GetObjectPropertyValue(Data);
+					Data = (uint8*)PropertyValue;
+				}
+			}
 		}
+		return Data;
+	}
+
+	const uint8* GetPropertyData(const uint8* Container) const
+	{
+		const uint8* Data = Container;
+		for (int i = 0; i < PropertyChain.Num(); ++i)
+		{
+			Data += PropertyChain[i]->GetOffset_ForInternal();
+
+			// If we're not the last property in the chain.
+			if (i < (PropertyChain.Num() - 1))
+			{
+				// Migratable property chains can cross into subobjects, so we will need to deal with objects which are not inlined into the container.
+				UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyChain[i]);
+				if (ObjectProperty)
+				{
+					UObject* PropertyValue = ObjectProperty->GetObjectPropertyValue(Data);
+					Data = (uint8*)PropertyValue;
+				}
+			}
+		}
+		return Data;
 	}
 
 	TArray<UProperty*> PropertyChain;
 	UProperty* Property;
-	int32 Offset;
 };
 
 // A map from rep handle to rep handle data.

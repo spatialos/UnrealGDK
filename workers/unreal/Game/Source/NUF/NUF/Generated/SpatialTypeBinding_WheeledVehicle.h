@@ -53,8 +53,8 @@ private:
 		bool& bSingleClientUpdateChanged,
 		improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& MultiClientUpdate,
 		bool& bMultiClientUpdateChanged,
-		improbable::unreal::UnrealWheeledVehicleMigratableData::Update& MigratedDataUpdate,
-		bool& bMigratedDataUpdateChanged) const;
+		improbable::unreal::UnrealWheeledVehicleMigratableData::Update& MigratableDataUpdate,
+		bool& bMigratableDataUpdateChanged) const;
 	void ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& OutUpdate) const;
 	void ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& OutUpdate) const;
 	void ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleMigratableData::Update& OutUpdate) const;

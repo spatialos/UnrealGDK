@@ -523,6 +523,12 @@ TMap<uint16, TSharedPtr<FUnrealProperty>> GetFlatMigratableData(TSharedPtr<FUnre
 		}
 		return true;
 	}, true);
+
+	// Sort by property handle.
+	MigratableData.KeySort([](uint16 A, uint16 B)
+	{
+		return A < B;
+	});
 	return MigratableData;
 }
 

@@ -200,15 +200,15 @@ bool USpatialActorChannel::ReplicateActor()
 
 	const int32 PossibleNewHistoryIndex = ActorReplicator->RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
 	FRepChangedHistory& PossibleNewHistoryItem = ActorReplicator->RepState->ChangeHistory[PossibleNewHistoryIndex];
-	TArray<uint16>& Changed = PossibleNewHistoryItem.Changed;
+	TArray<uint16>& RepChanged = PossibleNewHistoryItem.Changed;
 
 	// Gather all change lists that are new since we last looked, and merge them all together into a single CL
 	for (int32 i = ActorReplicator->RepState->LastChangelistIndex; i < ChangelistState->HistoryEnd; i++)
 	{
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
-		TArray<uint16> Temp = Changed;
-		ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, Changed);
+		TArray<uint16> Temp = RepChanged;
+		ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
 	}
 
 	const bool bCompareIndexSame = ActorReplicator->RepState->LastCompareIndex == ChangelistState->CompareIndex;
@@ -216,42 +216,40 @@ bool USpatialActorChannel::ReplicateActor()
 
 	// Update the migratable property change list.
 	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(Actor->GetClass());
-	TArray<uint16> MigChanged;
+	TArray<uint16> MigratableChanged;
 	if (Binding)
 	{
-		uint32 MigOffset = 0;
-		if (RepFlags.bNetInitial)
+		uint32 ShadowDataOffset = 0;
+		for (auto& PropertyInfo : Binding->GetMigratableHandlePropertyMap())
 		{
-			Binding->GetMigratableHandlePropertyMap().GetKeys(MigChanged);
-		}
-		else
-		{
-			for (auto& Property : Binding->GetMigratableHandlePropertyMap())
+			const uint8* Data = PropertyInfo.Value.GetPropertyData((uint8*)Actor);
+
+			// Compare and assign.
+			if (RepFlags.bNetInitial || !PropertyInfo.Value.Property->Identical(MigratablePropertyShadowData.GetData() + ShadowDataOffset, Data))
 			{
-				uint8* Data = (uint8*)Actor + Property.Value.Offset;
-				if (!Property.Value.Property->Identical(MigratablePropertyShadowData.GetData() + MigOffset, Data))
-				{
-					MigChanged.Add(Property.Key);
-					Property.Value.Property->CopyCompleteValue(MigratablePropertyShadowData.GetData() + MigOffset, Data);
-				}
-				MigOffset += Property.Value.Property->GetSize();
+				MigratableChanged.Add(PropertyInfo.Key);
+				PropertyInfo.Value.Property->CopyCompleteValue(MigratablePropertyShadowData.GetData() + ShadowDataOffset, Data);
 			}
+			ShadowDataOffset += PropertyInfo.Value.Property->GetSize();
 		}
 	}
 
 	// We can early out if we know for sure there are no new changelists to send
-	if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
+	if (MigratableChanged.Num() == 0)
 	{
-		UpdateChangelistHistory(ActorReplicator->RepState);
-		MemMark.Pop();
-		return false;
+		if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
+		{
+			UpdateChangelistHistory(ActorReplicator->RepState);
+			MemMark.Pop();
+			return false;
+		}
 	}
 
 	//todo-giray: We currently don't take replication of custom delta properties into account here because it doesn't use changelists.
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
 	// If any properties have changed, send a component update.
-	if (RepFlags.bNetInitial || Changed.Num() > 0 || MigChanged.Num() > 0)
+	if (RepFlags.bNetInitial || RepChanged.Num() > 0 || MigratableChanged.Num() > 0)
 	{		
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
@@ -287,24 +285,24 @@ bool USpatialActorChannel::ReplicateActor()
 
 			// Ensure that the initial changelist contains _every_ property. This ensures that the default properties are written to the entity template.
 			// Otherwise, there will be a mismatch between the rep state shadow data used by CompareProperties and the entity in SpatialOS.
-			TArray<uint16> InitialChanged;
+			TArray<uint16> InitialRepChanged;
 			for (auto& Cmd : ActorReplicator->RepLayout->Cmds)
 			{
 				if (Cmd.Type != REPCMD_DynamicArray && Cmd.Type != REPCMD_Return)
 				{
-					InitialChanged.Add(Cmd.RelativeHandle);
+					InitialRepChanged.Add(Cmd.RelativeHandle);
 				}
 			}
-			InitialChanged.Add(0);
+			InitialRepChanged.Add(0);
 
 			// Calculate initial spatial position (but don't send component update) and create the entity.
 			LastSpatialPosition = GetActorSpatialPosition(Actor);
-			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialChanged, MigChanged);
+			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialRepChanged, MigratableChanged);
 			bCreatingNewEntity = false;
 		}
 		else
 		{
-			Interop->SendSpatialUpdate(this, Changed, MigChanged);
+			Interop->SendSpatialUpdate(this, RepChanged, MigratableChanged);
 		}
 
 		bWroteSomethingImportant = true;

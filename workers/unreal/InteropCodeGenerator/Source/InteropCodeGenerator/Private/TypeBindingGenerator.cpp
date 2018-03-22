@@ -398,7 +398,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 			*GetReplicatedPropertyGroupName(Group),
 			*GetReplicatedPropertyGroupName(Group));
 	}
-	BuildComponentUpdateSignature.NameAndParams += FString::Printf(TEXT("\n\timprobable::unreal::%s::Update& MigratedDataUpdate,\n\tbool& bMigratedDataUpdateChanged"),
+	BuildComponentUpdateSignature.NameAndParams += FString::Printf(TEXT("\n\timprobable::unreal::%s::Update& MigratableDataUpdate,\n\tbool& bMigratableDataUpdateChanged"),
 		*SchemaMigratableDataName(Class));
 	BuildComponentUpdateSignature.NameAndParams += ") const";
 	HeaderWriter.Print(BuildComponentUpdateSignature.Declaration());
@@ -817,12 +817,17 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 			*GetReplicatedPropertyGroupName(Group));
 		SourceWriter.Printf("bool b%sUpdateChanged = false;", *GetReplicatedPropertyGroupName(Group));
 	}
+	SourceWriter.Printf("improbable::unreal::%s::Data MigratableData;", *SchemaMigratableDataName(Class));
+	SourceWriter.Printf("improbable::unreal::%s::Update MigratableDataUpdate;", *SchemaMigratableDataName(Class));
+	SourceWriter.Print("bool bMigratableDataUpdateChanged = false;");
 	TArray<FString> BuildUpdateArgs;
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
 		BuildUpdateArgs.Add(FString::Printf(TEXT("%sUpdate"), *GetReplicatedPropertyGroupName(Group)));
 		BuildUpdateArgs.Add(FString::Printf(TEXT("b%sUpdateChanged"), *GetReplicatedPropertyGroupName(Group)));
 	}
+	BuildUpdateArgs.Add("MigratableDataUpdate");
+	BuildUpdateArgs.Add("bMigratableDataUpdateChanged");
 	SourceWriter.Printf("BuildSpatialComponentUpdate(InitialChanges, Channel, %s);", *FString::Join(BuildUpdateArgs, TEXT(", ")));
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
@@ -830,6 +835,7 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 			*GetReplicatedPropertyGroupName(Group),
 			*GetReplicatedPropertyGroupName(Group));
 	}
+	SourceWriter.Print("MigratableDataUpdate.ApplyTo(MigratableData);");
 
 	// Create Entity.
 	SourceWriter.PrintNewLine();
@@ -887,8 +893,7 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(%sData, WorkersOnly)",
 			*SchemaReplicatedDataName(Group, Class), *GetReplicatedPropertyGroupName(Group));
 	}
-	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, WorkersOnly)",
-		*SchemaMigratableDataName(Class), *SchemaMigratableDataName(Class));
+	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(MigratableData, WorkersOnly)", *SchemaMigratableDataName(Class));
 	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, OwningClientOnly)",
 		*SchemaRPCComponentName(ERPCType::RPC_Client, Class), *SchemaRPCComponentName(ERPCType::RPC_Client, Class));
 	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, WorkersOnly)",
@@ -923,7 +928,7 @@ void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Cl
 		SourceWriter.Printf("bool b%sUpdateChanged = false;", *GetReplicatedPropertyGroupName(Group));
 	}
 	SourceWriter.Printf("improbable::unreal::%s::Update MigratableDataUpdate;", *SchemaMigratableDataName(Class));
-	SourceWriter.Print("bool bMigratedDataUpdateChanged = false;");
+	SourceWriter.Print("bool bMigratableDataUpdateChanged = false;");
 
 	TArray<FString> BuildUpdateArgs;
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
@@ -1034,7 +1039,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 			*GetReplicatedPropertyGroupName(Group),
 			*GetReplicatedPropertyGroupName(Group));
 	}
-	BuildComponentUpdateSignature.NameAndParams += FString::Printf(TEXT("\n\timprobable::unreal::%s::Update& MigratedDataUpdate,\n\tbool& bMigratedDataUpdateChanged"),
+	BuildComponentUpdateSignature.NameAndParams += FString::Printf(TEXT("\n\timprobable::unreal::%s::Update& MigratableDataUpdate,\n\tbool& bMigratableDataUpdateChanged"),
 		*SchemaMigratableDataName(Class));
 	BuildComponentUpdateSignature.NameAndParams += ") const";
 
@@ -1051,8 +1056,8 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 	SourceWriter.BeginScope();
 	SourceWriter.Print(R"""(
 		const FRepLayoutCmd& Cmd = Changes.RepCmds[HandleIterator.CmdIndex];
-		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 		const FRepHandleData& PropertyMapData = RepPropertyMap[HandleIterator.Handle];
+		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*Channel->Actor->GetName(),
@@ -1083,14 +1088,15 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 		for (uint16 ChangedHandle : Changes.MigChanged)
 		{
 			const FMigratableHandleData& PropertyMapData = MigPropertyMap[ChangedHandle];
+			const uint8* Data = PropertyMapData.GetPropertyData(Changes.SourceData);
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending migratable property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*Channel->Actor->GetName(),
 				Channel->GetEntityId().ToSpatialEntityId(),
-				*PropertyMapData.Property.Property->GetName(),
+				*PropertyMapData.Property->GetName(),
 				HandleIterator.Handle);
 			ServerSendUpdate_Migratable(Data, ChangedHandle, PropertyMapData.Property, Channel, MigratableDataUpdate);
-			bMigratableDataChanged = true;
+			bMigratableDataUpdateChanged = true;
 		})""");
 
 	SourceWriter.End();
@@ -1137,7 +1143,7 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 				SourceWriter, "OutUpdate", RepProp.Value, PropertyValueName, true,
 				[&SourceWriter, Handle](const FString& PropertyValue)
 			{
-				SourceWriter.Printf("Interop->QueueOutgoingObjectUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
+				SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
 			});
 			SourceWriter.Print("break;");
 			SourceWriter.End();
@@ -1193,7 +1199,7 @@ void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter,
 				SourceWriter, "OutUpdate", MigProp.Value, PropertyValueName, true,
 				[&SourceWriter, Handle](const FString& PropertyValue)
 			{
-				SourceWriter.Printf("Interop->QueueOutgoingObjectUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
+				SourceWriter.Printf("Interop->QueueOutgoingObjectMigUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
 			});
 			SourceWriter.Print("break;");
 			SourceWriter.End();
@@ -1271,7 +1277,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 			FString PropertyValueCppType = Property->GetCPPType();
 			FString PropertyName = TEXT("RepData->Property");
 			//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
-			SourceWriter.Printf("uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;");
+			SourceWriter.Printf("uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));");
 			if (Property->IsA<UBoolProperty>())
 			{
 				SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(%s)->GetPropertyValue(PropertyData);", *PropertyValueName, *PropertyName);
@@ -1294,7 +1300,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 						*RepData->Property->GetName(),
 						Handle);)""");
 				SourceWriter.Print("bWriteObjectProperty = false;");
-				SourceWriter.Print("Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, RepData);");
+				SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);");
 			});
 
 			// If this is RemoteRole, make sure to downgrade if bAutonomousProxy is false.
@@ -1318,7 +1324,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 				SourceWriter.BeginScope();
 			}
 
-			SourceWriter.Print("ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);");
+			SourceWriter.Print("ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);");
 			SourceWriter.PrintNewLine();
 
 			SourceWriter.Print(R"""(
@@ -1346,7 +1352,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData)
 {
 	FFunctionSignature ReceiveUpdateSignature{"void",
-		FString::Printf(TEXT("ReceiveUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::%s::Update& OutUpdate) const"),
+		FString::Printf(TEXT("ReceiveUpdate_Migratable(USpatialActorChannel* ActorChannel, const improbable::unreal::%s::Update& Update) const"),
 			*SchemaMigratableDataName(Class))
 	};
 	SourceWriter.BeginFunction(ReceiveUpdateSignature, TypeBindingName(Class));
@@ -1366,7 +1372,7 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 
 			SourceWriter.Printf("// %s", *SchemaFieldName(MigProp.Value));
 			SourceWriter.Printf("uint16 Handle = %d;", Handle);
-			SourceWriter.Print("const FMigratableHandleData* RepData = &HandleToPropertyMap[Handle];");
+			SourceWriter.Print("const FMigratableHandleData* MigratableData = &HandleToPropertyMap[Handle];");
 
 			if (Property->IsA<UObjectPropertyBase>())
 			{
@@ -1376,9 +1382,9 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 			// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
 			FString PropertyValueName = TEXT("Value");
 			FString PropertyValueCppType = Property->GetCPPType();
-			FString PropertyName = TEXT("RepData->Property");
+			FString PropertyName = TEXT("MigratableData->Property");
 			//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
-			SourceWriter.Printf("uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;");
+			SourceWriter.Printf("uint8* PropertyData = MigratableData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));");
 			if (Property->IsA<UBoolProperty>())
 			{
 				SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(%s)->GetPropertyValue(PropertyData);", *PropertyValueName, *PropertyName);
@@ -1398,10 +1404,10 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 						*ObjectRefToString(ObjectRef),
 						*ActorChannel->Actor->GetName(),
 						ActorChannel->GetEntityId().ToSpatialEntityId(),
-						*RepData->Property->GetName(),
+						*MigratableData->Property->GetName(),
 						Handle);)""");
 				SourceWriter.Print("bWriteObjectProperty = false;");
-				SourceWriter.Print("Interop->QueueIncomingObjectUpdate_Internal(ObjectRef, ActorChannel, RepData);");
+				SourceWriter.Print("Interop->QueueIncomingObjectMigUpdate_Internal(ObjectRef, ActorChannel, MigratableData);");
 			});
 
 			SourceWriter.PrintNewLine();
@@ -1412,7 +1418,7 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 				SourceWriter.BeginScope();
 			}
 
-			SourceWriter.Print("ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);");
+			SourceWriter.Print("ApplyIncomingMigratablePropertyUpdate(*MigratableData, ActorChannel->Actor, static_cast<const void*>(&Value));");
 			SourceWriter.PrintNewLine();
 
 			SourceWriter.Print(R"""(
@@ -1420,7 +1426,7 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId().ToSpatialEntityId(),
-					*RepData->Property->GetName(),
+					*MigratableData->Property->GetName(),
 					Handle);)""");
 
 			if (Property->IsA<UObjectPropertyBase>())

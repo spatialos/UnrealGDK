@@ -55,16 +55,20 @@ public:
 	uint32 NumAttempts;
 };
 
+// Helper types used by the maps below.
+using FPendingOutgoingProperties = TPair<TArray<uint16>, TArray<uint16>>; // Pending incoming properties (replicated and migratable).
+using FPendingIncomingProperties = TPair<TArray<const FRepHandleData*>, TArray<const FMigratableHandleData*>>;
+
 // Map types for pending objects/RPCs. For pending updates, they store a map from an unresolved object to a map of channels to properties
 // within those channels which depend on the unresolved object. For pending RPCs, they store a map from an unresolved object to a list of
 // RPC functor objects which need to be re-executed when the object is resolved.
-using FPendingOutgoingObjectUpdateMap = TMap<UObject*, TMap<USpatialActorChannel*, TArray<uint16>>>;
+using FPendingOutgoingObjectUpdateMap = TMap<UObject*, TMap<USpatialActorChannel*, FPendingOutgoingProperties>>;
 using FPendingOutgoingRPCMap = TMap<UObject*, TArray<TPair<FRPCCommandRequestFunc, bool>>>;
-using FPendingIncomingObjectUpdateMap = TMap<FHashableUnrealObjectRef, TMap<USpatialActorChannel*, TArray<const FRepHandleData*>>>;
+using FPendingIncomingObjectUpdateMap = TMap<FHashableUnrealObjectRef, TMap<USpatialActorChannel*, FPendingIncomingProperties>>;
 using FPendingIncomingRPCMap = TMap<FHashableUnrealObjectRef, TArray<FRPCCommandResponseFunc>>;
 
-// Helper function to write incoming property data to an object.
-FORCEINLINE void ApplyIncomingPropertyUpdate(const FRepHandleData& RepHandleData, UObject* Object, const void* Value, TArray<UProperty*>& RepNotifies)
+// Helper function to write incoming replicated property data to an object.
+FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& RepHandleData, UObject* Object, const void* Value, TArray<UProperty*>& RepNotifies)
 {
 	uint8* Dest = reinterpret_cast<uint8*>(Object) + RepHandleData.Offset;
 
@@ -88,6 +92,25 @@ FORCEINLINE void ApplyIncomingPropertyUpdate(const FRepHandleData& RepHandleData
 	else
 	{
 		RepHandleData.Property->CopyCompleteValue(Dest, Value);
+	}
+}
+
+// Helper function to write incoming migratable property data to an object.
+FORCEINLINE void ApplyIncomingMigratablePropertyUpdate(const FMigratableHandleData& MigratableHandleData, UObject* Object, const void* Value)
+{
+	uint8* Dest = MigratableHandleData.GetPropertyData(reinterpret_cast<uint8*>(Object));
+
+	// Write value to destination.
+	UBoolProperty* BoolProperty = Cast<UBoolProperty>(MigratableHandleData.Property);
+	if (BoolProperty)
+	{
+		// We use UBoolProperty::SetPropertyValue here explicitly to ensure that packed boolean properties
+		// are de-serialized correctly without clobbering neighboring boolean values in memory.
+		BoolProperty->SetPropertyValue(Dest, *static_cast<const bool*>(Value));
+	}
+	else
+	{
+		MigratableHandleData.Property->CopyCompleteValue(Dest, Value);
 	}
 }
 
@@ -131,9 +154,11 @@ public:
 	void HandleCommandResponse_Internal(const FString& RPCName, FUntypedRequestId RequestId, const FEntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
 
 	// Used to queue incoming/outgoing object updates/RPCs. Used by generated type bindings.
-	void QueueOutgoingObjectUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
+	void QueueOutgoingObjectRepUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
+	void QueueOutgoingObjectMigUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable);
-	void QueueIncomingObjectUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData);
+	void QueueIncomingObjectRepUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData);
+	void QueueIncomingObjectMigUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FMigratableHandleData* MigHandleData);
 	void QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder);
 
 	// Accessors.
@@ -171,10 +196,6 @@ private:
 	TMap<FUntypedRequestId, TSharedPtr<FOutgoingReliableRPC>> OutgoingReliableRPCs;
 
 	// Pending outgoing object ref property updates.
-	/*
-	TMap<UObject*, TArray<USpatialActorChannel*>> ChannelsAwaitingOutgoingObjectResolve;
-	TMap<USpatialActorChannel*, TArray<uint16>> PendingOutgoingObjectRefHandles;
-	*/
 	FPendingOutgoingObjectUpdateMap PendingOutgoingObjectUpdates;
 
 	// Pending outgoing RPCs.

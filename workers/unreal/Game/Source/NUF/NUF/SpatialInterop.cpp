@@ -321,7 +321,7 @@ void USpatialInterop::HandleCommandResponse_Internal(const FString& RPCName, FUn
 	}
 }
 
-void USpatialInterop::QueueOutgoingObjectUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
+void USpatialInterop::QueueOutgoingObjectRepUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
 {
 	check(UnresolvedObject);
 	check(DependentChannel);
@@ -329,7 +329,18 @@ void USpatialInterop::QueueOutgoingObjectUpdate_Internal(UObject* UnresolvedObje
 
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing object ref depending on object: %s, channel: %s, handle: %d."),
 		*UnresolvedObject->GetName(), *DependentChannel->GetName(), Handle);
-	PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel).Add(Handle);
+	PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel).Key.Add(Handle);
+}
+
+void USpatialInterop::QueueOutgoingObjectMigUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
+{
+	check(UnresolvedObject);
+	check(DependentChannel);
+	check(Handle > 0);
+
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing object ref depending on object: %s, channel: %s, handle: %d."),
+		*UnresolvedObject->GetName(), *DependentChannel->GetName(), Handle);
+	PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel).Value.Add(Handle);
 }
 
 void USpatialInterop::QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable)
@@ -339,13 +350,22 @@ void USpatialInterop::QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCC
 	PendingOutgoingRPCs.FindOrAdd(UnresolvedObject).Add(TPair<FRPCCommandRequestFunc, bool>{CommandSender, bReliable});
 }
 
-void USpatialInterop::QueueIncomingObjectUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData)
+void USpatialInterop::QueueIncomingObjectRepUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData)
 {
 	check(DependentChannel);
 	check(RepHandleData);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref depending on object ref: %s, channel: %s, property: %s."),
 		*ObjectRefToString(UnresolvedObjectRef), *DependentChannel->GetName(), *RepHandleData->Property->GetName());
-	PendingIncomingObjectUpdates.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Add(RepHandleData);
+	PendingIncomingObjectUpdates.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Key.Add(RepHandleData);
+}
+
+void USpatialInterop::QueueIncomingObjectMigUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FMigratableHandleData* RepHandleData)
+{
+	check(DependentChannel);
+	check(RepHandleData);
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref depending on object ref: %s, channel: %s, property: %s."),
+		*ObjectRefToString(UnresolvedObjectRef), *DependentChannel->GetName(), *RepHandleData->Property->GetName());
+	PendingIncomingObjectUpdates.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Value.Add(RepHandleData);
 }
 
 void USpatialInterop::QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder)
@@ -404,13 +424,15 @@ void USpatialInterop::ResolvePendingOutgoingObjectUpdates(UObject* Object)
 	for (auto& ChannelProperties : *DependentChannels)
 	{
 		USpatialActorChannel* DependentChannel = ChannelProperties.Key;
-		TArray<uint16>& Properties = ChannelProperties.Value;
-		if (Properties.Num() > 0)
+		FPendingOutgoingProperties& Properties = ChannelProperties.Value;
+		if (Properties.Key.Num() > 0)
 		{
-			// Changelists always have a 0 at the end.
-			Properties.Add(0);
-			SendSpatialUpdate(DependentChannel, Properties);
+			// Replication change lists always have a 0 at the end.
+			Properties.Key.Add(0);
 		}
+
+		// This function will only send updates if any of the property lists are non-empty.
+		SendSpatialUpdate(DependentChannel, Properties.Key, Properties.Value);
 	}
 	PendingOutgoingObjectUpdates.Remove(Object);
 }
@@ -441,19 +463,28 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 	for (auto& ChannelProperties : *DependentChannels)
 	{
 		USpatialActorChannel* DependentChannel = ChannelProperties.Key;
-		TArray<const FRepHandleData*>& Properties = ChannelProperties.Value;
+		FPendingIncomingProperties& Properties = ChannelProperties.Value;
 
 		// Trigger pending updates.
 		PreReceiveSpatialUpdate(DependentChannel);
 		TArray<UProperty*> RepNotifies;
-		for (const FRepHandleData* RepData : Properties)
+		for (const FRepHandleData* MigData : Properties.Key)
 		{
-			ApplyIncomingPropertyUpdate(*RepData, DependentChannel->Actor, &Object, RepNotifies);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object property update. actor %s (%lld), property %s"),
-				*SpatialOSInstance ->GetWorkerId(),
+			ApplyIncomingReplicatedPropertyUpdate(*MigData, DependentChannel->Actor, &Object, RepNotifies);
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object replicated property update. actor %s (%lld), property %s"),
+				*SpatialOSInstance->GetWorkerId(),
 				*DependentChannel->Actor->GetName(),
 				DependentChannel->GetEntityId().ToSpatialEntityId(),
-				*RepData->Property->GetName());
+				*MigData->Property->GetName());
+		}
+		for (const FMigratableHandleData* MigData : Properties.Value)
+		{
+			ApplyIncomingMigratablePropertyUpdate(*MigData, DependentChannel->Actor, &Object);
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object migratable property update. actor %s (%lld), property %s"),
+				*SpatialOSInstance->GetWorkerId(),
+				*DependentChannel->Actor->GetName(),
+				DependentChannel->GetEntityId().ToSpatialEntityId(),
+				*MigData->Property->GetName());
 		}
 		PostReceiveSpatialUpdate(DependentChannel, RepNotifies);
 	}
