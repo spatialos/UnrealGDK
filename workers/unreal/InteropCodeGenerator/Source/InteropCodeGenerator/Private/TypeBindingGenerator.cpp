@@ -436,7 +436,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 	// Type binding class.
 	HeaderWriter.Print("UCLASS()");
-	HeaderWriter.Printf("class %s : public USpatialTypeBinding", *TypeBindingName(Class));
+	HeaderWriter.Printf("class SPATIALGDK_API %s : public USpatialTypeBinding", *TypeBindingName(Class));
 	HeaderWriter.Print("{").Indent();
 	HeaderWriter.Print("GENERATED_BODY()");
 	HeaderWriter.PrintNewLine();
