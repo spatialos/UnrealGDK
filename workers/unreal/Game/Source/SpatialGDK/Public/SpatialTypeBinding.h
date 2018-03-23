@@ -213,7 +213,7 @@ using FRepHandlePropertyMap = TMap<uint16, FRepHandleData>;
 using FMigratableHandlePropertyMap = TMap<uint16, FMigratableHandleData>;
 
 UCLASS()
-class NUF_API USpatialTypeBinding : public UObject
+class SPATIALGDK_API USpatialTypeBinding : public UObject
 {
 	GENERATED_BODY()
 

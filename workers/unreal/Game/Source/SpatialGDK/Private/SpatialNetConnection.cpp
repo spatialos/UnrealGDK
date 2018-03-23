@@ -4,7 +4,7 @@
 #include "SpatialNetDriver.h"
 #include "SpatialPackageMapClient.h"
 
-#include "NUFGameStateBase.h"
+//#include "NUFGameStateBase.h"
 
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {

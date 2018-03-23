@@ -117,7 +117,7 @@ FORCEINLINE void ApplyIncomingMigratablePropertyUpdate(const FMigratableHandleDa
 // The system which is responsible for converting and sending Unreal updates to SpatialOS, and receiving updates from SpatialOS and
 // applying them to Unreal objects.
 UCLASS()
-class NUF_API USpatialInterop : public UObject
+class SPATIALGDK_API USpatialInterop : public UObject
 {
 	GENERATED_BODY()
 public:

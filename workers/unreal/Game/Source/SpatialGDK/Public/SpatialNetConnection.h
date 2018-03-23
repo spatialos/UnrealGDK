@@ -10,7 +10,7 @@
  * 
  */
 UCLASS(transient, config = Engine)
-class NUF_API USpatialNetConnection : public UIpConnection
+class SPATIALGDK_API USpatialNetConnection : public UIpConnection
 {
 	GENERATED_BODY()
 public:

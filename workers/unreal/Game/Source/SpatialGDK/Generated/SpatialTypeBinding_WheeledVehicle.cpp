@@ -1,30 +1,32 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // Note that this file has been generated automatically
 
-#include "SpatialTypeBinding_PlayerState.h"
+#include "SpatialTypeBinding_WheeledVehicle.h"
 #include "Engine.h"
 
 #include "SpatialOS.h"
 #include "EntityBuilder.h"
 
-#include "../SpatialConstants.h"
-#include "../SpatialConditionMapFilter.h"
-#include "../SpatialUnrealObjectRef.h"
-#include "../SpatialActorChannel.h"
-#include "../SpatialPackageMapClient.h"
-#include "../SpatialNetDriver.h"
-#include "../SpatialInterop.h"
+#include "SpatialConstants.h"
+#include "SpatialConditionMapFilter.h"
+#include "SpatialUnrealObjectRef.h"
+#include "SpatialActorChannel.h"
+#include "SpatialPackageMapClient.h"
+#include "SpatialNetDriver.h"
+#include "SpatialInterop.h"
+#include "WheeledVehicle.h"
+#include "WheeledVehicleMovementComponent.h"
 
-#include "UnrealPlayerStateSingleClientRepDataAddComponentOp.h"
-#include "UnrealPlayerStateMultiClientRepDataAddComponentOp.h"
-#include "UnrealPlayerStateMigratableDataAddComponentOp.h"
+#include "UnrealWheeledVehicleSingleClientRepDataAddComponentOp.h"
+#include "UnrealWheeledVehicleMultiClientRepDataAddComponentOp.h"
+#include "UnrealWheeledVehicleMigratableDataAddComponentOp.h"
 
-const FRepHandlePropertyMap& USpatialTypeBinding_PlayerState::GetRepHandlePropertyMap() const
+const FRepHandlePropertyMap& USpatialTypeBinding_WheeledVehicle::GetRepHandlePropertyMap() const
 {
 	static FRepHandlePropertyMap HandleToPropertyMap;
 	if (HandleToPropertyMap.Num() == 0)
 	{
-		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("PlayerState"));
+		UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT("WheeledVehicle"));
 		HandleToPropertyMap.Add(1, FRepHandleData(Class, {"bHidden"}, COND_None, REPNOTIFY_OnChanged));
 		HandleToPropertyMap.Add(2, FRepHandleData(Class, {"bReplicateMovement"}, COND_None, REPNOTIFY_OnChanged));
 		HandleToPropertyMap.Add(3, FRepHandleData(Class, {"bTearOff"}, COND_None, REPNOTIFY_OnChanged));
@@ -40,50 +42,43 @@ const FRepHandlePropertyMap& USpatialTypeBinding_PlayerState::GetRepHandleProper
 		HandleToPropertyMap.Add(13, FRepHandleData(Class, {"Role"}, COND_None, REPNOTIFY_OnChanged));
 		HandleToPropertyMap.Add(14, FRepHandleData(Class, {"bCanBeDamaged"}, COND_None, REPNOTIFY_OnChanged));
 		HandleToPropertyMap.Add(15, FRepHandleData(Class, {"Instigator"}, COND_None, REPNOTIFY_OnChanged));
-		HandleToPropertyMap.Add(16, FRepHandleData(Class, {"Score"}, COND_None, REPNOTIFY_OnChanged));
-		HandleToPropertyMap.Add(17, FRepHandleData(Class, {"Ping"}, COND_SkipOwner, REPNOTIFY_OnChanged));
-		HandleToPropertyMap.Add(18, FRepHandleData(Class, {"PlayerName"}, COND_None, REPNOTIFY_OnChanged));
-		HandleToPropertyMap.Add(19, FRepHandleData(Class, {"PlayerId"}, COND_InitialOnly, REPNOTIFY_OnChanged));
-		HandleToPropertyMap.Add(20, FRepHandleData(Class, {"bFromPreviousLevel"}, COND_None, REPNOTIFY_OnChanged));
-		HandleToPropertyMap.Add(21, FRepHandleData(Class, {"bIsABot"}, COND_InitialOnly, REPNOTIFY_OnChanged));
-		HandleToPropertyMap.Add(22, FRepHandleData(Class, {"bIsInactive"}, COND_InitialOnly, REPNOTIFY_OnChanged));
-		HandleToPropertyMap.Add(23, FRepHandleData(Class, {"bIsSpectator"}, COND_None, REPNOTIFY_OnChanged));
-		HandleToPropertyMap.Add(24, FRepHandleData(Class, {"bOnlySpectator"}, COND_None, REPNOTIFY_OnChanged));
-		HandleToPropertyMap.Add(25, FRepHandleData(Class, {"StartTime"}, COND_None, REPNOTIFY_OnChanged));
-		HandleToPropertyMap.Add(26, FRepHandleData(Class, {"UniqueId"}, COND_InitialOnly, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(16, FRepHandleData(Class, {"PlayerState"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(17, FRepHandleData(Class, {"RemoteViewPitch"}, COND_SkipOwner, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(18, FRepHandleData(Class, {"Controller"}, COND_None, REPNOTIFY_OnChanged));
 	}
 	return HandleToPropertyMap;
 }
 
-const FMigratableHandlePropertyMap& USpatialTypeBinding_PlayerState::GetMigratableHandlePropertyMap() const
+const FMigratableHandlePropertyMap& USpatialTypeBinding_WheeledVehicle::GetMigratableHandlePropertyMap() const
 {
 	static FMigratableHandlePropertyMap HandleToPropertyMap;
 	return HandleToPropertyMap;
 }
 
-UClass* USpatialTypeBinding_PlayerState::GetBoundClass() const
+UClass* USpatialTypeBinding_WheeledVehicle::GetBoundClass() const
 {
-	return APlayerState::StaticClass();
+	return AWheeledVehicle::StaticClass();
 }
 
-void USpatialTypeBinding_PlayerState::Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)
+void USpatialTypeBinding_WheeledVehicle::Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)
 {
 	Super::Init(InInterop, InPackageMap);
 
+	RPCToSenderMap.Emplace("ServerUpdateState", &USpatialTypeBinding_WheeledVehicle::ServerUpdateState_SendCommand);
 }
 
-void USpatialTypeBinding_PlayerState::BindToView()
+void USpatialTypeBinding_WheeledVehicle::BindToView()
 {
 	TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();
 	ViewCallbacks.Init(View);
 
 	if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
 	{
-		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealPlayerStateSingleClientRepData>([this](
-			const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerStateSingleClientRepData>& Op)
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealWheeledVehicleSingleClientRepData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleSingleClientRepData>& Op)
 		{
 			// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
-			if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealPlayerStateSingleClientRepData::ComponentId))
+			if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealWheeledVehicleSingleClientRepData::ComponentId))
 			{
 				return;
 			}
@@ -91,11 +86,11 @@ void USpatialTypeBinding_PlayerState::BindToView()
 			check(ActorChannel);
 			ReceiveUpdate_SingleClient(ActorChannel, Op.Update);
 		}));
-		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealPlayerStateMultiClientRepData>([this](
-			const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerStateMultiClientRepData>& Op)
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealWheeledVehicleMultiClientRepData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleMultiClientRepData>& Op)
 		{
 			// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
-			if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealPlayerStateMultiClientRepData::ComponentId))
+			if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealWheeledVehicleMultiClientRepData::ComponentId))
 			{
 				return;
 			}
@@ -103,11 +98,11 @@ void USpatialTypeBinding_PlayerState::BindToView()
 			check(ActorChannel);
 			ReceiveUpdate_MultiClient(ActorChannel, Op.Update);
 		}));
-		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealPlayerStateMigratableData>([this](
-			const worker::ComponentUpdateOp<improbable::unreal::UnrealPlayerStateMigratableData>& Op)
+		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealWheeledVehicleMigratableData>([this](
+			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleMigratableData>& Op)
 		{
 			// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
-			if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealPlayerStateMigratableData::ComponentId))
+			if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealWheeledVehicleMigratableData::ComponentId))
 			{
 				return;
 			}
@@ -116,24 +111,28 @@ void USpatialTypeBinding_PlayerState::BindToView()
 			ReceiveUpdate_Migratable(ActorChannel, Op.Update);
 		}));
 	}
+
+	using ServerRPCCommandTypes = improbable::unreal::UnrealWheeledVehicleServerRPCs::Commands;
+	ViewCallbacks.Add(View->OnCommandRequest<ServerRPCCommandTypes::Serverupdatestate>(std::bind(&USpatialTypeBinding_WheeledVehicle::ServerUpdateState_OnCommandRequest, this, std::placeholders::_1)));
+	ViewCallbacks.Add(View->OnCommandResponse<ServerRPCCommandTypes::Serverupdatestate>(std::bind(&USpatialTypeBinding_WheeledVehicle::ServerUpdateState_OnCommandResponse, this, std::placeholders::_1)));
 }
 
-void USpatialTypeBinding_PlayerState::UnbindFromView()
+void USpatialTypeBinding_WheeledVehicle::UnbindFromView()
 {
 	ViewCallbacks.Reset();
 }
 
-worker::Entity USpatialTypeBinding_PlayerState::CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const
+worker::Entity USpatialTypeBinding_WheeledVehicle::CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const
 {
 	// Setup initial data.
-	improbable::unreal::UnrealPlayerStateSingleClientRepData::Data SingleClientData;
-	improbable::unreal::UnrealPlayerStateSingleClientRepData::Update SingleClientUpdate;
+	improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Data SingleClientData;
+	improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update SingleClientUpdate;
 	bool bSingleClientUpdateChanged = false;
-	improbable::unreal::UnrealPlayerStateMultiClientRepData::Data MultiClientData;
-	improbable::unreal::UnrealPlayerStateMultiClientRepData::Update MultiClientUpdate;
+	improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Data MultiClientData;
+	improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update MultiClientUpdate;
 	bool bMultiClientUpdateChanged = false;
-	improbable::unreal::UnrealPlayerStateMigratableData::Data MigratableData;
-	improbable::unreal::UnrealPlayerStateMigratableData::Update MigratableDataUpdate;
+	improbable::unreal::UnrealWheeledVehicleMigratableData::Data MigratableData;
+	improbable::unreal::UnrealWheeledVehicleMigratableData::Update MigratableDataUpdate;
 	bool bMigratableDataUpdateChanged = false;
 	BuildSpatialComponentUpdate(InitialChanges, Channel, SingleClientUpdate, bSingleClientUpdateChanged, MultiClientUpdate, bMultiClientUpdateChanged, MigratableDataUpdate, bMigratableDataUpdateChanged);
 	SingleClientUpdate.ApplyTo(SingleClientData);
@@ -185,22 +184,23 @@ worker::Entity USpatialTypeBinding_PlayerState::CreateActorEntity(const FString&
 		.SetPersistence(true)
 		.SetReadAcl(AnyUnrealWorkerOrClient)
 		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealPlayerStateSingleClientRepData>(SingleClientData, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealPlayerStateMultiClientRepData>(MultiClientData, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealPlayerStateMigratableData>(MigratableData, WorkersOnly)
-		.AddComponent<improbable::unreal::UnrealPlayerStateClientRPCs>(improbable::unreal::UnrealPlayerStateClientRPCs::Data{}, OwningClientOnly)
-		.AddComponent<improbable::unreal::UnrealPlayerStateServerRPCs>(improbable::unreal::UnrealPlayerStateServerRPCs::Data{}, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealWheeledVehicleSingleClientRepData>(SingleClientData, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealWheeledVehicleMultiClientRepData>(MultiClientData, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealWheeledVehicleMigratableData>(MigratableData, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealWheeledVehicleClientRPCs>(improbable::unreal::UnrealWheeledVehicleClientRPCs::Data{}, OwningClientOnly)
+		.AddComponent<improbable::unreal::UnrealWheeledVehicleServerRPCs>(improbable::unreal::UnrealWheeledVehicleServerRPCs::Data{}, WorkersOnly)
+		.AddComponent<nuf::PossessPawn>(nuf::PossessPawn::Data{}, WorkersOnly)
 		.Build();
 }
 
-void USpatialTypeBinding_PlayerState::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const
+void USpatialTypeBinding_WheeledVehicle::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const
 {
 	// Build SpatialOS updates.
-	improbable::unreal::UnrealPlayerStateSingleClientRepData::Update SingleClientUpdate;
+	improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update SingleClientUpdate;
 	bool bSingleClientUpdateChanged = false;
-	improbable::unreal::UnrealPlayerStateMultiClientRepData::Update MultiClientUpdate;
+	improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update MultiClientUpdate;
 	bool bMultiClientUpdateChanged = false;
-	improbable::unreal::UnrealPlayerStateMigratableData::Update MigratableDataUpdate;
+	improbable::unreal::UnrealWheeledVehicleMigratableData::Update MigratableDataUpdate;
 	bool bMigratableDataUpdateChanged = false;
 	BuildSpatialComponentUpdate(Changes, Channel, SingleClientUpdate, bSingleClientUpdateChanged, MultiClientUpdate, bMultiClientUpdateChanged, MigratableDataUpdate, bMigratableDataUpdateChanged);
 
@@ -208,19 +208,19 @@ void USpatialTypeBinding_PlayerState::SendComponentUpdates(const FPropertyChange
 	TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();
 	if (bSingleClientUpdateChanged)
 	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerStateSingleClientRepData>(EntityId.ToSpatialEntityId(), SingleClientUpdate);
+		Connection->SendComponentUpdate<improbable::unreal::UnrealWheeledVehicleSingleClientRepData>(EntityId.ToSpatialEntityId(), SingleClientUpdate);
 	}
 	if (bMultiClientUpdateChanged)
 	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerStateMultiClientRepData>(EntityId.ToSpatialEntityId(), MultiClientUpdate);
+		Connection->SendComponentUpdate<improbable::unreal::UnrealWheeledVehicleMultiClientRepData>(EntityId.ToSpatialEntityId(), MultiClientUpdate);
 	}
 	if (bMigratableDataUpdateChanged)
 	{
-		Connection->SendComponentUpdate<improbable::unreal::UnrealPlayerStateMigratableData>(EntityId.ToSpatialEntityId(), MigratableDataUpdate);
+		Connection->SendComponentUpdate<improbable::unreal::UnrealWheeledVehicleMigratableData>(EntityId.ToSpatialEntityId(), MigratableDataUpdate);
 	}
 }
 
-void USpatialTypeBinding_PlayerState::SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame)
+void USpatialTypeBinding_WheeledVehicle::SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame)
 {
 	TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();
 	auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
@@ -228,50 +228,50 @@ void USpatialTypeBinding_PlayerState::SendRPCCommand(UObject* TargetObject, cons
 	(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetObject);
 }
 
-void USpatialTypeBinding_PlayerState::ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const
+void USpatialTypeBinding_WheeledVehicle::ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const
 {
-	auto* SingleClientAddOp = Cast<UUnrealPlayerStateSingleClientRepDataAddComponentOp>(AddComponentOp);
+	auto* SingleClientAddOp = Cast<UUnrealWheeledVehicleSingleClientRepDataAddComponentOp>(AddComponentOp);
 	if (SingleClientAddOp)
 	{
-		auto Update = improbable::unreal::UnrealPlayerStateSingleClientRepData::Update::FromInitialData(*SingleClientAddOp->Data.data());
+		auto Update = improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update::FromInitialData(*SingleClientAddOp->Data.data());
 		ReceiveUpdate_SingleClient(Channel, Update);
 	}
-	auto* MultiClientAddOp = Cast<UUnrealPlayerStateMultiClientRepDataAddComponentOp>(AddComponentOp);
+	auto* MultiClientAddOp = Cast<UUnrealWheeledVehicleMultiClientRepDataAddComponentOp>(AddComponentOp);
 	if (MultiClientAddOp)
 	{
-		auto Update = improbable::unreal::UnrealPlayerStateMultiClientRepData::Update::FromInitialData(*MultiClientAddOp->Data.data());
+		auto Update = improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update::FromInitialData(*MultiClientAddOp->Data.data());
 		ReceiveUpdate_MultiClient(Channel, Update);
 	}
-	auto* MigratableDataAddOp = Cast<UUnrealPlayerStateMigratableDataAddComponentOp>(AddComponentOp);
+	auto* MigratableDataAddOp = Cast<UUnrealWheeledVehicleMigratableDataAddComponentOp>(AddComponentOp);
 	if (MigratableDataAddOp)
 	{
-		auto Update = improbable::unreal::UnrealPlayerStateMigratableData::Update::FromInitialData(*MigratableDataAddOp->Data.data());
+		auto Update = improbable::unreal::UnrealWheeledVehicleMigratableData::Update::FromInitialData(*MigratableDataAddOp->Data.data());
 		ReceiveUpdate_Migratable(Channel, Update);
 	}
 }
 
-worker::Map<worker::ComponentId, worker::InterestOverride> USpatialTypeBinding_PlayerState::GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const
+worker::Map<worker::ComponentId, worker::InterestOverride> USpatialTypeBinding_WheeledVehicle::GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const
 {
 	worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
 	if (bIsClient)
 	{
 		if (!bAutonomousProxy)
 		{
-			Interest.emplace(improbable::unreal::UnrealPlayerStateSingleClientRepData::ComponentId, worker::InterestOverride{false});
+			Interest.emplace(improbable::unreal::UnrealWheeledVehicleSingleClientRepData::ComponentId, worker::InterestOverride{false});
 		}
-		Interest.emplace(improbable::unreal::UnrealPlayerStateMigratableData::ComponentId, worker::InterestOverride{false});
+		Interest.emplace(improbable::unreal::UnrealWheeledVehicleMigratableData::ComponentId, worker::InterestOverride{false});
 	}
 	return Interest;
 }
 
-void USpatialTypeBinding_PlayerState::BuildSpatialComponentUpdate(
+void USpatialTypeBinding_WheeledVehicle::BuildSpatialComponentUpdate(
 	const FPropertyChangeState& Changes,
 	USpatialActorChannel* Channel,
-	improbable::unreal::UnrealPlayerStateSingleClientRepData::Update& SingleClientUpdate,
+	improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& SingleClientUpdate,
 	bool& bSingleClientUpdateChanged,
-	improbable::unreal::UnrealPlayerStateMultiClientRepData::Update& MultiClientUpdate,
+	improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& MultiClientUpdate,
 	bool& bMultiClientUpdateChanged,
-	improbable::unreal::UnrealPlayerStateMigratableData::Update& MigratableDataUpdate,
+	improbable::unreal::UnrealWheeledVehicleMigratableData::Update& MigratableDataUpdate,
 	bool& bMigratableDataUpdateChanged) const
 {
 	const FRepHandlePropertyMap& RepPropertyMap = GetRepHandlePropertyMap();
@@ -322,11 +322,11 @@ void USpatialTypeBinding_PlayerState::BuildSpatialComponentUpdate(
 	}
 }
 
-void USpatialTypeBinding_PlayerState::ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerStateSingleClientRepData::Update& OutUpdate) const
+void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& OutUpdate) const
 {
 }
 
-void USpatialTypeBinding_PlayerState::ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerStateMultiClientRepData::Update& OutUpdate) const
+void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& OutUpdate) const
 {
 	switch (Handle)
 	{
@@ -505,86 +505,56 @@ void USpatialTypeBinding_PlayerState::ServerSendUpdate_MultiClient(const uint8* 
 			}
 			break;
 		}
-		case 16: // field_score
+		case 16: // field_playerstate
 		{
-			float Value = *(reinterpret_cast<float const*>(Data));
+			APlayerState* Value = *(reinterpret_cast<APlayerState* const*>(Data));
 
-			OutUpdate.set_field_score(Value);
+			if (Value != nullptr)
+			{
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+				{
+					Interop->QueueOutgoingObjectRepUpdate_Internal(Value, Channel, 16);
+				}
+				else
+				{
+					OutUpdate.set_field_playerstate(ObjectRef);
+				}
+			}
+			else
+			{
+				OutUpdate.set_field_playerstate(SpatialConstants::NULL_OBJECT_REF);
+			}
 			break;
 		}
-		case 17: // field_ping
+		case 17: // field_remoteviewpitch
 		{
 			uint8 Value = *(reinterpret_cast<uint8 const*>(Data));
 
-			OutUpdate.set_field_ping(uint32_t(Value));
+			OutUpdate.set_field_remoteviewpitch(uint32_t(Value));
 			break;
 		}
-		case 18: // field_playername
+		case 18: // field_controller
 		{
-			FString Value = *(reinterpret_cast<FString const*>(Data));
+			AController* Value = *(reinterpret_cast<AController* const*>(Data));
 
-			OutUpdate.set_field_playername(TCHAR_TO_UTF8(*Value));
-			break;
-		}
-		case 19: // field_playerid
-		{
-			int32 Value = *(reinterpret_cast<int32 const*>(Data));
-
-			OutUpdate.set_field_playerid(Value);
-			break;
-		}
-		case 20: // field_bfrompreviouslevel
-		{
-			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
-
-			OutUpdate.set_field_bfrompreviouslevel(Value);
-			break;
-		}
-		case 21: // field_bisabot
-		{
-			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
-
-			OutUpdate.set_field_bisabot(Value);
-			break;
-		}
-		case 22: // field_bisinactive
-		{
-			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
-
-			OutUpdate.set_field_bisinactive(Value);
-			break;
-		}
-		case 23: // field_bisspectator
-		{
-			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
-
-			OutUpdate.set_field_bisspectator(Value);
-			break;
-		}
-		case 24: // field_bonlyspectator
-		{
-			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
-
-			OutUpdate.set_field_bonlyspectator(Value);
-			break;
-		}
-		case 25: // field_starttime
-		{
-			int32 Value = *(reinterpret_cast<int32 const*>(Data));
-
-			OutUpdate.set_field_starttime(Value);
-			break;
-		}
-		case 26: // field_uniqueid
-		{
-			FUniqueNetIdRepl Value = *(reinterpret_cast<FUniqueNetIdRepl const*>(Data));
-
+			if (Value != nullptr)
 			{
-				TArray<uint8> ValueData;
-				FMemoryWriter ValueDataWriter(ValueData);
-				bool Success;
-				Value.NetSerialize(ValueDataWriter, PackageMap, Success);
-				OutUpdate.set_field_uniqueid(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+				improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+				{
+					Interop->QueueOutgoingObjectRepUpdate_Internal(Value, Channel, 18);
+				}
+				else
+				{
+					OutUpdate.set_field_controller(ObjectRef);
+				}
+			}
+			else
+			{
+				OutUpdate.set_field_controller(SpatialConstants::NULL_OBJECT_REF);
 			}
 			break;
 		}
@@ -594,11 +564,11 @@ void USpatialTypeBinding_PlayerState::ServerSendUpdate_MultiClient(const uint8* 
 	}
 }
 
-void USpatialTypeBinding_PlayerState::ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerStateMigratableData::Update& OutUpdate) const
+void USpatialTypeBinding_WheeledVehicle::ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealWheeledVehicleMigratableData::Update& OutUpdate) const
 {
 }
 
-void USpatialTypeBinding_PlayerState::ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerStateSingleClientRepData::Update& Update) const
+void USpatialTypeBinding_WheeledVehicle::ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealWheeledVehicleSingleClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
@@ -606,13 +576,13 @@ void USpatialTypeBinding_PlayerState::ReceiveUpdate_SingleClient(USpatialActorCh
 	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
-void USpatialTypeBinding_PlayerState::ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerStateMultiClientRepData::Update& Update) const
+void USpatialTypeBinding_WheeledVehicle::ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealWheeledVehicleMultiClientRepData::Update& Update) const
 {
 	Interop->PreReceiveSpatialUpdate(ActorChannel);
 
 	TArray<UProperty*> RepNotifies;
 	const bool bIsServer = Interop->GetNetDriver()->IsServer();
-	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealPlayerStateClientRPCs::ComponentId);
+	const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::UnrealWheeledVehicleClientRPCs::ComponentId);
 	const FRepHandlePropertyMap& HandleToPropertyMap = GetRepHandlePropertyMap();
 	FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);
 
@@ -1125,31 +1095,65 @@ void USpatialTypeBinding_PlayerState::ReceiveUpdate_MultiClient(USpatialActorCha
 			}
 		}
 	}
-	if (!Update.field_score().empty())
+	if (!Update.field_playerstate().empty())
 	{
-		// field_score
+		// field_playerstate
 		uint16 Handle = 16;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))
 		{
+			bool bWriteObjectProperty = true;
 			uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));
-			float Value = *(reinterpret_cast<float const*>(PropertyData));
+			APlayerState* Value = *(reinterpret_cast<APlayerState* const*>(PropertyData));
 
-			Value = (*Update.field_score().data());
+			{
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_playerstate().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
+				{
+					Value = nullptr;
+				}
+				else
+				{
+					FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+					if (NetGUID.IsValid())
+					{
+						UObject* Object_Raw = PackageMap->GetObjectFromNetGUID(NetGUID, true);
+						checkf(Object_Raw, TEXT("An object ref %s should map to a valid object."), *ObjectRefToString(ObjectRef));
+						Value = dynamic_cast<APlayerState*>(Object_Raw);
+						checkf(Value, TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
+					}
+					else
+					{
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
+							*Interop->GetSpatialOS()->GetWorkerId(),
+							*ObjectRefToString(ObjectRef),
+							*ActorChannel->Actor->GetName(),
+							ActorChannel->GetEntityId().ToSpatialEntityId(),
+							*RepData->Property->GetName(),
+							Handle);
+						bWriteObjectProperty = false;
+						Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);
+					}
+				}
+			}
 
-			ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+			if (bWriteObjectProperty)
+			{
+				ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId().ToSpatialEntityId(),
-				*RepData->Property->GetName(),
-				Handle);
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					*ActorChannel->Actor->GetName(),
+					ActorChannel->GetEntityId().ToSpatialEntityId(),
+					*RepData->Property->GetName(),
+					Handle);
+			}
 		}
 	}
-	if (!Update.field_ping().empty())
+	if (!Update.field_remoteviewpitch().empty())
 	{
-		// field_ping
+		// field_remoteviewpitch
 		uint16 Handle = 17;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))
@@ -1157,7 +1161,7 @@ void USpatialTypeBinding_PlayerState::ReceiveUpdate_MultiClient(USpatialActorCha
 			uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));
 			uint8 Value = *(reinterpret_cast<uint8 const*>(PropertyData));
 
-			Value = uint8(uint8((*Update.field_ping().data())));
+			Value = uint8(uint8((*Update.field_remoteviewpitch().data())));
 
 			ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
@@ -1169,214 +1173,163 @@ void USpatialTypeBinding_PlayerState::ReceiveUpdate_MultiClient(USpatialActorCha
 				Handle);
 		}
 	}
-	if (!Update.field_playername().empty())
+	if (!Update.field_controller().empty())
 	{
-		// field_playername
+		// field_controller
 		uint16 Handle = 18;
 		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
 		if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))
 		{
+			bool bWriteObjectProperty = true;
 			uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));
-			FString Value = *(reinterpret_cast<FString const*>(PropertyData));
-
-			Value = FString(UTF8_TO_TCHAR((*Update.field_playername().data()).c_str()));
-
-			ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
-
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId().ToSpatialEntityId(),
-				*RepData->Property->GetName(),
-				Handle);
-		}
-	}
-	if (!Update.field_playerid().empty())
-	{
-		// field_playerid
-		uint16 Handle = 19;
-		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
-		if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))
-		{
-			uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));
-			int32 Value = *(reinterpret_cast<int32 const*>(PropertyData));
-
-			Value = (*Update.field_playerid().data());
-
-			ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
-
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId().ToSpatialEntityId(),
-				*RepData->Property->GetName(),
-				Handle);
-		}
-	}
-	if (!Update.field_bfrompreviouslevel().empty())
-	{
-		// field_bfrompreviouslevel
-		uint16 Handle = 20;
-		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
-		if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))
-		{
-			uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));
-			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
-
-			Value = (*Update.field_bfrompreviouslevel().data());
-
-			ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
-
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId().ToSpatialEntityId(),
-				*RepData->Property->GetName(),
-				Handle);
-		}
-	}
-	if (!Update.field_bisabot().empty())
-	{
-		// field_bisabot
-		uint16 Handle = 21;
-		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
-		if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))
-		{
-			uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));
-			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
-
-			Value = (*Update.field_bisabot().data());
-
-			ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
-
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId().ToSpatialEntityId(),
-				*RepData->Property->GetName(),
-				Handle);
-		}
-	}
-	if (!Update.field_bisinactive().empty())
-	{
-		// field_bisinactive
-		uint16 Handle = 22;
-		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
-		if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))
-		{
-			uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));
-			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
-
-			Value = (*Update.field_bisinactive().data());
-
-			ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
-
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId().ToSpatialEntityId(),
-				*RepData->Property->GetName(),
-				Handle);
-		}
-	}
-	if (!Update.field_bisspectator().empty())
-	{
-		// field_bisspectator
-		uint16 Handle = 23;
-		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
-		if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))
-		{
-			uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));
-			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
-
-			Value = (*Update.field_bisspectator().data());
-
-			ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
-
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId().ToSpatialEntityId(),
-				*RepData->Property->GetName(),
-				Handle);
-		}
-	}
-	if (!Update.field_bonlyspectator().empty())
-	{
-		// field_bonlyspectator
-		uint16 Handle = 24;
-		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
-		if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))
-		{
-			uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));
-			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
-
-			Value = (*Update.field_bonlyspectator().data());
-
-			ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
-
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId().ToSpatialEntityId(),
-				*RepData->Property->GetName(),
-				Handle);
-		}
-	}
-	if (!Update.field_starttime().empty())
-	{
-		// field_starttime
-		uint16 Handle = 25;
-		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
-		if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))
-		{
-			uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));
-			int32 Value = *(reinterpret_cast<int32 const*>(PropertyData));
-
-			Value = (*Update.field_starttime().data());
-
-			ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
-
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId().ToSpatialEntityId(),
-				*RepData->Property->GetName(),
-				Handle);
-		}
-	}
-	if (!Update.field_uniqueid().empty())
-	{
-		// field_uniqueid
-		uint16 Handle = 26;
-		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
-		if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))
-		{
-			uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));
-			FUniqueNetIdRepl Value = *(reinterpret_cast<FUniqueNetIdRepl const*>(PropertyData));
+			AController* Value = *(reinterpret_cast<AController* const*>(PropertyData));
 
 			{
-				auto& ValueDataStr = (*Update.field_uniqueid().data());
-				TArray<uint8> ValueData;
-				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
-				FMemoryReader ValueDataReader(ValueData);
-				bool bSuccess;
-				Value.NetSerialize(ValueDataReader, PackageMap, bSuccess);
+				improbable::unreal::UnrealObjectRef ObjectRef = (*Update.field_controller().data());
+				check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+				if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
+				{
+					Value = nullptr;
+				}
+				else
+				{
+					FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+					if (NetGUID.IsValid())
+					{
+						UObject* Object_Raw = PackageMap->GetObjectFromNetGUID(NetGUID, true);
+						checkf(Object_Raw, TEXT("An object ref %s should map to a valid object."), *ObjectRefToString(ObjectRef));
+						Value = dynamic_cast<AController*>(Object_Raw);
+						checkf(Value, TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
+					}
+					else
+					{
+						UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
+							*Interop->GetSpatialOS()->GetWorkerId(),
+							*ObjectRefToString(ObjectRef),
+							*ActorChannel->Actor->GetName(),
+							ActorChannel->GetEntityId().ToSpatialEntityId(),
+							*RepData->Property->GetName(),
+							Handle);
+						bWriteObjectProperty = false;
+						Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);
+					}
+				}
 			}
 
-			ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+			if (bWriteObjectProperty)
+			{
+				ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId().ToSpatialEntityId(),
-				*RepData->Property->GetName(),
-				Handle);
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					*ActorChannel->Actor->GetName(),
+					ActorChannel->GetEntityId().ToSpatialEntityId(),
+					*RepData->Property->GetName(),
+					Handle);
+			}
 		}
 	}
 	Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);
 }
 
-void USpatialTypeBinding_PlayerState::ReceiveUpdate_Migratable(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerStateMigratableData::Update& Update) const
+void USpatialTypeBinding_WheeledVehicle::ReceiveUpdate_Migratable(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealWheeledVehicleMigratableData::Update& Update) const
 {
+}
+
+void USpatialTypeBinding_WheeledVehicle::ServerUpdateState_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)
+{
+	FFrame& Stack = *RPCFrame;
+	P_GET_PROPERTY(UFloatProperty, InSteeringInput);
+	P_GET_PROPERTY(UFloatProperty, InThrottleInput);
+	P_GET_PROPERTY(UFloatProperty, InBrakeInput);
+	P_GET_PROPERTY(UFloatProperty, InHandbrakeInput);
+	P_GET_PROPERTY(UIntProperty, CurrentGear);
+
+	auto Sender = [this, Connection, TargetObject, InSteeringInput, InThrottleInput, InBrakeInput, InHandbrakeInput, CurrentGear]() mutable -> FRPCCommandRequestResult
+	{
+		// Resolve TargetObject.
+		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
+		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+		{
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: RPC ServerUpdateState queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
+			return {TargetObject};
+		}
+
+		// Build request.
+		improbable::unreal::UnrealServerUpdateStateRequest Request;
+		Request.set_field_insteeringinput(InSteeringInput);
+		Request.set_field_inthrottleinput(InThrottleInput);
+		Request.set_field_inbrakeinput(InBrakeInput);
+		Request.set_field_inhandbrakeinput(InHandbrakeInput);
+		Request.set_field_currentgear(CurrentGear);
+
+		// Send command request.
+		Request.set_target_subobject_offset(TargetObjectRef.offset());
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending RPC: ServerUpdateState, target: %s %s"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*TargetObject->GetName(),
+			*ObjectRefToString(TargetObjectRef));
+		auto RequestId = Connection->SendCommandRequest<improbable::unreal::UnrealWheeledVehicleServerRPCs::Commands::Serverupdatestate>(TargetObjectRef.entity(), Request, 0);
+		return {RequestId.Id};
+	};
+	Interop->SendCommandRequest_Internal(Sender, /*bReliable*/ true);
+}
+
+void USpatialTypeBinding_WheeledVehicle::ServerUpdateState_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::UnrealWheeledVehicleServerRPCs::Commands::Serverupdatestate>& Op)
+{
+	auto Receiver = [this, Op]() mutable -> FRPCCommandResponseResult
+	{
+		improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
+		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
+		if (!TargetNetGUID.IsValid())
+		{
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: ServerUpdateState_OnCommandRequest: Target object %s is not resolved on this worker."),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ObjectRefToString(TargetObjectRef));
+			return {TargetObjectRef};
+		}
+		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+		UWheeledVehicleMovementComponent* TargetObject = Cast<UWheeledVehicleMovementComponent>(TargetObjectUntyped);
+		checkf(TargetObjectUntyped, TEXT("%s: ServerUpdateState_OnCommandRequest: Object Ref %s (NetGUID %s) does not correspond to a UObject."),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*ObjectRefToString(TargetObjectRef),
+			*TargetNetGUID.ToString());
+		checkf(TargetObject, TEXT("%s: ServerUpdateState_OnCommandRequest: Object Ref %s (NetGUID %s) is the wrong type. Name: %s"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*ObjectRefToString(TargetObjectRef),
+			*TargetNetGUID.ToString(),
+			*TargetObjectUntyped->GetName());
+
+		// Declare parameters.
+		float InSteeringInput;
+		float InThrottleInput;
+		float InBrakeInput;
+		float InHandbrakeInput;
+		int32 CurrentGear;
+
+		// Extract from request data.
+		InSteeringInput = Op.Request.field_insteeringinput();
+		InThrottleInput = Op.Request.field_inthrottleinput();
+		InBrakeInput = Op.Request.field_inbrakeinput();
+		InHandbrakeInput = Op.Request.field_inhandbrakeinput();
+		CurrentGear = Op.Request.field_currentgear();
+
+		// Call implementation.
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received RPC: ServerUpdateState, target: %s %s"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*TargetObject->GetName(),
+			*ObjectRefToString(TargetObjectRef));
+		TargetObject->ServerUpdateState_Implementation(InSteeringInput, InThrottleInput, InBrakeInput, InHandbrakeInput, CurrentGear);
+
+		// Send command response.
+		TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();
+		Connection->SendCommandResponse<improbable::unreal::UnrealWheeledVehicleServerRPCs::Commands::Serverupdatestate>(Op.RequestId, {});
+		return {};
+	};
+	Interop->SendCommandResponse_Internal(Receiver);
+}
+
+void USpatialTypeBinding_WheeledVehicle::ServerUpdateState_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::UnrealWheeledVehicleServerRPCs::Commands::Serverupdatestate>& Op)
+{
+	Interop->HandleCommandResponse_Internal(TEXT("ServerUpdateState"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));
 }

@@ -20,7 +20,7 @@ class USpatialNetDriver;
 
 // A replacement actor channel that plugs into the Engine's replication system and works with SpatialOS
 UCLASS(Transient)
-class NUF_API USpatialActorChannel : public UActorChannel
+class SPATIALGDK_API USpatialActorChannel : public UActorChannel
 {
 	GENERATED_BODY()
 
