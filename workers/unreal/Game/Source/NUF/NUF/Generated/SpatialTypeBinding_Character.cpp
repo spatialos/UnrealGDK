@@ -119,6 +119,11 @@ void USpatialTypeBinding_Character::BindToView()
 		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealCharacterSingleClientRepData>([this](
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientRepData>& Op)
 		{
+			// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
+			if (HasAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealCharacterSingleClientRepData::ComponentId))
+			{
+				return;
+			}
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			check(ActorChannel);
 			ReceiveUpdate_SingleClient(ActorChannel, Op.Update);
@@ -126,6 +131,11 @@ void USpatialTypeBinding_Character::BindToView()
 		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealCharacterMultiClientRepData>([this](
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientRepData>& Op)
 		{
+			// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
+			if (HasAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealCharacterMultiClientRepData::ComponentId))
+			{
+				return;
+			}
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			check(ActorChannel);
 			ReceiveUpdate_MultiClient(ActorChannel, Op.Update);
@@ -133,6 +143,11 @@ void USpatialTypeBinding_Character::BindToView()
 		ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::UnrealCharacterMigratableData>([this](
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMigratableData>& Op)
 		{
+			// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
+			if (HasAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealCharacterMigratableData::ComponentId))
+			{
+				return;
+			}
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			check(ActorChannel);
 			ReceiveUpdate_Migratable(ActorChannel, Op.Update);
@@ -173,20 +188,6 @@ void USpatialTypeBinding_Character::BindToView()
 void USpatialTypeBinding_Character::UnbindFromView()
 {
 	ViewCallbacks.Reset();
-}
-
-worker::ComponentId USpatialTypeBinding_Character::GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const
-{
-	switch (Group)
-	{
-	case GROUP_SingleClient:
-		return improbable::unreal::UnrealCharacterSingleClientRepData::ComponentId;
-	case GROUP_MultiClient:
-		return improbable::unreal::UnrealCharacterMultiClientRepData::ComponentId;
-	default:
-		checkNoEntry();
-		return 0;
-	}
 }
 
 worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const
@@ -317,6 +318,20 @@ void USpatialTypeBinding_Character::ReceiveAddComponent(USpatialActorChannel* Ch
 	}
 }
 
+worker::Map<worker::ComponentId, worker::InterestOverride> USpatialTypeBinding_Character::GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const
+{
+	worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
+	if (bIsClient)
+	{
+		if (!bAutonomousProxy)
+		{
+			Interest.emplace(improbable::unreal::UnrealCharacterSingleClientRepData::ComponentId, worker::InterestOverride{false});
+		}
+		Interest.emplace(improbable::unreal::UnrealCharacterMigratableData::ComponentId, worker::InterestOverride{false});
+	}
+	return Interest;
+}
+
 void USpatialTypeBinding_Character::BuildSpatialComponentUpdate(
 	const FPropertyChangeState& Changes,
 	USpatialActorChannel* Channel,
@@ -338,7 +353,7 @@ void USpatialTypeBinding_Character::BuildSpatialComponentUpdate(
 		{
 			const FRepLayoutCmd& Cmd = Changes.RepCmds[HandleIterator.CmdIndex];
 			const FRepHandleData& PropertyMapData = RepPropertyMap[HandleIterator.Handle];
-			const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
+			const uint8* Data = PropertyMapData.GetPropertyData(Changes.SourceData) + HandleIterator.ArrayOffset;
 			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*Channel->Actor->GetName(),

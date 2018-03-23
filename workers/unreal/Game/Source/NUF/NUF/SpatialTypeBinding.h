@@ -3,6 +3,7 @@
 #pragma once
 
 #include <improbable/worker.h>
+#include <improbable/view.h>
 
 #include "CoreMinimal.h"
 #include "Net/RepLayout.h"
@@ -30,6 +31,25 @@ FORCEINLINE EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Co
 	default:
 		return GROUP_MultiClient;
 	}
+}
+
+// TODO: Remove once we've upgraded to 14.0 and can disable component short circuiting. See TIG-137.
+FORCEINLINE bool HasAuthority(TWeakPtr<worker::View> View, const worker::EntityId EntityId, const worker::ComponentId ComponentId)
+{
+	TSharedPtr<worker::View> PinnedView = View.Pin();
+	if (PinnedView.IsValid())
+	{
+		auto It = PinnedView->ComponentAuthority.find(EntityId);
+		if (It != PinnedView->ComponentAuthority.end())
+		{
+			auto ComponentIt = (*It).second.find(ComponentId);
+			if (ComponentIt != (*It).second.end())
+			{
+				return (*ComponentIt).second == worker::Authority::kAuthoritative;
+			}
+		}
+	}
+	return false;
 }
 
 // Storage for a changelist created by the replication system when replicating from the server.
@@ -88,6 +108,8 @@ public:
 	UProperty* Property;
 	ELifetimeCondition Condition;
 	ELifetimeRepNotifyCondition RepNotifyCondition;
+
+private:
 	int32 Offset;
 };
 
@@ -191,7 +213,6 @@ public:
 	virtual void Init(USpatialInterop* Interop, USpatialPackageMapClient* PackageMap);
 	virtual void BindToView() PURE_VIRTUAL(USpatialTypeBinding::BindToView, );
 	virtual void UnbindFromView() PURE_VIRTUAL(USpatialTypeBinding::UnbindFromView, );
-	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const PURE_VIRTUAL(USpatialTypeBinding::GetReplicatedGroupComponentId, return worker::ComponentId{}; );
 	virtual UClass* GetBoundClass() const PURE_VIRTUAL(USpatialTypeBinding::GetBoundClass, return nullptr; );
 
 	virtual worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const PURE_VIRTUAL(USpatialTypeBinding::CreateActorEntity, return worker::Entity{}; );
@@ -199,6 +220,7 @@ public:
 	virtual void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) PURE_VIRTUAL(USpatialTypeBinding::SendRPCCommand, );
 	
 	virtual void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const PURE_VIRTUAL(USpatialTypeBinding::ReceiveAddComponent, );
+	virtual worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const PURE_VIRTUAL(USpatialTypeBinding::GetInterestOverrideMap, return {}; );
 
 protected:
 	UPROPERTY()

@@ -70,7 +70,7 @@ using FPendingIncomingRPCMap = TMap<FHashableUnrealObjectRef, TArray<FRPCCommand
 // Helper function to write incoming replicated property data to an object.
 FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& RepHandleData, UObject* Object, const void* Value, TArray<UProperty*>& RepNotifies)
 {
-	uint8* Dest = reinterpret_cast<uint8*>(Object) + RepHandleData.Offset;
+	uint8* Dest = RepHandleData.GetPropertyData(reinterpret_cast<uint8*>(Object));
 
 	// If value has changed, add to rep notify list.
 	if (RepHandleData.Property->HasAnyPropertyFlags(CPF_RepNotify))
@@ -211,7 +211,7 @@ private:
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
 	void UnregisterInteropType(UClass* Class);
 
-	void SetComponentInterests_Client(USpatialActorChannel* ActorChannel, const FEntityId& EntityId);
+	void SendComponentInterests(USpatialActorChannel* ActorChannel, const FEntityId& EntityId);
 
 	void ResolvePendingOutgoingObjectUpdates(UObject* Object);
 	void ResolvePendingOutgoingRPCs(UObject* Object);

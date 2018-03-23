@@ -212,11 +212,8 @@ void USpatialInterop::AddActorChannel(const FEntityId& EntityId, USpatialActorCh
 {
 	EntityToActorChannel.Add(EntityId, Channel);
 
-	// Set up component interests to receive single client component updates (now that roles have been set up).
-	if (NetDriver->GetNetMode() == NM_Client)
-	{
-		SetComponentInterests_Client(Channel, EntityId);
-	}
+	// Set up component interests to adjust which components are being received.
+	SendComponentInterests(Channel, EntityId);
 }
 
 void USpatialInterop::RemoveActorChannel(const FEntityId& EntityId)
@@ -385,24 +382,15 @@ void USpatialInterop::UnregisterInteropType(UClass* Class)
 	}
 }
 
-void USpatialInterop::SetComponentInterests_Client(USpatialActorChannel* ActorChannel, const FEntityId& EntityId)
+void USpatialInterop::SendComponentInterests(USpatialActorChannel* ActorChannel, const FEntityId& EntityId)
 {
 	UClass* ActorClass = ActorChannel->Actor->GetClass();
-	// Are we the autonomous proxy?
-	if (ActorChannel->Actor->Role == ROLE_AutonomousProxy)
+
+	const USpatialTypeBinding* Binding = GetTypeBindingByClass(ActorClass);
+	if (Binding)
 	{
-		// We want to receive single client updates.
-		const USpatialTypeBinding* Binding = GetTypeBindingByClass(ActorClass);
-		if (Binding)
-		{
-			worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
-			Interest.emplace(Binding->GetReplicatedGroupComponentId(GROUP_SingleClient), worker::InterestOverride{true});
-			SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId.ToSpatialEntityId(), Interest);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: We are the owning client of %s (%lld), therefore we want single client updates."),
-				*SpatialOSInstance->GetWorkerConfiguration().GetWorkerId(),
-				*ActorChannel->Actor->GetName(),
-				EntityId.ToSpatialEntityId());
-		}
+		auto Interest = Binding->GetInterestOverrideMap(NetDriver->GetNetMode() == NM_Client, ActorChannel->Actor->Role == ROLE_AutonomousProxy);
+		SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId.ToSpatialEntityId(), Interest);
 	}
 }
 

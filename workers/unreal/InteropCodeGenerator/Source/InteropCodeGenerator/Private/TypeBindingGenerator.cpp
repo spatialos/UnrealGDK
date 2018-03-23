@@ -360,13 +360,13 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		void Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap) override;
 		void BindToView() override;
 		void UnbindFromView() override;
-		worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
 
 		worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 		void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const override;
 		void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) override;
 
-		void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;)""");
+		void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;
+		worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const override;)""");
 	HeaderWriter.PrintNewLine();
 	HeaderWriter.Outdent().Print("private:").Indent();
 	HeaderWriter.Print("improbable::unreal::callbacks::FScopedViewCallbacks ViewCallbacks;");
@@ -513,9 +513,6 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	GenerateFunction_UnbindFromView(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_GetReplicatedGroupComponentId(SourceWriter, Class);
-
-	SourceWriter.PrintNewLine();
 	GenerateFunction_CreateActorEntity(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
@@ -526,6 +523,9 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_ReceiveAddComponent(SourceWriter, Class);
+
+	SourceWriter.PrintNewLine();
+	GenerateFunction_GetInterestOverrideMap(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_BuildSpatialComponentUpdate(SourceWriter, Class);
@@ -705,11 +705,16 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 		SourceWriter.Printf("ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::%s>([this](",
 			*SchemaReplicatedDataName(Group, Class));
 		SourceWriter.Indent();
-		SourceWriter.Printf("const worker::ComponentUpdateOp<improbable::unreal::%s>& Op)",
-			*SchemaReplicatedDataName(Group, Class));
+		SourceWriter.Printf("const worker::ComponentUpdateOp<improbable::unreal::%s>& Op)", *SchemaReplicatedDataName(Group, Class));
 		SourceWriter.Outdent();
 		SourceWriter.Print("{");
 		SourceWriter.Indent();
+		SourceWriter.Printf(R"""(
+			// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
+			if (HasAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::%s::ComponentId))
+			{
+				return;
+			})""", *SchemaReplicatedDataName(Group, Class));
 		SourceWriter.Printf(R"""(
 			USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 			check(ActorChannel);
@@ -724,6 +729,12 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 	SourceWriter.Outdent();
 	SourceWriter.Print("{");
 	SourceWriter.Indent();
+	SourceWriter.Printf(R"""(
+		// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
+		if (HasAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::%s::ComponentId))
+		{
+			return;
+		})""", *SchemaMigratableDataName(Class));
 	SourceWriter.Print(R"""(
 		USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 		check(ActorChannel);
@@ -767,29 +778,6 @@ void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class)
 {
 	SourceWriter.BeginFunction({"void", "UnbindFromView()"}, TypeBindingName(Class));
 	SourceWriter.Print("ViewCallbacks.Reset();");
-	SourceWriter.End();
-}
-
-void GenerateFunction_GetReplicatedGroupComponentId(FCodeWriter& SourceWriter, UClass* Class)
-{
-	SourceWriter.BeginFunction(
-		{"worker::ComponentId", "GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const"},
-		TypeBindingName(Class));
-
-	SourceWriter.Print("switch (Group)");
-	SourceWriter.BeginScope();
-	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
-	{
-		SourceWriter.Outdent();
-		SourceWriter.Printf("case GROUP_%s:", *GetReplicatedPropertyGroupName(Group));
-		SourceWriter.Indent();
-		SourceWriter.Printf("return improbable::unreal::%s::ComponentId;", *SchemaReplicatedDataName(Group, Class));
-	}
-	SourceWriter.Outdent().Print("default:").Indent();
-	SourceWriter.Print("checkNoEntry();");
-	SourceWriter.Print("return 0;");
-	SourceWriter.End();
-
 	SourceWriter.End();
 }
 
@@ -1001,6 +989,27 @@ void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Cla
 	SourceWriter.End();
 }
 
+void GenerateFunction_GetInterestOverrideMap(FCodeWriter& SourceWriter, UClass* Class)
+{
+	SourceWriter.BeginFunction(
+		{"worker::Map<worker::ComponentId, worker::InterestOverride>", "GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const"},
+		TypeBindingName(Class));
+	SourceWriter.Printf(R"""(
+		worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
+		if (bIsClient)
+		{
+			if (!bAutonomousProxy)
+			{
+				Interest.emplace(improbable::unreal::%s::ComponentId, worker::InterestOverride{false});
+			}
+			Interest.emplace(improbable::unreal::%s::ComponentId, worker::InterestOverride{false});
+		}
+		return Interest;)""",
+		*SchemaReplicatedDataName(REP_SingleClient, Class),
+		*SchemaMigratableDataName(Class));
+	SourceWriter.End();
+}
+
 void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UClass* Class)
 {
 	FFunctionSignature BuildComponentUpdateSignature;
@@ -1033,7 +1042,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 	SourceWriter.Print(R"""(
 		const FRepLayoutCmd& Cmd = Changes.RepCmds[HandleIterator.CmdIndex];
 		const FRepHandleData& PropertyMapData = RepPropertyMap[HandleIterator.Handle];
-		const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
+		const uint8* Data = PropertyMapData.GetPropertyData(Changes.SourceData) + HandleIterator.ArrayOffset;
 		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*Channel->Actor->GetName(),
