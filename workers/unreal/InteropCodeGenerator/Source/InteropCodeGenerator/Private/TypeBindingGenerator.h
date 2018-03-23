@@ -24,7 +24,7 @@ void GenerateUnrealToSchemaConversion(
 void GeneratePropertyToUnrealConversion(
 	FCodeWriter& Writer,
 	const FString& Update,
-	const TSharedPtr<FUnrealProperty> PropertyNode,
+	const UProperty* Property,
 	const FString& PropertyValue,
 	const bool bIsUpdate,
 	TFunction<void(const FString&)> ObjectResolveFailureGenerator);

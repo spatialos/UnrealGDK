@@ -65,7 +65,8 @@ FString PropertyToWorkerSDKType(UProperty* Property) {
 		{
 			DataType = TEXT("improbable::unreal::UnrealFPlane");
 		}
-		else {
+		else 
+		{
 			DataType = TEXT("std::string"); //this includes RepMovement and UniqueNetId
 		}
 	}
@@ -224,19 +225,19 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 
 		Writer.BeginScope();
 
-		Writer.Printf("const TArray<%s>& ValueArray = *(const TArray<%s>*)%s;", *(ArrayProperty->Inner->GetCPPType()), *(ArrayProperty->Inner->GetCPPType()), *PropertyValue);
-		Writer.Printf("::worker::List<%s> list;", *PropertyToWorkerSDKType(ArrayProperty->Inner));
+		Writer.Printf("const TArray<%s>& ValueArray = *(const TArray<%s>*)%s;", *ArrayProperty->Inner->GetCPPType(), *ArrayProperty->Inner->GetCPPType(), *PropertyValue);
+		Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(ArrayProperty->Inner));
 
 		Writer.Printf("for(int i = 0; i < %s->Num(); i++)", *PropertyValue);
 		Writer.BeginScope();
 
-		GenerateUnrealToSchemaConversion(Writer, "auto&& temp = ", ArrayProperty->Inner, "ValueArray[i]", bIsUpdate, ObjectResolveFailureGenerator);
+		GenerateUnrealToSchemaConversion(Writer, "auto&& ElementData = ", ArrayProperty->Inner, "ValueArray[i]", bIsUpdate, ObjectResolveFailureGenerator);
 
-		Writer.Print("list.emplace_back(temp);");
+		Writer.Print("List.emplace_back(ElementData);");
 
 		Writer.End();
 
-		Writer.Printf("%s(list);", *Update);
+		Writer.Printf("%s(List);", *Update);
 
 		Writer.End();
 	}
@@ -380,13 +381,13 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 		const UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 
 		Writer.BeginScope();
-		Writer.Printf("auto& list = %s;", *Update);
-		Writer.Printf("%s.SetNum(list.size());", *PropertyValue);
-		Writer.Print("for (int i = 0; i < list.size(); i++)");
+		Writer.Printf("auto& List = %s;", *Update);
+		Writer.Printf("%s.SetNum(List.size());", *PropertyValue);
+		Writer.Print("for(int i = 0; i < List.size(); i++)");
 		Writer.BeginScope();
-		Writer.Printf("%s Temp;", *(ArrayProperty->Inner->GetCPPType()));
-		GeneratePropertyToUnrealConversion(Writer, "list[i]", ArrayProperty->Inner, "Temp", true, ObjectResolveFailureGenerator);
-		Writer.Printf("%s[i] = Temp;", *PropertyValue);
+		//Writer.Printf("%s Temp;", *(ArrayProperty->Inner->GetCPPType()));
+		GeneratePropertyToUnrealConversion(Writer, "List[i]", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), true, ObjectResolveFailureGenerator);
+		//Writer.Printf("%s[i] = Temp;", *PropertyValue);
 		Writer.End();
 		Writer.End();
 	}

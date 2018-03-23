@@ -86,7 +86,7 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/NUF/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 
-	TArray<FString> Classes = { TEXT("PlayerController"), TEXT("PlayerState"), TEXT("NUFCharacter"), TEXT("WheeledVehicle") };
+	TArray<FString> Classes = {TEXT("PlayerController"), TEXT("PlayerState"), TEXT("NUFCharacter"), TEXT("WheeledVehicle")};
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
 		// Component IDs 100000 to 100009 reserved for other NUF components.

@@ -823,13 +823,13 @@ void USpatialTypeBinding_NUFCharacter::ServerSendUpdate_MultiClient(const uint8*
 
 			{
 				const TArray<FVector>& ValueArray = *(const TArray<FVector>*)Value;
-				::worker::List<improbable::Vector3f> list;
+				::worker::List<improbable::Vector3f> List;
 				for(int i = 0; i < Value->Num(); i++)
 				{
-					auto&& temp = (improbable::Vector3f(ValueArray[i].X, ValueArray[i].Y, ValueArray[i].Z));
-					list.emplace_back(temp);
+					auto&& ElementData = (improbable::Vector3f(ValueArray[i].X, ValueArray[i].Y, ValueArray[i].Z));
+					List.emplace_back(ElementData);
 				}
-				OutUpdate.set_field_myarray(list);
+				OutUpdate.set_field_myarray(List);
 			}
 			break;
 		}
@@ -2200,18 +2200,16 @@ void USpatialTypeBinding_NUFCharacter::ReceiveUpdate_MultiClient(USpatialActorCh
 			TArray<FVector> Value = *(reinterpret_cast<TArray<FVector> *>(PropertyData));
 
 			{
-				auto& list = (*Update.field_myarray().data());
-				Value.SetNum(list.size());
-				for (int i = 0; i < list.size(); i++)
+				auto& List = (*Update.field_myarray().data());
+				Value.SetNum(List.size());
+				for(int i = 0; i < List.size(); i++)
 				{
-					FVector Temp;
 					{
-						auto& Vector = list[i];
-						Temp.X = Vector.x();
-						Temp.Y = Vector.y();
-						Temp.Z = Vector.z();
+						auto& Vector = List[i];
+						Value[i].X = Vector.x();
+						Value[i].Y = Vector.y();
+						Value[i].Z = Vector.z();
 					}
-					Value[i] = Temp;
 				}
 			}
 

@@ -65,8 +65,8 @@ FString PropertyToSchemaType(UProperty* Property)
 
 	if (Property->IsA(UStructProperty::StaticClass()))
 	{
-		UStructProperty * StructProp = Cast<UStructProperty>(Property);
-		UScriptStruct * Struct = StructProp->Struct;
+		UStructProperty* StructProp = Cast<UStructProperty>(Property);
+		UScriptStruct* Struct = StructProp->Struct;
 		if (Struct->GetFName() == NAME_Vector ||
 			Struct->GetName() == TEXT("Vector_NetQuantize100") ||
 			Struct->GetName() == TEXT("Vector_NetQuantize10") ||
@@ -83,7 +83,8 @@ FString PropertyToSchemaType(UProperty* Property)
 		{
 			DataType = TEXT("UnrealFPlane");
 		}
-		else {
+		else
+		{
 			DataType = TEXT("bytes"); //this includes RepMovement and UniqueNetId
 		}
 	}
@@ -124,7 +125,8 @@ FString PropertyToSchemaType(UProperty* Property)
 		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner);
 		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
 	}
-	else {
+	else
+	{
 		DataType = TEXT("bytes");
 	}
 
