@@ -18,7 +18,6 @@ public class NUF : ModuleRules
 				"HeadMountedDisplay",
 				"Sockets",
 				"OnlineSubsystemUtils",
-				"SpatialOS",
 				"PhysXVehicles",
 				"SpatialGDK"
 			});
