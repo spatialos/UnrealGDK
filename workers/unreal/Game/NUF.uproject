@@ -4,14 +4,14 @@
 	"Category": "",
 	"Description": "",
 	"Modules": [
-    {
-      "Name": "NUF",
-      "Type": "Runtime",
-      "LoadingPhase": "Default",
-      "AdditionalDependencies": [
-        "Engine"
-      ]
-    },
+		{
+			"Name": "NUF",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		},
 		{
 			"Name": "SpatialGDK",
 			"Type": "Runtime",
