@@ -13,8 +13,6 @@
 #include <improbable/unreal/spawner.h>
 #include <improbable/unreal/level_data.h>
 
-#include "Generated/SpatialTypeBinding_Character.h"
-
 DEFINE_LOG_CATEGORY(LogSpatialOSSnapshot);
 
 using namespace improbable;

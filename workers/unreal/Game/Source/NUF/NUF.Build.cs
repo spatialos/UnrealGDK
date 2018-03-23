@@ -9,18 +9,18 @@ public class NUF : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(
-            new string[] 
-            {
-                "Core",
-                "CoreUObject",
-                "Engine",
-                "InputCore",
-                "HeadMountedDisplay",
-                "Sockets",
-                "OnlineSubsystemUtils",
-                "SpatialOS",
-                "PhysXVehicles",
-                "SpatialGDK"
-            });
+			new string[] 
+			{
+				"Core",
+				"CoreUObject",
+				"Engine",
+				"InputCore",
+				"HeadMountedDisplay",
+				"Sockets",
+				"OnlineSubsystemUtils",
+				"SpatialOS",
+				"PhysXVehicles",
+				"SpatialGDK"
+			});
 	}
 }
