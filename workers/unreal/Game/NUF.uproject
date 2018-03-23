@@ -1,16 +1,21 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{1883E5BF-452C-CD29-3D9A-168FAF6D0ABC}",
+	"EngineAssociation": "{1AAA3687-4621-3C9A-DB80-16AF1C56E67B}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
+    {
+      "Name": "NUF",
+      "Type": "Runtime",
+      "LoadingPhase": "Default",
+      "AdditionalDependencies": [
+        "Engine"
+      ]
+    },
 		{
-			"Name": "NUF",
+			"Name": "SpatialGDK",
 			"Type": "Runtime",
-			"LoadingPhase": "Default",
-			"AdditionalDependencies": [
-				"Engine"
-			]
+			"LoadingPhase": "Default"
 		}
 	],
 	"PostBuildSteps":

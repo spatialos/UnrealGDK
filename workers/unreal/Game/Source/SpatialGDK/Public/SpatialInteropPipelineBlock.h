@@ -40,7 +40,7 @@ struct FPendingAddComponentWrapper
 };
 
 UCLASS(BlueprintType)
-class NUF_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
+class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 {
 	GENERATED_BODY()
 

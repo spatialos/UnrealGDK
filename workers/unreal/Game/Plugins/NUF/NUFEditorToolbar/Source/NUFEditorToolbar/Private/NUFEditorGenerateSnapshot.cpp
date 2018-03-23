@@ -2,7 +2,7 @@
 
 #include "NUFEditorGenerateSnapshot.h"
 #include "EntityBuilder.h"
-#include "NUF/SpatialConstants.h"
+#include "SpatialConstants.h"
 #include "SpatialOSCommon.h"
 
 #include "GameFramework/Actor.h"
@@ -13,7 +13,7 @@
 #include <improbable/unreal/spawner.h>
 #include <improbable/unreal/level_data.h>
 
-#include "NUF/Generated/SpatialTypeBinding_Character.h"
+#include "Generated/SpatialTypeBinding_Character.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSSnapshot);
 

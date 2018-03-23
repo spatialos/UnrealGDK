@@ -17,7 +17,7 @@
 #include "PossessPawnRequest.h"
 #include "PossessPawnResponse.h"
 #include "NUFCharacter.h"
-#include "NUF/SpatialNetDriver.h"
+#include "SpatialNetDriver.h"
 #include "NUFGameStateBase.h"
 
 const FName AVehicleCppPawn::LookUpBinding("LookUp");

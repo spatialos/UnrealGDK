@@ -8,12 +8,19 @@ public class NUF : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "Sockets", "OnlineSubsystemUtils", "SpatialOS", "PhysXVehicles" });
-
-		if (UEBuildConfiguration.bBuildEditor == true)
-		{
-			// Required by UNUFGameInstance::StartPlayInEditorGameInstance.
-			PublicDependencyModuleNames.Add("UnrealEd");
-		}
+		PublicDependencyModuleNames.AddRange(
+            new string[] 
+            {
+                "Core",
+                "CoreUObject",
+                "Engine",
+                "InputCore",
+                "HeadMountedDisplay",
+                "Sockets",
+                "OnlineSubsystemUtils",
+                "SpatialOS",
+                "PhysXVehicles",
+                "SpatialGDK"
+            });
 	}
 }

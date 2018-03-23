@@ -10,7 +10,7 @@
 *
 */
 UCLASS()
-class NUF_API USpatialGameInstance : public UGameInstance
+class SPATIALGDK_API USpatialGameInstance : public UGameInstance
 {
 GENERATED_BODY()
 

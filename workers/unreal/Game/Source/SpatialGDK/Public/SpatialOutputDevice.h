@@ -6,7 +6,7 @@
 #include "Misc/OutputDevice.h"
 #include "SpatialOS.h"
 
-class NUF_API FSpatialOutputDevice : public FOutputDevice
+class SPATIALGDK_API FSpatialOutputDevice : public FOutputDevice
 {
 public:
 	FSpatialOutputDevice(USpatialOS* SpatialOSInstance, FString LoggerName);

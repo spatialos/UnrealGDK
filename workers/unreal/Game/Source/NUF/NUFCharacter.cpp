@@ -13,7 +13,7 @@
 #include "PossessPawnRequest.h"
 #include "PossessPawnResponse.h"
 #include "NUFGameStateBase.h"
-#include "NUF/SpatialNetDriver.h"
+#include "SpatialNetDriver.h"
 #include "VehicleCppPawn.h"
 
 //////////////////////////////////////////////////////////////////////////

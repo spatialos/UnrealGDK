@@ -340,7 +340,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		#include <improbable/unreal/unreal_metadata.h>
 		#include <improbable/unreal/generated/%s.h>
 		#include "ScopedViewCallbacks.h"
-		#include "../SpatialTypeBinding.h"
+		#include "SpatialTypeBinding.h"
 		#include "SpatialTypeBinding_%s.generated.h")""", *SchemaFilename, *Class->GetName());
 	HeaderWriter.PrintNewLine();
 
@@ -468,13 +468,13 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 		#include "SpatialOS.h"
 		#include "EntityBuilder.h"
 
-		#include "../SpatialConstants.h"
-		#include "../SpatialConditionMapFilter.h"
-		#include "../SpatialUnrealObjectRef.h"
-		#include "../SpatialActorChannel.h"
-		#include "../SpatialPackageMapClient.h"
-		#include "../SpatialNetDriver.h"
-		#include "../SpatialInterop.h")""", *InteropFilename);
+		#include "SpatialConstants.h"
+		#include "SpatialConditionMapFilter.h"
+		#include "SpatialUnrealObjectRef.h"
+		#include "SpatialActorChannel.h"
+		#include "SpatialPackageMapClient.h"
+		#include "SpatialNetDriver.h"
+		#include "SpatialInterop.h")""", *InteropFilename);
 	// TODO: Come up with a generic solution to include the right headers.
 	if (Class->GetName().Contains("WheeledVehicle"))
 	{

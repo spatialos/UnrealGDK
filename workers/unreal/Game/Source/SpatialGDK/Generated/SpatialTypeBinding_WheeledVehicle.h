@@ -8,7 +8,7 @@
 #include <improbable/unreal/unreal_metadata.h>
 #include <improbable/unreal/generated/UnrealWheeledVehicle.h>
 #include "ScopedViewCallbacks.h"
-#include "../SpatialTypeBinding.h"
+#include "SpatialTypeBinding.h"
 #include "SpatialTypeBinding_WheeledVehicle.generated.h"
 
 UCLASS()

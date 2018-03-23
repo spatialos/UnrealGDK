@@ -83,7 +83,7 @@ struct FRepHandleData
 using FRepHandlePropertyMap = TMap<int32, FRepHandleData>;
 
 UCLASS()
-class NUF_API USpatialTypeBinding : public UObject
+class SPATIALGDK_API USpatialTypeBinding : public UObject
 {
 	GENERATED_BODY()
 
