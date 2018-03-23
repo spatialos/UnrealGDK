@@ -11,7 +11,7 @@ class USpawnPlayerCommandResponder;
 class SpawnPlayerResponse;
 
 UCLASS()
-class NUF_API ASpatialSpawner : public AActor
+class SPATIALGDK_API ASpatialSpawner : public AActor
 {
 	GENERATED_BODY()
 	

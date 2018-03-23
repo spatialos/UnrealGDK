@@ -22,7 +22,7 @@ using SubobjectToOffsetMap = ::worker::Map< std::string, std::uint32_t >;
  * 
  */
 UCLASS()
-class NUF_API USpatialPackageMapClient : public UPackageMapClient
+class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()		
 public:
@@ -37,7 +37,7 @@ public:
 	void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);
 };
 
-class NUF_API FSpatialNetGUIDCache : public FNetGUIDCache
+class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 {
 public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);

@@ -37,7 +37,7 @@ private:
 };
 
 UCLASS()
-class NUF_API USpatialNetDriver : public UIpNetDriver
+class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 {
 	GENERATED_BODY()
 
