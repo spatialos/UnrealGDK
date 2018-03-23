@@ -189,7 +189,6 @@ worker::Entity USpatialTypeBinding_WheeledVehicle::CreateActorEntity(const FStri
 		.AddComponent<improbable::unreal::UnrealWheeledVehicleMigratableData>(MigratableData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealWheeledVehicleClientRPCs>(improbable::unreal::UnrealWheeledVehicleClientRPCs::Data{}, OwningClientOnly)
 		.AddComponent<improbable::unreal::UnrealWheeledVehicleServerRPCs>(improbable::unreal::UnrealWheeledVehicleServerRPCs::Data{}, WorkersOnly)
-		.AddComponent<nuf::PossessPawn>(nuf::PossessPawn::Data{}, WorkersOnly)
 		.Build();
 }
 

@@ -6,7 +6,6 @@
 #include "Commander.h"
 #include "EntityRegistry.h"
 #include "GameFramework/Character.h"
-#include "PossessPawnComponent.h"
 #include "NUFCharacter.generated.h"
 
 UCLASS(config=Game)
@@ -72,21 +71,6 @@ protected:
 	// End of APawn interface
 
 	void Interact();
-
-	UFUNCTION()
-	void OnPossessPawnRequest(UPossessPawnCommandResponder* Request);
-
-	UFUNCTION()
-	void OnPossessPawnRequestAck(const FSpatialOSCommandResult& Result, UPossessPawnResponse* Response);
-
-	UPROPERTY()
-	UPossessPawnComponent* PossessPawnComponent;
-	FPossessPawnCommandResultDelegate OnPossessPawnAckDelegate;
-
-	UPROPERTY()
-	UEntityRegistry* EntityRegistry;
-	UPROPERTY()
-	UCommander* Commander;
 
 public:
 	/** Returns CameraBoom subobject **/

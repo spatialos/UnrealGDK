@@ -254,7 +254,6 @@ worker::Entity USpatialTypeBinding_Character::CreateActorEntity(const FString& C
 		.AddComponent<improbable::unreal::UnrealCharacterMigratableData>(MigratableData, WorkersOnly)
 		.AddComponent<improbable::unreal::UnrealCharacterClientRPCs>(improbable::unreal::UnrealCharacterClientRPCs::Data{}, OwningClientOnly)
 		.AddComponent<improbable::unreal::UnrealCharacterServerRPCs>(improbable::unreal::UnrealCharacterServerRPCs::Data{}, WorkersOnly)
-		.AddComponent<nuf::PossessPawn>(nuf::PossessPawn::Data{}, WorkersOnly)
 		.Build();
 }
 
