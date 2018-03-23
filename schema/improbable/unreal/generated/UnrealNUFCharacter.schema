@@ -53,7 +53,8 @@ component UnrealNUFCharacterMultiClientRepData {
 	bytes field_reprootmotion_authoritativerootmotion = 41; // COND_SimulatedOnlyNoReplay
 	improbable.Vector3f field_reprootmotion_acceleration = 42; // COND_SimulatedOnlyNoReplay
 	improbable.Vector3f field_reprootmotion_linearvelocity = 43; // COND_SimulatedOnlyNoReplay
-	list<improbable.Vector3f> field_myarray = 44; // COND_None
+	list<int32> field_myarray = 44; // COND_None
+	bool field_brandomize = 45; // COND_None
 }
 component UnrealNUFCharacterWorkerRepData {
 	id = 100022;

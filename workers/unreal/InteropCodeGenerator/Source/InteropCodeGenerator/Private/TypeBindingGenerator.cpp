@@ -225,13 +225,12 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 
 		Writer.BeginScope();
 
-		Writer.Printf("const TArray<%s>& ValueArray = *(const TArray<%s>*)%s;", *ArrayProperty->Inner->GetCPPType(), *ArrayProperty->Inner->GetCPPType(), *PropertyValue);
 		Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(ArrayProperty->Inner));
 
-		Writer.Printf("for(int i = 0; i < %s->Num(); i++)", *PropertyValue);
+		Writer.Printf("for(int i = 0; i < %s.Num(); i++)", *PropertyValue);
 		Writer.BeginScope();
 
-		GenerateUnrealToSchemaConversion(Writer, "auto&& ElementData = ", ArrayProperty->Inner, "ValueArray[i]", bIsUpdate, ObjectResolveFailureGenerator);
+		GenerateUnrealToSchemaConversion(Writer, "auto&& ElementData = ", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), bIsUpdate, ObjectResolveFailureGenerator);
 
 		Writer.Print("List.emplace_back(ElementData);");
 
@@ -1145,7 +1144,7 @@ void GenerateFunction_ServerSendUpdate(FCodeWriter& SourceWriter, UClass* Class,
 			}
 			else if (Property->IsA <UArrayProperty>()) {
 				UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-				SourceWriter.Printf("const FScriptArray* %s = &(static_cast<UArrayProperty*>(Property)->GetPropertyValue(Data));", *PropertyValueName);
+				SourceWriter.Printf("const TArray<%s>& %s = *(reinterpret_cast<TArray<%s> const*>(Data));", *ArrayProperty->Inner->GetCPPType(), *PropertyValueName, *ArrayProperty->Inner->GetCPPType());
 			}
 			else
 			{

@@ -71,21 +71,23 @@ ANUFCharacter::ANUFCharacter()
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 
-	MyArray.Add(FVector(1, 1, 1));
-	MyArray.Add(FVector(2, 2, 2));
-	MyArray.Add(FVector(3, 3, 3));
-	MyArray.Add(FVector(4, 4, 4));
-	MyArray.Add(FVector(5, 5, 5));
+	MyArray.Add(1);
+	MyArray.Add(2);
+	MyArray.Add(3);
+	MyArray.Add(4);
+	MyArray.Add(5);
+
+	bRandomize = false;
 }
 
 void ANUFCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime); // Call parent class tick function  
 
-	if (HasAuthority()) {
-		//for (int i = 0; i < MyArray.Num(); i++) {
-		//	MyArray[i] = FVector(6, 6, 6);
-		//}
+	if (HasAuthority() && bRandomize) {
+		for (int i = 0; i < MyArray.Num(); i++) {
+			MyArray[i] = FMath::RandRange(0, 10);
+		}
 	}
 }
 
@@ -120,7 +122,7 @@ bool ANUFCharacter::TestRPC_Validate()
 
 void ANUFCharacter::TestRPC_Implementation()
 {
-	MyArray.Pop();
+	bRandomize = !bRandomize;
 }
 
 //////////////////////////////////////////////////////////////////////////

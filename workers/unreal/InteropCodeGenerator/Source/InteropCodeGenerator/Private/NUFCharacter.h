@@ -39,7 +39,10 @@ public:
 	void TestRPC_Implementation();
 
 	UPROPERTY(Replicated, VisibleAnywhere)
-	TArray<FVector> MyArray;
+	TArray<int> MyArray;
+
+	UPROPERTY(Replicated, VisibleAnywhere)
+	bool bRandomize;
 
 protected:
 

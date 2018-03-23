@@ -54,12 +54,6 @@ ANUFCharacter::ANUFCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
-
-	MyArray.Add(FVector(1, 1, 1));
-	MyArray.Add(FVector(2, 2, 2));
-	MyArray.Add(FVector(3, 3, 3));
-	MyArray.Add(FVector(4, 4, 4));
-	MyArray.Add(FVector(5, 5, 5));
 }
 
 void ANUFCharacter::Tick(float DeltaTime)

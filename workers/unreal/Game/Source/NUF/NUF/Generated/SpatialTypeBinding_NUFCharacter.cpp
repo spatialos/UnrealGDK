@@ -69,6 +69,7 @@ const FRepHandlePropertyMap& USpatialTypeBinding_NUFCharacter::GetHandleProperty
 		HandleToPropertyMap.Add(42, FRepHandleData(Class, {"RepRootMotion", "Acceleration"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
 		HandleToPropertyMap.Add(43, FRepHandleData(Class, {"RepRootMotion", "LinearVelocity"}, COND_SimulatedOnlyNoReplay, REPNOTIFY_OnChanged));
 		HandleToPropertyMap.Add(44, FRepHandleData(Class, {"MyArray"}, COND_None, REPNOTIFY_OnChanged));
+		HandleToPropertyMap.Add(45, FRepHandleData(Class, {"bRandomize"}, COND_None, REPNOTIFY_OnChanged));
 	}
 	return HandleToPropertyMap;
 }
@@ -819,18 +820,24 @@ void USpatialTypeBinding_NUFCharacter::ServerSendUpdate_MultiClient(const uint8*
 		}
 		case 44: // field_myarray
 		{
-			const FScriptArray* Value = &(static_cast<UArrayProperty*>(Property)->GetPropertyValue(Data));
+			const TArray<int32>& Value = *(reinterpret_cast<TArray<int32> const*>(Data));
 
 			{
-				const TArray<FVector>& ValueArray = *(const TArray<FVector>*)Value;
-				::worker::List<improbable::Vector3f> List;
-				for(int i = 0; i < Value->Num(); i++)
+				::worker::List<std::int32_t> List;
+				for(int i = 0; i < Value.Num(); i++)
 				{
-					auto&& ElementData = (improbable::Vector3f(ValueArray[i].X, ValueArray[i].Y, ValueArray[i].Z));
+					auto&& ElementData = (Value[i]);
 					List.emplace_back(ElementData);
 				}
 				OutUpdate.set_field_myarray(List);
 			}
+			break;
+		}
+		case 45: // field_brandomize
+		{
+			bool Value = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);
+
+			OutUpdate.set_field_brandomize(Value);
 			break;
 		}
 	default:
@@ -2197,21 +2204,38 @@ void USpatialTypeBinding_NUFCharacter::ReceiveUpdate_MultiClient(USpatialActorCh
 		if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))
 		{
 			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
-			TArray<FVector> Value = *(reinterpret_cast<TArray<FVector> *>(PropertyData));
+			TArray<int32> Value = *(reinterpret_cast<TArray<int32> *>(PropertyData));
 
 			{
 				auto& List = (*Update.field_myarray().data());
 				Value.SetNum(List.size());
 				for(int i = 0; i < List.size(); i++)
 				{
-					{
-						auto& Vector = List[i];
-						Value[i].X = Vector.x();
-						Value[i].Y = Vector.y();
-						Value[i].Z = Vector.z();
-					}
+					Value[i] = List[i];
 				}
 			}
+
+			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
+
+			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received property update. actor %s (%lld), property %s (handle %d)"),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*ActorChannel->Actor->GetName(),
+				ActorChannel->GetEntityId().ToSpatialEntityId(),
+				*RepData->Property->GetName(),
+				Handle);
+		}
+	}
+	if (!Update.field_brandomize().empty())
+	{
+		// field_brandomize
+		uint16 Handle = 45;
+		const FRepHandleData* RepData = &HandleToPropertyMap[Handle];
+		if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))
+		{
+			uint8* PropertyData = reinterpret_cast<uint8*>(ActorChannel->Actor) + RepData->Offset;
+			bool Value = static_cast<UBoolProperty*>(RepData->Property)->GetPropertyValue(PropertyData);
+
+			Value = (*Update.field_brandomize().data());
 
 			ApplyIncomingPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);
 
