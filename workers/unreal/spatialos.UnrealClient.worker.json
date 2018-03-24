@@ -11,10 +11,16 @@
     },
     "entity_interest": {
       "range_entity_interest": {
-        "radius": 2
+        "radius": 50
       }
     },
-    "streaming_query": [],
+    "streaming_query": [
+      {
+        "global_component_streaming_query": {
+          "component_name": "improbable.unreal.UnrealLevel"
+        }
+      }
+    ],
     "component_delivery": {
       "default": "RELIABLE_ORDERED",
       "checkout_all_initially": true

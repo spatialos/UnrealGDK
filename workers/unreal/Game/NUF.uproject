@@ -1,13 +1,24 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{8EAC0144-4E78-FB2B-D576-519AC143F70B}",
+	"EngineAssociation": "{1883E5BF-452C-CD29-3D9A-168FAF6D0ABC}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
 		{
 			"Name": "NUF",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
 		}
-	]
+	],
+	"PostBuildSteps":
+	{
+		"Win64": [
+			"cd /D \"$(ProjectDir)\"",
+			"spatial invoke unreal package --engineDir=\"$(EngineDir)\" --project=\"$(ProjectFile)\" --platform=\"$(TargetPlatform)\" --target=\"$(TargetType)\" --configuration=\"$(TargetConfiguration)\" -- -allmaps",
+			"exit /B %ERRORLEVEL%"
+		]
+	}
 }

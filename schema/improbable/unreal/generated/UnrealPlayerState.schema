@@ -1,0 +1,49 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Note that this file has been generated automatically
+package improbable.unreal;
+
+import "improbable/vector3.schema";
+import "improbable/unreal/core_types.schema";
+
+component UnrealPlayerStateSingleClientRepData {
+	id = 100015;
+}
+component UnrealPlayerStateMultiClientRepData {
+	id = 100016;
+	bool field_bhidden = 1; // COND_None
+	bool field_breplicatemovement = 2; // COND_None
+	bool field_btearoff = 3; // COND_None
+	uint32 field_remoterole = 4; // COND_None
+	UnrealObjectRef field_owner = 5; // COND_None
+	bytes field_replicatedmovement = 6; // COND_SimulatedOrPhysics
+	UnrealObjectRef field_attachmentreplication_attachparent = 7; // COND_Custom
+	improbable.Vector3f field_attachmentreplication_locationoffset = 8; // COND_Custom
+	improbable.Vector3f field_attachmentreplication_relativescale3d = 9; // COND_Custom
+	UnrealFRotator field_attachmentreplication_rotationoffset = 10; // COND_Custom
+	string field_attachmentreplication_attachsocket = 11; // COND_Custom
+	UnrealObjectRef field_attachmentreplication_attachcomponent = 12; // COND_Custom
+	uint32 field_role = 13; // COND_None
+	bool field_bcanbedamaged = 14; // COND_None
+	UnrealObjectRef field_instigator = 15; // COND_None
+	float field_score = 16; // COND_None
+	uint32 field_ping = 17; // COND_SkipOwner
+	string field_playername = 18; // COND_None
+	int32 field_playerid = 19; // COND_InitialOnly
+	bool field_bfrompreviouslevel = 20; // COND_None
+	bool field_bisabot = 21; // COND_InitialOnly
+	bool field_bisinactive = 22; // COND_InitialOnly
+	bool field_bisspectator = 23; // COND_None
+	bool field_bonlyspectator = 24; // COND_None
+	int32 field_starttime = 25; // COND_None
+	bytes field_uniqueid = 26; // COND_InitialOnly
+}
+component UnrealPlayerStateWorkerRepData {
+	id = 100017;
+}
+
+component UnrealPlayerStateClientRPCs {
+	id = 100018;
+}
+component UnrealPlayerStateServerRPCs {
+	id = 100019;
+}

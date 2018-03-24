@@ -57,7 +57,7 @@ Build/*/**
 !Build/**/*.ico
 
 # Built data for maps
-*_BuiltData.uasset
+#*_BuiltData.uasset
 
 **/Binaries/
 **/Build
@@ -66,7 +66,8 @@ Build/*/**
 **/Saved/
 
 .spatialos/
+Game/enc_temp_folder/
 Game/Source/SpatialOS/
 Game/ThirdParty/Improbable/
 temp_worker_builds/
-Game/Plugins/
+Game/Plugins/SpatialOS

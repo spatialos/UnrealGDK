@@ -1,0 +1,445 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Note that this file has been generated automatically
+package improbable.unreal;
+
+import "improbable/vector3.schema";
+import "improbable/unreal/core_types.schema";
+
+component UnrealPlayerControllerSingleClientRepData {
+	id = 100010;
+	UnrealFRotator field_targetviewrotation = 1; // COND_OwnerOnly
+	improbable.Vector3f field_spawnlocation = 2; // COND_OwnerOnly
+}
+component UnrealPlayerControllerMultiClientRepData {
+	id = 100011;
+	bool field_bhidden = 1; // COND_None
+	bool field_breplicatemovement = 2; // COND_None
+	bool field_btearoff = 3; // COND_None
+	uint32 field_remoterole = 4; // COND_None
+	UnrealObjectRef field_owner = 5; // COND_None
+	bytes field_replicatedmovement = 6; // COND_SimulatedOrPhysics
+	UnrealObjectRef field_attachmentreplication_attachparent = 7; // COND_Custom
+	improbable.Vector3f field_attachmentreplication_locationoffset = 8; // COND_Custom
+	improbable.Vector3f field_attachmentreplication_relativescale3d = 9; // COND_Custom
+	UnrealFRotator field_attachmentreplication_rotationoffset = 10; // COND_Custom
+	string field_attachmentreplication_attachsocket = 11; // COND_Custom
+	UnrealObjectRef field_attachmentreplication_attachcomponent = 12; // COND_Custom
+	uint32 field_role = 13; // COND_None
+	bool field_bcanbedamaged = 14; // COND_None
+	UnrealObjectRef field_instigator = 15; // COND_None
+	UnrealObjectRef field_pawn = 16; // COND_None
+	UnrealObjectRef field_playerstate = 17; // COND_None
+}
+component UnrealPlayerControllerWorkerRepData {
+	id = 100012;
+}
+type UnrealOnServerStartedVisualLoggerRequest {
+	uint32 target_subobject_offset = 1;
+	bool field_bislogging = 2;
+}
+type UnrealClientWasKickedRequest {
+	uint32 target_subobject_offset = 1;
+	bytes field_kickreason = 2;
+}
+type UnrealClientVoiceHandshakeCompleteRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealClientUpdateLevelStreamingStatusRequest {
+	uint32 target_subobject_offset = 1;
+	string field_packagename = 2;
+	bool field_bnewshouldbeloaded = 3;
+	bool field_bnewshouldbevisible = 4;
+	bool field_bnewshouldblockonload = 5;
+	int32 field_lodindex = 6;
+}
+type UnrealClientUnmutePlayerRequest {
+	uint32 target_subobject_offset = 1;
+	bytes field_playerid = 2;
+}
+type UnrealClientTravelInternalRequest {
+	uint32 target_subobject_offset = 1;
+	string field_url = 2;
+	uint32 field_traveltype = 3;
+	bool field_bseamless = 4;
+	int32 field_mappackageguid_a = 5;
+	int32 field_mappackageguid_b = 6;
+	int32 field_mappackageguid_c = 7;
+	int32 field_mappackageguid_d = 8;
+}
+type UnrealClientTeamMessageRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_senderplayerstate = 2;
+	string field_s = 3;
+	string field_type = 4;
+	float field_msglifetime = 5;
+}
+type UnrealClientStopForceFeedbackRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_forcefeedbackeffect = 2;
+	string field_tag = 3;
+}
+type UnrealClientStopCameraShakeRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_shake = 2;
+	bool field_bimmediately = 3;
+}
+type UnrealClientStopCameraAnimRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_animtostop = 2;
+}
+type UnrealClientStartOnlineSessionRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealClientSpawnCameraLensEffectRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_lenseffectemitterclass = 2;
+}
+type UnrealClientSetViewTargetRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_a = 2;
+	float field_transitionparams_blendtime = 3;
+	uint32 field_transitionparams_blendfunction = 4;
+	float field_transitionparams_blendexp = 5;
+	bool field_transitionparams_blockoutgoing = 6;
+}
+type UnrealClientSetSpectatorWaitingRequest {
+	uint32 target_subobject_offset = 1;
+	bool field_bwaiting = 2;
+}
+type UnrealClientSetHUDRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_newhudclass = 2;
+}
+type UnrealClientSetForceMipLevelsToBeResidentRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_material = 2;
+	float field_forceduration = 3;
+	int32 field_cinematictexturegroups = 4;
+}
+type UnrealClientSetCinematicModeRequest {
+	uint32 target_subobject_offset = 1;
+	bool field_bincinematicmode = 2;
+	bool field_baffectsmovement = 3;
+	bool field_baffectsturning = 4;
+	bool field_baffectshud = 5;
+}
+type UnrealClientSetCameraModeRequest {
+	uint32 target_subobject_offset = 1;
+	string field_newcammode = 2;
+}
+type UnrealClientSetCameraFadeRequest {
+	uint32 target_subobject_offset = 1;
+	bool field_benablefading = 2;
+	uint32 field_fadecolor_b = 3;
+	uint32 field_fadecolor_g = 4;
+	uint32 field_fadecolor_r = 5;
+	uint32 field_fadecolor_a = 6;
+	float field_fadealpha_x = 7;
+	float field_fadealpha_y = 8;
+	float field_fadetime = 9;
+	bool field_bfadeaudio = 10;
+}
+type UnrealClientSetBlockOnAsyncLoadingRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealClientReturnToMainMenuRequest {
+	uint32 target_subobject_offset = 1;
+	string field_returnreason = 2;
+}
+type UnrealClientRetryClientRestartRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_newpawn = 2;
+}
+type UnrealClientRestartRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_newpawn = 2;
+}
+type UnrealClientResetRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealClientRepObjRefRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_object = 2;
+}
+type UnrealClientReceiveLocalizedMessageRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_message = 2;
+	int32 field_switch = 3;
+	UnrealObjectRef field_relatedplayerstate_1 = 4;
+	UnrealObjectRef field_relatedplayerstate_2 = 5;
+	UnrealObjectRef field_optionalobject = 6;
+}
+type UnrealClientPrestreamTexturesRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_forcedactor = 2;
+	float field_forceduration = 3;
+	bool field_benablestreaming = 4;
+	int32 field_cinematictexturegroups = 5;
+}
+type UnrealClientPrepareMapChangeRequest {
+	uint32 target_subobject_offset = 1;
+	string field_levelname = 2;
+	bool field_bfirst = 3;
+	bool field_blast = 4;
+}
+type UnrealClientPlaySoundAtLocationRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_sound = 2;
+	improbable.Vector3f field_location = 3;
+	float field_volumemultiplier = 4;
+	float field_pitchmultiplier = 5;
+}
+type UnrealClientPlaySoundRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_sound = 2;
+	float field_volumemultiplier = 3;
+	float field_pitchmultiplier = 4;
+}
+type UnrealClientPlayForceFeedbackRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_forcefeedbackeffect = 2;
+	bool field_blooping = 3;
+	string field_tag = 4;
+}
+type UnrealClientPlayCameraShakeRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_shake = 2;
+	float field_scale = 3;
+	uint32 field_playspace = 4;
+	UnrealFRotator field_userplayspacerot = 5;
+}
+type UnrealClientPlayCameraAnimRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_animtoplay = 2;
+	float field_scale = 3;
+	float field_rate = 4;
+	float field_blendintime = 5;
+	float field_blendouttime = 6;
+	bool field_bloop = 7;
+	bool field_brandomstarttime = 8;
+	uint32 field_space = 9;
+	UnrealFRotator field_customplayspace = 10;
+}
+type UnrealClientMutePlayerRequest {
+	uint32 target_subobject_offset = 1;
+	bytes field_playerid = 2;
+}
+type UnrealClientMessageRequest {
+	uint32 target_subobject_offset = 1;
+	string field_s = 2;
+	string field_type = 3;
+	float field_msglifetime = 4;
+}
+type UnrealClientIgnoreMoveInputRequest {
+	uint32 target_subobject_offset = 1;
+	bool field_bignore = 2;
+}
+type UnrealClientIgnoreLookInputRequest {
+	uint32 target_subobject_offset = 1;
+	bool field_bignore = 2;
+}
+type UnrealClientGotoStateRequest {
+	uint32 target_subobject_offset = 1;
+	string field_newstate = 2;
+}
+type UnrealClientGameEndedRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_endgamefocus = 2;
+	bool field_biswinner = 3;
+}
+type UnrealClientForceGarbageCollectionRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealClientFlushLevelStreamingRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealClientEndOnlineSessionRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealClientEnableNetworkVoiceRequest {
+	uint32 target_subobject_offset = 1;
+	bool field_benable = 2;
+}
+type UnrealClientCommitMapChangeRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealClientClearCameraLensEffectsRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealClientCapBandwidthRequest {
+	uint32 target_subobject_offset = 1;
+	int32 field_cap = 2;
+}
+type UnrealClientCancelPendingMapChangeRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealClientAddTextureStreamingLocRequest {
+	uint32 target_subobject_offset = 1;
+	improbable.Vector3f field_inloc = 2;
+	float field_duration = 3;
+	bool field_boverridelocation = 4;
+}
+type UnrealClientSetRotationRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealFRotator field_newrotation = 2;
+	bool field_bresetcamera = 3;
+}
+type UnrealClientSetLocationRequest {
+	uint32 target_subobject_offset = 1;
+	improbable.Vector3f field_newlocation = 2;
+	UnrealFRotator field_newrotation = 3;
+}
+type UnrealServerViewSelfRequest {
+	uint32 target_subobject_offset = 1;
+	float field_transitionparams_blendtime = 2;
+	uint32 field_transitionparams_blendfunction = 3;
+	float field_transitionparams_blendexp = 4;
+	bool field_transitionparams_blockoutgoing = 5;
+}
+type UnrealServerViewPrevPlayerRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealServerViewNextPlayerRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealServerVerifyViewTargetRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealServerUpdateLevelVisibilityRequest {
+	uint32 target_subobject_offset = 1;
+	string field_packagename = 2;
+	bool field_bisvisible = 3;
+}
+type UnrealServerUpdateCameraRequest {
+	uint32 target_subobject_offset = 1;
+	improbable.Vector3f field_camloc = 2;
+	int32 field_campitchandyaw = 3;
+}
+type UnrealServerUnmutePlayerRequest {
+	uint32 target_subobject_offset = 1;
+	bytes field_playerid = 2;
+}
+type UnrealServerToggleAILoggingRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealServerShortTimeoutRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealServerSetSpectatorWaitingRequest {
+	uint32 target_subobject_offset = 1;
+	bool field_bwaiting = 2;
+}
+type UnrealServerSetSpectatorLocationRequest {
+	uint32 target_subobject_offset = 1;
+	improbable.Vector3f field_newloc = 2;
+	UnrealFRotator field_newrot = 3;
+}
+type UnrealServerRestartPlayerRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealServerPauseRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealServerNotifyLoadedWorldRequest {
+	uint32 target_subobject_offset = 1;
+	string field_worldpackagename = 2;
+}
+type UnrealServerMutePlayerRequest {
+	uint32 target_subobject_offset = 1;
+	bytes field_playerid = 2;
+}
+type UnrealServerCheckClientPossessionReliableRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealServerCheckClientPossessionRequest {
+	uint32 target_subobject_offset = 1;
+}
+type UnrealServerChangeNameRequest {
+	uint32 target_subobject_offset = 1;
+	string field_s = 2;
+}
+type UnrealServerCameraRequest {
+	uint32 target_subobject_offset = 1;
+	string field_newmode = 2;
+}
+type UnrealServerAcknowledgePossessionRequest {
+	uint32 target_subobject_offset = 1;
+	UnrealObjectRef field_p = 2;
+}
+
+component UnrealPlayerControllerClientRPCs {
+	id = 100013;
+	command UnrealRPCCommandResponse onserverstartedvisuallogger(UnrealOnServerStartedVisualLoggerRequest);
+	command UnrealRPCCommandResponse clientwaskicked(UnrealClientWasKickedRequest);
+	command UnrealRPCCommandResponse clientvoicehandshakecomplete(UnrealClientVoiceHandshakeCompleteRequest);
+	command UnrealRPCCommandResponse clientupdatelevelstreamingstatus(UnrealClientUpdateLevelStreamingStatusRequest);
+	command UnrealRPCCommandResponse clientunmuteplayer(UnrealClientUnmutePlayerRequest);
+	command UnrealRPCCommandResponse clienttravelinternal(UnrealClientTravelInternalRequest);
+	command UnrealRPCCommandResponse clientteammessage(UnrealClientTeamMessageRequest);
+	command UnrealRPCCommandResponse clientstopforcefeedback(UnrealClientStopForceFeedbackRequest);
+	command UnrealRPCCommandResponse clientstopcamerashake(UnrealClientStopCameraShakeRequest);
+	command UnrealRPCCommandResponse clientstopcameraanim(UnrealClientStopCameraAnimRequest);
+	command UnrealRPCCommandResponse clientstartonlinesession(UnrealClientStartOnlineSessionRequest);
+	command UnrealRPCCommandResponse clientspawncameralenseffect(UnrealClientSpawnCameraLensEffectRequest);
+	command UnrealRPCCommandResponse clientsetviewtarget(UnrealClientSetViewTargetRequest);
+	command UnrealRPCCommandResponse clientsetspectatorwaiting(UnrealClientSetSpectatorWaitingRequest);
+	command UnrealRPCCommandResponse clientsethud(UnrealClientSetHUDRequest);
+	command UnrealRPCCommandResponse clientsetforcemiplevelstoberesident(UnrealClientSetForceMipLevelsToBeResidentRequest);
+	command UnrealRPCCommandResponse clientsetcinematicmode(UnrealClientSetCinematicModeRequest);
+	command UnrealRPCCommandResponse clientsetcameramode(UnrealClientSetCameraModeRequest);
+	command UnrealRPCCommandResponse clientsetcamerafade(UnrealClientSetCameraFadeRequest);
+	command UnrealRPCCommandResponse clientsetblockonasyncloading(UnrealClientSetBlockOnAsyncLoadingRequest);
+	command UnrealRPCCommandResponse clientreturntomainmenu(UnrealClientReturnToMainMenuRequest);
+	command UnrealRPCCommandResponse clientretryclientrestart(UnrealClientRetryClientRestartRequest);
+	command UnrealRPCCommandResponse clientrestart(UnrealClientRestartRequest);
+	command UnrealRPCCommandResponse clientreset(UnrealClientResetRequest);
+	command UnrealRPCCommandResponse clientrepobjref(UnrealClientRepObjRefRequest);
+	command UnrealRPCCommandResponse clientreceivelocalizedmessage(UnrealClientReceiveLocalizedMessageRequest);
+	command UnrealRPCCommandResponse clientprestreamtextures(UnrealClientPrestreamTexturesRequest);
+	command UnrealRPCCommandResponse clientpreparemapchange(UnrealClientPrepareMapChangeRequest);
+	command UnrealRPCCommandResponse clientplaysoundatlocation(UnrealClientPlaySoundAtLocationRequest);
+	command UnrealRPCCommandResponse clientplaysound(UnrealClientPlaySoundRequest);
+	command UnrealRPCCommandResponse clientplayforcefeedback(UnrealClientPlayForceFeedbackRequest);
+	command UnrealRPCCommandResponse clientplaycamerashake(UnrealClientPlayCameraShakeRequest);
+	command UnrealRPCCommandResponse clientplaycameraanim(UnrealClientPlayCameraAnimRequest);
+	command UnrealRPCCommandResponse clientmuteplayer(UnrealClientMutePlayerRequest);
+	command UnrealRPCCommandResponse clientmessage(UnrealClientMessageRequest);
+	command UnrealRPCCommandResponse clientignoremoveinput(UnrealClientIgnoreMoveInputRequest);
+	command UnrealRPCCommandResponse clientignorelookinput(UnrealClientIgnoreLookInputRequest);
+	command UnrealRPCCommandResponse clientgotostate(UnrealClientGotoStateRequest);
+	command UnrealRPCCommandResponse clientgameended(UnrealClientGameEndedRequest);
+	command UnrealRPCCommandResponse clientforcegarbagecollection(UnrealClientForceGarbageCollectionRequest);
+	command UnrealRPCCommandResponse clientflushlevelstreaming(UnrealClientFlushLevelStreamingRequest);
+	command UnrealRPCCommandResponse clientendonlinesession(UnrealClientEndOnlineSessionRequest);
+	command UnrealRPCCommandResponse clientenablenetworkvoice(UnrealClientEnableNetworkVoiceRequest);
+	command UnrealRPCCommandResponse clientcommitmapchange(UnrealClientCommitMapChangeRequest);
+	command UnrealRPCCommandResponse clientclearcameralenseffects(UnrealClientClearCameraLensEffectsRequest);
+	command UnrealRPCCommandResponse clientcapbandwidth(UnrealClientCapBandwidthRequest);
+	command UnrealRPCCommandResponse clientcancelpendingmapchange(UnrealClientCancelPendingMapChangeRequest);
+	command UnrealRPCCommandResponse clientaddtexturestreamingloc(UnrealClientAddTextureStreamingLocRequest);
+	command UnrealRPCCommandResponse clientsetrotation(UnrealClientSetRotationRequest);
+	command UnrealRPCCommandResponse clientsetlocation(UnrealClientSetLocationRequest);
+}
+component UnrealPlayerControllerServerRPCs {
+	id = 100014;
+	command UnrealRPCCommandResponse serverviewself(UnrealServerViewSelfRequest);
+	command UnrealRPCCommandResponse serverviewprevplayer(UnrealServerViewPrevPlayerRequest);
+	command UnrealRPCCommandResponse serverviewnextplayer(UnrealServerViewNextPlayerRequest);
+	command UnrealRPCCommandResponse serververifyviewtarget(UnrealServerVerifyViewTargetRequest);
+	command UnrealRPCCommandResponse serverupdatelevelvisibility(UnrealServerUpdateLevelVisibilityRequest);
+	command UnrealRPCCommandResponse serverupdatecamera(UnrealServerUpdateCameraRequest);
+	command UnrealRPCCommandResponse serverunmuteplayer(UnrealServerUnmutePlayerRequest);
+	command UnrealRPCCommandResponse servertoggleailogging(UnrealServerToggleAILoggingRequest);
+	command UnrealRPCCommandResponse servershorttimeout(UnrealServerShortTimeoutRequest);
+	command UnrealRPCCommandResponse serversetspectatorwaiting(UnrealServerSetSpectatorWaitingRequest);
+	command UnrealRPCCommandResponse serversetspectatorlocation(UnrealServerSetSpectatorLocationRequest);
+	command UnrealRPCCommandResponse serverrestartplayer(UnrealServerRestartPlayerRequest);
+	command UnrealRPCCommandResponse serverpause(UnrealServerPauseRequest);
+	command UnrealRPCCommandResponse servernotifyloadedworld(UnrealServerNotifyLoadedWorldRequest);
+	command UnrealRPCCommandResponse servermuteplayer(UnrealServerMutePlayerRequest);
+	command UnrealRPCCommandResponse servercheckclientpossessionreliable(UnrealServerCheckClientPossessionReliableRequest);
+	command UnrealRPCCommandResponse servercheckclientpossession(UnrealServerCheckClientPossessionRequest);
+	command UnrealRPCCommandResponse serverchangename(UnrealServerChangeNameRequest);
+	command UnrealRPCCommandResponse servercamera(UnrealServerCameraRequest);
+	command UnrealRPCCommandResponse serveracknowledgepossession(UnrealServerAcknowledgePossessionRequest);
+}

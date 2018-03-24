@@ -1,0 +1,50 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Note that this file has been generated automatically
+package improbable.unreal;
+
+import "improbable/vector3.schema";
+import "improbable/unreal/core_types.schema";
+
+component UnrealWheeledVehicleSingleClientRepData {
+	id = 100025;
+}
+component UnrealWheeledVehicleMultiClientRepData {
+	id = 100026;
+	bool field_bhidden = 1; // COND_None
+	bool field_breplicatemovement = 2; // COND_None
+	bool field_btearoff = 3; // COND_None
+	uint32 field_remoterole = 4; // COND_None
+	UnrealObjectRef field_owner = 5; // COND_None
+	bytes field_replicatedmovement = 6; // COND_SimulatedOrPhysics
+	UnrealObjectRef field_attachmentreplication_attachparent = 7; // COND_Custom
+	improbable.Vector3f field_attachmentreplication_locationoffset = 8; // COND_Custom
+	improbable.Vector3f field_attachmentreplication_relativescale3d = 9; // COND_Custom
+	UnrealFRotator field_attachmentreplication_rotationoffset = 10; // COND_Custom
+	string field_attachmentreplication_attachsocket = 11; // COND_Custom
+	UnrealObjectRef field_attachmentreplication_attachcomponent = 12; // COND_Custom
+	uint32 field_role = 13; // COND_None
+	bool field_bcanbedamaged = 14; // COND_None
+	UnrealObjectRef field_instigator = 15; // COND_None
+	UnrealObjectRef field_playerstate = 16; // COND_None
+	uint32 field_remoteviewpitch = 17; // COND_SkipOwner
+	UnrealObjectRef field_controller = 18; // COND_None
+}
+component UnrealWheeledVehicleWorkerRepData {
+	id = 100027;
+}
+type UnrealServerUpdateStateRequest {
+	uint32 target_subobject_offset = 1;
+	float field_insteeringinput = 2;
+	float field_inthrottleinput = 3;
+	float field_inbrakeinput = 4;
+	float field_inhandbrakeinput = 5;
+	int32 field_currentgear = 6;
+}
+
+component UnrealWheeledVehicleClientRPCs {
+	id = 100028;
+}
+component UnrealWheeledVehicleServerRPCs {
+	id = 100029;
+	command UnrealRPCCommandResponse serverupdatestate(UnrealServerUpdateStateRequest);
+}

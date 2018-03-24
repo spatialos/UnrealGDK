@@ -1,0 +1,16 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{582A942E-4D87-0CA4-6B60-A6962C48FD96}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "InteropCodeGenerator",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		}
+	]
+}

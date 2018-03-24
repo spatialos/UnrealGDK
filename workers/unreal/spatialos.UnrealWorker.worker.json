@@ -11,10 +11,16 @@
     },
     "entity_interest": {
       "range_entity_interest": {
-        "radius": 2
+        "radius": 0
       }
     },
-    "streaming_query": [],
+    "streaming_query": [
+      {
+        "global_component_streaming_query": {
+          "component_name": "improbable.unreal.UnrealLevel"
+        }
+      }
+    ],
     "component_delivery": {
       "default": "RELIABLE_ORDERED",
       "checkout_all_initially": true
@@ -25,6 +31,7 @@
       "artifact_name": "UnrealEditor@Windows.zip",
       "command": "StartServer.bat",
       "arguments": [
+        "ThirdPersonExampleMap",
         "-server",
         "-stdout",
         "-nowrite",
@@ -55,7 +62,8 @@
       "command": "StartServer.sh",
       "arguments": [
         "${IMPROBABLE_WORKER_ID}",
-        "BridgeDemo",
+        "NUF",
+        "ThirdPersonExampleMap",
         "+appName",
         "${IMPROBABLE_PROJECT_NAME}",
         "+receptionistIp",
@@ -78,7 +86,7 @@
       "windows": {
         "command": "${UNREAL_HOME}\\Engine\\Binaries\\Win64\\UE4Editor.exe",
         "arguments": [
-          "${IMPROBABLE_WORKER_DIR}/Game/<PROJECT_NAME>.uproject",
+          "${IMPROBABLE_WORKER_DIR}/Game/NUF.uproject",
           "-server",
           "-stdout",
           "-nowrite",
