@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS(transient, config = Engine)
+UCLASS(transient)
 class SPATIALGDK_API USpatialNetConnection : public UIpConnection
 {
 	GENERATED_BODY()

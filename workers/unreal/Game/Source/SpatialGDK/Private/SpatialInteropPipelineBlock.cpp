@@ -419,7 +419,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 	return EntityActor;
 }
 
-// Note that in NUF, this function will not be called on the spawning worker.
+// Note that in SpatialGDK, this function will not be called on the spawning worker.
 // It's only for client, and in the future, other workers.
 AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ActorClass)
 {
