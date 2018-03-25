@@ -43,7 +43,7 @@ public class NUFEditorToolbar : ModuleRules
 				"Slate",
 				"SlateCore",
 				"SpatialOS",
-				"NUF"
+				"SpatialGDK"
 			});
 	}
 }

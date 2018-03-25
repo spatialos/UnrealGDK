@@ -9,7 +9,9 @@
 #include "Editor/EditorEngine.h"
 #endif
 
-bool USpatialGameInstance::StartGameInstance_NUFClient(FString& Error)
+DEFINE_LOG_CATEGORY(LogSpatialGDK);
+
+bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 {
 	if (WorldContext->PendingNetGame)
 	{
@@ -69,7 +71,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 	}
 
 	FString Error;
-	if (StartGameInstance_NUFClient(Error))
+	if (StartGameInstance_SpatialGDKClient(Error))
 	{
 		GetEngine()->TransitionType = TT_WaitingToConnect;
 		return FGameInstancePIEResult::Success();
@@ -91,9 +93,9 @@ void USpatialGameInstance::StartGameInstance()
 
 	FString Error;
 
-	if (!StartGameInstance_NUFClient(Error))
+	if (!StartGameInstance_SpatialGDKClient(Error))
 	{
-		UE_LOG(LogSpatialOSNUF, Fatal, TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
+		UE_LOG(LogSpatialGDK, Fatal, TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
 		FPlatformMisc::RequestExit(false);
 	}
 }

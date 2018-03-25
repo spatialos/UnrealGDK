@@ -20,7 +20,7 @@
 
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
 
-DEFINE_LOG_CATEGORY(LogSpatialOSNUF);
+DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
 {
@@ -89,7 +89,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	UE_LOG(LogSpatialOSNUF, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
 
 	checkf(!SpatialOSInstance->IsConnected(), TEXT("SpatialOS should not be connected already. This is probably because we attempted to travel to a different level, which current isn't supported."));
 
@@ -108,7 +108,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 void USpatialNetDriver::OnSpatialOSConnected()
 {
-	UE_LOG(LogSpatialOSNUF, Log, TEXT("Connected to SpatialOS."));
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS."));
 
 	InteropPipelineBlock = NewObject<USpatialInteropPipelineBlock>();
 	InteropPipelineBlock->Init(EntityRegistry, this, GetWorld());
@@ -154,12 +154,12 @@ void USpatialNetDriver::OnSpatialOSConnected()
 
 void USpatialNetDriver::OnSpatialOSDisconnected()
 {
-	UE_LOG(LogSpatialOSNUF, Warning, TEXT("Disconnected from SpatialOS."));
+	UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Disconnected from SpatialOS."));
 }
 
 void USpatialNetDriver::OnSpatialOSConnectFailed()
 {
-	UE_LOG(LogSpatialOSNUF, Error, TEXT("Could not connect to SpatialOS."));
+	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS."));
 }
 
 bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const
@@ -168,13 +168,13 @@ bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const 
 	return true;
 }
 
-//NUF: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.
+//SpatialGDK: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.
 #if WITH_SERVER_CODE
 
 // Returns true if this actor should replicate to *any* of the passed in connections
 static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, const TArray<FNetViewer>& ConnectionViewers)
 {
-	//NUF: Currently we're just returning true as a worker replicates all the known actors in our design.
+	//SpatialGDK: Currently we're just returning true as a worker replicates all the known actors in our design.
 	// We might make some exceptions in the future, so keeping this function.
 	return true;
 }
@@ -227,7 +227,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 		//			to reset their NetUpdateTime so that they will get sent as soon as the connection is no longer saturated
 		AActor* OwningActor = Connection->OwningActor;
 		
-		//NUF: We allow a connection without an owner to process if it's meant to be the connection to the fake SpatialOS client.
+		//SpatialGDK: We allow a connection without an owner to process if it's meant to be the connection to the fake SpatialOS client.
 		if ((Connection->bReliableSpatialConnection || OwningActor != NULL) && Connection->State == USOCK_Open && (Connection->Driver->Time - Connection->LastReceiveTime < 1.5f))
 		{
 			check(Connection->bReliableSpatialConnection || World == OwningActor->GetWorld());
@@ -310,7 +310,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 				Channel->StartBecomingDormant();
 			}
 
-			// NUF: This actor should only be replicated if GetNetworkConnection() matches this connection. However, if this actor doesn't have a connection
+			// SpatialGDK: This actor should only be replicated if GetNetworkConnection() matches this connection. However, if this actor doesn't have a connection
 			// (which implies that it's owned by the server rather than a client), then it should fall back to the "catch all" SpatialOS connection which is
 			// ClientConnections[0]. The below condition means that each actor should only be replicated once, unless "ClientConnections" contain duplicates,
 			// which should never happen.
@@ -319,7 +319,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			{
 				if (ActorConnection == nullptr && Connection == ClientConnections[0])
 				{
-					UE_LOG(LogSpatialOSNUF, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());
+					UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());
 				}
 				else
 				{
@@ -328,10 +328,10 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			}
 			else
 			{
-				UE_LOG(LogSpatialOSNUF, Verbose, TEXT("Actor %s will be replicated on the connection %s"), *Actor->GetName(), *Connection->GetName());
+				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the connection %s"), *Actor->GetName(), *Connection->GetName());
 			}
 			
-			//NUF: Here, Unreal does initial relevancy checking and level load checking.
+			//SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
 			// We have removed the level load check because it doesn't apply.
 			// Relevancy checking is also mostly just a pass through, might be removed later.
 			if (!IsActorRelevantToConnection(Actor, ConnectionViewers))
@@ -434,7 +434,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			AActor* Actor = PriorityActors[j]->ActorInfo->Actor;
 			bool bIsRelevant = false;
 
-			//NUF: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
+			//SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
 			// only check visibility on already visible actors every 1.0 + 0.5R seconds
 			// bTearOff actors should never be checked
 			if (!Actor->bTearOff && (!Channel || Time - Channel->RelevantTime > 1.f))
@@ -548,7 +548,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 }
 #endif
 
-//NUF: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
+//SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
 // In our implementation, connections on the server do not represent clients. They represent direct connections to SpatialOS.
 // For this reason, things like ready checks, acks, throttling based on number of updated connections, interest management are irrelevant at this level.
 int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
@@ -568,7 +568,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 	const int32 NumClientsToTick = ServerReplicateActors_PrepConnections(DeltaSeconds);
 
-	//NUF: This is a formality as there is at least one "perfect" Spatial connection in our design.
+	//SpatialGDK: This is a formality as there is at least one "perfect" Spatial connection in our design.
 	if (NumClientsToTick == 0)
 	{
 		// No connections are ready this frame
@@ -604,7 +604,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		// if this client shouldn't be ticked this frame
 		if (i >= NumClientsToTick)
 		{
-			//NUF: This should not really happen in our case because we only replicate to SpatialOS and not to individual clients. Leaving the code here just in case.
+			//SpatialGDK: This should not really happen in our case because we only replicate to SpatialOS and not to individual clients. Leaving the code here just in case.
 
 			//UE_LOG(LogNet, Log, TEXT("skipping update to %s"),*Connection->GetName());
 			// then mark each considered actor as bPendingNetUpdate so that they will be considered again the next frame when the connection is actually ticked
@@ -748,7 +748,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	USpatialNetConnection* Connection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
 	if (!Connection)
 	{
-		UE_LOG(LogSpatialOSNUF, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
 		return;
 	}
 
