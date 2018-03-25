@@ -3,11 +3,11 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class NUFTarget : TargetRules
+public class SampleGameTarget : TargetRules
 {
-	public NUFTarget(TargetInfo Target) : base(Target)
+	public SampleGameTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Game;
-		ExtraModuleNames.Add("NUF");
+		ExtraModuleNames.Add("SampleGame");
 	}
 }

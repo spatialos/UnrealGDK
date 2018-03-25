@@ -1,6 +1,6 @@
 // Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
 
-#include "NUFCharacter.h"
+#include "SampleGameCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -10,22 +10,22 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "NUFGameStateBase.h"
+#include "SampleGameGameStateBase.h"
 #include "SpatialNetDriver.h"
 #include "VehicleCppPawn.h"
 
 //////////////////////////////////////////////////////////////////////////
-// ANUFCharacter
+// ASampleGameCharacter
 
-ANUFCharacter::ANUFCharacter()
+ASampleGameCharacter::ASampleGameCharacter()
 {
 	// Hack to ensure that the game state is created and set to tick on a client as we don't replicate it
 	UWorld* World = GetWorld();
 	if (World && World->GetGameState() == nullptr)
 	{
-		AGameStateBase* GameState = World->SpawnActor<AGameStateBase>(ANUFGameStateBase::StaticClass());
+		AGameStateBase* GameState = World->SpawnActor<AGameStateBase>(ASampleGameGameStateBase::StaticClass());
 		World->SetGameState(GameState);
-		Cast<ANUFGameStateBase>(GameState)->FakeServerHasBegunPlay();
+		Cast<ASampleGameGameStateBase>(GameState)->FakeServerHasBegunPlay();
 	}
 
 	// Set size for collision capsule
@@ -61,7 +61,7 @@ ANUFCharacter::ANUFCharacter()
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 }
 
-void ANUFCharacter::BeginPlay()
+void ASampleGameCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 }
@@ -69,60 +69,60 @@ void ANUFCharacter::BeginPlay()
 //////////////////////////////////////////////////////////////////////////
 // Input
 
-void ANUFCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
+void ASampleGameCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
-	PlayerInputComponent->BindAxis("MoveForward", this, &ANUFCharacter::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &ANUFCharacter::MoveRight);
+	PlayerInputComponent->BindAxis("MoveForward", this, &ASampleGameCharacter::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ASampleGameCharacter::MoveRight);
 
 	// We have 2 versions of the rotation bindings to handle different kinds of devices differently
 	// "turn" handles devices that provide an absolute delta, such as a mouse.
 	// "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("TurnRate", this, &ANUFCharacter::TurnAtRate);
+	PlayerInputComponent->BindAxis("TurnRate", this, &ASampleGameCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
-	PlayerInputComponent->BindAxis("LookUpRate", this, &ANUFCharacter::LookUpAtRate);
+	PlayerInputComponent->BindAxis("LookUpRate", this, &ASampleGameCharacter::LookUpAtRate);
 
 	// handle touch devices
-	PlayerInputComponent->BindTouch(IE_Pressed, this, &ANUFCharacter::TouchStarted);
-	PlayerInputComponent->BindTouch(IE_Released, this, &ANUFCharacter::TouchStopped);
+	PlayerInputComponent->BindTouch(IE_Pressed, this, &ASampleGameCharacter::TouchStarted);
+	PlayerInputComponent->BindTouch(IE_Released, this, &ASampleGameCharacter::TouchStopped);
 
 	// VR headset functionality
-	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ANUFCharacter::OnResetVR);
+	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ASampleGameCharacter::OnResetVR);
 }
 
-void ANUFCharacter::OnResetVR()
+void ASampleGameCharacter::OnResetVR()
 {
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }
 
-void ANUFCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
+void ASampleGameCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
 	Jump();
 }
 
-void ANUFCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
+void ASampleGameCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
 {
 	StopJumping();
 }
 
-void ANUFCharacter::TurnAtRate(float Rate)
+void ASampleGameCharacter::TurnAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 }
 
-void ANUFCharacter::LookUpAtRate(float Rate)
+void ASampleGameCharacter::LookUpAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
-void ANUFCharacter::MoveForward(float Value)
+void ASampleGameCharacter::MoveForward(float Value)
 {
 	if ((Controller != NULL) && (Value != 0.0f))
 	{
@@ -136,7 +136,7 @@ void ANUFCharacter::MoveForward(float Value)
 	}
 }
 
-void ANUFCharacter::MoveRight(float Value)
+void ASampleGameCharacter::MoveRight(float Value)
 {
 	if ((Controller != NULL) && (Value != 0.0f))
 	{

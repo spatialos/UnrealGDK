@@ -3,11 +3,11 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class NUFEditorTarget : TargetRules
+public class SampleGameEditorTarget : TargetRules
 {
-	public NUFEditorTarget(TargetInfo Target) : base(Target)
+	public SampleGameEditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
-		ExtraModuleNames.Add("NUF");
+		ExtraModuleNames.Add("SampleGame");
 	}
 }

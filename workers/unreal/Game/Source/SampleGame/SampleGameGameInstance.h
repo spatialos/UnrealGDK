@@ -4,10 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "SpatialGameInstance.h"
-#include "NUFGameInstance.generated.h"
+#include "SampleGameGameInstance.generated.h"
 
 UCLASS()
-class NUF_API UNUFGameInstance : public USpatialGameInstance
+class SAMPLEGAME_API USampleGameGameInstance : public USpatialGameInstance
 {
 	GENERATED_BODY()
 };
