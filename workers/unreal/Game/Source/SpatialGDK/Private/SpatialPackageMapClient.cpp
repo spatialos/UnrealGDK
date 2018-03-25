@@ -97,7 +97,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 	check(Interop);
 
 	// Set up the NetGUID and ObjectRef for this actor.
-	FNetworkGUID NetGUID = GetOrAssignNetGUID_NUF(Actor);
+	FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
 	improbable::unreal::UnrealObjectRef ObjectRef{EntityId.ToSpatialEntityId(), 0};
 	RegisterObjectRef(NetGUID, ObjectRef);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"),
@@ -114,7 +114,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 		if (OffsetIterator != SubobjectToOffset.end()) {
 			std::uint32_t Offset = OffsetIterator->second;
 
-			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_NUF(Subobject);
+			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
 			improbable::unreal::UnrealObjectRef SubobjectRef{EntityId.ToSpatialEntityId(), Offset};
 			RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
 			UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
@@ -192,7 +192,7 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 		}
 
 		// Set up the NetGUID and ObjectRef for this actor.
-		FNetworkGUID NetGUID = GetOrAssignNetGUID_NUF(Actor);
+		FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
 		improbable::unreal::UnrealObjectRef ObjectRef{0, StaticObjectId};
 		RegisterObjectRef(NetGUID, ObjectRef);
 		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new static object ref for actor: %s. NetGUID: %s, object ref: %s"),
@@ -206,7 +206,7 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 		for (UObject* Subobject : StaticSubobjects)
 		{
 			checkf((SubobjectOffset >> 7) == 0, TEXT("Static object has exceeded 127 subobjects."));
-			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_NUF(Subobject);
+			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
 			improbable::unreal::UnrealObjectRef SubobjectRef{0, StaticObjectId + SubobjectOffset++};
 			RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
 			UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new static object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
@@ -216,7 +216,7 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 	}
 }
 
-FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_NUF(const UObject* Object)
+FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(const UObject* Object)
 {
 	FNetworkGUID NetGUID = GetOrAssignNetGUID(Object);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: GetOrAssignNetGUID for object %s returned %s. IsDynamicObject: %d"),

@@ -6,6 +6,8 @@
 #include "Engine/GameInstance.h"
 #include "SpatialGameInstance.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDK, Log, All);
+
 /**
 *
 */
@@ -14,7 +16,7 @@ class SPATIALGDK_API USpatialGameInstance : public UGameInstance
 {
 GENERATED_BODY()
 
-	bool StartGameInstance_NUFClient(FString& Error);
+	bool StartGameInstance_SpatialGDKClient(FString& Error);
 
 #if WITH_EDITOR
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;

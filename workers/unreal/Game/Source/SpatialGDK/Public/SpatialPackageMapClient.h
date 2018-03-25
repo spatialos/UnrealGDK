@@ -52,7 +52,7 @@ public:
 	void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);
 
 private:
-	FNetworkGUID GetOrAssignNetGUID_NUF(const UObject* Object);
+	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(const UObject* Object);
 	void RegisterObjectRef(FNetworkGUID NetGUID, const improbable::unreal::UnrealObjectRef& ObjectRef);
 	FNetworkGUID AssignStaticActorNetGUID(const UObject* Object, const FNetworkGUID& StaticNetGUID);
 

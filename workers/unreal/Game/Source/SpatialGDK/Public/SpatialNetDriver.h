@@ -17,8 +17,7 @@ class USpatialOSComponentUpdater;
 class USpatialOS;
 class USpatialNetConnection;
 
-// SpatialNetDriver will not be in the NUF module in a final product, so we can merge this with LogSpatialOS.
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNUF, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
 class FSpatialWorkerUniqueNetId : public FUniqueNetId
 {
@@ -116,7 +115,7 @@ protected:
 	void OnSpatialOSDisconnected();
 		
 #if WITH_SERVER_CODE
-	//NUF: These functions all exist in UNetDriver, but we need to modify/simplify them in certain ways.
+	//SpatialGDK: These functions all exist in UNetDriver, but we need to modify/simplify them in certain ways.
 	// Could have marked them virtual in base class but that's a pointless source change as these functions are not meant to be called from anywhere except USpatialNetDriver::ServerReplicateActors.
 	int32 ServerReplicateActors_PrepConnections(const float DeltaSeconds);
 	int32 ServerReplicateActors_PrioritizeActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors);

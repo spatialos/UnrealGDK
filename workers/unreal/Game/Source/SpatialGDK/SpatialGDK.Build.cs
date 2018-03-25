@@ -35,14 +35,13 @@ public class SpatialGDK : ModuleRules
                 "OnlineSubsystemUtils",
                 "PhysXVehicles",
                 "SpatialOS",
-                "InputCore",
-                "UnrealEd"
+                "InputCore"
             });
 
-        if (UEBuildConfiguration.bBuildEditor == true)
-        {
-            // Required by UNUFGameInstance::StartPlayInEditorGameInstance.
-            PublicDependencyModuleNames.Add("UnrealEd");
-        }
-    }
+		if (UEBuildConfiguration.bBuildEditor == true)
+		{
+			// Required by USpatialGameInstance::StartPlayInEditorGameInstance.
+			PublicDependencyModuleNames.Add("UnrealEd");
+		}
+	}
 }
