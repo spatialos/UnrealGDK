@@ -4,15 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "NUFGameMode.generated.h"
+#include "SampleGameGameMode.generated.h"
 
 UCLASS(minimalapi)
-class ANUFGameMode : public AGameModeBase
+class ASampleGameGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
 public:
-	ANUFGameMode();
+	ASampleGameGameMode();
 };
 
 

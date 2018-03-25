@@ -1,8 +1,8 @@
 // Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
 
-#include "NUFGameStateBase.h"
+#include "SampleGameGameStateBase.h"
 
-void ANUFGameStateBase::FakeServerHasBegunPlay()
+void ASampleGameGameStateBase::FakeServerHasBegunPlay()
 {
 	if (!GetWorld()) 
 	{

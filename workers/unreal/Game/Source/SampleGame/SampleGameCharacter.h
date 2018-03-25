@@ -6,10 +6,10 @@
 #include "Commander.h"
 #include "EntityRegistry.h"
 #include "GameFramework/Character.h"
-#include "NUFCharacter.generated.h"
+#include "SampleGameCharacter.generated.h"
 
 UCLASS(config=Game)
-class ANUFCharacter : public ACharacter
+class ASampleGameCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -21,7 +21,7 @@ class ANUFCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 public:
-	ANUFCharacter();
+	ASampleGameCharacter();
 
 	virtual void BeginPlay() override;
 

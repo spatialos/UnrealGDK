@@ -3,11 +3,11 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class NUFServerTarget : TargetRules
+public class SampleGameServerTarget : TargetRules
 {
-	public NUFServerTarget(TargetInfo Target) : base(Target)
+	public SampleGameServerTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Server;
-		ExtraModuleNames.Add("NUF");
+		ExtraModuleNames.Add("SampleGame");
 	}
 }

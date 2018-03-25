@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "NUFPlayerController.generated.h"
+#include "SampleGamePlayerController.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class NUF_API ANUFPlayerController : public APlayerController
+class SAMPLEGAME_API ASampleGamePlayerController : public APlayerController
 {
 	GENERATED_BODY()
 

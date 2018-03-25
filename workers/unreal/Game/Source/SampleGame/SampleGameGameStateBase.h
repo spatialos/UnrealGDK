@@ -4,10 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
-#include "NUFGameStateBase.generated.h"
+#include "SampleGameGameStateBase.generated.h"
 
 UCLASS()
-class NUF_API ANUFGameStateBase : public AGameStateBase
+class SAMPLEGAME_API ASampleGameGameStateBase : public AGameStateBase
 {
 	GENERATED_BODY()
 
