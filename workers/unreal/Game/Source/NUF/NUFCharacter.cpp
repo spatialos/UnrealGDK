@@ -32,8 +32,6 @@ ANUFCharacter::ANUFCharacter()
 		Cast<ANUFGameStateBase>(GameState)->FakeServerHasBegunPlay();
 	}
 
-	PrimaryActorTick.bCanEverTick = true;
-
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -68,11 +66,6 @@ ANUFCharacter::ANUFCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
-}
-
-void ANUFCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime); // Call parent class tick function  
 }
 
 void ANUFCharacter::BeginPlay()

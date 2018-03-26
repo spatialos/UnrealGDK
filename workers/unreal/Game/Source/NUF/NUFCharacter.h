@@ -36,10 +36,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
-	UFUNCTION(reliable, server, WithValidation)
-	void TestRPC();
-	bool TestRPC_Validate();
-	void TestRPC_Implementation();
+	UPROPERTY(Replicated, VisibleAnywhere)
+	TArray<int> MyArray;
 
 protected:
 
