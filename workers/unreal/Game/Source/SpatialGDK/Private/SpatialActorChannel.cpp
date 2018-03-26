@@ -187,10 +187,10 @@ bool USpatialActorChannel::ReplicateActor()
 
 	// Epic does this at the net driver level, per connection. See UNetDriver::ServerReplicateActors().
 	// However, we have many player controllers sharing one connection, so we do it at the actor level before replication.
-	APlayerController* PC = Cast<APlayerController>(Actor);
-	if (PC)
+	APlayerController* PlayerController = Cast<APlayerController>(Actor);
+	if (PlayerController)
 	{
-		PC->SendClientAdjustment();
+		PlayerController->SendClientAdjustment();
 	}
 	
 	// Update the replicated property change list.
@@ -268,7 +268,6 @@ bool USpatialActorChannel::ReplicateActor()
 			}
 			if (!PlayerState)
 			{
-				APlayerController* PlayerController = Cast<APlayerController>(Actor);
 				if (PlayerController)
 				{
 					PlayerState = PlayerController->PlayerState;
@@ -313,8 +312,8 @@ bool USpatialActorChannel::ReplicateActor()
 		UpdateChangelistHistory(ActorReplicator->RepState);
 	}
 
-	// Update SpatialOS position.
-	if (!PC)
+	// Update SpatialOS position, but not for PlayerController or PlayerState as this is done indirectly by the PlayerCharacter update
+	if (!PlayerController && !Cast<APlayerState>(Actor))
 	{
 		UpdateSpatialPosition();
 	}
@@ -495,9 +494,9 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 
 void USpatialActorChannel::UpdateSpatialPosition()
 {
-	// PlayerController's are a special case here. To ensure that the PlayerController and its pawn is migrated
-	// between workers at the same time (which is not guaranteed), we ensure that we update the position component of
-	// the PlayerController at the same time as the pawn.
+	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
+	// migrated between workers at the same time (which is not guaranteed), we ensure that we update the position component 
+	// of the PlayerController and PlayerState at the same time as the pawn.
 
 	// Check that it has moved sufficiently far to be updated
 	const float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
