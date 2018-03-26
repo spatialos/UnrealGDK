@@ -9,12 +9,12 @@ class FToolBarBuilder;
 class FMenuBuilder;
 class FUICommandList;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogNUFEditor, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditor, Log, All);
 
-class FNUFEditorToolbarModule : public IModuleInterface, public FTickableEditorObject
+class FSpatialGDKEditorToolbarModule : public IModuleInterface, public FTickableEditorObject
 {
 public:
-	FNUFEditorToolbarModule();
+	FSpatialGDKEditorToolbarModule();
 
 	void StartupModule() override;
 	void ShutdownModule() override;
@@ -29,7 +29,7 @@ public:
 
 	TStatId GetStatId() const override
 	{
-		RETURN_QUICK_DECLARE_CYCLE_STAT(FNUFEditorToolbarModule, STATGROUP_Tickables);
+		RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables);
 	}
 
 private:
