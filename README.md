@@ -67,16 +67,16 @@ There is a small number of changes to UE4 source code we have to make. These cha
 
 ## How to run:
 
-- Build the engine fork, which can be found at `https://github.com/improbable/UnrealEngine`. Make sure to check out the right branch.
+- Build the engine fork, which can be found at `https://github.com/improbable/UnrealEngine`. Make sure to check out the `UnrealEngine417_NUF` branch.
 - Set UNREAL_HOME environment variable to the engine fork location.
 - Set the uproject to use the engine fork.
 - `spatial worker build --target=local`
 - `spatial local launch`
 - Launch PIE with dedicated server + 1 player.
 
-The interop code and schema generated for marshalling updates/RPCs is committed directly to the source tree in `workers/unreal/Game/Source/NUF/NUF/Generated` and `schema/improbable/unreal/generated` respectively, so the commandlet is not required to be re-run unless the code generator is changed.
+The interop code and schema generated for marshalling updates/RPCs is committed directly to the source tree in `workers/unreal/Game/Source/SpatialGDK/Generated` and `schema/improbable/unreal/generated` respectively, so the commandlet is not required to be re-run unless the code generator is changed.
 
-Also provided are two non-load balanced launch scripts to assist in developing. 'one_worker_test.json' tests that managed workers launch correctly and ensures entities will never cross worker boundaries. 'two_worker_test.json' provides a static worker boundary between two workers to assist entity migration testing.
+Also provided are two non-load balanced launch scripts to assist in developing. 'one_worker_test.json' tests that managed workers launch correctly and ensures entities will never cross worker boundaries. 'two_worker_test.json' provides a static non-overlapping worker boundary between two workers to assist entity migration testing. As worker boundaries don't overlap, workers have no knowledge of entities authoritative on other workers. This is something we'll be addressing in future updates.
 
 ## Current focus:
 We are currently implementing cross-server actor transfers.
