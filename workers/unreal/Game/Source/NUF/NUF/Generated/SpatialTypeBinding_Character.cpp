@@ -120,7 +120,7 @@ void USpatialTypeBinding_Character::BindToView()
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterSingleClientRepData>& Op)
 		{
 			// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
-			if (HasAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealCharacterSingleClientRepData::ComponentId))
+			if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealCharacterSingleClientRepData::ComponentId))
 			{
 				return;
 			}
@@ -132,7 +132,7 @@ void USpatialTypeBinding_Character::BindToView()
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMultiClientRepData>& Op)
 		{
 			// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
-			if (HasAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealCharacterMultiClientRepData::ComponentId))
+			if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealCharacterMultiClientRepData::ComponentId))
 			{
 				return;
 			}
@@ -144,7 +144,7 @@ void USpatialTypeBinding_Character::BindToView()
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealCharacterMigratableData>& Op)
 		{
 			// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
-			if (HasAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealCharacterMigratableData::ComponentId))
+			if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealCharacterMigratableData::ComponentId))
 			{
 				return;
 			}

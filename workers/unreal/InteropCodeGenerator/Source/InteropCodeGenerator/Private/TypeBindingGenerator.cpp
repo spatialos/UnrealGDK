@@ -711,7 +711,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 		SourceWriter.Indent();
 		SourceWriter.Printf(R"""(
 			// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
-			if (HasAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::%s::ComponentId))
+			if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::%s::ComponentId))
 			{
 				return;
 			})""", *SchemaReplicatedDataName(Group, Class));
@@ -731,7 +731,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 	SourceWriter.Indent();
 	SourceWriter.Printf(R"""(
 		// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
-		if (HasAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::%s::ComponentId))
+		if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::%s::ComponentId))
 		{
 			return;
 		})""", *SchemaMigratableDataName(Class));

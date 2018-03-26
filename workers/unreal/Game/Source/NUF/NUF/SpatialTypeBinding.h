@@ -34,7 +34,7 @@ FORCEINLINE EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Co
 }
 
 // TODO: Remove once we've upgraded to 14.0 and can disable component short circuiting. See TIG-137.
-FORCEINLINE bool HasAuthority(TWeakPtr<worker::View> View, const worker::EntityId EntityId, const worker::ComponentId ComponentId)
+FORCEINLINE bool HasComponentAuthority(TWeakPtr<worker::View> View, const worker::EntityId EntityId, const worker::ComponentId ComponentId)
 {
 	TSharedPtr<worker::View> PinnedView = View.Pin();
 	if (PinnedView.IsValid())
@@ -76,7 +76,7 @@ public:
 		UStruct* CurrentContainerType = Class;
 		for (FName PropertyName : PropertyNames)
 		{
-			checkf(CurrentContainerType, TEXT("A property in the chain (except the leaf) is not a struct property."));
+			checkf(CurrentContainerType, TEXT("A property in the chain (except the end) is not a container."));
 			UProperty* Property = CurrentContainerType->FindPropertyByName(PropertyName);
 			PropertyChain.Add(Property);
 			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
@@ -84,6 +84,10 @@ public:
 			{
 				CurrentContainerType = StructProperty->Struct;
 			}
+      else
+      {
+        CurrentContainerType = nullptr;
+      }
 		}
 		Property = PropertyChain[PropertyChain.Num() - 1];
 
@@ -99,6 +103,7 @@ public:
 		return Container + Offset;
 	}
 
+  
 	FORCEINLINE const uint8* GetPropertyData(const uint8* Container) const
 	{
 		return Container + Offset;
@@ -117,17 +122,23 @@ private:
 class FMigratableHandleData
 {
 public:
-	FMigratableHandleData(UClass* Class, TArray<FName> PropertyNames)
+	FMigratableHandleData(UClass* Class, TArray<FName> PropertyNames) :
+    SubobjectProperty(false),
+    Offset(0)
 	{
 		// Build property chain.
 		check(PropertyNames.Num() > 0);
 		UStruct* CurrentContainerType = Class;
 		for (FName PropertyName : PropertyNames)
 		{
-			checkf(CurrentContainerType, TEXT("A property in the chain (except the leaf) is not a struct property."));
+			checkf(CurrentContainerType, TEXT("A property in the chain (except the end) is not a container."));
 			UProperty* Property = CurrentContainerType->FindPropertyByName(PropertyName);
 			check(Property);
 			PropertyChain.Add(Property);
+      if (!SubobjectProperty)
+      {
+        Offset += Property->GetOffset_ForInternal();
+      }
 			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
 			if (StructProperty)
 			{
@@ -139,58 +150,60 @@ public:
 				if (ObjectProperty)
 				{
 					CurrentContainerType = ObjectProperty->PropertyClass;
+          SubobjectProperty = true; // We are now recursing into a subobjects properties.
+          Offset = 0;
 				}
+        else
+        {
+          // We should only encounter a non-container style property if this is the final property in the chain.
+          // Otherwise, the above check will be hit.
+          CurrentContainerType = nullptr;
+        }
 			}
 		}
 		Property = PropertyChain[PropertyChain.Num() - 1];
 	}
 
-	uint8* GetPropertyData(uint8* Container) const
+	FORCEINLINE uint8* GetPropertyData(uint8* Container) const
 	{
-		uint8* Data = Container;
-		for (int i = 0; i < PropertyChain.Num(); ++i)
-		{
-			Data += PropertyChain[i]->GetOffset_ForInternal();
+    if (SubobjectProperty)
+    {
+      uint8* Data = Container;
+      for (int i = 0; i < PropertyChain.Num(); ++i)
+      {
+        Data += PropertyChain[i]->GetOffset_ForInternal();
 
-			// If we're not the last property in the chain.
-			if (i < (PropertyChain.Num() - 1))
-			{
-				// Migratable property chains can cross into subobjects, so we will need to deal with objects which are not inlined into the container.
-				UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyChain[i]);
-				if (ObjectProperty)
-				{
-					UObject* PropertyValue = ObjectProperty->GetObjectPropertyValue(Data);
-					Data = (uint8*)PropertyValue;
-				}
-			}
-		}
-		return Data;
+        // If we're not the last property in the chain.
+        if (i < (PropertyChain.Num() - 1))
+        {
+          // Migratable property chains can cross into subobjects, so we will need to deal with objects which are not inlined into the container.
+          UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyChain[i]);
+          if (ObjectProperty)
+          {
+            UObject* PropertyValue = ObjectProperty->GetObjectPropertyValue(Data);
+            Data = (uint8*)PropertyValue;
+          }
+        }
+      }
+      return Data;
+    }
+    else
+    {
+      return Container + Offset;
+    }
 	}
 
-	const uint8* GetPropertyData(const uint8* Container) const
+	FORCEINLINE const uint8* GetPropertyData(const uint8* Container) const
 	{
-		const uint8* Data = Container;
-		for (int i = 0; i < PropertyChain.Num(); ++i)
-		{
-			Data += PropertyChain[i]->GetOffset_ForInternal();
-
-			// If we're not the last property in the chain.
-			if (i < (PropertyChain.Num() - 1))
-			{
-				// Migratable property chains can cross into subobjects, so we will need to deal with objects which are not inlined into the container.
-				UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyChain[i]);
-				if (ObjectProperty)
-				{
-					UObject* PropertyValue = ObjectProperty->GetObjectPropertyValue(Data);
-					Data = (uint8*)PropertyValue;
-				}
-			}
-		}
-		return Data;
+    return GetPropertyData((uint8*)Container);
 	}
 
 	TArray<UProperty*> PropertyChain;
 	UProperty* Property;
+
+private:
+  bool SubobjectProperty; // If this is true, then this property refers to a property within a subobject.
+  uint32 Offset;
 };
 
 // A map from rep handle to rep handle data.

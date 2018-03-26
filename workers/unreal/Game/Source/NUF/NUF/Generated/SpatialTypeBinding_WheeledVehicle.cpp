@@ -78,7 +78,7 @@ void USpatialTypeBinding_WheeledVehicle::BindToView()
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleSingleClientRepData>& Op)
 		{
 			// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
-			if (HasAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealWheeledVehicleSingleClientRepData::ComponentId))
+			if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealWheeledVehicleSingleClientRepData::ComponentId))
 			{
 				return;
 			}
@@ -90,7 +90,7 @@ void USpatialTypeBinding_WheeledVehicle::BindToView()
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleMultiClientRepData>& Op)
 		{
 			// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
-			if (HasAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealWheeledVehicleMultiClientRepData::ComponentId))
+			if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealWheeledVehicleMultiClientRepData::ComponentId))
 			{
 				return;
 			}
@@ -102,7 +102,7 @@ void USpatialTypeBinding_WheeledVehicle::BindToView()
 			const worker::ComponentUpdateOp<improbable::unreal::UnrealWheeledVehicleMigratableData>& Op)
 		{
 			// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
-			if (HasAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealWheeledVehicleMigratableData::ComponentId))
+			if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::UnrealWheeledVehicleMigratableData::ComponentId))
 			{
 				return;
 			}
