@@ -3,8 +3,8 @@
 	"Version": 1,
 	"VersionName": "1.0",
 	"FriendlyName": "Toolbar",
-	"Description": "NUF Editor Toolbar",
-	"Category": "NUF",
+	"Description": "SpatialGDK Editor Toolbar",
+	"Category": "SpatialGDK",
 	"CreatedBy": "Improbable Worlds, Ltd.",
 	"CreatedByURL": "https://improbable.io",
 	"DocsURL": "",
@@ -15,7 +15,7 @@
 	"Installed": false,
 	"Modules": [
 		{
-			"Name": "NUFEditorToolbar",
+			"Name": "SpatialGDKEditorToolbar",
 			"Type": "Editor",
 			"LoadingPhase": "Default"
 		}

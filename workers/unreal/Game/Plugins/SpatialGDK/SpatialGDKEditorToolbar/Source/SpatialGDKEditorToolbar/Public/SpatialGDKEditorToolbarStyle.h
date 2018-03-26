@@ -7,7 +7,7 @@
 
 class FSlateStyleSet;
 
-class FNUFEditorToolbarStyle
+class FSpatialGDKEditorToolbarStyle
 {
 public:
 	static void Initialize();

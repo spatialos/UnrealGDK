@@ -2,23 +2,23 @@
 
 using UnrealBuildTool;
 
-public class NUFEditorToolbar : ModuleRules
+public class SpatialGDKEditorToolbar : ModuleRules
 {
-	public NUFEditorToolbar(ReadOnlyTargetRules Target) : base(Target)
+	public SpatialGDKEditorToolbar(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		bFasterWithoutUnity = true;
 
 		PublicIncludePaths.AddRange(
 			new string[] {
-				"NUFEditorToolbar/Public",
+				"SpatialGDKEditorToolbar/Public",
 				"SpatialOS/Public"
 			});
 				
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				"NUFEditorToolbar/Private",
+				"SpatialGDKEditorToolbar/Private",
 			});
 			
 		

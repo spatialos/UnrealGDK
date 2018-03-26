@@ -1,15 +1,15 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "NUFEditorToolbarStyle.h"
+#include "SpatialGDKEditorToolbarStyle.h"
 #include "Framework/Application/SlateApplication.h"
 #include "IPluginManager.h"
 #include "SlateGameResources.h"
-#include "NUFEditorToolbar.h"
+#include "SpatialGDKEditorToolbar.h"
 #include "Styling/SlateStyleRegistry.h"
 
-TSharedPtr<FSlateStyleSet> FNUFEditorToolbarStyle::StyleInstance = NULL;
+TSharedPtr<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::StyleInstance = NULL;
 
-void FNUFEditorToolbarStyle::Initialize()
+void FSpatialGDKEditorToolbarStyle::Initialize()
 {
 	if (!StyleInstance.IsValid())
 	{
@@ -18,16 +18,16 @@ void FNUFEditorToolbarStyle::Initialize()
 	}
 }
 
-void FNUFEditorToolbarStyle::Shutdown()
+void FSpatialGDKEditorToolbarStyle::Shutdown()
 {
 	FSlateStyleRegistry::UnRegisterSlateStyle(*StyleInstance);
 	ensure(StyleInstance.IsUnique());
 	StyleInstance.Reset();
 }
 
-FName FNUFEditorToolbarStyle::GetStyleSetName()
+FName FSpatialGDKEditorToolbarStyle::GetStyleSetName()
 {
-	static FName StyleSetName(TEXT("NUFEditorToolbarStyle"));
+	static FName StyleSetName(TEXT("SpatialGDKEditorToolbarStyle"));
 	return StyleSetName;
 }
 
@@ -41,17 +41,17 @@ const FVector2D Icon20x20(20.0f, 20.0f);
 const FVector2D Icon40x40(40.0f, 40.0f);
 }
 
-TSharedRef<FSlateStyleSet> FNUFEditorToolbarStyle::Create()
+TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 {
 	TSharedRef<FSlateStyleSet> Style =
-		MakeShareable(new FSlateStyleSet("NUFEditorToolbarStyle"));
-	Style->SetContentRoot(IPluginManager::Get().FindPlugin("NUFEditorToolbar")->GetBaseDir() /
+		MakeShareable(new FSlateStyleSet("SpatialGDKEditorToolbarStyle"));
+	Style->SetContentRoot(IPluginManager::Get().FindPlugin("SpatialGDKEditorToolbar")->GetBaseDir() /
 		TEXT("Resources"));
 
-	Style->Set("NUFEditorToolbar.CreateNUFSnapshot",
+	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot",
 		new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon40x40));
 
-	Style->Set("NUFEditorToolbar.CreateNUFSnapshot.Small",
+	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot.Small",
 		new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon20x20));
 
 	return Style;
@@ -59,7 +59,7 @@ TSharedRef<FSlateStyleSet> FNUFEditorToolbarStyle::Create()
 
 #undef IMAGE_BRUSH
 
-void FNUFEditorToolbarStyle::ReloadTextures()
+void FSpatialGDKEditorToolbarStyle::ReloadTextures()
 {
 	if (FSlateApplication::IsInitialized())
 	{
@@ -67,7 +67,7 @@ void FNUFEditorToolbarStyle::ReloadTextures()
 	}
 }
 
-const ISlateStyle& FNUFEditorToolbarStyle::Get()
+const ISlateStyle& FSpatialGDKEditorToolbarStyle::Get()
 {
 	return *StyleInstance;
 }
