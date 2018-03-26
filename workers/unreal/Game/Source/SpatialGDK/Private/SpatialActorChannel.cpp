@@ -312,7 +312,7 @@ bool USpatialActorChannel::ReplicateActor()
 		UpdateChangelistHistory(ActorReplicator->RepState);
 	}
 
-	// Update SpatialOS position, but not for PlayerController or PlayerState as this is done indirectly by the PlayerCharacter update
+	// Update SpatialOS position.
 	if (!PlayerController && !Cast<APlayerState>(Actor))
 	{
 		UpdateSpatialPosition();
