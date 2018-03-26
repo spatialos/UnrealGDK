@@ -32,8 +32,6 @@ ANUFCharacter::ANUFCharacter()
 		Cast<ANUFGameStateBase>(GameState)->FakeServerHasBegunPlay();
 	}
 
-	bReplicates = true;
-
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Set size for collision capsule
@@ -70,25 +68,11 @@ ANUFCharacter::ANUFCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
-
-	MyArray.Add(1);
-	MyArray.Add(2);
-	MyArray.Add(3);
-	MyArray.Add(4);
-	MyArray.Add(5);
-
-	bRandomize = false;
 }
 
 void ANUFCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime); // Call parent class tick function  
-
-	if (HasAuthority() && bRandomize) {
-		for (int i = 0; i < MyArray.Num(); i++) {
-			MyArray[i] = FMath::RandRange(0, 10);
-		}
-	}
 }
 
 void ANUFCharacter::BeginPlay()
@@ -111,8 +95,6 @@ void ANUFCharacter::BeginPlay()
 void ANUFCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ANUFCharacter, MyArray);
 }
 
 bool ANUFCharacter::TestRPC_Validate()
@@ -122,7 +104,6 @@ bool ANUFCharacter::TestRPC_Validate()
 
 void ANUFCharacter::TestRPC_Implementation()
 {
-	bRandomize = !bRandomize;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -158,7 +139,6 @@ void ANUFCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 
 void ANUFCharacter::Interact() {
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("On screen message from Character"));
-	TestRPC();
 }
 
 void ANUFCharacter::OnPossessPawnRequest(UPossessPawnCommandResponder* Responder)

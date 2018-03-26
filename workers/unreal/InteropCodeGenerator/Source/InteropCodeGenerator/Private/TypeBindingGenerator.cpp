@@ -384,9 +384,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 		Writer.Printf("%s.SetNum(List.size());", *PropertyValue);
 		Writer.Print("for(int i = 0; i < List.size(); i++)");
 		Writer.BeginScope();
-		//Writer.Printf("%s Temp;", *(ArrayProperty->Inner->GetCPPType()));
 		GeneratePropertyToUnrealConversion(Writer, "List[i]", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), true, ObjectResolveFailureGenerator);
-		//Writer.Printf("%s[i] = Temp;", *PropertyValue);
 		Writer.End();
 		Writer.End();
 	}
@@ -567,7 +565,8 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 		#include "../SpatialPackageMapClient.h"
 		#include "../SpatialNetDriver.h"
 		#include "../SpatialInterop.h")""", *InteropFilename);
-	// TODO: Come up with a generic solution to include the right headers.
+
+	// TODO: Temporary Hack, need to come up with generic solution. See TIG-138
 	if (Class->GetName().Contains("WheeledVehicle"))
 	{
 		SourceWriter.Printf(R"""(

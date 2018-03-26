@@ -41,12 +41,6 @@ public:
 	bool TestRPC_Validate();
 	void TestRPC_Implementation();
 
-	UPROPERTY(Replicated, VisibleAnywhere)
-	TArray<int> MyArray;
-
-	UPROPERTY(Replicated, VisibleAnywhere)
-	bool bRandomize;
-
 protected:
 
 	/** Resets HMD orientation in VR. */
