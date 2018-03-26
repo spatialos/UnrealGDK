@@ -1,0 +1,29 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{1AAA3687-4621-3C9A-DB80-16AF1C56E67B}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "SampleGame",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		},
+		{
+			"Name": "SpatialGDK",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"PostBuildSteps":
+	{
+		"Win64": [
+			"cd /D \"$(ProjectDir)\"",
+			"spatial invoke unreal package --engineDir=\"$(EngineDir)\" --project=\"$(ProjectFile)\" --platform=\"$(TargetPlatform)\" --target=\"$(TargetType)\" --configuration=\"$(TargetConfiguration)\" -- -allmaps",
+			"exit /B %ERRORLEVEL%"
+		]
+	}
+}

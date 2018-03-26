@@ -1,0 +1,23 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Toolbar",
+	"Description": "SpatialGDK Editor Toolbar",
+	"Category": "SpatialGDK",
+	"CreatedBy": "Improbable Worlds, Ltd.",
+	"CreatedByURL": "https://improbable.io",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "https://forums.improbable.io/c/sup",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "SpatialGDKEditorToolbar",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}
