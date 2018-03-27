@@ -13,7 +13,7 @@ class USpatialActorChannel;
 class USpatialPackageMapClient;
 class USpatialNetDriver;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInterop, Log, All);
+SPATIALGDK_API DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInterop, Log, All);
 
 // An general version of worker::RequestId.
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);

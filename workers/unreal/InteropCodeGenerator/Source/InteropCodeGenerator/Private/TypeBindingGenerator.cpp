@@ -436,7 +436,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 	// Type binding class.
 	HeaderWriter.Print("UCLASS()");
-	HeaderWriter.Printf("class SPATIALGDK_API %s : public USpatialTypeBinding", *TypeBindingName(Class));
+	HeaderWriter.Printf("class %s : public USpatialTypeBinding", *TypeBindingName(Class));
 	HeaderWriter.Print("{").Indent();
 	HeaderWriter.Print("GENERATED_BODY()");
 	HeaderWriter.PrintNewLine();
@@ -976,14 +976,6 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		*SchemaRPCComponentName(ERPCType::RPC_Client, Class), *SchemaRPCComponentName(ERPCType::RPC_Client, Class));
 	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, WorkersOnly)",
 		*SchemaRPCComponentName(ERPCType::RPC_Server, Class), *SchemaRPCComponentName(ERPCType::RPC_Server, Class));
-
-	// This adds a custom component called PossessPawn which is added the the Character and Vehicle. It allows
-	// these two classes to call an RPC which is intended to let the player possess a different pawn.
-	// TODO: Remove this hack.
-	if (Class->GetName().Contains("WheeledVehicle") || Class->GetName().Contains("Character"))
-	{
-		SourceWriter.Printf(".AddComponent<nuf::PossessPawn>(nuf::PossessPawn::Data{}, WorkersOnly)");
-	}
 
 	SourceWriter.Print(".Build();");
 	SourceWriter.Outdent();

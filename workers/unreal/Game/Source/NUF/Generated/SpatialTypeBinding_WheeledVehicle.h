@@ -12,7 +12,7 @@
 #include "SpatialTypeBinding_WheeledVehicle.generated.h"
 
 UCLASS()
-class SPATIALGDK_API USpatialTypeBinding_WheeledVehicle : public USpatialTypeBinding
+class USpatialTypeBinding_WheeledVehicle : public USpatialTypeBinding
 {
 	GENERATED_BODY()
 
