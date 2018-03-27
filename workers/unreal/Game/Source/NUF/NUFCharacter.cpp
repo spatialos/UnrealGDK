@@ -16,6 +16,8 @@
 #include "NUF/SpatialNetDriver.h"
 #include "VehicleCppPawn.h"
 
+#include "UnrealNetwork.h"
+
 //////////////////////////////////////////////////////////////////////////
 // ANUFCharacter
 
@@ -83,6 +85,20 @@ void ANUFCharacter::BeginPlay()
 	}
 }
 
+void ANUFCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+}
+
+bool ANUFCharacter::TestRPC_Validate()
+{
+	return true;
+}
+
+void ANUFCharacter::TestRPC_Implementation()
+{
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -116,19 +132,6 @@ void ANUFCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 
 void ANUFCharacter::Interact() {
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("On screen message from Character"));
-
-	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AVehicleCppPawn::StaticClass(), FoundActors);
-
-	nuf::PossessPawnRequest Request{ EntityRegistry->GetEntityIdFromActor(FoundActors[0]).ToSpatialEntityId() };
-
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
-
-	Commander->PossessPawn(
-		EntityRegistry->GetEntityIdFromActor(this),
-		NewObject<UPossessPawnRequest>()->Init(Request),
-		OnPossessPawnAckDelegate,
-		0);
 }
 
 void ANUFCharacter::OnPossessPawnRequest(UPossessPawnCommandResponder* Responder)

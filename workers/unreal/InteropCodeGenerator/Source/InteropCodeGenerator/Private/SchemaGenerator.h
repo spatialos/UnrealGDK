@@ -40,7 +40,7 @@ FString CPPCommandClassName(UFunction* Function);
 
 // Given a RepLayout cmd type (a data type supported by the replication system). Generates the corresponding
 // type used in schema.
-FString RepLayoutTypeToSchemaType(ERepLayoutCmdType Type);
+FString PropertyToSchemaType(UProperty* Property);
 
 // Generates a schema file, given an output code writer, component ID, Unreal type and type info.
 int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo);
