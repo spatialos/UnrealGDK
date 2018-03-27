@@ -228,7 +228,7 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPt
 	}
 }
 
-TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type)
+TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties)
 {
 	// Struct types will set this to nullptr.
 	UClass* Class = Cast<UClass>(Type);
@@ -265,7 +265,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type)
 		if (Property->IsA<UStructProperty>())
 		{
 			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
-			PropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct);
+			PropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, {});
 			PropertyNode->Type->ParentProperty = PropertyNode;
 			continue;
 		}
@@ -310,7 +310,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type)
 				UE_LOG(LogTemp, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
 				// This property is definitely a strong reference, recurse into it.
-				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass);
+				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {});
 				PropertyNode->Type->ParentProperty = PropertyNode;
 			}
 			else
@@ -358,7 +358,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type)
 				UStructProperty* StructParameter = Cast<UStructProperty>(Parameter);
 				if (StructParameter)
 				{
-					PropertyNode->Type = CreateUnrealTypeInfo(StructParameter->Struct);
+					PropertyNode->Type = CreateUnrealTypeInfo(StructParameter->Struct, {});
 					PropertyNode->Type->ParentProperty = PropertyNode;
 				}
 			}
@@ -451,6 +451,28 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type)
 		PropertyNode->ReplicationData = RepDataNode;
 	}
 
+	// Process the migratable properties list.
+	uint16 MigratableDataHandle = 1;
+	for (const TArray<FName>& PropertyNames : MigratableProperties)
+	{
+		// Find the property represented by this chain.
+		TSharedPtr<FUnrealProperty> MigratableProperty = nullptr;
+		TSharedPtr<FUnrealType> CurrentTypeNode = TypeNode;
+		for (FName PropertyName : PropertyNames)
+		{
+			checkf(CurrentTypeNode.IsValid(), TEXT("A property in the chain (except the leaf) is not a struct property."));
+			UProperty* NextProperty = CurrentTypeNode->Type->FindPropertyByName(PropertyName);
+			checkf(NextProperty, TEXT("Cannot find property %s in container %s"), *PropertyName.ToString(), *CurrentTypeNode->Type->GetName());
+			MigratableProperty = CurrentTypeNode->Properties.FindChecked(NextProperty);
+			CurrentTypeNode = MigratableProperty->Type;
+		}
+
+		// Create migratable data.
+		MigratableProperty->MigratableData = MakeShared<FUnrealMigratableData>();
+		MigratableProperty->MigratableData->Handle = MigratableDataHandle++;
+		MigratableProperty->MigratableData->RepLayoutType = PropertyToRepLayoutType(MigratableProperty->Property);
+	}
+
 	return TypeNode;
 }
 
@@ -487,6 +509,26 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 		return A < B;
 	});
 	return RepData;
+}
+
+TMap<uint16, TSharedPtr<FUnrealProperty>> GetFlatMigratableData(TSharedPtr<FUnrealType> TypeInfo)
+{
+	TMap<uint16, TSharedPtr<FUnrealProperty>> MigratableData;
+	VisitAllProperties(TypeInfo, [&MigratableData](TSharedPtr<FUnrealProperty> Property)
+	{
+		if (Property->MigratableData.IsValid())
+		{
+			MigratableData.Add(Property->MigratableData->Handle, Property);
+		}
+		return true;
+	}, true);
+
+	// Sort by property handle.
+	MigratableData.KeySort([](uint16 A, uint16 B)
+	{
+		return A < B;
+	});
+	return MigratableData;
 }
 
 FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)

@@ -17,28 +17,24 @@ class USpatialTypeBinding_PlayerState : public USpatialTypeBinding
 	GENERATED_BODY()
 
 public:
-	static const FRepHandlePropertyMap& GetHandlePropertyMap();
+	const FRepHandlePropertyMap& GetRepHandlePropertyMap() const override;
+	const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() const override;
 
 	UClass* GetBoundClass() const override;
 
 	void Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap) override;
 	void BindToView() override;
 	void UnbindFromView() override;
-	worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const override;
 
 	worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 	void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const override;
 	void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) override;
 
 	void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;
-	void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) override;
+	worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const override;
 
 private:
 	improbable::unreal::callbacks::FScopedViewCallbacks ViewCallbacks;
-
-	// Pending updates.
-	TMap<FEntityId, improbable::unreal::UnrealPlayerStateSingleClientRepData::Data> PendingSingleClientData;
-	TMap<FEntityId, improbable::unreal::UnrealPlayerStateMultiClientRepData::Data> PendingMultiClientData;
 
 	// RPC to sender map.
 	using FRPCSender = void (USpatialTypeBinding_PlayerState::*)(worker::Connection* const, struct FFrame* const, UObject*);
@@ -51,11 +47,15 @@ private:
 		improbable::unreal::UnrealPlayerStateSingleClientRepData::Update& SingleClientUpdate,
 		bool& bSingleClientUpdateChanged,
 		improbable::unreal::UnrealPlayerStateMultiClientRepData::Update& MultiClientUpdate,
-		bool& bMultiClientUpdateChanged) const;
+		bool& bMultiClientUpdateChanged,
+		improbable::unreal::UnrealPlayerStateMigratableData::Update& MigratableDataUpdate,
+		bool& bMigratableDataUpdateChanged) const;
 	void ServerSendUpdate_SingleClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerStateSingleClientRepData::Update& OutUpdate) const;
 	void ServerSendUpdate_MultiClient(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerStateMultiClientRepData::Update& OutUpdate) const;
+	void ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::UnrealPlayerStateMigratableData::Update& OutUpdate) const;
 	void ReceiveUpdate_SingleClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerStateSingleClientRepData::Update& Update) const;
 	void ReceiveUpdate_MultiClient(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerStateMultiClientRepData::Update& Update) const;
+	void ReceiveUpdate_Migratable(USpatialActorChannel* ActorChannel, const improbable::unreal::UnrealPlayerStateMigratableData::Update& Update) const;
 
 	// RPC command sender functions.
 

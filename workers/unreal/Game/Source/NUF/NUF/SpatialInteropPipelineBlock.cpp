@@ -414,36 +414,6 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 				// Call PostNetInit on client only.
 				EntityActor->PostNetInit();
 			}
-
-			// TODO(David): remove dirty hacks here to deal with repairing non-replicated state.
-			{
-				// Fix up player controller (if checked out _after_ character).
-				APlayerController* ActorController = Cast<APlayerController>(EntityActor);
-				if (ActorController)
-				{
-					APawn* ControlledPawn = ActorController->GetPawn();
-					if (ControlledPawn)
-					{
-						ActorController->ServerAcknowledgePossession_Implementation(ControlledPawn);
-					}
-				}
-
-				// Fix up pawns/characters.
-				APawn* Pawn = Cast<APawn>(EntityActor);
-				if (Pawn)
-				{
-					APlayerController* Controller = Cast<APlayerController>(Pawn->GetController());
-					if (Controller)
-					{
-						Controller->ServerAcknowledgePossession_Implementation(Pawn);
-					}
-					ACharacter* Character = Cast<ACharacter>(Pawn);
-					if (Character)
-					{
-						Cast<UCharacterMovementComponent>(Character->GetMovementComponent())->ApplyNetworkMovementMode(Character->GetReplicatedMovementMode());
-					}
-				}
-			}
 		}
 	}
 	return EntityActor;

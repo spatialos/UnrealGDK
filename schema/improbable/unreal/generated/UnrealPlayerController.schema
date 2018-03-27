@@ -30,8 +30,9 @@ component UnrealPlayerControllerMultiClientRepData {
 	UnrealObjectRef field_pawn = 16; // COND_None
 	UnrealObjectRef field_playerstate = 17; // COND_None
 }
-component UnrealPlayerControllerWorkerRepData {
+component UnrealPlayerControllerMigratableData {
 	id = 100012;
+	UnrealObjectRef field_acknowledgedpawn = 1;
 }
 type UnrealOnServerStartedVisualLoggerRequest {
 	uint32 target_subobject_offset = 1;

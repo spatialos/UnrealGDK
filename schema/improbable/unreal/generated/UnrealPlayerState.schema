@@ -37,7 +37,7 @@ component UnrealPlayerStateMultiClientRepData {
 	int32 field_starttime = 25; // COND_None
 	bytes field_uniqueid = 26; // COND_InitialOnly
 }
-component UnrealPlayerStateWorkerRepData {
+component UnrealPlayerStateMigratableData {
 	id = 100017;
 }
 

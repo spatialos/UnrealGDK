@@ -29,7 +29,7 @@ component UnrealWheeledVehicleMultiClientRepData {
 	uint32 field_remoteviewpitch = 17; // COND_SkipOwner
 	UnrealObjectRef field_controller = 18; // COND_None
 }
-component UnrealWheeledVehicleWorkerRepData {
+component UnrealWheeledVehicleMigratableData {
 	id = 100027;
 }
 type UnrealServerUpdateStateRequest {

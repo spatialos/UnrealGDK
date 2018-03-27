@@ -3,6 +3,7 @@
 #pragma once
 
 #include <improbable/worker.h>
+#include <improbable/view.h>
 
 #include "CoreMinimal.h"
 #include "Net/RepLayout.h"
@@ -32,18 +33,39 @@ FORCEINLINE EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Co
 	}
 }
 
+// TODO: Remove once we've upgraded to 14.0 and can disable component short circuiting. See TIG-137.
+FORCEINLINE bool HasComponentAuthority(TWeakPtr<worker::View> View, const worker::EntityId EntityId, const worker::ComponentId ComponentId)
+{
+	TSharedPtr<worker::View> PinnedView = View.Pin();
+	if (PinnedView.IsValid())
+	{
+		auto It = PinnedView->ComponentAuthority.find(EntityId);
+		if (It != PinnedView->ComponentAuthority.end())
+		{
+			auto ComponentIt = (*It).second.find(ComponentId);
+			if (ComponentIt != (*It).second.end())
+			{
+				return (*ComponentIt).second == worker::Authority::kAuthoritative;
+			}
+		}
+	}
+	return false;
+}
+
 // Storage for a changelist created by the replication system when replicating from the server.
 struct FPropertyChangeState
 {
-	const TArray<uint16>& Changed;
 	const uint8* RESTRICT SourceData;
-	TArray<FRepLayoutCmd>& Cmds;
-	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex;
+	const TArray<uint16>& RepChanged; // changed replicated properties
+	TArray<FRepLayoutCmd>& RepCmds;
+	TArray<FHandleToCmdIndex>& RepBaseHandleToCmdIndex;
+	const TArray<uint16>& MigChanged; // changed migratable properties
 };
 
 // A structure containing information about a replicated property.
-struct FRepHandleData
+class FRepHandleData
 {
+public:
 	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, ELifetimeCondition Condition, ELifetimeRepNotifyCondition RepNotifyCondition) :
 		Condition(Condition),
 		RepNotifyCondition(RepNotifyCondition),
@@ -54,13 +76,17 @@ struct FRepHandleData
 		UStruct* CurrentContainerType = Class;
 		for (FName PropertyName : PropertyNames)
 		{
-			checkf(CurrentContainerType, TEXT("A property in the chain (except the leaf) is not a struct property."));
+			checkf(CurrentContainerType, TEXT("A property in the chain (except the end) is not a container."));
 			UProperty* Property = CurrentContainerType->FindPropertyByName(PropertyName);
 			PropertyChain.Add(Property);
 			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
 			if (StructProperty)
 			{
 				CurrentContainerType = StructProperty->Struct;
+			}
+			else
+			{
+				CurrentContainerType = nullptr;
 			}
 		}
 		Property = PropertyChain[PropertyChain.Num() - 1];
@@ -72,15 +98,119 @@ struct FRepHandleData
 		}
 	}
 
+	FORCEINLINE uint8* GetPropertyData(uint8* Container) const
+	{
+		return Container + Offset;
+	}
+
+  
+	FORCEINLINE const uint8* GetPropertyData(const uint8* Container) const
+	{
+		return Container + Offset;
+	}
+
 	TArray<UProperty*> PropertyChain;
 	UProperty* Property;
 	ELifetimeCondition Condition;
 	ELifetimeRepNotifyCondition RepNotifyCondition;
+
+private:
 	int32 Offset;
 };
 
+// A structure containing information about a migratable property.
+class FMigratableHandleData
+{
+public:
+	FMigratableHandleData(UClass* Class, TArray<FName> PropertyNames) :
+    SubobjectProperty(false),
+    Offset(0)
+	{
+		// Build property chain.
+		check(PropertyNames.Num() > 0);
+		UStruct* CurrentContainerType = Class;
+		for (FName PropertyName : PropertyNames)
+		{
+			checkf(CurrentContainerType, TEXT("A property in the chain (except the end) is not a container."));
+			UProperty* Property = CurrentContainerType->FindPropertyByName(PropertyName);
+			check(Property);
+			PropertyChain.Add(Property);
+			if (!SubobjectProperty)
+			{
+				Offset += Property->GetOffset_ForInternal();
+			}
+			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
+			if (StructProperty)
+			{
+				CurrentContainerType = StructProperty->Struct;
+			}
+			else
+			{
+				UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property);
+				if (ObjectProperty)
+				{
+					CurrentContainerType = ObjectProperty->PropertyClass;
+					SubobjectProperty = true; // We are now recursing into a subobjects properties.
+					Offset = 0;
+				}
+				else
+				{
+					// We should only encounter a non-container style property if this is the final property in the chain.
+					// Otherwise, the above check will be hit.
+					CurrentContainerType = nullptr;
+				}
+			}
+		}
+		Property = PropertyChain[PropertyChain.Num() - 1];
+	}
+
+	FORCEINLINE uint8* GetPropertyData(uint8* Container) const
+	{
+		if (SubobjectProperty)
+		{
+			uint8* Data = Container;
+			for (int i = 0; i < PropertyChain.Num(); ++i)
+			{
+				Data += PropertyChain[i]->GetOffset_ForInternal();
+
+				// If we're not the last property in the chain.
+				if (i < (PropertyChain.Num() - 1))
+				{
+					// Migratable property chains can cross into subobjects, so we will need to deal with objects which are not inlined into the container.
+					UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyChain[i]);
+					if (ObjectProperty)
+					{
+						UObject* PropertyValue = ObjectProperty->GetObjectPropertyValue(Data);
+						Data = (uint8*)PropertyValue;
+					}
+				}
+			}
+			return Data;
+		}
+		else
+		{
+			return Container + Offset;
+		}
+	}
+
+	FORCEINLINE const uint8* GetPropertyData(const uint8* Container) const
+	{
+    return GetPropertyData((uint8*)Container);
+	}
+
+	TArray<UProperty*> PropertyChain;
+	UProperty* Property;
+
+private:
+  bool SubobjectProperty; // If this is true, then this property refers to a property within a subobject.
+  uint32 Offset;
+};
+
 // A map from rep handle to rep handle data.
-using FRepHandlePropertyMap = TMap<int32, FRepHandleData>;
+using FRepHandlePropertyMap = TMap<uint16, FRepHandleData>;
+
+// A map from migratable handle to migratable handle data.
+using FMigratableHandlePropertyMap = TMap<uint16, FMigratableHandleData>;
 
 UCLASS()
 class NUF_API USpatialTypeBinding : public UObject
@@ -88,10 +218,14 @@ class NUF_API USpatialTypeBinding : public UObject
 	GENERATED_BODY()
 
 public:
+	virtual const FRepHandlePropertyMap& GetRepHandlePropertyMap() const
+		PURE_VIRTUAL(USpatialTypeBinding::GetRepHandlePropertyMap, static FRepHandlePropertyMap Map; return Map; );
+	virtual const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() const
+		PURE_VIRTUAL(USpatialTypeBinding::GetMigratableHandlePropertyMap, static FMigratableHandlePropertyMap Map; return Map; );
+
 	virtual void Init(USpatialInterop* Interop, USpatialPackageMapClient* PackageMap);
 	virtual void BindToView() PURE_VIRTUAL(USpatialTypeBinding::BindToView, );
 	virtual void UnbindFromView() PURE_VIRTUAL(USpatialTypeBinding::UnbindFromView, );
-	virtual worker::ComponentId GetReplicatedGroupComponentId(EReplicatedPropertyGroup Group) const PURE_VIRTUAL(USpatialTypeBinding::GetReplicatedGroupComponentId, return worker::ComponentId{}; );
 	virtual UClass* GetBoundClass() const PURE_VIRTUAL(USpatialTypeBinding::GetBoundClass, return nullptr; );
 
 	virtual worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const PURE_VIRTUAL(USpatialTypeBinding::CreateActorEntity, return worker::Entity{}; );
@@ -99,7 +233,7 @@ public:
 	virtual void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) PURE_VIRTUAL(USpatialTypeBinding::SendRPCCommand, );
 	
 	virtual void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const PURE_VIRTUAL(USpatialTypeBinding::ReceiveAddComponent, );
-	virtual void ApplyQueuedStateToChannel(USpatialActorChannel* ActorChannel) PURE_VIRTUAL(USpatialTypeBinding::ApplyQueuedStateToActor, );
+	virtual worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const PURE_VIRTUAL(USpatialTypeBinding::GetInterestOverrideMap, return {}; );
 
 protected:
 	UPROPERTY()

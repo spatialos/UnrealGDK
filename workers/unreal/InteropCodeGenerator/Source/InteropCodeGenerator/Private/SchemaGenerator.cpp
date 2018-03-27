@@ -13,9 +13,9 @@ FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type)
 	return FString::Printf(TEXT("Unreal%s%sRepData"), *Type->GetName(), *GetReplicatedPropertyGroupName(Group));
 }
 
-FString SchemaWorkerReplicatedDataName(UStruct* Type)
+FString SchemaMigratableDataName(UStruct* Type)
 {
-	return FString::Printf(TEXT("Unreal%sWorkerRepData"), *Type->GetName());
+	return FString::Printf(TEXT("Unreal%sMigratableData"), *Type->GetName());
 }
 
 FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type)
@@ -169,31 +169,23 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	}
 
 	// Worker-worker replicated properties.
-	Writer.Printf("component %s {", *SchemaWorkerReplicatedDataName(Class));
+	Writer.Printf("component %s {", *SchemaMigratableDataName(Class));
 	Writer.Indent();
 	Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
-
 	int FieldCounter = 0;
-
-	/*
-	* The VC++ Linker has a limit of UINT16_MAX number of symbols in a DLL
-	* CompleteData dramatically increases the number of symbols and aren't
-	* necessarily being used, so for now we skip them.
-	*/
-	//for (auto& Prop : Layout.CompleteProperties)
-	//{
-	//	FieldCounter++;
-	//	Writer.Printf("%s %s = %d;",
-	//		*RepLayoutTypeToSchemaType(Prop.Type),
-	//		*GetFullyQualifiedName(Prop.Chain),
-	//		FieldCounter
-	//	);
-	//}
-
+	for (auto& Prop : GetFlatMigratableData(TypeInfo))
+	{
+		FieldCounter++;
+		Writer.Printf("%s %s = %d;",
+			*RepLayoutTypeToSchemaType(Prop.Value->MigratableData->RepLayoutType),
+			*SchemaFieldName(Prop.Value),
+			FieldCounter
+		);
+	}
 	Writer.Outdent().Print("}");
 
+	// RPC components.
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
-
 	for (auto Group : GetRPCTypes())
 	{
 		// Generate schema RPC command types
