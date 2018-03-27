@@ -84,10 +84,10 @@ public:
 			{
 				CurrentContainerType = StructProperty->Struct;
 			}
-      else
-      {
-        CurrentContainerType = nullptr;
-      }
+			else
+			{
+				CurrentContainerType = nullptr;
+			}
 		}
 		Property = PropertyChain[PropertyChain.Num() - 1];
 
@@ -135,10 +135,10 @@ public:
 			UProperty* Property = CurrentContainerType->FindPropertyByName(PropertyName);
 			check(Property);
 			PropertyChain.Add(Property);
-      if (!SubobjectProperty)
-      {
-        Offset += Property->GetOffset_ForInternal();
-      }
+			if (!SubobjectProperty)
+			{
+				Offset += Property->GetOffset_ForInternal();
+			}
 			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
 			if (StructProperty)
 			{
@@ -150,15 +150,15 @@ public:
 				if (ObjectProperty)
 				{
 					CurrentContainerType = ObjectProperty->PropertyClass;
-          SubobjectProperty = true; // We are now recursing into a subobjects properties.
-          Offset = 0;
+					SubobjectProperty = true; // We are now recursing into a subobjects properties.
+					Offset = 0;
 				}
-        else
-        {
-          // We should only encounter a non-container style property if this is the final property in the chain.
-          // Otherwise, the above check will be hit.
-          CurrentContainerType = nullptr;
-        }
+				else
+				{
+					// We should only encounter a non-container style property if this is the final property in the chain.
+					// Otherwise, the above check will be hit.
+					CurrentContainerType = nullptr;
+				}
 			}
 		}
 		Property = PropertyChain[PropertyChain.Num() - 1];
@@ -166,31 +166,31 @@ public:
 
 	FORCEINLINE uint8* GetPropertyData(uint8* Container) const
 	{
-    if (SubobjectProperty)
-    {
-      uint8* Data = Container;
-      for (int i = 0; i < PropertyChain.Num(); ++i)
-      {
-        Data += PropertyChain[i]->GetOffset_ForInternal();
+		if (SubobjectProperty)
+		{
+			uint8* Data = Container;
+			for (int i = 0; i < PropertyChain.Num(); ++i)
+			{
+				Data += PropertyChain[i]->GetOffset_ForInternal();
 
-        // If we're not the last property in the chain.
-        if (i < (PropertyChain.Num() - 1))
-        {
-          // Migratable property chains can cross into subobjects, so we will need to deal with objects which are not inlined into the container.
-          UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyChain[i]);
-          if (ObjectProperty)
-          {
-            UObject* PropertyValue = ObjectProperty->GetObjectPropertyValue(Data);
-            Data = (uint8*)PropertyValue;
-          }
-        }
-      }
-      return Data;
-    }
-    else
-    {
-      return Container + Offset;
-    }
+				// If we're not the last property in the chain.
+				if (i < (PropertyChain.Num() - 1))
+				{
+					// Migratable property chains can cross into subobjects, so we will need to deal with objects which are not inlined into the container.
+					UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyChain[i]);
+					if (ObjectProperty)
+					{
+						UObject* PropertyValue = ObjectProperty->GetObjectPropertyValue(Data);
+						Data = (uint8*)PropertyValue;
+					}
+				}
+			}
+			return Data;
+		}
+		else
+		{
+			return Container + Offset;
+		}
 	}
 
 	FORCEINLINE const uint8* GetPropertyData(const uint8* Container) const
