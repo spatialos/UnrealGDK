@@ -73,15 +73,6 @@ void ANUFCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 }
 
-bool ANUFCharacter::TestRPC_Validate()
-{
-	return true;
-}
-
-void ANUFCharacter::TestRPC_Implementation()
-{
-}
-
 //////////////////////////////////////////////////////////////////////////
 // Input
 

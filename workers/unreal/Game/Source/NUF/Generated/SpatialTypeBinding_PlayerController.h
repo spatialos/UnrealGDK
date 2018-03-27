@@ -12,7 +12,7 @@
 #include "SpatialTypeBinding_PlayerController.generated.h"
 
 UCLASS()
-class SPATIALGDK_API USpatialTypeBinding_PlayerController : public USpatialTypeBinding
+class USpatialTypeBinding_PlayerController : public USpatialTypeBinding
 {
 	GENERATED_BODY()
 

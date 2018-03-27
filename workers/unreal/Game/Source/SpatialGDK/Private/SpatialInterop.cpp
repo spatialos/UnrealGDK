@@ -10,8 +10,6 @@
 #include "EntityRegistry.h"
 #include "SpatialPackageMapClient.h"
 
-#include "Generated/SpatialTypeBindingList.h"
-
 // Needed for the entity template stuff.
 #include <improbable/standard_library.h>
 #include <improbable/unreal/player.h>
@@ -32,8 +30,17 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	TimerManager = InTimerManager;
 	PackageMap = Cast<USpatialPackageMapClient>(Driver->GetSpatialOSNetConnection()->PackageMap);
 
+	// Collect all type binding classes.
+	TArray<UClass*> TypeBindingClasses;
+	for (TObjectIterator<UClass> It; It; ++It)
+	{
+		if (It->IsChildOf(USpatialTypeBinding::StaticClass()) && *It != USpatialTypeBinding::StaticClass())
+		{
+			TypeBindingClasses.Add(*It);
+		}
+	}
+
 	// Register type binding classes.
-	TArray<UClass*> TypeBindingClasses = GetGeneratedTypeBindings();
 	for (UClass* TypeBindingClass : TypeBindingClasses)
 	{
 		UClass* BoundClass = TypeBindingClass->GetDefaultObject<USpatialTypeBinding>()->GetBoundClass();

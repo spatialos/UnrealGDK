@@ -18,6 +18,8 @@
 #include "UnrealCharacterSingleClientRepDataAddComponentOp.h"
 #include "UnrealCharacterMultiClientRepDataAddComponentOp.h"
 
+//DEFINE_LOG_CATEGORY(LogSpatialOSInterop);
+
 const FRepHandlePropertyMap& USpatialTypeBinding_Character::GetHandlePropertyMap()
 {
 	static FRepHandlePropertyMap HandleToPropertyMap;

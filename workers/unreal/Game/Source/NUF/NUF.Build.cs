@@ -19,6 +19,7 @@ public class NUF : ModuleRules
 				"Sockets",
 				"OnlineSubsystemUtils",
 				"PhysXVehicles",
+				"SpatialOS",
 				"SpatialGDK"
 			});
 	}

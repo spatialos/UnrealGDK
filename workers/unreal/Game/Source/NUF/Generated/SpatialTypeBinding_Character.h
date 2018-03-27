@@ -12,7 +12,7 @@
 #include "SpatialTypeBinding_Character.generated.h"
 
 UCLASS()
-class SPATIALGDK_API USpatialTypeBinding_Character : public USpatialTypeBinding
+class USpatialTypeBinding_Character : public USpatialTypeBinding
 {
 	GENERATED_BODY()
 
