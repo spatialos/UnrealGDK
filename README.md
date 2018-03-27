@@ -36,6 +36,8 @@ This layer is responsible for most of the conversion between Unreal property upd
 
 Moreover, RPC invocations are intercepted by this layer and directed through appropriate class bindings where they turn into SpatialOS commands.
 
+Note that this class is responsible for dealing with the asynchronous nature of SpatialOS entity spawning. For example, it might not be possible to resolve an object property update or RPC parameter immediately if the entity that corresponds to the relevant actor has not been created by SpatialOS yet. There are mechanisms built into this layer that retry sending these operations upon resolving actor <-> entity associations.
+
 ### `USpatialInteropPipelineBlock`
 
 This file extends on the entity pipeline block concept that is present in our UnrealSDK. The main functionality here is maintaining a registry of `AActor` <-> SpatialOS entity associations. There are multiple scenarios for these associations, depending on who the original worker that spawns the actor is, the type of worker, and the type of actor.
@@ -43,8 +45,6 @@ This file extends on the entity pipeline block concept that is present in our Un
 ### `USpatialPackageMapClient`
 
 Transmitting `UObject` references over the wire requires extra care. We encode each UObject reference in SpatialOS terms in a structure called `UnrealObjectRef`, and the workers translate these to pointers to their local objects using a GUID system that builds on Unreal's implementation.
-
-Note that this class is responsible for dealing with the async nature of SpatialOS entity spawning. For example, it might not be possible to resolve an object property update or RPC parameter immediately if the entity that corresponds to the relevant actor has not been created by SpatialOS yet. There are mechanisms built into this layer that retry sending these operations upon resolving actor <-> entity associations.
 
 ### `USpatialActorChannel`:
 
@@ -67,14 +67,16 @@ There is a small number of changes to UE4 source code we have to make. These cha
 
 ## How to run:
 
-- Build the engine fork, which can be found at `https://github.com/improbable/native-unreal-framework`. Make sure to check out the right branch.
+- Build the engine fork, which can be found at `https://github.com/improbable/UnrealEngine`. Make sure to check out the `UnrealEngine417_NUF` branch.
+- Set UNREAL_HOME environment variable to the engine fork location.
 - Set the uproject to use the engine fork.
-- `spatial worker codegen`
 - `spatial worker build --target=local`
-- `spatial local launch manual.json`
+- `spatial local launch`
 - Launch PIE with dedicated server + 1 player.
 
-The interop code and schema generated for marshalling updates/RPCs is committed directly to the source tree in `workers/unreal/Game/NUF/Generated` and `schema/unreal/generated` respectively, so the commandlet is not required to be re-run unless the code generator is changed.
+The interop code and schema generated for marshalling updates and RPCs has been committed directly to the source tree in `workers/unreal/Game/Source/SpatialGDK/Generated` and `schema/improbable/unreal/generated` respectively. This means you only need to re-run the commandlet if you have changed the code generator.
+
+There are also two non-load-balanced launch scripts to assist your development: 'one_worker_test.json' tests that managed workers launch correctly and ensures that entities never cross worker boundaries. 'two_worker_test.json' provides a static non-overlapping worker boundary between two workers to assist your entity migration testing. As worker boundaries don't overlap, workers have no knowledge of an entity which is under the authority of a different worker.
 
 ## Current focus:
 We are currently implementing cross-server actor transfers.
