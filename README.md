@@ -36,7 +36,7 @@ This layer is responsible for most of the conversion between Unreal property upd
 
 Moreover, RPC invocations are intercepted by this layer and directed through appropriate class bindings where they turn into SpatialOS commands.
 
-Note that this class is responsible for dealing with the async nature of SpatialOS entity spawning. For example, it might not be possible to resolve an object property update or RPC parameter immediately if the entity that corresponds to the relevant actor has not been created by SpatialOS yet. There are mechanisms built into this layer that retry sending these operations upon resolving actor <-> entity associations.
+Note that this class is responsible for dealing with the asynchronous nature of SpatialOS entity spawning. For example, it might not be possible to resolve an object property update or RPC parameter immediately if the entity that corresponds to the relevant actor has not been created by SpatialOS yet. There are mechanisms built into this layer that retry sending these operations upon resolving actor <-> entity associations.
 
 ### `USpatialInteropPipelineBlock`
 
