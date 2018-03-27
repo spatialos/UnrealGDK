@@ -1284,8 +1284,11 @@ void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter,
 				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
 			}
 			SourceWriter.PrintNewLine();
+			
+			FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(MigProp.Value);
+			
 			GenerateUnrealToSchemaConversion(
-				SourceWriter, "OutUpdate", MigProp.Value, PropertyValueName, true,
+				SourceWriter, SpatialValueSetter, MigProp.Value->Property, PropertyValueName, true,
 				[&SourceWriter, Handle](const FString& PropertyValue)
 			{
 				SourceWriter.Printf("Interop->QueueOutgoingObjectMigUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
@@ -1490,8 +1493,11 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
 			}
 			SourceWriter.PrintNewLine();
+
+			FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(MigProp.Value));
+
 			GeneratePropertyToUnrealConversion(
-				SourceWriter, TEXT("Update"), MigProp.Value, PropertyValueName, true,
+				SourceWriter, SpatialValue, MigProp.Value->Property, PropertyValueName, true,
 				[&SourceWriter](const FString& PropertyValue)
 			{
 				SourceWriter.Print(R"""(

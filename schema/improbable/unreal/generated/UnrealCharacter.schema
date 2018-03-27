@@ -60,10 +60,6 @@ component UnrealCharacterMigratableData {
 	uint32 field_charactermovement_movementmode = 2;
 	uint32 field_charactermovement_custommovementmode = 3;
 }
-type UnrealRootMotionDebugClientPrintOnScreenRequest {
-	uint32 target_subobject_offset = 1;
-	string field_instring = 2;
-}
 type UnrealClientCheatWalkRequest {
 	uint32 target_subobject_offset = 1;
 }
@@ -183,7 +179,6 @@ type UnrealServerMoveRequest {
 
 component UnrealCharacterClientRPCs {
 	id = 100023;
-	command UnrealRPCCommandResponse rootmotiondebugclientprintonscreen(UnrealRootMotionDebugClientPrintOnScreenRequest);
 	command UnrealRPCCommandResponse clientcheatwalk(UnrealClientCheatWalkRequest);
 	command UnrealRPCCommandResponse clientcheatghost(UnrealClientCheatGhostRequest);
 	command UnrealRPCCommandResponse clientcheatfly(UnrealClientCheatFlyRequest);

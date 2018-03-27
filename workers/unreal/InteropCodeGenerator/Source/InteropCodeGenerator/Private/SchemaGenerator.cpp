@@ -177,7 +177,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	{
 		FieldCounter++;
 		Writer.Printf("%s %s = %d;",
-			*RepLayoutTypeToSchemaType(Prop.Value->MigratableData->RepLayoutType),
+			*PropertyToSchemaType(Prop.Value->Property),
 			*SchemaFieldName(Prop.Value),
 			FieldCounter
 		);

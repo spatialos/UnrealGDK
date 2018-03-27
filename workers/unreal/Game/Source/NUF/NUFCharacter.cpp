@@ -5,7 +5,6 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Engine/World.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -88,15 +87,6 @@ void ANUFCharacter::BeginPlay()
 void ANUFCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-}
-
-bool ANUFCharacter::TestRPC_Validate()
-{
-	return true;
-}
-
-void ANUFCharacter::TestRPC_Implementation()
-{
 }
 
 //////////////////////////////////////////////////////////////////////////
