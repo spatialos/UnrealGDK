@@ -83,7 +83,7 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 {
 	FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../schema/improbable/unreal/generated/"));
-	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/NUF/Generated/"));
+	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/SampleGame/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 
 	// Hard coded class information.
@@ -100,7 +100,7 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
-		// Component IDs 100000 to 100009 reserved for other NUF components.
+		// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 		int ComponentId = 100010;
 		for (auto& ClassName : Classes)
 		{
