@@ -12,7 +12,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "SampleGameGameStateBase.h"
 #include "SpatialNetDriver.h"
-#include "VehicleCppPawn.h"
 
 #include "UnrealNetwork.h"
 
