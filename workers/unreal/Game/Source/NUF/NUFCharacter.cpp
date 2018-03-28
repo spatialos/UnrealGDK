@@ -12,6 +12,7 @@
 #include "NUFGameStateBase.h"
 #include "SpatialNetDriver.h"
 #include "VehicleCppPawn.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
 
 #include "UnrealNetwork.h"
 
@@ -65,11 +66,6 @@ ANUFCharacter::ANUFCharacter()
 void ANUFCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-}
-
-void ANUFCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -884,6 +884,8 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		TypeBindingName(Class));
 
 	// Set up initial data.
+	SourceWriter.Print(TEXT("checkf(GetRepHandlePropertyMap().Num() >= InitialChanges.RepChanged.Num() - 1, " \
+							"TEXT(\"Attempting to replicate more properties than typebinding is aware of. Have additional replicated properties been added in a subobject?\"))"));
 	SourceWriter.Print(TEXT("// Setup initial data."));
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{

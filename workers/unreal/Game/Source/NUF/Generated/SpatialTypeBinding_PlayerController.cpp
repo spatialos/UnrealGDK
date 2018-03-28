@@ -337,6 +337,7 @@ void USpatialTypeBinding_PlayerController::UnbindFromView()
 
 worker::Entity USpatialTypeBinding_PlayerController::CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const
 {
+	checkf(GetRepHandlePropertyMap().Num() >= InitialChanges.RepChanged.Num() - 1, TEXT("Attempting to replicate more properties than typebinding is aware of. Have additional replicated properties been added in a subobject?"))
 	// Setup initial data.
 	improbable::unreal::UnrealPlayerControllerSingleClientRepData::Data SingleClientData;
 	improbable::unreal::UnrealPlayerControllerSingleClientRepData::Update SingleClientUpdate;
