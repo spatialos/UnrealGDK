@@ -6,7 +6,6 @@
 #include "Commander.h"
 #include "EntityRegistry.h"
 #include "GameFramework/Character.h"
-#include "PossessPawnComponent.h"
 #include "NUFCharacter.generated.h"
 
 UCLASS(config=Game)
@@ -33,9 +32,6 @@ public:
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
-
-	UPROPERTY(Replicated, VisibleAnywhere)
-	TArray<int> MyArray;
 
 protected:
 
@@ -72,21 +68,6 @@ protected:
 	// End of APawn interface
 
 	void Interact();
-
-	UFUNCTION()
-	void OnPossessPawnRequest(UPossessPawnCommandResponder* Request);
-
-	UFUNCTION()
-	void OnPossessPawnRequestAck(const FSpatialOSCommandResult& Result, UPossessPawnResponse* Response);
-
-	UPROPERTY()
-	UPossessPawnComponent* PossessPawnComponent;
-	FPossessPawnCommandResultDelegate OnPossessPawnAckDelegate;
-
-	UPROPERTY()
-	UEntityRegistry* EntityRegistry;
-	UPROPERTY()
-	UCommander* Commander;
 
 public:
 	/** Returns CameraBoom subobject **/

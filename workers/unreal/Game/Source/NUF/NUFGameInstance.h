@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "NUF/SpatialGameInstance.h"
+#include "SpatialGameInstance.h"
 #include "NUFGameInstance.generated.h"
 
 UCLASS()

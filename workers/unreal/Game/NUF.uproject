@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{647052D0-4EBA-1BF9-DF57-AFAA76F19D66}",
+	"EngineAssociation": "{1AAA3687-4621-3C9A-DB80-16AF1C56E67B}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -11,6 +11,11 @@
 			"AdditionalDependencies": [
 				"Engine"
 			]
+		},
+		{
+			"Name": "SpatialGDK",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
 		}
 	],
 	"PostBuildSteps":
