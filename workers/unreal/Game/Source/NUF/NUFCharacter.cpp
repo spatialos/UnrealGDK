@@ -5,6 +5,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Engine/World.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -12,7 +13,6 @@
 #include "NUFGameStateBase.h"
 #include "SpatialNetDriver.h"
 #include "VehicleCppPawn.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
 
 #include "UnrealNetwork.h"
 
