@@ -11,6 +11,11 @@
 			"AdditionalDependencies": [
 				"Engine"
 			]
+		},
+		{
+			"Name": "SpatialGDK",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
 		}
 	],
 	"PostBuildSteps":

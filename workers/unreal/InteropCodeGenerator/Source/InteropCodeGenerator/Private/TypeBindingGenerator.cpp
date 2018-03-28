@@ -430,7 +430,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		#include <improbable/unreal/unreal_metadata.h>
 		#include <improbable/unreal/generated/%s.h>
 		#include "ScopedViewCallbacks.h"
-		#include "../SpatialTypeBinding.h"
+		#include "SpatialTypeBinding.h"
 		#include "SpatialTypeBinding_%s.generated.h")""", *SchemaFilename, *Class->GetName());
 	HeaderWriter.PrintNewLine();
 
@@ -556,13 +556,13 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 		#include "SpatialOS.h"
 		#include "EntityBuilder.h"
 
-		#include "../SpatialConstants.h"
-		#include "../SpatialConditionMapFilter.h"
-		#include "../SpatialUnrealObjectRef.h"
-		#include "../SpatialActorChannel.h"
-		#include "../SpatialPackageMapClient.h"
-		#include "../SpatialNetDriver.h"
-		#include "../SpatialInterop.h")""", *InteropFilename);
+		#include "SpatialConstants.h"
+		#include "SpatialConditionMapFilter.h"
+		#include "SpatialUnrealObjectRef.h"
+		#include "SpatialActorChannel.h"
+		#include "SpatialPackageMapClient.h"
+		#include "SpatialNetDriver.h"
+		#include "SpatialInterop.h")""", *InteropFilename);
 
 	// TODO: Temporary Hack, need to come up with generic solution. See TIG-138
 	if (Class->GetName().Contains("WheeledVehicle"))
@@ -884,6 +884,8 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		TypeBindingName(Class));
 
 	// Set up initial data.
+	SourceWriter.Print(TEXT("checkf(GetRepHandlePropertyMap().Num() >= InitialChanges.RepChanged.Num() - 1, " \
+							"TEXT(\"Attempting to replicate more properties than typebinding is aware of. Have additional replicated properties been added in a subobject?\"))"));
 	SourceWriter.Print(TEXT("// Setup initial data."));
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
@@ -976,14 +978,6 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		*SchemaRPCComponentName(ERPCType::RPC_Client, Class), *SchemaRPCComponentName(ERPCType::RPC_Client, Class));
 	SourceWriter.Printf(".AddComponent<improbable::unreal::%s>(improbable::unreal::%s::Data{}, WorkersOnly)",
 		*SchemaRPCComponentName(ERPCType::RPC_Server, Class), *SchemaRPCComponentName(ERPCType::RPC_Server, Class));
-
-	// This adds a custom component called PossessPawn which is added the the Character and Vehicle. It allows
-	// these two classes to call an RPC which is intended to let the player possess a different pawn.
-	// TODO: Remove this hack.
-	if (Class->GetName().Contains("WheeledVehicle") || Class->GetName().Contains("Character"))
-	{
-		SourceWriter.Printf(".AddComponent<nuf::PossessPawn>(nuf::PossessPawn::Data{}, WorkersOnly)");
-	}
 
 	SourceWriter.Print(".Build();");
 	SourceWriter.Outdent();

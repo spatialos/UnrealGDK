@@ -2,7 +2,7 @@
 
 #include "NUFEditorGenerateSnapshot.h"
 #include "EntityBuilder.h"
-#include "NUF/SpatialConstants.h"
+#include "SpatialConstants.h"
 #include "SpatialOSCommon.h"
 
 #include "GameFramework/Actor.h"
