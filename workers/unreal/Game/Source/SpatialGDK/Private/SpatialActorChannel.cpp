@@ -187,10 +187,10 @@ bool USpatialActorChannel::ReplicateActor()
 
 	// Epic does this at the net driver level, per connection. See UNetDriver::ServerReplicateActors().
 	// However, we have many player controllers sharing one connection, so we do it at the actor level before replication.
-	APlayerController* PC = Cast<APlayerController>(Actor);
-	if (PC)
+	APlayerController* PlayerController = Cast<APlayerController>(Actor);
+	if (PlayerController)
 	{
-		PC->SendClientAdjustment();
+		PlayerController->SendClientAdjustment();
 	}
 	
 	// Update the replicated property change list.
@@ -268,7 +268,6 @@ bool USpatialActorChannel::ReplicateActor()
 			}
 			if (!PlayerState)
 			{
-				APlayerController* PlayerController = Cast<APlayerController>(Actor);
 				if (PlayerController)
 				{
 					PlayerState = PlayerController->PlayerState;
@@ -314,7 +313,7 @@ bool USpatialActorChannel::ReplicateActor()
 	}
 
 	// Update SpatialOS position.
-	if (!PC)
+	if (!PlayerController && !Cast<APlayerState>(Actor))
 	{
 		UpdateSpatialPosition();
 	}
@@ -495,9 +494,9 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 
 void USpatialActorChannel::UpdateSpatialPosition()
 {
-	// PlayerController's are a special case here. To ensure that the PlayerController and its pawn is migrated
-	// between workers at the same time (which is not guaranteed), we ensure that we update the position component of
-	// the PlayerController at the same time as the pawn.
+	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
+	// migrated between workers at the same time (which is not guaranteed), we ensure that we update the position component 
+	// of the PlayerController and PlayerState at the same time as the pawn.
 
 	// Check that it has moved sufficiently far to be updated
 	const float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
@@ -513,19 +512,20 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	Interop->SendSpatialPositionUpdate(GetEntityId(), LastSpatialPosition);
 
 	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
-	APawn* Pawn = Cast<APawn>(Actor);
-	APlayerController* PlayerController = Cast<APlayerController>(Pawn->GetController());
-	if (Pawn && PlayerController)
+	if (APawn* Pawn = Cast<APawn>(Actor))
 	{
-		USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController));
-		if (ControllerActorChannel)
+		if (APlayerController* PlayerController = Cast<APlayerController>(Pawn->GetController()))
 		{
-			Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
-		}
-		USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController->PlayerState));
-		if (PlayerStateActorChannel)
-		{
-			Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
+			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController));
+			if (ControllerActorChannel)
+			{
+				Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
+			}
+			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController->PlayerState));
+			if (PlayerStateActorChannel)
+			{
+				Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
+			}
 		}
 	}
 }
