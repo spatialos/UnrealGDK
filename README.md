@@ -1,14 +1,7 @@
-# NUF: Native Unreal Framework
+# Spatial GDK: Unreal Module for Spatial OS development
 
-NUF is a proof of concept project that implements Unreal networking over SpatialOS. It is not yet fully functional and is provided here for reference, however we are very open to any feedback regarding the architecture of the project.
-
-NUF is not designed as an SDK, however most of the code here can be pulled into one in the future.
-
-## Current scope:
-NUF is meant to support only a limited number of classes at this time. Currently, we have basic interoperability for `APlayerController` and `ACharacter` classes. We also generate interop code for `AGameStateBase` and `APlayerState` to temporarily drive basic connection logic, but this is bound to change.
-
-## How does NUF work?
-At a very high level, NUF does 3 things:
+## How does the Spatial GDK work?
+At a very high level, Spatial GDK does 3 things:
 1) Simulate handshake process of an Unreal client and server, using SpatialOS commands
 2) Detect changes to replicated properties of replicated actors, and convert them into SpatialOS component updates via generated code.
 3) Intercept RPCs, and convert them into SpatialOS commands via generated code.
@@ -18,17 +11,17 @@ Main components of the project are:
 ### `GenerateInteropCodeCommandlet`
 The code generator will take a set of Unreal classes, and generate routing code (called "type bindings") that enables automated Unreal <-> SpatialOS communication. This file lives in a separate .uproject (`InteropCodeGenerator`) to prevent cross-dependency between generated code and the code generator.
 
-The interop code generator first generates `.schema` files from `UObject` class layouts via Unreals reflection system for SpatialOS to be able to understand and store Unreal data. Then, it generates special `SpatialTypeBinding` classes which are designed to convert property updates to and from SpatialOS (in the form of component updates), and send/receive RPCs via SpatialOS commands. There is rudimentary logic to handle conditional replication based on actor ownership.
+The interop code generator first generates `.schema` files from `UObject` class layouts via Unreal's reflection system for SpatialOS to be able to understand and store Unreal data. Then, it generates special `SpatialTypeBinding` classes which are designed to convert property updates to and from SpatialOS (in the form of component updates), and send/receive RPCs via SpatialOS commands. There is rudimentary logic to handle conditional replication based on actor ownership.
 
 The code generator can be run by executing either `generate_code.bat` or `generate_code.sh` after building the `InteropCodeGenerator` project with `Development Editor` at least once.
 
 ### `USpatialNetDriver`
 
-Unlike our `UnrealSDK` examples, SpatialOS initialization in NUF happens at the net driver level. `SpatialNetDriver` connects to SpatialOS. Within the `OnSpatialOSConnected` callback, client will send a request to spawn a player.
+Unlike our `UnrealSDK` examples, SpatialOS initialization in Spatial GDK happens at the net driver level. `SpatialNetDriver` connects to SpatialOS. Within the `OnSpatialOSConnected` callback, client will send a request to spawn a player.
 
 ### `USpatialNetConnection`
 
-How we handle net connections diverges somewhat from Unreal's approach. If a worker is managing N players, NUF will create N + 1 `USpatialNetConnection`'s. The first connection is a special "fall back" connection which is used to write the state of objects managed by the worker to SpatialOS, such as static objects or NPCs. The remaining connections are used by each `PlayerController` managed by the worker, and actors which are owned by each player controller are replicated via their player controllers `USpatialNetConnection`. On the client side, there is just one `USpatialNetConnection`, similar to Unreal's current approach.
+How we handle net connections diverges somewhat from Unreal's approach. If a worker is managing N players, Spatial GDK will create N + 1 `USpatialNetConnection`'s. The first connection is a special "fall back" connection which is used to write the state of objects managed by the worker to SpatialOS, such as static objects or NPCs. The remaining connections are used by each `PlayerController` managed by the worker, and actors which are owned by each player controller are replicated via their player controllers `USpatialNetConnection`. On the client side, there is just one `USpatialNetConnection`, similar to Unreal's current approach.
 
 ### `USpatialInterop`
 
@@ -50,7 +43,7 @@ Transmitting `UObject` references over the wire requires extra care. We encode e
 
 This class is in charge of triggering initial serialization and SpatialOS entity creation in response to `SpawnActor()` calls, and per tick delta detection in replicated actor properties. There is one per replicated actor in our implementation, as opposed to one per replicated actor per connected player.
 
-Note that NUF does not use any other channel type currently. Data that is regularly routed through control channels (e.g. login request) is meant to be implemented directly using SpatialOS commands. See `ASpatialSpawner` for an example.
+Note that Spatial GDK does not use any other channel type currently. Data that is regularly routed through control channels (e.g. login request) is meant to be implemented directly using SpatialOS commands. See `ASpatialSpawner` for an example.
 
 ## Current limitations:
 The focus of this project is de-risking SpatialOS interoperability with native code. Some code organization, feature coverage and efficiency trade-offs have been made temporarily to expedite implementation.
