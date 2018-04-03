@@ -67,8 +67,4 @@ Build/*/**
 **/Saved/
 
 .spatialos/
-Game/enc_temp_folder/
-Game/Source/SpatialOS/
-Game/ThirdParty/Improbable/
-temp_worker_builds/
-Game/Plugins/SpatialOS
+Plugins/SpatialOS
