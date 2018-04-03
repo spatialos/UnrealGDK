@@ -2,7 +2,7 @@
 
 ## How does the Spatial GDK work?
 At a very high level, Spatial GDK does 3 things:
-1) Simulate handshake process of an Unreal client and server, using SpatialOS commands
+1) Simulate the handshake process of an Unreal client and server, using SpatialOS commands
 2) Detect changes to replicated properties of replicated actors, and convert them into SpatialOS component updates via generated code.
 3) Intercept RPCs, and convert them into SpatialOS commands via generated code.
 
@@ -11,17 +11,20 @@ Main components of the project are:
 ### `GenerateInteropCodeCommandlet`
 The code generator will take a set of Unreal classes, and generate routing code (called "type bindings") that enables automated Unreal <-> SpatialOS communication. This file lives in a separate .uproject (`InteropCodeGenerator`) to prevent cross-dependency between generated code and the code generator.
 
-The interop code generator first generates `.schema` files from `UObject` class layouts via Unreal's reflection system for SpatialOS to be able to understand and store Unreal data. Then, it generates special `SpatialTypeBinding` classes which are designed to convert property updates to and from SpatialOS (in the form of component updates), and send/receive RPCs via SpatialOS commands. There is rudimentary logic to handle conditional replication based on actor ownership.
+First, the interop code generator generates `.schema` files from `UObject` class layouts via Unreal's reflection system. This enables SpatialOS to understand and store Unreal data. Then, it generates `SpatialTypeBinding` classes. These classes:
+* Convert property updates to and from SpatialOS in the form of component updates.
+* Send and receive RPCs via SpatialOS commands.
+* Have rudimentary logic to handle conditional replication based on actor ownership.
 
-The code generator can be run by executing either `generate_code.bat` or `generate_code.sh` after building the `InteropCodeGenerator` project with `Development Editor` at least once.
+To run the code generator, make sure you have built the `InteropCodeGenerator` project with `Development Editor` at least once. Then execute either `generate_code.bat` or `generate_code.sh`
 
 ### `USpatialNetDriver`
 
-Unlike our `UnrealSDK` examples, SpatialOS initialization in Spatial GDK happens at the net driver level. `SpatialNetDriver` connects to SpatialOS. Within the `OnSpatialOSConnected` callback, client will send a request to spawn a player.
+Unlike our `UnrealSDK` examples, SpatialOS initialisation in Spatial GDK happens at the net driver level. `SpatialNetDriver` connects to SpatialOS. Within the `OnSpatialOSConnected` callback, the client sends a request to spawn a player.
 
 ### `USpatialNetConnection`
 
-How we handle net connections diverges somewhat from Unreal's approach. If a worker is managing N players, Spatial GDK will create N + 1 `USpatialNetConnection`'s. The first connection is a special "fall back" connection which is used to write the state of objects managed by the worker to SpatialOS, such as static objects or NPCs. The remaining connections are used by each `PlayerController` managed by the worker, and actors which are owned by each player controller are replicated via their player controllers `USpatialNetConnection`. On the client side, there is just one `USpatialNetConnection`, similar to Unreal's current approach.
+How we handle net connections diverges somewhat from Unreal's approach. If a worker is managing N players, Spatial GDK creates N + 1 `USpatialNetConnection`s. The first connection is a special "fall back" connection; the GDK uses this connection to write to SpatialOS the state of objects managed by the worker. These objects could be NPCs or static objects, for example. The remaining connections are used by each `PlayerController` managed by the worker. Actors owned by each `PlayerController` are replicated via their player controller's `USpatialNetConnection`. On the client side, there is just one `USpatialNetConnection`, similar to Unreal's current approach.
 
 ### `USpatialInterop`
 
