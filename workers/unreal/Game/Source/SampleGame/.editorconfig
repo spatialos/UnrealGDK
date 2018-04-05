@@ -1,9 +1,0 @@
-root = true
-
-[*]
-insert_final_newline = true
-
-[*.{cpp,h}]
-indent_size = 4
-indent_style = tab
-indent_brace_style = Allman
