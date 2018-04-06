@@ -13,11 +13,16 @@ public class SpatialGDK : ModuleRules
     public SpatialGDK(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-        
+        bFasterWithoutUnity = true;
+
         PublicIncludePaths.AddRange(
             new string[] 
             {
                 "SpatialGDK/Public",
+                "SpatialGDK/Public/WorkerSdk",
+                "SpatialGDK/Generated/Usr",
+                "SpatialGDK/Generated/Std",
+                "SpatialGDK/Generated/UClasses",
             });
         
         PrivateIncludePaths.AddRange( 
@@ -34,7 +39,6 @@ public class SpatialGDK : ModuleRules
                 "Engine",
                 "OnlineSubsystemUtils",
                 "PhysXVehicles",
-                "SpatialOS",
                 "InputCore"
             });
 
@@ -43,5 +47,27 @@ public class SpatialGDK : ModuleRules
 			// Required by USpatialGameInstance::StartPlayInEditorGameInstance.
 			PublicDependencyModuleNames.Add("UnrealEd");
 		}
+
+   		var CoreSdkLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
+        string CoreSdkShared;
+
+        if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
+        {
+            CoreSdkShared = Path.Combine(CoreSdkLibraryDir, "CoreSdkDll.dll");
+            PublicAdditionalLibraries.AddRange(new[] { Path.Combine(CoreSdkLibraryDir, "CoreSdkDll.lib") });
+        }
+        else
+        {
+            CoreSdkShared = Path.Combine(CoreSdkLibraryDir, "libCoreSdkDll.so");
+            PublicAdditionalLibraries.AddRange(new[] { CoreSdkShared });
+        }
+
+        RuntimeDependencies.Add(new RuntimeDependency(CoreSdkShared));
+
+        PublicLibraryPaths.Add(CoreSdkLibraryDir);
+        PublicDelayLoadDLLs.Add("CoreSdkDll.dll");
+
+        // Point generated code to the correct API spec.
+        Definitions.Add("IMPROBABLE_DLL_API=SPATIALGDK_API");
 	}
 }
