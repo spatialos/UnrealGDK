@@ -103,26 +103,24 @@ void SpatialGDKGenerateSnapshot(const FString& SavePath, UWorld* World)
 {
 	const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
 
-	std::unordered_map<worker::EntityId, worker::Entity> SnapshotEntities;
+	worker::SnapshotOutputStream OutputStream{ improbable::unreal::Components{}, TCHAR_TO_UTF8(*FullPath) };
 	
 	// Create spawner.
-	SnapshotEntities.emplace(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
+	OutputStream.WriteEntity(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
 
 	// Create level entities.
+	worker::Option<std::string> Result;
 	for (auto EntityPair : CreateLevelEntities(World))
 	{
-		SnapshotEntities.emplace(std::move(EntityPair));
+		Result = OutputStream.WriteEntity(EntityPair.first, EntityPair.second);
+
+		if (!Result.empty())
+		{
+			std::string ErrorString = Result.value_or("");
+			UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(ErrorString.c_str()));
+			return;
+		}
 	}
 
-	// Save snapshot.
-	worker::Option<std::string> Result = worker::SaveSnapshot(improbable::unreal::Components{}, TCHAR_TO_UTF8(*FullPath), SnapshotEntities);
-	if (!Result.empty())
-	{
-		std::string ErrorString = Result.value_or("");
-		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(ErrorString.c_str()));
-	}
-	else
-	{
-		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path %s"), *FullPath);
-	}
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path %s"), *FullPath);
 }

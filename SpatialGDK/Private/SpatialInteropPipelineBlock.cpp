@@ -2,6 +2,7 @@
 #include "SpatialInteropPipelineBlock.h"
 
 #include "SpatialConstants.h"
+#include "SpatialOSComponent.h"
 #include "SpatialActorChannel.h"
 #include "SpatialNetDriver.h"
 #include "SpatialNetConnection.h"
@@ -39,9 +40,9 @@ void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDr
 	// Fill KnownComponents.
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
-		if (It->IsChildOf(USpatialOsComponent::StaticClass()) && !It->HasAnyClassFlags(CLASS_Abstract))
+		if (It->IsChildOf(USpatialOSComponent::StaticClass()) && !It->HasAnyClassFlags(CLASS_Abstract))
 		{
-			USpatialOsComponent* CDO = Cast<USpatialOsComponent>((*It)->GetDefaultObject());
+			USpatialOSComponent* CDO = Cast<USpatialOSComponent>((*It)->GetDefaultObject());
 			KnownComponents.Emplace(CDO->GetComponentId(), *It);
 		}
 	}
@@ -221,7 +222,7 @@ void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentId
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
 	if (Actor)
 	{
-		USpatialOsComponent* Component = Cast<USpatialOsComponent>(Actor->GetComponentByClass(ComponentClass));
+		USpatialOSComponent* Component = Cast<USpatialOSComponent>(Actor->GetComponentByClass(ComponentClass));
 		if (Component)
 		{
 			Component->Init(LockedConnection, LockedView, ComponentIdentifier.EntityId, NetDriver->GetSpatialOS()->GetCallbackDispatcher());
@@ -254,7 +255,7 @@ void USpatialInteropPipelineBlock::DisableComponentImpl(const FComponentIdentifi
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
 	if (Actor)
 	{
-		USpatialOsComponent* Component = Cast<USpatialOsComponent>(Actor->GetComponentByClass(ComponentClass));
+		USpatialOSComponent* Component = Cast<USpatialOSComponent>(Actor->GetComponentByClass(ComponentClass));
 		if (Component)
 		{
 			Component->Disable(ComponentIdentifier.EntityId, NetDriver->GetSpatialOS()->GetCallbackDispatcher());
@@ -472,13 +473,13 @@ UClass* USpatialInteropPipelineBlock::GetNativeEntityClass(improbable::MetadataD
 
 void USpatialInteropPipelineBlock::SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection)
 {
-	TArray<UActorComponent*> SpatialOSComponents = Actor->GetComponentsByClass(USpatialOsComponent::StaticClass());
+	TArray<UActorComponent*> SpatialOSComponents = Actor->GetComponentsByClass(USpatialOSComponent::StaticClass());
 
 	worker::Map<worker::ComponentId, worker::InterestOverride> ComponentIdsAndInterestOverrides;
 
 	for (auto Component : SpatialOSComponents)
 	{
-		USpatialOsComponent* SpatialOsComponent = Cast<USpatialOsComponent>(Component);
+		USpatialOSComponent* SpatialOsComponent = Cast<USpatialOSComponent>(Component);
 		ComponentIdsAndInterestOverrides.emplace(std::make_pair(
 			SpatialOsComponent->GetComponentId().ToSpatialComponentId(),
 			worker::InterestOverride{/* IsInterested */ true }));

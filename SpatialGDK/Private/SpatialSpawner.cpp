@@ -48,7 +48,7 @@ void ASpatialSpawner::HandleSpawnRequest(USpawnPlayerCommandResponder* Responder
 
 	if (NetDriver)
 	{
-		FString URLString = Responder->GetRequest()->GetUrl();
+		FString URLString = Responder->GetRequest().Url;
 		URLString += TEXT("?workerId=") + Responder->GetCallerWorkerId();
 		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), false);
 	}
@@ -56,6 +56,7 @@ void ASpatialSpawner::HandleSpawnRequest(USpawnPlayerCommandResponder* Responder
 	{
 		UE_LOG(LogTemp, Error, TEXT("Login failed. Spatial net driver is not setup correctly."));
 	}
-	auto Response = NewObject<USpawnPlayerResponse>()->Init({});
+	FSpawnPlayerResponse Response;
+	Response.Init({});
 	Responder->SendResponse(Response);
 }
