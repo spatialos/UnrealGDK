@@ -151,7 +151,7 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 {
-	SpatialGDKGenerateIntopCode();
+	SpatialGDKGenerateInteropCode();
 }
 
 #undef LOCTEXT_NAMESPACE

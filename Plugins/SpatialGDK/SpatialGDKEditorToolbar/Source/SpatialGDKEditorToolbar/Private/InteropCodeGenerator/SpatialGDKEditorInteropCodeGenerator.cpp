@@ -119,6 +119,4 @@ void SpatialGDKGenerateInteropCode()
 	{
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Path was invalid - schema not generated"));
 	}
-
-	return 0;
 }
