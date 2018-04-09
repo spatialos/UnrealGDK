@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "GenerateInteropCodeCommandlet.h"
+#include "SpatialGDKEditorInteropCodeGenerator.h"
 
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
@@ -9,6 +9,8 @@
 #include "TypeBindingGenerator.h"
 
 #include "Misc/FileHelper.h"
+
+DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 
 namespace
 {
@@ -80,11 +82,14 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 }
 } // ::
 
-int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
+void SpatialGDKGenerateInteropCode()
 {
 	FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../schema/improbable/unreal/generated/"));
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/SampleGame/Generated/"));
-	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
+	FString AbsoluteCombinedSchemaPath = FPaths::ConvertRelativePathToFull(CombinedSchemaPath);
+	FString AbsoluteCombinedForwardingCodePath = FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
+
+	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *AbsoluteCombinedSchemaPath, *AbsoluteCombinedForwardingCodePath);
 
 	// Hard coded class information.
 	TArray<FString> Classes = {"PlayerController", "PlayerState", "Character", "WheeledVehicle"};
@@ -98,7 +103,7 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 		{"CharacterMovement", "CustomMovementMode"}
 	});
 
-	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
+	if (FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath) && FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
 	{
 		// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 		int ComponentId = 100010;
@@ -112,7 +117,7 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Display, TEXT("Path was invalid - schema not generated"));
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Path was invalid - schema not generated"));
 	}
 
 	return 0;

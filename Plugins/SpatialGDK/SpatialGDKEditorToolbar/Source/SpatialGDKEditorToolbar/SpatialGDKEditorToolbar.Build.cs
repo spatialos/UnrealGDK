@@ -34,17 +34,17 @@ public class SpatialGDKEditorToolbar : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
-                "Core",
-                "CoreUObject",
-                "Engine",
-                "InputCore",
-                "LevelEditor",
-                "Projects",
+				"Core",
+				"CoreUObject",
+				"Engine",
+				"InputCore",
+				"LevelEditor",
+				"Projects",
 				"Slate",
 				"SlateCore",
 				"SpatialOS",
 				"SpatialGDK",
-                "UnrealEd"
-            });
+				"UnrealEd"
+			});
 	}
 }
