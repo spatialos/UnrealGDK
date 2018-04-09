@@ -43,6 +43,7 @@ private:
 	void AddMenuExtension(FMenuBuilder& Builder);
 
 	void CreateSnapshotButtonClicked();
+	void GenerateInteropCodeButtonClicked();
 
 private:
 	TSharedPtr<FUICommandList> PluginCommands;

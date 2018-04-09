@@ -12,6 +12,7 @@
 #include "SpatialGDKEditorToolbarCommands.h"
 #include "SpatialGDKEditorToolbarStyle.h"
 #include "SpatialGDKEditorGenerateSnapshot.h"
+#include "SpatialGDKEditorInteropCodeGenerator.h"
 
 #include "HAL/FileManager.h"
 #include "Editor/EditorEngine.h"
@@ -83,6 +84,12 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FExecuteAction::CreateRaw(
 			this, &FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked),
 		FCanExecuteAction());
+
+	PluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode,
+		FExecuteAction::CreateRaw(
+			this, &FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked),
+		FCanExecuteAction());
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> PluginCommands)
@@ -115,6 +122,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 	Builder.BeginSection("SpatialGDK", LOCTEXT("SpatialGDK", "SpatialGDK"));
 	{
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode);
 	}
 	Builder.EndSection();
 }
@@ -123,6 +131,7 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 {
 	Builder.AddSeparator(NAME_None);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode);
 }
 
 void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
@@ -138,6 +147,11 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 	{
 		UE_LOG(LogTemp, Display, TEXT("Path was invalid - snapshot not generated"));
 	}
+}
+
+void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
+{
+	SpatialGDKGenerateInteropCode();
 }
 
 #undef LOCTEXT_NAMESPACE

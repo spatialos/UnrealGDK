@@ -21,4 +21,5 @@ public:
 
 public:
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSnapshot;
+	TSharedPtr<FUICommandInfo> GenerateInteropCode;
 };
