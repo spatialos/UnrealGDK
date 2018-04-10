@@ -1,22 +1,22 @@
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#pragma once
+// #pragma once
 
-#include "AddComponentOpWrapperBase.h"
-#include "CoreMinimal.h"
-#include "EngineMinimal.h"
-#include "ComponentAddOpQueueWrapper.generated.h"
+// #include "AddComponentOpWrapperBase.h"
+// #include "CoreMinimal.h"
+// #include "EngineMinimal.h"
+// #include "ComponentAddOpQueueWrapper.generated.h"
 
-USTRUCT()
-struct FComponentAddOpQueueWrapper
-{
-  GENERATED_USTRUCT_BODY()
+// USTRUCT()
+// struct FComponentAddOpQueueWrapper
+// {
+//   GENERATED_USTRUCT_BODY()
 
-public:
-  UPROPERTY()
-  TArray<UAddComponentOpWrapperBase*> Underlying;
+// public:
+//   UPROPERTY()
+//   TArray<UAddComponentOpWrapperBase*> Underlying;
 
-  FComponentAddOpQueueWrapper()
-  {
-  }
-};
+//   FComponentAddOpQueueWrapper()
+//   {
+//   }
+// };

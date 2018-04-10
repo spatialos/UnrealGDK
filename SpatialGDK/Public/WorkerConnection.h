@@ -4,7 +4,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "HAL/ThreadSafeBool.h"
-#include "SpatialOSSdkLoader.h"
+#include "SpatialGDKLoader.h"
 #include "SpatialOSViewTypes.h"
 #include "SpatialOSWorkerConfiguration.h"
 
@@ -98,7 +98,7 @@ private:
 
   void OnMetrics(const worker::MetricsOp& Op);
 
-  FSpatialOSSdkLoader SdkLoader;
+  FSpatialGDKLoader SdkLoader;
 
   FThreadSafeBool bIsConnecting;
 

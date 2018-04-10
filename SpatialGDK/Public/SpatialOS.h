@@ -27,7 +27,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectionFailedDelegate);
  * SpatialOS.
  */
 UCLASS()
-class SPATIALOS_API USpatialOS : public UObject
+class SPATIALGDK_API USpatialOS : public UObject
 {
   GENERATED_BODY()
 public:
@@ -148,10 +148,10 @@ public:
   */
   UEntityPipeline* GetEntityPipeline() const;
 
-  /**
-  * Callback dispatcher
-  */
-  UCallbackDispatcher* GetCallbackDispatcher() const;
+  // /**
+  // * Callback dispatcher
+  // */
+  // UCallbackDispatcher* GetCallbackDispatcher() const;
 
   /**
    * Returns the raw entity, if it is available on this worker, or nullptr otherwise.
@@ -183,8 +183,8 @@ private:
   UPROPERTY()
   UEntityPipeline* EntityPipeline;
 
-  UPROPERTY()
-  UCallbackDispatcher* CallbackDispatcher;
+  // UPROPERTY()
+  // UCallbackDispatcher* CallbackDispatcher;
 
   improbable::unreal::core::FWorkerConnection WorkerConnection;
   bool bConnectionWasSuccessful;

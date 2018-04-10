@@ -5,7 +5,7 @@
 #include "ComponentUpdateOpWrapperBase.generated.h"
 
 UCLASS(abstract)
-class SPATIALOS_API UComponentUpdateOpWrapperBase : public UObject
+class SPATIALGDK_API UComponentUpdateOpWrapperBase : public UObject
 {
   GENERATED_BODY()
 public:

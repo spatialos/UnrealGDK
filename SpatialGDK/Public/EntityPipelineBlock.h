@@ -18,7 +18,7 @@ class UAddComponentOpWrapperBase;
 class UEntityPipeline;
 
 UCLASS(Abstract)
-class SPATIALOS_API UEntityPipelineBlock : public UObject
+class SPATIALGDK_API UEntityPipelineBlock : public UObject
 {
   GENERATED_BODY()
   friend class UEntityPipeline;
@@ -48,7 +48,6 @@ protected:
   UEntityPipelineBlock* NextBlock;
 
   virtual void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-                          const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
-                          ::UCallbackDispatcher* CallbackDispatcher)
+                          const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World)
       PURE_VIRTUAL(UEntityPipelineBlock::ProcessOps(), );
 };

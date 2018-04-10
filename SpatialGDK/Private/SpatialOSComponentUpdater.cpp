@@ -1,30 +1,30 @@
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialOSComponentUpdater.h"
+// #include "SpatialOSComponentUpdater.h"
 
-#include "EntityRegistry.h"
-#include "SpatialOSComponent.h"
+// #include "EntityRegistry.h"
+// #include "SpatialOSComponent.h"
 
-void USpatialOSComponentUpdater::UpdateComponents(UEntityRegistry* Registry, float DeltaSeconds)
-{
-  if (Registry == nullptr)
-  {
-    return;
-  }
+// void USpatialOSComponentUpdater::UpdateComponents(UEntityRegistry* Registry, float DeltaSeconds)
+// {
+//   if (Registry == nullptr)
+//   {
+//     return;
+//   }
 
-  for (auto& Elem : Registry->EntityComponentCache)
-  {
-    if (Elem.Key == nullptr || Elem.Key->IsPendingKill())
-    {
-      continue;
-    }
+//   for (auto& Elem : Registry->EntityComponentCache)
+//   {
+//     if (Elem.Key == nullptr || Elem.Key->IsPendingKill())
+//     {
+//       continue;
+//     }
 
-    for (auto& Component : Elem.Value.Components)
-    {
-      if (Component != nullptr)
-      {
-        Component->TriggerAutomaticComponentUpdate(DeltaSeconds);
-      }
-    }
-  }
-}
+//     for (auto& Component : Elem.Value.Components)
+//     {
+//       if (Component != nullptr)
+//       {
+//         Component->TriggerAutomaticComponentUpdate(DeltaSeconds);
+//       }
+//     }
+//   }
+// }

@@ -11,7 +11,7 @@
 #include "SpatialNetDriver.generated.h"
 
 class UEntityPipeline;
-class UEntityRegistry;
+// class UEntityRegistry;
 class UCallbackDispatcher;
 class USpatialOSComponentUpdater;
 class USpatialOS;
@@ -65,7 +65,7 @@ public:
 	UPROPERTY()
 	USpatialInteropPipelineBlock* InteropPipelineBlock;
 
-	UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
+	//UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
 
 	USpatialOS* GetSpatialOS() { return SpatialOSInstance; }
 	
@@ -85,11 +85,11 @@ protected:
 
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
-	UPROPERTY()
-	USpatialOSComponentUpdater* SpatialOSComponentUpdater;
+	// UPROPERTY()
+	// USpatialOSComponentUpdater* SpatialOSComponentUpdater;
 
-	UPROPERTY()
-	UEntityRegistry* EntityRegistry;
+	// UPROPERTY()
+	// UEntityRegistry* EntityRegistry;
 
 	// Timer manager.
 	FTimerManager* TimerManager;

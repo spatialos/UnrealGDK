@@ -7,7 +7,7 @@
 #include "SpatialOSWorkerConfiguration.generated.h"
 
 USTRUCT(BlueprintType)
-struct SPATIALOS_API FSpatialOSWorkerConfiguration
+struct SPATIALGDK_API FSpatialOSWorkerConfiguration
 {
   GENERATED_USTRUCT_BODY()
 public:

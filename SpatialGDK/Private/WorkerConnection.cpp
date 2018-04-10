@@ -3,7 +3,7 @@
 
 #include "Async.h"
 #include "SpatialOS.h"
-#include "SpatialOSCommon.h"
+#include "SpatialGDKCommon.h"
 #include "SpatialOSViewTypes.h"
 #include "SpatialOSWorkerTypes.h"
 

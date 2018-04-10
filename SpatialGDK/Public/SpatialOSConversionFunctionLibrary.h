@@ -10,7 +10,7 @@
 *
 */
 UCLASS()
-class SPATIALOS_API USpatialOSConversionFunctionLibrary : public UBlueprintFunctionLibrary
+class SPATIALGDK_API USpatialOSConversionFunctionLibrary : public UBlueprintFunctionLibrary
 {
   GENERATED_BODY()
 public:

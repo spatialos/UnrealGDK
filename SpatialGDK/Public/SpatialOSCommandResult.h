@@ -11,7 +11,7 @@
 #include "SpatialOSCommandResult.generated.h"
 
 USTRUCT(BlueprintType)
-struct SPATIALOS_API FSpatialOSCommandResult
+struct SPATIALGDK_API FSpatialOSCommandResult
 {
   GENERATED_USTRUCT_BODY();
 

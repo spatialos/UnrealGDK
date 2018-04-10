@@ -11,7 +11,7 @@
 * SpatialOS deployment.
 */
 USTRUCT(BlueprintType)
-struct SPATIALOS_API FSpatialOSNetworkingConfiguration
+struct SPATIALGDK_API FSpatialOSNetworkingConfiguration
 {
   GENERATED_USTRUCT_BODY()
 
@@ -136,7 +136,7 @@ struct SPATIALOS_API FSpatialOSNetworkingConfiguration
 * Provides configuration parameters related to debugging a worker.
 */
 USTRUCT(BlueprintType)
-struct SPATIALOS_API FSpatialOSDebuggingConfig
+struct SPATIALGDK_API FSpatialOSDebuggingConfig
 {
   GENERATED_USTRUCT_BODY()
 
@@ -199,7 +199,7 @@ struct SPATIALOS_API FSpatialOSDebuggingConfig
 * Provides configuration parameters related to a worker's behaviour.
 */
 USTRUCT(BlueprintType)
-struct SPATIALOS_API FSpatialOSApplicationConfig
+struct SPATIALGDK_API FSpatialOSApplicationConfig
 {
   GENERATED_USTRUCT_BODY()
 
@@ -262,7 +262,7 @@ struct SPATIALOS_API FSpatialOSApplicationConfig
 * Provides configuration parameters for controlling a worker's behaviour.
 */
 USTRUCT(BlueprintType)
-struct SPATIALOS_API FSpatialOSWorkerConfigurationData
+struct SPATIALGDK_API FSpatialOSWorkerConfigurationData
 {
   GENERATED_USTRUCT_BODY()
 

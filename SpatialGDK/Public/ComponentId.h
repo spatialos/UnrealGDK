@@ -7,7 +7,7 @@
 #include "ComponentId.generated.h"
 
 USTRUCT(BlueprintType)
-struct SPATIALOS_API FComponentId
+struct SPATIALGDK_API FComponentId
 {
   GENERATED_USTRUCT_BODY()
 

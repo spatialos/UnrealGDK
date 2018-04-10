@@ -12,7 +12,7 @@
 */
 
 UCLASS(Blueprintable, NotPlaceable)
-class SPATIALOS_API UEntityQueryConstraint : public UObject
+class SPATIALGDK_API UEntityQueryConstraint : public UObject
 {
   GENERATED_BODY()
 
@@ -29,7 +29,7 @@ public:
 */
 
 USTRUCT(BlueprintType)
-struct SPATIALOS_API FEntityIdQueryConstraint
+struct SPATIALGDK_API FEntityIdQueryConstraint
 {
   GENERATED_BODY()
 
@@ -55,7 +55,7 @@ public:
 * Struct defining Component ID query constraint
 */
 USTRUCT(BlueprintType)
-struct SPATIALOS_API FComponentIdQueryConstraint
+struct SPATIALGDK_API FComponentIdQueryConstraint
 {
   GENERATED_BODY()
 
@@ -82,7 +82,7 @@ public:
 */
 
 USTRUCT(BlueprintType)
-struct SPATIALOS_API FSphereQueryConstraint
+struct SPATIALGDK_API FSphereQueryConstraint
 {
   GENERATED_BODY()
 

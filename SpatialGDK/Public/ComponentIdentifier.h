@@ -2,13 +2,9 @@
 
 #include "EngineMinimal.h"
 #include "SpatialOSWorkerTypes.h"
-#include "ComponentIdentifier.generated.h"
 
-USTRUCT(BlueprintType)
-struct FComponentIdentifier
+struct ComponentIdentifier
 {
-  GENERATED_BODY()
-
   worker::EntityId EntityId;
   worker::ComponentId ComponentId;
 

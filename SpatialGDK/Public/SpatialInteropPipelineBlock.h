@@ -14,6 +14,12 @@ namespace worker
 	struct RemoveComponentOp;
 }
 
+namespace improbable
+{
+	class MetadataData;
+	class PositionData;
+}
+
 class UAddComponentOpWrapperBase;
 class UMetadataAddComponentOp;
 class UPositionAddComponentOp;
@@ -26,17 +32,10 @@ class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInteropPipelineBlock, Log, All);
 
-// Needed because UHT does not support nested types.
-USTRUCT()
 struct FPendingAddComponentWrapper
 {
-	GENERATED_BODY()
-
-	UPROPERTY()
 	FComponentIdentifier EntityComponent;
-
-	UPROPERTY()
-	UAddComponentOpWrapperBase* AddComponentOp;
+	AddComponentOpWrapperBase* AddComponentOp;
 };
 
 UCLASS(BlueprintType)
@@ -67,7 +66,7 @@ private:
 	UPROPERTY()
 	TArray<FPendingAddComponentWrapper> PendingAddComponents;
 
-	TMap<FComponentIdentifier, worker::AuthorityChangeOp> PendingAuthorityChanges;
+	// TMap<FComponentIdentifier, worker::AuthorityChangeOp> PendingAuthorityChanges;
 
 	UPROPERTY()
 	TArray<FComponentIdentifier> PendingRemoveComponents;
@@ -75,8 +74,8 @@ private:
 	UPROPERTY()
 	TArray<FEntityId> PendingRemoveEntities;
 
-	UPROPERTY()
-	UEntityRegistry* EntityRegistry;
+	// UPROPERTY()
+	// UEntityRegistry* EntityRegistry;
 
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
@@ -95,8 +94,7 @@ private:
 
 	// Stub.
 	void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-		const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
-		UCallbackDispatcher* CallbackDispatcher) override;
+		const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World) override;
 
 private:
 	AActor* GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId);
@@ -105,7 +103,7 @@ private:
 	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);
 	UClass* GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent);
 	
-	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection);
+//	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection);
 
 	template <typename AddOpType, typename Metaclass>
 	typename Metaclass::Data* GetPendingComponentData(const FEntityId& EntityId)

@@ -13,7 +13,7 @@
 * FRequestIds are mostly used as unique identifiers to link up requests sent with their request ids.
 */
 USTRUCT(BlueprintType)
-struct SPATIALOS_API FRequestId
+struct SPATIALGDK_API FRequestId
 {
   GENERATED_USTRUCT_BODY()
 

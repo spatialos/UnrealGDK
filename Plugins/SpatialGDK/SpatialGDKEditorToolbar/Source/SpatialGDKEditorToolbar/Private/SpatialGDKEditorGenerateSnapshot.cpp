@@ -3,7 +3,7 @@
 #include "SpatialGDKEditorGenerateSnapshot.h"
 #include "EntityBuilder.h"
 #include "SpatialConstants.h"
-#include "SpatialOSCommon.h"
+#include "SpatialGDKCommon.h"
 
 #include "GameFramework/Actor.h"
 #include "EngineUtils.h"

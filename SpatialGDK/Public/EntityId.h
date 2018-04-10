@@ -8,7 +8,7 @@
 #include "EntityId.generated.h"
 
 USTRUCT(BlueprintType)
-struct SPATIALOS_API FEntityId
+struct SPATIALGDK_API FEntityId
 {
   GENERATED_USTRUCT_BODY()
 

@@ -10,7 +10,7 @@
 #include "SpatialOSBlueprintLibrary.generated.h"
 
 UCLASS()
-class SPATIALOS_API USpatialOSBlueprintLibrary : public UBlueprintFunctionLibrary
+class SPATIALGDK_API USpatialOSBlueprintLibrary : public UBlueprintFunctionLibrary
 {
   GENERATED_UCLASS_BODY()
 
