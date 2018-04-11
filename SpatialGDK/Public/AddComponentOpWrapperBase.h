@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "UObject/NoExportTypes.h"
 #include "AddComponentOpWrapperBase.generated.h"
 
