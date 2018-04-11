@@ -7,42 +7,12 @@
 
 #include "EntityRegistry.generated.h"
 
-// class USpatialOSComponent;
-
-// USTRUCT()
-// struct FSpatialOSComponentList
-// {
-//   GENERATED_BODY()
-
-//   UPROPERTY()
-//   TArray<USpatialOSComponent*> Components;
-// };
-
 UCLASS()
 class SPATIALGDK_API UEntityRegistry : public UObject
 {
   GENERATED_BODY()
 
 public:
-  // /**
-  // * Finds all Blueprint assets present in the paths specified in the list and registers
-  // * them in the registry so that they can be used as templates for instantiation
-  // * When an entity is added.
-  // *
-  // * @param BlueprintPaths list containing all Blueprint paths that will be scanned for Blueprint
-  // * assets.
-  // */
-  // UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
-  // void RegisterEntityBlueprints(const TArray<FString>& BlueprintPaths);
-
-  // /**
-  // * Returns the UClass type for a specified class name if the UClass
-  // * type has been registered to the specified class name.
-  // *
-  // * @param ClassName from which a UClass is acquired.
-  // **/
-  // UClass** GetRegisteredEntityClass(const FString& ClassName);
-
   /**
   * Adds a mapping from an FEntityId to a AActor to the registry
   *
@@ -78,26 +48,7 @@ public:
   UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
   AActor* GetActorFromEntityId(const FEntityId& EntityId) const;
 
-  // /**
-  // * Adds a mapping from an AActor to a USpatialOSComponent to the registry. This cache is
-  // * then used to update components within SpatialOSComponentUpdater.
-  // *
-  // * @param Actor the owning AActor for the USpatialOSComponent that is added to the registry.
-  // * @param Component the USpatialOSComponent owner by the Actor instance.
-  // **/
-  // void RegisterComponent(AActor* Actor, USpatialOSComponent* Component);
-
-  // /**
-  // * Removes the entry for an Actor/Component pair if present in the registry.
-  // *
-  // * @param Actor the AActor that owns the Component.
-  // * @param Component the USpatialOSComponent which will be removed from the registry.
-  // **/
-  // void UnregisterComponent(AActor* Actor, USpatialOSComponent* Component);
-
 private:
-  // UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
-  // void RegisterEntityClass(const FString& ClassName, UClass* ClassToSpawn);
 
   UPROPERTY()
   TMap<FString, UClass*> ClassMap;
@@ -105,8 +56,4 @@ private:
   TMap<FEntityId, AActor*> EntityIdToActor;
   UPROPERTY()
   TMap<AActor*, FEntityId> ActorToEntityId;
-  // UPROPERTY()
-  // TMap<AActor*, FSpatialOSComponentList> EntityComponentCache;
-
-  // friend class USpatialOSComponentUpdater;
 };
