@@ -5,7 +5,7 @@
 #include "Engine/EngineTypes.h"
 #include "HAL/ThreadSafeBool.h"
 #include "SpatialGDKLoader.h"
-#include "SpatialOSViewTypes.h"
+#include "SpatialGDKViewTypes.h"
 #include "SpatialOSWorkerConfiguration.h"
 
 namespace improbable
