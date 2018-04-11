@@ -6,7 +6,6 @@
 
 #include "Engine/ActorChannel.h"
 #include "EntityId.h"
-#include "SpatialOSCommandResult.h"
 #include "improbable/worker.h"
 #include "improbable/standard_library.h"
 #include "SpatialTypeBinding.h"
