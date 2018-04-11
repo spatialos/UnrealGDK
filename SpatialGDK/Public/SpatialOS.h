@@ -148,11 +148,6 @@ public:
   */
   UEntityPipeline* GetEntityPipeline() const;
 
-  // /**
-  // * Callback dispatcher
-  // */
-  // UCallbackDispatcher* GetCallbackDispatcher() const;
-
   /**
    * Returns the raw entity, if it is available on this worker, or nullptr otherwise.
    */
@@ -182,9 +177,6 @@ private:
 
   UPROPERTY()
   UEntityPipeline* EntityPipeline;
-
-  // UPROPERTY()
-  // UCallbackDispatcher* CallbackDispatcher;
 
   improbable::unreal::core::FWorkerConnection WorkerConnection;
   bool bConnectionWasSuccessful;
