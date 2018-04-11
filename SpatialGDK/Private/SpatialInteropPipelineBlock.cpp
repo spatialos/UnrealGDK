@@ -96,7 +96,7 @@ void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId Com
 	{
 		PendingRemoveComponents.Emplace(FComponentIdentifier{RemoveComponentOp.EntityId, ComponentId});
 	}
-	
+
 	if (NextBlock)
 	{
 		NextBlock->RemoveComponent(ComponentId, RemoveComponentOp);
@@ -150,7 +150,6 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 	// Apply queued remove component ops.
 	for (auto& PendingRemoveComponent : PendingRemoveComponents)
 	{
-		DisableComponentImpl(PendingRemoveComponent);
 	}
 
 	// Remove entities.
