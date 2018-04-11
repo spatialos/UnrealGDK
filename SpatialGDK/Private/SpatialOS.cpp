@@ -2,7 +2,6 @@
 
 #include "SpatialOS.h"
 
-//#include "CallbackDispatcher.h"
 #include "EntityPipeline.h"
 #include "SpatialOSSettings.h"
 #include "SpatialOSViewTypes.h"
@@ -15,7 +14,6 @@ USpatialOS::USpatialOS()
 : WorkerConfiguration(), WorkerConnection(), bConnectionWasSuccessful(false)
 {
   EntityPipeline = CreateDefaultSubobject<UEntityPipeline>(TEXT("EntityPipeline"));
- // CallbackDispatcher = CreateDefaultSubobject<UCallbackDispatcher>(TEXT("CallbackDispatcher"));
 }
 
 void USpatialOS::BeginDestroy()
@@ -245,11 +243,6 @@ UEntityPipeline* USpatialOS::GetEntityPipeline() const
   return EntityPipeline;
 }
 
-// UCallbackDispatcher* USpatialOS::GetCallbackDispatcher() const
-// {
-//   return CallbackDispatcher;
-// }
-
 worker::Entity* USpatialOS::GetLocalEntity(const worker::EntityId& EntityId)
 {
   if (!IsConnected())
@@ -288,7 +281,6 @@ void USpatialOS::OnDisconnectDispatcherCallback(const worker::DisconnectOp& Op)
 
 void USpatialOS::OnDisconnectInternal()
 {
- // CallbackDispatcher->Reset();
   EntityPipeline->DeregisterAllCallbacks();
   Callbacks.Reset();
   bConnectionWasSuccessful = false;
