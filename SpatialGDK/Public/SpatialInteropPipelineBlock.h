@@ -71,8 +71,6 @@ private:
 	UPROPERTY()
 	TArray<FPendingAddComponentWrapper> PendingAddComponents;
 
-	// TMap<FComponentIdentifier, worker::AuthorityChangeOp> PendingAuthorityChanges;
-
 	UPROPERTY()
 	TArray<FComponentIdentifier> PendingRemoveComponents;
 
@@ -87,14 +85,9 @@ private:
 
 	UWorld* World;
 
-	// Maps ComponentId to USpatialOsComponent* class name
-	// UPROPERTY()
-	// TMap<FComponentId, UClass*> KnownComponents;
-
 private:
 	void AddEntityImpl(const FEntityId& EntityId);
 	void InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp);
-	void DisableComponentImpl(const FComponentIdentifier& ComponentIdentifier);
 	void RemoveEntityImpl(const FEntityId& EntityId);
 
 	// Stub.
@@ -106,9 +99,6 @@ private:
 	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ClassToSpawn);
 	
 	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);
-//	UClass* GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent);
-	
-//	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection);
 
 	template <typename AddOpType, typename Metaclass>
 	typename Metaclass::Data* GetPendingComponentData(const FEntityId& EntityId)

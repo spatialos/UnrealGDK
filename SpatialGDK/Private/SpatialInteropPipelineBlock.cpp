@@ -2,7 +2,6 @@
 #include "SpatialInteropPipelineBlock.h"
 
 #include "SpatialConstants.h"
-#include "SpatialOSComponent.h"
 #include "SpatialActorChannel.h"
 #include "SpatialNetDriver.h"
 #include "SpatialNetConnection.h"
@@ -16,7 +15,6 @@
 
 #include "SpatialConstants.h"
 #include "improbable/unreal/unreal_metadata.h"
-// #include "UnrealMetadataComponent.h"
 #include "UnrealLevelAddComponentOp.h"
 
 // TODO(David): Needed for ApplyNetworkMovementMode hack below.
@@ -31,16 +29,6 @@ void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDr
 	World = LoadedWorld;
 
 	bInCriticalSection = false;
-
-	// // Fill KnownComponents.
-	// for (TObjectIterator<UClass> It; It; ++It)
-	// {
-	// 	if (It->IsChildOf(USpatialOSComponent::StaticClass()) && !It->HasAnyClassFlags(CLASS_Abstract))
-	// 	{
-	// 		USpatialOSComponent* CDO = Cast<USpatialOSComponent>((*It)->GetDefaultObject());
-	// 		KnownComponents.Emplace(CDO->GetComponentId(), *It);
-	// 	}
-	// }
 }
 
 void USpatialInteropPipelineBlock::AddEntity(const worker::AddEntityOp& AddEntityOp)
@@ -84,7 +72,7 @@ void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddC
 	{
 		FPendingAddComponentWrapper Wrapper;
 		Wrapper.EntityComponent = FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId};
-		Wrapper.AddComponentOp = std::move(AddComponentOp);
+		Wrapper.AddComponentOp = AddComponentOp;
 		PendingAddComponents.Emplace(Wrapper);
 	}
 	else
@@ -124,14 +112,7 @@ void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId Com
 {
 	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::ChangeAuthorityOp component ID: %u entity ID: %lld inCriticalSection: %d"),
 		ComponentId, AuthChangeOp.EntityId, (int)bInCriticalSection);
-
-	// // When a component is initialised, the callback dispatcher will automatically deal with authority changes. Therefore, we need
-	// // to only queue changes if the entity itself has been queued for addition, which can only happen in a critical section.
-	// if (bInCriticalSection && PendingAddEntities.Contains(FEntityId(AuthChangeOp.EntityId)))
-	// {
-	// 	PendingAuthorityChanges.Emplace(FComponentIdentifier{AuthChangeOp.EntityId, ComponentId}, AuthChangeOp);
-	// }
-
+	
 	if (NextBlock)
 	{
 		NextBlock->ChangeAuthority(ComponentId, AuthChangeOp);
@@ -186,7 +167,6 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 	bInCriticalSection = false;
 	PendingAddEntities.Empty();
 	PendingAddComponents.Empty();
-	// PendingAuthorityChanges.Empty();
 	PendingRemoveComponents.Empty();
 	PendingRemoveEntities.Empty();
 
@@ -207,28 +187,10 @@ void USpatialInteropPipelineBlock::AddEntityImpl(const FEntityId& EntityId)
 
 void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp)
 {
-	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
-	TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
-
-	// UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
-	// check(ComponentClass);
-
 	// An actor might not be created for a particular entity ID if that entity doesn't have all of the required components.
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
 	if (Actor)
 	{
-		// USpatialOSComponent* Component = Cast<USpatialOSComponent>(Actor->GetComponentByClass(ComponentClass));
-		// if (Component)
-		// {
-		// 	Component->Init(LockedConnection, LockedView, ComponentIdentifier.EntityId, NetDriver->GetSpatialOS()->GetCallbackDispatcher());
-		// 	Component->ApplyInitialState(*AddComponentOp);
-		// 	worker::AuthorityChangeOp* QueuedAuthChangeOp = PendingAuthorityChanges.Find(ComponentIdentifier);
-		// 	if (QueuedAuthChangeOp)
-		// 	{
-		// 		Component->ApplyInitialAuthority(*QueuedAuthChangeOp);
-		// 	}
-		// }
-
 		// Initialise the static objects when we check out the level data component.
 		auto LevelAddComponentOp = Cast<UUnrealLevelAddComponentOp>(AddComponentOp);
 		if (LevelAddComponentOp)
@@ -240,22 +202,6 @@ void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentId
 			PMC->RegisterStaticObjects(*LevelAddComponentOp->Data.data());
 		}
 	}
-}
-
-void USpatialInteropPipelineBlock::DisableComponentImpl(const FComponentIdentifier& ComponentIdentifier)
-{
-	// UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
-	// check(ComponentClass);
-
-	// AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
-	// if (Actor)
-	// {
-	// 	USpatialOSComponent* Component = Cast<USpatialOSComponent>(Actor->GetComponentByClass(ComponentClass));
-	// 	if (Component)
-	// 	{
-	// 		Component->Disable(ComponentIdentifier.EntityId, NetDriver->GetSpatialOS()->GetCallbackDispatcher());
-	// 	}
-	// }
 }
 
 void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
@@ -301,7 +247,6 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 	{
 		// Option 1
 		UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
-		//SetupComponentInterests(EntityActor, EntityId, LockedConnection);
 
 		improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
 		check(UnrealMetadataComponent);
@@ -314,15 +259,6 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 	}
 	else
 	{
-		// TODO: validate that this is no longer required.
-		// if ((ActorClass = GetRegisteredEntityClass(MetadataComponent)) != nullptr)
-		// {
-		// 	// Option 2
-		// 	UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Spawning a registered %s"), *ActorClass->GetName());
-		// 	EntityActor = SpawnNewEntity(PositionComponent, ActorClass);
-		// 	EntityRegistry->AddToRegistry(EntityId, EntityActor);
-		// }
-		// else 
 		if (UClass* ActorClass = GetNativeEntityClass(MetadataComponent))
 		{
 			// Option 3
@@ -438,53 +374,9 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* P
 	return NewActor;
 }
 
-// This is for classes that we register explicitly with Unreal, currently used for "non-native" replication. This logic might change soon.
-// UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent)
-// {
-// 	FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->entity_type().c_str());
-
-// 	// Initially, attempt to find the class that has been registered to the EntityType string
-// 	UClass** RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString);
-
-// 	// Try without the full path. This should not be necessary, but for now the pawn class needs it.
-// 	if (!RegisteredClass)
-// 	{
-// 		int32 LastSlash = -1;
-// 		if (EntityTypeString.FindLastChar('/', LastSlash))
-// 		{
-// 			RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString.RightChop(LastSlash));
-// 		}
-// 	}
-// 	UClass* ClassToSpawn = RegisteredClass ? *RegisteredClass : nullptr;
-
-// 	return ClassToSpawn;
-// }
-
 // This is for classes that we derive from meta name, mainly to spawn the corresponding actors on clients.
 UClass* USpatialInteropPipelineBlock::GetNativeEntityClass(improbable::MetadataData* MetadataComponent)
 {
 	FString Metadata = UTF8_TO_TCHAR(MetadataComponent->entity_type().c_str());
 	return FindObject<UClass>(ANY_PACKAGE, *Metadata);	
 }
-
-// void USpatialInteropPipelineBlock::SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection)
-// {
-// 	TArray<UActorComponent*> SpatialOSComponents = Actor->GetComponentsByClass(USpatialOSComponent::StaticClass());
-
-// 	worker::Map<worker::ComponentId, worker::InterestOverride> ComponentIdsAndInterestOverrides;
-
-// 	for (auto Component : SpatialOSComponents)
-// 	{
-// 		USpatialOSComponent* SpatialOsComponent = Cast<USpatialOSComponent>(Component);
-// 		ComponentIdsAndInterestOverrides.emplace(std::make_pair(
-// 			SpatialOsComponent->GetComponentId().ToSpatialComponentId(),
-// 			worker::InterestOverride{/* IsInterested */ true }));
-// 	}
-
-// 	auto LockedConnection = Connection.Pin();
-// 	if (LockedConnection.IsValid())
-// 	{
-// 		LockedConnection->SendComponentInterest(EntityId.ToSpatialEntityId(), ComponentIdsAndInterestOverrides);
-// 	}
-// }
-
