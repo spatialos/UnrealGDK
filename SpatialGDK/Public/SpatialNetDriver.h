@@ -11,7 +11,7 @@
 #include "SpatialNetDriver.generated.h"
 
 class UEntityPipeline;
-// class UEntityRegistry;
+class UEntityRegistry;
 class UCallbackDispatcher;
 class USpatialOSComponentUpdater;
 class USpatialOS;
@@ -84,9 +84,6 @@ protected:
 	USpatialOS* SpatialOSInstance;
 
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
-
-	// UPROPERTY()
-	// USpatialOSComponentUpdater* SpatialOSComponentUpdater;
 
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;

@@ -8,7 +8,6 @@
 #include "SpatialConstants.h"
 #include "SpatialInteropPipelineBlock.h"
 #include "SpatialOS.h"
-#include "SpatialOSComponentUpdater.h"
 #include "Engine/ActorChannel.h"
 #include "Engine/NetworkObjectList.h"
 #include "GameFramework/GameNetworkManager.h"
