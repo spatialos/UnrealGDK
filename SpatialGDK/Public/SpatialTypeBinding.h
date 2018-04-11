@@ -5,10 +5,10 @@
 #include <improbable/worker.h>
 #include <improbable/view.h>
 
-#include "CoreMinimal.h"
-#include "Net/RepLayout.h"
 #include "AddComponentOpWrapperBase.h"
+#include "CoreMinimal.h"
 #include "EntityId.h"
+#include "Net/RepLayout.h"
 #include "SpatialTypeBinding.generated.h"
 
 class USpatialInterop;

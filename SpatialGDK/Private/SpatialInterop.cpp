@@ -15,7 +15,6 @@
 #include <improbable/unreal/player.h>
 #include <improbable/unreal/unreal_metadata.h>
 #include "EntityBuilder.h"
-#include "EntityTemplate.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSInterop);
 

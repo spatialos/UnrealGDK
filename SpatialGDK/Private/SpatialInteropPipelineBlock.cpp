@@ -14,11 +14,10 @@
 #include "improbable/view.h"
 #include "improbable/worker.h"
 
-// #include "PositionComponent.h"
-// #include "MetadataComponent.h"
 #include "SpatialConstants.h"
-#include "UnrealMetadataComponent.h"
-#include "UnrealLevelComponent.h"
+#include "improbable/unreal/unreal_metadata.h"
+// #include "UnrealMetadataComponent.h"
+#include "UnrealLevelAddComponentOp.h"
 
 // TODO(David): Needed for ApplyNetworkMovementMode hack below.
 #include "GameFramework/CharacterMovementComponent.h"
@@ -33,15 +32,15 @@ void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDr
 
 	bInCriticalSection = false;
 
-	// Fill KnownComponents.
-	for (TObjectIterator<UClass> It; It; ++It)
-	{
-		if (It->IsChildOf(USpatialOSComponent::StaticClass()) && !It->HasAnyClassFlags(CLASS_Abstract))
-		{
-			USpatialOSComponent* CDO = Cast<USpatialOSComponent>((*It)->GetDefaultObject());
-			KnownComponents.Emplace(CDO->GetComponentId(), *It);
-		}
-	}
+	// // Fill KnownComponents.
+	// for (TObjectIterator<UClass> It; It; ++It)
+	// {
+	// 	if (It->IsChildOf(USpatialOSComponent::StaticClass()) && !It->HasAnyClassFlags(CLASS_Abstract))
+	// 	{
+	// 		USpatialOSComponent* CDO = Cast<USpatialOSComponent>((*It)->GetDefaultObject());
+	// 		KnownComponents.Emplace(CDO->GetComponentId(), *It);
+	// 	}
+	// }
 }
 
 void USpatialInteropPipelineBlock::AddEntity(const worker::AddEntityOp& AddEntityOp)
@@ -85,7 +84,7 @@ void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddC
 	{
 		FPendingAddComponentWrapper Wrapper;
 		Wrapper.EntityComponent = FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId};
-		Wrapper.AddComponentOp = AddComponentOp;
+		Wrapper.AddComponentOp = std::move(AddComponentOp);
 		PendingAddComponents.Emplace(Wrapper);
 	}
 	else
@@ -211,8 +210,8 @@ void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentId
 	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
 	TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
 
-	UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
-	check(ComponentClass);
+	// UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
+	// check(ComponentClass);
 
 	// An actor might not be created for a particular entity ID if that entity doesn't have all of the required components.
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
@@ -245,18 +244,18 @@ void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentId
 
 void USpatialInteropPipelineBlock::DisableComponentImpl(const FComponentIdentifier& ComponentIdentifier)
 {
-	UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
-	check(ComponentClass);
+	// UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
+	// check(ComponentClass);
 
-	AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
-	if (Actor)
-	{
-		USpatialOSComponent* Component = Cast<USpatialOSComponent>(Actor->GetComponentByClass(ComponentClass));
-		if (Component)
-		{
-			Component->Disable(ComponentIdentifier.EntityId, NetDriver->GetSpatialOS()->GetCallbackDispatcher());
-		}
-	}
+	// AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
+	// if (Actor)
+	// {
+	// 	USpatialOSComponent* Component = Cast<USpatialOSComponent>(Actor->GetComponentByClass(ComponentClass));
+	// 	if (Component)
+	// 	{
+	// 		Component->Disable(ComponentIdentifier.EntityId, NetDriver->GetSpatialOS()->GetCallbackDispatcher());
+	// 	}
+	// }
 }
 
 void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
@@ -440,26 +439,26 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* P
 }
 
 // This is for classes that we register explicitly with Unreal, currently used for "non-native" replication. This logic might change soon.
-UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent)
-{
-	FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->entity_type().c_str());
+// UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent)
+// {
+// 	FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->entity_type().c_str());
 
-	// Initially, attempt to find the class that has been registered to the EntityType string
-	UClass** RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString);
+// 	// Initially, attempt to find the class that has been registered to the EntityType string
+// 	UClass** RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString);
 
-	// Try without the full path. This should not be necessary, but for now the pawn class needs it.
-	if (!RegisteredClass)
-	{
-		int32 LastSlash = -1;
-		if (EntityTypeString.FindLastChar('/', LastSlash))
-		{
-			RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString.RightChop(LastSlash));
-		}
-	}
-	UClass* ClassToSpawn = RegisteredClass ? *RegisteredClass : nullptr;
+// 	// Try without the full path. This should not be necessary, but for now the pawn class needs it.
+// 	if (!RegisteredClass)
+// 	{
+// 		int32 LastSlash = -1;
+// 		if (EntityTypeString.FindLastChar('/', LastSlash))
+// 		{
+// 			RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString.RightChop(LastSlash));
+// 		}
+// 	}
+// 	UClass* ClassToSpawn = RegisteredClass ? *RegisteredClass : nullptr;
 
-	return ClassToSpawn;
-}
+// 	return ClassToSpawn;
+// }
 
 // This is for classes that we derive from meta name, mainly to spawn the corresponding actors on clients.
 UClass* USpatialInteropPipelineBlock::GetNativeEntityClass(improbable::MetadataData* MetadataComponent)

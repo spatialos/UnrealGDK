@@ -13,7 +13,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOS, Log, All);
 
-class UCallbackDispatcher;
+// class UCallbackDispatcher;
 class UEntityPipeline;
 
 // clang-format off

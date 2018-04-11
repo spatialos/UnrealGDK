@@ -2,6 +2,7 @@
 
 #include "CallbackDispatcher.h"
 #include "ScopedViewCallbacks.h"
+#include "AddComponentOpWrapperBase.h"
 #include "UObject/NoExportTypes.h"
 
 #include "EntityPipelineBlock.generated.h"
@@ -14,7 +15,6 @@ struct RemoveComponentOp;
 struct AuthorityChangeOp;
 }
 
-class UAddComponentOpWrapperBase;
 class UEntityPipeline;
 
 UCLASS(Abstract)

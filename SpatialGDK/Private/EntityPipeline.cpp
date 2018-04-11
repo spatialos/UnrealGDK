@@ -7,6 +7,8 @@
 #include "EntityPipelineBlock.h"
 #include "CoreMinimal.h"
 
+#include "SpatialGDKCommon.h"
+
 #include "SpatialOSViewTypes.h"
 #include "SpatialOSWorkerTypes.h"
 //#include "CallbackDispatcher.h"
@@ -75,6 +77,9 @@ void UEntityPipeline::Init(const TWeakPtr<SpatialOSView>& InView)
 
 		Callbacks.Add(LockedView->OnCriticalSection(
 			std::bind(&UEntityPipeline::OnCriticalSection, this, std::placeholders::_1)));
+
+		// BindFunc Binder{Callbacks, LockedView, this};
+		// worker::ForEachComponent(improbable::unreal::Components{}, Binder);
 
 		// Callbacks.Add(LockedView->OnAddComponent<improbable::unreal::UnrealLevel>(
 		// 	std::bind(&UEntityPipeline::AddUnrealLevelComponentOp, this, std::placeholders::_1)));

@@ -65,7 +65,7 @@ public:
 	UPROPERTY()
 	USpatialInteropPipelineBlock* InteropPipelineBlock;
 
-	//UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
+	UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
 
 	USpatialOS* GetSpatialOS() { return SpatialOSInstance; }
 	
@@ -88,8 +88,8 @@ protected:
 	// UPROPERTY()
 	// USpatialOSComponentUpdater* SpatialOSComponentUpdater;
 
-	// UPROPERTY()
-	// UEntityRegistry* EntityRegistry;
+	UPROPERTY()
+	UEntityRegistry* EntityRegistry;
 
 	// Timer manager.
 	FTimerManager* TimerManager;

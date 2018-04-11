@@ -4,7 +4,6 @@
 #include "EntityId.h"
 #include "EntityPipelineBlock.h"
 #include "ComponentId.h"
-#include "AddComponentOpWrapperBase.h"
 #include "SpatialInteropPipelineBlock.generated.h"
 
 namespace worker
@@ -32,10 +31,16 @@ class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInteropPipelineBlock, Log, All);
 
+USTRUCT()
 struct FPendingAddComponentWrapper
 {
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
 	FComponentIdentifier EntityComponent;
-	AddComponentOpWrapperBase* AddComponentOp;
+	
+	UPROPERTY()
+	UAddComponentOpWrapperBase* AddComponentOp;
 };
 
 UCLASS(BlueprintType)
@@ -74,8 +79,8 @@ private:
 	UPROPERTY()
 	TArray<FEntityId> PendingRemoveEntities;
 
-	// UPROPERTY()
-	// UEntityRegistry* EntityRegistry;
+	UPROPERTY()
+	UEntityRegistry* EntityRegistry;
 
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
@@ -83,8 +88,8 @@ private:
 	UWorld* World;
 
 	// Maps ComponentId to USpatialOsComponent* class name
-	UPROPERTY()
-	TMap<FComponentId, UClass*> KnownComponents;
+	// UPROPERTY()
+	// TMap<FComponentId, UClass*> KnownComponents;
 
 private:
 	void AddEntityImpl(const FEntityId& EntityId);
@@ -101,7 +106,7 @@ private:
 	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ClassToSpawn);
 	
 	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);
-	UClass* GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent);
+//	UClass* GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent);
 	
 //	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection);
 

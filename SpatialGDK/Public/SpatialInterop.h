@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "AddComponentOpWrapperBase.h"
 #include "CoreMinimal.h"
 #include "SpatialTypeBinding.h"
 #include "SpatialUnrealObjectRef.h"

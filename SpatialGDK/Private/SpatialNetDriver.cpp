@@ -101,7 +101,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	SpatialOSInstance->Connect();
 
 	// Set up manager objects.
-	SpatialOSComponentUpdater = NewObject<USpatialOSComponentUpdater>(this);
+	// SpatialOSComponentUpdater = NewObject<USpatialOSComponentUpdater>(this);
 	EntityRegistry = NewObject<UEntityRegistry>(this);
 	Interop = NewObject<USpatialInterop>(this);
 }
@@ -114,10 +114,10 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	InteropPipelineBlock->Init(EntityRegistry, this, GetWorld());
 	SpatialOSInstance->GetEntityPipeline()->AddBlock(InteropPipelineBlock);
 
-	TArray<FString> BlueprintPaths;
-	BlueprintPaths.Add(TEXT(ENTITY_BLUEPRINTS_FOLDER));
+	// TArray<FString> BlueprintPaths;
+	// BlueprintPaths.Add(TEXT(ENTITY_BLUEPRINTS_FOLDER));
 
-	EntityRegistry->RegisterEntityBlueprints(BlueprintPaths);
+	//EntityRegistry->RegisterEntityBlueprints(BlueprintPaths);
 
 	// Each connection stores a URL with various optional settings (host, port, map, netspeed...)
 	// We currently don't make use of any of these as some are meaningless in a SpatialOS world, and some are less of a priority.
@@ -733,7 +733,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		SpatialOSInstance->ProcessOps();
 		SpatialOSInstance->GetEntityPipeline()->ProcessOps(SpatialOSInstance->GetView(), SpatialOSInstance->GetConnection(), GetWorld());
-		SpatialOSComponentUpdater->UpdateComponents(EntityRegistry, DeltaTime);
+		// SpatialOSComponentUpdater->UpdateComponents(EntityRegistry, DeltaTime);
 	}
 }
 

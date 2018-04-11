@@ -23,6 +23,7 @@ public class SpatialGDK : ModuleRules
                 "SpatialGDK/Generated/Usr",
                 "SpatialGDK/Generated/Std",
                 "SpatialGDK/Generated/UClasses",
+                "SpatialGDK/Ops/"
             });
         
         PrivateIncludePaths.AddRange( 
