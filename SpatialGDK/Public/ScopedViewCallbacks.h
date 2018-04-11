@@ -2,7 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialGDKViewTypes..h"
+#include "SpatialGDKViewTypes.h"
 #include "SpatialGDKWorkerTypes.h"
 
 namespace improbable

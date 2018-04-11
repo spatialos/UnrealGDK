@@ -3,7 +3,7 @@
 
 #include "EngineMinimal.h"
 #include "ScopedViewCallbacks.h"
-#include "SpatialGDKViewTypes..h"
+#include "SpatialGDKViewTypes.h"
 #include "SpatialOSWorkerConfiguration.h"
 #include "SpatialOSWorkerConfigurationData.h"
 #include "SpatialGDKWorkerTypes.h"

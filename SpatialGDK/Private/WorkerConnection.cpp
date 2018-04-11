@@ -4,7 +4,7 @@
 #include "Async.h"
 #include "SpatialOS.h"
 #include "SpatialGDKCommon.h"
-#include "SpatialGDKViewTypes..h"
+#include "SpatialGDKViewTypes.h"
 #include "SpatialGDKWorkerTypes.h"
 
 #define LOCTEXT_NAMESPACE "FWorkerConnection"
