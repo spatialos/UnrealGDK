@@ -4,7 +4,7 @@
 
 #include "EntityPipeline.h"
 #include "SpatialGDKSettings.h"
-#include "SpatialOSViewTypes.h"
+#include "SpatialGDKViewTypes..h"
 #include "SpatialOSWorkerConfigurationData.h"
 #include "SpatialGDKWorkerTypes.h"
 

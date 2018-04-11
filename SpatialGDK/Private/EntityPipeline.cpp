@@ -9,7 +9,7 @@
 
 #include "SpatialGDKCommon.h"
 
-#include "SpatialOSViewTypes.h"
+#include "SpatialGDKViewTypes..h"
 #include "SpatialGDKWorkerTypes.h"
 
 /**

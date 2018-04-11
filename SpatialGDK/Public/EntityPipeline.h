@@ -7,7 +7,7 @@
 
 #include "CoreMinimal.h"
 #include "AddComponentOpWrapperBase.h"
-#include "SpatialOSViewTypes.h"
+#include "SpatialGDKViewTypes..h"
 #include "SpatialGDKWorkerTypes.h"
 #include "EntityPipelineBlock.h"
 #include "ScopedViewCallbacks.h"
