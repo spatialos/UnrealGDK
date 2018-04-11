@@ -6,7 +6,7 @@
 #include "SpatialOSViewTypes.h"
 #include "SpatialOSWorkerConfiguration.h"
 #include "SpatialOSWorkerConfigurationData.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "WorkerConnection.h"
 
 #include "SpatialOS.generated.h"

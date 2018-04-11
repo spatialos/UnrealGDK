@@ -8,7 +8,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "AddComponentOpWrapperBase.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "improbable/unreal/generated/UnrealWheeledVehicle.h"
 #include "UnrealWheeledVehicleSingleClientRepDataAddComponentOp.generated.h"
 

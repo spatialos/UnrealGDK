@@ -3,7 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "SpatialOSViewTypes.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 
 namespace improbable
 {

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "improbable/unreal/level_data.h"
 #include "improbable/unreal/player.h"
 #include "improbable/unreal/spawner.h"

@@ -3,7 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "SpatialOSWorkerConfigurationData.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "SpatialOSWorkerConfiguration.generated.h"
 
 USTRUCT(BlueprintType)

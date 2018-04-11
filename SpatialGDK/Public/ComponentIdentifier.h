@@ -1,7 +1,7 @@
 #pragma once
 
 #include "EngineMinimal.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "ComponentIdentifier.generated.h"
 
 USTRUCT(BlueprintType)

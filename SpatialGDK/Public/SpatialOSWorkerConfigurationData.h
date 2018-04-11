@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma once
 
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "improbable/defaults.h"
 
 #include "SpatialOSWorkerConfigurationData.generated.h"

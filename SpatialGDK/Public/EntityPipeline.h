@@ -8,7 +8,7 @@
 #include "CoreMinimal.h"
 #include "AddComponentOpWrapperBase.h"
 #include "SpatialOSViewTypes.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "EntityPipelineBlock.h"
 #include "ScopedViewCallbacks.h"
 #include "UnrealLevelAddComponentOp.h"

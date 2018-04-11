@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 
 #include "Engine.h"
 #include "EntityId.h"

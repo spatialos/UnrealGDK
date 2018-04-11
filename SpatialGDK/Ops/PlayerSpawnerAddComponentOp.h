@@ -8,7 +8,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "AddComponentOpWrapperBase.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "improbable/unreal/spawner.h"
 #include "PlayerSpawnerAddComponentOp.generated.h"
 

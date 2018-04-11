@@ -6,7 +6,7 @@
 #include "SpatialGDKSettings.h"
 #include "SpatialOSViewTypes.h"
 #include "SpatialOSWorkerConfigurationData.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOS);
 

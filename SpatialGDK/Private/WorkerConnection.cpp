@@ -5,7 +5,7 @@
 #include "SpatialOS.h"
 #include "SpatialGDKCommon.h"
 #include "SpatialOSViewTypes.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 
 #define LOCTEXT_NAMESPACE "FWorkerConnection"
 
