@@ -40,10 +40,10 @@
 #include "MetadataAddComponentOp.h"
 #include "PositionAddComponentOp.h"
 #include "PersistenceAddComponentOp.h"
-//TODO: move this to be nested in the UEntityPipeline when the UEntityPipeline is 
-// no longer a UObject.
+
 #include "EntityPipeline.generated.h"
 
+// TODO: UNR-64 Remove the need for the entity pipeline
 // struct BindFunc
 // {
 // 	BindFunc(improbable::unreal::callbacks::FScopedViewCallbacks& Callbacks,
@@ -90,6 +90,7 @@ public:
 
 	void OnAddEntity(const worker::AddEntityOp& Op) { FirstBlock->AddEntity(Op); }
 
+	// TODO: UNR-64 Remove the need for the entity pipeline
 	// template<typename T>
 	// void OnAddComponent(const worker::AddComponentOp<T>& Op) {
 	// 	auto Wrapper = TSharedPtr<AddComponentOpWrapperBase>(new AddComponentOpWrapper<T>(Op, T::ComponentId));
@@ -168,8 +169,6 @@ private:
 	UEntityPipelineBlock* FirstBlock;
 	UPROPERTY()
 	UEntityPipelineBlock* LastBlock;
-	// UPROPERTY()
-	// UCallbackDispatcher* CallbackDispatcher;
 
 	bool bInitialised;
 	improbable::unreal::callbacks::FScopedViewCallbacks Callbacks;

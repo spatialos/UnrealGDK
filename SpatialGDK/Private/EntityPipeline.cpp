@@ -11,36 +11,6 @@
 
 #include "SpatialOSViewTypes.h"
 #include "SpatialOSWorkerTypes.h"
-//#include "CallbackDispatcher.h"
-// #include "UnrealLevelAddComponentOp.h"
-// #include "UnrealLevelPlaceholderAddComponentOp.h"
-// #include "PlayerControlClientAddComponentOp.h"
-// #include "PlayerSpawnerAddComponentOp.h"
-// #include "UnrealMetadataAddComponentOp.h"
-// #include "UnrealCharacterSingleClientRepDataAddComponentOp.h"
-// #include "UnrealCharacterMultiClientRepDataAddComponentOp.h"
-// #include "UnrealCharacterMigratableDataAddComponentOp.h"
-// #include "UnrealCharacterClientRPCsAddComponentOp.h"
-// #include "UnrealCharacterServerRPCsAddComponentOp.h"
-// #include "UnrealPlayerControllerSingleClientRepDataAddComponentOp.h"
-// #include "UnrealPlayerControllerMultiClientRepDataAddComponentOp.h"
-// #include "UnrealPlayerControllerMigratableDataAddComponentOp.h"
-// #include "UnrealPlayerControllerClientRPCsAddComponentOp.h"
-// #include "UnrealPlayerControllerServerRPCsAddComponentOp.h"
-// #include "UnrealPlayerStateSingleClientRepDataAddComponentOp.h"
-// #include "UnrealPlayerStateMultiClientRepDataAddComponentOp.h"
-// #include "UnrealPlayerStateMigratableDataAddComponentOp.h"
-// #include "UnrealPlayerStateClientRPCsAddComponentOp.h"
-// #include "UnrealPlayerStateServerRPCsAddComponentOp.h"
-// #include "UnrealWheeledVehicleSingleClientRepDataAddComponentOp.h"
-// #include "UnrealWheeledVehicleMultiClientRepDataAddComponentOp.h"
-// #include "UnrealWheeledVehicleMigratableDataAddComponentOp.h"
-// #include "UnrealWheeledVehicleClientRPCsAddComponentOp.h"
-// #include "UnrealWheeledVehicleServerRPCsAddComponentOp.h"
-// #include "EntityAclAddComponentOp.h"
-// #include "MetadataAddComponentOp.h"
-// #include "PositionAddComponentOp.h"
-// #include "PersistenceAddComponentOp.h"
 
 /**
 *
@@ -52,7 +22,6 @@ DEFINE_LOG_CATEGORY(LogEntityPipeline);
 UEntityPipeline::UEntityPipeline()
 : FirstBlock(nullptr)
 , LastBlock(nullptr)
-//, CallbackDispatcher(nullptr)
 , bInitialised(false)
 {
 }
@@ -63,8 +32,6 @@ void UEntityPipeline::Init(const TWeakPtr<SpatialOSView>& InView)
 	checkf(FirstBlock, TEXT("Trying to bind callbacks but no blocks have been added!"));
 
 	Callbacks.Init(InView);
-	// CallbackDispatcher = InCallbackDispatcher;
-	// CallbackDispatcher->OnAuthorityChangeOpReceived.AddUObject(this, &UEntityPipeline::OnAuthorityChange);
 
 	auto LockedView = InView.Pin();
 	if (LockedView.IsValid())
@@ -78,6 +45,7 @@ void UEntityPipeline::Init(const TWeakPtr<SpatialOSView>& InView)
 		Callbacks.Add(LockedView->OnCriticalSection(
 			std::bind(&UEntityPipeline::OnCriticalSection, this, std::placeholders::_1)));
 
+		// TODO: UNR-64 Remove the need for the entity pipeline
 		// BindFunc Binder{Callbacks, LockedView, this};
 		// worker::ForEachComponent(improbable::unreal::Components{}, Binder);
 
@@ -205,11 +173,6 @@ void UEntityPipeline::Init(const TWeakPtr<SpatialOSView>& InView)
 
 void UEntityPipeline::DeregisterAllCallbacks()
 {
-	// if (CallbackDispatcher != nullptr)
-	// {
-	// 	CallbackDispatcher->Reset();
-	// 	CallbackDispatcher = nullptr;
-	// }
 	Callbacks.Reset();
 	bInitialised = false;
 }
