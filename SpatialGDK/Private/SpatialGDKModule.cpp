@@ -5,7 +5,7 @@
 #include "ModuleManager.h"
 #include "Paths.h"
 #include "PlatformProcess.h"
-#include "SpatialOSSettings.h"
+#include "SpatialGDKSettings.h"
 #include "UObjectBase.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKModule"
@@ -40,7 +40,7 @@ void FSpatialGDKModule::RegisterSettings()
     ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings(
         "Project", "SpatialOS", "SpatialOS", LOCTEXT("RuntimeGeneralSettingsName", "SpatialOS"),
         LOCTEXT("RuntimeGeneralSettingsDescription", "Base configuration for SpatialOS module."),
-        GetMutableDefault<USpatialOSSettings>());
+        GetMutableDefault<USpatialGDKSettings>());
 
     if (SettingsSection.IsValid())
     {
@@ -59,7 +59,7 @@ void FSpatialGDKModule::UnregisterSettings()
 
 bool FSpatialGDKModule::HandleSettingsSaved()
 {
-  USpatialOSSettings* Settings = GetMutableDefault<USpatialOSSettings>();
+  USpatialGDKSettings* Settings = GetMutableDefault<USpatialGDKSettings>();
   Settings->SaveConfig();
 
   return true;

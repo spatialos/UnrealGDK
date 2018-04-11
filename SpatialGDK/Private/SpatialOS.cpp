@@ -3,7 +3,7 @@
 #include "SpatialOS.h"
 
 #include "EntityPipeline.h"
-#include "SpatialOSSettings.h"
+#include "SpatialGDKSettings.h"
 #include "SpatialOSViewTypes.h"
 #include "SpatialOSWorkerConfigurationData.h"
 #include "SpatialOSWorkerTypes.h"
@@ -45,7 +45,7 @@ void USpatialOS::ApplyEditorWorkerConfiguration(FWorldContext& InWorldContext)
     return;
   }
 
-  const auto SpatialOSSettings = GetDefault<USpatialOSSettings>();
+  const auto SpatialOSSettings = GetDefault<USpatialGDKSettings>();
   if (SpatialOSSettings == nullptr || !SpatialOSSettings->bUseUserWorkerConfigurations)
   {
     return;

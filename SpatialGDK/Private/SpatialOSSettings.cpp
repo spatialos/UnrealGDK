@@ -1,12 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialOSSettings.h"
+#include "SpatialGDKSettings.h"
 
 FSpatialOSWorkerOverrideSettings::FSpatialOSWorkerOverrideSettings() : bDisableRendering(false)
 {
 }
 
-USpatialOSSettings::USpatialOSSettings(const FObjectInitializer& ObjectInitializer)
+USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer), bUseUserWorkerConfigurations(false)
 {
 }

@@ -21,12 +21,12 @@ struct FSpatialOSWorkerOverrideSettings
 };
 
 UCLASS(config = Editor, defaultconfig)
-class USpatialOSSettings : public UObject
+class USpatialGDKSettings : public UObject
 {
   GENERATED_BODY()
 
 public:
-  USpatialOSSettings(const FObjectInitializer& ObjectInitializer);
+  USpatialGDKSettings(const FObjectInitializer& ObjectInitializer);
 
   /** Should user worker configurations be used? */
   UPROPERTY(EditAnywhere, config, Category = Custom, meta = (ConfigRestartRequired = false))
