@@ -2,7 +2,7 @@
 #pragma once
 #include "SpatialOSWorkerConfigurationData.h"
 
-#include "SpatialOSSettings.generated.h"
+#include "SpatialGDKSettings.generated.h"
 
 USTRUCT()
 struct FSpatialOSWorkerOverrideSettings
