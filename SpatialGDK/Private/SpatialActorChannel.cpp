@@ -7,7 +7,6 @@
 #include "Engine/DemoNetDriver.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
-//#include "Commander.h"
 #include "SpatialNetConnection.h"
 #include "SpatialOS.h"
 #include "SpatialInterop.h"
