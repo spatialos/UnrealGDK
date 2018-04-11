@@ -3,7 +3,6 @@
 #include "ComponentIdentifier.h"
 #include "EntityId.h"
 #include "EntityPipelineBlock.h"
-#include "ComponentId.h"
 #include "SpatialInteropPipelineBlock.generated.h"
 
 namespace worker
