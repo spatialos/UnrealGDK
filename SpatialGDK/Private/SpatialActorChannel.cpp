@@ -1,15 +1,15 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialActorChannel.h"
-#include "SpatialNetDriver.h"
-#include "SpatialPackageMapClient.h"
-#include "EntityRegistry.h"
 #include "Engine/DemoNetDriver.h"
+#include "EntityRegistry.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
-#include "SpatialNetConnection.h"
-#include "SpatialOS.h"
 #include "SpatialInterop.h"
+#include "SpatialNetConnection.h"
+#include "SpatialNetDriver.h"
+#include "SpatialOS.h"
+#include "SpatialPackageMapClient.h"
 #include "SpatialTypeBinding.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
@@ -19,7 +19,7 @@ namespace
 //This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
 // We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
 // In this function, we poll for any changes in Unreal properties compared to the last time we replicated this actor.
-void UpdateChangelistHistory(FRepState * RepState)
+void UpdateChangelistHistory(FRepState* RepState)
 {
 	check(RepState->HistoryEnd >= RepState->HistoryStart);
 
@@ -30,9 +30,9 @@ void UpdateChangelistHistory(FRepState * RepState)
 	{
 		const int32 HistoryIndex = i % FRepState::MAX_CHANGE_HISTORY;
 
-		FRepChangedHistory & HistoryItem = RepState->ChangeHistory[HistoryIndex];
+		FRepChangedHistory& HistoryItem = RepState->ChangeHistory[HistoryIndex];
 
-		check(HistoryItem.Changed.Num() > 0);		// All active history items should contain a change list
+		check(HistoryItem.Changed.Num() > 0);  // All active history items should contain a change list
 
 		HistoryItem.Changed.Empty();
 		HistoryItem.OutPacketIdRange = FPacketIdRange();
@@ -50,11 +50,11 @@ void UpdateChangelistHistory(FRepState * RepState)
 }
 
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
-	: Super(ObjectInitializer)
-	, ActorEntityId(0)
-	, ReserveEntityIdRequestId(-1)
-	, CreateEntityRequestId(-1)
-	, SpatialNetDriver(nullptr)
+: Super(ObjectInitializer)
+, ActorEntityId(0)
+, ReserveEntityIdRequestId(-1)
+, CreateEntityRequestId(-1)
+, SpatialNetDriver(nullptr)
 {
 	bCoreActor = true;
 	bCreatingNewEntity = false;
@@ -84,15 +84,13 @@ void USpatialActorChannel::BindToSpatialView()
 	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
 	{
-		ReserveEntityCallback = PinnedView->OnReserveEntityIdResponse([this](const worker::ReserveEntityIdResponseOp& Op)
-		{
+		ReserveEntityCallback = PinnedView->OnReserveEntityIdResponse([this](const worker::ReserveEntityIdResponseOp& Op) {
 			if (Op.RequestId == ReserveEntityIdRequestId)
 			{
 				OnReserveEntityIdResponse(Op);
-			}			
+			}
 		});
-		CreateEntityCallback = PinnedView->OnCreateEntityResponse([this](const worker::CreateEntityResponseOp& Op)
-		{
+		CreateEntityCallback = PinnedView->OnCreateEntityResponse([this](const worker::CreateEntityResponseOp& Op) {
 			if (Op.RequestId == CreateEntityRequestId)
 			{
 				OnCreateEntityResponse(Op);
@@ -123,12 +121,12 @@ bool USpatialActorChannel::ReplicateActor()
 	{
 		return false;
 	}
-	
+
 	check(Actor);
 	check(!Closing);
 	check(Connection);
 	check(Connection->PackageMap);
-	
+
 	const UWorld* const ActorWorld = Actor->GetWorld();
 
 	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
@@ -152,7 +150,7 @@ bool USpatialActorChannel::ReplicateActor()
 	{
 		RepFlags.bNetInitial = true;
 		Bunch.bClose = Actor->bNetTemporary;
-		Bunch.bReliable = true; // Net temporary sends need to be reliable as well to force them to retry
+		Bunch.bReliable = true;  // Net temporary sends need to be reliable as well to force them to retry
 	}
 
 	//Here, Unreal would have determined if this connection belongs to this actor's Outer.
@@ -167,7 +165,7 @@ bool USpatialActorChannel::ReplicateActor()
 		// We don't care about this as we can distinguish this already based on the components in the entity,
 		// so SerializeNewActor will probably do nothing.
 		Connection->PackageMap->SerializeNewActor(Bunch, this, Actor);
-	
+
 		Actor->OnSerializeNewActor(Bunch);
 	}
 
@@ -178,7 +176,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
 
-	FMemMark MemMark(FMemStack::Get());	// The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in ::PostSendBunch. we free it below
+	FMemMark MemMark(FMemStack::Get());  // The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in ::PostSendBunch. we free it below
 
 	// ----------------------------------------------------------
 	// Replicate Actor and Component properties and RPCs
@@ -191,7 +189,7 @@ bool USpatialActorChannel::ReplicateActor()
 	{
 		PlayerController->SendClientAdjustment();
 	}
-	
+
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
@@ -249,11 +247,11 @@ bool USpatialActorChannel::ReplicateActor()
 
 	// If any properties have changed, send a component update.
 	if (RepFlags.bNetInitial || RepChanged.Num() > 0 || MigratableChanged.Num() > 0)
-	{		
+	{
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
 			// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
-			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
+			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a
 			// player controller, get the player state.
 			FString PlayerWorkerId;
 			APlayerState* PlayerState = Cast<APlayerState>(Actor);
@@ -369,7 +367,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 	bIsReplicatingActor = false;
 
-	bForceCompareProperties = false;		// Only do this once per frame when set
+	bForceCompareProperties = false;  // Only do this once per frame when set
 
 	return bWroteSomethingImportant;
 }
@@ -425,7 +423,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 			ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
 		}
 		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with no entity ID. Initiated reserve entity ID. Request id: %d"),
-			*InActor->GetName(), ReserveEntityIdRequestId.Id);
+			   *InActor->GetName(), ReserveEntityIdRequestId.Id);
 	}
 	else
 	{
@@ -493,12 +491,12 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 
 void USpatialActorChannel::UpdateSpatialPosition()
 {
-	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
-	// migrated between workers at the same time (which is not guaranteed), we ensure that we update the position component 
+	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are
+	// migrated between workers at the same time (which is not guaranteed), we ensure that we update the position component
 	// of the PlayerController and PlayerState at the same time as the pawn.
 
 	// Check that it has moved sufficiently far to be updated
-	const float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
+	const float SpatialPositionThreshold = 100.0f * 100.0f;  // 1m (100cm)
 	FVector ActorSpatialPosition = GetActorSpatialPosition(Actor);
 	if (FVector::DistSquared(ActorSpatialPosition, LastSpatialPosition) < SpatialPositionThreshold)
 	{
@@ -537,7 +535,7 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* Actor)
 	// If the actor has a well defined location then use that
 	// Otherwise if it has a parent use its location
 	// Otherwise use the origin
-	if (Actor->GetRootComponent()) 
+	if (Actor->GetRootComponent())
 	{
 		return Actor->GetRootComponent()->GetComponentLocation();
 	}

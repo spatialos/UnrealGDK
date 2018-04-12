@@ -1,21 +1,21 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #include "SpatialInteropPipelineBlock.h"
 
-#include "SpatialConstants.h"
-#include "SpatialActorChannel.h"
-#include "SpatialNetDriver.h"
-#include "SpatialNetConnection.h"
-#include "SpatialPackageMapClient.h"
 #include "AddComponentOpWrapperBase.h"
 #include "EngineMinimal.h"
 #include "EntityRegistry.h"
 #include "GameFramework/PlayerController.h"
+#include "SpatialActorChannel.h"
+#include "SpatialConstants.h"
+#include "SpatialNetConnection.h"
+#include "SpatialNetDriver.h"
+#include "SpatialPackageMapClient.h"
 #include "improbable/view.h"
 #include "improbable/worker.h"
 
 #include "SpatialConstants.h"
-#include "improbable/unreal/unreal_metadata.h"
 #include "UnrealLevelAddComponentOp.h"
+#include "improbable/unreal/unreal_metadata.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKInteropPipelineBlock);
 
@@ -63,7 +63,7 @@ void USpatialInteropPipelineBlock::RemoveEntity(const worker::RemoveEntityOp& Re
 void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddComponentOp)
 {
 	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::AddComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"),
-		AddComponentOp->ComponentId, AddComponentOp->EntityId, (int)bInCriticalSection);
+		   AddComponentOp->ComponentId, AddComponentOp->EntityId, (int)bInCriticalSection);
 
 	if (bInCriticalSection)
 	{
@@ -84,10 +84,10 @@ void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddC
 }
 
 void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId ComponentId,
-	const worker::RemoveComponentOp& RemoveComponentOp)
+												   const worker::RemoveComponentOp& RemoveComponentOp)
 {
 	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"),
-		ComponentId, RemoveComponentOp.EntityId, (int)bInCriticalSection);
+		   ComponentId, RemoveComponentOp.EntityId, (int)bInCriticalSection);
 
 	if (NextBlock)
 	{
@@ -96,11 +96,11 @@ void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId Com
 }
 
 void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId ComponentId,
-	const worker::AuthorityChangeOp& AuthChangeOp)
+												   const worker::AuthorityChangeOp& AuthChangeOp)
 {
 	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::ChangeAuthorityOp component ID: %u entity ID: %lld inCriticalSection: %d"),
-		ComponentId, AuthChangeOp.EntityId, (int)bInCriticalSection);
-	
+		   ComponentId, AuthChangeOp.EntityId, (int)bInCriticalSection);
+
 	if (NextBlock)
 	{
 		NextBlock->ChangeAuthority(ComponentId, AuthChangeOp);
@@ -236,7 +236,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		check(PackageMap);
 
 		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
-		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());	
+		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
 	}
 	else
 	{
@@ -289,7 +289,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 				}
 			}
 
-			// Add to entity registry. 
+			// Add to entity registry.
 			EntityRegistry->AddToRegistry(EntityId, EntityActor);
 
 			// Set up actor channel.
@@ -359,5 +359,5 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* P
 UClass* USpatialInteropPipelineBlock::GetNativeEntityClass(improbable::MetadataData* MetadataComponent)
 {
 	FString Metadata = UTF8_TO_TCHAR(MetadataComponent->entity_type().c_str());
-	return FindObject<UClass>(ANY_PACKAGE, *Metadata);	
+	return FindObject<UClass>(ANY_PACKAGE, *Metadata);
 }

@@ -4,7 +4,8 @@
 #include "SpatialNetDriver.h"
 #include "SpatialPackageMapClient.h"
 
-USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer)
+: Super(ObjectInitializer)
 {
 	InternalAck = 1;
 }
@@ -35,7 +36,6 @@ void USpatialNetConnection::InitLocalConnection(UNetDriver* InDriver, class FSoc
 void USpatialNetConnection::InitRemoteConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, const class FInternetAddr& InRemoteAddr, EConnectionState InState, int32 InMaxPacket, int32 InPacketOverhead)
 {
 	Super::InitRemoteConnection(InDriver, InSocket, InURL, InRemoteAddr, InState, InMaxPacket, InPacketOverhead);
-
 }
 
 bool USpatialNetConnection::ClientHasInitializedLevelFor(const UObject* TestObject) const
@@ -45,7 +45,7 @@ bool USpatialNetConnection::ClientHasInitializedLevelFor(const UObject* TestObje
 	//Intentionally does not call Super::
 }
 
-void USpatialNetConnection::LowLevelSend(void * Data, int32 CountBytes, int32 CountBits)
+void USpatialNetConnection::LowLevelSend(void* Data, int32 CountBytes, int32 CountBits)
 {
 	//Intentionally does not call Super::
 }
