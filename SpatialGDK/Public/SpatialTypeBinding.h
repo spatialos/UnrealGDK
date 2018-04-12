@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <improbable/worker.h>
 #include <improbable/view.h>
+#include <improbable/worker.h>
 
 #include "AddComponentOpWrapperBase.h"
 #include "CoreMinimal.h"
@@ -25,11 +25,11 @@ FORCEINLINE EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Co
 {
 	switch (Condition)
 	{
-	case COND_AutonomousOnly:
-	case COND_OwnerOnly:
-		return GROUP_SingleClient;
-	default:
-		return GROUP_MultiClient;
+		case COND_AutonomousOnly:
+		case COND_OwnerOnly:
+			return GROUP_SingleClient;
+		default:
+			return GROUP_MultiClient;
 	}
 }
 
@@ -56,20 +56,18 @@ FORCEINLINE bool HasComponentAuthority(TWeakPtr<worker::View> View, const worker
 struct FPropertyChangeState
 {
 	const uint8* RESTRICT SourceData;
-	const TArray<uint16>& RepChanged; // changed replicated properties
+	const TArray<uint16>& RepChanged;  // changed replicated properties
 	TArray<FRepLayoutCmd>& RepCmds;
 	TArray<FHandleToCmdIndex>& RepBaseHandleToCmdIndex;
-	const TArray<uint16>& MigChanged; // changed migratable properties
+	const TArray<uint16>& MigChanged;  // changed migratable properties
 };
 
 // A structure containing information about a replicated property.
 class FRepHandleData
 {
-public:
-	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, ELifetimeCondition Condition, ELifetimeRepNotifyCondition RepNotifyCondition) :
-		Condition(Condition),
-		RepNotifyCondition(RepNotifyCondition),
-		Offset(0)
+  public:
+	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, ELifetimeCondition Condition, ELifetimeRepNotifyCondition RepNotifyCondition)
+	: Condition(Condition), RepNotifyCondition(RepNotifyCondition), Offset(0)
 	{
 		// Build property chain.
 		check(PropertyNames.Num() > 0);
@@ -103,7 +101,6 @@ public:
 		return Container + Offset;
 	}
 
-  
 	FORCEINLINE const uint8* GetPropertyData(const uint8* Container) const
 	{
 		return Container + Offset;
@@ -114,17 +111,16 @@ public:
 	ELifetimeCondition Condition;
 	ELifetimeRepNotifyCondition RepNotifyCondition;
 
-private:
+  private:
 	int32 Offset;
 };
 
 // A structure containing information about a migratable property.
 class FMigratableHandleData
 {
-public:
-	FMigratableHandleData(UClass* Class, TArray<FName> PropertyNames) :
-    SubobjectProperty(false),
-    Offset(0)
+  public:
+	FMigratableHandleData(UClass* Class, TArray<FName> PropertyNames)
+	: SubobjectProperty(false), Offset(0)
 	{
 		// Build property chain.
 		check(PropertyNames.Num() > 0);
@@ -150,7 +146,7 @@ public:
 				if (ObjectProperty)
 				{
 					CurrentContainerType = ObjectProperty->PropertyClass;
-					SubobjectProperty = true; // We are now recursing into a subobjects properties.
+					SubobjectProperty = true;  // We are now recursing into a subobjects properties.
 					Offset = 0;
 				}
 				else
@@ -195,15 +191,15 @@ public:
 
 	FORCEINLINE const uint8* GetPropertyData(const uint8* Container) const
 	{
-    return GetPropertyData((uint8*)Container);
+		return GetPropertyData((uint8*)Container);
 	}
 
 	TArray<UProperty*> PropertyChain;
 	UProperty* Property;
 
-private:
-  bool SubobjectProperty; // If this is true, then this property refers to a property within a subobject.
-  uint32 Offset;
+  private:
+	bool SubobjectProperty;  // If this is true, then this property refers to a property within a subobject.
+	uint32 Offset;
 };
 
 // A map from rep handle to rep handle data.
@@ -217,25 +213,25 @@ class SPATIALGDK_API USpatialTypeBinding : public UObject
 {
 	GENERATED_BODY()
 
-public:
+  public:
 	virtual const FRepHandlePropertyMap& GetRepHandlePropertyMap() const
-		PURE_VIRTUAL(USpatialTypeBinding::GetRepHandlePropertyMap, static FRepHandlePropertyMap Map; return Map; );
+		PURE_VIRTUAL(USpatialTypeBinding::GetRepHandlePropertyMap, static FRepHandlePropertyMap Map; return Map;);
 	virtual const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() const
-		PURE_VIRTUAL(USpatialTypeBinding::GetMigratableHandlePropertyMap, static FMigratableHandlePropertyMap Map; return Map; );
+		PURE_VIRTUAL(USpatialTypeBinding::GetMigratableHandlePropertyMap, static FMigratableHandlePropertyMap Map; return Map;);
 
 	virtual void Init(USpatialInterop* Interop, USpatialPackageMapClient* PackageMap);
 	virtual void BindToView() PURE_VIRTUAL(USpatialTypeBinding::BindToView, );
 	virtual void UnbindFromView() PURE_VIRTUAL(USpatialTypeBinding::UnbindFromView, );
-	virtual UClass* GetBoundClass() const PURE_VIRTUAL(USpatialTypeBinding::GetBoundClass, return nullptr; );
+	virtual UClass* GetBoundClass() const PURE_VIRTUAL(USpatialTypeBinding::GetBoundClass, return nullptr;);
 
-	virtual worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const PURE_VIRTUAL(USpatialTypeBinding::CreateActorEntity, return worker::Entity{}; );
+	virtual worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const PURE_VIRTUAL(USpatialTypeBinding::CreateActorEntity, return worker::Entity{};);
 	virtual void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const PURE_VIRTUAL(USpatialTypeBinding::SendComponentUpdates, );
 	virtual void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) PURE_VIRTUAL(USpatialTypeBinding::SendRPCCommand, );
-	
-	virtual void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const PURE_VIRTUAL(USpatialTypeBinding::ReceiveAddComponent, );
-	virtual worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const PURE_VIRTUAL(USpatialTypeBinding::GetInterestOverrideMap, return {}; );
 
-protected:
+	virtual void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const PURE_VIRTUAL(USpatialTypeBinding::ReceiveAddComponent, );
+	virtual worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const PURE_VIRTUAL(USpatialTypeBinding::GetInterestOverrideMap, return {};);
+
+  protected:
 	UPROPERTY()
 	USpatialInterop* Interop;
 

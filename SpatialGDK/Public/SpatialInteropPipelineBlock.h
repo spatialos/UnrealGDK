@@ -7,15 +7,15 @@
 
 namespace worker
 {
-	struct AddEntityOp;
-	struct RemoveEntityOp;
-	struct RemoveComponentOp;
+struct AddEntityOp;
+struct RemoveEntityOp;
+struct RemoveComponentOp;
 }
 
 namespace improbable
 {
-	class MetadataData;
-	class PositionData;
+class MetadataData;
+class PositionData;
 }
 
 class UAddComponentOpWrapperBase;
@@ -37,7 +37,7 @@ struct FPendingAddComponentWrapper
 
 	UPROPERTY()
 	FComponentIdentifier EntityComponent;
-	
+
 	UPROPERTY()
 	UAddComponentOpWrapperBase* AddComponentOp;
 };
@@ -47,7 +47,7 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 {
 	GENERATED_BODY()
 
-public:
+  public:
 	void Init(UEntityRegistry* Registry, USpatialNetDriver* Driver, UWorld* LoadedWorld);
 
 	void AddEntity(const worker::AddEntityOp& AddEntityOp) override;
@@ -61,7 +61,7 @@ public:
 	void EnterCriticalSection() override;
 	void LeaveCriticalSection() override;
 
-private:
+  private:
 	bool bInCriticalSection;
 
 	UPROPERTY()
@@ -81,19 +81,19 @@ private:
 
 	UWorld* World;
 
-private:
+  private:
 	void AddEntityImpl(const FEntityId& EntityId);
 	void InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp);
 	void RemoveEntityImpl(const FEntityId& EntityId);
 
 	// Stub.
 	void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-		const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World) override;
+					const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World) override;
 
-private:
+  private:
 	AActor* GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId);
 	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ClassToSpawn);
-	
+
 	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);
 
 	template <typename AddOpType, typename Metaclass>

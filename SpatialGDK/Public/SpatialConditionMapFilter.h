@@ -2,23 +2,23 @@
 
 #pragma once
 
+#include "Engine/NetConnection.h"
 #include "Net/RepLayout.h"
 #include "SpatialActorChannel.h"
 #include "SpatialNetDriver.h"
-#include "Engine/NetConnection.h"
 #include "SpatialOS.h"
 
 class FSpatialConditionMapFilter
 {
-public:
+  public:
 	FSpatialConditionMapFilter(USpatialActorChannel* ActorChannel, bool bAuthoritative)
 	{
 		// Reconstruct replication flags on the client side.
 		FReplicationFlags RepFlags;
 		RepFlags.bReplay = 0;
-		RepFlags.bNetInitial = 1; // The server will only ever send one update for bNetInitial, so just let them through here.
+		RepFlags.bNetInitial = 1;  // The server will only ever send one update for bNetInitial, so just let them through here.
 		RepFlags.bNetSimulated = ActorChannel->Actor->Role == ROLE_SimulatedProxy;
-		RepFlags.bNetOwner = bAuthoritative;// ActorChannel->Actor->IsOwnedBy(ActorChannel->Connection->PlayerController);
+		RepFlags.bNetOwner = bAuthoritative;  // ActorChannel->Actor->IsOwnedBy(ActorChannel->Connection->PlayerController);
 		RepFlags.bRepPhysics = ActorChannel->Actor->ReplicatedMovement.bRepPhysics;
 
 #if 0
@@ -32,7 +32,7 @@ public:
 #endif
 
 		// Build a ConditionMap. This code is taken directly from FRepLayout::RebuildConditionalProperties
-		static_assert(COND_Max == 14, "We are expecting 14 rep conditions"); // Guard in case more are added.
+		static_assert(COND_Max == 14, "We are expecting 14 rep conditions");  // Guard in case more are added.
 		const bool bIsInitial = RepFlags.bNetInitial ? true : false;
 		const bool bIsOwner = RepFlags.bNetOwner ? true : false;
 		const bool bIsSimulated = RepFlags.bNetSimulated ? true : false;
@@ -60,7 +60,6 @@ public:
 		return ConditionMap[Condition];
 	}
 
-private:
+  private:
 	bool ConditionMap[COND_Max];
-
 };

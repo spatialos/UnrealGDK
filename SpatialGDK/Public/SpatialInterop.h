@@ -3,10 +3,10 @@
 #pragma once
 
 #include "AddComponentOpWrapperBase.h"
+#include "ComponentIdentifier.h"
 #include "CoreMinimal.h"
 #include "SpatialTypeBinding.h"
 #include "SpatialUnrealObjectRef.h"
-#include "ComponentIdentifier.h"
 #include "SpatialInterop.generated.h"
 
 class USpatialOS;
@@ -27,8 +27,14 @@ struct FRPCCommandRequestResult
 	FUntypedRequestId RequestId;
 
 	FRPCCommandRequestResult() = delete;
-	FRPCCommandRequestResult(UObject* UnresolvedObject) : UnresolvedObject{UnresolvedObject}, RequestId{0} {}
-	FRPCCommandRequestResult(FUntypedRequestId RequestId) : UnresolvedObject{nullptr}, RequestId{RequestId} {}
+	FRPCCommandRequestResult(UObject* UnresolvedObject)
+	: UnresolvedObject{UnresolvedObject}, RequestId{0}
+	{
+	}
+	FRPCCommandRequestResult(FUntypedRequestId RequestId)
+	: UnresolvedObject{nullptr}, RequestId{RequestId}
+	{
+	}
 };
 
 // Function storing a command request operation, capturing all arguments by value.
@@ -45,10 +51,9 @@ using FRPCCommandResponseFunc = TFunction<FRPCCommandResponseResult()>;
 // Stores the number of attempts when retrying failed commands.
 class FOutgoingReliableRPC
 {
-public:
-	FOutgoingReliableRPC(FRPCCommandRequestFunc SendCommandRequest) :
-		SendCommandRequest{SendCommandRequest},
-		NumAttempts{1}
+  public:
+	FOutgoingReliableRPC(FRPCCommandRequestFunc SendCommandRequest)
+	: SendCommandRequest{SendCommandRequest}, NumAttempts{1}
 	{
 	}
 
@@ -57,7 +62,7 @@ public:
 };
 
 // Helper types used by the maps below.
-using FPendingOutgoingProperties = TPair<TArray<uint16>, TArray<uint16>>; // Pending incoming properties (replicated and migratable).
+using FPendingOutgoingProperties = TPair<TArray<uint16>, TArray<uint16>>;  // Pending incoming properties (replicated and migratable).
 using FPendingIncomingProperties = TPair<TArray<const FRepHandleData*>, TArray<const FMigratableHandleData*>>;
 
 // Map types for pending objects/RPCs. For pending updates, they store a map from an unresolved object to a map of channels to properties
@@ -121,7 +126,7 @@ UCLASS()
 class SPATIALGDK_API USpatialInterop : public UObject
 {
 	GENERATED_BODY()
-public:
+  public:
 	USpatialInterop();
 
 	void Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTimerManager* TimerManager);
@@ -173,7 +178,7 @@ public:
 		return NetDriver;
 	}
 
-private:
+  private:
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
 
@@ -204,11 +209,11 @@ private:
 
 	// Pending incoming object ref property updates.
 	FPendingIncomingObjectUpdateMap PendingIncomingObjectUpdates;
-	
+
 	// Pending incoming RPCs.
 	FPendingIncomingRPCMap PendingIncomingRPCs;
 
-private:
+  private:
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
 	void UnregisterInteropType(UClass* Class);
 

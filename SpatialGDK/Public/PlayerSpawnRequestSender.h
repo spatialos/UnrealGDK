@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include "improbable/unreal/spawner.h"
 #include "LogMacros.h"
-#include <improbable/worker.h>
+#include "improbable/unreal/spawner.h"
 #include <improbable/view.h>
+#include <improbable/worker.h>
 
-namespace worker 
-{ 
+namespace worker
+{
 class Connection;
 class View;
 }  // ::worker
@@ -25,13 +25,13 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSPlayerSpawner, Log, All);
  */
 class SPATIALGDK_API FPlayerSpawnRequestSender
 {
-public:
+  public:
 	FPlayerSpawnRequestSender();
 	~FPlayerSpawnRequestSender();
 
 	void RequestPlayer(USpatialOS* InSpatialOS, FTimerManager* InTimerManager, const FURL& Url);
 
-private:
+  private:
 	using SpawnPlayerCommand = improbable::unreal::PlayerSpawner::Commands::SpawnPlayer;
 
 	void SendPlayerSpawnRequest();

@@ -6,10 +6,10 @@
 
 #include "Engine/ActorChannel.h"
 #include "EntityId.h"
-#include "improbable/worker.h"
-#include "improbable/standard_library.h"
-#include "SpatialTypeBinding.h"
 #include "SpatialNetDriver.h"
+#include "SpatialTypeBinding.h"
+#include "improbable/standard_library.h"
+#include "improbable/worker.h"
 #include "SpatialActorChannel.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKActorChannel, Log, All);
@@ -22,8 +22,8 @@ class SPATIALGDK_API USpatialActorChannel : public UActorChannel
 {
 	GENERATED_BODY()
 
-public:
-	USpatialActorChannel(const FObjectInitializer & ObjectInitializer = FObjectInitializer::Get());
+  public:
+	USpatialActorChannel(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	// SpatialOS Entity ID.
 	FORCEINLINE FEntityId GetEntityId() const
@@ -33,7 +33,7 @@ public:
 
 	FORCEINLINE bool IsReadyForReplication() const
 	{
-		// Wait until we've reserved an entity ID.		
+		// Wait until we've reserved an entity ID.
 		return ActorEntityId != FEntityId{};
 	}
 
@@ -66,12 +66,11 @@ public:
 			RepChanged,
 			ActorReplicator->RepLayout->Cmds,
 			ActorReplicator->RepLayout->BaseHandleToCmdIndex,
-			MigChanged
-		};
+			MigChanged};
 	}
 
 	// UChannel interface
-	virtual void Init(UNetConnection * connection, int32 channelIndex, bool bOpenedLocally) override;
+	virtual void Init(UNetConnection* connection, int32 channelIndex, bool bOpenedLocally) override;
 	//Requires source changes to be virtual in base class.
 	virtual bool ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
@@ -85,10 +84,11 @@ public:
 	UPROPERTY(transient)
 	bool bCoreActor;
 
-protected:
+  protected:
 	// UChannel interface
 	virtual bool CleanUp(const bool bForDestroy) override;
-private:
+
+  private:
 	void BindToSpatialView();
 	void UnbindFromSpatialView() const;
 
@@ -101,7 +101,7 @@ private:
 
 	worker::Dispatcher::CallbackKey ReserveEntityCallback;
 	worker::Dispatcher::CallbackKey CreateEntityCallback;
-	
+
 	worker::RequestId<worker::ReserveEntityIdRequest> ReserveEntityIdRequestId;
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 
@@ -115,7 +115,7 @@ private:
 	UPROPERTY(Transient)
 	bool bCreatingNewEntity;
 
-private:
+  private:
 	void UpdateSpatialPosition();
 
 	static FVector GetActorSpatialPosition(AActor* Actor);
