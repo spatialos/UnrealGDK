@@ -13,7 +13,7 @@ struct FSpatialOSWorkerOverrideSettings
 
   /** SpatialOS worker configuration */
   UPROPERTY(EditAnywhere, config, Category = WorkerOverride)
-  FSpatialOSWorkerConfigurationData WorkerConfigurationData;
+  FSpatialGDKWorkerConfigurationData WorkerConfigurationData;
 
   /** Should viewport rendering be disabled? */
   UPROPERTY(EditAnywhere, config, Category = WorkerOverride)

@@ -78,7 +78,7 @@ public:
 	}
 
 protected:
-	FSpatialOSWorkerConfigurationData WorkerConfig;
+	FSpatialGDKWorkerConfigurationData WorkerConfig;
 
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;

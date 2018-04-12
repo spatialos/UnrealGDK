@@ -62,7 +62,7 @@ FWorkerConnection::FWorkerConnection()
 }
 
 worker::LocatorParameters
-FWorkerConnection::CreateLocatorParameters(const FSpatialOSWorkerConfiguration& WorkerConfiguration)
+FWorkerConnection::CreateLocatorParameters(const FSpatialGDKWorkerConfiguration& WorkerConfiguration)
 {
   worker::LocatorParameters LocatorParameters;
   LocatorParameters.CredentialsType = WorkerConfiguration.GetSteamToken().IsEmpty()

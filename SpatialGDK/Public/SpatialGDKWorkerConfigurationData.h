@@ -4,18 +4,18 @@
 #include "SpatialGDKWorkerTypes.h"
 #include "improbable/defaults.h"
 
-#include "SpatialOSWorkerConfigurationData.generated.h"
+#include "SpatialGDKWorkerConfigurationData.generated.h"
 
 /**
 * Provides configuration parameters related to how a worker establishes a connection with a
 * SpatialOS deployment.
 */
 USTRUCT(BlueprintType)
-struct SPATIALGDK_API FSpatialOSNetworkingConfiguration
+struct SPATIALGDK_API FSpatialGDKNetworkingConfiguration
 {
   GENERATED_USTRUCT_BODY()
 
-  FSpatialOSNetworkingConfiguration()
+  FSpatialGDKNetworkingConfiguration()
   : LocatorHost("locator.improbable.io")
   , ReceptionistHost("127.0.0.1")
   , LinkProtocol(worker::NetworkConnectionType::kRaknet)
@@ -136,11 +136,11 @@ struct SPATIALGDK_API FSpatialOSNetworkingConfiguration
 * Provides configuration parameters related to debugging a worker.
 */
 USTRUCT(BlueprintType)
-struct SPATIALGDK_API FSpatialOSDebuggingConfig
+struct SPATIALGDK_API FSpatialGDKDebuggingConfig
 {
   GENERATED_USTRUCT_BODY()
 
-  FSpatialOSDebuggingConfig()
+  FSpatialGDKDebuggingConfig()
   : BuiltInMetricsReportPeriodMillis(worker::defaults::kBuiltInMetricsReportPeriodMillis)
   , LogMessageQueueCapacity(worker::defaults::kLogMessageQueueCapacity)
   , ProtocolLoggingOnStartup(false)
@@ -199,11 +199,11 @@ struct SPATIALGDK_API FSpatialOSDebuggingConfig
 * Provides configuration parameters related to a worker's behaviour.
 */
 USTRUCT(BlueprintType)
-struct SPATIALGDK_API FSpatialOSApplicationConfig
+struct SPATIALGDK_API FSpatialGDKApplicationConfig
 {
   GENERATED_USTRUCT_BODY()
 
-  FSpatialOSApplicationConfig()
+  FSpatialGDKApplicationConfig()
   : DeploymentName("")
   , DeploymentTag("prod")
   , ProjectName("")
@@ -262,11 +262,11 @@ struct SPATIALGDK_API FSpatialOSApplicationConfig
 * Provides configuration parameters for controlling a worker's behaviour.
 */
 USTRUCT(BlueprintType)
-struct SPATIALGDK_API FSpatialOSWorkerConfigurationData
+struct SPATIALGDK_API FSpatialGDKWorkerConfigurationData
 {
   GENERATED_USTRUCT_BODY()
 
-  FSpatialOSWorkerConfigurationData() : Debugging(), Networking(), SpatialOSApplication()
+  FSpatialGDKWorkerConfigurationData() : Debugging(), Networking(), SpatialGDKApplication()
   {
   }
 
@@ -274,18 +274,18 @@ struct SPATIALGDK_API FSpatialOSWorkerConfigurationData
   * Provides configuration parameters related to debugging a worker.
   */
   UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration)
-  FSpatialOSDebuggingConfig Debugging;
+  FSpatialGDKDebuggingConfig Debugging;
 
   /**
   * Provides configuration parameters related to how a worker establishes a connection with a
   * SpatialOS deployment.
   */
   UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration)
-  FSpatialOSNetworkingConfiguration Networking;
+  FSpatialGDKNetworkingConfiguration Networking;
 
   /**
   * Provides configuration parameters related to a worker's behaviour.
   */
   UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration)
-  FSpatialOSApplicationConfig SpatialOSApplication;
+  FSpatialGDKApplicationConfig SpatialGDKApplication;
 };

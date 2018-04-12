@@ -23,10 +23,10 @@ void USpatialOS::BeginDestroy()
 }
 
 void USpatialOS::ApplyConfiguration(
-    const FSpatialOSWorkerConfigurationData& InWorkerConfigurationData)
+    const FSpatialGDKWorkerConfigurationData& InWorkerConfigurationData)
 {
   checkf(!IsConnected(), TEXT("ApplyConfiguration was called after Connect was called."));
-  WorkerConfiguration = FSpatialOSWorkerConfiguration(InWorkerConfigurationData);
+  WorkerConfiguration = FSpatialGDKWorkerConfiguration(InWorkerConfigurationData);
 }
 
 void USpatialOS::ApplyEditorWorkerConfiguration(FWorldContext& InWorldContext)
@@ -59,7 +59,7 @@ void USpatialOS::ApplyEditorWorkerConfiguration(FWorldContext& InWorldContext)
   {
     const auto& WorkerConfig =
         SpatialOSSettings->WorkerConfigurations[EditorConfigurationArrayIndex];
-    WorkerConfiguration = FSpatialOSWorkerConfiguration(WorkerConfig.WorkerConfigurationData);
+    WorkerConfiguration = FSpatialGDKWorkerConfiguration(WorkerConfig.WorkerConfigurationData);
 
     // This check is required When a PIE instance is launched as a dedicated server,
     // as no GameViewport will have been created.
@@ -179,7 +179,7 @@ void USpatialOS::ProcessOps()
   WorkerConnection.ProcessOps();
 }
 
-const FSpatialOSWorkerConfiguration USpatialOS::GetWorkerConfiguration() const
+const FSpatialGDKWorkerConfiguration USpatialOS::GetWorkerConfiguration() const
 {
   return WorkerConfiguration;
 }

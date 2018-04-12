@@ -6,7 +6,7 @@
 #include "HAL/ThreadSafeBool.h"
 #include "SpatialGDKLoader.h"
 #include "SpatialGDKViewTypes.h"
-#include "SpatialOSWorkerConfiguration.h"
+#include "SpatialGDKWorkerConfiguration.h"
 
 namespace improbable
 {
@@ -38,9 +38,9 @@ public:
   FWorkerConnection();
 
   /** Create a worker::LocatorParameters struct with values populated from a
-   * FSpatialOSWorkerConfiguration struct. */
+   * FSpatialGDKWorkerConfiguration struct. */
   worker::LocatorParameters
-  CreateLocatorParameters(const FSpatialOSWorkerConfiguration& WorkerConfiguration);
+  CreateLocatorParameters(const FSpatialGDKWorkerConfiguration& WorkerConfiguration);
 
   /** Get a list of available deployemnts to connect to. This is non blocking and will call
    * OnDeplymentsFoundCallback when deployments are found, or the timout is reached */

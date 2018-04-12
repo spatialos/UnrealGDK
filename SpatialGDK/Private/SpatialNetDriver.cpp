@@ -43,7 +43,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// Set up the worker config.
 	// todo-giray: Give this the correct value
 	WorkerConfig.Networking.UseExternalIp = false;
-	WorkerConfig.SpatialOSApplication.WorkerPlatform = bInitAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
+	WorkerConfig.SpatialGDKApplication.WorkerPlatform = bInitAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
 
 	// We do this here straight away to trigger LoadMap.
 	if (bInitAsClient)

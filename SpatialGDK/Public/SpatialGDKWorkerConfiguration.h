@@ -7,12 +7,12 @@
 #include "SpatialOSWorkerConfiguration.generated.h"
 
 USTRUCT(BlueprintType)
-struct SPATIALGDK_API FSpatialOSWorkerConfiguration
+struct SPATIALGDK_API FSpatialGDKWorkerConfiguration
 {
   GENERATED_USTRUCT_BODY()
 public:
-  FSpatialOSWorkerConfiguration();
-  FSpatialOSWorkerConfiguration(const FSpatialOSWorkerConfigurationData& WorkerConfigurationData,
+  FSpatialGDKWorkerConfiguration();
+  FSpatialGDKWorkerConfiguration(const FSpatialGDKWorkerConfigurationData& WorkerConfigurationData,
                                 const TArray<FString>* const CommandLineOverrides = nullptr);
 
   const FString& GetDeploymentName() const;
@@ -44,5 +44,5 @@ public:
 private:
   void LogWorkerConfiguration() const;
 
-  FSpatialOSWorkerConfigurationData WorkerConfigurationData;
+  FSpatialGDKWorkerConfigurationData WorkerConfigurationData;
 };

@@ -4,7 +4,7 @@
 #include "EngineMinimal.h"
 #include "ScopedViewCallbacks.h"
 #include "SpatialGDKViewTypes.h"
-#include "SpatialOSWorkerConfiguration.h"
+#include "SpatialGDKWorkerConfiguration.h"
 #include "SpatialOSWorkerConfigurationData.h"
 #include "SpatialGDKWorkerTypes.h"
 #include "WorkerConnection.h"
@@ -44,7 +44,7 @@ public:
   // clang-format off
   UFUNCTION(BlueprintCallable, Category = "SpatialOS")
   // clang-format on
-  void ApplyConfiguration(const FSpatialOSWorkerConfigurationData& InWorkerConfigurationData);
+  void ApplyConfiguration(const FSpatialGDKWorkerConfigurationData& InWorkerConfigurationData);
 
   /**
   * Applies a worker configuration specified in the editor to a PIE worker.
@@ -105,7 +105,7 @@ public:
    * ApplyConfiguration must be called before access to this property is valid.
    */
   UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-  const FSpatialOSWorkerConfiguration GetWorkerConfiguration() const;
+  const FSpatialGDKWorkerConfiguration GetWorkerConfiguration() const;
 
   /**
   * Returns the ID that was assigned to this worker at runtime.
@@ -173,7 +173,7 @@ public:
 
 private:
   UPROPERTY()
-  FSpatialOSWorkerConfiguration WorkerConfiguration;
+  FSpatialGDKWorkerConfiguration WorkerConfiguration;
 
   UPROPERTY()
   UEntityPipeline* EntityPipeline;
