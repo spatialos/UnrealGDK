@@ -71,9 +71,6 @@ private:
 	TArray<FPendingAddComponentWrapper> PendingAddComponents;
 
 	UPROPERTY()
-	TArray<FComponentIdentifier> PendingRemoveComponents;
-
-	UPROPERTY()
 	TArray<FEntityId> PendingRemoveEntities;
 
 	UPROPERTY()

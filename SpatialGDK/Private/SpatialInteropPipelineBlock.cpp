@@ -92,11 +92,6 @@ void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId Com
 	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"),
 		ComponentId, RemoveComponentOp.EntityId, (int)bInCriticalSection);
 
-	if (bInCriticalSection)
-	{
-		PendingRemoveComponents.Emplace(FComponentIdentifier{RemoveComponentOp.EntityId, ComponentId});
-	}
-
 	if (NextBlock)
 	{
 		NextBlock->RemoveComponent(ComponentId, RemoveComponentOp);
@@ -145,11 +140,6 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 	for (auto& PendingAddComponent : PendingAddComponents)
 	{
 		InitialiseNewComponentImpl(PendingAddComponent.EntityComponent, PendingAddComponent.AddComponentOp);
-	}
-
-	// Apply queued remove component ops.
-	for (auto& PendingRemoveComponent : PendingRemoveComponents)
-	{
 	}
 
 	// Remove entities.

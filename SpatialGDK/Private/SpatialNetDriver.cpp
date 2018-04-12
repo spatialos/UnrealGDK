@@ -17,8 +17,6 @@
 #include "SpatialPendingNetGame.h"
 #include "SpatialActorChannel.h"
 
-#define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
-
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
