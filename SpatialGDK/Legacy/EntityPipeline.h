@@ -1,45 +1,45 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // ===========
 // DO NOT EDIT - this file is automatically regenerated.
-// =========== 
+// ===========
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "AddComponentOpWrapperBase.h"
-#include "SpatialGDKViewTypes.h"
-#include "SpatialGDKWorkerTypes.h"
+#include "CoreMinimal.h"
+#include "EntityAclAddComponentOp.h"
 #include "EntityPipelineBlock.h"
-#include "ScopedViewCallbacks.h"
-#include "UnrealLevelAddComponentOp.h"
-#include "UnrealLevelPlaceholderAddComponentOp.h"
+#include "MetadataAddComponentOp.h"
+#include "PersistenceAddComponentOp.h"
 #include "PlayerControlClientAddComponentOp.h"
 #include "PlayerSpawnerAddComponentOp.h"
-#include "UnrealMetadataAddComponentOp.h"
-#include "UnrealCharacterSingleClientRepDataAddComponentOp.h"
-#include "UnrealCharacterMultiClientRepDataAddComponentOp.h"
-#include "UnrealCharacterMigratableDataAddComponentOp.h"
-#include "UnrealCharacterClientRPCsAddComponentOp.h"
-#include "UnrealCharacterServerRPCsAddComponentOp.h"
-#include "UnrealPlayerControllerSingleClientRepDataAddComponentOp.h"
-#include "UnrealPlayerControllerMultiClientRepDataAddComponentOp.h"
-#include "UnrealPlayerControllerMigratableDataAddComponentOp.h"
-#include "UnrealPlayerControllerClientRPCsAddComponentOp.h"
-#include "UnrealPlayerControllerServerRPCsAddComponentOp.h"
-#include "UnrealPlayerStateSingleClientRepDataAddComponentOp.h"
-#include "UnrealPlayerStateMultiClientRepDataAddComponentOp.h"
-#include "UnrealPlayerStateMigratableDataAddComponentOp.h"
-#include "UnrealPlayerStateClientRPCsAddComponentOp.h"
-#include "UnrealPlayerStateServerRPCsAddComponentOp.h"
-#include "UnrealWheeledVehicleSingleClientRepDataAddComponentOp.h"
-#include "UnrealWheeledVehicleMultiClientRepDataAddComponentOp.h"
-#include "UnrealWheeledVehicleMigratableDataAddComponentOp.h"
-#include "UnrealWheeledVehicleClientRPCsAddComponentOp.h"
-#include "UnrealWheeledVehicleServerRPCsAddComponentOp.h"
-#include "EntityAclAddComponentOp.h"
-#include "MetadataAddComponentOp.h"
 #include "PositionAddComponentOp.h"
-#include "PersistenceAddComponentOp.h"
+#include "ScopedViewCallbacks.h"
+#include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerTypes.h"
+#include "UnrealCharacterClientRPCsAddComponentOp.h"
+#include "UnrealCharacterMigratableDataAddComponentOp.h"
+#include "UnrealCharacterMultiClientRepDataAddComponentOp.h"
+#include "UnrealCharacterServerRPCsAddComponentOp.h"
+#include "UnrealCharacterSingleClientRepDataAddComponentOp.h"
+#include "UnrealLevelAddComponentOp.h"
+#include "UnrealLevelPlaceholderAddComponentOp.h"
+#include "UnrealMetadataAddComponentOp.h"
+#include "UnrealPlayerControllerClientRPCsAddComponentOp.h"
+#include "UnrealPlayerControllerMigratableDataAddComponentOp.h"
+#include "UnrealPlayerControllerMultiClientRepDataAddComponentOp.h"
+#include "UnrealPlayerControllerServerRPCsAddComponentOp.h"
+#include "UnrealPlayerControllerSingleClientRepDataAddComponentOp.h"
+#include "UnrealPlayerStateClientRPCsAddComponentOp.h"
+#include "UnrealPlayerStateMigratableDataAddComponentOp.h"
+#include "UnrealPlayerStateMultiClientRepDataAddComponentOp.h"
+#include "UnrealPlayerStateServerRPCsAddComponentOp.h"
+#include "UnrealPlayerStateSingleClientRepDataAddComponentOp.h"
+#include "UnrealWheeledVehicleClientRPCsAddComponentOp.h"
+#include "UnrealWheeledVehicleMigratableDataAddComponentOp.h"
+#include "UnrealWheeledVehicleMultiClientRepDataAddComponentOp.h"
+#include "UnrealWheeledVehicleServerRPCsAddComponentOp.h"
+#include "UnrealWheeledVehicleSingleClientRepDataAddComponentOp.h"
 
 #include "EntityPipeline.generated.h"
 
@@ -51,14 +51,14 @@
 // 		UEntityPipeline* EntityPipeline)
 // 		: Callbacks(Callbacks)
 // 		, LockedView(LockedView)
-// 		, EntityPipeline(EntityPipeline)  
+// 		, EntityPipeline(EntityPipeline)
 // 	{
 
 // 	}
 //    improbable::unreal::callbacks::FScopedViewCallbacks& Callbacks;
 //    TSharedPtr<SpatialOSView> LockedView;
 //    UEntityPipeline* EntityPipeline;
- 
+
 //   template <typename T>
 //   void Accept() {
 //     Callbacks.Add(LockedView->OnAddComponent<T>(
@@ -71,7 +71,7 @@ class SPATIALGDK_API UEntityPipeline : public UObject
 {
 	GENERATED_BODY()
 
-public:
+  public:
 	UEntityPipeline();
 
 	/**
@@ -85,10 +85,12 @@ public:
 	void DeregisterAllCallbacks();
 
 	void AddBlock(UEntityPipelineBlock* NewBlock);
-	void ProcessOps(const TWeakPtr<SpatialOSView>& InView, const
-	 TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World);
+	void ProcessOps(const TWeakPtr<SpatialOSView>& InView, const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World);
 
-	void OnAddEntity(const worker::AddEntityOp& Op) { FirstBlock->AddEntity(Op); }
+	void OnAddEntity(const worker::AddEntityOp& Op)
+	{
+		FirstBlock->AddEntity(Op);
+	}
 
 	// TODO: UNR-64 Remove the need for the entity pipeline
 	// template<typename T>
@@ -100,10 +102,29 @@ public:
 	// 	}
 	// }
 
-	void OnRemoveEntity(const worker::RemoveEntityOp& Op) { FirstBlock->RemoveEntity(Op); }
-	void OnCriticalSection(const worker::CriticalSectionOp& Op) { if (Op.InCriticalSection) { FirstBlock->EnterCriticalSection(); } else { FirstBlock->LeaveCriticalSection(); } }
-	void OnRemoveComponent(const worker::ComponentId ComponentId, const worker::RemoveComponentOp& Op) { FirstBlock->RemoveComponent(ComponentId, Op); }
-	void OnAuthorityChange(const worker::ComponentId ComponentId, const worker::AuthorityChangeOp& Op) { FirstBlock->ChangeAuthority(ComponentId, Op); }
+	void OnRemoveEntity(const worker::RemoveEntityOp& Op)
+	{
+		FirstBlock->RemoveEntity(Op);
+	}
+	void OnCriticalSection(const worker::CriticalSectionOp& Op)
+	{
+		if (Op.InCriticalSection)
+		{
+			FirstBlock->EnterCriticalSection();
+		}
+		else
+		{
+			FirstBlock->LeaveCriticalSection();
+		}
+	}
+	void OnRemoveComponent(const worker::ComponentId ComponentId, const worker::RemoveComponentOp& Op)
+	{
+		FirstBlock->RemoveComponent(ComponentId, Op);
+	}
+	void OnAuthorityChange(const worker::ComponentId ComponentId, const worker::AuthorityChangeOp& Op)
+	{
+		FirstBlock->ChangeAuthority(ComponentId, Op);
+	}
 
 	void AddUnrealLevelComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealLevel>& Op);
 	void RemoveUnrealLevelComponentOp(const worker::RemoveComponentOp& Op);
@@ -164,7 +185,7 @@ public:
 	void AddPersistenceComponentOp(const worker::AddComponentOp<improbable::Persistence>& Op);
 	void RemovePersistenceComponentOp(const worker::RemoveComponentOp& Op);
 
-private:
+  private:
 	UPROPERTY()
 	UEntityPipelineBlock* FirstBlock;
 	UPROPERTY()

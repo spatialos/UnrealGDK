@@ -1,11 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // ===========
 // DO NOT EDIT - this file is automatically regenerated.
-// ===========
+// =========== 
 
 #include "EntityPipeline.h"
-#include "CoreMinimal.h"
 #include "EntityPipelineBlock.h"
+#include "CoreMinimal.h"
 
 #include "SpatialGDKCommon.h"
 
@@ -166,6 +166,7 @@ void UEntityPipeline::Init(const TWeakPtr<SpatialOSView>& InView)
 			std::bind(&UEntityPipeline::RemovePositionComponentOp, this, std::placeholders::_1)));
 		Callbacks.Add(LockedView->OnRemoveComponent<improbable::Persistence>(
 			std::bind(&UEntityPipeline::RemovePersistenceComponentOp, this, std::placeholders::_1)));
+
 	}
 	bInitialised = true;
 }
@@ -178,13 +179,13 @@ void UEntityPipeline::DeregisterAllCallbacks()
 
 void UEntityPipeline::AddBlock(UEntityPipelineBlock* NewBlock)
 {
-	checkf(!bInitialised, TEXT("Cannot add blocks after the pipeline has started"));
+    checkf(!bInitialised, TEXT("Cannot add blocks after the pipeline has started"));
 
-	if (FirstBlock == nullptr)
+    if(FirstBlock == nullptr)
 	{
 		FirstBlock = NewBlock;
 	}
-	if (LastBlock != nullptr)
+	if(LastBlock != nullptr)
 	{
 		LastBlock->NextBlock = NewBlock;
 	}
@@ -202,8 +203,7 @@ void UEntityPipeline::ProcessOps(const TWeakPtr<SpatialOSView>& InView, const TW
 	}
 }
 
-void UEntityPipeline::AddUnrealLevelComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealLevel>& Op)
-{
+void UEntityPipeline::AddUnrealLevelComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealLevel>& Op) {
 	UUnrealLevelAddComponentOp* NewOp = NewObject<UUnrealLevelAddComponentOp>();
 	if (NewOp)
 	{
@@ -215,13 +215,11 @@ void UEntityPipeline::AddUnrealLevelComponentOp(const worker::AddComponentOp<imp
 	}
 }
 
-void UEntityPipeline::RemoveUnrealLevelComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealLevelComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealLevel::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealLevelPlaceholderComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealLevelPlaceholder>& Op)
-{
+void UEntityPipeline::AddUnrealLevelPlaceholderComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealLevelPlaceholder>& Op) {
 	UUnrealLevelPlaceholderAddComponentOp* NewOp = NewObject<UUnrealLevelPlaceholderAddComponentOp>();
 	if (NewOp)
 	{
@@ -233,13 +231,11 @@ void UEntityPipeline::AddUnrealLevelPlaceholderComponentOp(const worker::AddComp
 	}
 }
 
-void UEntityPipeline::RemoveUnrealLevelPlaceholderComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealLevelPlaceholderComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealLevelPlaceholder::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddPlayerControlClientComponentOp(const worker::AddComponentOp<improbable::unreal::PlayerControlClient>& Op)
-{
+void UEntityPipeline::AddPlayerControlClientComponentOp(const worker::AddComponentOp<improbable::unreal::PlayerControlClient>& Op) {
 	UPlayerControlClientAddComponentOp* NewOp = NewObject<UPlayerControlClientAddComponentOp>();
 	if (NewOp)
 	{
@@ -251,13 +247,11 @@ void UEntityPipeline::AddPlayerControlClientComponentOp(const worker::AddCompone
 	}
 }
 
-void UEntityPipeline::RemovePlayerControlClientComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemovePlayerControlClientComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::PlayerControlClient::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddPlayerSpawnerComponentOp(const worker::AddComponentOp<improbable::unreal::PlayerSpawner>& Op)
-{
+void UEntityPipeline::AddPlayerSpawnerComponentOp(const worker::AddComponentOp<improbable::unreal::PlayerSpawner>& Op) {
 	UPlayerSpawnerAddComponentOp* NewOp = NewObject<UPlayerSpawnerAddComponentOp>();
 	if (NewOp)
 	{
@@ -269,13 +263,11 @@ void UEntityPipeline::AddPlayerSpawnerComponentOp(const worker::AddComponentOp<i
 	}
 }
 
-void UEntityPipeline::RemovePlayerSpawnerComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemovePlayerSpawnerComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::PlayerSpawner::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealMetadataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealMetadata>& Op)
-{
+void UEntityPipeline::AddUnrealMetadataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealMetadata>& Op) {
 	UUnrealMetadataAddComponentOp* NewOp = NewObject<UUnrealMetadataAddComponentOp>();
 	if (NewOp)
 	{
@@ -287,13 +279,11 @@ void UEntityPipeline::AddUnrealMetadataComponentOp(const worker::AddComponentOp<
 	}
 }
 
-void UEntityPipeline::RemoveUnrealMetadataComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealMetadataComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealMetadata::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealCharacterSingleClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealCharacterSingleClientRepData>& Op)
-{
+void UEntityPipeline::AddUnrealCharacterSingleClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealCharacterSingleClientRepData>& Op) {
 	UUnrealCharacterSingleClientRepDataAddComponentOp* NewOp = NewObject<UUnrealCharacterSingleClientRepDataAddComponentOp>();
 	if (NewOp)
 	{
@@ -305,13 +295,11 @@ void UEntityPipeline::AddUnrealCharacterSingleClientRepDataComponentOp(const wor
 	}
 }
 
-void UEntityPipeline::RemoveUnrealCharacterSingleClientRepDataComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealCharacterSingleClientRepDataComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealCharacterSingleClientRepData::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealCharacterMultiClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealCharacterMultiClientRepData>& Op)
-{
+void UEntityPipeline::AddUnrealCharacterMultiClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealCharacterMultiClientRepData>& Op) {
 	UUnrealCharacterMultiClientRepDataAddComponentOp* NewOp = NewObject<UUnrealCharacterMultiClientRepDataAddComponentOp>();
 	if (NewOp)
 	{
@@ -323,13 +311,11 @@ void UEntityPipeline::AddUnrealCharacterMultiClientRepDataComponentOp(const work
 	}
 }
 
-void UEntityPipeline::RemoveUnrealCharacterMultiClientRepDataComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealCharacterMultiClientRepDataComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealCharacterMultiClientRepData::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealCharacterMigratableDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealCharacterMigratableData>& Op)
-{
+void UEntityPipeline::AddUnrealCharacterMigratableDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealCharacterMigratableData>& Op) {
 	UUnrealCharacterMigratableDataAddComponentOp* NewOp = NewObject<UUnrealCharacterMigratableDataAddComponentOp>();
 	if (NewOp)
 	{
@@ -341,13 +327,11 @@ void UEntityPipeline::AddUnrealCharacterMigratableDataComponentOp(const worker::
 	}
 }
 
-void UEntityPipeline::RemoveUnrealCharacterMigratableDataComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealCharacterMigratableDataComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealCharacterMigratableData::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealCharacterClientRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealCharacterClientRPCs>& Op)
-{
+void UEntityPipeline::AddUnrealCharacterClientRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealCharacterClientRPCs>& Op) {
 	UUnrealCharacterClientRPCsAddComponentOp* NewOp = NewObject<UUnrealCharacterClientRPCsAddComponentOp>();
 	if (NewOp)
 	{
@@ -359,13 +343,11 @@ void UEntityPipeline::AddUnrealCharacterClientRPCsComponentOp(const worker::AddC
 	}
 }
 
-void UEntityPipeline::RemoveUnrealCharacterClientRPCsComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealCharacterClientRPCsComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealCharacterClientRPCs::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealCharacterServerRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealCharacterServerRPCs>& Op)
-{
+void UEntityPipeline::AddUnrealCharacterServerRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealCharacterServerRPCs>& Op) {
 	UUnrealCharacterServerRPCsAddComponentOp* NewOp = NewObject<UUnrealCharacterServerRPCsAddComponentOp>();
 	if (NewOp)
 	{
@@ -377,13 +359,11 @@ void UEntityPipeline::AddUnrealCharacterServerRPCsComponentOp(const worker::AddC
 	}
 }
 
-void UEntityPipeline::RemoveUnrealCharacterServerRPCsComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealCharacterServerRPCsComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealCharacterServerRPCs::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealPlayerControllerSingleClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerSingleClientRepData>& Op)
-{
+void UEntityPipeline::AddUnrealPlayerControllerSingleClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerSingleClientRepData>& Op) {
 	UUnrealPlayerControllerSingleClientRepDataAddComponentOp* NewOp = NewObject<UUnrealPlayerControllerSingleClientRepDataAddComponentOp>();
 	if (NewOp)
 	{
@@ -395,13 +375,11 @@ void UEntityPipeline::AddUnrealPlayerControllerSingleClientRepDataComponentOp(co
 	}
 }
 
-void UEntityPipeline::RemoveUnrealPlayerControllerSingleClientRepDataComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealPlayerControllerSingleClientRepDataComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealPlayerControllerSingleClientRepData::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealPlayerControllerMultiClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerMultiClientRepData>& Op)
-{
+void UEntityPipeline::AddUnrealPlayerControllerMultiClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerMultiClientRepData>& Op) {
 	UUnrealPlayerControllerMultiClientRepDataAddComponentOp* NewOp = NewObject<UUnrealPlayerControllerMultiClientRepDataAddComponentOp>();
 	if (NewOp)
 	{
@@ -413,13 +391,11 @@ void UEntityPipeline::AddUnrealPlayerControllerMultiClientRepDataComponentOp(con
 	}
 }
 
-void UEntityPipeline::RemoveUnrealPlayerControllerMultiClientRepDataComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealPlayerControllerMultiClientRepDataComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealPlayerControllerMultiClientRepData::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealPlayerControllerMigratableDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerMigratableData>& Op)
-{
+void UEntityPipeline::AddUnrealPlayerControllerMigratableDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerMigratableData>& Op) {
 	UUnrealPlayerControllerMigratableDataAddComponentOp* NewOp = NewObject<UUnrealPlayerControllerMigratableDataAddComponentOp>();
 	if (NewOp)
 	{
@@ -431,13 +407,11 @@ void UEntityPipeline::AddUnrealPlayerControllerMigratableDataComponentOp(const w
 	}
 }
 
-void UEntityPipeline::RemoveUnrealPlayerControllerMigratableDataComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealPlayerControllerMigratableDataComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealPlayerControllerMigratableData::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealPlayerControllerClientRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerClientRPCs>& Op)
-{
+void UEntityPipeline::AddUnrealPlayerControllerClientRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerClientRPCs>& Op) {
 	UUnrealPlayerControllerClientRPCsAddComponentOp* NewOp = NewObject<UUnrealPlayerControllerClientRPCsAddComponentOp>();
 	if (NewOp)
 	{
@@ -449,13 +423,11 @@ void UEntityPipeline::AddUnrealPlayerControllerClientRPCsComponentOp(const worke
 	}
 }
 
-void UEntityPipeline::RemoveUnrealPlayerControllerClientRPCsComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealPlayerControllerClientRPCsComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealPlayerControllerClientRPCs::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealPlayerControllerServerRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerServerRPCs>& Op)
-{
+void UEntityPipeline::AddUnrealPlayerControllerServerRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerControllerServerRPCs>& Op) {
 	UUnrealPlayerControllerServerRPCsAddComponentOp* NewOp = NewObject<UUnrealPlayerControllerServerRPCsAddComponentOp>();
 	if (NewOp)
 	{
@@ -467,13 +439,11 @@ void UEntityPipeline::AddUnrealPlayerControllerServerRPCsComponentOp(const worke
 	}
 }
 
-void UEntityPipeline::RemoveUnrealPlayerControllerServerRPCsComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealPlayerControllerServerRPCsComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealPlayerControllerServerRPCs::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealPlayerStateSingleClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerStateSingleClientRepData>& Op)
-{
+void UEntityPipeline::AddUnrealPlayerStateSingleClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerStateSingleClientRepData>& Op) {
 	UUnrealPlayerStateSingleClientRepDataAddComponentOp* NewOp = NewObject<UUnrealPlayerStateSingleClientRepDataAddComponentOp>();
 	if (NewOp)
 	{
@@ -485,13 +455,11 @@ void UEntityPipeline::AddUnrealPlayerStateSingleClientRepDataComponentOp(const w
 	}
 }
 
-void UEntityPipeline::RemoveUnrealPlayerStateSingleClientRepDataComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealPlayerStateSingleClientRepDataComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealPlayerStateSingleClientRepData::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealPlayerStateMultiClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerStateMultiClientRepData>& Op)
-{
+void UEntityPipeline::AddUnrealPlayerStateMultiClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerStateMultiClientRepData>& Op) {
 	UUnrealPlayerStateMultiClientRepDataAddComponentOp* NewOp = NewObject<UUnrealPlayerStateMultiClientRepDataAddComponentOp>();
 	if (NewOp)
 	{
@@ -503,13 +471,11 @@ void UEntityPipeline::AddUnrealPlayerStateMultiClientRepDataComponentOp(const wo
 	}
 }
 
-void UEntityPipeline::RemoveUnrealPlayerStateMultiClientRepDataComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealPlayerStateMultiClientRepDataComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealPlayerStateMultiClientRepData::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealPlayerStateMigratableDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerStateMigratableData>& Op)
-{
+void UEntityPipeline::AddUnrealPlayerStateMigratableDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerStateMigratableData>& Op) {
 	UUnrealPlayerStateMigratableDataAddComponentOp* NewOp = NewObject<UUnrealPlayerStateMigratableDataAddComponentOp>();
 	if (NewOp)
 	{
@@ -521,13 +487,11 @@ void UEntityPipeline::AddUnrealPlayerStateMigratableDataComponentOp(const worker
 	}
 }
 
-void UEntityPipeline::RemoveUnrealPlayerStateMigratableDataComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealPlayerStateMigratableDataComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealPlayerStateMigratableData::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealPlayerStateClientRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerStateClientRPCs>& Op)
-{
+void UEntityPipeline::AddUnrealPlayerStateClientRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerStateClientRPCs>& Op) {
 	UUnrealPlayerStateClientRPCsAddComponentOp* NewOp = NewObject<UUnrealPlayerStateClientRPCsAddComponentOp>();
 	if (NewOp)
 	{
@@ -539,13 +503,11 @@ void UEntityPipeline::AddUnrealPlayerStateClientRPCsComponentOp(const worker::Ad
 	}
 }
 
-void UEntityPipeline::RemoveUnrealPlayerStateClientRPCsComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealPlayerStateClientRPCsComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealPlayerStateClientRPCs::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealPlayerStateServerRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerStateServerRPCs>& Op)
-{
+void UEntityPipeline::AddUnrealPlayerStateServerRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealPlayerStateServerRPCs>& Op) {
 	UUnrealPlayerStateServerRPCsAddComponentOp* NewOp = NewObject<UUnrealPlayerStateServerRPCsAddComponentOp>();
 	if (NewOp)
 	{
@@ -557,13 +519,11 @@ void UEntityPipeline::AddUnrealPlayerStateServerRPCsComponentOp(const worker::Ad
 	}
 }
 
-void UEntityPipeline::RemoveUnrealPlayerStateServerRPCsComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealPlayerStateServerRPCsComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealPlayerStateServerRPCs::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealWheeledVehicleSingleClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealWheeledVehicleSingleClientRepData>& Op)
-{
+void UEntityPipeline::AddUnrealWheeledVehicleSingleClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealWheeledVehicleSingleClientRepData>& Op) {
 	UUnrealWheeledVehicleSingleClientRepDataAddComponentOp* NewOp = NewObject<UUnrealWheeledVehicleSingleClientRepDataAddComponentOp>();
 	if (NewOp)
 	{
@@ -575,13 +535,11 @@ void UEntityPipeline::AddUnrealWheeledVehicleSingleClientRepDataComponentOp(cons
 	}
 }
 
-void UEntityPipeline::RemoveUnrealWheeledVehicleSingleClientRepDataComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealWheeledVehicleSingleClientRepDataComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealWheeledVehicleSingleClientRepData::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealWheeledVehicleMultiClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealWheeledVehicleMultiClientRepData>& Op)
-{
+void UEntityPipeline::AddUnrealWheeledVehicleMultiClientRepDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealWheeledVehicleMultiClientRepData>& Op) {
 	UUnrealWheeledVehicleMultiClientRepDataAddComponentOp* NewOp = NewObject<UUnrealWheeledVehicleMultiClientRepDataAddComponentOp>();
 	if (NewOp)
 	{
@@ -593,13 +551,11 @@ void UEntityPipeline::AddUnrealWheeledVehicleMultiClientRepDataComponentOp(const
 	}
 }
 
-void UEntityPipeline::RemoveUnrealWheeledVehicleMultiClientRepDataComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealWheeledVehicleMultiClientRepDataComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealWheeledVehicleMultiClientRepData::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealWheeledVehicleMigratableDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealWheeledVehicleMigratableData>& Op)
-{
+void UEntityPipeline::AddUnrealWheeledVehicleMigratableDataComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealWheeledVehicleMigratableData>& Op) {
 	UUnrealWheeledVehicleMigratableDataAddComponentOp* NewOp = NewObject<UUnrealWheeledVehicleMigratableDataAddComponentOp>();
 	if (NewOp)
 	{
@@ -611,13 +567,11 @@ void UEntityPipeline::AddUnrealWheeledVehicleMigratableDataComponentOp(const wor
 	}
 }
 
-void UEntityPipeline::RemoveUnrealWheeledVehicleMigratableDataComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealWheeledVehicleMigratableDataComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealWheeledVehicleMigratableData::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealWheeledVehicleClientRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealWheeledVehicleClientRPCs>& Op)
-{
+void UEntityPipeline::AddUnrealWheeledVehicleClientRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealWheeledVehicleClientRPCs>& Op) {
 	UUnrealWheeledVehicleClientRPCsAddComponentOp* NewOp = NewObject<UUnrealWheeledVehicleClientRPCsAddComponentOp>();
 	if (NewOp)
 	{
@@ -629,13 +583,11 @@ void UEntityPipeline::AddUnrealWheeledVehicleClientRPCsComponentOp(const worker:
 	}
 }
 
-void UEntityPipeline::RemoveUnrealWheeledVehicleClientRPCsComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealWheeledVehicleClientRPCsComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealWheeledVehicleClientRPCs::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddUnrealWheeledVehicleServerRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealWheeledVehicleServerRPCs>& Op)
-{
+void UEntityPipeline::AddUnrealWheeledVehicleServerRPCsComponentOp(const worker::AddComponentOp<improbable::unreal::UnrealWheeledVehicleServerRPCs>& Op) {
 	UUnrealWheeledVehicleServerRPCsAddComponentOp* NewOp = NewObject<UUnrealWheeledVehicleServerRPCsAddComponentOp>();
 	if (NewOp)
 	{
@@ -647,13 +599,11 @@ void UEntityPipeline::AddUnrealWheeledVehicleServerRPCsComponentOp(const worker:
 	}
 }
 
-void UEntityPipeline::RemoveUnrealWheeledVehicleServerRPCsComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveUnrealWheeledVehicleServerRPCsComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::unreal::UnrealWheeledVehicleServerRPCs::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddEntityAclComponentOp(const worker::AddComponentOp<improbable::EntityAcl>& Op)
-{
+void UEntityPipeline::AddEntityAclComponentOp(const worker::AddComponentOp<improbable::EntityAcl>& Op) {
 	UEntityAclAddComponentOp* NewOp = NewObject<UEntityAclAddComponentOp>();
 	if (NewOp)
 	{
@@ -665,13 +615,11 @@ void UEntityPipeline::AddEntityAclComponentOp(const worker::AddComponentOp<impro
 	}
 }
 
-void UEntityPipeline::RemoveEntityAclComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveEntityAclComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::EntityAcl::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddMetadataComponentOp(const worker::AddComponentOp<improbable::Metadata>& Op)
-{
+void UEntityPipeline::AddMetadataComponentOp(const worker::AddComponentOp<improbable::Metadata>& Op) {
 	UMetadataAddComponentOp* NewOp = NewObject<UMetadataAddComponentOp>();
 	if (NewOp)
 	{
@@ -683,13 +631,11 @@ void UEntityPipeline::AddMetadataComponentOp(const worker::AddComponentOp<improb
 	}
 }
 
-void UEntityPipeline::RemoveMetadataComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemoveMetadataComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::Metadata::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddPositionComponentOp(const worker::AddComponentOp<improbable::Position>& Op)
-{
+void UEntityPipeline::AddPositionComponentOp(const worker::AddComponentOp<improbable::Position>& Op) {
 	UPositionAddComponentOp* NewOp = NewObject<UPositionAddComponentOp>();
 	if (NewOp)
 	{
@@ -701,13 +647,11 @@ void UEntityPipeline::AddPositionComponentOp(const worker::AddComponentOp<improb
 	}
 }
 
-void UEntityPipeline::RemovePositionComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemovePositionComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::Position::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }
-void UEntityPipeline::AddPersistenceComponentOp(const worker::AddComponentOp<improbable::Persistence>& Op)
-{
+void UEntityPipeline::AddPersistenceComponentOp(const worker::AddComponentOp<improbable::Persistence>& Op) {
 	UPersistenceAddComponentOp* NewOp = NewObject<UPersistenceAddComponentOp>();
 	if (NewOp)
 	{
@@ -719,8 +663,7 @@ void UEntityPipeline::AddPersistenceComponentOp(const worker::AddComponentOp<imp
 	}
 }
 
-void UEntityPipeline::RemovePersistenceComponentOp(const worker::RemoveComponentOp& Op)
-{
+void UEntityPipeline::RemovePersistenceComponentOp(const worker::RemoveComponentOp& Op) {
 	const worker::ComponentId ComponentId = improbable::Persistence::ComponentId;
 	FirstBlock->RemoveComponent(ComponentId, Op);
 }

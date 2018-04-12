@@ -2,7 +2,8 @@
 
 #include "SpatialGDKSettings.h"
 
-FSpatialGDKWorkerOverrideSettings::FSpatialGDKWorkerOverrideSettings() : bDisableRendering(false)
+FSpatialGDKWorkerOverrideSettings::FSpatialGDKWorkerOverrideSettings()
+: bDisableRendering(false)
 {
 }
 
