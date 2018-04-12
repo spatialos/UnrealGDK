@@ -4,7 +4,7 @@
 #include "CoreMinimal.h"
 #include "SpatialGDKWorkerConfigurationData.h"
 #include "SpatialGDKWorkerTypes.h"
-#include "SpatialOSWorkerConfiguration.generated.h"
+#include "SpatialGDKWorkerConfiguration.generated.h"
 
 USTRUCT(BlueprintType)
 struct SPATIALGDK_API FSpatialGDKWorkerConfiguration
