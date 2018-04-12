@@ -17,9 +17,6 @@
 #include "improbable/unreal/unreal_metadata.h"
 #include "UnrealLevelAddComponentOp.h"
 
-// TODO(David): Needed for ApplyNetworkMovementMode hack below.
-#include "GameFramework/CharacterMovementComponent.h"
-
 DEFINE_LOG_CATEGORY(LogSpatialGDKInteropPipelineBlock);
 
 void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDriver* Driver, UWorld* LoadedWorld)
