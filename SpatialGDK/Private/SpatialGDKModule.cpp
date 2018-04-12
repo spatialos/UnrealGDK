@@ -34,12 +34,12 @@ void FSpatialGDKModule::RegisterSettings()
     ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
 
     SettingsContainer->DescribeCategory(
-        "SpatialOS", LOCTEXT("RuntimeWDCategoryName", "SpatialOS"),
-        LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialOS module"));
+        "SpatialGDK", LOCTEXT("RuntimeWDCategoryName", "SpatialGDK"),
+        LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialGDK module"));
 
     ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings(
-        "Project", "SpatialOS", "SpatialOS", LOCTEXT("RuntimeGeneralSettingsName", "SpatialOS"),
-        LOCTEXT("RuntimeGeneralSettingsDescription", "Base configuration for SpatialOS module."),
+        "Project", "SpatialGDK", "SpatialGDK", LOCTEXT("RuntimeGeneralSettingsName", "SpatialGDK"),
+        LOCTEXT("RuntimeGeneralSettingsDescription", "Base configuration for SpatialGDK module."),
         GetMutableDefault<USpatialGDKSettings>());
 
     if (SettingsSection.IsValid())
@@ -53,7 +53,7 @@ void FSpatialGDKModule::UnregisterSettings()
 {
   if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
   {
-    SettingsModule->UnregisterSettings("Project", "SpatialOS", "SpatialOS");
+    SettingsModule->UnregisterSettings("Project", "SpatialGDK", "SpatialGDK");
   }
 }
 
