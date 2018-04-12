@@ -9,12 +9,12 @@
 #include "Misc/MessageDialog.h"
 #include "NotificationManager.h"
 #include "SNotificationList.h"
+#include "SpatialGDKEditorGenerateSnapshot.h"
 #include "SpatialGDKEditorToolbarCommands.h"
 #include "SpatialGDKEditorToolbarStyle.h"
-#include "SpatialGDKEditorGenerateSnapshot.h"
 
-#include "HAL/FileManager.h"
 #include "Editor/EditorEngine.h"
+#include "HAL/FileManager.h"
 
 #include "LevelEditor.h"
 
@@ -104,7 +104,7 @@ void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandLis
 		ToolbarExtender->AddToolBarExtension(
 			"Game", EExtensionHook::After, PluginCommands,
 			FToolBarExtensionDelegate::CreateRaw(this,
-				&FSpatialGDKEditorToolbarModule::AddToolbarExtension));
+												 &FSpatialGDKEditorToolbarModule::AddToolbarExtension));
 
 		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
 	}
