@@ -2,7 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialOSWorkerConfigurationData.h"
+#include "SpatialGDKWorkerConfigurationData.h"
 #include "SpatialGDKWorkerTypes.h"
 #include "SpatialOSWorkerConfiguration.generated.h"
 
