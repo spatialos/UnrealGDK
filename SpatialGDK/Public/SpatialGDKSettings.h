@@ -1,15 +1,15 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma once
-#include "SpatialOSWorkerConfigurationData.h"
+#include "SpatialGDKWorkerConfigurationData.h"
 
 #include "SpatialGDKSettings.generated.h"
 
 USTRUCT()
-struct FSpatialOSWorkerOverrideSettings
+struct FSpatialGDKWorkerOverrideSettings
 {
   GENERATED_BODY()
 
-  FSpatialOSWorkerOverrideSettings();
+  FSpatialGDKWorkerOverrideSettings();
 
   /** SpatialOS worker configuration */
   UPROPERTY(EditAnywhere, config, Category = WorkerOverride)
@@ -36,5 +36,5 @@ public:
   // clang-format off
   UPROPERTY(EditAnywhere, config, Category = Custom, meta = (ConfigRestartRequired = false, EditCondition = bUseUserWorkerConfigurations))
   // clang-format on
-  TArray<FSpatialOSWorkerOverrideSettings> WorkerConfigurations;
+  TArray<FSpatialGDKWorkerOverrideSettings> WorkerConfigurations;
 };
