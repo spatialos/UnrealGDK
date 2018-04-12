@@ -5,7 +5,7 @@
 #include "ScopedViewCallbacks.h"
 #include "SpatialGDKViewTypes.h"
 #include "SpatialGDKWorkerConfiguration.h"
-#include "SpatialOSWorkerConfigurationData.h"
+#include "SpatialGDKWorkerConfigurationData.h"
 #include "SpatialGDKWorkerTypes.h"
 #include "WorkerConnection.h"
 
