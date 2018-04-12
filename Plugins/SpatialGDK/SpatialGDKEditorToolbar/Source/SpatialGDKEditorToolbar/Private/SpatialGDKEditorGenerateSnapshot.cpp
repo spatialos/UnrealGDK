@@ -117,7 +117,7 @@ void SpatialGDKGenerateSnapshot(const FString& SavePath, UWorld* World)
 		if (!Result.empty())
 		{
 			std::string ErrorString = Result.value_or("");
-			UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(ErrorString.c_str()));
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(ErrorString.c_str()));
 			return;
 		}
 	}
