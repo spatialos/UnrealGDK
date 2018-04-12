@@ -37,8 +37,7 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 {
 	// Transform the property chain into a chain of names.
 	TArray<FString> ChainNames;
-	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
-	{
+	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString {
 		return Property->Property->GetName().ToLower();
 	});
 
@@ -73,7 +72,7 @@ FString PropertyToSchemaType(UProperty* Property)
 			Struct->GetName() == TEXT("Vector_NetQuantizeNormal") ||
 			Struct->GetName() == TEXT("Vector_NetQuantize"))
 		{
-			DataType = TEXT("improbable.Vector3f"); // not well supported
+			DataType = TEXT("improbable.Vector3f");  // not well supported
 		}
 		else if (Struct->GetFName() == NAME_Rotator)
 		{
@@ -85,7 +84,7 @@ FString PropertyToSchemaType(UProperty* Property)
 		}
 		else
 		{
-			DataType = TEXT("bytes"); //this includes RepMovement and UniqueNetId
+			DataType = TEXT("bytes");  //this includes RepMovement and UniqueNetId
 		}
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
@@ -102,7 +101,7 @@ FString PropertyToSchemaType(UProperty* Property)
 	}
 	else if (Property->IsA(UByteProperty::StaticClass()))
 	{
-		DataType = TEXT("uint32"); // uint8 not supported in schema.
+		DataType = TEXT("uint32");  // uint8 not supported in schema.
 	}
 	else if (Property->IsA(UNameProperty::StaticClass()) || Property->IsA(UStrProperty::StaticClass()))
 	{
@@ -159,11 +158,10 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		{
 			FieldCounter++;
 			Writer.Printf("%s %s = %d; // %s",
-				*PropertyToSchemaType(RepProp.Value->Property),
-				*SchemaFieldName(RepProp.Value),
-				FieldCounter,
-				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition)
-			);
+						  *PropertyToSchemaType(RepProp.Value->Property),
+						  *SchemaFieldName(RepProp.Value),
+						  FieldCounter,
+						  *GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition));
 		}
 		Writer.Outdent().Print("}");
 	}
@@ -177,10 +175,9 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	{
 		FieldCounter++;
 		Writer.Printf("%s %s = %d;",
-			*PropertyToSchemaType(Prop.Value->Property),
-			*SchemaFieldName(Prop.Value),
-			FieldCounter
-		);
+					  *PropertyToSchemaType(Prop.Value->Property),
+					  *SchemaFieldName(Prop.Value),
+					  FieldCounter);
 	}
 	Writer.Outdent().Print("}");
 
@@ -206,10 +203,9 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			{
 				FieldCounter++;
 				Writer.Printf("%s %s = %d;",
-					*PropertyToSchemaType(Param->Property),
-					*SchemaFieldName(Param),
-					FieldCounter
-				);
+							  *PropertyToSchemaType(Param->Property),
+							  *SchemaFieldName(Param),
+							  FieldCounter);
 			}
 			Writer.Outdent().Print("}");
 		}
@@ -225,8 +221,8 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		for (auto& RPC : RPCsByType[Group])
 		{
 			Writer.Printf("command UnrealRPCCommandResponse %s(%s);",
-				*SchemaCommandName(RPC->Function),
-				*SchemaRPCRequestType(RPC->Function));
+						  *SchemaCommandName(RPC->Function),
+						  *SchemaRPCRequestType(RPC->Function));
 		}
 		Writer.Outdent().Print("}");
 	}

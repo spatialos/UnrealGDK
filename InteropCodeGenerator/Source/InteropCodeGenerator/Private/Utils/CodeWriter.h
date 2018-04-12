@@ -25,7 +25,7 @@ struct FFunctionSignature
 
 class FCodeWriter
 {
-public:
+  public:
 	FCodeWriter();
 
 	template <typename... T>
@@ -47,7 +47,7 @@ public:
 	void WriteToFile(const FString& Filename);
 	void Dump();
 
-private:
+  private:
 	FString OutputSource;
 	int Scope;
 };

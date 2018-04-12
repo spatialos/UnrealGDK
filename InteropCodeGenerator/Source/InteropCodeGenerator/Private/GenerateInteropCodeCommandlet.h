@@ -10,6 +10,6 @@ class UGenerateInteropCodeCommandlet : public UCommandlet
 {
 	GENERATED_BODY()
 
-public:
+  public:
 	virtual int32 Main(const FString& Params) override;
 };

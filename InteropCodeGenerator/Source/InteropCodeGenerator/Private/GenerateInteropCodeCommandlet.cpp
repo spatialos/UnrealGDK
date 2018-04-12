@@ -2,11 +2,11 @@
 
 #include "GenerateInteropCodeCommandlet.h"
 
-#include "Utils/CodeWriter.h"
-#include "Utils/ComponentIdGenerator.h"
-#include "TypeStructure.h"
 #include "SchemaGenerator.h"
 #include "TypeBindingGenerator.h"
+#include "TypeStructure.h"
+#include "Utils/CodeWriter.h"
+#include "Utils/ComponentIdGenerator.h"
 
 #include "Misc/FileHelper.h"
 
@@ -78,7 +78,7 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 	OutputListHeader.WriteToFile(FString::Printf(TEXT("%sSpatialTypeBindingList.h"), *ForwardingCodePath));
 	OutputListSource.WriteToFile(FString::Printf(TEXT("%sSpatialTypeBindingList.cpp"), *ForwardingCodePath));
 }
-} // ::
+}  // ::
 
 int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 {
@@ -89,14 +89,10 @@ int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 	// Hard coded class information.
 	TArray<FString> Classes = {"PlayerController", "PlayerState", "Character", "WheeledVehicle"};
 	TMap<FString, TArray<TArray<FName>>> MigratableProperties;
-	MigratableProperties.Add("PlayerController", {
-		{"AcknowledgedPawn"}
-	});
-	MigratableProperties.Add("Character", {
-		{"CharacterMovement", "GroundMovementMode"},
-		{"CharacterMovement", "MovementMode"},
-		{"CharacterMovement", "CustomMovementMode"}
-	});
+	MigratableProperties.Add("PlayerController", {{"AcknowledgedPawn"}});
+	MigratableProperties.Add("Character", {{"CharacterMovement", "GroundMovementMode"},
+										   {"CharacterMovement", "MovementMode"},
+										   {"CharacterMovement", "CustomMovementMode"}});
 
 	if (FPaths::CollapseRelativeDirectories(CombinedSchemaPath) && FPaths::CollapseRelativeDirectories(CombinedForwardingCodePath))
 	{
