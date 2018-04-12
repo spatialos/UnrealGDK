@@ -28,7 +28,7 @@ class USpatialOsComponent;
 class USpatialActorChannel;
 class USpatialNetDriver;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInteropPipelineBlock, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInteropPipelineBlock, Log, All);
 
 USTRUCT()
 struct FPendingAddComponentWrapper
