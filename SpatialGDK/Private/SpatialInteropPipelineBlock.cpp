@@ -152,7 +152,6 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 	bInCriticalSection = false;
 	PendingAddEntities.Empty();
 	PendingAddComponents.Empty();
-	PendingRemoveComponents.Empty();
 	PendingRemoveEntities.Empty();
 
 	if (NextBlock)
