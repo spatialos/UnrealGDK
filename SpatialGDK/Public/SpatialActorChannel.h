@@ -12,7 +12,7 @@
 #include "SpatialNetDriver.h"
 #include "SpatialActorChannel.generated.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSActorChannel, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKActorChannel, Log, All);
 
 class USpatialNetDriver;
 

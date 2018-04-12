@@ -12,7 +12,7 @@
 #include "SpatialInterop.h"
 #include "SpatialTypeBinding.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialOSActorChannel);
+DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
 
 namespace
 {
