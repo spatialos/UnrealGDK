@@ -32,7 +32,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
-	UChannel::ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
+	ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
 	// Create SpatialOS instance and setup callbacks.
 	SpatialOSInstance = NewObject<USpatialOS>(this);
@@ -862,7 +862,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 	if (bOk)
 	{
 		FString LevelName = GetWorld()->GetCurrentLevel()->GetOutermost()->GetName();
-		Connection->ClientWorldPackageName = GetWorld()->GetCurrentLevel()->GetOutermost()->GetFName();
+		Connection->SetClientWorldPackageName(GetWorld()->GetCurrentLevel()->GetOutermost()->GetFName());
 
 		FString GameName;
 		FString RedirectURL;
