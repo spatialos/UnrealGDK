@@ -25,6 +25,7 @@ public class SpatialGDK : ModuleRules
                 "SpatialGDK/Generated/Std",
                 "SpatialGDK/Generated/UClasses",
                 "SpatialGDK/Legacy",
+                "SpatialGDK/Legacy/Deprecated",
                 "SpatialGDK/Ops"
             });
         
