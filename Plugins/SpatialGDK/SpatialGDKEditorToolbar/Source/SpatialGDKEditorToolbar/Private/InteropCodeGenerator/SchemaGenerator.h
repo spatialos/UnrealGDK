@@ -9,6 +9,9 @@
 
 class FCodeWriter;
 
+// Given a class or function name, generates the name used for naming schema components and types. Currently, this just removes underscores.
+FString UnrealNameToSchemaTypeName(const FString& UnrealName);
+
 // Given a replicated property group and Unreal type, generates the name of the corresponding component.
 // For example: UnrealCharacterMultiClientRepData
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type);

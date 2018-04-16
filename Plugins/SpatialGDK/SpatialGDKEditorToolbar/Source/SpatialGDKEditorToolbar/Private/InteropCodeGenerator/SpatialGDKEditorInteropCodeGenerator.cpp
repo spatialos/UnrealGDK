@@ -20,7 +20,7 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	FCodeWriter OutputHeader;
 	FCodeWriter OutputSource;
 
-	FString SchemaFilename = FString::Printf(TEXT("Unreal%s"), *Class->GetName());
+	FString SchemaFilename = FString::Printf(TEXT("Unreal%s"), *UnrealNameToSchemaTypeName(Class->GetName()));
 	FString TypeBindingFilename = FString::Printf(TEXT("SpatialTypeBinding_%s"), *Class->GetName());
 
 	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, MigratableProperties);
@@ -80,6 +80,29 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 	OutputListHeader.WriteToFile(FString::Printf(TEXT("%sSpatialTypeBindingList.h"), *ForwardingCodePath));
 	OutputListSource.WriteToFile(FString::Printf(TEXT("%sSpatialTypeBindingList.cpp"), *ForwardingCodePath));
 }
+
+bool CheckClassNameListValidity(const TArray<FString>& Classes)
+{
+	for (int i = 0; i < Classes.Num() - 1; ++i)
+	{
+		auto& ClassA = Classes[i];
+		auto SchemaTypeA = UnrealNameToSchemaTypeName(ClassA);
+
+		for (int j = i + 1; j < Classes.Num(); ++j)
+		{
+			auto& ClassB = Classes[j];
+			auto SchemaTypeB = UnrealNameToSchemaTypeName(ClassB);
+
+			if (SchemaTypeA.Equals(SchemaTypeB))
+			{
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Class name collision after removing underscores: '%s' and '%s' - schema not generated"), *ClassA, *ClassB);
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
 } // ::
 
 void SpatialGDKGenerateInteropCode()
@@ -102,6 +125,11 @@ void SpatialGDKGenerateInteropCode()
 		{"CharacterMovement", "MovementMode"},
 		{"CharacterMovement", "CustomMovementMode"}
 	});
+
+	if (!CheckClassNameListValidity(Classes))
+	{
+		return;
+	}
 
 	if (FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath) && FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
 	{
