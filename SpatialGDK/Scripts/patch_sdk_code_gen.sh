@@ -8,4 +8,4 @@ pushd "../Generated/UClasses"
 
 find -name '*.h' | xargs sed -i 's/SPATIALOS_API/SPATIALGDK_API/'
 
-popd 
+popd
