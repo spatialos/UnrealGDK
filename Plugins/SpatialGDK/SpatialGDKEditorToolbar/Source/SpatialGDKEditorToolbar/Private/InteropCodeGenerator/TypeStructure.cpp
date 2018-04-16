@@ -410,11 +410,6 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		if (Parent.Property == Cmd.Property)
 		{
 			PropertyNode = TypeNode->Properties[Cmd.Property];
-			if (Cmd.Type == REPCMD_DynamicArray)
-			{
-				CmdIndex += 2; //For Arrays, the Cmd list generates a cmd for the array, a cmd for the inner property of the array, and a return cmd. This skips over the last two cmds.
-							   // See FRepLayout::InitFromProperty_r for more information about how the Cmd's array is set up for Array properties.
-			}
 		}
 		else
 		{
@@ -450,6 +445,12 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			RepDataNode->RoleSwapHandle = -1;
 		}
 		PropertyNode->ReplicationData = RepDataNode;
+
+		if (Cmd.Type == REPCMD_DynamicArray)
+		{
+			// Bypass the inner properties and null terminator cmd when processing arrays.
+			CmdIndex = Cmd.EndCmd - 1;
+		}
 	}
 
 	// Process the migratable properties list.
