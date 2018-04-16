@@ -143,6 +143,21 @@ FString PropertyToSchemaType(UProperty* Property)
 
 	return DataType;
 }
+void AppendName(FString& ClassDescription, UProperty* Property)
+{
+	auto OwnerClass = Property->GetOwnerClass();
+	if (OwnerClass == NULL) {
+		ClassDescription += Property->GetOwnerStruct()->GetName();
+		//ParentClassName += FString::Printf(TEXT(" // %s"), *RepProp.Value->Property->GetOwnerStruct()->GetOwnerClass()->GetName());
+		//auto Ref = RepProp.Value->ContainerType.Pin();
+		//if (Ref.IsValid()) {
+		//	ClassDescription += Ref->Type->GetOuter()->GetName();
+		//}
+	}
+	else {
+		ClassDescription += OwnerClass->GetName();
+	}
+}
 
 int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo)
 {
@@ -169,11 +184,118 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		for (auto& RepProp : RepData[Group])
 		{
 			FieldCounter++;
-			Writer.Printf("%s %s = %d; // %s",
+			//auto OwnerClass = RepProp.Value->Property->GetOwnerClass();
+			//if (OwnerClass == NULL) {
+			//	ParentClassName = RepProp.Value->Property->GetOwnerStruct()->GetName();
+			//	//ParentClassName += FString::Printf(TEXT(" // %s"), *RepProp.Value->Property->GetOwnerStruct()->GetOwnerClass()->GetName());
+			//	auto Ref = RepProp.Value->ContainerType.Pin();
+			//	if (Ref.IsValid()){
+			//		ParentClassName += Ref->Type->GetOuter()->GetName();
+			//	}
+			//} else {
+			//	ParentClassName = OwnerClass->GetName();
+			//}
+
+			//// A node which represents an unreal type, such as ACharacter or UCharacterMovementComponent.
+			//struct FUnrealType
+			//{
+			//	UStruct* Type;
+			//	TMap<UProperty*, TSharedPtr<FUnrealProperty>> Properties;
+			//	TMap<UFunction*, TSharedPtr<FUnrealRPC>> RPCs;
+			//	TWeakPtr<FUnrealProperty> ParentProperty;
+			//};
+
+			//// A node which represents a single property or parameter in an RPC.
+			//struct FUnrealProperty
+			//{
+			//	UProperty* Property;
+			//	TSharedPtr<FUnrealType> Type; // Only set if strong reference to object/struct property.
+			//	TSharedPtr<FUnrealRepData> ReplicationData; // Only set if property is replicated.
+			//	TSharedPtr<FUnrealMigratableData> MigratableData; // Only set if property is migratable (and not replicated).
+			//	TWeakPtr<FUnrealType> ContainerType; // Not set if this property is an RPC parameter.
+			//};
+
+			// RepProp.Value == FUnrealProperty // The base property we are searching from.
+			// RepProp.Value->Type == FUnrealType // The type this property came from.
+			// RepProp.Value->Type->ParentProperty // The parent of this unreal type.
+
+			//AppendName();
+
+			//auto ParentProperty = RepProp.Value->Type->ParentProperty.Pin();
+			//while (ParentProperty.IsValid()) 
+			//{
+			//	auto OwnerClass = ParentProperty->Property->GetOwnerClass();
+			//	if (OwnerClass != NULL) {
+			//		ParentClassName += FString::Printf(TEXT(" // %s"), *OwnerClass->GetName());
+			//	}
+			//	else
+			//	{
+			//		ParentClassName += FString::Printf(TEXT(" // NULL"));
+			//	}
+			//	ParentProperty = ParentProperty->ContainerType.Pin()->ParentProperty.Pin();
+			//}
+
+			//auto OwnerClass = RepProp.Value->Property->GetOwnerClass();
+			//if (OwnerClass == NULL)
+			//{
+			//}
+
+			// while FUnrealProperty->Type->ParentProperty exists          then we need to get the name of this object.
+			// FUnrealProperty = FUnrealProperty->Type->ParentProperty     recurse intp parent
+
+			// Then we get the FUnrealProperty->Propetty->GetOuter()       // This should be where property variable 'lives'
+
+			FString ParentClassName = TEXT("");
+
+			auto ThisProp = RepProp.Value;
+			auto loop = true;
+			while (loop) {
+
+				if (ThisProp->Type.IsValid()) // If we have a defined unreal type
+				{
+					if (ThisProp->Type->ParentProperty.IsValid()) // If we have a parent property, this should be the 'truth'
+					{
+						ThisProp = ThisProp->Type->ParentProperty.Pin();
+						ParentClassName += FString::Printf(TEXT(" %s ::"), *ThisProp->Type->Type->GetName());
+						
+						// Duplicate Code (Oscillation)
+						if (ThisProp->ContainerType.Pin()->ParentProperty.Pin().IsValid()) // Check the ContainerType for a parent property.
+						{
+							//ParentClassName += FString::Printf(TEXT(" %s ::"), *ThisProp->ContainerType.Pin()->Type->GetName());
+							ThisProp = ThisProp->ContainerType.Pin()->ParentProperty.Pin();
+						}
+						else {
+							loop = false;
+						}
+					}
+
+				}
+				else { // If we do not have an unreal type
+
+					if (ThisProp->ContainerType.Pin()->ParentProperty.Pin().IsValid()) // Check the ContainerType for a parent property.
+					{
+						ParentClassName += FString::Printf(TEXT(" %s ::"), *ThisProp->ContainerType.Pin()->Type->GetName());
+						ThisProp = ThisProp->ContainerType.Pin()->ParentProperty.Pin();
+					} else {
+						loop = false;
+					}
+
+				}
+			}
+
+			auto MaybeTheOwner = ThisProp->Property->GetOuter();
+			if(MaybeTheOwner != nullptr)
+			{
+				ParentClassName += FString::Printf(TEXT(" %s"), *MaybeTheOwner->GetName());
+			}
+
+			// Insert parent class name here. Data comes from the rep prop.
+			Writer.Printf("%s %s = %d; // %s // %s",
 				*PropertyToSchemaType(RepProp.Value->Property),
 				*SchemaFieldName(RepProp.Value),
 				FieldCounter,
-				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition)
+				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
+				*ParentClassName
 			);
 		}
 		Writer.Outdent().Print("}");
@@ -205,6 +327,9 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			FString TypeStr = SchemaRPCRequestType(RPC->Function);
 
 			Writer.Printf("type %s {", *TypeStr);
+			// Add location of rpc here
+			//Writer.Printf("// class %s", );
+
 			Writer.Indent();
 
 			// Recurse into functions properties and build a complete transitive property list.

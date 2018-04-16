@@ -229,6 +229,7 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPt
 	}
 }
 
+// Type is the class....
 TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties)
 {
 	// Struct types will set this to nullptr.
@@ -239,6 +240,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 	TypeNode->Type = Type;
 
 	// Iterate through each property in the struct.
+	// JOSH: This may become a field in a component.
 	for (TFieldIterator<UProperty> It(Type); It; ++It)
 	{
 		UProperty* Property = *It;
@@ -254,6 +256,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
 		PropertyNode->Property = Property;
 		PropertyNode->ContainerType = TypeNode;
+
 		TypeNode->Properties.Add(Property, PropertyNode);
 
 		// If this property not a struct or object (which can contain more properties), stop here.
@@ -306,9 +309,18 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			}
 
 			// Check whether the owner of this value is the CDO itself.
+			// JOSH: This is where it's grabbing the parent, here we can add a pointer to the class structure UnrealType is associated with so that we can add it to the correct schema.
+			// We need a tree structure of the files to prevent over-writing without need.
+			// Add "import <parent>" here.
+			// What's the best way of doing this?
+			// We recurse into the parent and generate schema-types for the RPC calls and add this to the child classes.
+			// Store a list of found parent classes?
+			// 1- Let's just remove this code and see what we end up with.
+
 			if (Value->GetOuter() == ContainerCDO)
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
+				//UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("-------- Found parent property: %s Parent Class: %s --------"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
 				// This property is definitely a strong reference, recurse into it.
 				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {});
@@ -334,6 +346,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 	}
 
 	// Iterate through each RPC in the class.
+	// JOSH: These are what become schema-types.
 	for (TFieldIterator<UFunction> RemoteFunction(Class); RemoteFunction; ++RemoteFunction)
 	{
 		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
@@ -462,11 +475,12 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		TSharedPtr<FUnrealType> CurrentTypeNode = TypeNode;
 		for (FName PropertyName : PropertyNames)
 		{
-			checkf(CurrentTypeNode.IsValid(), TEXT("A property in the chain (except the leaf) is not a struct property."));
+			checkf(CurrentTypeNode.IsValid(), TEXT("A property in the chain (except the leaf) is not a struct property.")) //---------------------------------------------------------------------------
 			UProperty* NextProperty = CurrentTypeNode->Type->FindPropertyByName(PropertyName);
 			checkf(NextProperty, TEXT("Cannot find property %s in container %s"), *PropertyName.ToString(), *CurrentTypeNode->Type->GetName());
 			MigratableProperty = CurrentTypeNode->Properties.FindChecked(NextProperty);
 			CurrentTypeNode = MigratableProperty->Type;
+			
 		}
 
 		// Create migratable data.
@@ -478,12 +492,14 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 	return TypeNode;
 }
 
+// JOSH: At this point we don't want this to be flat.
 FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 {
 	FUnrealFlatRepData RepData;
 	RepData.Add(REP_MultiClient);
 	RepData.Add(REP_SingleClient);
 
+	// Helper function to go through parents.
 	VisitAllProperties(TypeInfo, [&RepData](TSharedPtr<FUnrealProperty> Property)
 	{
 		if (Property->ReplicationData.IsValid())

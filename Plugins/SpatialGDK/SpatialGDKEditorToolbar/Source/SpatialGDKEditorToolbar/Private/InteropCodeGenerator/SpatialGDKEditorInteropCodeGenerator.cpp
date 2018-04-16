@@ -141,7 +141,6 @@ void SpatialGDKGenerateInteropCode()
 			TArray<TArray<FName>> ClassMigratableProperties = MigratableProperties.FindRef(ClassName);
 			ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, ClassMigratableProperties);
 		}
-		GenerateTypeBindingList(CombinedForwardingCodePath, Classes);
 	}
 	else
 	{

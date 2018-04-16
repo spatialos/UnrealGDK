@@ -104,6 +104,7 @@ struct FUnrealType
 	TMap<UProperty*, TSharedPtr<FUnrealProperty>> Properties;
 	TMap<UFunction*, TSharedPtr<FUnrealRPC>> RPCs;
 	TWeakPtr<FUnrealProperty> ParentProperty;
+	UStruct* Owner;
 };
 
 // A node which represents a single property or parameter in an RPC.
