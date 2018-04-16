@@ -85,13 +85,13 @@ bool CheckClassNameListValidity(const TArray<FString>& Classes)
 {
 	for (int i = 0; i < Classes.Num() - 1; ++i)
 	{
-		auto& ClassA = Classes[i];
-		auto SchemaTypeA = UnrealNameToSchemaTypeName(ClassA);
+		const FString& ClassA = Classes[i];
+		const FString SchemaTypeA = UnrealNameToSchemaTypeName(ClassA);
 
 		for (int j = i + 1; j < Classes.Num(); ++j)
 		{
-			auto& ClassB = Classes[j];
-			auto SchemaTypeB = UnrealNameToSchemaTypeName(ClassB);
+			const FString& ClassB = Classes[j];
+			const FString SchemaTypeB = UnrealNameToSchemaTypeName(ClassB);
 
 			if (SchemaTypeA.Equals(SchemaTypeB))
 			{
