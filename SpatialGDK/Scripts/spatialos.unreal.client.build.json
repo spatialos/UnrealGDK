@@ -9,7 +9,7 @@
             "worker_package",
             "unpack",
             "--package_file",
-            "spatialos_worker_packages.json"
+            "Game/Source/SpatialGDK/Scripts/spatialos_worker_packages.json"
           ]
         },
         {
@@ -31,7 +31,7 @@
             "--cachePath=Game/Intermediate/Improbable/schema_codegen_cache_usr",
             "--output=Game/Source/SpatialGDK/Generated/Usr",
             "--language=cpp",
-            "--input=../../schema/usr",
+            "--input=../../schema",
             "--repository=../../build/dependencies/schema"
           ]
         },
@@ -43,9 +43,9 @@
             "--cachePath=Game/Intermediate/Improbable/schema_codegen_cache_usr",
             "--output=Game/Source/SpatialGDK/Generated/Usr",
             "--language=cpp",
-            "--input=../../schema/gen",
+            "--input=../../generatedschema",
             "--repository=../../build/dependencies/schema",
-            "--dependency=../../schema/usr"
+            "--dependency=../../schema/"
           ]
         },
         {
@@ -67,7 +67,7 @@
             "--cachePath=Game/Intermediate/Improbable/schema_codegen_cache_json_usr",
             "--output=Game/Intermediate/Improbable/json/usr",
             "--language=ast_json",
-            "--input=../../schema/usr",
+            "--input=../../schema",
             "--repository=../../build/dependencies/schema"
           ]
         },
