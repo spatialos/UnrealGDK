@@ -82,9 +82,22 @@ void USpatialPackageMapClient::RegisterStaticObjects(const improbable::unreal::U
 	SpatialGuidCache->RegisterStaticObjects(LevelData);
 }
 
+uint32 USpatialPackageMapClient::GetHashFromStaticClass(const UClass* StaticClass) const
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	return SpatialGuidCache->GetHashFromStaticClass(StaticClass);
+}
+
+UClass* USpatialPackageMapClient::GetStaticClassFromHash(uint32 Hash) const
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	return SpatialGuidCache->GetStaticClassFromHash(Hash);
+}
+
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 	: FNetGUIDCache(InDriver)
 {
+	CreateStaticClassMapping();
 }
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, const ::worker::Map< std::string, std::uint32_t >& SubobjectToOffset)
@@ -216,6 +229,17 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 	}
 }
 
+uint32 FSpatialNetGUIDCache::GetHashFromStaticClass(const UClass* StaticClass) const
+{
+	return GetTypeHash(*StaticClass->GetPathName());
+}
+
+UClass* FSpatialNetGUIDCache::GetStaticClassFromHash(uint32 Hash) const
+{
+	check(StaticClassPathHashMap.Contains(Hash));
+	return FindObject<UClass>(ANY_PACKAGE, *StaticClassPathHashMap[Hash]);
+}
+
 FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(const UObject* Object)
 {
 	FNetworkGUID NetGUID = GetOrAssignNetGUID(Object);
@@ -282,4 +306,19 @@ FNetworkGUID FSpatialNetGUIDCache::AssignStaticActorNetGUID(const UObject* Objec
 		*ObjectRefToString(ObjectRef));
 
 	return StaticNetGUID;
+}
+
+void FSpatialNetGUIDCache::CreateStaticClassMapping()
+{
+	for (TObjectIterator<UClass> It; It; ++It)
+	{
+		if (It->IsChildOf(UObject::StaticClass()) && !It->HasAnyClassFlags(CLASS_Abstract))
+		{
+			uint32 PathHash = GetHashFromStaticClass(*It);
+			check(StaticClassPathHashMap.Contains(PathHash) == false);
+			StaticClassPathHashMap.Add(PathHash, It->GetPathName());
+		}
+	}
+
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered %d static classes to the class hashmap"), StaticClassPathHashMap.Num());
 }

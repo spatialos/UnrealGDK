@@ -123,6 +123,11 @@ FString PropertyToSchemaType(UProperty* Property)
 	{
 		DataType = TEXT("bytes");
 	}
+	else if (Property->IsA(UClassProperty::StaticClass()))
+	{
+		// we hash the static class paths
+		DataType = TEXT("uint32");
+	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
 		DataType = TEXT("UnrealObjectRef");
