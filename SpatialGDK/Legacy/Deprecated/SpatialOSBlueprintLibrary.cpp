@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialOSBlueprintLibrary.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 
 USpatialOSBlueprintLibrary::USpatialOSBlueprintLibrary(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)

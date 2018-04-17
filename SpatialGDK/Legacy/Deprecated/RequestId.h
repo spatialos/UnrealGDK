@@ -2,7 +2,7 @@
 
 #include "ComponentIdentifier.h"
 #include "CoreMinimal.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 
 #include "RequestId.generated.h"
 

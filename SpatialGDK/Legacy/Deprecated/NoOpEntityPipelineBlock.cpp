@@ -4,8 +4,8 @@
 #include "AddComponentOpWrapperBase.h"
 #include "CallbackDispatcher.h"
 #include "Engine.h"
-#include "SpatialOSViewTypes.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 
 void UNoOpEntityPipelineBlock::AddEntity(const worker::AddEntityOp& AddEntityOp)
 {

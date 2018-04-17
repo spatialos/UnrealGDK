@@ -3,7 +3,7 @@
 #include "ComponentId.h"
 #include "CoreMinimal.h"
 #include "EntityId.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "improbable/collections.h"
 #include "EntityQueryConstraints.generated.h"
 

@@ -11,8 +11,8 @@
 #include "PositionAddComponentOp.h"
 #include "PositionComponent.h"
 #include "SpatialOSConversionFunctionLibrary.h"
-#include "SpatialOSViewTypes.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "improbable/view.h"
 
 USimpleEntitySpawnerBlock::FSpatialOperation::FSpatialOperation(
