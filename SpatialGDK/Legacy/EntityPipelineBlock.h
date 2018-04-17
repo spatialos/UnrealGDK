@@ -39,6 +39,10 @@ class SPATIALGDK_API UEntityPipelineBlock : public UObject
 								 const worker::AuthorityChangeOp& AuthChangeOp)
 		PURE_VIRTUAL(UEntityPipelineBlock::ChangeAuthority(), );
 
+	virtual void EnterCriticalSection() PURE_VIRTUAL(UEntityPipelineBlock::EnterCriticalSection(), );
+
+	virtual void LeaveCriticalSection() PURE_VIRTUAL(UEntityPipelineBlock::LeaveCriticalSection(), );
+
   protected:
 	UPROPERTY()
 	UEntityPipelineBlock* NextBlock;

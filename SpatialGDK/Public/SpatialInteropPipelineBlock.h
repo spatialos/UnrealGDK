@@ -1,21 +1,18 @@
 #pragma once
 
+#include "AddComponentOpWrapperBase.h"
+#include "ComponentId.h"
 #include "ComponentIdentifier.h"
 #include "EntityId.h"
 #include "EntityPipelineBlock.h"
 #include "SpatialInteropPipelineBlock.generated.h"
+
 
 namespace worker
 {
 struct AddEntityOp;
 struct RemoveEntityOp;
 struct RemoveComponentOp;
-}
-
-namespace improbable
-{
-class MetadataData;
-class PositionData;
 }
 
 class UAddComponentOpWrapperBase;
@@ -28,12 +25,13 @@ class USpatialOsComponent;
 class USpatialActorChannel;
 class USpatialNetDriver;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInteropPipelineBlock, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInteropPipelineBlock, Log, All);
 
+// Needed because UHT does not support nested types.
 USTRUCT()
 struct FPendingAddComponentWrapper
 {
-	GENERATED_USTRUCT_BODY()
+	GENERATED_BODY()
 
 	UPROPERTY()
 	FComponentIdentifier EntityComponent;
@@ -70,6 +68,11 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 	UPROPERTY()
 	TArray<FPendingAddComponentWrapper> PendingAddComponents;
 
+	TMap<FComponentIdentifier, worker::AuthorityChangeOp> PendingAuthorityChanges;
+
+	UPROPERTY()
+	TArray<FComponentIdentifier> PendingRemoveComponents;
+
 	UPROPERTY()
 	TArray<FEntityId> PendingRemoveEntities;
 
@@ -81,20 +84,29 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 
 	UWorld* World;
 
+	// Maps ComponentId to USpatialOsComponent* class name
+	UPROPERTY()
+	TMap<FComponentId, UClass*> KnownComponents;
+
   private:
 	void AddEntityImpl(const FEntityId& EntityId);
 	void InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp);
+	void DisableComponentImpl(const FComponentIdentifier& ComponentIdentifier);
 	void RemoveEntityImpl(const FEntityId& EntityId);
 
 	// Stub.
 	void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-					const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World) override;
+					const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
+					UCallbackDispatcher* CallbackDispatcher) override;
 
   private:
 	AActor* GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId);
 	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ClassToSpawn);
 
 	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);
+	UClass* GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent);
+
+	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection);
 
 	template <typename AddOpType, typename Metaclass>
 	typename Metaclass::Data* GetPendingComponentData(const FEntityId& EntityId)
