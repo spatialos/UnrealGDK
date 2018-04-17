@@ -137,7 +137,7 @@ public:
 			PropertyChain.Add(CurProperty);
 			if (!SubobjectProperty)
 			{
-				Offset += Property->GetOffset_ForInternal();
+				Offset += CurProperty->GetOffset_ForInternal();
 			}
 			UStructProperty* StructProperty = Cast<UStructProperty>(CurProperty);
 			if (StructProperty)
