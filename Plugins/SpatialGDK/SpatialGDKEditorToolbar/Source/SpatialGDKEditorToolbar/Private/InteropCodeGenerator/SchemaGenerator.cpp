@@ -44,7 +44,8 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 	TArray<FString> ChainNames;
 	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
 	{
-		return Property->Property->GetName().ToLower();
+		// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
+		return Property->Property->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
 	});
 
 	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
@@ -54,7 +55,8 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 
 FString SchemaCommandName(UFunction* Function)
 {
-	return Function->GetName().ToLower();
+	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
+	return Function->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
 }
 
 FString CPPCommandClassName(UFunction* Function)
