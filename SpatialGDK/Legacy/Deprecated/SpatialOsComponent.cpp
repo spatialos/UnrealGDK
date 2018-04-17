@@ -5,8 +5,8 @@
 #include "CallbackDispatcher.h"
 #include "Commander.h"
 #include "EntityPipeline.h"
-#include "SpatialOSViewTypes.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 
 USpatialOSComponent::USpatialOSComponent()
 : MaxUpdatesPerSecond(30)

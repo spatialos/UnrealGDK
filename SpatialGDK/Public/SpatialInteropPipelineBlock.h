@@ -7,7 +7,6 @@
 #include "EntityPipelineBlock.h"
 #include "SpatialInteropPipelineBlock.generated.h"
 
-
 namespace worker
 {
 struct AddEntityOp;
@@ -21,11 +20,11 @@ class UPositionAddComponentOp;
 class UCallbackDispatcher;
 class UEntityRegistry;
 class UEntityPipeline;
-class USpatialOsComponent;
+class USpatialOSComponent;
 class USpatialActorChannel;
 class USpatialNetDriver;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInteropPipelineBlock, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInteropPipelineBlock, Log, All);
 
 // Needed because UHT does not support nested types.
 USTRUCT()
@@ -84,7 +83,7 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 
 	UWorld* World;
 
-	// Maps ComponentId to USpatialOsComponent* class name
+	// Maps ComponentId to USpatialOSComponent* class name
 	UPROPERTY()
 	TMap<FComponentId, UClass*> KnownComponents;
 

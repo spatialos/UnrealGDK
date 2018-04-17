@@ -21,7 +21,7 @@ class UPositionAddComponentOp;
 class UCallbackDispatcher;
 class UEntityRegistry;
 class UEntityPipeline;
-class USpatialOsComponent;
+class USpatialOSComponent;
 
 UCLASS(BlueprintType)
 class SPATIALGDK_API USimpleEntitySpawnerBlock : public UEntityPipelineBlock
@@ -68,7 +68,7 @@ private:
   UPROPERTY()
   UEntityRegistry* EntityRegistry;
 
-  // Maps ComponentId to USpatialOsComponent* class name
+  // Maps ComponentId to USpatialOSComponent* class name
   UPROPERTY()
   TMap<int, UClass*> KnownComponents;
 

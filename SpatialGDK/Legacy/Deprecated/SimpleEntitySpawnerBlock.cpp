@@ -175,8 +175,8 @@ bool USimpleEntitySpawnerBlock::ProcessAddComponentOp(
       return true;
     }
 
-    USpatialOsComponent* Component =
-        Cast<USpatialOsComponent>(Actor->GetComponentByClass(*ComponentClass));
+    USpatialOSComponent* Component =
+        Cast<USpatialOSComponent>(Actor->GetComponentByClass(*ComponentClass));
     if (!Component)
     {
       return true;
@@ -216,8 +216,8 @@ bool USimpleEntitySpawnerBlock::ProcessRemoveComponentOp(UCallbackDispatcher* In
     return true;
   }
 
-  USpatialOsComponent* Component =
-      Cast<USpatialOsComponent>(Actor->GetComponentByClass(*ComponentClass));
+  USpatialOSComponent* Component =
+      Cast<USpatialOSComponent>(Actor->GetComponentByClass(*ComponentClass));
 
   if (Component)
   {
@@ -318,11 +318,11 @@ AActor* USimpleEntitySpawnerBlock::SpawnNewEntity(UMetadataAddComponentOp* Metad
                                                 FRotator::ZeroRotator, FActorSpawnParameters());
 
       TArray<UActorComponent*> SpatialOSComponents =
-          NewActor->GetComponentsByClass(USpatialOsComponent::StaticClass());
+          NewActor->GetComponentsByClass(USpatialOSComponent::StaticClass());
 
       for (auto Component : SpatialOSComponents)
       {
-        USpatialOsComponent* SpatialOSComponent = Cast<USpatialOsComponent>(Component);
+        USpatialOSComponent* SpatialOSComponent = Cast<USpatialOSComponent>(Component);
         KnownComponents.Emplace(SpatialOSComponent->GetComponentId().ToSpatialComponentId(),
                                 Component->GetClass());
       }
@@ -349,13 +349,13 @@ void USimpleEntitySpawnerBlock::SetupComponentInterests(
     AActor* Actor, const FEntityId& EntityId, const TWeakPtr<SpatialOSConnection>& Connection)
 {
   TArray<UActorComponent*> SpatialOSComponents =
-      Actor->GetComponentsByClass(USpatialOsComponent::StaticClass());
+      Actor->GetComponentsByClass(USpatialOSComponent::StaticClass());
 
   worker::Map<worker::ComponentId, worker::InterestOverride> ComponentIdsAndInterestOverrides;
 
   for (auto Component : SpatialOSComponents)
   {
-    USpatialOsComponent* SpatialOsComponent = Cast<USpatialOsComponent>(Component);
+    USpatialOSComponent* SpatialOsComponent = Cast<USpatialOSComponent>(Component);
     ComponentIdsAndInterestOverrides.emplace(
         std::make_pair(SpatialOsComponent->GetComponentId().ToSpatialComponentId(),
                        worker::InterestOverride{/* IsInterested */ true}));

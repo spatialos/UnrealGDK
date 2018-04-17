@@ -2,9 +2,11 @@
 
 #include "SpatialOS.h"
 
+#include "CallbackDispatcher.h"
 #include "EntityPipeline.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerConfigurationData.h"
 #include "SpatialGDKWorkerTypes.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOS);
@@ -13,6 +15,7 @@ USpatialOS::USpatialOS()
 : WorkerConfiguration(), WorkerConnection(), bConnectionWasSuccessful(false)
 {
 	EntityPipeline = CreateDefaultSubobject<UEntityPipeline>(TEXT("EntityPipeline"));
+	CallbackDispatcher = CreateDefaultSubobject<UCallbackDispatcher>(TEXT("CallbackDispatcher"));
 }
 
 void USpatialOS::BeginDestroy()
@@ -44,8 +47,8 @@ void USpatialOS::ApplyEditorWorkerConfiguration(FWorldContext& InWorldContext)
 		return;
 	}
 
-	const auto SpatialOSSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialOSSettings == nullptr || !SpatialOSSettings->bUseUserWorkerConfigurations)
+	const auto SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialGDKSettings == nullptr || !SpatialGDKSettings->bUseUserWorkerConfigurations)
 	{
 		return;
 	}
@@ -53,11 +56,11 @@ void USpatialOS::ApplyEditorWorkerConfiguration(FWorldContext& InWorldContext)
 	// InWorldContext.PIEInstance is 0 if one PIE instance is run otherwise [1, ..., n] if n PIE
 	// instances are run. See Engine\Source\Editor\UnrealEd\Private\PlayLevel.cpp, line 2528.
 	const int32 EditorConfigurationArrayIndex = FMath::Max(0, InWorldContext.PIEInstance - 1);
-	const int32 NumWorkerConfigurations = SpatialOSSettings->WorkerConfigurations.Num();
+	const int32 NumWorkerConfigurations = SpatialGDKSettings->WorkerConfigurations.Num();
 	if (EditorConfigurationArrayIndex < NumWorkerConfigurations)
 	{
 		const auto& WorkerConfig =
-			SpatialOSSettings->WorkerConfigurations[EditorConfigurationArrayIndex];
+			SpatialGDKSettings->WorkerConfigurations[EditorConfigurationArrayIndex];
 		WorkerConfiguration = FSpatialGDKWorkerConfiguration(WorkerConfig.WorkerConfigurationData);
 
 		// This check is required When a PIE instance is launched as a dedicated server,
@@ -119,7 +122,8 @@ void USpatialOS::Connect()
 			OnConnectedDelegate.Broadcast();
 			UE_LOG(LogSpatialOS, Display, TEXT("Connected to SpatialOS"));
 
-			EntityPipeline->Init(GetView());
+			CallbackDispatcher->Init(GetView());
+			EntityPipeline->Init(GetView(), CallbackDispatcher);
 		}
 		else
 		{
@@ -242,6 +246,11 @@ UEntityPipeline* USpatialOS::GetEntityPipeline() const
 	return EntityPipeline;
 }
 
+UCallbackDispatcher* USpatialOS::GetCallbackDispatcher() const
+{
+	return CallbackDispatcher;
+}
+
 worker::Entity* USpatialOS::GetLocalEntity(const worker::EntityId& EntityId)
 {
 	if (!IsConnected())
@@ -280,6 +289,7 @@ void USpatialOS::OnDisconnectDispatcherCallback(const worker::DisconnectOp& Op)
 
 void USpatialOS::OnDisconnectInternal()
 {
+	CallbackDispatcher->Reset();
 	EntityPipeline->DeregisterAllCallbacks();
 	Callbacks.Reset();
 	bConnectionWasSuccessful = false;
