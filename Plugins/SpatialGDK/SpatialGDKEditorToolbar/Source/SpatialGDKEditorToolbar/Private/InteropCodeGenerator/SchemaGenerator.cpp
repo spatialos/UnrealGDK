@@ -280,26 +280,26 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 	for (auto RPCTypeOwner : TypeOwners)
 	{
+		// Don't overwrite
 		if(!RPCTypeOwner->Type->GetName().Equals(*TypeInfo->Type->GetName()))
 		{
-			Writer.Printf("import \"improbable/unreal/Unreal%s.schema\";", *RPCTypeOwner->Type->GetName());
-		}
+			Writer.Printf("import \"improbable/unreal/generated/Unreal%s.schema\";", *RPCTypeOwner->Type->GetName());
+			// Write the RPCs to the proper schema file.
+			//FString RPCTypeOwnerSchemaFilename = FString::Printf(TEXT("Unreal%s"), *RPCTypeOwner->Type->GetName());
+			//RPCTypeOwnerSchemaWriter.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *RPCTypeOwnerSchemaFilename
+			RPCTypeWriterMap.FindOrAdd(*RPCTypeOwner->Type->GetName());
 
-		// Write the RPCs to the proper schema file.
-		//FString RPCTypeOwnerSchemaFilename = FString::Printf(TEXT("Unreal%s"), *RPCTypeOwner->Type->GetName());
-		//RPCTypeOwnerSchemaWriter.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *RPCTypeOwnerSchemaFilename
-		RPCTypeWriterMap.FindOrAdd(*RPCTypeOwner->Type->GetName());
+			FCodeWriter& RPCTypeOwnerSchemaWriter = RPCTypeWriterMap[*RPCTypeOwner->Type->GetName()];
 
-		FCodeWriter& RPCTypeOwnerSchemaWriter = RPCTypeWriterMap[*RPCTypeOwner->Type->GetName()];
-
-		RPCTypeOwnerSchemaWriter.Print(R"""(
+			RPCTypeOwnerSchemaWriter.Print(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
 		package improbable.unreal;
 
 		import "improbable/vector3.schema";
 		import "improbable/unreal/core_types.schema";)""");
-		RPCTypeOwnerSchemaWriter.PrintNewLine();
+			RPCTypeOwnerSchemaWriter.PrintNewLine();
+		}
 	}
 
 	for (auto Group : GetRPCTypes())
@@ -308,34 +308,40 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		for (auto& RPC : RPCsByType[Group])
 		{
 			FString TypeStr = SchemaRPCRequestType(RPC->Function);
-			UE_LOG(LogTemp, Warning, TEXT("RPC Type Owner Found - %s ::  %s"), *RPC->CallerType->GetName(), *RPC->Function->GetName());
+			//UE_LOG(LogTemp, Warning, TEXT("RPC Type Owner Found - %s ::  %s"), *RPC->CallerType->GetName(), *RPC->Function->GetName());
 
 			// Get the type writer
-			auto& RPCTypeWriter = RPCTypeWriterMap[*RPC->CallerType->GetName()];
+			FCodeWriter* RPCTypeWriter = &Writer;
+			if (RPC->CallerType->GetName().Equals(*TypeInfo->Type->GetName())) {
+				UE_LOG(LogTemp, Warning, TEXT("Original owner Found - %s ::  %s"), *RPC->CallerType->GetName(), *RPC->Function->GetName());
+			} else {
+				RPCTypeWriter = &RPCTypeWriterMap[*RPC->CallerType->GetName()];
+				UE_LOG(LogTemp, Warning, TEXT("Type owner Found - %s ::  %s"), *RPC->CallerType->GetName(), *RPC->Function->GetName());
+			}
 
 			FString ThisClass = RPC->CallerType->GetName();
 			FString OwnerClass = RPC->CallerType->GetOuter()->GetName();
 			FString FunctionOuter = RPC->Function->GetOuter()->GetName();
 
-			RPCTypeWriter.Printf("type %s { // %s :: %s // %s" , *TypeStr, *ThisClass, *OwnerClass, *FunctionOuter);
-			RPCTypeWriter.Indent();
+			RPCTypeWriter->Printf("type %s { // %s :: %s // %s" , *TypeStr, *ThisClass, *OwnerClass, *FunctionOuter);
+			RPCTypeWriter->Indent();
 
 			// Recurse into functions properties and build a complete transitive property list.
 			TArray<TSharedPtr<FUnrealProperty>> ParamList = GetFlatRPCParameters(RPC);
 
 			// RPC target sub-object offset.
-			RPCTypeWriter.Printf("uint32 target_subobject_offset = 1;");
+			RPCTypeWriter->Printf("uint32 target_subobject_offset = 1;");
 			FieldCounter = 1;
 			for (auto& Param : ParamList)
 			{
 				FieldCounter++;
-				RPCTypeWriter.Printf("%s %s = %d;",
+				RPCTypeWriter->Printf("%s %s = %d;",
 					*PropertyToSchemaType(Param->Property),
 					*SchemaFieldName(Param),
 					FieldCounter
 				);
 			}
-			RPCTypeWriter.Outdent().Print("}");
+			RPCTypeWriter->Outdent().Print("}");
 		}
 	}
 	Writer.PrintNewLine();
@@ -343,11 +349,15 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	// Save type owners to disk.
 	for (auto RPCTypeOwner : TypeOwners)
 	{
-		RPCTypeWriterMap.FindOrAdd(*RPCTypeOwner->Type->GetName());
-		FCodeWriter RPCTypeOwnerSchemaWriter = RPCTypeWriterMap[*RPCTypeOwner->Type->GetName()];
-		// Write the RPCs to the proper schema file.
-		FString RPCTypeOwnerSchemaFilename = FString::Printf(TEXT("Unreal%s"), *RPCTypeOwner->Type->GetName());
-		RPCTypeOwnerSchemaWriter.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *RPCTypeOwnerSchemaFilename));
+		// Don't overwrite
+		if (!RPCTypeOwner->Type->GetName().Equals(*TypeInfo->Type->GetName()))
+		{
+			RPCTypeWriterMap.FindOrAdd(*RPCTypeOwner->Type->GetName());
+			FCodeWriter RPCTypeOwnerSchemaWriter = RPCTypeWriterMap[*RPCTypeOwner->Type->GetName()];
+			// Write the RPCs to the proper schema file.
+			FString RPCTypeOwnerSchemaFilename = FString::Printf(TEXT("Unreal%s"), *RPCTypeOwner->Type->GetName());
+			RPCTypeOwnerSchemaWriter.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *RPCTypeOwnerSchemaFilename));
+		}
 	}
 
 
