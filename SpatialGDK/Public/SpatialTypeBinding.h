@@ -139,14 +139,14 @@ public:
 			{
 				Offset += Property->GetOffset_ForInternal();
 			}
-			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
+			UStructProperty* StructProperty = Cast<UStructProperty>(CurProperty);
 			if (StructProperty)
 			{
 				CurrentContainerType = StructProperty->Struct;
 			}
 			else
 			{
-				UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property);
+				UObjectProperty* ObjectProperty = Cast<UObjectProperty>(CurProperty);
 				if (ObjectProperty)
 				{
 					CurrentContainerType = ObjectProperty->PropertyClass;
