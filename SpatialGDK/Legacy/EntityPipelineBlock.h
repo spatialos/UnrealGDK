@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AddComponentOpWrapperBase.h"
+#include "CallbackDispatcher.h"
 #include "ScopedViewCallbacks.h"
 #include "UObject/NoExportTypes.h"
 
@@ -14,6 +14,7 @@ struct RemoveComponentOp;
 struct AuthorityChangeOp;
 }
 
+class UAddComponentOpWrapperBase;
 class UEntityPipeline;
 
 UCLASS(Abstract)
@@ -38,15 +39,12 @@ class SPATIALGDK_API UEntityPipelineBlock : public UObject
 								 const worker::AuthorityChangeOp& AuthChangeOp)
 		PURE_VIRTUAL(UEntityPipelineBlock::ChangeAuthority(), );
 
-	virtual void EnterCriticalSection() PURE_VIRTUAL(UEntityPipelineBlock::EnterCriticalSection(), );
-
-	virtual void LeaveCriticalSection() PURE_VIRTUAL(UEntityPipelineBlock::LeaveCriticalSection(), );
-
   protected:
 	UPROPERTY()
 	UEntityPipelineBlock* NextBlock;
 
 	virtual void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-							const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World)
+							const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
+							::UCallbackDispatcher* CallbackDispatcher)
 		PURE_VIRTUAL(UEntityPipelineBlock::ProcessOps(), );
 };
