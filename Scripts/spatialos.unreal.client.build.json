@@ -9,7 +9,7 @@
             "worker_package",
             "unpack",
             "--package_file",
-            "Game/Source/SpatialGDK/Scripts/spatialos_worker_packages.json"
+            "Game/Scripts/spatialos_worker_packages.json"
           ]
         },
         {
