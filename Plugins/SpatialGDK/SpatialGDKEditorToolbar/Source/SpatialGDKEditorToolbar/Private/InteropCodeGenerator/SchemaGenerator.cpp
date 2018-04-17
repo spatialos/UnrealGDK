@@ -159,7 +159,7 @@ void AppendName(FString& ClassDescription, UProperty* Property)
 	}
 }
 
-int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo)
+int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
 {
 	FComponentIdGenerator IdGenerator(ComponentId);
 
@@ -184,69 +184,11 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		for (auto& RepProp : RepData[Group])
 		{
 			FieldCounter++;
-			//auto OwnerClass = RepProp.Value->Property->GetOwnerClass();
-			//if (OwnerClass == NULL) {
-			//	ParentClassName = RepProp.Value->Property->GetOwnerStruct()->GetName();
-			//	//ParentClassName += FString::Printf(TEXT(" // %s"), *RepProp.Value->Property->GetOwnerStruct()->GetOwnerClass()->GetName());
-			//	auto Ref = RepProp.Value->ContainerType.Pin();
-			//	if (Ref.IsValid()){
-			//		ParentClassName += Ref->Type->GetOuter()->GetName();
-			//	}
-			//} else {
-			//	ParentClassName = OwnerClass->GetName();
-			//}
-
-			//// A node which represents an unreal type, such as ACharacter or UCharacterMovementComponent.
-			//struct FUnrealType
-			//{
-			//	UStruct* Type;
-			//	TMap<UProperty*, TSharedPtr<FUnrealProperty>> Properties;
-			//	TMap<UFunction*, TSharedPtr<FUnrealRPC>> RPCs;
-			//	TWeakPtr<FUnrealProperty> ParentProperty;
-			//};
-
-			//// A node which represents a single property or parameter in an RPC.
-			//struct FUnrealProperty
-			//{
-			//	UProperty* Property;
-			//	TSharedPtr<FUnrealType> Type; // Only set if strong reference to object/struct property.
-			//	TSharedPtr<FUnrealRepData> ReplicationData; // Only set if property is replicated.
-			//	TSharedPtr<FUnrealMigratableData> MigratableData; // Only set if property is migratable (and not replicated).
-			//	TWeakPtr<FUnrealType> ContainerType; // Not set if this property is an RPC parameter.
-			//};
-
-			// RepProp.Value == FUnrealProperty // The base property we are searching from.
-			// RepProp.Value->Type == FUnrealType // The type this property came from.
-			// RepProp.Value->Type->ParentProperty // The parent of this unreal type.
-
-			//AppendName();
-
-			//auto ParentProperty = RepProp.Value->Type->ParentProperty.Pin();
-			//while (ParentProperty.IsValid()) 
-			//{
-			//	auto OwnerClass = ParentProperty->Property->GetOwnerClass();
-			//	if (OwnerClass != NULL) {
-			//		ParentClassName += FString::Printf(TEXT(" // %s"), *OwnerClass->GetName());
-			//	}
-			//	else
-			//	{
-			//		ParentClassName += FString::Printf(TEXT(" // NULL"));
-			//	}
-			//	ParentProperty = ParentProperty->ContainerType.Pin()->ParentProperty.Pin();
-			//}
-
-			//auto OwnerClass = RepProp.Value->Property->GetOwnerClass();
-			//if (OwnerClass == NULL)
-			//{
-			//}
-
 			// while FUnrealProperty->Type->ParentProperty exists          then we need to get the name of this object.
 			// FUnrealProperty = FUnrealProperty->Type->ParentProperty     recurse intp parent
-
 			// Then we get the FUnrealProperty->Propetty->GetOuter()       // This should be where property variable 'lives'
 
 			FString ParentClassName = TEXT("");
-
 			auto ThisProp = RepProp.Value;
 			auto loop = true;
 			while (loop) {
@@ -268,10 +210,8 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 							loop = false;
 						}
 					}
-
 				}
 				else { // If we do not have an unreal type
-
 					if (ThisProp->ContainerType.Pin()->ParentProperty.Pin().IsValid()) // Check the ContainerType for a parent property.
 					{
 						ParentClassName += FString::Printf(TEXT(" %s ::"), *ThisProp->ContainerType.Pin()->Type->GetName());
@@ -279,7 +219,6 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 					} else {
 						loop = false;
 					}
-
 				}
 			}
 
@@ -318,39 +257,108 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	Writer.Outdent().Print("}");
 
 	// RPC components.
+	// JOSH: Here instead of adding each RPC as a type, we just import by type name.
+	// GetAllRPCsByType, we can edit this to just return the types of the RPCs which we are using.
+	// Will need a helper method to make the schema of the owner types. (e.g. CharacterMovementComponent)
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
+
+	// Get the Types of the RPCs we are using...
+	// Make a new file with the RPCs translated to schema-types...
+	// Save it...
+	// Add the type owners as imports to the schema we are generating.
+
+	// FCodeWriter OutputSchema;
+	// FString SchemaFilename = FString::Printf(TEXT("Unreal%s"), *Class->GetName());
+	// OutputSchema.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFilename));
+	
+	auto TypeOwners = MakeTypeOwnersOfRPCs(TypeInfo);
+
+	// Map writers to types.
+	// Add code generation steps to them.
+	// Print to disk
+	TMap<FString, FCodeWriter> RPCTypeWriterMap;
+
+	for (auto RPCTypeOwner : TypeOwners)
+	{
+		// Don't overwrite
+		if(!RPCTypeOwner->Type->GetName().Equals(*TypeInfo->Type->GetName()))
+		{
+			Writer.Printf("import \"improbable/unreal/Unreal%s.schema\";", *RPCTypeOwner->Type->GetName());
+			// Write the RPCs to the proper schema file.
+			//FString RPCTypeOwnerSchemaFilename = FString::Printf(TEXT("Unreal%s"), *RPCTypeOwner->Type->GetName());
+			//RPCTypeOwnerSchemaWriter.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *RPCTypeOwnerSchemaFilename
+			RPCTypeWriterMap.FindOrAdd(*RPCTypeOwner->Type->GetName());
+
+			FCodeWriter& RPCTypeOwnerSchemaWriter = RPCTypeWriterMap[*RPCTypeOwner->Type->GetName()];
+
+			RPCTypeOwnerSchemaWriter.Print(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package improbable.unreal;
+
+		import "improbable/vector3.schema";
+		import "improbable/unreal/core_types.schema";)""");
+			RPCTypeOwnerSchemaWriter.PrintNewLine();
+		}
+	}
+
 	for (auto Group : GetRPCTypes())
 	{
 		// Generate schema RPC command types
 		for (auto& RPC : RPCsByType[Group])
 		{
 			FString TypeStr = SchemaRPCRequestType(RPC->Function);
+			UE_LOG(LogTemp, Warning, TEXT("RPC Type Owner Found - %s ::  %s"), *RPC->CallerType->GetName(), *RPC->Function->GetName());
 
-			Writer.Printf("type %s {", *TypeStr);
-			// Add location of rpc here
-			//Writer.Printf("// class %s", );
+			// Get the type writer
+			FCodeWriter& RPCTypeWriter = Writer;
+			if (RPC->CallerType->GetName().Equals(*TypeInfo->Type->GetName())) {
+				RPCTypeWriter = Writer;
+			} else {
+				RPCTypeWriter = RPCTypeWriterMap[*RPC->CallerType->GetName()];
+			}
 
-			Writer.Indent();
+			FString ThisClass = RPC->CallerType->GetName();
+			FString OwnerClass = RPC->CallerType->GetOuter()->GetName();
+			FString FunctionOuter = RPC->Function->GetOuter()->GetName();
+
+			RPCTypeWriter.Printf("type %s { // %s :: %s // %s" , *TypeStr, *ThisClass, *OwnerClass, *FunctionOuter);
+			RPCTypeWriter.Indent();
 
 			// Recurse into functions properties and build a complete transitive property list.
 			TArray<TSharedPtr<FUnrealProperty>> ParamList = GetFlatRPCParameters(RPC);
 
-			// RPC target subobject offset.
-			Writer.Printf("uint32 target_subobject_offset = 1;");
+			// RPC target sub-object offset.
+			RPCTypeWriter.Printf("uint32 target_subobject_offset = 1;");
 			FieldCounter = 1;
 			for (auto& Param : ParamList)
 			{
 				FieldCounter++;
-				Writer.Printf("%s %s = %d;",
+				RPCTypeWriter.Printf("%s %s = %d;",
 					*PropertyToSchemaType(Param->Property),
 					*SchemaFieldName(Param),
 					FieldCounter
 				);
 			}
-			Writer.Outdent().Print("}");
+			RPCTypeWriter.Outdent().Print("}");
 		}
 	}
 	Writer.PrintNewLine();
+
+	// Save type owners to disk.
+	for (auto RPCTypeOwner : TypeOwners)
+	{
+		// Don't overwrite
+		if (!RPCTypeOwner->Type->GetName().Equals(*TypeInfo->Type->GetName()))
+		{
+			RPCTypeWriterMap.FindOrAdd(*RPCTypeOwner->Type->GetName());
+			FCodeWriter RPCTypeOwnerSchemaWriter = RPCTypeWriterMap[*RPCTypeOwner->Type->GetName()];
+			// Write the RPCs to the proper schema file.
+			FString RPCTypeOwnerSchemaFilename = FString::Printf(TEXT("Unreal%s"), *RPCTypeOwner->Type->GetName());
+			RPCTypeOwnerSchemaWriter.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *RPCTypeOwnerSchemaFilename));
+		}
+	}
+
 
 	for (auto Group : GetRPCTypes())
 	{

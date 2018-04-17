@@ -47,7 +47,9 @@ public:
 	void WriteToFile(const FString& Filename);
 	void Dump();
 
+	FString OutputSource; // Make a function to get this.
+
 private:
-	FString OutputSource;
+	
 	int Scope;
 };

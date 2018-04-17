@@ -549,6 +549,25 @@ TMap<uint16, TSharedPtr<FUnrealProperty>> GetFlatMigratableData(TSharedPtr<FUnre
 	return MigratableData;
 }
 
+TArray<TSharedPtr<FUnrealType>> MakeTypeOwnersOfRPCs(TSharedPtr<FUnrealType> TypeInfo)
+{
+	// GetRPCTypeOwners
+	TArray<TSharedPtr<FUnrealType>> RPCTypeOwners;
+	VisitAllObjects(TypeInfo, [&RPCTypeOwners](TSharedPtr<FUnrealType> Type)
+	{
+		for (auto& RPC : Type->RPCs)
+		{
+			RPCTypeOwners.AddUnique(Type);
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT(" Type Owner Found - %s ::  %s"), *Type->Type->GetName(), *RPC.Value->Function->GetName());
+		}
+		return true;
+	}, true);
+
+	// Make the files for them....
+
+	return RPCTypeOwners;
+}
+
 FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 {
 	FUnrealRPCsByType RPCsByType;
@@ -559,6 +578,7 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 		for (auto& RPC : Type->RPCs)
 		{
 			RPCsByType.FindOrAdd(RPC.Value->Type).Add(RPC.Value);
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT(" Type Owner Found - %s ::  %s"), *Type->Type->GetName(), *RPC.Value->Function->GetName());
 		}
 		return true;
 	}, true);

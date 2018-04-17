@@ -46,4 +46,4 @@ FString CPPCommandClassName(UFunction* Function);
 FString PropertyToSchemaType(UProperty* Property);
 
 // Generates a schema file, given an output code writer, component ID, Unreal type and type info.
-int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo);
+int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath);

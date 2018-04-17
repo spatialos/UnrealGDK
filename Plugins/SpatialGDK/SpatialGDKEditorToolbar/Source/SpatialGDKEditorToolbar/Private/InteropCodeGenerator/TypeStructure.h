@@ -148,6 +148,7 @@ struct FUnrealMigratableData
 using FUnrealFlatRepData = TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPtr<FUnrealProperty>>>;
 using FUnrealRPCsByType = TMap<ERPCType, TArray<TSharedPtr<FUnrealRPC>>>;
 
+
 // Given a UClass, returns either "AFoo" or "UFoo" depending on whether Foo is a subclass of actor.
 FString GetFullCPPName(UClass* Class);
 
@@ -166,6 +167,8 @@ TArray<ERPCType> GetRPCTypes();
 
 // Given a UFunction, determines the RPC type.
 ERPCType GetRPCTypeFromFunction(UFunction* Function);
+
+TArray<TSharedPtr<FUnrealType>> MakeTypeOwnersOfRPCs(TSharedPtr<FUnrealType> TypeInfo);
 
 // Converts an RPC type to string. Used to generate component names.
 FString GetRPCTypeName(ERPCType RPCType);
