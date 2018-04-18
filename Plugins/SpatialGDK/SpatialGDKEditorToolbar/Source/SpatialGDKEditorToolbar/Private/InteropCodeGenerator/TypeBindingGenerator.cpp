@@ -1553,6 +1553,15 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 		SourceWriter.Print("FFrame& Stack = *RPCFrame;");
 		for (TFieldIterator<UProperty> Param(RPC->Function); Param; ++Param)
 		{
+			// TODO: UNR-152
+			if (Param->IsA(UArrayProperty::StaticClass()))
+			{
+				FString ParamTypeName = GetFullCPPName((*Param)->GetClass());
+				FString ParamName = (*Param)->GetName();
+				SourceWriter.Printf("// UNSUPPORTED TArray parameters (%s %s)", *ParamTypeName, *ParamName);
+				continue;
+			}
+
 			SourceWriter.Print(*GenerateFFramePropertyReader(*Param));
 		}
 		SourceWriter.PrintNewLine();
@@ -1563,6 +1572,12 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 	CapturedArguments.Add(TEXT("TargetObject"));
 	for (TFieldIterator<UProperty> Param(RPC->Function); Param; ++Param)
 	{
+		// TODO: UNR-152
+		if (Param->IsA(UArrayProperty::StaticClass()))
+		{
+			continue;
+		}
+
 		CapturedArguments.Add((*Param)->GetName());
 	}
 	SourceWriter.Printf("auto Sender = [this, Connection, %s]() mutable -> FRPCCommandRequestResult", *FString::Join(CapturedArguments, TEXT(", ")));
@@ -1583,6 +1598,14 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 	TArray<TSharedPtr<FUnrealProperty>> RPCParameters = GetFlatRPCParameters(RPC);
 	for (auto Param : RPCParameters)
 	{
+		// TODO: UNR-152
+		if (Param->Property->IsA(UArrayProperty::StaticClass()))
+		{
+			FString ParamName = CPPFieldName(Param);
+			SourceWriter.Printf("// UNSUPPORTED TArray parameters (%s)", *ParamName);
+			continue;
+		}
+
 		FString SpatialValueSetter = TEXT("Request.set_") + SchemaFieldName(Param);
 
 		GenerateUnrealToSchemaConversion(
@@ -1674,9 +1697,20 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 		SourceWriter.Print("// Declare parameters.");
 		for (auto Param : RPC->Parameters)
 		{
-			FString PropertyValueCppType = Param.Value->Property->GetCPPType();
+			FString PropertyTemplateType;
+			FString PropertyValueCppType = Param.Value->Property->GetCPPType(&PropertyTemplateType);
 			FString PropertyValueName = Param.Value->Property->GetNameCPP();
-			SourceWriter.Printf("%s %s;", *PropertyValueCppType, *PropertyValueName);
+
+			// TODO: UNR-152 - this should be factored out to a utility function somewhere
+			if (Param.Value->Property->IsA(UArrayProperty::StaticClass()) && PropertyTemplateType.Len() > 0)
+			{
+				// Append the template type if it exists.
+				SourceWriter.Printf("%s%s %s;", *PropertyValueCppType, *PropertyTemplateType, *PropertyValueName);
+			}
+			else {
+				SourceWriter.Printf("%s %s;", *PropertyValueCppType, *PropertyValueName);
+			}
+
 			RPCParameters.Add(PropertyValueName);
 		}
 
@@ -1686,6 +1720,15 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 		
 		for (auto Param : GetFlatRPCParameters(RPC))
 		{
+			// TODO: UNR-152
+			if (Param->Property->IsA(UArrayProperty::StaticClass()))
+			{
+				FString PropertyValueCppType = Param->Property->GetCPPType();
+				FString PropertyValueName = Param->Property->GetNameCPP();
+				SourceWriter.Printf("// UNSUPPORTED TArray parameters (%s %s)", *PropertyValueCppType, *PropertyValueName);
+				continue;
+			}
+
 			FString SpatialValue = FString::Printf(TEXT("%s.%s()"), TEXT("Op.Request"), *SchemaFieldName(Param));
 
 			GeneratePropertyToUnrealConversion(

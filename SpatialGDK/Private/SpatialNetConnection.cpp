@@ -38,7 +38,7 @@ void USpatialNetConnection::InitRemoteConnection(UNetDriver* InDriver, class FSo
 
 }
 
-bool USpatialNetConnection::ClientHasInitializedLevelFor(const UObject* TestObject) const
+bool USpatialNetConnection::ClientHasInitializedLevelFor(const AActor* TestActor) const
 {
 	check(Driver->IsServer());
 	return true;
