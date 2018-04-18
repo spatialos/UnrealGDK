@@ -68,3 +68,7 @@ Build/*/**
 
 .spatialos/
 Plugins/SpatialOS
+
+# Don't ignore the legacy code generator
+!CodeGeneration/*.exe
+!CodeGeneration/*.dll
