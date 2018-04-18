@@ -19,8 +19,9 @@ public class SpatialGDK : ModuleRules
             new string[] 
             {
                 "SpatialGDK/Public",
-                "SpatialGDK/Public/WorkerSdk",
-                "SpatialGDK/Generated/Usr",
+                "SpatialGDK/WorkerSDK/worker_sdk/include",
+                "SpatialGDK/WorkerSDK/core_sdk/include",
+                "SpatialGDK/Generated/User",
                 "SpatialGDK/Generated/Std",
                 "SpatialGDK/Generated/UClasses",
                 "SpatialGDK/Legacy",
