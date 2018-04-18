@@ -125,8 +125,7 @@ FString PropertyToSchemaType(UProperty* Property)
 	}
 	else if (Property->IsA(UClassProperty::StaticClass()))
 	{
-		// we hash the static class paths
-		DataType = TEXT("uint32");
+		DataType = TEXT("uint32");	// Note: We hash the static class path names to UClass objects.
 	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{

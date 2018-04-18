@@ -236,8 +236,11 @@ uint32 FSpatialNetGUIDCache::GetHashFromStaticClass(const UClass* StaticClass) c
 
 UClass* FSpatialNetGUIDCache::GetStaticClassFromHash(uint32 Hash) const
 {
-	check(StaticClassPathHashMap.Contains(Hash));
-	return FindObject<UClass>(ANY_PACKAGE, *StaticClassPathHashMap[Hash]);
+	// This should never fail in production code, but might in development if the client and server are running versions 
+	// with inconsistent static class lists.
+	bool bContainsHash = StaticClassPathHashMap.Contains(Hash);
+	checkf(bContainsHash, TEXT("Failed to find static class for hash: %d"), Hash);
+	return bContainsHash ? StaticClassPathHashMap[Hash] : nullptr;
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(const UObject* Object)
@@ -312,11 +315,11 @@ void FSpatialNetGUIDCache::CreateStaticClassMapping()
 {
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
-		if (It->IsChildOf(UObject::StaticClass()) && !It->HasAnyClassFlags(CLASS_Abstract))
+		if (!It->HasAnyClassFlags(CLASS_Abstract))
 		{
 			uint32 PathHash = GetHashFromStaticClass(*It);
-			check(StaticClassPathHashMap.Contains(PathHash) == false);
-			StaticClassPathHashMap.Add(PathHash, It->GetPathName());
+			checkf(StaticClassPathHashMap.Contains(PathHash) == false, TEXT("Hash clash between %s and %s"), *It->GetPathName(), *StaticClassPathHashMap[PathHash]->GetPathName());
+			StaticClassPathHashMap.Add(PathHash, *It);
 		}
 	}
 
