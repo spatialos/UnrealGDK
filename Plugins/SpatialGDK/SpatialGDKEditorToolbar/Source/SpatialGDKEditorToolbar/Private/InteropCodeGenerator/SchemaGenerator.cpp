@@ -143,21 +143,6 @@ FString PropertyToSchemaType(UProperty* Property)
 
 	return DataType;
 }
-void AppendName(FString& ClassDescription, UProperty* Property)
-{
-	auto OwnerClass = Property->GetOwnerClass();
-	if (OwnerClass == NULL) {
-		ClassDescription += Property->GetOwnerStruct()->GetName();
-		//ParentClassName += FString::Printf(TEXT(" // %s"), *RepProp.Value->Property->GetOwnerStruct()->GetOwnerClass()->GetName());
-		//auto Ref = RepProp.Value->ContainerType.Pin();
-		//if (Ref.IsValid()) {
-		//	ClassDescription += Ref->Type->GetOuter()->GetName();
-		//}
-	}
-	else {
-		ClassDescription += OwnerClass->GetName();
-	}
-}
 
 int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
 {
