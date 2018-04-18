@@ -35,15 +35,6 @@
           "name": "core-dynamic-x86_64-win32"
         }
       ]
-    },
-    {
-      "path": "Game/Binaries/ThirdParty/Improbable/CodeGeneration",
-      "type": "unreal",
-      "packages": [
-        {
-          "name": "Improbable.Unreal.CodeGeneration"
-        }
-      ]
     }
   ]
 }
