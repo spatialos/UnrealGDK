@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "TypeStructure.h"
+#include "SpatialGDKEditorInteropCodeGenerator.h"
 
 FString GetFullCPPName(UClass* Class)
 {
@@ -246,7 +247,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		// TODO(David): Should we still be skipping this?
 		if (Property->IsA<UMulticastDelegateProperty>())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s - multicast delegate property, skipping"), *Property->GetName());
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - multicast delegate property, skipping"), *Property->GetName());
 			continue;
 		}
 
@@ -300,7 +301,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			// If this is an editor-only property, skip it. As we've already added to the property list at this stage, just remove it.
 			if (Value->IsEditorOnly())
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s - editor only, skipping"), *Property->GetName());
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - editor only, skipping"), *Property->GetName());
 				TypeNode->Properties.Remove(Property);
 				continue;
 			}
@@ -308,7 +309,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			// Check whether the owner of this value is the CDO itself.
 			if (Value->GetOuter() == ContainerCDO)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
 				// This property is definitely a strong reference, recurse into it.
 				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {});
@@ -317,13 +318,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			else
 			{
 				// The values outer is not us, store as weak reference.
-				UE_LOG(LogTemp, Warning, TEXT("%s - %s weak reference (outer not this)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - %s weak reference (outer not this)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
 			}
 		}
 		else
 		{
 			// If value is just nullptr, then we clearly don't own it.
-			UE_LOG(LogTemp, Warning, TEXT("%s - %s weak reference (null init)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - %s weak reference (null init)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
 		}
 	}
 
@@ -410,11 +411,6 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		if (Parent.Property == Cmd.Property)
 		{
 			PropertyNode = TypeNode->Properties[Cmd.Property];
-			if (Cmd.Type == REPCMD_DynamicArray)
-			{
-				CmdIndex += 2;  //For Arrays, the Cmd list generates a cmd for the array, a cmd for the inner property of the array, and a return cmd. This skips over the last two cmds.
-								// See FRepLayout::InitFromProperty_r for more information about how the Cmd's array is set up for Array properties.
-			}
 		}
 		else
 		{
@@ -450,6 +446,12 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			RepDataNode->RoleSwapHandle = -1;
 		}
 		PropertyNode->ReplicationData = RepDataNode;
+
+		if (Cmd.Type == REPCMD_DynamicArray)
+		{
+			// Bypass the inner properties and null terminator cmd when processing arrays.
+			CmdIndex = Cmd.EndCmd - 1;
+		}
 	}
 
 	// Process the migratable properties list.

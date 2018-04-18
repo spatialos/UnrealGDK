@@ -8,29 +8,34 @@
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 
+FString UnrealNameToSchemaTypeName(const FString& UnrealName)
+{
+	return UnrealName.Replace(TEXT("_"), TEXT(""));
+}
+
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type)
 {
-	return FString::Printf(TEXT("Unreal%s%sRepData"), *Type->GetName(), *GetReplicatedPropertyGroupName(Group));
+	return FString::Printf(TEXT("Unreal%s%sRepData"), *UnrealNameToSchemaTypeName(Type->GetName()), *GetReplicatedPropertyGroupName(Group));
 }
 
 FString SchemaMigratableDataName(UStruct* Type)
 {
-	return FString::Printf(TEXT("Unreal%sMigratableData"), *Type->GetName());
+	return FString::Printf(TEXT("Unreal%sMigratableData"), *UnrealNameToSchemaTypeName(Type->GetName()));
 }
 
 FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type)
 {
-	return FString::Printf(TEXT("Unreal%s%sRPCs"), *Type->GetName(), *GetRPCTypeName(RpcType));
+	return FString::Printf(TEXT("Unreal%s%sRPCs"), *UnrealNameToSchemaTypeName(Type->GetName()), *GetRPCTypeName(RpcType));
 }
 
 FString SchemaRPCRequestType(UFunction* Function)
 {
-	return FString::Printf(TEXT("Unreal%sRequest"), *Function->GetName());
+	return FString::Printf(TEXT("Unreal%sRequest"), *UnrealNameToSchemaTypeName(Function->GetName()));
 }
 
 FString SchemaRPCResponseType(UFunction* Function)
 {
-	return FString::Printf(TEXT("Unreal%sResponse"), *Function->GetName());
+	return FString::Printf(TEXT("Unreal%sResponse"), *UnrealNameToSchemaTypeName(Function->GetName()));
 }
 
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
@@ -38,7 +43,8 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 	// Transform the property chain into a chain of names.
 	TArray<FString> ChainNames;
 	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString {
-		return Property->Property->GetName().ToLower();
+		// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
+		return Property->Property->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
 	});
 
 	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
@@ -48,7 +54,8 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 
 FString SchemaCommandName(UFunction* Function)
 {
-	return Function->GetName().ToLower();
+	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
+	return Function->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
 }
 
 FString CPPCommandClassName(UFunction* Function)

@@ -1,0 +1,148 @@
+{
+  "tasks": [
+    {
+      "name": "Codegen",
+      "steps": [
+        {
+          "name": "Install dependencies",
+          "arguments": [
+            "worker_package",
+            "unpack",
+            "--package_file",
+            "Game/Scripts/spatialos_worker_packages.json"
+          ]
+        },
+        {
+          "name": "C++ standard library",
+          "arguments": [
+            "process_schema",
+            "generate",
+            "--cachePath=Game/Intermediate/Improbable/schema_codegen_cache_std",
+            "--output=Game/Source/SpatialGDK/Generated/Std",
+            "--language=cpp",
+            "--input=../../build/dependencies/schema/standard_library"
+          ]
+        },
+        {
+          "name": "C++ user code",
+          "arguments": [
+            "process_schema",
+            "generate",
+            "--cachePath=Game/Intermediate/Improbable/schema_codegen_cache_user",
+            "--output=Game/Source/SpatialGDK/Generated/User",
+            "--language=cpp",
+            "--input=../../schema",
+            "--input=../../generatedschema",
+            "--repository=../../build/dependencies/schema"
+          ]
+        },
+        {
+          "name": "Json AST standard library",
+          "arguments": [
+            "process_schema",
+            "generate",
+            "--cachePath=Game/Intermediate/Improbable/schema_codegen_cache_json_std",
+            "--output=Game/Intermediate/Improbable/json/std",
+            "--language=ast_json",
+            "--input=../../build/dependencies/schema/standard_library"
+          ]
+        },
+        {
+          "name": "Json AST user code",
+          "arguments": [
+            "process_schema",
+            "generate",
+            "--cachePath=Game/Intermediate/Improbable/schema_codegen_cache_json_user",
+            "--output=Game/Intermediate/Improbable/json/User",
+            "--language=ast_json",
+            "--input=../../schema",
+            "--repository=../../build/dependencies/schema"
+          ]
+        },
+        {
+          "name": "Unreal Code Generation",
+          "description": "Generates Unreal UActorComponents from the project schema.",
+          "command": "Game/Binaries/ThirdParty/Improbable/CodeGeneration/UnrealCodeGenerator.exe",
+          "arguments": [
+            "--json-dir=Game/Intermediate/Improbable/json",
+            "--output-dir=Game/Source/SpatialGDK/Generated/UClasses"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Build",
+      "steps": [
+        {
+          "name": "Codegen",
+          "arguments": [
+            "invoke-task",
+            "Codegen"
+          ]
+        },
+        {
+          "name": "Win64 Editor (Local)",
+          "target": "Local",
+          "arguments": [
+            "invoke",
+            "unreal",
+            "build",
+            "--target=Editor",
+            "--configuration=Development",
+            "--platform=Win64"
+          ]
+        },
+        {
+          "name": "Win64 Editor (Cloud)",
+          "target": "Cloud",
+          "arguments": [
+            "invoke",
+            "unreal",
+            "build",
+            "--target=Editor",
+            "--configuration=Development",
+            "--platform=Win64"
+          ]
+        },
+        {
+          "name": "Linux Server",
+          "target": "Cloud",
+          "arguments": [
+            "invoke",
+            "unreal",
+            "build",
+            "--target=Server",
+            "--configuration=Development",
+            "--platform=Linux"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Clean",
+      "steps": [
+        {
+          "name": "Generated code cache",
+          "arguments": [
+            "process_schema",
+            "clean",
+            "Game/Intermediate/Improbable/json",
+            "Game/Intermediate/Improbable/schema_codegen_cache_std",
+            "Game/Intermediate/Improbable/schema_codegen_cache_user",
+            "Game/Intermediate/Improbable/schema_codegen_cache_json_std",
+            "Game/Intermediate/Improbable/schema_codegen_cache_json_user"
+          ]
+        },
+        {
+          "name": "Dependencies and generated code",
+          "arguments": [
+            "worker_package",
+            "clean",
+            "--package_file",
+            "Game/Intermediate/Improbable/spatialos_worker_packages.json"
+          ]
+        }
+      ]
+    }
+  ]
+}
