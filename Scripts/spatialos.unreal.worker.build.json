@@ -28,24 +28,12 @@
           "arguments": [
             "process_schema",
             "generate",
-            "--cachePath=Game/Intermediate/Improbable/schema_codegen_cache_usr",
-            "--output=Game/Source/SpatialGDK/Generated/Usr",
+            "--cachePath=Game/Intermediate/Improbable/schema_codegen_cache_user",
+            "--output=Game/Source/SpatialGDK/Generated/User",
             "--language=cpp",
             "--input=../../schema",
-            "--repository=../../build/dependencies/schema"
-          ]
-        },
-        {
-          "name": "C++ generated schemas code",
-          "arguments": [
-            "process_schema",
-            "generate",
-            "--cachePath=Game/Intermediate/Improbable/schema_codegen_cache_usr",
-            "--output=Game/Source/SpatialGDK/Generated/Usr",
-            "--language=cpp",
             "--input=../../generatedschema",
-            "--repository=../../build/dependencies/schema",
-            "--dependency=../../schema/"
+            "--repository=../../build/dependencies/schema"
           ]
         },
         {
@@ -64,8 +52,8 @@
           "arguments": [
             "process_schema",
             "generate",
-            "--cachePath=Game/Intermediate/Improbable/schema_codegen_cache_json_usr",
-            "--output=Game/Intermediate/Improbable/json/usr",
+            "--cachePath=Game/Intermediate/Improbable/schema_codegen_cache_json_user",
+            "--output=Game/Intermediate/Improbable/json/User",
             "--language=ast_json",
             "--input=../../schema",
             "--repository=../../build/dependencies/schema"
@@ -140,9 +128,9 @@
             "clean",
             "Game/Intermediate/Improbable/json",
             "Game/Intermediate/Improbable/schema_codegen_cache_std",
-            "Game/Intermediate/Improbable/schema_codegen_cache_usr",
+            "Game/Intermediate/Improbable/schema_codegen_cache_user",
             "Game/Intermediate/Improbable/schema_codegen_cache_json_std",
-            "Game/Intermediate/Improbable/schema_codegen_cache_json_usr"
+            "Game/Intermediate/Improbable/schema_codegen_cache_json_user"
           ]
         },
         {

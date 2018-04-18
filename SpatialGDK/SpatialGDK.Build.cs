@@ -21,7 +21,7 @@ public class SpatialGDK : ModuleRules
                 "SpatialGDK/Public",
                 "SpatialGDK/WorkerSDK/worker_sdk/include",
                 "SpatialGDK/WorkerSDK/core_sdk/include",
-                "SpatialGDK/Generated/Usr",
+                "SpatialGDK/Generated/User",
                 "SpatialGDK/Generated/Std",
                 "SpatialGDK/Generated/UClasses",
                 "SpatialGDK/Legacy",
