@@ -1554,7 +1554,8 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 		for (TFieldIterator<UProperty> Param(RPC->Function); Param; ++Param)
 		{
 			// TODO: UNR-152
-			if (Param->IsA(UArrayProperty::StaticClass())) {
+			if (Param->IsA(UArrayProperty::StaticClass()))
+			{
 				FString ParamTypeName = GetFullCPPName((*Param)->GetClass());
 				FString ParamName = (*Param)->GetName();
 				SourceWriter.Printf("// UNSUPPORTED TArray parameters (%s %s)", *ParamTypeName, *ParamName);
@@ -1572,7 +1573,10 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 	for (TFieldIterator<UProperty> Param(RPC->Function); Param; ++Param)
 	{
 		// TODO: UNR-152
-		if (Param->IsA(UArrayProperty::StaticClass())) continue;
+		if (Param->IsA(UArrayProperty::StaticClass()))
+		{
+			continue;
+		}
 
 		CapturedArguments.Add((*Param)->GetName());
 	}
@@ -1595,7 +1599,8 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 	for (auto Param : RPCParameters)
 	{
 		// TODO: UNR-152
-		if (Param->Property->IsA(UArrayProperty::StaticClass())) {
+		if (Param->Property->IsA(UArrayProperty::StaticClass()))
+		{
 			FString ParamName = CPPFieldName(Param);
 			SourceWriter.Printf("// UNSUPPORTED TArray parameters (%s)", *ParamName);
 			continue;
