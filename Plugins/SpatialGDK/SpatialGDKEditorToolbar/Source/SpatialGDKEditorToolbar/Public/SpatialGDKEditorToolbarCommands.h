@@ -21,4 +21,5 @@ class FSpatialGDKEditorToolbarCommands : public TCommands<FSpatialGDKEditorToolb
 
   public:
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSnapshot;
+	TSharedPtr<FUICommandInfo> GenerateInteropCode;
 };
