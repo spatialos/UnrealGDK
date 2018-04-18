@@ -35,6 +35,12 @@ public:
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 
 	void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);
+
+	uint32 GetHashFromStaticClass(const UClass* StaticClass) const;
+	UClass* GetStaticClassFromHash(uint32 Hash) const;
+
+private:
+
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
@@ -51,12 +57,18 @@ public:
 
 	void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);
 
+	uint32 GetHashFromStaticClass(const UClass* StaticClass) const;
+	UClass* GetStaticClassFromHash(uint32 Hash) const;
+
 private:
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(const UObject* Object);
 	void RegisterObjectRef(FNetworkGUID NetGUID, const improbable::unreal::UnrealObjectRef& ObjectRef);
 	FNetworkGUID AssignStaticActorNetGUID(const UObject* Object, const FNetworkGUID& StaticNetGUID);
 
+	void CreateStaticClassMapping();
+
 	TMap<FNetworkGUID, FHashableUnrealObjectRef> NetGUIDToUnrealObjectRef;
 	TMap<FHashableUnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
+	TMap<uint32, UClass*> StaticClassHashMap;
 };
 

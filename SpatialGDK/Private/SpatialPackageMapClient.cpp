@@ -82,9 +82,22 @@ void USpatialPackageMapClient::RegisterStaticObjects(const improbable::unreal::U
 	SpatialGuidCache->RegisterStaticObjects(LevelData);
 }
 
+uint32 USpatialPackageMapClient::GetHashFromStaticClass(const UClass* StaticClass) const
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	return SpatialGuidCache->GetHashFromStaticClass(StaticClass);
+}
+
+UClass* USpatialPackageMapClient::GetStaticClassFromHash(uint32 Hash) const
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	return SpatialGuidCache->GetStaticClassFromHash(Hash);
+}
+
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 	: FNetGUIDCache(InDriver)
 {
+	CreateStaticClassMapping();
 }
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, const ::worker::Map< std::string, std::uint32_t >& SubobjectToOffset)
@@ -216,6 +229,20 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 	}
 }
 
+uint32 FSpatialNetGUIDCache::GetHashFromStaticClass(const UClass* StaticClass) const
+{
+	return GetTypeHash(*StaticClass->GetPathName());
+}
+
+UClass* FSpatialNetGUIDCache::GetStaticClassFromHash(uint32 Hash) const
+{
+	// This should never fail in production code, but might in development if the client and server are running versions 
+	// with inconsistent static class lists.
+	bool bContainsHash = StaticClassHashMap.Contains(Hash);
+	checkf(bContainsHash, TEXT("Failed to find static class for hash: %d"), Hash);
+	return bContainsHash ? StaticClassHashMap[Hash] : nullptr;
+}
+
 FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(const UObject* Object)
 {
 	FNetworkGUID NetGUID = GetOrAssignNetGUID(Object);
@@ -282,4 +309,19 @@ FNetworkGUID FSpatialNetGUIDCache::AssignStaticActorNetGUID(const UObject* Objec
 		*ObjectRefToString(ObjectRef));
 
 	return StaticNetGUID;
+}
+
+void FSpatialNetGUIDCache::CreateStaticClassMapping()
+{
+	for (TObjectIterator<UClass> It; It; ++It)
+	{
+		if (!It->HasAnyClassFlags(CLASS_Abstract))
+		{
+			uint32 PathHash = GetHashFromStaticClass(*It);
+			checkf(StaticClassHashMap.Contains(PathHash) == false, TEXT("Hash clash between %s and %s"), *It->GetPathName(), *StaticClassHashMap[PathHash]->GetPathName());
+			StaticClassHashMap.Add(PathHash, *It);
+		}
+	}
+
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered %d static classes to the class hashmap"), StaticClassHashMap.Num());
 }

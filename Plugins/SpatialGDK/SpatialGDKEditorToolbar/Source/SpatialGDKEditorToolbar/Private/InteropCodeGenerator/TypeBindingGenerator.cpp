@@ -176,9 +176,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	}
 	else if (Property->IsA(UClassProperty::StaticClass()))
 	{
-		// todo David: UClasses are yet to be implemented. 
-		// this is above UObjectProperty to make sure it isn't caught there.
-		Writer.Printf("// UNSUPPORTED UClassProperty %s(%s);", *Update, *PropertyValue);
+		Writer.Printf("%s(PackageMap->GetHashFromStaticClass(%s));", *Update, *PropertyValue);
 	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
@@ -328,9 +326,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	}
 	else if (Property->IsA(UClassProperty::StaticClass()))
 	{
-		// todo David: UClasses are yet to be implemented. 
-		// this is above UObjectProperty to make sure it isn't caught there.
-		Writer.Printf("// UNSUPPORTED UClassProperty %s %s", *PropertyValue, *Update);
+		Writer.Printf("%s = PackageMap->GetStaticClassFromHash(%s);", *PropertyValue, *Update);
 	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
