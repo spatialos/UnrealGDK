@@ -238,9 +238,9 @@ UClass* FSpatialNetGUIDCache::GetStaticClassFromHash(uint32 Hash) const
 {
 	// This should never fail in production code, but might in development if the client and server are running versions 
 	// with inconsistent static class lists.
-	bool bContainsHash = StaticClassPathHashMap.Contains(Hash);
+	bool bContainsHash = StaticClassHashMap.Contains(Hash);
 	checkf(bContainsHash, TEXT("Failed to find static class for hash: %d"), Hash);
-	return bContainsHash ? StaticClassPathHashMap[Hash] : nullptr;
+	return bContainsHash ? StaticClassHashMap[Hash] : nullptr;
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(const UObject* Object)
@@ -318,10 +318,10 @@ void FSpatialNetGUIDCache::CreateStaticClassMapping()
 		if (!It->HasAnyClassFlags(CLASS_Abstract))
 		{
 			uint32 PathHash = GetHashFromStaticClass(*It);
-			checkf(StaticClassPathHashMap.Contains(PathHash) == false, TEXT("Hash clash between %s and %s"), *It->GetPathName(), *StaticClassPathHashMap[PathHash]->GetPathName());
-			StaticClassPathHashMap.Add(PathHash, *It);
+			checkf(StaticClassHashMap.Contains(PathHash) == false, TEXT("Hash clash between %s and %s"), *It->GetPathName(), *StaticClassHashMap[PathHash]->GetPathName());
+			StaticClassHashMap.Add(PathHash, *It);
 		}
 	}
 
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered %d static classes to the class hashmap"), StaticClassPathHashMap.Num());
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered %d static classes to the class hashmap"), StaticClassHashMap.Num());
 }

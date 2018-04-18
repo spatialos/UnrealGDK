@@ -69,6 +69,6 @@ private:
 
 	TMap<FNetworkGUID, FHashableUnrealObjectRef> NetGUIDToUnrealObjectRef;
 	TMap<FHashableUnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
-	TMap<uint32, UClass*> StaticClassPathHashMap;
+	TMap<uint32, UClass*> StaticClassHashMap;
 };
 
