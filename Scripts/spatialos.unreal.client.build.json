@@ -67,6 +67,14 @@
             "--json-dir=Game/Intermediate/Improbable/json",
             "--output-dir=Game/Source/SpatialGDK/Generated/UClasses"
           ]
+        },
+        {
+          "name": "Patch generated code",
+          "description": "Post processing the legace generated code.",
+          "command": "bash",
+          "arguments": [
+            "Game/Scripts/patch_sdk_code_gen.sh"
+          ]
         }
       ]
     },
