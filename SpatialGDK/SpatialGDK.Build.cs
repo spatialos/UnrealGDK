@@ -38,7 +38,8 @@ public class SpatialGDK : ModuleRules
                 "InputCore"
             });
 
-		if (UEBuildConfiguration.bBuildEditor == true)
+		// Check if we're building in the editor.
+		if (Target.bBuildEditor)
 		{
 			// Required by USpatialGameInstance::StartPlayInEditorGameInstance.
 			PublicDependencyModuleNames.Add("UnrealEd");
