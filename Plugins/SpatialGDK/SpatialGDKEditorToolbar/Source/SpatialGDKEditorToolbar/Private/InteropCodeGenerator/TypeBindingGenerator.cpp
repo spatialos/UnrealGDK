@@ -145,9 +145,9 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		{
 			Writer.Printf("%s(improbable::unreal::UnrealFPlane(%s.X, %s.Y, %s.Z, %s.W));", *Update, *PropertyValue, *PropertyValue, *PropertyValue, *PropertyValue);
 		}
-		else if (Struct->StructFlags & STRUCT_NetSerializeNative)
+		else
 		{
-			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
+			// A generic struct, RepMovement or UniqueNetIdRepl needs to be replicated using NetSerialize.
 			Writer.BeginScope();
 			Writer.Printf(R"""(
 				TArray<uint8> ValueData;
@@ -156,15 +156,6 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 				%s.NetSerialize(ValueDataWriter, PackageMap, Success);
 				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *PropertyValue, *Update);
 			Writer.End();
-		}
-		else
-		{
-			// We do a basic binary serialization for the generic struct.
-			Writer.Printf(R"""(
-				TArray<uint8> ValueData;
-				FMemoryWriter ValueDataWriter(ValueData);
-				%s::StaticStruct()->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&Value[i])));
-				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *Property->GetCPPType(), *Property->GetCPPType(), *Update);
 		}
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
@@ -302,9 +293,9 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 			Writer.Printf("%s.W = Plane.w();", *PropertyValue);
 			Writer.Outdent().Print("}");
 		}
-		else if (Struct->StructFlags & STRUCT_NetSerializeNative)
+		else
 		{
-			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
+			// A generic struct, RepMovement or UniqueNetIdRepl needs to be replicated using NetSerialize.
 			Writer.BeginScope();
 			Writer.Print(FString::Printf(TEXT(R"""(
 				auto& ValueDataStr = %s;
@@ -314,15 +305,6 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 				bool bSuccess;
 				%s.NetSerialize(ValueDataReader, PackageMap, bSuccess);)"""), *Update, *PropertyValue));
 			Writer.End();
-		}
-		else
-		{
-			Writer.Print(FString::Printf(TEXT(R"""(
-				auto& ValueDataStr = %s;
-				TArray<uint8> ValueData;
-				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
-				FMemoryReader ValueDataReader(ValueData);
-				%s::StaticStruct()->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&Value[i]));)"""), *Update, *PropertyType));
 		}
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
