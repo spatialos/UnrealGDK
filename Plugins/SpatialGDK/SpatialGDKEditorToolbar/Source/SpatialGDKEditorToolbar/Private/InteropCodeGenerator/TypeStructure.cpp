@@ -549,9 +549,9 @@ TMap<uint16, TSharedPtr<FUnrealProperty>> GetFlatMigratableData(TSharedPtr<FUnre
 	return MigratableData;
 }
 
-TArray<FString> MakeTypeOwnersOfRPCs(TSharedPtr<FUnrealType> TypeInfo)
+// Goes through all RPCs in the TypeInfo and returns a list of all the unique RPC source classes.
+TArray<FString> GetRPCTypeOwners(TSharedPtr<FUnrealType> TypeInfo)
 {
-	// GetRPCTypeOwners
 	TArray<FString> RPCTypeOwners;
 	VisitAllObjects(TypeInfo, [&RPCTypeOwners](TSharedPtr<FUnrealType> Type)
 	{
@@ -563,9 +563,6 @@ TArray<FString> MakeTypeOwnersOfRPCs(TSharedPtr<FUnrealType> TypeInfo)
 		}
 		return true;
 	}, true);
-
-	// Make the files for them....
-
 	return RPCTypeOwners;
 }
 
