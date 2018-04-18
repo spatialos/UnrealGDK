@@ -43,6 +43,7 @@ class FSpatialGDKEditorToolbarModule : public IModuleInterface, public FTickable
 	void AddMenuExtension(FMenuBuilder& Builder);
 
 	void CreateSnapshotButtonClicked();
+	void GenerateInteropCodeButtonClicked();
 
   private:
 	TSharedPtr<FUICommandList> PluginCommands;

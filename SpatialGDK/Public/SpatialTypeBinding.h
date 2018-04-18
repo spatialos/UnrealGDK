@@ -75,9 +75,9 @@ class FRepHandleData
 		for (FName PropertyName : PropertyNames)
 		{
 			checkf(CurrentContainerType, TEXT("A property in the chain (except the end) is not a container."));
-			UProperty* Property = CurrentContainerType->FindPropertyByName(PropertyName);
-			PropertyChain.Add(Property);
-			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
+			UProperty* CurProperty = CurrentContainerType->FindPropertyByName(PropertyName);
+			PropertyChain.Add(CurProperty);
+			UStructProperty* StructProperty = Cast<UStructProperty>(CurProperty);
 			if (StructProperty)
 			{
 				CurrentContainerType = StructProperty->Struct;
@@ -90,9 +90,9 @@ class FRepHandleData
 		Property = PropertyChain[PropertyChain.Num() - 1];
 
 		// Calculate offset by summing the offsets of each property in the chain.
-		for (UProperty* Property : PropertyChain)
+		for (UProperty* CurProperty : PropertyChain)
 		{
-			Offset += Property->GetOffset_ForInternal();
+			Offset += CurProperty->GetOffset_ForInternal();
 		}
 	}
 
@@ -128,21 +128,21 @@ class FMigratableHandleData
 		for (FName PropertyName : PropertyNames)
 		{
 			checkf(CurrentContainerType, TEXT("A property in the chain (except the end) is not a container."));
-			UProperty* Property = CurrentContainerType->FindPropertyByName(PropertyName);
-			check(Property);
-			PropertyChain.Add(Property);
+			UProperty* CurProperty = CurrentContainerType->FindPropertyByName(PropertyName);
+			check(CurProperty);
+			PropertyChain.Add(CurProperty);
 			if (!SubobjectProperty)
 			{
-				Offset += Property->GetOffset_ForInternal();
+				Offset += CurProperty->GetOffset_ForInternal();
 			}
-			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
+			UStructProperty* StructProperty = Cast<UStructProperty>(CurProperty);
 			if (StructProperty)
 			{
 				CurrentContainerType = StructProperty->Struct;
 			}
 			else
 			{
-				UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property);
+				UObjectProperty* ObjectProperty = Cast<UObjectProperty>(CurProperty);
 				if (ObjectProperty)
 				{
 					CurrentContainerType = ObjectProperty->PropertyClass;
