@@ -1696,8 +1696,10 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 			FString PropertyValueCppType = Param.Value->Property->GetCPPType(&PropertyTemplateType);
 			FString PropertyValueName = Param.Value->Property->GetNameCPP();
 
-			// TODO: UNR-152
-			if (PropertyTemplateType.Len() > 0) {
+			// TODO: UNR-152 - this should be factored out to a utility function somewhere
+			if (Param.Value->Property->IsA(UArrayProperty::StaticClass()) && PropertyTemplateType.Len() > 0)
+			{
+				// Append the template type if it exists.
 				SourceWriter.Printf("%s%s %s;", *PropertyValueCppType, *PropertyTemplateType, *PropertyValueName);
 			}
 			else {
@@ -1714,9 +1716,10 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 		for (auto Param : GetFlatRPCParameters(RPC))
 		{
 			// TODO: UNR-152
-			FString PropertyValueCppType = Param->Property->GetCPPType();
-			FString PropertyValueName = Param->Property->GetNameCPP();
-			if (PropertyValueCppType.Equals(FString("TArray"))) {
+			if (Param->Property->IsA(UArrayProperty::StaticClass()))
+			{
+				FString PropertyValueCppType = Param->Property->GetCPPType();
+				FString PropertyValueName = Param->Property->GetNameCPP();
 				SourceWriter.Printf("// UNSUPPORTED TArray parameters (%s %s)", *PropertyValueCppType, *PropertyValueName);
 				continue;
 			}
