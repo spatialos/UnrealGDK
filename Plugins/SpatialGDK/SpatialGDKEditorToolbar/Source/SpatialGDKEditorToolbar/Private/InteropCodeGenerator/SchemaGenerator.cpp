@@ -271,7 +271,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	// FString SchemaFilename = FString::Printf(TEXT("Unreal%s"), *Class->GetName());
 	// OutputSchema.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFilename));
 	
-	auto TypeOwners = MakeTypeOwnersOfRPCs(TypeInfo);
+	TArray<FString> TypeOwners = MakeTypeOwnersOfRPCs(TypeInfo);
 
 	// Map writers to types.
 	// Add code generation steps to them.
@@ -281,15 +281,15 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	for (auto RPCTypeOwner : TypeOwners)
 	{
 		// Don't overwrite
-		if(!RPCTypeOwner->Type->GetName().Equals(*TypeInfo->Type->GetName()))
+		if(!RPCTypeOwner.Equals(*TypeInfo->Type->GetName()))
 		{
-			Writer.Printf("import \"improbable/unreal/generated/Unreal%s.schema\";", *RPCTypeOwner->Type->GetName());
+			Writer.Printf("import \"improbable/unreal/generated/Unreal%s.schema\";", *RPCTypeOwner);
 			// Write the RPCs to the proper schema file.
 			//FString RPCTypeOwnerSchemaFilename = FString::Printf(TEXT("Unreal%s"), *RPCTypeOwner->Type->GetName());
 			//RPCTypeOwnerSchemaWriter.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *RPCTypeOwnerSchemaFilename
-			RPCTypeWriterMap.FindOrAdd(*RPCTypeOwner->Type->GetName());
+			RPCTypeWriterMap.FindOrAdd(*RPCTypeOwner);
 
-			FCodeWriter& RPCTypeOwnerSchemaWriter = RPCTypeWriterMap[*RPCTypeOwner->Type->GetName()];
+			FCodeWriter& RPCTypeOwnerSchemaWriter = RPCTypeWriterMap[*RPCTypeOwner];
 
 			RPCTypeOwnerSchemaWriter.Print(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -312,11 +312,12 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 			// Get the type writer
 			FCodeWriter* RPCTypeWriter = &Writer;
-			if (RPC->CallerType->GetName().Equals(*TypeInfo->Type->GetName())) {
-				UE_LOG(LogTemp, Warning, TEXT("Original owner Found - %s ::  %s"), *RPC->CallerType->GetName(), *RPC->Function->GetName());
+			FString RPCOwnerName = *RPC->Function->GetOuter()->GetName();
+			if (RPC->Function->GetOuter()->GetName().Equals(*TypeInfo->Type->GetName())) {
+				UE_LOG(LogTemp, Warning, TEXT("Original owner Found - %s ::  %s"), *RPC->Function->GetOuter()->GetName(), *RPC->Function->GetName());
 			} else {
-				RPCTypeWriter = &RPCTypeWriterMap[*RPC->CallerType->GetName()];
-				UE_LOG(LogTemp, Warning, TEXT("Type owner Found - %s ::  %s"), *RPC->CallerType->GetName(), *RPC->Function->GetName());
+				RPCTypeWriter = &RPCTypeWriterMap[*RPC->Function->GetOuter()->GetName()];
+				UE_LOG(LogTemp, Warning, TEXT("Type owner Found - %s ::  %s"), *RPC->Function->GetOuter()->GetName(), *RPC->Function->GetName());
 			}
 
 			FString ThisClass = RPC->CallerType->GetName();
@@ -350,12 +351,12 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	for (auto RPCTypeOwner : TypeOwners)
 	{
 		// Don't overwrite
-		if (!RPCTypeOwner->Type->GetName().Equals(*TypeInfo->Type->GetName()))
+		if (!RPCTypeOwner.Equals(*TypeInfo->Type->GetName()))
 		{
-			RPCTypeWriterMap.FindOrAdd(*RPCTypeOwner->Type->GetName());
-			FCodeWriter RPCTypeOwnerSchemaWriter = RPCTypeWriterMap[*RPCTypeOwner->Type->GetName()];
+			RPCTypeWriterMap.FindOrAdd(*RPCTypeOwner);
+			FCodeWriter RPCTypeOwnerSchemaWriter = RPCTypeWriterMap[*RPCTypeOwner];
 			// Write the RPCs to the proper schema file.
-			FString RPCTypeOwnerSchemaFilename = FString::Printf(TEXT("Unreal%s"), *RPCTypeOwner->Type->GetName());
+			FString RPCTypeOwnerSchemaFilename = FString::Printf(TEXT("Unreal%s"), *RPCTypeOwner);
 			RPCTypeOwnerSchemaWriter.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *RPCTypeOwnerSchemaFilename));
 		}
 	}

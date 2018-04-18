@@ -115,7 +115,7 @@ void SpatialGDKGenerateInteropCode()
 	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *AbsoluteCombinedSchemaPath, *AbsoluteCombinedForwardingCodePath);
 
 	// Hard coded class information.
-	TArray<FString> Classes = {"PlayerController", "PlayerState", "Character", "WheeledVehicle", "SampleGameCharacter"};
+	TArray<FString> Classes = {"PlayerController", "PlayerState", "WheeledVehicle", "SampleGameCharacter"};
 	TMap<FString, TArray<TArray<FName>>> MigratableProperties;
 	MigratableProperties.Add("PlayerController", {
 		{"AcknowledgedPawn"}
