@@ -82,7 +82,7 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 
 int32 UGenerateInteropCodeCommandlet::Main(const FString& Params)
 {
-	FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../generatedschema/improbable/unreal/generated/"));
+	FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../generatedschema/improbable/unreal/"));
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/SampleGame/Generated/"));
 	UE_LOG(LogTemp, Display, TEXT("Schema path %s - Forwarding code path %s"), *CombinedSchemaPath, *CombinedForwardingCodePath);
 
