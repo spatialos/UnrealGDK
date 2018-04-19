@@ -172,11 +172,10 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 			FString ParentClassName = TEXT("");
 
-			// This loop will add the owner class of each field in the component.
-			// TODO: Delete this when InteropCodegen is in a more complete state.
+			// This loop will add the owner class of each field in the component. Meant for short-term debugging only.
+			// TODO UNR-166: Delete this when InteropCodegen is in a more complete state.
 			auto ThisProp = RepProp.Value;
-			auto loop = true;
-			while (loop) {
+			while (true) {
 				if (ThisProp->Type.IsValid()) // If we have a defined unreal type
 				{
 					if (ThisProp->Type->ParentProperty.IsValid()) // If we have a parent property, this should be the 'truth'
@@ -189,8 +188,9 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 						{
 							ThisProp = ThisProp->ContainerType.Pin()->ParentProperty.Pin();
 						}
-						else {
-							loop = false;
+						else 
+						{
+							break;
 						}
 					}
 				}
@@ -199,14 +199,15 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 					{
 						ParentClassName += FString::Printf(TEXT(" %s ::"), *ThisProp->ContainerType.Pin()->Type->GetName());
 						ThisProp = ThisProp->ContainerType.Pin()->ParentProperty.Pin();
-					} else {
-						loop = false;
+					} else 
+					{
+						break;
 					}
 				}
 			}
 
 			auto MaybeTheOwner = ThisProp->Property->GetOuter();
-			if(MaybeTheOwner != nullptr)
+			if (MaybeTheOwner != nullptr)
 			{
 				ParentClassName += FString::Printf(TEXT(" %s"), *MaybeTheOwner->GetName());
 			}
@@ -267,7 +268,8 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			// Get the correct code writer for this RPC.
 			FCodeWriter* RPCTypeOwnerSchemaWriter = &Writer;
 			FString RPCOwnerName = *RPC->Function->GetOuter()->GetName();
-			if (!RPCOwnerName.Equals(*TypeInfo->Type->GetName())) {
+			if (!RPCOwnerName.Equals(*TypeInfo->Type->GetName())) 
+			{
 				RPCTypeOwnerSchemaWriter = &RPCTypeCodeWriterMap[*RPCOwnerName];
 			}
 

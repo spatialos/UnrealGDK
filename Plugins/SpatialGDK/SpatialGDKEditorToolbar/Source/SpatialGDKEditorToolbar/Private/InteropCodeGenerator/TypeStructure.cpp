@@ -461,12 +461,11 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		TSharedPtr<FUnrealType> CurrentTypeNode = TypeNode;
 		for (FName PropertyName : PropertyNames)
 		{
-			checkf(CurrentTypeNode.IsValid(), TEXT("A property in the chain (except the leaf) is not a struct property."))
+			checkf(CurrentTypeNode.IsValid(), TEXT("A property in the chain (except the leaf) is not a struct property."));
 			UProperty* NextProperty = CurrentTypeNode->Type->FindPropertyByName(PropertyName);
 			checkf(NextProperty, TEXT("Cannot find property %s in container %s"), *PropertyName.ToString(), *CurrentTypeNode->Type->GetName());
 			MigratableProperty = CurrentTypeNode->Properties.FindChecked(NextProperty);
 			CurrentTypeNode = MigratableProperty->Type;
-			
 		}
 
 		// Create migratable data.
@@ -543,7 +542,7 @@ TArray<FString> GetRPCTypeOwners(TSharedPtr<FUnrealType> TypeInfo)
 		{
 			FString RPCOwnerName = *RPC.Value->Function->GetOuter()->GetName();
 			RPCTypeOwners.AddUnique(RPCOwnerName);
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT(" Type Owner Found - %s ::  %s"), *RPCOwnerName, *RPC.Value->Function->GetName());
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("RPC Type Owner Found - %s ::  %s"), *RPCOwnerName, *RPC.Value->Function->GetName());
 		}
 		return true;
 	}, true);
@@ -560,7 +559,6 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 		for (auto& RPC : Type->RPCs)
 		{
 			RPCsByType.FindOrAdd(RPC.Value->Type).Add(RPC.Value);
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT(" Type Owner Found - %s ::  %s"), *Type->Type->GetName(), *RPC.Value->Function->GetName());
 		}
 		return true;
 	}, true);
