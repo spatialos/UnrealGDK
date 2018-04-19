@@ -163,8 +163,8 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 			Writer.Printf(R"""(
 				TArray<uint8> ValueData;
 				FMemoryWriter ValueDataWriter(ValueData);
-				%s::StaticStruct()->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&Value[i])));
-				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *Property->GetCPPType(), *Property->GetCPPType(), *Update);
+				%s::StaticStruct()->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&%s)));
+				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *Property->GetCPPType(), *Property->GetCPPType(), *PropertyValue, *Update);
 		}
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
@@ -322,7 +322,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 				TArray<uint8> ValueData;
 				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
-				%s::StaticStruct()->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&Value[i])));)"""), *Update, *PropertyType));
+				%s::StaticStruct()->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&%s));)"""), *Update, *PropertyType, *PropertyValue));
 		}
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
