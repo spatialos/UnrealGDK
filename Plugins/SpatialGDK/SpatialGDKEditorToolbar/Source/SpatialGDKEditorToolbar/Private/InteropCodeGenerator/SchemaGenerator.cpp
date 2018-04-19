@@ -266,12 +266,8 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			FString TypeStr = SchemaRPCRequestType(RPC->Function);
 
 			// Get the correct code writer for this RPC.
-			FCodeWriter* RPCTypeOwnerSchemaWriter = &Writer;
 			FString RPCOwnerName = *RPC->Function->GetOuter()->GetName();
-			if (!RPCOwnerName.Equals(*TypeInfo->Type->GetName())) 
-			{
-				RPCTypeOwnerSchemaWriter = &RPCTypeCodeWriterMap[*RPCOwnerName];
-			}
+			FCodeWriter* RPCTypeOwnerSchemaWriter = &RPCTypeCodeWriterMap[*RPCOwnerName];
 
 			RPCTypeOwnerSchemaWriter->Printf("type %s {" , *TypeStr);
 			RPCTypeOwnerSchemaWriter->Indent();
