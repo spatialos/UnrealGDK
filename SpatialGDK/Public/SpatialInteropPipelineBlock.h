@@ -20,7 +20,7 @@ class UPositionAddComponentOp;
 class UCallbackDispatcher;
 class UEntityRegistry;
 class UEntityPipeline;
-class USpatialOSComponent;
+class USpatialOsComponent;
 class USpatialActorChannel;
 class USpatialNetDriver;
 
@@ -83,7 +83,7 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 
 	UWorld* World;
 
-	// Maps ComponentId to USpatialOSComponent* class name
+	// Maps ComponentId to USpatialOsComponent* class name
 	UPROPERTY()
 	TMap<FComponentId, UClass*> KnownComponents;
 

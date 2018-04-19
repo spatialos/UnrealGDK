@@ -7,15 +7,15 @@
 
 #include "EntityRegistry.generated.h"
 
-class USpatialOSComponent;
+class USpatialOsComponent;
 
 USTRUCT()
-struct FSpatialOSComponentList
+struct FSpatialComponentList
 {
 	GENERATED_BODY()
 
 	UPROPERTY()
-	TArray<USpatialOSComponent*> Components;
+	TArray<USpatialOsComponent*> Components;
 };
 
 UCLASS()
@@ -79,21 +79,21 @@ class SPATIALGDK_API UEntityRegistry : public UObject
 	AActor* GetActorFromEntityId(const FEntityId& EntityId) const;
 
 	/**
-  * Adds a mapping from an AActor to a USpatialOSComponent to the registry. This cache is
+  * Adds a mapping from an AActor to a USpatialOsComponent to the registry. This cache is
   * then used to update components within SpatialOSComponentUpdater.
   *
-  * @param Actor the owning AActor for the USpatialOSComponent that is added to the registry.
-  * @param Component the USpatialOSComponent owner by the Actor instance.
+  * @param Actor the owning AActor for the USpatialOsComponent that is added to the registry.
+  * @param Component the USpatialOsComponent owner by the Actor instance.
   **/
-	void RegisterComponent(AActor* Actor, USpatialOSComponent* Component);
+	void RegisterComponent(AActor* Actor, USpatialOsComponent* Component);
 
 	/**
   * Removes the entry for an Actor/Component pair if present in the registry.
   *
   * @param Actor the AActor that owns the Component.
-  * @param Component the USpatialOSComponent which will be removed from the registry.
+  * @param Component the USpatialOsComponent which will be removed from the registry.
   **/
-	void UnregisterComponent(AActor* Actor, USpatialOSComponent* Component);
+	void UnregisterComponent(AActor* Actor, USpatialOsComponent* Component);
 
   private:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
@@ -108,5 +108,5 @@ class SPATIALGDK_API UEntityRegistry : public UObject
   UPROPERTY()
   TMap<AActor*, FSpatialComponentList> EntityComponentCache;
 
-	friend class USpatialOSComponentUpdater;
+	friend class USpatialOsComponentUpdater;
 };

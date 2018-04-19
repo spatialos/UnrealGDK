@@ -5,7 +5,7 @@
 #include "EntityRegistry.h"
 #include "SpatialOsComponent.h"
 
-void USpatialOSComponentUpdater::UpdateComponents(UEntityRegistry* Registry, float DeltaSeconds)
+void USpatialOsComponentUpdater::UpdateComponents(UEntityRegistry* Registry, float DeltaSeconds)
 {
   if (Registry == nullptr)
   {

@@ -8,7 +8,7 @@
 class UEntityRegistry;
 
 UCLASS()
-class SPATIALGDK_API USpatialOSComponentUpdater : public UObject
+class SPATIALGDK_API USpatialOsComponentUpdater : public UObject
 {
   GENERATED_BODY()
 

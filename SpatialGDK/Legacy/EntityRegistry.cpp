@@ -95,14 +95,14 @@ AActor* UEntityRegistry::GetActorFromEntityId(const FEntityId& EntityId) const
 	return nullptr;
 }
 
-void UEntityRegistry::RegisterComponent(AActor* Actor, USpatialOSComponent* Component)
+void UEntityRegistry::RegisterComponent(AActor* Actor, USpatialOsComponent* Component)
 {
 	auto& ComponentCache = EntityComponentCache.FindOrAdd(Actor);
 	check(ComponentCache.Components.Find(Component) == INDEX_NONE);
 	ComponentCache.Components.Push(Component);
 }
 
-void UEntityRegistry::UnregisterComponent(AActor* Actor, USpatialOSComponent* Component)
+void UEntityRegistry::UnregisterComponent(AActor* Actor, USpatialOsComponent* Component)
 {
 	if (auto ComponentCache = EntityComponentCache.Find(Actor))
 	{

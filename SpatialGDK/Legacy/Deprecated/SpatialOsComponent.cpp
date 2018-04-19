@@ -8,7 +8,7 @@
 #include "SpatialGDKViewTypes.h"
 #include "SpatialGDKWorkerTypes.h"
 
-USpatialOSComponent::USpatialOSComponent()
+USpatialOsComponent::USpatialOsComponent()
 : MaxUpdatesPerSecond(30)
 , Connection(nullptr)
 , View(nullptr)
@@ -22,7 +22,7 @@ USpatialOSComponent::USpatialOSComponent()
 {
 }
 
-void USpatialOSComponent::Init(const TWeakPtr<SpatialOSConnection>& InConnection,
+void USpatialOsComponent::Init(const TWeakPtr<SpatialOSConnection>& InConnection,
 							   const TWeakPtr<SpatialOSView>& InView, worker::EntityId InEntityId,
 							   UCallbackDispatcher* CallbackDispatcher)
 {
@@ -32,13 +32,13 @@ void USpatialOSComponent::Init(const TWeakPtr<SpatialOSConnection>& InConnection
 	Callbacks.Reset(new improbable::unreal::callbacks::FScopedViewCallbacks(View));
 }
 
-void USpatialOSComponent::BeginDestroy()
+void USpatialOsComponent::BeginDestroy()
 {
 	Super::BeginDestroy();
 	Callbacks.Reset();
 }
 
-void USpatialOSComponent::ApplyInitialAuthority(const worker::AuthorityChangeOp& AuthChangeOp)
+void USpatialOsComponent::ApplyInitialAuthority(const worker::AuthorityChangeOp& AuthChangeOp)
 {
 	OnAuthorityChangeDispatcherCallback(AuthChangeOp);
 }
@@ -48,22 +48,22 @@ worker::EntityId USpatialOsComponent::GetEntityId()
   return EntityId;
 }
 
-bool USpatialOSComponent::HasAuthority()
+bool USpatialOsComponent::HasAuthority()
 {
 	return Authority == EAuthority::Authoritative || Authority == EAuthority::AuthorityLossImminent;
 }
 
-EAuthority USpatialOSComponent::GetAuthority()
+EAuthority USpatialOsComponent::GetAuthority()
 {
 	return Authority;
 }
 
-bool USpatialOSComponent::IsComponentReady()
+bool USpatialOsComponent::IsComponentReady()
 {
 	return bIsComponentReady;
 }
 
-void USpatialOSComponent::SendAuthorityLossImminentAcknowledgement()
+void USpatialOsComponent::SendAuthorityLossImminentAcknowledgement()
 {
 	auto LockedConnection = Connection.Pin();
 	if (LockedConnection.IsValid())
@@ -73,7 +73,7 @@ void USpatialOSComponent::SendAuthorityLossImminentAcknowledgement()
 	}
 }
 
-void USpatialOSComponent::OnAuthorityChangeDispatcherCallback(const worker::AuthorityChangeOp& op)
+void USpatialOsComponent::OnAuthorityChangeDispatcherCallback(const worker::AuthorityChangeOp& op)
 {
 	if (op.EntityId != EntityId)
 	{
@@ -95,7 +95,7 @@ void USpatialOSComponent::OnAuthorityChangeDispatcherCallback(const worker::Auth
 	OnAuthorityChange.Broadcast(Authority);
 }
 
-void USpatialOSComponent::OnRemoveComponentDispatcherCallback(const worker::RemoveComponentOp& op)
+void USpatialOsComponent::OnRemoveComponentDispatcherCallback(const worker::RemoveComponentOp& op)
 {
 	if (op.EntityId != EntityId)
 	{
@@ -104,7 +104,7 @@ void USpatialOSComponent::OnRemoveComponentDispatcherCallback(const worker::Remo
 	bIsComponentReady = false;
 }
 
-UCommander* USpatialOSComponent::SendCommand()
+UCommander* USpatialOsComponent::SendCommand()
 {
 	if (Commander == nullptr)
 	{

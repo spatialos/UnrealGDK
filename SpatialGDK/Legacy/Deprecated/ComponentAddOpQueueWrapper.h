@@ -2,19 +2,21 @@
 
 #pragma once
 
-#include "SpatialOSWorkerTypes.h"
-#include "UObject/NoExportTypes.h"
-#include "ComponentUpdateOpWrapperBase.generated.h"
+#include "AddComponentOpWrapperBase.h"
+#include "CoreMinimal.h"
+#include "EngineMinimal.h"
+#include "ComponentAddOpQueueWrapper.generated.h"
 
-UCLASS(abstract)
-class SPATIALOS_API UComponentUpdateOpWrapperBase : public UObject
+USTRUCT()
+struct FComponentAddOpQueueWrapper
 {
-  GENERATED_BODY()
+  GENERATED_USTRUCT_BODY()
+
 public:
-  UComponentUpdateOpWrapperBase()
+  UPROPERTY()
+  TArray<UAddComponentOpWrapperBase*> Underlying;
+
+  FComponentAddOpQueueWrapper()
   {
   }
-
-  ::worker::ComponentId ComponentId;
-  ::worker::EntityId EntityId;
 };

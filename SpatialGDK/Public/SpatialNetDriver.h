@@ -13,7 +13,7 @@
 class UEntityPipeline;
 class UEntityRegistry;
 class UCallbackDispatcher;
-class USpatialOSComponentUpdater;
+class USpatialOsComponentUpdater;
 class USpatialOS;
 class USpatialNetConnection;
 

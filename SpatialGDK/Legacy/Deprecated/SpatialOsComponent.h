@@ -32,13 +32,13 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSpatialComponentReadyDelegate);
 // clang-format on
 
 UCLASS(abstract)
-class SPATIALGDK_API USpatialOSComponent : public UActorComponent
+class SPATIALGDK_API USpatialOsComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
   public:
-	USpatialOSComponent();
-	virtual ~USpatialOSComponent() = default;
+	USpatialOsComponent();
+	virtual ~USpatialOsComponent() = default;
 
 	virtual void BeginDestroy() override;
 
@@ -47,20 +47,20 @@ class SPATIALGDK_API USpatialOSComponent : public UActorComponent
 					  UCallbackDispatcher* InCallbackDispatcher);
 
 	virtual void Disable(const worker::EntityId InEntityId, UCallbackDispatcher* CallbackDispatcher)
-		PURE_VIRTUAL(USpatialOSComponent::Disable(), );
+		PURE_VIRTUAL(USpatialOsComponent::Disable(), );
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Component")
 	virtual FComponentId GetComponentId()
-		PURE_VIRTUAL(USpatialOSComponent::GetComponentId, return 0;);
+		PURE_VIRTUAL(USpatialOsComponent::GetComponentId, return 0;);
 
 	virtual void ApplyInitialState(const UAddComponentOpWrapperBase& AddComponentOp)
-		PURE_VIRTUAL(USpatialOSComponent::ApplyInitialState(), );
+		PURE_VIRTUAL(USpatialOsComponent::ApplyInitialState(), );
 
   virtual void ReplicateChanges(float DeltaSeconds)
       PURE_VIRTUAL(USpatialOsComponent::ReplicateChanges, );
 
 	virtual void TriggerAutomaticComponentUpdate(float DeltaSeconds)
-		PURE_VIRTUAL(USpatialOSComponent::TriggerAutomaticComponentUpdate, );
+		PURE_VIRTUAL(USpatialOsComponent::TriggerAutomaticComponentUpdate, );
 
 	void ApplyInitialAuthority(const worker::AuthorityChangeOp& AuthChangeOp);
 
