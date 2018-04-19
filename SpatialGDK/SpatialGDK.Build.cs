@@ -10,7 +10,13 @@ using UnrealBuildTool;
 
 public class SpatialGDK : ModuleRules
 {
+#if !WITH_FORWARDED_MODULE_RULES_CTOR
+    // Backwards compatibility with Unreal 4.15
+    public SpatialGDK(TargetInfo Target)
+#else
+    // Unreal 4.16+
     public SpatialGDK(ReadOnlyTargetRules Target) : base(Target)
+#endif
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
         bFasterWithoutUnity = true;
@@ -19,8 +25,7 @@ public class SpatialGDK : ModuleRules
             new string[] 
             {
                 "SpatialGDK/Public",
-                "SpatialGDK/WorkerSDK/worker_sdk/include",
-                "SpatialGDK/WorkerSDK/core_sdk/include",
+                "SpatialGDK/Public/WorkerSdk",
                 "SpatialGDK/Generated/User",
                 "SpatialGDK/Generated/Std",
                 "SpatialGDK/Generated/UClasses",
@@ -66,7 +71,7 @@ public class SpatialGDK : ModuleRules
             PublicAdditionalLibraries.AddRange(new[] { CoreSdkShared });
         }
 
-        RuntimeDependencies.Add(new RuntimeDependency(CoreSdkShared));
+        RuntimeDependencies.Add(CoreSdkShared, StagedFileType.NonUFS);
 
         PublicLibraryPaths.Add(CoreSdkLibraryDir);
         PublicDelayLoadDLLs.Add("CoreSdkDll.dll");

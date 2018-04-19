@@ -56,22 +56,15 @@ class SPATIALGDK_API USpatialOSComponent : public UActorComponent
 	virtual void ApplyInitialState(const UAddComponentOpWrapperBase& AddComponentOp)
 		PURE_VIRTUAL(USpatialOSComponent::ApplyInitialState(), );
 
-	// Utility function to take the current state of this component and add it to the entity
-	// template 'OutEntity'.
-	virtual void AddComponentDataToEntity(const improbable::WorkerRequirementSet& WriteRequirement,
-										  worker::Entity& OutEntity) const
-		PURE_VIRTUAL(USpatialOSComponent::AddComponentDataToEntity(), );
-
-	virtual void ReplicateChanges(float DeltaSeconds)
-		PURE_VIRTUAL(USpatialOSComponent::ReplicateChanges, );
+  virtual void ReplicateChanges(float DeltaSeconds)
+      PURE_VIRTUAL(USpatialOsComponent::ReplicateChanges, );
 
 	virtual void TriggerAutomaticComponentUpdate(float DeltaSeconds)
 		PURE_VIRTUAL(USpatialOSComponent::TriggerAutomaticComponentUpdate, );
 
 	void ApplyInitialAuthority(const worker::AuthorityChangeOp& AuthChangeOp);
 
-	UFUNCTION(BlueprintPure, Category = "SpatialOS Component")
-	FEntityId GetEntityId();
+  worker::EntityId GetEntityId();
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Component",
 			  meta = (DeprecatedFunction, DeprecationMessage = "Please use GetAuthority() instead."))

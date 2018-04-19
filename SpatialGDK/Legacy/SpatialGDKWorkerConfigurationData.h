@@ -140,17 +140,64 @@ struct SPATIALGDK_API FSpatialGDKDebuggingConfig
 {
 	GENERATED_USTRUCT_BODY()
 
-	FSpatialGDKDebuggingConfig()
-	: BuiltInMetricsReportPeriodMillis(worker::defaults::kBuiltInMetricsReportPeriodMillis)
-	, LogMessageQueueCapacity(worker::defaults::kLogMessageQueueCapacity)
-	, ProtocolLoggingOnStartup(false)
-	, ProtocolLogPrefix(worker::defaults::kLogPrefix.c_str())
-	, ProtocolLogMaxFileBytes(100U * worker::defaults::kMaxLogFileSizeBytes)
-	, ProtocolLogMaxFiles(worker::defaults::kMaxLogFiles)
-	{
-	}
+  FSpatialOSDebuggingConfig()
+  : InfraServiceUrl("https://api.spatial.improbable.io")
+  , LogDebugToSpatialOs(false)
+  , LogAssertToSpatialOs(false)
+  , LogWarningToSpatialOs(true)
+  , LogErrorToSpatialOs(true)
+  , BuiltInMetricsReportPeriodMillis(worker::defaults::kBuiltInMetricsReportPeriodMillis)
+  , LogMessageQueueCapacity(worker::defaults::kLogMessageQueueCapacity)
+  , ProtocolLoggingOnStartup(false)
+  , ProtocolLogPrefix(worker::defaults::kLogPrefix.c_str())
+  , ProtocolLogMaxFileBytes(100U * worker::defaults::kMaxLogFileSizeBytes)
+  , ProtocolLogMaxFiles(worker::defaults::kMaxLogFiles)
+  , ShowDebugTraces(false)
+  , UseInstrumentation(true)
+  {
+  }
 
-	/**
+  /**
+  * This field is not in use. Setting this field will not affect a worker's behaviour.
+  */
+  UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
+            meta = (DeprecatedFunction,
+                    DeprecationMessage =
+                        "This field is deprecated and will be removed in a future release."))
+  FString InfraServiceUrl;
+  /**
+  * This field is not in use. Setting this field will not affect a worker's behaviour.
+  */
+  UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
+            meta = (DeprecatedFunction,
+                    DeprecationMessage =
+                        "This field is deprecated and will be removed in a future release."))
+  bool LogDebugToSpatialOs;
+  /**
+  * This field is not in use. Setting this field will not affect a worker's behaviour.
+  */
+  UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
+            meta = (DeprecatedFunction,
+                    DeprecationMessage =
+                        "This field is deprecated and will be removed in a future release."))
+  bool LogAssertToSpatialOs;
+  /**
+  * This field is not in use. Setting this field will not affect a worker's behaviour.
+  */
+  UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
+            meta = (DeprecatedFunction,
+                    DeprecationMessage =
+                        "This field is deprecated and will be removed in a future release."))
+  bool LogWarningToSpatialOs;
+  /**
+  * This field is not in use. Setting this field will not affect a worker's behaviour.
+  */
+  UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
+            meta = (DeprecatedFunction,
+                    DeprecationMessage =
+                        "This field is deprecated and will be removed in a future release."))
+  bool LogErrorToSpatialOs;
+  /**
   * "BuiltInMetricsReportPeriodMillis" field for an underlying worker::ConnectionParameters struct.
   * This parameter controls how frequently the Connection will return a MetricsOp reporting its
   * built-in metrics. If set to zero, this functionality is disabled.
@@ -191,8 +238,24 @@ struct SPATIALGDK_API FSpatialGDKDebuggingConfig
   * Maximum number of log files to keep.
   * To be used when protocol logging is enabled.
   */
-	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration)
-	uint32 ProtocolLogMaxFiles;
+  UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration)
+  uint32 ProtocolLogMaxFiles;
+  /**
+  * This field is not in use. Setting this field will not affect a worker's behaviour.
+  */
+  UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
+            meta = (DeprecatedFunction,
+                    DeprecationMessage =
+                        "This field is deprecated and will be removed in a future release."))
+  bool ShowDebugTraces;
+  /**
+  * This field is not in use. Setting this field will not affect a worker's behaviour.
+  */
+  UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
+            meta = (DeprecatedFunction,
+                    DeprecationMessage =
+                        "This field is deprecated and will be removed in a future release."))
+  bool UseInstrumentation;
 };
 
 /**
@@ -203,17 +266,36 @@ struct SPATIALGDK_API FSpatialGDKApplicationConfig
 {
 	GENERATED_USTRUCT_BODY()
 
-	FSpatialGDKApplicationConfig()
-	: DeploymentName("")
-	, DeploymentTag("prod")
-	, ProjectName("")
-	, WorkerPlatform("UnrealClient")
-	, WorkerId("")
-	, LoginToken("")
-	{
-	}
+  FSpatialOSApplicationConfig()
+  : AppName("")
+  , AssemblyName("")
+  , DeploymentName("")
+  , DeploymentTag("prod")
+  , ProjectName("")
+  , WorkerPlatform("UnrealClient")
+  , WorkerId("")
+  , LoginToken("")
+  {
+  }
 
-	/**
+  /**
+  * "ProjectName" field for an underlying worker::LocatorParameters struct.
+  * To be used when connecting to a SpatialOS deployment via a locator service.
+  * This field is deprecated. Please use ProjectName instead.
+  */
+  UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
+            meta = (DeprecatedFunction,
+                    DeprecationMessage = "This field is deprecated, use ProjectName instead."))
+  FString AppName;
+  /**
+  * This field is not in use. Setting this field will not affect a worker's behaviour.
+  */
+  UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
+            meta = (DeprecatedFunction,
+                    DeprecationMessage =
+                        "This field is deprecated and will be removed in a future release."))
+  FString AssemblyName;
+  /**
   * "deployment_name" argument for an underlying worker::Locator::ConnectAsync() function call.
   * The name of the deployment.
   * To be used when connecting to a SpatialOS deployment via a locator service.

@@ -99,14 +99,14 @@ class SPATIALGDK_API UEntityRegistry : public UObject
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
 	void RegisterEntityClass(const FString& ClassName, UClass* ClassToSpawn);
 
-	UPROPERTY()
-	TMap<FString, UClass*> ClassMap;
-	UPROPERTY()
-	TMap<FEntityId, AActor*> EntityIdToActor;
-	UPROPERTY()
-	TMap<AActor*, FEntityId> ActorToEntityId;
-	UPROPERTY()
-	TMap<AActor*, FSpatialOSComponentList> EntityComponentCache;
+  UPROPERTY()
+  TMap<FString, UClass*> ClassMap;
+  UPROPERTY()
+  TMap<FEntityId, AActor*> EntityIdToActor;
+  UPROPERTY()
+  TMap<AActor*, FEntityId> ActorToEntityId;
+  UPROPERTY()
+  TMap<AActor*, FSpatialComponentList> EntityComponentCache;
 
 	friend class USpatialOSComponentUpdater;
 };

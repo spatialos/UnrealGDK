@@ -43,9 +43,9 @@ void USpatialOSComponent::ApplyInitialAuthority(const worker::AuthorityChangeOp&
 	OnAuthorityChangeDispatcherCallback(AuthChangeOp);
 }
 
-FEntityId USpatialOSComponent::GetEntityId()
+worker::EntityId USpatialOsComponent::GetEntityId()
 {
-	return FEntityId(EntityId);
+  return EntityId;
 }
 
 bool USpatialOSComponent::HasAuthority()

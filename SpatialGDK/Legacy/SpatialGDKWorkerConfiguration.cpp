@@ -26,14 +26,21 @@ FSpatialGDKWorkerConfiguration::FSpatialGDKWorkerConfiguration(
 	const auto commandLine = FCommandLine::Get();
 	auto& AppConfig = WorkerConfigurationData.SpatialGDKApplication;
 
-	FParse::Value(commandLine, *FString("projectName"), AppConfig.ProjectName);
+  FParse::Value(commandLine, *FString("appName"), AppConfig.AppName);
+  FParse::Value(commandLine, *FString("projectName"), AppConfig.ProjectName);
+  if (!AppConfig.AppName.IsEmpty() && AppConfig.ProjectName.IsEmpty())
+  {
+    AppConfig.ProjectName = AppConfig.AppName;
+  }
 
-	if (AppConfig.ProjectName.IsEmpty())
-	{
-		UE_LOG(
-			LogSpatialOS, Error,
-			TEXT("The project's name must be set from code, or on the command line with +projectName."))
-	}
+  if (AppConfig.ProjectName.IsEmpty())
+  {
+    UE_LOG(
+        LogSpatialOS, Error,
+        TEXT("The project's name must be set from code, or on the command line with +projectName."))
+  }
+
+  FParse::Value(commandLine, *FString("assemblyName"), AppConfig.AssemblyName);
 
 	FParse::Value(commandLine, *FString("deploymentName"), AppConfig.DeploymentName);
 	const auto SplitIndex = AppConfig.DeploymentName.Find("-");
@@ -71,22 +78,41 @@ FSpatialGDKWorkerConfiguration::FSpatialGDKWorkerConfiguration(
 	FParse::Value(commandLine, *FString("tcpSendBufferSize"), NetworkConfig.TcpSendBufferSize);
 	FParse::Bool(commandLine, *FString("useExternalIpForBridge"), NetworkConfig.UseExternalIp);
 
-	auto& DebuggingConfig = WorkerConfigurationData.Debugging;
-	FParse::Value(commandLine, *FString("builtInMetricsReportPeriodMillis"),
-				  DebuggingConfig.BuiltInMetricsReportPeriodMillis);
-	FParse::Value(commandLine, *FString("logMessageQueueCapacity"),
-				  DebuggingConfig.LogMessageQueueCapacity);
-	FParse::Bool(commandLine, *FString("protocolLoggingOnStartup"),
-				 DebuggingConfig.ProtocolLoggingOnStartup);
-	FParse::Value(commandLine, *FString("protocolLogPrefix"), DebuggingConfig.ProtocolLogPrefix);
-	FParse::Value(commandLine, *FString("protocolLogMaxFileBytes"),
-				  DebuggingConfig.ProtocolLogMaxFileBytes);
-	FParse::Value(commandLine, *FString("protocolLogMaxFiles"), DebuggingConfig.ProtocolLogMaxFiles);
+  auto& DebuggingConfig = WorkerConfigurationData.Debugging;
+  FParse::Value(commandLine, *FString("infraServicesUrl"), DebuggingConfig.InfraServiceUrl);
+  FParse::Value(commandLine, *FString("builtInMetricsReportPeriodMillis"),
+                DebuggingConfig.BuiltInMetricsReportPeriodMillis);
+  FParse::Value(commandLine, *FString("logMessageQueueCapacity"),
+                DebuggingConfig.LogMessageQueueCapacity);
+  FParse::Bool(commandLine, *FString("protocolLoggingOnStartup"),
+               DebuggingConfig.ProtocolLoggingOnStartup);
+  FParse::Value(commandLine, *FString("protocolLogPrefix"), DebuggingConfig.ProtocolLogPrefix);
+  FParse::Value(commandLine, *FString("protocolLogMaxFileBytes"),
+                DebuggingConfig.ProtocolLogMaxFileBytes);
+  FParse::Value(commandLine, *FString("protocolLogMaxFiles"), DebuggingConfig.ProtocolLogMaxFiles);
+  FParse::Bool(commandLine, *FString("showDebugTraces"), DebuggingConfig.ShowDebugTraces);
+  FParse::Bool(commandLine, *FString("useInstrumentation"), DebuggingConfig.UseInstrumentation);
 
-	LogWorkerConfiguration();
+  FParse::Bool(commandLine, *FString("logDebugToSpatialOs"), DebuggingConfig.LogDebugToSpatialOs);
+  FParse::Bool(commandLine, *FString("logAssertToSpatialOs"), DebuggingConfig.LogAssertToSpatialOs);
+  FParse::Bool(commandLine, *FString("logWarningToSpatialOs"),
+               DebuggingConfig.LogWarningToSpatialOs);
+  FParse::Bool(commandLine, *FString("logErrorToSpatialOs"), DebuggingConfig.LogErrorToSpatialOs);
+
+  LogWorkerConfiguration();
 }
 
-const FString& FSpatialGDKWorkerConfiguration::GetDeploymentName() const
+const FString& FSpatialGDKWorkerConfiguration::GetAppName() const
+{
+  return WorkerConfigurationData.SpatialGDKApplication.AppName;
+}
+
+const FString& FSpatialGDKWorkerConfiguration::GetAssemblyName() const
+{
+  return WorkerConfigurationData.SpatialGDKApplication.AssemblyName;
+}
+
+const FString& FSOSWorkerConfiguration::GetDeploymentName() const
 {
 	return WorkerConfigurationData.SpatialGDKApplication.DeploymentName;
 }
@@ -176,6 +202,11 @@ const uint32 FSpatialGDKWorkerConfiguration::GetTcpSendBufferSize() const
 	return WorkerConfigurationData.Networking.TcpSendBufferSize;
 }
 
+const FString& FSpatialGDKWorkerConfiguration::GetInfraServiceUrl() const
+{
+  return WorkerConfigurationData.Debugging.InfraServiceUrl;
+}
+
 const uint32 FSpatialGDKWorkerConfiguration::GetBuiltInMetricsReportPeriodMillis() const
 {
 	return WorkerConfigurationData.Debugging.BuiltInMetricsReportPeriodMillis;
@@ -206,6 +237,36 @@ const uint32 FSpatialGDKWorkerConfiguration::GetProtocolLogMaxFiles() const
 	return WorkerConfigurationData.Debugging.ProtocolLogMaxFiles;
 }
 
+const bool FSpatialGDKWorkerConfiguration::GetShowDebugTraces() const
+{
+  return WorkerConfigurationData.Debugging.ShowDebugTraces;
+}
+
+const bool FSpatialGDKWorkerConfiguration::GetUseInstrumentation() const
+{
+  return WorkerConfigurationData.Debugging.UseInstrumentation;
+}
+
+const bool FSpatialGDKWorkerConfiguration::GetLogDebugToSpatialOs() const
+{
+  return WorkerConfigurationData.Debugging.LogDebugToSpatialOs;
+}
+
+const bool FSpatialGDKWorkerConfiguration::GetLogAssertToSpatialOs() const
+{
+  return WorkerConfigurationData.Debugging.LogAssertToSpatialOs;
+}
+
+const bool FSpatialGDKWorkerConfiguration::GetLogWarningToSpatialOs() const
+{
+  return WorkerConfigurationData.Debugging.LogWarningToSpatialOs;
+}
+
+const bool FSpatialGDKWorkerConfiguration::GetLogErrorToSpatialOs() const
+{
+  return WorkerConfigurationData.Debugging.LogErrorToSpatialOs;
+}
+
 const bool FSpatialGDKWorkerConfiguration::GetUseExternalIp() const
 {
 	return WorkerConfigurationData.Networking.UseExternalIp;
@@ -213,14 +274,15 @@ const bool FSpatialGDKWorkerConfiguration::GetUseExternalIp() const
 
 void FSpatialGDKWorkerConfiguration::LogWorkerConfiguration() const
 {
-	UE_LOG(LogSpatialOS, Display, TEXT("WorkerConfiguration settings"));
-	const auto& AppConfig = WorkerConfigurationData.SpatialGDKApplication;
-	UE_LOG(LogSpatialOS, Display, TEXT("deploymentName = %s"), *AppConfig.DeploymentName);
-	UE_LOG(LogSpatialOS, Display, TEXT("deploymentTag = %s"), *AppConfig.DeploymentTag);
-	UE_LOG(LogSpatialOS, Display, TEXT("projectName = %s"), *AppConfig.ProjectName);
-	UE_LOG(LogSpatialOS, Display, TEXT("workerType = %s"), *AppConfig.WorkerPlatform);
-	UE_LOG(LogSpatialOS, Display, TEXT("workerId = %s"), *AppConfig.WorkerId);
-	UE_LOG(LogSpatialOS, Display, TEXT("loginToken = %s"), *AppConfig.LoginToken);
+  UE_LOG(LogSpatialOS, Display, TEXT("WorkerConfiguration settings"));
+  const auto& AppConfig = WorkerConfigurationData.SpatialGDKApplication;
+  UE_LOG(LogSpatialOS, Display, TEXT("assemblyName = %s"), *AppConfig.AssemblyName);
+  UE_LOG(LogSpatialOS, Display, TEXT("deploymentName = %s"), *AppConfig.DeploymentName);
+  UE_LOG(LogSpatialOS, Display, TEXT("deploymentTag = %s"), *AppConfig.DeploymentTag);
+  UE_LOG(LogSpatialOS, Display, TEXT("projectName = %s"), *AppConfig.ProjectName);
+  UE_LOG(LogSpatialOS, Display, TEXT("workerType = %s"), *AppConfig.WorkerPlatform);
+  UE_LOG(LogSpatialOS, Display, TEXT("workerId = %s"), *AppConfig.WorkerId);
+  UE_LOG(LogSpatialOS, Display, TEXT("loginToken = %s"), *AppConfig.LoginToken);
 
 	const auto& NetworkConfig = WorkerConfigurationData.Networking;
 	UE_LOG(LogSpatialOS, Display, TEXT("locatorHost = %s"), *NetworkConfig.LocatorHost);
@@ -244,16 +306,29 @@ void FSpatialGDKWorkerConfiguration::LogWorkerConfiguration() const
 	UE_LOG(LogSpatialOS, Display, TEXT("UseExternalIp = %s"),
 		   NetworkConfig.UseExternalIp ? TEXT("true") : TEXT("false"));
 
-	const auto& DebuggingConfig = WorkerConfigurationData.Debugging;
-	UE_LOG(LogSpatialOS, Display, TEXT("builtInMetricsReportPeriodMillis = %d"),
-		   DebuggingConfig.BuiltInMetricsReportPeriodMillis);
-	UE_LOG(LogSpatialOS, Display, TEXT("logMessageQueueCapacity = %d"),
-		   DebuggingConfig.LogMessageQueueCapacity);
-	UE_LOG(LogSpatialOS, Display, TEXT("protocolLoggingOnStartup = %s"),
-		   DebuggingConfig.ProtocolLoggingOnStartup ? TEXT("true") : TEXT("false"));
-	UE_LOG(LogSpatialOS, Display, TEXT("protocolLogPrefix = %s"), *DebuggingConfig.ProtocolLogPrefix);
-	UE_LOG(LogSpatialOS, Display, TEXT("protocolLogMaxFileBytes = %d"),
-		   DebuggingConfig.ProtocolLogMaxFileBytes);
-	UE_LOG(LogSpatialOS, Display, TEXT("protocolLogMaxFiles = %d"),
-		   DebuggingConfig.ProtocolLogMaxFiles);
+  const auto& DebuggingConfig = WorkerConfigurationData.Debugging;
+  UE_LOG(LogSpatialOS, Display, TEXT("infraServicesUrl = %s"), *DebuggingConfig.InfraServiceUrl);
+  UE_LOG(LogSpatialOS, Display, TEXT("logDebugToSpatialOs = %s"),
+         DebuggingConfig.LogDebugToSpatialOs ? TEXT("true") : TEXT("false"));
+  UE_LOG(LogSpatialOS, Display, TEXT("logAssertToSpatialOs = %s"),
+         DebuggingConfig.LogAssertToSpatialOs ? TEXT("true") : TEXT("false"));
+  UE_LOG(LogSpatialOS, Display, TEXT("logWarningToSpatialOs = %s"),
+         DebuggingConfig.LogWarningToSpatialOs ? TEXT("true") : TEXT("false"));
+  UE_LOG(LogSpatialOS, Display, TEXT("logErrorToSpatialOs = %s"),
+         DebuggingConfig.LogErrorToSpatialOs ? TEXT("true") : TEXT("false"));
+  UE_LOG(LogSpatialOS, Display, TEXT("builtInMetricsReportPeriodMillis = %d"),
+         DebuggingConfig.BuiltInMetricsReportPeriodMillis);
+  UE_LOG(LogSpatialOS, Display, TEXT("logMessageQueueCapacity = %d"),
+         DebuggingConfig.LogMessageQueueCapacity);
+  UE_LOG(LogSpatialOS, Display, TEXT("protocolLoggingOnStartup = %s"),
+         DebuggingConfig.ProtocolLoggingOnStartup ? TEXT("true") : TEXT("false"));
+  UE_LOG(LogSpatialOS, Display, TEXT("protocolLogPrefix = %s"), *DebuggingConfig.ProtocolLogPrefix);
+  UE_LOG(LogSpatialOS, Display, TEXT("protocolLogMaxFileBytes = %d"),
+         DebuggingConfig.ProtocolLogMaxFileBytes);
+  UE_LOG(LogSpatialOS, Display, TEXT("protocolLogMaxFiles = %d"),
+         DebuggingConfig.ProtocolLogMaxFiles);
+  UE_LOG(LogSpatialOS, Display, TEXT("showDebugTraces = %s"),
+         DebuggingConfig.ShowDebugTraces ? TEXT("true") : TEXT("false"));
+  UE_LOG(LogSpatialOS, Display, TEXT("useInstrumentation = %s"),
+         DebuggingConfig.UseInstrumentation ? TEXT("true") : TEXT("false"));
 }

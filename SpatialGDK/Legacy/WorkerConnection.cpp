@@ -61,31 +61,16 @@ FWorkerConnection::FWorkerConnection()
 	View->OnMetrics(std::bind(&FWorkerConnection::OnMetrics, this, std::placeholders::_1));
 }
 
-worker::LocatorParameters
-FWorkerConnection::CreateLocatorParameters(const FSpatialGDKWorkerConfiguration& WorkerConfiguration)
-{
-	worker::LocatorParameters LocatorParameters;
-	LocatorParameters.CredentialsType = WorkerConfiguration.GetSteamToken().IsEmpty()
-		? worker::LocatorCredentialsType::kLoginToken
-		: worker::LocatorCredentialsType::kSteam;
-	LocatorParameters.LoginToken =
-		worker::LoginTokenCredentials{TCHAR_TO_UTF8(*WorkerConfiguration.GetLoginToken())};
-	LocatorParameters.ProjectName = TCHAR_TO_UTF8(*WorkerConfiguration.GetProjectName());
-	LocatorParameters.Steam.DeploymentTag = TCHAR_TO_UTF8(*WorkerConfiguration.GetDeploymentTag());
-	LocatorParameters.Steam.Ticket = TCHAR_TO_UTF8(*WorkerConfiguration.GetSteamToken());
-	return LocatorParameters;
-}
-
 void FWorkerConnection::GetDeploymentListAsync(
-	const FString& LocatorHost, const worker::LocatorParameters& LocatorParams,
-	FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback, std::uint32_t TimeoutMillis)
+    const FString& ProjectName, const FString& LocatorHost, const FString& LoginToken,
+    FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback, std::uint32_t TimeoutMillis)
 {
-	AsyncTask(ENamedThreads::GameThread,
-			  [LocatorHost, LocatorParams, TimeoutMillis, OnDeploymentsFoundCallback, this]() {
-				  auto Locator = SpatialOSLocator{TCHAR_TO_UTF8(*LocatorHost), LocatorParams};
-				  WaitForDeploymentFuture(TimeoutMillis, Locator.GetDeploymentListAsync(),
-										  OnDeploymentsFoundCallback);
-			  });
+  AsyncTask(ENamedThreads::GameThread, [ProjectName, LocatorHost, LoginToken, TimeoutMillis,
+                                        OnDeploymentsFoundCallback, this]() {
+    WaitForDeploymentFuture(
+        TimeoutMillis, CreateLocator(ProjectName, LocatorHost, LoginToken).GetDeploymentListAsync(),
+        OnDeploymentsFoundCallback);
+  });
 }
 
 void FWorkerConnection::ConnectToReceptionistAsync(const FString& Hostname, std::uint16_t Port,
@@ -111,13 +96,11 @@ void FWorkerConnection::ConnectToReceptionistAsync(const FString& Hostname, std:
 	});
 }
 
-void FWorkerConnection::ConnectToLocatorAsync(const FString& LocatorHost,
-											  const worker::LocatorParameters& LocatorParams,
-											  const FString& DeploymentId,
-											  const worker::ConnectionParameters& Params,
-											  FQueueStatusDelegate QueueStatusCallback,
-											  FOnConnectedDelegate OnConnectedCallback,
-											  std::uint32_t TimeoutMillis)
+void FWorkerConnection::ConnectToLocatorAsync(
+    const FString& ProjectName, const FString& LocatorHost, const FString& DeploymentId,
+    const FString& LoginToken, const worker::ConnectionParameters& Params,
+    FQueueStatusDelegate QueueStatusCallback, FOnConnectedDelegate OnConnectedCallback,
+    std::uint32_t TimeoutMillis)
 {
 	if (!CanCreateNewConnection())
 	{
@@ -137,17 +120,17 @@ void FWorkerConnection::ConnectToLocatorAsync(const FString& LocatorHost,
 		return QueueStatusReturnValueFuture.Get();
 	};
 
-	bIsConnecting = true;
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask,
-			  [LocatorHost, LocatorParams, TimeoutMillis, DeploymentId, Params, QueueStatusWrapper,
-			   OnConnectedCallback, this]() {
-				  auto Locator = SpatialOSLocator{TCHAR_TO_UTF8(*LocatorHost), LocatorParams};
-				  WaitForConnectionFuture(TimeoutMillis,
-										  Locator.ConnectAsync(improbable::unreal::Components{},
-															   TCHAR_TO_UTF8(*DeploymentId), Params,
-															   QueueStatusWrapper),
-										  OnConnectedCallback);
-			  });
+  bIsConnecting = true;
+  AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask,
+            [ProjectName, LocatorHost, LoginToken, TimeoutMillis, DeploymentId, Params,
+             QueueStatusWrapper, OnConnectedCallback, this]() {
+              WaitForConnectionFuture(TimeoutMillis,
+                                      CreateLocator(ProjectName, LocatorHost, LoginToken)
+                                          .ConnectAsync(improbable::unreal::Components{},
+                                                        TCHAR_TO_UTF8(*DeploymentId), Params,
+                                                        QueueStatusWrapper),
+                                      OnConnectedCallback);
+            });
 }
 
 void FWorkerConnection::Disconnect()
@@ -227,6 +210,17 @@ const TWeakPtr<SpatialOSConnection> FWorkerConnection::GetConnection() const
 worker::Metrics& FWorkerConnection::GetMetrics()
 {
 	return *Metrics;
+}
+
+SpatialOSLocator FWorkerConnection::CreateLocator(const FString& ProjectName,
+                                                  const FString& LocatorHost,
+                                                  const FString& LoginToken)
+{
+  worker::LocatorParameters LocatorParams;
+  LocatorParams.ProjectName = TCHAR_TO_UTF8(*ProjectName);
+  LocatorParams.CredentialsType = worker::LocatorCredentialsType::kLoginToken;
+  LocatorParams.LoginToken = worker::LoginTokenCredentials{TCHAR_TO_UTF8(*LoginToken)};
+  return SpatialOSLocator{TCHAR_TO_UTF8(*LocatorHost), LocatorParams};
 }
 
 void FWorkerConnection::WaitForDeploymentFuture(

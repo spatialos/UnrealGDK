@@ -148,21 +148,20 @@ void USpatialOS::Connect()
 		}
 	});
 
-	const bool ShouldConnectViaLocator = !WorkerConfiguration.GetLoginToken().IsEmpty() ||
-		!WorkerConfiguration.GetSteamToken().IsEmpty();
-	if (ShouldConnectViaLocator)
-	{
-		auto LocatorParameters = WorkerConnection.CreateLocatorParameters(WorkerConfiguration);
-		WorkerConnection.ConnectToLocatorAsync(WorkerConfiguration.GetLocatorHost(), LocatorParameters,
-											   WorkerConfiguration.GetDeploymentName(), Params,
-											   OnQueueStatus, OnConnected);
-	}
-	else
-	{
-		WorkerConnection.ConnectToReceptionistAsync(
-			WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(),
-			WorkerConfiguration.GetWorkerId(), Params, OnConnected);
-	}
+  const bool ShouldConnectViaLocator = !WorkerConfiguration.GetLoginToken().IsEmpty();
+  if (ShouldConnectViaLocator)
+  {
+    WorkerConnection.ConnectToLocatorAsync(
+        WorkerConfiguration.GetProjectName(), WorkerConfiguration.GetLocatorHost(),
+        WorkerConfiguration.GetDeploymentName(), WorkerConfiguration.GetLoginToken(), Params,
+        OnQueueStatus, OnConnected);
+  }
+  else
+  {
+    WorkerConnection.ConnectToReceptionistAsync(
+        WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(),
+        WorkerConfiguration.GetWorkerId(), Params, OnConnected);
+  }
 }
 
 void USpatialOS::Disconnect()
