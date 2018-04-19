@@ -1,15 +1,6 @@
 {
   "targets": [
     {
-      "path": "Game/Plugins/SpatialOS",
-      "type": "unreal",
-      "packages": [
-        {
-          "name": "improbable_editor_toolbar_plugin"
-        }
-      ]
-    },
-    {
       "path": "Game/Binaries/ThirdParty/Improbable/Linux",
       "type": "worker_sdk",
       "packages": [
