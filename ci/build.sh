@@ -63,44 +63,41 @@ rm -rf "${UNREAL_GDK_DIR}/Source/SpatialOS/Public/WorkerSdk"
 
 markEndOfBlock "Clean folders"
 
-# #####
-# # Create folders.
-# #####
-# markStartOfBlock "Create folders"
+#####
+# Create folders.
+#####
+markStartOfBlock "Create folders"
 
 # mkdir -p "${BUILD_DIR}/json"
 # mkdir -p "${WORKER_PACKAGE_DIR}"
 # mkdir -p "${CODE_GENERATION_DIR}"
 # mkdir -p "${CORE_SDK_DIR}/tools"
 # mkdir -p "${CORE_SDK_DIR}/schema"
-# mkdir -p "${CORE_SDK_DIR}/worker_sdk"
+mkdir -p "${CORE_SDK_DIR}/worker_sdk"
 # mkdir -p "${UNREAL_GDK_DIR}/packages"
 # mkdir -p "${UNREAL_GDK_DIR}/Source/SpatialOS/Private/WorkerSdk"
-# mkdir -p "${UNREAL_GDK_DIR}/Source/SpatialOS/Public/WorkerSdk"
-# mkdir -p "${UNIFIED_UNREAL_SDK_TEMP_DIR}/Game/Binaries/ThirdParty/Improbable/Linux"
-# mkdir -p "${UNIFIED_UNREAL_SDK_TEMP_DIR}/Game/Binaries/ThirdParty/Improbable/Win32"
-# mkdir -p "${UNIFIED_UNREAL_SDK_TEMP_DIR}/Game/Binaries/ThirdParty/Improbable/Win64"
+mkdir -p "${UNREAL_GDK_DIR}/Source/SpatialOS/Public/WorkerSdk"
 # mkdir -p "${UNIFIED_UNREAL_SDK_TEMP_DIR}/Game/Source/SpatialOS"
 # mkdir -p "${UNIFIED_UNREAL_SDK_TEMP_DIR}/Game/Plugins/SpatialOS"
 # mkdir -p "${UNIFIED_UNREAL_SDK_TEMP_DIR}/Game/Binaries/ThirdParty/Improbable/Programs"
 # mkdir -p "${UNREAL_GENERATED_CODE_DIR}/Usr"
 
-# markEndOfBlock "Create folders"
+markEndOfBlock "Create folders"
 
-# #####
-# # Retrieve dependencies.
-# #####
-# markStartOfBlock "Retrieve dependencies"
+#####
+# Retrieve dependencies.
+#####
+markStartOfBlock "Retrieve dependencies"
 
-# # CoreSDK dependencies.
+# CoreSDK dependencies.
 # "${PACKAGE_CLIENT}" retrieve "tools"      "${SCHEMA_COMPILER_PACKAGE}" "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/tools/${SCHEMA_COMPILER_PACKAGE}"
 # "${PACKAGE_CLIENT}" retrieve "schema"     "standard_library"           "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/schema/standard_library"
-# "${PACKAGE_CLIENT}" retrieve "worker_sdk" "core-dynamic-x86-win32"     "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86-win32"
-# "${PACKAGE_CLIENT}" retrieve "worker_sdk" "core-dynamic-x86_64-win32"  "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-win32"
-# "${PACKAGE_CLIENT}" retrieve "worker_sdk" "core-dynamic-x86_64-linux"  "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-linux"
+"${PACKAGE_CLIENT}" retrieve "worker_sdk" "core-dynamic-x86-win32"     "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86-win32"
+"${PACKAGE_CLIENT}" retrieve "worker_sdk" "core-dynamic-x86_64-win32"  "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-win32"
+"${PACKAGE_CLIENT}" retrieve "worker_sdk" "core-dynamic-x86_64-linux"  "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-linux"
 
-# # Download the C++ SDK for its headers, only.
-# "${PACKAGE_CLIENT}" retrieve "worker_sdk" "cpp-static-x86_64-msvc_mtd-win32" "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/worker_sdk/cpp-src"
+# Download the C++ SDK for its headers, only.
+"${PACKAGE_CLIENT}" retrieve "worker_sdk" "cpp-static-x86_64-msvc_mtd-win32" "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/worker_sdk/cpp-src"
 
 # # Engines dependencies.
 # if [ "${BUILD_NUMBER}" != "LOCAL" ] ; then
@@ -109,16 +106,18 @@ markEndOfBlock "Clean folders"
 #   cp "../develop-code-generator/build/worker_packages/code_generation/Improbable.CodeGeneration.zip" "${CODE_GENERATION_DIR}"
 # fi
 
-# markEndOfBlock "Retrieve dependencies"
+markEndOfBlock "Retrieve dependencies"
 
-# #####
-# # Unpack dependencies.
-# #####
-# markStartOfBlock "Unpack dependencies"
+#####
+# Unpack dependencies.
+#####
+markStartOfBlock "Unpack dependencies"
 
 # unpackToWithClean "${CORE_SDK_DIR}/schema/standard_library"              "${SCHEMA_STD_DIR}"
 # unpackToWithClean "${CORE_SDK_DIR}/tools/${SCHEMA_COMPILER_PACKAGE}"     "${SCHEMA_COMPILER_DIR}"
-# unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-win32" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win64"
+unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86-win32" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win32"
+unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-win32" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win64"
+unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-Linux" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Linux"
 # unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/cpp-src"                   "${BUILD_DIR}/cpp_src/"
 
 # # Include the WorkerSdk header files
