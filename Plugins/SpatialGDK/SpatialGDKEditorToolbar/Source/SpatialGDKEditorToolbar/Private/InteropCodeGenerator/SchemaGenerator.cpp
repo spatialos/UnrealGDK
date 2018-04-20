@@ -174,45 +174,30 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 			// This loop will add the owner class of each field in the component. Meant for short-term debugging only.
 			// TODO UNR-166: Delete this when InteropCodegen is in a more complete state.
-			auto ThisProp = RepProp.Value;
-			while (true) 
+			FString PropertyPath;
+			TSharedPtr<FUnrealProperty> UnrealProperty = RepProp.Value;
+			while (UnrealProperty->ContainerType != nullptr)
 			{
-				if (ThisProp->Type.IsValid()) // If we have a defined unreal type
+				TSharedPtr<FUnrealType> ContainerType = UnrealProperty->ContainerType.Pin();
+				check(ContainerType.IsValid());
+				if (ContainerType->ParentProperty != nullptr)
 				{
-					if (ThisProp->Type->ParentProperty.IsValid()) // If we have a parent property, this should be the 'truth'
+					TSharedPtr<FUnrealProperty> ParentProperty = ContainerType->ParentProperty.Pin();
+					if (ParentProperty.IsValid())
 					{
-						ThisProp = ThisProp->Type->ParentProperty.Pin();
-						ParentClassName += FString::Printf(TEXT(" %s ::"), *ThisProp->Type->Type->GetName());
-						
-						// Duplicate Code (Oscillation)
-						if (ThisProp->ContainerType.Pin()->ParentProperty.Pin().IsValid()) // Check the ContainerType for a parent property.
-						{
-							ThisProp = ThisProp->ContainerType.Pin()->ParentProperty.Pin();
-						}
-						else 
-						{
-							break;
-						}
+						PropertyPath += FString::Printf(TEXT("%s::%s"), *ContainerType->Type->GetName(), *ParentProperty->Property->GetName());
 					}
+					UnrealProperty = ParentProperty;
 				}
-				else 
-				{ // If we do not have an unreal type
-					if (ThisProp->ContainerType.Pin()->ParentProperty.Pin().IsValid()) // Check the ContainerType for a parent property.
-					{
-						ParentClassName += FString::Printf(TEXT(" %s ::"), *ThisProp->ContainerType.Pin()->Type->GetName());
-						ThisProp = ThisProp->ContainerType.Pin()->ParentProperty.Pin();
-					} 
-					else 
-					{
-						break;
-					}
+				else
+				{
+					break;
 				}
 			}
 
-			auto MaybeTheOwner = ThisProp->Property->GetOuter();
-			if (MaybeTheOwner != nullptr)
+			if (UObject* ObjOuter = UnrealProperty->Property->GetOuter())
 			{
-				ParentClassName += FString::Printf(TEXT(" %s"), *MaybeTheOwner->GetName());
+				PropertyPath += FString::Printf(TEXT("::%s"), *ObjOuter->GetName());
 			}
 
 			Writer.Printf("%s %s = %d; // %s // %s",
@@ -220,7 +205,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 				*SchemaFieldName(RepProp.Value),
 				FieldCounter,
 				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
-				*ParentClassName
+				*PropertyPath
 			);
 		}
 		Writer.Outdent().Print("}");
