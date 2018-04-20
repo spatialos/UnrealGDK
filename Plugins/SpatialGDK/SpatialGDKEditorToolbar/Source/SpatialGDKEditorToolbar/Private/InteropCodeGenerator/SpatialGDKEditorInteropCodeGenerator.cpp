@@ -26,7 +26,7 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, MigratableProperties);
 
 	// Generate schema.
-	int NumComponents = GenerateTypeBindingSchema(OutputSchema, ComponentId, Class, TypeInfo);
+	int NumComponents = GenerateTypeBindingSchema(OutputSchema, ComponentId, Class, TypeInfo, SchemaPath);
 	OutputSchema.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFilename));
 
 	// Generate forwarding code.
@@ -141,7 +141,6 @@ void SpatialGDKGenerateInteropCode()
 			TArray<TArray<FName>> ClassMigratableProperties = MigratableProperties.FindRef(ClassName);
 			ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, ClassMigratableProperties);
 		}
-		GenerateTypeBindingList(CombinedForwardingCodePath, Classes);
 	}
 	else
 	{

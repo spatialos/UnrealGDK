@@ -166,6 +166,8 @@ TArray<ERPCType> GetRPCTypes();
 // Given a UFunction, determines the RPC type.
 ERPCType GetRPCTypeFromFunction(UFunction* Function);
 
+TArray<FString> GetRPCTypeOwners(TSharedPtr<FUnrealType> TypeInfo);
+
 // Converts an RPC type to string. Used to generate component names.
 FString GetRPCTypeName(ERPCType RPCType);
 

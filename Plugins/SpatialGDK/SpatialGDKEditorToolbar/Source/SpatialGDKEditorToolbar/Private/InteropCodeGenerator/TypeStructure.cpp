@@ -533,6 +533,23 @@ TMap<uint16, TSharedPtr<FUnrealProperty>> GetFlatMigratableData(TSharedPtr<FUnre
 	return MigratableData;
 }
 
+// Goes through all RPCs in the TypeInfo and returns a list of all the unique RPC source classes.
+TArray<FString> GetRPCTypeOwners(TSharedPtr<FUnrealType> TypeInfo)
+{
+	TArray<FString> RPCTypeOwners;
+	VisitAllObjects(TypeInfo, [&RPCTypeOwners](TSharedPtr<FUnrealType> Type)
+	{
+		for (auto& RPC : Type->RPCs)
+		{
+			FString RPCOwnerName = *RPC.Value->Function->GetOuter()->GetName();
+			RPCTypeOwners.AddUnique(RPCOwnerName);
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("RPC Type Owner Found - %s ::  %s"), *RPCOwnerName, *RPC.Value->Function->GetName());
+		}
+		return true;
+	}, true);
+	return RPCTypeOwners;
+}
+
 FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 {
 	FUnrealRPCsByType RPCsByType;
