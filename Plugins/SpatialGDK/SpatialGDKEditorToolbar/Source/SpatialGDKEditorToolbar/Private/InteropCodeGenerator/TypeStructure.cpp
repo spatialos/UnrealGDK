@@ -305,6 +305,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 				continue;
 			}
 
+			// Check whether the owner of this value is the CDO itself.
 			if (Value->GetOuter() == ContainerCDO)
 			{
 				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
