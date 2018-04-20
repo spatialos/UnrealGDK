@@ -175,7 +175,8 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			// This loop will add the owner class of each field in the component. Meant for short-term debugging only.
 			// TODO UNR-166: Delete this when InteropCodegen is in a more complete state.
 			auto ThisProp = RepProp.Value;
-			while (true) {
+			while (true) 
+			{
 				if (ThisProp->Type.IsValid()) // If we have a defined unreal type
 				{
 					if (ThisProp->Type->ParentProperty.IsValid()) // If we have a parent property, this should be the 'truth'
@@ -194,12 +195,14 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 						}
 					}
 				}
-				else { // If we do not have an unreal type
+				else 
+				{ // If we do not have an unreal type
 					if (ThisProp->ContainerType.Pin()->ParentProperty.Pin().IsValid()) // Check the ContainerType for a parent property.
 					{
 						ParentClassName += FString::Printf(TEXT(" %s ::"), *ThisProp->ContainerType.Pin()->Type->GetName());
 						ThisProp = ThisProp->ContainerType.Pin()->ParentProperty.Pin();
-					} else 
+					} 
+					else 
 					{
 						break;
 					}
