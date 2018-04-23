@@ -4,15 +4,6 @@
       "name": "Codegen",
       "steps": [
         {
-          "name": "Install dependencies",
-          "arguments": [
-            "worker_package",
-            "unpack",
-            "--package_file",
-            "Game/Scripts/spatialos_worker_packages.json"
-          ]
-        },
-        {
           "name": "C++ standard library",
           "arguments": [
             "process_schema",
