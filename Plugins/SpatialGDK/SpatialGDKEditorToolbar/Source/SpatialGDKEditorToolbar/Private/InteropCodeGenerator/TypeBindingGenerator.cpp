@@ -896,8 +896,15 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		TypeBindingName(Class));
 
 	// Set up initial data.
-	SourceWriter.Print(TEXT("checkf(GetRepHandlePropertyMap().Num() >= InitialChanges.RepChanged.Num() - 1, " \
-							"TEXT(\"Attempting to replicate more properties than typebinding is aware of. Have additional replicated properties been added in a subobject?\"))"));
+	SourceWriter.Print(R"""(
+		// Validate replication list.
+		const uint16 RepHandlePropertyMapCount = GetRepHandlePropertyMap().Num();
+		for (auto& Rep : InitialChanges.RepChanged)
+		{
+			checkf(Rep <= RepHandlePropertyMapCount, TEXT("Attempting to replicate more properties than typebinding is aware of. Have additional replicated properties been added in a non generated child object?"))
+		}
+		)""");
+
 	SourceWriter.Print(TEXT("// Setup initial data."));
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
@@ -1150,7 +1157,15 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 			*Channel->Actor->GetName(),
 			Channel->GetEntityId().ToSpatialEntityId(),
 			*Cmd.Property->GetName(),
-			HandleIterator.Handle);)""");
+			HandleIterator.Handle);
+			if (Cmd.Type == REPCMD_DynamicArray)
+			{
+				if (HandleIterator.JumpOverArray() == false)
+				{
+					checkf(false, TEXT("Failed to jump over array, replication aborted."));
+					break;
+				}
+			})""");
 
 	SourceWriter.Print("switch (GetGroupFromCondition(PropertyMapData.Condition))");
 	SourceWriter.BeginScope();
