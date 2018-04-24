@@ -285,36 +285,22 @@ bool USpatialActorChannel::ReplicateActor()
 			// Ensure that the initial changelist contains _every_ property. This ensures that the default properties are written to the entity template.
 			// Otherwise, there will be a mismatch between the rep state shadow data used by CompareProperties and the entity in SpatialOS.
 			TArray<uint16> InitialRepChanged;
-			TArray<uint16> ArrayRepChanged;
-			TArray<uint16>* ActiveRepChanges = &InitialRepChanged;
 			bool bInDynamicArray = false;
-			
-			for (auto& Cmd : ActorReplicator->RepLayout->Cmds)
+			for (uint16 CmdIdx = 0; CmdIdx < ActorReplicator->RepLayout->Cmds.Num(); ++CmdIdx)
 			{
-				if (Cmd.Type != REPCMD_Return)
-				{
-					ActiveRepChanges->Add(Cmd.RelativeHandle);
+				const auto& Cmd = ActorReplicator->RepLayout->Cmds[CmdIdx];
 
-					if (Cmd.Type == REPCMD_DynamicArray)
-					{
-						checkf(!bInDynamicArray, TEXT("Encountered nested array"));
-						ActiveRepChanges = &ArrayRepChanged;
-						bInDynamicArray = true;
-					}
+				InitialRepChanged.Add(Cmd.RelativeHandle);
+
+				if (Cmd.Type == REPCMD_DynamicArray)
+				{
+					checkf(!bInDynamicArray, TEXT("Encountered nested array"));
+					bInDynamicArray = true;
+					InitialRepChanged.Add((Cmd.EndCmd - CmdIdx) - 2);
 				}
-				else
+				else if (Cmd.Type == REPCMD_Return)
 				{
-					if (bInDynamicArray)
-					{
-						// End of dynamic array, append array length and contents to main rep list.
-						InitialRepChanged.Add(ArrayRepChanged.Num());
-						InitialRepChanged.Append(ArrayRepChanged);
-						ArrayRepChanged.Empty();
-						ActiveRepChanges = &InitialRepChanged;
-						bInDynamicArray = false;
-					}
-
-					ActiveRepChanges->Add(0);
+					bInDynamicArray = false;
 				}
 			}
 

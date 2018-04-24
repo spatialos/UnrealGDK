@@ -1157,14 +1157,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 			*Channel->Actor->GetName(),
 			Channel->GetEntityId().ToSpatialEntityId(),
 			*Cmd.Property->GetName(),
-			HandleIterator.Handle);
-			if (Cmd.Type == REPCMD_DynamicArray)
-			{
-				if (!HandleIterator.JumpOverArray())
-				{
-					break;
-				}
-			})""");
+			HandleIterator.Handle);)""");
 
 	SourceWriter.Print("switch (GetGroupFromCondition(PropertyMapData.Condition))");
 	SourceWriter.BeginScope();
@@ -1181,6 +1174,14 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 		SourceWriter.Print("break;");
 	}
 	SourceWriter.End();
+	SourceWriter.Print(R"""(
+			if (Cmd.Type == REPCMD_DynamicArray)
+			{
+				if (!HandleIterator.JumpOverArray())
+				{
+					break;
+				}
+			})""");
 	SourceWriter.End();
 	SourceWriter.End();
 
