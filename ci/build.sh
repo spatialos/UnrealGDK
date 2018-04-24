@@ -118,10 +118,10 @@ markStartOfBlock "Unpack dependencies"
 unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86-win32" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win32"
 unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-win32" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win64"
 unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-Linux" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Linux"
-# unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/cpp-src"                   "${BUILD_DIR}/cpp_src/"
+unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/cpp-src"                   "${BUILD_DIR}/cpp_src/"
 
-# # Include the WorkerSdk header files
-# cp -r "${BUILD_DIR}/cpp_src/include/"               "${UNREAL_GDK_DIR}/Source/SpatialOS/Public/WorkerSdk"
+# Include the WorkerSdk header files
+cp -r "${BUILD_DIR}/cpp_src/include/"               "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
 
 # unpackToWithClean "${CODE_GENERATION_DIR}/Improbable.CodeGeneration" "packages/Improbable.CodeGeneration"
 
@@ -134,7 +134,7 @@ unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-Linux" "${UNRE
 # "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.TeamCityEventListener --version 1.0.3
 # "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.VSProjectLoader --version 3.7.0
 
-# markEndOfBlock "Unpack dependencies"
+markEndOfBlock "Unpack dependencies"
 
 # #####
 # # Build go CLI tools.
