@@ -234,8 +234,8 @@ bool USpatialActorChannel::ReplicateActor()
 		}
 	}
 
-	// We can early out if we know for sure there are no new changelists to send
-	if (MigratableChanged.Num() == 0)
+	// We can early out if we know for sure there are no new changelists to send, and we are not creating a new entity.
+	if (!bCreatingNewEntity && MigratableChanged.Num() == 0)
 	{
 		if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
 		{
