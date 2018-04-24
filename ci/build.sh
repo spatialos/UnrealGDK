@@ -116,17 +116,13 @@ markStartOfBlock "Unpack dependencies"
 
 # unpackToWithClean "${CORE_SDK_DIR}/schema/standard_library"              "${SCHEMA_STD_DIR}"
 # unpackToWithClean "${CORE_SDK_DIR}/tools/${SCHEMA_COMPILER_PACKAGE}"     "${SCHEMA_COMPILER_DIR}"
-#unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86-win32" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win32"
-#unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-win32" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win64"
-#unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-Linux" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Linux"
-#unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/cpp-src"                   "${BUILD_DIR}/cpp_src/"
 
 # Include the WorkerSdk header files
 cp -r "${CORE_SDK_DIR}/cpp-src/include/"               "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
 
 # unpackToWithClean "${CODE_GENERATION_DIR}/Improbable.CodeGeneration" "packages/Improbable.CodeGeneration"
 
-# "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit --version 3.9.0
+#"${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit --version 3.9.0
 # "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Console --version 3.8.0
 # "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.ConsoleRunner --version 3.8.0
 # "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.NUnitProjectLoader --version 3.5.0
@@ -137,18 +133,18 @@ cp -r "${CORE_SDK_DIR}/cpp-src/include/"               "${UNREAL_GDK_DIR}/Source
 
 markEndOfBlock "Unpack dependencies"
 
-# #####
-# # Build go CLI tools.
-# #####
-# markStartOfBlock "Build go CLI tools"
+#####
+# Build go CLI tools.
+#####
+markStartOfBlock "Build go CLI tools"
 
-# GOOS="windows" GOARCH="amd64" \
-#   go build -o "${GO_CLI_TOOLS}/windows/unreal_packager.exe" improbable.io/unreal_packager/...
+GOOS="windows" GOARCH="amd64" \
+  go build -o "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/unreal_packager.exe" improbable.io/unreal_packager/...
 
-# GOOS="windows" GOARCH="amd64" \
-#   go build -o "${GO_CLI_TOOLS}/windows/clean.exe" improbable.io/clean/...
+GOOS="windows" GOARCH="amd64" \
+  go build -o "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/clean.exe" improbable.io/clean/...
 
-# markEndOfBlock "Build go CLI tools"
+markEndOfBlock "Build go CLI tools"
 
 # #####
 # # Build CodeGeneration.
