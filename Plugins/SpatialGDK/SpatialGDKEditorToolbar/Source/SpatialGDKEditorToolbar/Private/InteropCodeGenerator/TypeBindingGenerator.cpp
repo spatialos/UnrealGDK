@@ -1175,13 +1175,13 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 	}
 	SourceWriter.End();
 	SourceWriter.Print(R"""(
-			if (Cmd.Type == REPCMD_DynamicArray)
+		if (Cmd.Type == REPCMD_DynamicArray)
+		{
+			if (!HandleIterator.JumpOverArray())
 			{
-				if (!HandleIterator.JumpOverArray())
-				{
-					break;
-				}
-			})""");
+				break;
+			}
+		})""");
 	SourceWriter.End();
 	SourceWriter.End();
 
