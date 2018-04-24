@@ -6,6 +6,7 @@ cd "$(dirname "$0")/../"
 
 source ci/pinned-tools.sh
 source ci/profiling.sh
+source ci/force_spatial_cli_structure.sh
 
 if ! isWindows ; then
   echo "Unreal Sdk is only supported on Windows."
@@ -92,12 +93,12 @@ markStartOfBlock "Retrieve dependencies"
 # CoreSDK dependencies.
 # "${PACKAGE_CLIENT}" retrieve "tools"      "${SCHEMA_COMPILER_PACKAGE}" "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/tools/${SCHEMA_COMPILER_PACKAGE}"
 # "${PACKAGE_CLIENT}" retrieve "schema"     "standard_library"           "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/schema/standard_library"
-"${PACKAGE_CLIENT}" retrieve "worker_sdk" "core-dynamic-x86-win32"     "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86-win32"
-"${PACKAGE_CLIENT}" retrieve "worker_sdk" "core-dynamic-x86_64-win32"  "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-win32"
-"${PACKAGE_CLIENT}" retrieve "worker_sdk" "core-dynamic-x86_64-linux"  "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-linux"
+runSpatial worker_package unpack-to worker_sdk core-dynamic-x86-win32 "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win32"
+runSpatial worker_package unpack-to worker_sdk core-dynamic-x86_64-win32 "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win64"
+runSpatial worker_package unpack-to worker_sdk core-dynamic-x86_64-linux "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Linux"
 
 # Download the C++ SDK for its headers, only.
-"${PACKAGE_CLIENT}" retrieve "worker_sdk" "cpp-static-x86_64-msvc_mtd-win32" "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/worker_sdk/cpp-src"
+runSpatial worker_package unpack-to worker_sdk cpp-static-x86_64-msvc_mtd-win32 "${CORE_SDK_DIR}/cpp-src"
 
 # # Engines dependencies.
 # if [ "${BUILD_NUMBER}" != "LOCAL" ] ; then
@@ -115,13 +116,13 @@ markStartOfBlock "Unpack dependencies"
 
 # unpackToWithClean "${CORE_SDK_DIR}/schema/standard_library"              "${SCHEMA_STD_DIR}"
 # unpackToWithClean "${CORE_SDK_DIR}/tools/${SCHEMA_COMPILER_PACKAGE}"     "${SCHEMA_COMPILER_DIR}"
-unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86-win32" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win32"
-unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-win32" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win64"
-unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-Linux" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Linux"
-unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/cpp-src"                   "${BUILD_DIR}/cpp_src/"
+#unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86-win32" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win32"
+#unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-win32" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win64"
+#unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-Linux" "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Linux"
+#unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/cpp-src"                   "${BUILD_DIR}/cpp_src/"
 
 # Include the WorkerSdk header files
-cp -r "${BUILD_DIR}/cpp_src/include/"               "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
+cp -r "${CORE_SDK_DIR}/cpp-src/include/"               "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
 
 # unpackToWithClean "${CODE_GENERATION_DIR}/Improbable.CodeGeneration" "packages/Improbable.CodeGeneration"
 

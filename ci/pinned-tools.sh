@@ -67,6 +67,15 @@ function unpackToWithClean() {
   unpackTo "${SOURCE}" "${TARGET}"
 }
 
+function runSpatial() {
+  local default_flags=(
+    "--log_level=debug"
+  )
+
+  forceSpatialCliStructureV2
+  spatial "$@" "${default_flags[@]}"
+}
+
 # Variable declarations
 
 PROGRAMFILES_X86=$(cmd.exe /c "echo %ProgramFiles(x86)%")
