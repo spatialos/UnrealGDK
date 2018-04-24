@@ -896,8 +896,15 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		TypeBindingName(Class));
 
 	// Set up initial data.
-	SourceWriter.Print(TEXT("checkf(GetRepHandlePropertyMap().Num() >= InitialChanges.RepChanged.Num() - 1, " \
-							"TEXT(\"Attempting to replicate more properties than typebinding is aware of. Have additional replicated properties been added in a subobject?\"))"));
+	SourceWriter.Print(R"""(
+		// Validate replication list.
+		const uint16 RepHandlePropertyMapCount = GetRepHandlePropertyMap().Num();
+		for (auto& Rep : InitialChanges.RepChanged)
+		{
+			checkf(Rep <= RepHandlePropertyMapCount, TEXT("Attempting to replicate a property with a handle that the type binding is not aware of. Have additional replicated properties been added in a non generated child object?"))
+		}
+		)""");
+
 	SourceWriter.Print(TEXT("// Setup initial data."));
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
@@ -1167,6 +1174,14 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 		SourceWriter.Print("break;");
 	}
 	SourceWriter.End();
+	SourceWriter.Print(R"""(
+		if (Cmd.Type == REPCMD_DynamicArray)
+		{
+			if (!HandleIterator.JumpOverArray())
+			{
+				break;
+			}
+		})""");
 	SourceWriter.End();
 	SourceWriter.End();
 

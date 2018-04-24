@@ -285,14 +285,27 @@ bool USpatialActorChannel::ReplicateActor()
 			// Ensure that the initial changelist contains _every_ property. This ensures that the default properties are written to the entity template.
 			// Otherwise, there will be a mismatch between the rep state shadow data used by CompareProperties and the entity in SpatialOS.
 			TArray<uint16> InitialRepChanged;
-			for (auto& Cmd : ActorReplicator->RepLayout->Cmds)
+			bool bInDynamicArray = false;
+			for (uint16 CmdIdx = 0; CmdIdx < ActorReplicator->RepLayout->Cmds.Num(); ++CmdIdx)
 			{
-				if (Cmd.Type != REPCMD_Return)
+				const auto& Cmd = ActorReplicator->RepLayout->Cmds[CmdIdx];
+
+				InitialRepChanged.Add(Cmd.RelativeHandle);
+
+				if (Cmd.Type == REPCMD_DynamicArray)
 				{
-					InitialRepChanged.Add(Cmd.RelativeHandle);
+					checkf(!bInDynamicArray, TEXT("Encountered nested array"));
+					bInDynamicArray = true;
+					// Add the number of array properties to comform to Unreal's RepLayout design and 
+					// allow FRepHandleIterator to jump over arrays. Cmd.EndCmd is an index into 
+					// RepLayout->Cmds[] that points to the value after the termination NULL of this array.
+					InitialRepChanged.Add((Cmd.EndCmd - CmdIdx) - 2);
+				}
+				else if (Cmd.Type == REPCMD_Return)
+				{
+					bInDynamicArray = false;
 				}
 			}
-			InitialRepChanged.Add(0);
 
 			// Calculate initial spatial position (but don't send component update) and create the entity.
 			LastSpatialPosition = GetActorSpatialPosition(Actor);
