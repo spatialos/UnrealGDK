@@ -296,6 +296,9 @@ bool USpatialActorChannel::ReplicateActor()
 				{
 					checkf(!bInDynamicArray, TEXT("Encountered nested array"));
 					bInDynamicArray = true;
+					// Add the number of array properties to comform to Unreal's RepLayout design and 
+					// allow FRepHandleIterator to jump over arrays. Cmd.EndCmd is an index into 
+					// RepLayout->Cmds[] that points to the value after the termination NULL of this array.
 					InitialRepChanged.Add((Cmd.EndCmd - CmdIdx) - 2);
 				}
 				else if (Cmd.Type == REPCMD_Return)
