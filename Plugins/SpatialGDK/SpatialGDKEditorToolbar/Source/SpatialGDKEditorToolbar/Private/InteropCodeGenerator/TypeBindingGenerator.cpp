@@ -901,7 +901,7 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		const uint16 RepHandlePropertyMapCount = GetRepHandlePropertyMap().Num();
 		for (auto& Rep : InitialChanges.RepChanged)
 		{
-			checkf(Rep <= RepHandlePropertyMapCount, TEXT("Attempting to replicate more properties than typebinding is aware of. Have additional replicated properties been added in a non generated child object?"))
+			checkf(Rep <= RepHandlePropertyMapCount, TEXT("Attempting to replicate a property with a handle that the type binding is not aware of. Have additional replicated properties been added in a non generated child object?"))
 		}
 		)""");
 
@@ -1160,9 +1160,8 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 			HandleIterator.Handle);
 			if (Cmd.Type == REPCMD_DynamicArray)
 			{
-				if (HandleIterator.JumpOverArray() == false)
+				if (!HandleIterator.JumpOverArray())
 				{
-					checkf(false, TEXT("Failed to jump over array, replication aborted."));
 					break;
 				}
 			})""");
