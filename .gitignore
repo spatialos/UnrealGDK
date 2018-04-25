@@ -70,8 +70,13 @@ Build/*/**
 **/Intermediate/
 **/Saved/
 
+**/bin/
+**/obj/
+
 .spatialos/
 Plugins/SpatialOS
 logs/
 
 Scripts/spatialos.*.build.json
+
+!Source/Programs/Improbable.Unreal.CodeGeneration/UnrealCodeGeneration.sln
