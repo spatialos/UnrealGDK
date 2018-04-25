@@ -132,15 +132,6 @@
             "Game/Intermediate/Improbable/schema_codegen_cache_json_std",
             "Game/Intermediate/Improbable/schema_codegen_cache_json_user"
           ]
-        },
-        {
-          "name": "Dependencies and generated code",
-          "arguments": [
-            "worker_package",
-            "clean",
-            "--package_file",
-            "Game/Intermediate/Improbable/spatialos_worker_packages.json"
-          ]
         }
       ]
     }
