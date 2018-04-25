@@ -11,7 +11,8 @@
             "--cachePath=Game/Intermediate/Improbable/schema_codegen_cache_std",
             "--output=Game/Source/SpatialGDK/Generated/Std",
             "--language=cpp",
-            "--input=../../build/dependencies/schema/standard_library"
+            "--input=../../build/dependencies/schema/standard_library",
+            "--version=%core_sdk_version%"
           ]
         },
         {
@@ -24,7 +25,8 @@
             "--language=cpp",
             "--input=../../schema",
             "--input=../../generatedschema",
-            "--repository=../../build/dependencies/schema"
+            "--repository=../../build/dependencies/schema",
+            "--version=%core_sdk_version%"
           ]
         },
         {
@@ -35,7 +37,8 @@
             "--cachePath=Game/Intermediate/Improbable/schema_codegen_cache_json_std",
             "--output=Game/Intermediate/Improbable/json/std",
             "--language=ast_json",
-            "--input=../../build/dependencies/schema/standard_library"
+            "--input=../../build/dependencies/schema/standard_library",
+            "--version=%core_sdk_version%"
           ]
         },
         {
@@ -48,7 +51,8 @@
             "--language=ast_json",
             "--input=../../schema",
             "--input=../../generatedschema",
-            "--repository=../../build/dependencies/schema"
+            "--repository=../../build/dependencies/schema",
+            "--version=%core_sdk_version%"
           ]
         },
         {
@@ -83,9 +87,8 @@
         {
           "name": "Win64 Editor (Local)",
           "target": "Local",
+          "command": "Game/Binaries/ThirdParty/Improbable/Programs/unreal_packager",
           "arguments": [
-            "invoke",
-            "unreal",
             "build",
             "--target=Editor",
             "--configuration=Development",
@@ -95,9 +98,8 @@
         {
           "name": "Win64 Editor (Cloud)",
           "target": "Cloud",
+          "command": "Game/Binaries/ThirdParty/Improbable/Programs/unreal_packager",
           "arguments": [
-            "invoke",
-            "unreal",
             "build",
             "--target=Editor",
             "--configuration=Development",
@@ -107,9 +109,8 @@
         {
           "name": "Linux Server",
           "target": "Cloud",
+          "command": "Game/Binaries/ThirdParty/Improbable/Programs/unreal_packager",
           "arguments": [
-            "invoke",
-            "unreal",
             "build",
             "--target=Server",
             "--configuration=Development",
@@ -122,15 +123,11 @@
       "name": "Clean",
       "steps": [
         {
-          "name": "Generated code cache",
+          "name": "Build artifacts and generated code",
+          "command": "Game/Binaries/ThirdParty/Improbable/Programs/clean",
           "arguments": [
-            "process_schema",
-            "clean",
-            "Game/Intermediate/Improbable/json",
-            "Game/Intermediate/Improbable/schema_codegen_cache_std",
-            "Game/Intermediate/Improbable/schema_codegen_cache_user",
-            "Game/Intermediate/Improbable/schema_codegen_cache_json_std",
-            "Game/Intermediate/Improbable/schema_codegen_cache_json_user"
+            "Game/Intermediate/Improbable",
+            "Game/Source/SpatialGDK/Generated/UClasses"
           ]
         }
       ]

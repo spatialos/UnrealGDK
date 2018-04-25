@@ -24,7 +24,7 @@ markStartOfBlock "Setup variables"
 
 #BUILD_NUMBER=$(go run "${GOPATH}/src/improbable.io/get-version-string/main.go")
 PINNED_CORE_SDK_VERSION="$(cat core-sdk.version)"
-PINNED_CODE_GENERATOR_VERSION="$(cat code-generator.version)"
+#PINNED_CODE_GENERATOR_VERSION="$(cat code-generator.version)"
 
 BUILD_DIR="$(pwd)/build"
 CORE_SDK_DIR="${BUILD_DIR}/core_sdk"
@@ -88,67 +88,67 @@ markEndOfBlock "Create folders"
 #####
 # Retrieve dependencies.
 # #####
-# markStartOfBlock "Retrieve dependencies"
+markStartOfBlock "Retrieve dependencies"
 
-# # CoreSDK dependencies.
-# # "${PACKAGE_CLIENT}" retrieve "tools"      "${SCHEMA_COMPILER_PACKAGE}" "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/tools/${SCHEMA_COMPILER_PACKAGE}"
-# # "${PACKAGE_CLIENT}" retrieve "schema"     "standard_library"           "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/schema/standard_library"
-# runSpatial worker_package unpack-to worker_sdk core-dynamic-x86-win32 "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win32"
-# runSpatial worker_package unpack-to worker_sdk core-dynamic-x86_64-win32 "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win64"
-# runSpatial worker_package unpack-to worker_sdk core-dynamic-x86_64-linux "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Linux"
+# CoreSDK dependencies.
+# "${PACKAGE_CLIENT}" retrieve "tools"      "${SCHEMA_COMPILER_PACKAGE}" "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/tools/${SCHEMA_COMPILER_PACKAGE}"
+# "${PACKAGE_CLIENT}" retrieve "schema"     "standard_library"           "${PINNED_CORE_SDK_VERSION}" "${CORE_SDK_DIR}/schema/standard_library"
+runSpatial worker_package unpack-to worker_sdk core-dynamic-x86-win32 "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win32"
+runSpatial worker_package unpack-to worker_sdk core-dynamic-x86_64-win32 "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win64"
+runSpatial worker_package unpack-to worker_sdk core-dynamic-x86_64-linux "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Linux"
 
-# # Download the C++ SDK for its headers, only.
-# runSpatial worker_package unpack-to worker_sdk cpp-static-x86_64-msvc_mtd-win32 "${CORE_SDK_DIR}/cpp-src"
+# Download the C++ SDK for its headers, only.
+runSpatial worker_package unpack-to worker_sdk cpp-static-x86_64-msvc_mtd-win32 "${CORE_SDK_DIR}/cpp-src"
 
-# # # Engines dependencies.
-# # if [ "${BUILD_NUMBER}" != "LOCAL" ] ; then
-# #   "${PACKAGE_CLIENT}" retrieve "code_generation" "Improbable.CodeGeneration" "${PINNED_CODE_GENERATOR_VERSION}" "${CODE_GENERATION_DIR}/Improbable.CodeGeneration"
-# # else
-# #   cp "../develop-code-generator/build/worker_packages/code_generation/Improbable.CodeGeneration.zip" "${CODE_GENERATION_DIR}"
-# # fi
+# # Engines dependencies.
+# if [ "${BUILD_NUMBER}" != "LOCAL" ] ; then
+#   "${PACKAGE_CLIENT}" retrieve "code_generation" "Improbable.CodeGeneration" "${PINNED_CODE_GENERATOR_VERSION}" "${CODE_GENERATION_DIR}/Improbable.CodeGeneration"
+# else
+#   cp "../develop-code-generator/build/worker_packages/code_generation/Improbable.CodeGeneration.zip" "${CODE_GENERATION_DIR}"
+# fi
 
-# markEndOfBlock "Retrieve dependencies"
+markEndOfBlock "Retrieve dependencies"
 
-# #####
-# # Unpack dependencies.
-# #####
-# markStartOfBlock "Unpack dependencies"
+#####
+# Unpack dependencies.
+#####
+markStartOfBlock "Unpack dependencies"
 
-# # unpackToWithClean "${CORE_SDK_DIR}/schema/standard_library"              "${SCHEMA_STD_DIR}"
-# # unpackToWithClean "${CORE_SDK_DIR}/tools/${SCHEMA_COMPILER_PACKAGE}"     "${SCHEMA_COMPILER_DIR}"
+# unpackToWithClean "${CORE_SDK_DIR}/schema/standard_library"              "${SCHEMA_STD_DIR}"
+# unpackToWithClean "${CORE_SDK_DIR}/tools/${SCHEMA_COMPILER_PACKAGE}"     "${SCHEMA_COMPILER_DIR}"
 
-# # Include the WorkerSdk header files
-# cp -r "${CORE_SDK_DIR}/cpp-src/include/"               "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
+# Include the WorkerSdk header files
+cp -r "${CORE_SDK_DIR}/cpp-src/include/"               "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
 
-# # unpackToWithClean "${CODE_GENERATION_DIR}/Improbable.CodeGeneration" "packages/Improbable.CodeGeneration"
+# unpackToWithClean "${CODE_GENERATION_DIR}/Improbable.CodeGeneration" "packages/Improbable.CodeGeneration"
 
-# #"${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit --version 3.9.0
-# # "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Console --version 3.8.0
-# # "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.ConsoleRunner --version 3.8.0
-# # "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.NUnitProjectLoader --version 3.5.0
-# # "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.NUnitV2Driver --version 3.6.0
-# # "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.NUnitV2ResultWriter --version 3.5.0
-# # "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.TeamCityEventListener --version 1.0.3
-# # "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.VSProjectLoader --version 3.7.0
+#"${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit --version 3.9.0
+# "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Console --version 3.8.0
+# "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.ConsoleRunner --version 3.8.0
+# "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.NUnitProjectLoader --version 3.5.0
+# "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.NUnitV2Driver --version 3.6.0
+# "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.NUnitV2ResultWriter --version 3.5.0
+# "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.TeamCityEventListener --version 1.0.3
+# "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.VSProjectLoader --version 3.7.0
 
-# markEndOfBlock "Unpack dependencies"
+markEndOfBlock "Unpack dependencies"
 
-# #####
-# # Build go CLI tools.
-# #####
-# markStartOfBlock "Build go CLI tools"
+#####
+# Build go CLI tools.
+#####
+markStartOfBlock "Build go CLI tools"
 
-# GOOS="windows" GOARCH="amd64" \
-#   go build -o "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/unreal_packager.exe" improbable.io/unreal_packager/...
+GOOS="windows" GOARCH="amd64" \
+  go build -o "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/unreal_packager.exe" improbable.io/unreal_packager/...
 
-# GOOS="windows" GOARCH="amd64" \
-#   go build -o "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/clean.exe" improbable.io/clean/...
+GOOS="windows" GOARCH="amd64" \
+  go build -o "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/clean.exe" improbable.io/clean/...
 
-# markEndOfBlock "Build go CLI tools"
+markEndOfBlock "Build go CLI tools"
 
-# #####
-# # Process build scripts.
-# #####
+#####
+# Process build scripts.
+#####
 
 cp -a "build_scripts/."                                                     "${UNREAL_GDK_DIR}/Scripts"
 sed -i "s/%core_sdk_version%/${PINNED_CORE_SDK_VERSION}/g"                 "${UNREAL_GDK_DIR}/Scripts/"spatialos.*.build.json
