@@ -57,6 +57,10 @@ Build/*/**
 # Don't ignore icon files in Build
 !Build/**/*.ico
 
+# Build artifacts
+/build/
+/packages/
+
 # Built data for maps
 #*_BuiltData.uasset
 
@@ -71,7 +75,3 @@ Plugins/SpatialOS
 logs/
 
 Scripts/spatialos.*.build.json
-
-# Don't ignore the legacy code generator
-!Binaries/ThirdParty/Improbable/CodeGeneration/*.exe
-!Binaries/ThirdParty/Improbable/CodeGeneration/*.dll
