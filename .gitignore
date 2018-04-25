@@ -70,7 +70,7 @@ Build/*/**
 Plugins/SpatialOS
 logs/
 
-Scripts/spatialos.*.worker.build.json
+Scripts/spatialos.*.build.json
 
 # Don't ignore the legacy code generator
 !CodeGeneration/*.exe

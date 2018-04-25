@@ -77,7 +77,7 @@ markStartOfBlock "Create folders"
 mkdir -p "${CORE_SDK_DIR}/worker_sdk"
 # mkdir -p "${UNREAL_GDK_DIR}/packages"
 # mkdir -p "${UNREAL_GDK_DIR}/Source/SpatialOS/Private/WorkerSdk"
-mkdir -p "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
+mkdir -p "${UNREAL_GDK_DIR}/Source/Spatial/Public/WorkerSdk"
 # mkdir -p "${UNIFIED_UNREAL_SDK_TEMP_DIR}/Game/Source/SpatialOS"
 # mkdir -p "${UNIFIED_UNREAL_SDK_TEMP_DIR}/Game/Plugins/SpatialOS"
 # mkdir -p "${UNIFIED_UNREAL_SDK_TEMP_DIR}/Game/Binaries/ThirdParty/Improbable/Programs"
@@ -151,7 +151,7 @@ markEndOfBlock "Create folders"
 # #####
 
 cp -a "build_scripts/."                                                     "${UNREAL_GDK_DIR}/Scripts"
-sed -i "s/%core_sdk_version%/${PINNED_CORE_SDK_VERSION}/g"                 "${UNREAL_GDK_DIR}/Scripts/"spatialos.*.worker.build.json
+sed -i "s/%core_sdk_version%/${PINNED_CORE_SDK_VERSION}/g"                 "${UNREAL_GDK_DIR}/Scripts/"spatialos.*.build.json
 
 # #####
 # # Build CodeGeneration.
