@@ -1,0 +1,9 @@
+C:\work\native-unreal-framework\Source\Programs\Improbable.Unreal.CodeGeneration\bin\Debug\UnrealCodeGenerator.exe
+C:\work\native-unreal-framework\Source\Programs\Improbable.Unreal.CodeGeneration\bin\Debug\UnrealCodeGenerator.pdb
+C:\work\native-unreal-framework\Source\Programs\Improbable.Unreal.CodeGeneration\bin\Debug\CodeGenerator.dll
+C:\work\native-unreal-framework\Source\Programs\Improbable.Unreal.CodeGeneration\bin\Debug\Improbable.TextTemplating.dll
+C:\work\native-unreal-framework\Source\Programs\Improbable.Unreal.CodeGeneration\bin\Debug\Newtonsoft.Json.dll
+C:\work\native-unreal-framework\Source\Programs\Improbable.Unreal.CodeGeneration\bin\Debug\Mono.TextTemplating.dll
+C:\work\native-unreal-framework\Source\Programs\Improbable.Unreal.CodeGeneration\obj\Debug\Improbable.Unreal.CodeGeneration.csprojResolveAssemblyReference.cache
+C:\work\native-unreal-framework\Source\Programs\Improbable.Unreal.CodeGeneration\obj\Debug\UnrealCodeGenerator.exe
+C:\work\native-unreal-framework\Source\Programs\Improbable.Unreal.CodeGeneration\obj\Debug\UnrealCodeGenerator.pdb

@@ -1,0 +1,64 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#
+
+#>
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// =========== 
+
+#pragma once
+
+#include "<#= commandDetails.UnderlyingPackageDetails.Include #>"
+
+<# foreach (var requiredInclude in commandDetails.UnrealResponseTypeDetails.RequiredIncludes) { #>
+#include <#= requiredInclude #>
+<# } #>
+
+#include "CoreMinimal.h"
+#include "SpatialOSWorkerTypes.h"
+#include "UObject/NoExportTypes.h"
+#include "<#= commandDetails.CapitalisedName #>CommandResponder.generated.h"
+
+/**
+ *
+ */
+UCLASS(BlueprintType)
+class SPATIALOS_API U<#= commandDetails.CapitalisedName #>CommandResponder : public UObject
+{
+    GENERATED_BODY()
+
+  public:
+    U<#= commandDetails.CapitalisedName #>CommandResponder();
+	U<#= commandDetails.CapitalisedName #>CommandResponder* Init(
+        const TWeakPtr<SpatialOSConnection>& InConnection,
+        worker::RequestId<
+            worker::IncomingCommandRequest<<#= commandDetails.QualifiedOwnerName #>::Commands::<#= commandDetails.UnderlyingCapitalisedName #>>
+		> InRequestId,
+        <#= commandDetails.UnrealRequestTypeDetails.UnrealType #> InRequest, 
+		const std::string& InCallerWorkerId
+	);
+
+    UFUNCTION(BlueprintPure, Category = "<#= commandDetails.CapitalisedOwnerName #>Component")
+    <#= commandDetails.UnrealRequestTypeDetails.UnrealType #> GetRequest();
+
+	UFUNCTION(BlueprintPure, Category = "<#= commandDetails.CapitalisedOwnerName #>Component")
+    FString GetCallerWorkerId();
+
+    UFUNCTION(BlueprintCallable, Category = "<#= commandDetails.CapitalisedOwnerName #>Component")
+    void SendResponse(<#= commandDetails.UnrealResponseTypeDetails.UnrealType #> response);
+
+  private:
+
+    TWeakPtr<SpatialOSConnection> Connection;
+
+    worker::RequestId<worker::IncomingCommandRequest<<#= commandDetails.QualifiedOwnerName #>::Commands::<#= commandDetails.UnderlyingCapitalisedName #>>>
+        RequestId;
+
+	UPROPERTY()
+    <#= commandDetails.UnrealRequestTypeDetails.UnrealType #> Request;
+
+	FString CallerWorkerId;
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(<#= commandDetails.UnrealCommandDelegateName #>, U<#= commandDetails.CapitalisedName #>CommandResponder*, responder);
