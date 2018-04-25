@@ -73,5 +73,5 @@ logs/
 Scripts/spatialos.*.build.json
 
 # Don't ignore the legacy code generator
-!CodeGeneration/*.exe
-!CodeGeneration/*.dll
+!Binaries/ThirdParty/Improbable/CodeGeneration/*.exe
+!Binaries/ThirdParty/Improbable/CodeGeneration/*.dll
