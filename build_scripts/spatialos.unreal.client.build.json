@@ -58,7 +58,7 @@
         {
           "name": "Unreal Code Generation",
           "description": "Generates Unreal UActorComponents from the project schema.",
-          "command": "Game/Binaries/ThirdParty/Improbable/CodeGeneration/UnrealCodeGenerator.exe",
+          "command": "Game/Binaries/ThirdParty/Improbable/Programs/UnrealCodeGenerator.exe",
           "arguments": [
             "--json-dir=Game/Intermediate/Improbable/json",
             "--output-dir=Game/Source/SpatialGDK/Generated/UClasses"

@@ -21,11 +21,18 @@ markStartOfBlock "$0"
 markStartOfBlock "Setup variables"
 
 PINNED_CORE_SDK_VERSION="$(cat core-sdk.version)"
+PINNED_CODE_GENERATOR_VERSION="$(cat code-generator.version)"
 
+UNREAL_GDK_DIR="$(pwd)"
 BUILD_DIR="$(pwd)/build"
 CORE_SDK_DIR="${BUILD_DIR}/core_sdk"
-UNREAL_GDK_DIR="$(pwd)"
+CODE_GENERATION_DIR="${BUILD_DIR}/code_generation"
 
+PACKAGE_TARGET_DIR="packages"
+CACHE_PATH="$HOME/.imp_nuget"
+GO_CLI_TOOLS="$(pwd)/build/bin"
+UNREAL_CODEGEN_ROOT="Source/Programs/Improbable.Unreal.CodeGeneration/bin/Release"
+UNREAL_CODEGEN="${UNREAL_CODEGEN_ROOT}/UnrealCodeGenerator.exe"
 markEndOfBlock "Setup variables"
 
 #####
@@ -34,6 +41,7 @@ markEndOfBlock "Setup variables"
 markStartOfBlock "Clean folders"
 
 rm -rf "${BUILD_DIR}"
+rm -rf "${UNREAL_GDK_DIR}/packages"
 rm -rf "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
 
 markEndOfBlock "Clean folders"
@@ -43,6 +51,7 @@ markEndOfBlock "Clean folders"
 #####
 markStartOfBlock "Create folders"
 
+mkdir -p "${UNREAL_GDK_DIR}/packages"
 mkdir -p "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
 
 markEndOfBlock "Create folders"
@@ -59,6 +68,8 @@ runSpatial worker_package unpack-to worker_sdk core-dynamic-x86_64-linux "${UNRE
 # Download the C++ SDK for its headers, only.
 runSpatial worker_package unpack-to worker_sdk cpp-static-x86_64-msvc_mtd-win32 "${CORE_SDK_DIR}/cpp-src"
 
+runSpatial worker_package unpack-to code_generation Improbable.CodeGeneration "${PACKAGE_TARGET_DIR}/Improbable.CodeGeneration" --version="${PINNED_CODE_GENERATOR_VERSION}"
+
 markEndOfBlock "Retrieve dependencies"
 
 #####
@@ -69,6 +80,15 @@ markStartOfBlock "Unpack dependencies"
 # Include the WorkerSdk header files
 cp -r "${CORE_SDK_DIR}/cpp-src/include/"               "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
 
+"${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit --version 3.9.0
+"${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Console --version 3.8.0
+"${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.ConsoleRunner --version 3.8.0
+"${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.NUnitProjectLoader --version 3.5.0
+"${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.NUnitV2Driver --version 3.6.0
+"${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.NUnitV2ResultWriter --version 3.5.0
+"${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.TeamCityEventListener --version 1.0.3
+"${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit.Extension.VSProjectLoader --version 3.7.0
+
 markEndOfBlock "Unpack dependencies"
 
 #####
@@ -77,12 +97,27 @@ markEndOfBlock "Unpack dependencies"
 markStartOfBlock "Build go CLI tools"
 
 GOOS="windows" GOARCH="amd64" \
-  go build -o "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/unreal_packager.exe" improbable.io/unreal_packager/...
+  go build -ldflags="-s -w" -o "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/unreal_packager.exe" improbable.io/unreal_packager/...
 
 GOOS="windows" GOARCH="amd64" \
-  go build -o "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/clean.exe" improbable.io/clean/...
+  go build -ldflags="-s -w" -o "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/clean.exe" improbable.io/clean/...
 
 markEndOfBlock "Build go CLI tools"
+
+#####
+# Build CodeGeneration.
+#####
+markStartOfBlock "Build CodeGeneration"
+
+"${MSBUILD}" "Source/Programs/Improbable.Unreal.CodeGeneration/UnrealCodeGeneration.sln" \
+    /property:Configuration='Release' \
+    /property:SolutionDir="../" \
+    /verbosity:minimal
+
+cp -a "Source/Programs/Improbable.Unreal.CodeGeneration/bin/Release/"*.dll "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs"
+cp -a "Source/Programs/Improbable.Unreal.CodeGeneration/bin/Release/"*.exe "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs"
+
+markEndOfBlock "Build CodeGeneration"
 
 #####
 # Process build scripts.

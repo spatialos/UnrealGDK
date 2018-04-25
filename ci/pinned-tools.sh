@@ -9,6 +9,11 @@ error() {
 }
 trap 'error "${BASH_SOURCE}" "${LINENO}"' ERR
 
+if [ -z "$IMPROBABLE_TOOLS" ]; then
+    echo "The internal tools share is not set up correctly on this machine. Please follow the setup instructions here before running build.sh: https://brevi.link/internal-tools-share"
+    exit 1
+fi
+
 function isLinux() {
   [[ "$(uname -s)" == "Linux" ]];
 }
@@ -73,6 +78,10 @@ function runSpatial() {
 
 PROGRAMFILES_X86=$(cmd.exe /c "echo %ProgramFiles(x86)%")
 MSBUILD="${PROGRAMFILES_X86}\MSBuild\14.0\Bin\MSBuild.exe"
+
+TOOLS_OS="$(getPlatformName)"
+IMP_NUGET_VERSION="20180320.121538.4d07aa9573"
+IMP_NUGET="${IMPROBABLE_TOOLS}/imp-nuget/${IMP_NUGET_VERSION}/${TOOLS_OS}/imp-nuget"
 
 GOPATH="$(pwd)/go"
 
