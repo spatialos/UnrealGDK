@@ -62,8 +62,7 @@ FWorkerConnection::FWorkerConnection()
 }
 
 void FWorkerConnection::GetDeploymentListAsync(
-	const FString& ProjectName, const FString& LocatorHost, const FString& LoginToken,
-	FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback, std::uint32_t TimeoutMillis)
+	const FString& ProjectName, const FString& LocatorHost, const FString& LoginToken, FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback, std::uint32_t TimeoutMillis)
 {
 	AsyncTask(ENamedThreads::GameThread, [ProjectName, LocatorHost, LoginToken, TimeoutMillis,
 										  OnDeploymentsFoundCallback, this]() {
@@ -74,11 +73,7 @@ void FWorkerConnection::GetDeploymentListAsync(
 	});
 }
 
-void FWorkerConnection::ConnectToReceptionistAsync(const FString& Hostname, std::uint16_t Port,
-												   const FString& WorkerId,
-												   const worker::ConnectionParameters& Params,
-												   FOnConnectedDelegate OnConnectedCallback,
-												   std::uint32_t TimeoutMillis)
+void FWorkerConnection::ConnectToReceptionistAsync(const FString& Hostname, std::uint16_t Port, const FString& WorkerId, const worker::ConnectionParameters& Params, FOnConnectedDelegate OnConnectedCallback, std::uint32_t TimeoutMillis)
 {
 	if (!CanCreateNewConnection())
 	{
@@ -99,10 +94,7 @@ void FWorkerConnection::ConnectToReceptionistAsync(const FString& Hostname, std:
 }
 
 void FWorkerConnection::ConnectToLocatorAsync(
-	const FString& ProjectName, const FString& LocatorHost, const FString& DeploymentId,
-	const FString& LoginToken, const worker::ConnectionParameters& Params,
-	FQueueStatusDelegate QueueStatusCallback, FOnConnectedDelegate OnConnectedCallback,
-	std::uint32_t TimeoutMillis)
+	const FString& ProjectName, const FString& LocatorHost, const FString& DeploymentId, const FString& LoginToken, const worker::ConnectionParameters& Params, FQueueStatusDelegate QueueStatusCallback, FOnConnectedDelegate OnConnectedCallback, std::uint32_t TimeoutMillis)
 {
 	if (!CanCreateNewConnection())
 	{
@@ -225,8 +217,7 @@ SpatialOSLocator FWorkerConnection::CreateLocator(const FString& ProjectName,
 }
 
 void FWorkerConnection::WaitForDeploymentFuture(
-	std::uint32_t TimeoutMillis, SpatialOSFuture<worker::DeploymentList> DeploymentListFuture,
-	FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback)
+	std::uint32_t TimeoutMillis, SpatialOSFuture<worker::DeploymentList> DeploymentListFuture, FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback)
 {
 	if (DeploymentListFuture.Wait(TimeoutMillis))
 	{
@@ -246,8 +237,7 @@ void FWorkerConnection::WaitForDeploymentFuture(
 }
 
 void FWorkerConnection::WaitForConnectionFuture(
-	std::uint32_t TimeoutMillis, SpatialOSFuture<SpatialOSConnection> ConnectionFuture,
-	FOnConnectedDelegate OnConnectedCallback)
+	std::uint32_t TimeoutMillis, SpatialOSFuture<SpatialOSConnection> ConnectionFuture, FOnConnectedDelegate OnConnectedCallback)
 {
 	if (ConnectionFuture.Wait(TimeoutMillis))
 	{

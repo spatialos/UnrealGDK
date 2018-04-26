@@ -119,10 +119,7 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 	return DataType;
 }
 
-void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update,
-									  UProperty* Property, const FString& PropertyValue,
-									  const bool bIsUpdate,
-									  TFunction<void(const FString&)> ObjectResolveFailureGenerator)
+void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, const bool bIsUpdate, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
 	// Get result type.
 	if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
@@ -267,9 +264,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 }
 
 void GeneratePropertyToUnrealConversion(
-	FCodeWriter& Writer, const FString& Update, const UProperty* Property,
-	const FString& PropertyValue, const bool bIsUpdate,
-	TFunction<void(const FString&)> ObjectResolveFailureGenerator)
+	FCodeWriter& Writer, const FString& Update, const UProperty* Property, const FString& PropertyValue, const bool bIsUpdate, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
 	FString PropertyType = Property->GetCPPType();
 
@@ -450,9 +445,7 @@ FString GenerateFFramePropertyReader(UProperty* Property)
 						   *Property->GetName());
 }
 
-void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename,
-							   FString InteropFilename, UClass* Class,
-							   const TSharedPtr<FUnrealType> TypeInfo)
+void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo)
 {
 	HeaderWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -596,9 +589,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	HeaderWriter.Print("};");
 }
 
-void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename,
-							   FString InteropFilename, UClass* Class,
-							   const TSharedPtr<FUnrealType> TypeInfo)
+void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo)
 {
 	SourceWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -729,8 +720,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	}
 }
 
-void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class,
-											  const FUnrealFlatRepData& RepData)
+void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData)
 {
 	SourceWriter.BeginFunction({"const FRepHandlePropertyMap&", "GetRepHandlePropertyMap() const"},
 							   TypeBindingName(Class));
@@ -782,8 +772,7 @@ void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass*
 }
 
 void GenerateFunction_GetMigratableHandlePropertyMap(
-	FCodeWriter& SourceWriter, UClass* Class,
-	const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData)
+	FCodeWriter& SourceWriter, UClass* Class, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData)
 {
 	SourceWriter.BeginFunction(
 		{"const FMigratableHandlePropertyMap&", "GetMigratableHandlePropertyMap() const"},
@@ -834,8 +823,7 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class,
-						   const FUnrealRPCsByType& RPCsByType)
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType)
 {
 	SourceWriter.BeginFunction(
 		{"void", "Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)"},
@@ -856,8 +844,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class,
 	SourceWriter.End();
 }
 
-void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class,
-								 const FUnrealRPCsByType& RPCsByType)
+void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType)
 {
 	SourceWriter.BeginFunction({"void", "BindToView()"}, TypeBindingName(Class));
 
@@ -1288,9 +1275,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 	SourceWriter.End();
 }
 
-void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class,
-											   const FUnrealFlatRepData& RepData,
-											   EReplicatedPropertyGroup Group)
+void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData, EReplicatedPropertyGroup Group)
 {
 	FFunctionSignature ServerSendUpdateSignature{
 		"void",
@@ -1372,8 +1357,7 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 }
 
 void GenerateFunction_ServerSendUpdate_MigratableData(
-	FCodeWriter& SourceWriter, UClass* Class,
-	const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData)
+	FCodeWriter& SourceWriter, UClass* Class, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData)
 {
 	FFunctionSignature ServerSendUpdateSignature{
 		"void",
@@ -1444,9 +1428,7 @@ void GenerateFunction_ServerSendUpdate_MigratableData(
 	SourceWriter.End();
 }
 
-void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class,
-											const FUnrealFlatRepData& RepData,
-											EReplicatedPropertyGroup Group)
+void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData, EReplicatedPropertyGroup Group)
 {
 	FFunctionSignature ReceiveUpdateSignature{
 		"void", FString::Printf(TEXT("ReceiveUpdate_%s(USpatialActorChannel* ActorChannel, const "
@@ -1605,8 +1587,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 }
 
 void GenerateFunction_ReceiveUpdate_MigratableData(
-	FCodeWriter& SourceWriter, UClass* Class,
-	const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData)
+	FCodeWriter& SourceWriter, UClass* Class, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData)
 {
 	FFunctionSignature ReceiveUpdateSignature{
 		"void", FString::Printf(TEXT("ReceiveUpdate_Migratable(USpatialActorChannel* ActorChannel, "
@@ -1715,8 +1696,7 @@ void GenerateFunction_ReceiveUpdate_MigratableData(
 	SourceWriter.End();
 }
 
-void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class,
-									 const TSharedPtr<FUnrealRPC> RPC)
+void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC)
 {
 	FFunctionSignature SendCommandSignature{
 		"void", FString::Printf(TEXT("%s_SendCommand(worker::Connection* const Connection, struct "
@@ -1799,8 +1779,7 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class,
 	SourceWriter.End();
 }
 
-void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Class,
-										  const TSharedPtr<FUnrealRPC> RPC)
+void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC)
 {
 	FString RequestFuncName =
 		FString::Printf(TEXT("%s_OnCommandRequest(const "
@@ -1903,8 +1882,7 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 	SourceWriter.End();
 }
 
-void GenerateFunction_RPCOnCommandResponse(FCodeWriter& SourceWriter, UClass* Class,
-										   const TSharedPtr<FUnrealRPC> RPC)
+void GenerateFunction_RPCOnCommandResponse(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC)
 {
 	FString ResponseFuncName = FString::Printf(
 		TEXT("%s_OnCommandResponse(const "

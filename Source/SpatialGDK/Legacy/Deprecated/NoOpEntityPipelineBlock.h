@@ -36,6 +36,7 @@ class SPATIALGDK_API UNoOpEntityPipelineBlock : public UEntityPipelineBlock
 
   private:
 	void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-					const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
+					const TWeakPtr<SpatialOSConnection>& InConnection,
+					UWorld* World,
 					UCallbackDispatcher* InCallbackDispatcher) override;
 };

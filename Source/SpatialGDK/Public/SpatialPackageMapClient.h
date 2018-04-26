@@ -26,11 +26,9 @@ class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()
   public:
-	FNetworkGUID ResolveEntityActor(AActor* Actor, FEntityId EntityId,
-									const SubobjectToOffsetMap& SubobjectToOffset);
+	FNetworkGUID ResolveEntityActor(AActor* Actor, FEntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityActor(const FEntityId& EntityId);
-	virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel* Channel,
-								   class AActor*& Actor) override;
+	virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel* Channel, class AActor*& Actor) override;
 
 	improbable::unreal::UnrealObjectRef
 	GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;

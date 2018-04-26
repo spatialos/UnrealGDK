@@ -190,7 +190,8 @@ ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property);
 // If the Visitor function returns false, it will not recurse any further into that part of the
 // tree.
 void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode,
-					 TFunction<bool(TSharedPtr<FUnrealType>)> Visitor, bool bRecurseIntoSubobjects);
+					 TFunction<bool(TSharedPtr<FUnrealType>)> Visitor,
+					 bool bRecurseIntoSubobjects);
 
 // Similar to 'VisitAllObjects', but instead applies the Visitor function to all properties which
 // are traversed.

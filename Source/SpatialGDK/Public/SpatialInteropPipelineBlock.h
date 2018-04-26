@@ -98,19 +98,20 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 
 	// Stub.
 	void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-					const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
+					const TWeakPtr<SpatialOSConnection>& InConnection,
+					UWorld* World,
 					UCallbackDispatcher* CallbackDispatcher) override;
 
   private:
 	AActor* GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection,
-							 TSharedPtr<worker::View> LockedView, const FEntityId& EntityId);
+							 TSharedPtr<worker::View> LockedView,
+							 const FEntityId& EntityId);
 	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ClassToSpawn);
 
 	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);
 	UClass* GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent);
 
-	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId,
-								 const TWeakPtr<worker::Connection>& Connection);
+	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection);
 
 	template <typename AddOpType, typename Metaclass>
 	typename Metaclass::Data* GetPendingComponentData(const FEntityId& EntityId)

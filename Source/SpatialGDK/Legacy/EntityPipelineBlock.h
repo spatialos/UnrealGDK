@@ -50,7 +50,8 @@ class SPATIALGDK_API UEntityPipelineBlock : public UObject
 	UEntityPipelineBlock* NextBlock;
 
 	virtual void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-							const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
+							const TWeakPtr<SpatialOSConnection>& InConnection,
+							UWorld* World,
 							::UCallbackDispatcher* CallbackDispatcher)
 		PURE_VIRTUAL(UEntityPipelineBlock::ProcessOps(), );
 };

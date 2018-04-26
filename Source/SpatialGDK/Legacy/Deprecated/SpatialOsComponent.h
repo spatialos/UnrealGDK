@@ -43,7 +43,8 @@ class SPATIALGDK_API USpatialOsComponent : public UActorComponent
 	virtual void BeginDestroy() override;
 
 	virtual void Init(const TWeakPtr<SpatialOSConnection>& InConnection,
-					  const TWeakPtr<SpatialOSView>& InView, worker::EntityId InEntityId,
+					  const TWeakPtr<SpatialOSView>& InView,
+					  worker::EntityId InEntityId,
 					  UCallbackDispatcher* InCallbackDispatcher);
 
 	virtual void Disable(const worker::EntityId InEntityId, UCallbackDispatcher* CallbackDispatcher)
@@ -66,9 +67,7 @@ class SPATIALGDK_API USpatialOsComponent : public UActorComponent
 
 	worker::EntityId GetEntityId();
 
-	UFUNCTION(BlueprintPure, Category = "SpatialOS Component",
-			  meta = (DeprecatedFunction,
-					  DeprecationMessage = "Please use GetAuthority() instead."))
+	UFUNCTION(BlueprintPure, Category = "SpatialOS Component", meta = (DeprecatedFunction, DeprecationMessage = "Please use GetAuthority() instead."))
 	bool HasAuthority();
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Component")

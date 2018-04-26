@@ -108,8 +108,7 @@ void USimpleEntitySpawnerBlock::QueueOp(FSpatialOperation SpatialOperation)
 }
 
 bool USimpleEntitySpawnerBlock::ProcessAddEntityOp(
-	UWorld* World, const TWeakPtr<SpatialOSConnection>& InConnection,
-	const FSpatialOperation& SpatialOperation)
+	UWorld* World, const TWeakPtr<SpatialOSConnection>& InConnection, const FSpatialOperation& SpatialOperation)
 {
 	TArray<FSpatialOperation>* EntityOpsQueue =
 		QueuedOps.Find(SpatialOperation.ComponentIdentifier.EntityId);
@@ -166,8 +165,7 @@ bool USimpleEntitySpawnerBlock::ProcessAddEntityOp(
 }
 
 bool USimpleEntitySpawnerBlock::ProcessAddComponentOp(
-	const TWeakPtr<SpatialOSView>& InView, const TWeakPtr<SpatialOSConnection>& InConnection,
-	UCallbackDispatcher* InCallbackDispatcher, const FSpatialOperation& SpatialOperation)
+	const TWeakPtr<SpatialOSView>& InView, const TWeakPtr<SpatialOSConnection>& InConnection, UCallbackDispatcher* InCallbackDispatcher, const FSpatialOperation& SpatialOperation)
 {
 	AActor* Actor =
 		EntityRegistry->GetActorFromEntityId(SpatialOperation.ComponentIdentifier.EntityId);
@@ -250,7 +248,8 @@ bool USimpleEntitySpawnerBlock::ProcessRemoveEntityOp(UWorld* World,
 
 void USimpleEntitySpawnerBlock::ProcessOps(const TWeakPtr<SpatialOSView>& InView,
 										   const TWeakPtr<SpatialOSConnection>& InConnection,
-										   UWorld* World, UCallbackDispatcher* InCallbackDispatcher)
+										   UWorld* World,
+										   UCallbackDispatcher* InCallbackDispatcher)
 {
 	for (auto& EntityOps : QueuedOps)
 	{
@@ -281,7 +280,8 @@ void USimpleEntitySpawnerBlock::ProcessOps(const TWeakPtr<SpatialOSView>& InView
 
 bool USimpleEntitySpawnerBlock::ProcessOp(const TWeakPtr<SpatialOSView>& InView,
 										  const TWeakPtr<SpatialOSConnection>& InConnection,
-										  UWorld* World, UCallbackDispatcher* InCallbackDispatcher,
+										  UWorld* World,
+										  UCallbackDispatcher* InCallbackDispatcher,
 										  FSpatialOperation SpatialOperation)
 {
 	switch (SpatialOperation.OperationType)

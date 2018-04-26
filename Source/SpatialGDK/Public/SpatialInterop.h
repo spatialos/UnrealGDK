@@ -85,7 +85,8 @@ using FPendingIncomingRPCMap = TMap<FHashableUnrealObjectRef, TArray<FRPCCommand
 
 // Helper function to write incoming replicated property data to an object.
 FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& RepHandleData,
-													   UObject* Object, const void* Value,
+													   UObject* Object,
+													   const void* Value,
 													   TArray<UProperty*>& RepNotifies)
 {
 	uint8* Dest = RepHandleData.GetPropertyData(reinterpret_cast<uint8*>(Object));
@@ -118,7 +119,8 @@ FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& Rep
 // Helper function to write incoming migratable property data to an object.
 FORCEINLINE void
 ApplyIncomingMigratablePropertyUpdate(const FMigratableHandleData& MigratableHandleData,
-									  UObject* Object, const void* Value)
+									  UObject* Object,
+									  const void* Value)
 {
 	uint8* Dest = MigratableHandleData.GetPropertyData(reinterpret_cast<uint8*>(Object));
 
@@ -154,12 +156,9 @@ class SPATIALGDK_API USpatialInterop : public UObject
 
 	// Sending component updates and RPCs.
 	worker::RequestId<worker::CreateEntityRequest>
-	SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location,
-							const FString& PlayerWorkerId, const TArray<uint16>& RepChanged,
-							const TArray<uint16>& MigChanged);
+	SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged);
 	void SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location);
-	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged,
-						   const TArray<uint16>& MigChanged);
+	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
 	void ReceiveAddComponent(USpatialActorChannel* Channel,
 							 UAddComponentOpWrapperBase* AddComponentOp);
@@ -184,10 +183,7 @@ class SPATIALGDK_API USpatialInterop : public UObject
 	// RPC handlers. Used by generated type bindings.
 	void SendCommandRequest_Internal(FRPCCommandRequestFunc Function, bool bReliable);
 	void SendCommandResponse_Internal(FRPCCommandResponseFunc Function);
-	void HandleCommandResponse_Internal(const FString& RPCName, FUntypedRequestId RequestId,
-										const FEntityId& EntityId,
-										const worker::StatusCode& StatusCode,
-										const FString& Message);
+	void HandleCommandResponse_Internal(const FString& RPCName, FUntypedRequestId RequestId, const FEntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
 
 	// Used to queue incoming/outgoing object updates/RPCs. Used by generated type bindings.
 	void QueueOutgoingObjectRepUpdate_Internal(UObject* UnresolvedObject,
@@ -196,14 +192,15 @@ class SPATIALGDK_API USpatialInterop : public UObject
 	void QueueOutgoingObjectMigUpdate_Internal(UObject* UnresolvedObject,
 											   USpatialActorChannel* DependentChannel,
 											   uint16 Handle);
-	void QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender,
-								   bool bReliable);
+	void QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable);
 	void QueueIncomingObjectRepUpdate_Internal(
 		const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef,
-		USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData);
+		USpatialActorChannel* DependentChannel,
+		const FRepHandleData* RepHandleData);
 	void QueueIncomingObjectMigUpdate_Internal(
 		const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef,
-		USpatialActorChannel* DependentChannel, const FMigratableHandleData* MigHandleData);
+		USpatialActorChannel* DependentChannel,
+		const FMigratableHandleData* MigHandleData);
 	void QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef,
 								   FRPCCommandResponseFunc Responder);
 

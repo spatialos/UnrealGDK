@@ -19,8 +19,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
-bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL,
-								 bool bReuseAddressAndPort, FString& Error)
+bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
 {
 	if (!Super::InitBase(bInitAsClient, InNotify, URL, bReuseAddressAndPort, Error))
 	{
@@ -207,7 +206,8 @@ static FORCEINLINE_DEBUGGABLE bool IsActorDormant(FNetworkObjectInfo* ActorInfo,
 // Returns true if this actor wants to go dormant for a particular connection
 static FORCEINLINE_DEBUGGABLE bool ShouldActorGoDormant(AActor* Actor,
 														const TArray<FNetViewer>& ConnectionViewers,
-														UActorChannel* Channel, const float Time,
+														UActorChannel* Channel,
+														const float Time,
 														const bool bLowNetBandwidth)
 {
 	if (Actor->NetDormancy <= DORM_Awake || !Channel || Channel->bPendingDormancy ||
@@ -303,9 +303,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 }
 
 int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(
-	UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers,
-	const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated,
-	FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors)
+	UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors)
 {
 	// Get list of visible/relevant actors.
 
@@ -441,8 +439,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(
 }
 
 int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(
-	UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers,
-	FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated)
+	UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated)
 {
 	if (!Connection->IsNetReady(0))
 	{
@@ -876,9 +873,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	}
 }
 
-void USpatialNetDriver::ProcessRemoteFunction(AActor* Actor, UFunction* Function, void* Parameters,
-											  FOutParmRec* OutParms, FFrame* Stack,
-											  UObject* SubObject)
+void USpatialNetDriver::ProcessRemoteFunction(AActor* Actor, UFunction* Function, void* Parameters, FOutParmRec* OutParms, FFrame* Stack, UObject* SubObject)
 {
 	USpatialNetConnection* Connection = ServerConnection
 		? Cast<USpatialNetConnection>(ServerConnection)

@@ -14,9 +14,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 
 namespace
 {
-int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath,
-									int ComponentId, UClass* Class,
-									const TArray<TArray<FName>>& MigratableProperties)
+int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<TArray<FName>>& MigratableProperties)
 {
 	FCodeWriter OutputSchema;
 	FCodeWriter OutputHeader;

@@ -13,7 +13,8 @@ class FSpatialOSEditorToolbarCommands : public TCommands<FSpatialOSEditorToolbar
 	: TCommands<FSpatialOSEditorToolbarCommands>(
 		  TEXT("SpatialOSEditorToolbar"),
 		  NSLOCTEXT("Contexts", "SpatialOSEditorToolbar", "SpatialOSEditorToolbar Plugin"),
-		  NAME_None, FSpatialOSEditorToolbarStyle::GetStyleSetName())
+		  NAME_None,
+		  FSpatialOSEditorToolbarStyle::GetStyleSetName())
 	{
 	}
 

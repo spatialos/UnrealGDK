@@ -184,7 +184,8 @@ ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property)
 }
 
 void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode,
-					 TFunction<bool(TSharedPtr<FUnrealType>)> Visitor, bool bRecurseIntoSubobjects)
+					 TFunction<bool(TSharedPtr<FUnrealType>)> Visitor,
+					 bool bRecurseIntoSubobjects)
 {
 	bool bShouldRecurseFurther = Visitor(TypeNode);
 	for (auto& PropertyPair : TypeNode->Properties)

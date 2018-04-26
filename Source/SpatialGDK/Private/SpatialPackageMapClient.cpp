@@ -26,8 +26,7 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 }
 
 FNetworkGUID
-USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntityId EntityId,
-											 const SubobjectToOffsetMap& SubobjectToOffset)
+USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	FNetworkGUID NetGUID = SpatialGuidCache->GetNetGUIDFromEntityId(EntityId.ToSpatialEntityId());
@@ -49,8 +48,7 @@ void USpatialPackageMapClient::RemoveEntityActor(const FEntityId& EntityId)
 	}
 }
 
-bool USpatialPackageMapClient::SerializeNewActor(FArchive& Ar, UActorChannel* Channel,
-												 AActor*& Actor)
+bool USpatialPackageMapClient::SerializeNewActor(FArchive& Ar, UActorChannel* Channel, AActor*& Actor)
 {
 	bool bResult = Super::SerializeNewActor(Ar, Channel, Actor);
 	// will remove the override if remains unused.

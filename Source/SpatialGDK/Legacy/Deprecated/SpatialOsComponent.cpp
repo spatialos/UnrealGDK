@@ -23,7 +23,8 @@ USpatialOsComponent::USpatialOsComponent()
 }
 
 void USpatialOsComponent::Init(const TWeakPtr<SpatialOSConnection>& InConnection,
-							   const TWeakPtr<SpatialOSView>& InView, worker::EntityId InEntityId,
+							   const TWeakPtr<SpatialOSView>& InView,
+							   worker::EntityId InEntityId,
 							   UCallbackDispatcher* CallbackDispatcher)
 {
 	this->Connection = InConnection;

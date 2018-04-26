@@ -50,8 +50,7 @@ class FGenericComponentBuilder : public FEntityComponentBuilder
 		worker::Entity Entity,
 		worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
 		improbable::WorkerRequirementSet ReadRequirement)
-	: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement),
-							  std::move(ReadRequirement))
+	: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement), std::move(ReadRequirement))
 	{
 	}
 
@@ -93,14 +92,12 @@ class FReadAclComponentBuilder : public FEntityComponentBuilder
 		worker::Entity Entity,
 		worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
 		improbable::WorkerRequirementSet ReadRequirement)
-	: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement),
-							  std::move(ReadRequirement))
+	: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement), std::move(ReadRequirement))
 	{
 	}
 
 	FReadAclComponentBuilder(FReadAclComponentBuilder&& rhs)
-	: FEntityComponentBuilder(std::move(rhs.InternalEntity), std::move(rhs.ComponentAuthority),
-							  std::move(rhs.ReadRequirementSet))
+	: FEntityComponentBuilder(std::move(rhs.InternalEntity), std::move(rhs.ComponentAuthority), std::move(rhs.ReadRequirementSet))
 	{
 	}
 
@@ -123,8 +120,7 @@ class FPersistenceComponentBuilder : public FEntityComponentBuilder
 		worker::Entity Entity,
 		worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
 		improbable::WorkerRequirementSet ReadRequirement)
-	: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement),
-							  std::move(ReadRequirement))
+	: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement), std::move(ReadRequirement))
 	{
 	}
 
@@ -152,8 +148,7 @@ class FMetadataComponentBuilder : public FEntityComponentBuilder
 		worker::Entity Entity,
 		worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
 		improbable::WorkerRequirementSet ReadRequirement)
-	: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement),
-							  std::move(ReadRequirement))
+	: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement), std::move(ReadRequirement))
 	{
 	}
 

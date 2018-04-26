@@ -16,8 +16,7 @@ FSpatialOutputDevice::~FSpatialOutputDevice()
 	FOutputDeviceRedirector::Get()->RemoveOutputDevice(this);
 }
 
-void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity,
-									 const class FName& Category)
+void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const class FName& Category)
 {
 	if (Verbosity > FilterLevel ||
 		/*!CategoriesToRedirect.Contains(Category) ||*/ !IsValid(SpatialOS))

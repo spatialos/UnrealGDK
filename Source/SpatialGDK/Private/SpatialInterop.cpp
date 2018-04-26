@@ -22,8 +22,7 @@ USpatialInterop::USpatialInterop()
 {
 }
 
-void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver,
-						   FTimerManager* InTimerManager)
+void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTimerManager* InTimerManager)
 {
 	SpatialOSInstance = Instance;
 	NetDriver = Driver;
@@ -68,8 +67,7 @@ USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 }
 
 worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(
-	USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId,
-	const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
+	USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
 {
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
@@ -199,8 +197,7 @@ void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel,
 								  Channel->GetEntityId());
 }
 
-void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function,
-								FFrame* const Frame)
+void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame)
 {
 	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
 	if (!Binding)
@@ -318,7 +315,8 @@ void USpatialInterop::SendCommandResponse_Internal(FRPCCommandResponseFunc Funct
 }
 
 void USpatialInterop::HandleCommandResponse_Internal(const FString& RPCName,
-													 FUntypedRequestId RequestId, const FEntityId&,
+													 FUntypedRequestId RequestId,
+													 const FEntityId&,
 													 const worker::StatusCode& StatusCode,
 													 const FString& Message)
 {
@@ -418,7 +416,8 @@ void USpatialInterop::QueueOutgoingRPC_Internal(UObject* UnresolvedObject,
 
 void USpatialInterop::QueueIncomingObjectRepUpdate_Internal(
 	const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef,
-	USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData)
+	USpatialActorChannel* DependentChannel,
+	const FRepHandleData* RepHandleData)
 {
 	check(DependentChannel);
 	check(RepHandleData);
@@ -434,7 +433,8 @@ void USpatialInterop::QueueIncomingObjectRepUpdate_Internal(
 
 void USpatialInterop::QueueIncomingObjectMigUpdate_Internal(
 	const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef,
-	USpatialActorChannel* DependentChannel, const FMigratableHandleData* RepHandleData)
+	USpatialActorChannel* DependentChannel,
+	const FMigratableHandleData* RepHandleData)
 {
 	check(DependentChannel);
 	check(RepHandleData);

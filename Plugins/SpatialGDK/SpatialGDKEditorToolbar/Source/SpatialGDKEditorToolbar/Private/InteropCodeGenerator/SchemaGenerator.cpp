@@ -149,8 +149,7 @@ FString PropertyToSchemaType(UProperty* Property)
 	return DataType;
 }
 
-int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class,
-							  TSharedPtr<FUnrealType> TypeInfo)
+int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo)
 {
 	FComponentIdGenerator IdGenerator(ComponentId);
 

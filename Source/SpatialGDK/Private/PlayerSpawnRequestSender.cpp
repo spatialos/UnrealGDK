@@ -24,7 +24,8 @@ FPlayerSpawnRequestSender::~FPlayerSpawnRequestSender()
 }
 
 void FPlayerSpawnRequestSender::RequestPlayer(USpatialOS* InSpatialOS,
-											  FTimerManager* InTimerManager, const FURL& Url)
+											  FTimerManager* InTimerManager,
+											  const FURL& Url)
 {
 	TimerManager = InTimerManager;
 	Connection = InSpatialOS->GetConnection().Pin().Get();

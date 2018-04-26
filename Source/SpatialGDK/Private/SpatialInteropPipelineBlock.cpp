@@ -28,8 +28,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKInteropPipelineBlock);
 
-void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDriver* Driver,
-										UWorld* LoadedWorld)
+void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDriver* Driver, UWorld* LoadedWorld)
 {
 	EntityRegistry = Registry;
 	NetDriver = Driver;
@@ -314,7 +313,8 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 }
 
 void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>&,
-											  const TWeakPtr<SpatialOSConnection>&, UWorld*,
+											  const TWeakPtr<SpatialOSConnection>&,
+											  UWorld*,
 											  UCallbackDispatcher*)
 {
 }
