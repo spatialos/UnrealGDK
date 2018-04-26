@@ -10,7 +10,7 @@ namespace unreal
 {
 class FEntityComponentBuilder
 {
-  private:
+private:
 	friend class FGenericComponentBuilder;
 	friend class FReadAclComponentBuilder;
 	friend class FPersistenceComponentBuilder;
@@ -21,21 +21,21 @@ class FEntityComponentBuilder
 		worker::Entity Entity,
 		worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
 		improbable::WorkerRequirementSet ReadRequirement)
-	: InternalEntity(std::move(Entity))
-	, ComponentAuthority(std::move(WriteRequirement))
-	, ReadRequirementSet(std::move(ReadRequirement))
+		: InternalEntity(std::move(Entity))
+		, ComponentAuthority(std::move(WriteRequirement))
+		, ReadRequirementSet(std::move(ReadRequirement))
 	{
 	}
 
 	FEntityComponentBuilder()
-	: ReadRequirementSet{{}}
+		: ReadRequirementSet{{}}
 	{
 	}
 
-  public:
-	FEntityComponentBuilder(FEntityComponentBuilder&& rhs) = default;
+public:
+	FEntityComponentBuilder(FEntityComponentBuilder &&rhs) = default;
 
-  protected:
+protected:
 	worker::Entity InternalEntity;
 
 	worker::Map<std::uint32_t, improbable::WorkerRequirementSet> ComponentAuthority;
@@ -44,26 +44,25 @@ class FEntityComponentBuilder
 
 class FGenericComponentBuilder : public FEntityComponentBuilder
 {
-  private:
+private:
 	friend class FReadAclComponentBuilder;
 	FGenericComponentBuilder(
 		worker::Entity Entity,
 		worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
 		improbable::WorkerRequirementSet ReadRequirement)
-	: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement),
-							  std::move(ReadRequirement))
+		: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement), std::move(ReadRequirement))
 	{
 	}
 
-	FGenericComponentBuilder(FGenericComponentBuilder&& rhs) = default;
+	FGenericComponentBuilder(FGenericComponentBuilder &&rhs) = default;
 
-  public:
+public:
 	FGenericComponentBuilder() = delete;
-	FGenericComponentBuilder(const FGenericComponentBuilder& rhs) = delete;
+	FGenericComponentBuilder(const FGenericComponentBuilder &rhs) = delete;
 
 	template <class T>
-	FGenericComponentBuilder AddComponent(const typename T::Data& data,
-										  const improbable::WorkerRequirementSet& WriteRequirement)
+	FGenericComponentBuilder AddComponent(const typename T::Data &data,
+										  const improbable::WorkerRequirementSet &WriteRequirement)
 	{
 		InternalEntity.Add<T>(data);
 		ComponentAuthority.emplace(T::ComponentId, WriteRequirement);
@@ -71,7 +70,7 @@ class FGenericComponentBuilder : public FEntityComponentBuilder
 	}
 
 	FGenericComponentBuilder
-	SetEntityAclComponentWriteAccess(const improbable::WorkerRequirementSet& WriteRequirement)
+	SetEntityAclComponentWriteAccess(const improbable::WorkerRequirementSet &WriteRequirement)
 	{
 		ComponentAuthority.emplace(improbable::EntityAcl::ComponentId, WriteRequirement);
 		return FGenericComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
@@ -87,28 +86,26 @@ class FGenericComponentBuilder : public FEntityComponentBuilder
 
 class FReadAclComponentBuilder : public FEntityComponentBuilder
 {
-  private:
+private:
 	friend class FPersistenceComponentBuilder;
 	FReadAclComponentBuilder(
 		worker::Entity Entity,
 		worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
 		improbable::WorkerRequirementSet ReadRequirement)
-	: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement),
-							  std::move(ReadRequirement))
+		: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement), std::move(ReadRequirement))
 	{
 	}
 
-	FReadAclComponentBuilder(FReadAclComponentBuilder&& rhs)
-	: FEntityComponentBuilder(std::move(rhs.InternalEntity), std::move(rhs.ComponentAuthority),
-							  std::move(rhs.ReadRequirementSet))
+	FReadAclComponentBuilder(FReadAclComponentBuilder &&rhs)
+		: FEntityComponentBuilder(std::move(rhs.InternalEntity), std::move(rhs.ComponentAuthority), std::move(rhs.ReadRequirementSet))
 	{
 	}
 
-  public:
+public:
 	FReadAclComponentBuilder() = delete;
-	FReadAclComponentBuilder(const FReadAclComponentBuilder& rhs) = delete;
+	FReadAclComponentBuilder(const FReadAclComponentBuilder &rhs) = delete;
 
-	FGenericComponentBuilder SetReadAcl(const improbable::WorkerRequirementSet& ReadRequirement)
+	FGenericComponentBuilder SetReadAcl(const improbable::WorkerRequirementSet &ReadRequirement)
 	{
 		ReadRequirementSet = ReadRequirement;
 		return FGenericComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
@@ -117,22 +114,21 @@ class FReadAclComponentBuilder : public FEntityComponentBuilder
 
 class FPersistenceComponentBuilder : public FEntityComponentBuilder
 {
-  private:
+private:
 	friend class FMetadataComponentBuilder;
 	FPersistenceComponentBuilder(
 		worker::Entity Entity,
 		worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
 		improbable::WorkerRequirementSet ReadRequirement)
-	: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement),
-							  std::move(ReadRequirement))
+		: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement), std::move(ReadRequirement))
 	{
 	}
 
-	FPersistenceComponentBuilder(FPersistenceComponentBuilder&& rhs) = default;
+	FPersistenceComponentBuilder(FPersistenceComponentBuilder &&rhs) = default;
 
-  public:
+public:
 	FPersistenceComponentBuilder() = delete;
-	FPersistenceComponentBuilder(const FPersistenceComponentBuilder& rhs) = delete;
+	FPersistenceComponentBuilder(const FPersistenceComponentBuilder &rhs) = delete;
 
 	FReadAclComponentBuilder SetPersistence(bool IsPersistent)
 	{
@@ -146,24 +142,23 @@ class FPersistenceComponentBuilder : public FEntityComponentBuilder
 
 class FMetadataComponentBuilder : public FEntityComponentBuilder
 {
-  private:
+private:
 	friend class FPositionComponentBuilder;
 	FMetadataComponentBuilder(
 		worker::Entity Entity,
 		worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
 		improbable::WorkerRequirementSet ReadRequirement)
-	: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement),
-							  std::move(ReadRequirement))
+		: FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement), std::move(ReadRequirement))
 	{
 	}
 
-	FMetadataComponentBuilder(FMetadataComponentBuilder&& rhs) = default;
+	FMetadataComponentBuilder(FMetadataComponentBuilder &&rhs) = default;
 
-  public:
+public:
 	FMetadataComponentBuilder() = delete;
-	FMetadataComponentBuilder(const FMetadataComponentBuilder& rhs) = delete;
+	FMetadataComponentBuilder(const FMetadataComponentBuilder &rhs) = delete;
 
-	FPersistenceComponentBuilder AddMetadataComponent(const improbable::Metadata::Data& data)
+	FPersistenceComponentBuilder AddMetadataComponent(const improbable::Metadata::Data &data)
 	{
 		InternalEntity.Add<improbable::Metadata>(data);
 		return FPersistenceComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
@@ -172,19 +167,19 @@ class FMetadataComponentBuilder : public FEntityComponentBuilder
 
 class FPositionComponentBuilder : public FEntityComponentBuilder
 {
-  private:
+private:
 	friend class FEntityBuilder;
 	FPositionComponentBuilder()
 	{
 	}
-	FPositionComponentBuilder(FPositionComponentBuilder&& rhs) = default;
+	FPositionComponentBuilder(FPositionComponentBuilder &&rhs) = default;
 
-  public:
-	FPositionComponentBuilder(const FPositionComponentBuilder& rhs) = delete;
+public:
+	FPositionComponentBuilder(const FPositionComponentBuilder &rhs) = delete;
 
 	FMetadataComponentBuilder
-	AddPositionComponent(const improbable::Position::Data& data,
-						 const improbable::WorkerRequirementSet& WriteRequirement)
+	AddPositionComponent(const improbable::Position::Data &data,
+						 const improbable::WorkerRequirementSet &WriteRequirement)
 	{
 		InternalEntity.Add<improbable::Position>(data);
 		ComponentAuthority.emplace(improbable::Position::ComponentId, WriteRequirement);
@@ -222,11 +217,11 @@ class FPositionComponentBuilder : public FEntityComponentBuilder
 
 class FEntityBuilder
 {
-  public:
+public:
 	static FPositionComponentBuilder Begin()
 	{
 		return FPositionComponentBuilder();
 	}
 };
-}  // ::unreal
-}  // ::improbable
+} // ::unreal
+} // ::improbable

@@ -17,14 +17,14 @@ namespace callbacks
  */
 class FScopedViewCallbacks
 {
-  public:
+public:
 	FScopedViewCallbacks()
 	{
 		View.Reset();
 	}
 
-	FScopedViewCallbacks(const TWeakPtr<SpatialOSView>& InView)
-	: View(InView)
+	FScopedViewCallbacks(const TWeakPtr<SpatialOSView> &InView)
+		: View(InView)
 	{
 	}
 
@@ -36,7 +36,7 @@ class FScopedViewCallbacks
 	/**
   * Initialise the FScopedViewCallbacks. Calling Init() more than once results in an error.
   */
-	void Init(const TWeakPtr<SpatialOSView>& InView)
+	void Init(const TWeakPtr<SpatialOSView> &InView)
 	{
 		auto LockedView = View.Pin();
 		checkf(!LockedView.IsValid(), TEXT("Attempting to call Init() more than once."));
@@ -85,10 +85,10 @@ class FScopedViewCallbacks
 		check(numRemoved == 1);
 	}
 
-  private:
+private:
 	TWeakPtr<SpatialOSView> View;
 	TArray<uint64> Handles;
 };
-}  // ::callbacks
-}  // ::unreal
-}  // ::improbable
+} // ::callbacks
+} // ::unreal
+} // ::improbable

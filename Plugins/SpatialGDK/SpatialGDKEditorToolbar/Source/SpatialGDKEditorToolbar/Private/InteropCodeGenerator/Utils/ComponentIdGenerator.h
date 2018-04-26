@@ -5,7 +5,8 @@
 struct FComponentIdGenerator
 {
 	FComponentIdGenerator(int StartId)
-	: InitialId(StartId), NumIds(0)
+		: InitialId(StartId)
+		, NumIds(0)
 	{
 	}
 
@@ -19,7 +20,7 @@ struct FComponentIdGenerator
 		return NumIds;
 	}
 
-  private:
+private:
 	int InitialId;
 	int NumIds;
 };

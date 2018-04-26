@@ -14,7 +14,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 
 namespace
 {
-int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<TArray<FName>>& MigratableProperties)
+int GenerateCompleteSchemaFromClass(const FString &SchemaPath, const FString &ForwardingCodePath, int ComponentId, UClass *Class, const TArray<TArray<FName>> &MigratableProperties)
 {
 	FCodeWriter OutputSchema;
 	FCodeWriter OutputHeader;
@@ -38,7 +38,7 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	return NumComponents;
 }
 
-void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FString>& Classes)
+void GenerateTypeBindingList(const FString &ForwardingCodePath, const TArray<FString> &Classes)
 {
 	FCodeWriter OutputListHeader;
 	FCodeWriter OutputListSource;
@@ -58,7 +58,7 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 
 		#include "SpatialTypeBindingList.h")""");
 	OutputListSource.PrintNewLine();
-	for (auto& ClassName : Classes)
+	for (auto &ClassName : Classes)
 	{
 		OutputListSource.Printf("#include \"SpatialTypeBinding_%s.h\"", *ClassName);
 	}
@@ -81,16 +81,16 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 	OutputListSource.WriteToFile(FString::Printf(TEXT("%sSpatialTypeBindingList.cpp"), *ForwardingCodePath));
 }
 
-bool CheckClassNameListValidity(const TArray<FString>& Classes)
+bool CheckClassNameListValidity(const TArray<FString> &Classes)
 {
 	for (int i = 0; i < Classes.Num() - 1; ++i)
 	{
-		const FString& ClassA = Classes[i];
+		const FString &ClassA = Classes[i];
 		const FString SchemaTypeA = UnrealNameToSchemaTypeName(ClassA);
 
 		for (int j = i + 1; j < Classes.Num(); ++j)
 		{
-			const FString& ClassB = Classes[j];
+			const FString &ClassB = Classes[j];
 			const FString SchemaTypeB = UnrealNameToSchemaTypeName(ClassB);
 
 			if (SchemaTypeA.Equals(SchemaTypeB))
@@ -103,7 +103,7 @@ bool CheckClassNameListValidity(const TArray<FString>& Classes)
 
 	return true;
 }
-}  // ::
+} // ::
 
 void SpatialGDKGenerateInteropCode()
 {
@@ -118,9 +118,7 @@ void SpatialGDKGenerateInteropCode()
 	TArray<FString> Classes = {"PlayerController", "PlayerState", "Character", "WheeledVehicle"};
 	TMap<FString, TArray<TArray<FName>>> MigratableProperties;
 	MigratableProperties.Add("PlayerController", {{"AcknowledgedPawn"}});
-	MigratableProperties.Add("Character", {{"CharacterMovement", "GroundMovementMode"},
-										   {"CharacterMovement", "MovementMode"},
-										   {"CharacterMovement", "CustomMovementMode"}});
+	MigratableProperties.Add("Character", {{"CharacterMovement", "GroundMovementMode"}, {"CharacterMovement", "MovementMode"}, {"CharacterMovement", "CustomMovementMode"}});
 
 	if (!CheckClassNameListValidity(Classes))
 	{
@@ -131,9 +129,9 @@ void SpatialGDKGenerateInteropCode()
 	{
 		// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 		int ComponentId = 100010;
-		for (auto& ClassName : Classes)
+		for (auto &ClassName : Classes)
 		{
-			UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassName);
+			UClass *Class = FindObject<UClass>(ANY_PACKAGE, *ClassName);
 			TArray<TArray<FName>> ClassMigratableProperties = MigratableProperties.FindRef(ClassName);
 			ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, ClassMigratableProperties);
 		}

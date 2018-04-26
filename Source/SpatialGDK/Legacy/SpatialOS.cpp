@@ -12,7 +12,9 @@
 DEFINE_LOG_CATEGORY(LogSpatialOS);
 
 USpatialOS::USpatialOS()
-: WorkerConfiguration(), WorkerConnection(), bConnectionWasSuccessful(false)
+	: WorkerConfiguration()
+	, WorkerConnection()
+	, bConnectionWasSuccessful(false)
 {
 	EntityPipeline = CreateDefaultSubobject<UEntityPipeline>(TEXT("EntityPipeline"));
 	CallbackDispatcher = CreateDefaultSubobject<UCallbackDispatcher>(TEXT("CallbackDispatcher"));
@@ -25,25 +27,25 @@ void USpatialOS::BeginDestroy()
 }
 
 void USpatialOS::ApplyConfiguration(
-	const FSpatialGDKWorkerConfigurationData& InWorkerConfigurationData)
+	const FSpatialGDKWorkerConfigurationData &InWorkerConfigurationData)
 {
 	checkf(!IsConnected(), TEXT("ApplyConfiguration was called after Connect was called."));
 	WorkerConfiguration = FSpatialGDKWorkerConfiguration(InWorkerConfigurationData);
 }
 
-void USpatialOS::ApplyEditorWorkerConfiguration(FWorldContext& InWorldContext)
+void USpatialOS::ApplyEditorWorkerConfiguration(FWorldContext &InWorldContext)
 {
 	checkf(!IsConnected(), TEXT("ApplyConfiguration was called after Connect was called."));
 
 	// This WorldContext does not represent a PIE instance
 	if (InWorldContext.WorldType != EWorldType::PIE || InWorldContext.PIEInstance == -1)
 	{
-		UE_LOG(LogSpatialOS, Warning,
-			   TEXT("USpatialOS::ApplyEditorWorkerConfiguration(): The supplied "
-					"WorldContext does not represent a PIE instance. No changes are made. "
-					"Make sure you only call this method when starting a worker instance "
-					"from the Unreal Editor. PIEInstance: %d, WorldType: %d"),
-			   InWorldContext.PIEInstance, static_cast<int>(InWorldContext.WorldType));
+		UE_LOG(LogSpatialOS, Warning, TEXT("USpatialOS::ApplyEditorWorkerConfiguration(): The supplied "
+										   "WorldContext does not represent a PIE instance. No changes are made. "
+										   "Make sure you only call this method when starting a worker instance "
+										   "from the Unreal Editor. PIEInstance: %d, WorldType: %d"),
+			   InWorldContext.PIEInstance,
+			   static_cast<int>(InWorldContext.WorldType));
 		return;
 	}
 
@@ -59,7 +61,7 @@ void USpatialOS::ApplyEditorWorkerConfiguration(FWorldContext& InWorldContext)
 	const int32 NumWorkerConfigurations = SpatialGDKSettings->WorkerConfigurations.Num();
 	if (EditorConfigurationArrayIndex < NumWorkerConfigurations)
 	{
-		const auto& WorkerConfig =
+		const auto &WorkerConfig =
 			SpatialGDKSettings->WorkerConfigurations[EditorConfigurationArrayIndex];
 		WorkerConfiguration = FSpatialGDKWorkerConfiguration(WorkerConfig.WorkerConfigurationData);
 
@@ -81,10 +83,7 @@ void USpatialOS::Connect()
 {
 	checkf(!IsConnected(), TEXT("Connection is already established."));
 	// Log parsed input
-	UE_LOG(LogSpatialOS, Warning,
-		   TEXT(": receptionistHost %s, receptionistPort %d, WorkerType %s, WorkerId %s"),
-		   *WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(),
-		   *WorkerConfiguration.GetWorkerType(), *WorkerConfiguration.GetWorkerId())
+	UE_LOG(LogSpatialOS, Warning, TEXT(": receptionistHost %s, receptionistPort %d, WorkerType %s, WorkerId %s"), *WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(), *WorkerConfiguration.GetWorkerType(), *WorkerConfiguration.GetWorkerId())
 
 	auto LockedView = WorkerConnection.GetView().Pin();
 	if (LockedView.IsValid())
@@ -134,11 +133,10 @@ void USpatialOS::Connect()
 	});
 
 	improbable::unreal::core::FQueueStatusDelegate OnQueueStatus;
-	OnQueueStatus.BindLambda([this](const worker::QueueStatus& Status) {
+	OnQueueStatus.BindLambda([this](const worker::QueueStatus &Status) {
 		if (Status.Error)
 		{
-			UE_LOG(LogSpatialOS, Error, TEXT("Error connecting to deployment: %s"),
-				   UTF8_TO_TCHAR(Status.Error->c_str()));
+			UE_LOG(LogSpatialOS, Error, TEXT("Error connecting to deployment: %s"), UTF8_TO_TCHAR(Status.Error->c_str()));
 			return false;
 		}
 		else
@@ -148,20 +146,17 @@ void USpatialOS::Connect()
 		}
 	});
 
-  const bool ShouldConnectViaLocator = !WorkerConfiguration.GetLoginToken().IsEmpty();
-  if (ShouldConnectViaLocator)
-  {
-    WorkerConnection.ConnectToLocatorAsync(
-        WorkerConfiguration.GetProjectName(), WorkerConfiguration.GetLocatorHost(),
-        WorkerConfiguration.GetDeploymentName(), WorkerConfiguration.GetLoginToken(), Params,
-        OnQueueStatus, OnConnected);
-  }
-  else
-  {
-    WorkerConnection.ConnectToReceptionistAsync(
-        WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(),
-        WorkerConfiguration.GetWorkerId(), Params, OnConnected);
-  }
+	const bool ShouldConnectViaLocator = !WorkerConfiguration.GetLoginToken().IsEmpty();
+	if (ShouldConnectViaLocator)
+	{
+		WorkerConnection.ConnectToLocatorAsync(
+			WorkerConfiguration.GetProjectName(), WorkerConfiguration.GetLocatorHost(), WorkerConfiguration.GetDeploymentName(), WorkerConfiguration.GetLoginToken(), Params, OnQueueStatus, OnConnected);
+	}
+	else
+	{
+		WorkerConnection.ConnectToReceptionistAsync(
+			WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(), WorkerConfiguration.GetWorkerId(), Params, OnConnected);
+	}
 }
 
 void USpatialOS::Disconnect()
@@ -235,22 +230,22 @@ const TWeakPtr<SpatialOSConnection> USpatialOS::GetConnection() const
 	return WorkerConnection.GetConnection();
 }
 
-worker::Metrics& USpatialOS::GetMetrics()
+worker::Metrics &USpatialOS::GetMetrics()
 {
 	return WorkerConnection.GetMetrics();
 }
 
-UEntityPipeline* USpatialOS::GetEntityPipeline() const
+UEntityPipeline *USpatialOS::GetEntityPipeline() const
 {
 	return EntityPipeline;
 }
 
-UCallbackDispatcher* USpatialOS::GetCallbackDispatcher() const
+UCallbackDispatcher *USpatialOS::GetCallbackDispatcher() const
 {
 	return CallbackDispatcher;
 }
 
-worker::Entity* USpatialOS::GetLocalEntity(const worker::EntityId& EntityId)
+worker::Entity *USpatialOS::GetLocalEntity(const worker::EntityId &EntityId)
 {
 	if (!IsConnected())
 	{
@@ -261,7 +256,7 @@ worker::Entity* USpatialOS::GetLocalEntity(const worker::EntityId& EntityId)
 
 	if (LockedView.IsValid())
 	{
-		auto& entityMap = LockedView->Entities;
+		auto &entityMap = LockedView->Entities;
 		auto entityIter = entityMap.find(EntityId);
 
 		if (entityIter != entityMap.end())
@@ -273,7 +268,7 @@ worker::Entity* USpatialOS::GetLocalEntity(const worker::EntityId& EntityId)
 	return nullptr;
 }
 
-void USpatialOS::OnDisconnectDispatcherCallback(const worker::DisconnectOp& Op)
+void USpatialOS::OnDisconnectDispatcherCallback(const worker::DisconnectOp &Op)
 {
 	if (bConnectionWasSuccessful)
 	{

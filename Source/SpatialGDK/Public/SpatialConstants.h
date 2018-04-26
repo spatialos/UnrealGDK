@@ -15,7 +15,7 @@ enum EntityIds
 	SPAWNER_ENTITY_ID = 1,
 	LEVEL_DATA_ENTITY_ID = 2,
 	PLACEHOLDER_ENTITY_ID_FIRST = 3,
-	PLACEHOLDER_ENTITY_ID_LAST = PLACEHOLDER_ENTITY_ID_FIRST + 35,  // 36 placeholder entities.
+	PLACEHOLDER_ENTITY_ID_LAST = PLACEHOLDER_ENTITY_ID_FIRST + 35, // 36 placeholder entities.
 };
 
 const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
@@ -31,12 +31,12 @@ inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 	return FIRST_COMMAND_RETRY_WAIT_SECONDS * WaitTimeExponentialFactor;
 }
 
-FORCEINLINE improbable::Coordinates LocationToSpatialOSCoordinates(const FVector& Location)
+FORCEINLINE improbable::Coordinates LocationToSpatialOSCoordinates(const FVector &Location)
 {
 	return {Location.Y * 0.01f, Location.Z * 0.01f, Location.X * 0.01f};
 }
 
-FORCEINLINE FVector SpatialOSCoordinatesToLocation(const improbable::Coordinates& Coords)
+FORCEINLINE FVector SpatialOSCoordinatesToLocation(const improbable::Coordinates &Coords)
 {
 	return {float(Coords.z() * 100.0), float(Coords.x() * 100.0), float(Coords.y() * 100.0f)};
 }

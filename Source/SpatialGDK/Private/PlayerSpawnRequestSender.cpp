@@ -1,19 +1,19 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "PlayerSpawnRequestSender.h"
+#include <functional>
 #include "CoreMinimal.h"
 #include "SpatialConstants.h"
 #include "SpatialOS.h"
 #include "TimerManager.h"
-#include <functional>
 
 DEFINE_LOG_CATEGORY(LogSpatialOSPlayerSpawner);
 
 FPlayerSpawnRequestSender::FPlayerSpawnRequestSender()
-: TimerManager(nullptr)
-, Connection(nullptr)
-, View(nullptr)
-, NumberOfAttempts(0u)
+	: TimerManager(nullptr)
+	, Connection(nullptr)
+	, View(nullptr)
+	, NumberOfAttempts(0u)
 {
 }
 
@@ -26,7 +26,7 @@ FPlayerSpawnRequestSender::~FPlayerSpawnRequestSender()
 	}
 }
 
-void FPlayerSpawnRequestSender::RequestPlayer(USpatialOS* InSpatialOS, FTimerManager* InTimerManager, const FURL& Url)
+void FPlayerSpawnRequestSender::RequestPlayer(USpatialOS *InSpatialOS, FTimerManager *InTimerManager, const FURL &Url)
 {
 	TimerManager = InTimerManager;
 	Connection = InSpatialOS->GetConnection().Pin().Get();
@@ -47,7 +47,7 @@ void FPlayerSpawnRequestSender::SendPlayerSpawnRequest()
 }
 
 void FPlayerSpawnRequestSender::HandlePlayerSpawnResponse(
-	const worker::CommandResponseOp<SpawnPlayerCommand>& Op)
+	const worker::CommandResponseOp<SpawnPlayerCommand> &Op)
 {
 	View->Remove(ResponseCallbackKey.GetValue());
 	ResponseCallbackKey.Reset();
@@ -57,8 +57,7 @@ void FPlayerSpawnRequestSender::HandlePlayerSpawnResponse(
 	}
 	else if (NumberOfAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 	{
-		UE_LOG(LogSpatialOSPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""),
-			   *FString(Op.Message.c_str()));
+		UE_LOG(LogSpatialOSPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""), *FString(Op.Message.c_str()));
 
 		FTimerHandle RetryTimer;
 		FTimerDelegate TimerCallback;
@@ -70,7 +69,6 @@ void FPlayerSpawnRequestSender::HandlePlayerSpawnResponse(
 	}
 	else
 	{
-		UE_LOG(LogSpatialOSPlayerSpawner, Fatal, TEXT("Player spawn request failed too many times. (%u attempts)"),
-			   SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+		UE_LOG(LogSpatialOSPlayerSpawner, Fatal, TEXT("Player spawn request failed too many times. (%u attempts)"), SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 	}
 }

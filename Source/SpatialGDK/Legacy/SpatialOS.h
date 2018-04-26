@@ -30,7 +30,7 @@ UCLASS()
 class SPATIALGDK_API USpatialOS : public UObject
 {
 	GENERATED_BODY()
-  public:
+public:
 	USpatialOS();
 
 	virtual void BeginDestroy() override;
@@ -44,7 +44,7 @@ class SPATIALGDK_API USpatialOS : public UObject
 	// clang-format off
   UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	// clang-format on
-	void ApplyConfiguration(const FSpatialGDKWorkerConfigurationData& InWorkerConfigurationData);
+	void ApplyConfiguration(const FSpatialGDKWorkerConfigurationData &InWorkerConfigurationData);
 
 	/**
   * Applies a worker configuration specified in the editor to a PIE worker.
@@ -63,7 +63,7 @@ class SPATIALGDK_API USpatialOS : public UObject
   * * "Use Single Process" is false.
   * It is invalid to call this method after this.Connect is called.
   */
-	void ApplyEditorWorkerConfiguration(FWorldContext& InWorldContext);
+	void ApplyEditorWorkerConfiguration(FWorldContext &InWorldContext);
 
 	/**
    * Start the bootstrap process which results in connecting to SpatialOS.
@@ -141,22 +141,22 @@ class SPATIALGDK_API USpatialOS : public UObject
 	/**
    * The current metrics.
    */
-	worker::Metrics& GetMetrics();
+	worker::Metrics &GetMetrics();
 
 	/**
   * Entity pipeline
   */
-	UEntityPipeline* GetEntityPipeline() const;
+	UEntityPipeline *GetEntityPipeline() const;
 
 	/**
   * Callback dispatcher
   */
-	UCallbackDispatcher* GetCallbackDispatcher() const;
+	UCallbackDispatcher *GetCallbackDispatcher() const;
 
 	/**
    * Returns the raw entity, if it is available on this worker, or nullptr otherwise.
    */
-	worker::Entity* GetLocalEntity(const worker::EntityId& InEntityId);
+	worker::Entity *GetLocalEntity(const worker::EntityId &InEntityId);
 
 	/**
    * This delegate is triggered when a connection to SpatialOS has been successfully made.
@@ -176,20 +176,20 @@ class SPATIALGDK_API USpatialOS : public UObject
 	UPROPERTY(BlueprintAssignable, Category = "SpatialOS")
 	FOnConnectionFailedDelegate OnConnectionFailedDelegate;
 
-  private:
+private:
 	UPROPERTY()
 	FSpatialGDKWorkerConfiguration WorkerConfiguration;
 
 	UPROPERTY()
-	UEntityPipeline* EntityPipeline;
+	UEntityPipeline *EntityPipeline;
 
 	UPROPERTY()
-	UCallbackDispatcher* CallbackDispatcher;
+	UCallbackDispatcher *CallbackDispatcher;
 
 	improbable::unreal::core::FWorkerConnection WorkerConnection;
 	bool bConnectionWasSuccessful;
 
 	improbable::unreal::callbacks::FScopedViewCallbacks Callbacks;
-	void OnDisconnectDispatcherCallback(const worker::DisconnectOp& Op);
+	void OnDisconnectDispatcherCallback(const worker::DisconnectOp &Op);
 	void OnDisconnectInternal();
 };

@@ -52,5 +52,5 @@ using Components = worker::Components<improbable::unreal::UnrealLevel,
 									  improbable::Position,
 									  improbable::Persistence>;
 
-}  // ::unreal
-}  // ::improbable
+} // ::unreal
+} // ::improbable

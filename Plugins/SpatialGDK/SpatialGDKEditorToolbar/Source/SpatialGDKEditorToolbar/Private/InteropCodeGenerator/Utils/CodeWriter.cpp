@@ -4,17 +4,17 @@
 #include "Misc/FileHelper.h"
 
 FCodeWriter::FCodeWriter()
-: Scope(0)
+	: Scope(0)
 {
 }
 
-FCodeWriter& FCodeWriter::PrintNewLine()
+FCodeWriter &FCodeWriter::PrintNewLine()
 {
 	OutputSource += TEXT("\r\n");
 	return *this;
 }
 
-FCodeWriter& FCodeWriter::Print(const FString& String)
+FCodeWriter &FCodeWriter::Print(const FString &String)
 {
 	TArray<FString> Lines;
 	String.Replace(TEXT("\r\n"), TEXT("\n")).ParseIntoArray(Lines, TEXT("\n"), false);
@@ -36,7 +36,7 @@ FCodeWriter& FCodeWriter::Print(const FString& String)
 	}
 
 	// Replace 4 spaces with tabs.
-	for (auto& Line : Lines)
+	for (auto &Line : Lines)
 	{
 		Line.Replace(TEXT("    "), TEXT("\t"));
 	}
@@ -53,7 +53,7 @@ FCodeWriter& FCodeWriter::Print(const FString& String)
 	}
 
 	// Add lines to output.
-	for (auto& Line : Lines)
+	for (auto &Line : Lines)
 	{
 		FString TrimmedLine = Line.Mid(TrimScope);
 		if (!TrimmedLine.IsEmpty())
@@ -71,48 +71,48 @@ FCodeWriter& FCodeWriter::Print(const FString& String)
 	return *this;
 }
 
-FCodeWriter& FCodeWriter::Indent()
+FCodeWriter &FCodeWriter::Indent()
 {
 	Scope++;
 	return *this;
 }
 
-FCodeWriter& FCodeWriter::Outdent()
+FCodeWriter &FCodeWriter::Outdent()
 {
 	check(Scope > 0);
 	Scope--;
 	return *this;
 }
 
-FCodeWriter& FCodeWriter::BeginScope()
+FCodeWriter &FCodeWriter::BeginScope()
 {
 	Print("{");
 	Indent();
 	return *this;
 }
 
-FCodeWriter& FCodeWriter::BeginFunction(const FFunctionSignature& Signature)
+FCodeWriter &FCodeWriter::BeginFunction(const FFunctionSignature &Signature)
 {
 	Print(Signature.Definition());
 	BeginScope();
 	return *this;
 }
 
-FCodeWriter& FCodeWriter::BeginFunction(const FFunctionSignature& Signature, const FString& TypeName)
+FCodeWriter &FCodeWriter::BeginFunction(const FFunctionSignature &Signature, const FString &TypeName)
 {
 	Print(Signature.Definition(TypeName));
 	BeginScope();
 	return *this;
 }
 
-FCodeWriter& FCodeWriter::End()
+FCodeWriter &FCodeWriter::End()
 {
 	Outdent();
 	Print("}");
 	return *this;
 }
 
-void FCodeWriter::WriteToFile(const FString& Filename)
+void FCodeWriter::WriteToFile(const FString &Filename)
 {
 	check(Scope == 0);
 	FFileHelper::SaveStringToFile(OutputSource, *Filename);

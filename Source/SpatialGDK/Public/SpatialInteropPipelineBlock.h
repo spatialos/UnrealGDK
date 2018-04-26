@@ -36,7 +36,7 @@ struct FPendingAddComponentWrapper
 	FComponentIdentifier EntityComponent;
 
 	UPROPERTY()
-	UAddComponentOpWrapperBase* AddComponentOp;
+	UAddComponentOpWrapperBase *AddComponentOp;
 };
 
 UCLASS(BlueprintType)
@@ -44,21 +44,21 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 {
 	GENERATED_BODY()
 
-  public:
-	void Init(UEntityRegistry* Registry, USpatialNetDriver* Driver, UWorld* LoadedWorld);
+public:
+	void Init(UEntityRegistry *Registry, USpatialNetDriver *Driver, UWorld *LoadedWorld);
 
-	void AddEntity(const worker::AddEntityOp& AddEntityOp) override;
-	void RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp) override;
+	void AddEntity(const worker::AddEntityOp &AddEntityOp) override;
+	void RemoveEntity(const worker::RemoveEntityOp &RemoveEntityOp) override;
 
-	void AddComponent(UAddComponentOpWrapperBase* AddComponentOp) override;
-	void RemoveComponent(const worker::ComponentId ComponentId, const worker::RemoveComponentOp& RemoveComponentOp) override;
+	void AddComponent(UAddComponentOpWrapperBase *AddComponentOp) override;
+	void RemoveComponent(const worker::ComponentId ComponentId, const worker::RemoveComponentOp &RemoveComponentOp) override;
 
-	void ChangeAuthority(const worker::ComponentId ComponentId, const worker::AuthorityChangeOp& AuthChangeOp) override;
+	void ChangeAuthority(const worker::ComponentId ComponentId, const worker::AuthorityChangeOp &AuthChangeOp) override;
 
 	void EnterCriticalSection() override;
 	void LeaveCriticalSection() override;
 
-  private:
+private:
 	bool bInCriticalSection;
 
 	UPROPERTY()
@@ -76,42 +76,43 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 	TArray<FEntityId> PendingRemoveEntities;
 
 	UPROPERTY()
-	UEntityRegistry* EntityRegistry;
+	UEntityRegistry *EntityRegistry;
 
 	UPROPERTY()
-	USpatialNetDriver* NetDriver;
+	USpatialNetDriver *NetDriver;
 
-	UWorld* World;
+	UWorld *World;
 
 	// Maps ComponentId to USpatialOsComponent* class name
 	UPROPERTY()
-	TMap<FComponentId, UClass*> KnownComponents;
+	TMap<FComponentId, UClass *> KnownComponents;
 
-  private:
-	void AddEntityImpl(const FEntityId& EntityId);
-	void InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp);
-	void DisableComponentImpl(const FComponentIdentifier& ComponentIdentifier);
-	void RemoveEntityImpl(const FEntityId& EntityId);
+private:
+	void AddEntityImpl(const FEntityId &EntityId);
+	void InitialiseNewComponentImpl(const FComponentIdentifier &ComponentIdentifier, UAddComponentOpWrapperBase *AddComponentOp);
+	void DisableComponentImpl(const FComponentIdentifier &ComponentIdentifier);
+	void RemoveEntityImpl(const FEntityId &EntityId);
 
 	// Stub.
-	void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-					const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
-					UCallbackDispatcher* CallbackDispatcher) override;
+	void ProcessOps(const TWeakPtr<SpatialOSView> &InView,
+					const TWeakPtr<SpatialOSConnection> &InConnection,
+					UWorld *World,
+					UCallbackDispatcher *CallbackDispatcher) override;
 
-  private:
-	AActor* GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId);
-	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ClassToSpawn);
+private:
+	AActor *GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId &EntityId);
+	AActor *SpawnNewEntity(improbable::PositionData *PositionComponent, UClass *ClassToSpawn);
 
-	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);
-	UClass* GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent);
+	UClass *GetNativeEntityClass(improbable::MetadataData *MetadataComponent);
+	UClass *GetRegisteredEntityClass(improbable::MetadataData *MetadataComponent);
 
-	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection);
+	void SetupComponentInterests(AActor *Actor, const FEntityId &EntityId, const TWeakPtr<worker::Connection> &Connection);
 
 	template <typename AddOpType, typename Metaclass>
-	typename Metaclass::Data* GetPendingComponentData(const FEntityId& EntityId)
+	typename Metaclass::Data *GetPendingComponentData(const FEntityId &EntityId)
 	{
 		const auto ComponentId = Metaclass::ComponentId;
-		for (FPendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+		for (FPendingAddComponentWrapper &PendingAddComponent : PendingAddComponents)
 		{
 			if (PendingAddComponent.EntityComponent == FComponentIdentifier{EntityId.ToSpatialEntityId(), ComponentId})
 			{
@@ -122,7 +123,7 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 	}
 
 	template <typename Metaclass>
-	typename Metaclass::Data* GetComponentDataFromView(TSharedPtr<worker::View> LockedView, const FEntityId& EntityId)
+	typename Metaclass::Data *GetComponentDataFromView(TSharedPtr<worker::View> LockedView, const FEntityId &EntityId)
 	{
 		auto EntityIterator = LockedView->Entities.find(EntityId.ToSpatialEntityId());
 		if (EntityIterator == LockedView->Entities.end())

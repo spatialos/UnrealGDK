@@ -1,8 +1,8 @@
 #pragma once
 
+#include "ComponentIdentifier.generated.h"
 #include "EngineMinimal.h"
 #include "SpatialGDKWorkerTypes.h"
-#include "ComponentIdentifier.generated.h"
 
 USTRUCT(BlueprintType)
 struct FComponentIdentifier
@@ -12,24 +12,24 @@ struct FComponentIdentifier
 	worker::EntityId EntityId;
 	worker::ComponentId ComponentId;
 
-	bool operator==(const FComponentIdentifier& Other) const
+	bool operator==(const FComponentIdentifier &Other) const
 	{
 		return (Other.EntityId == EntityId && Other.ComponentId == ComponentId);
 	}
 
-	FComponentIdentifier& operator=(const FComponentIdentifier& Other)
+	FComponentIdentifier &operator=(const FComponentIdentifier &Other)
 	{
 		EntityId = Other.EntityId;
 		ComponentId = Other.ComponentId;
 		return *this;
 	}
 
-	friend uint32 GetTypeHash(worker::EntityId const& Rhs)
+	friend uint32 GetTypeHash(worker::EntityId const &Rhs)
 	{
 		return HashEntityId(Rhs);
 	}
 
-	friend uint32 GetTypeHash(FComponentIdentifier const& Rhs)
+	friend uint32 GetTypeHash(FComponentIdentifier const &Rhs)
 	{
 		// This creates a single integer value from ComponentId and EntityId using a Cantor pairing
 		// function

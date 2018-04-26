@@ -15,7 +15,6 @@
 #include "SpatialGDKEditorToolbarCommands.h"
 #include "SpatialGDKEditorToolbarStyle.h"
 
-
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
 
@@ -68,7 +67,7 @@ void FSpatialGDKEditorToolbarModule::RegisterSettings()
 
 void FSpatialGDKEditorToolbarModule::UnregisterSettings()
 {
-	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	if (ISettingsModule *SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
 	{
 		SettingsModule->UnregisterSettings("Project", "SpatialGDK", "Toolbar");
 	}
@@ -96,14 +95,13 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> PluginCommands)
 {
-	FLevelEditorModule& LevelEditorModule =
+	FLevelEditorModule &LevelEditorModule =
 		FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 
 	{
 		TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender());
 		MenuExtender->AddMenuExtension(
-			"General", EExtensionHook::After, PluginCommands,
-			FMenuExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddMenuExtension));
+			"General", EExtensionHook::After, PluginCommands, FMenuExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddMenuExtension));
 
 		LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
 	}
@@ -111,15 +109,13 @@ void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandLis
 	{
 		TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
 		ToolbarExtender->AddToolBarExtension(
-			"Game", EExtensionHook::After, PluginCommands,
-			FToolBarExtensionDelegate::CreateRaw(this,
-												 &FSpatialGDKEditorToolbarModule::AddToolbarExtension));
+			"Game", EExtensionHook::After, PluginCommands, FToolBarExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddToolbarExtension));
 
 		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
+void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder &Builder)
 {
 	Builder.BeginSection("SpatialGDK", LOCTEXT("SpatialGDK", "SpatialGDK"));
 	{
@@ -129,7 +125,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 	Builder.EndSection();
 }
 
-void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builder)
+void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder &Builder)
 {
 	Builder.AddSeparator(NAME_None);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);

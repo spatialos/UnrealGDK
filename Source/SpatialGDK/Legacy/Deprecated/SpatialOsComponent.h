@@ -36,38 +36,38 @@ class SPATIALGDK_API USpatialOsComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	USpatialOsComponent();
 	virtual ~USpatialOsComponent() = default;
 
 	virtual void BeginDestroy() override;
 
-	virtual void Init(const TWeakPtr<SpatialOSConnection>& InConnection,
-					  const TWeakPtr<SpatialOSView>& InView, worker::EntityId InEntityId,
-					  UCallbackDispatcher* InCallbackDispatcher);
+	virtual void Init(const TWeakPtr<SpatialOSConnection> &InConnection,
+					  const TWeakPtr<SpatialOSView> &InView,
+					  worker::EntityId InEntityId,
+					  UCallbackDispatcher *InCallbackDispatcher);
 
-	virtual void Disable(const worker::EntityId InEntityId, UCallbackDispatcher* CallbackDispatcher)
+	virtual void Disable(const worker::EntityId InEntityId, UCallbackDispatcher *CallbackDispatcher)
 		PURE_VIRTUAL(USpatialOsComponent::Disable(), );
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Component")
 	virtual FComponentId GetComponentId()
 		PURE_VIRTUAL(USpatialOsComponent::GetComponentId, return 0;);
 
-	virtual void ApplyInitialState(const UAddComponentOpWrapperBase& AddComponentOp)
+	virtual void ApplyInitialState(const UAddComponentOpWrapperBase &AddComponentOp)
 		PURE_VIRTUAL(USpatialOsComponent::ApplyInitialState(), );
 
-  virtual void ReplicateChanges(float DeltaSeconds)
-      PURE_VIRTUAL(USpatialOsComponent::ReplicateChanges, );
+	virtual void ReplicateChanges(float DeltaSeconds)
+		PURE_VIRTUAL(USpatialOsComponent::ReplicateChanges, );
 
 	virtual void TriggerAutomaticComponentUpdate(float DeltaSeconds)
 		PURE_VIRTUAL(USpatialOsComponent::TriggerAutomaticComponentUpdate, );
 
-	void ApplyInitialAuthority(const worker::AuthorityChangeOp& AuthChangeOp);
+	void ApplyInitialAuthority(const worker::AuthorityChangeOp &AuthChangeOp);
 
-  worker::EntityId GetEntityId();
+	worker::EntityId GetEntityId();
 
-	UFUNCTION(BlueprintPure, Category = "SpatialOS Component",
-			  meta = (DeprecatedFunction, DeprecationMessage = "Please use GetAuthority() instead."))
+	UFUNCTION(BlueprintPure, Category = "SpatialOS Component", meta = (DeprecatedFunction, DeprecationMessage = "Please use GetAuthority() instead."))
 	bool HasAuthority();
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Component")
@@ -86,7 +86,7 @@ class SPATIALGDK_API USpatialOsComponent : public UActorComponent
 	FSpatialComponentReadyDelegate OnComponentReady;
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Component")
-	UCommander* SendCommand();
+	UCommander *SendCommand();
 
 	/** Maximum frequency of automatically generated SpatialOS updates from this component.
   * 0 means manual mode. No automatic updates will be sent.
@@ -96,9 +96,9 @@ class SPATIALGDK_API USpatialOsComponent : public UActorComponent
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int MaxUpdatesPerSecond;
 
-  protected:
-	virtual void OnAuthorityChangeDispatcherCallback(const worker::AuthorityChangeOp& op);
-	void OnRemoveComponentDispatcherCallback(const worker::RemoveComponentOp& op);
+protected:
+	virtual void OnAuthorityChangeDispatcherCallback(const worker::AuthorityChangeOp &op);
+	void OnRemoveComponentDispatcherCallback(const worker::RemoveComponentOp &op);
 
 	TWeakPtr<SpatialOSConnection> Connection;
 	TWeakPtr<SpatialOSView> View;
@@ -113,5 +113,5 @@ class SPATIALGDK_API USpatialOsComponent : public UActorComponent
 	bool bHasEventQueued;
 
 	UPROPERTY()
-	UCommander* Commander;
+	UCommander *Commander;
 };
