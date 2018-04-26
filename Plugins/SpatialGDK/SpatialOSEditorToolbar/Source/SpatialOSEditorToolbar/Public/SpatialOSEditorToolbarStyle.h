@@ -7,22 +7,21 @@
 
 class FSlateStyleSet;
 
-class FSpatialOSEditorToolbarStyle
-{
-  public:
-	static void Initialize();
+class FSpatialOSEditorToolbarStyle {
+public:
+  static void Initialize();
 
-	static void Shutdown();
+  static void Shutdown();
 
-	static void ReloadTextures();
+  static void ReloadTextures();
 
-	static const ISlateStyle& Get();
+  static const ISlateStyle &Get();
 
-	static FName GetStyleSetName();
+  static FName GetStyleSetName();
 
-  private:
-	static TSharedRef<FSlateStyleSet> Create();
+private:
+  static TSharedRef<FSlateStyleSet> Create();
 
-  private:
-	static TSharedPtr<FSlateStyleSet> StyleInstance;
+private:
+  static TSharedPtr<FSlateStyleSet> StyleInstance;
 };

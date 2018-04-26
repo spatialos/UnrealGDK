@@ -7,36 +7,26 @@
 
 #include "CommanderTypes.h"
 #include "RequestId.h"
-#include "UObject/NoExportTypes.h"
 #include "SpatialOSCommandResult.generated.h"
+#include "UObject/NoExportTypes.h"
 
 USTRUCT(BlueprintType)
-struct SPATIALGDK_API FSpatialOSCommandResult
-{
-	GENERATED_USTRUCT_BODY();
+struct SPATIALGDK_API FSpatialOSCommandResult {
+  GENERATED_USTRUCT_BODY();
 
-  public:
-	FSpatialOSCommandResult()
-	: StatusCode(ECommandResponseCode::Unknown)
-	{
-	}
+public:
+  FSpatialOSCommandResult() : StatusCode(ECommandResponseCode::Unknown) {}
 
-	bool Success() const
-	{
-		return StatusCode == ECommandResponseCode::Success;
-	}
+  bool Success() const { return StatusCode == ECommandResponseCode::Success; }
 
-	FString GetErrorMessage() const
-	{
-		return ErrorMessage;
-	}
+  FString GetErrorMessage() const { return ErrorMessage; }
 
-	UPROPERTY()
-	ECommandResponseCode StatusCode;
+  UPROPERTY()
+  ECommandResponseCode StatusCode;
 
-	UPROPERTY()
-	FString ErrorMessage;
+  UPROPERTY()
+  FString ErrorMessage;
 
-	UPROPERTY()
-	FRequestId RequestId;
+  UPROPERTY()
+  FRequestId RequestId;
 };

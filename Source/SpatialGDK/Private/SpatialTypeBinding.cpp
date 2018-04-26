@@ -3,10 +3,10 @@
 #include "SpatialTypeBinding.h"
 #include "SpatialPackageMapClient.h"
 
-void USpatialTypeBinding::Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)
-{
-	check(InInterop);
-	check(InPackageMap);
-	Interop = InInterop;
-	PackageMap = InPackageMap;
+void USpatialTypeBinding::Init(USpatialInterop *InInterop,
+                               USpatialPackageMapClient *InPackageMap) {
+  check(InInterop);
+  check(InPackageMap);
+  Interop = InInterop;
+  PackageMap = InPackageMap;
 }
