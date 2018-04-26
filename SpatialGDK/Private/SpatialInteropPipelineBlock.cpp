@@ -300,6 +300,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 	// 2) A "pure" Spatial create entity request, which means we need to spawn an actor that was manually registered to correspond to it.
 	// 3) A SpawnActor() call that was initiated from a different worker, which means we need to find and spawn the corresponding "native" actor that corresponds to it.
 	//	  This can happen on either the client (for all actors) or server (for actors which were spawned by a different server worker, or are migrated).
+
 	if (EntityActor)
 	{
 		// Option 1
