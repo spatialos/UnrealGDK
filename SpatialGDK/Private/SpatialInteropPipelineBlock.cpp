@@ -301,6 +301,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 	// 3) A SpawnActor() call that was initiated from a different worker, which means we need to find and spawn the corresponding "native" actor that corresponds to it.
 	//	  This can happen on either the client (for all actors) or server (for actors which were spawned by a different server worker, or are migrated).
 
+	// This is the worker which made the actor.=, so it just associates the entityID with the actor.
 	if (EntityActor)
 	{
 		// Option 1
@@ -319,6 +320,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 	else
 	{
 		UClass* ActorClass = nullptr;
+		// GetRegisteredEntityClass is the part looking for a blueprint.
 		if ((ActorClass = GetRegisteredEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 2
@@ -326,7 +328,8 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			EntityActor = SpawnNewEntity(PositionComponent, ActorClass);
 			EntityRegistry->AddToRegistry(EntityId, EntityActor);
 		}
-		else if ((ActorClass = GetNativeEntityClass(MetadataComponent)) != nullptr)
+		// This finds an UnrealClass, doesn't have to be a blueprint.
+		else if ((ActorClass = GetNativeEntityClass(MetadataComponent)) != nullptr) // Conditional hack to detect that we are creating a player spawner.
 		{
 			// Option 3
 			UNetConnection* Connection = nullptr;

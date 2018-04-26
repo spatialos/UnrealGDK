@@ -28,13 +28,26 @@ namespace {
 worker::Entity CreateSpawnerEntity()
 {
 	const Coordinates InitialPosition{0, 0, 0};
+	improbable::WorkerAttributeSet WorkerAttribute{ { worker::List<std::string>{"UnrealWorker"} } };
+	improbable::WorkerRequirementSet WorkersOnly{ { WorkerAttribute } };
+
+	improbable::unreal::UnrealMetadata::Data UnrealMetadata;
+	//if (Channel->Actor->IsFullNameStableForNetworking())
+	//{
+	//	UnrealMetadata.set_static_path({ std::string{ TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld())) } });
+	//}
+	//if (!ClientWorkerIdString.empty())
+	//{
+	//	UnrealMetadata.set_owner_worker_id({ ClientWorkerIdString });
+	//}
 
 	return improbable::unreal::FEntityBuilder::Begin()
 		.AddPositionComponent(Position::Data{InitialPosition}, UnrealWorkerWritePermission)
-		.AddMetadataComponent(Metadata::Data("Spawner"))
+		.AddMetadataComponent(Metadata::Data("SpatialSpawner"))
 		.SetPersistence(true)
 		.SetReadAcl(AnyWorkerReadPermission)
 		.AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{}, UnrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
 		.Build();
 }
 
