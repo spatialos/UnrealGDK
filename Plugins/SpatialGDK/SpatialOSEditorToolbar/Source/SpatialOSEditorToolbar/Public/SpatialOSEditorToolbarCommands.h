@@ -9,19 +9,18 @@
 class FSpatialOSEditorToolbarCommands : public TCommands<FSpatialOSEditorToolbarCommands>
 {
 public:
-	FSpatialOSEditorToolbarCommands()
-		: TCommands<FSpatialOSEditorToolbarCommands>(
-			  TEXT("SpatialOSEditorToolbar"),
-			  NSLOCTEXT("Contexts", "SpatialOSEditorToolbar", "SpatialOSEditorToolbar Plugin"),
-			  NAME_None,
-			  FSpatialOSEditorToolbarStyle::GetStyleSetName())
-	{
-	}
+  FSpatialOSEditorToolbarCommands()
+  : TCommands<FSpatialOSEditorToolbarCommands>(
+        TEXT("SpatialOSEditorToolbar"),
+        NSLOCTEXT("Contexts", "SpatialOSEditorToolbar", "SpatialOSEditorToolbar Plugin"), NAME_None,
+        FSpatialOSEditorToolbarStyle::GetStyleSetName())
+  {
+  }
 
-	virtual void RegisterCommands() override;
+  virtual void RegisterCommands() override;
 
 public:
-	TSharedPtr<FUICommandInfo> StartSpatialOSStackAction;
-	TSharedPtr<FUICommandInfo> StopSpatialOSStackAction;
-	TSharedPtr<FUICommandInfo> LaunchInspectorWebPageAction;
+  TSharedPtr<FUICommandInfo> StartSpatialOSStackAction;
+  TSharedPtr<FUICommandInfo> StopSpatialOSStackAction;
+  TSharedPtr<FUICommandInfo> LaunchInspectorWebPageAction;
 };

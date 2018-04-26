@@ -9,18 +9,17 @@
 class FSpatialGDKEditorToolbarCommands : public TCommands<FSpatialGDKEditorToolbarCommands>
 {
 public:
-	FSpatialGDKEditorToolbarCommands()
-		: TCommands<FSpatialGDKEditorToolbarCommands>(
-			  TEXT("SpatialGDKEditorToolbar"),
-			  NSLOCTEXT("Contexts", "SpatialGDKEditorToolbar", "SpatialGDKEditorToolbar Plugin"),
-			  NAME_None,
-			  FSpatialGDKEditorToolbarStyle::GetStyleSetName())
-	{
-	}
+  FSpatialGDKEditorToolbarCommands()
+  : TCommands<FSpatialGDKEditorToolbarCommands>(
+        TEXT("SpatialGDKEditorToolbar"),
+        NSLOCTEXT("Contexts", "SpatialGDKEditorToolbar", "SpatialGDKEditorToolbar Plugin"),
+        NAME_None, FSpatialGDKEditorToolbarStyle::GetStyleSetName())
+  {
+  }
 
-	virtual void RegisterCommands() override;
+  virtual void RegisterCommands() override;
 
 public:
-	TSharedPtr<FUICommandInfo> CreateSpatialGDKSnapshot;
-	TSharedPtr<FUICommandInfo> GenerateInteropCode;
+  TSharedPtr<FUICommandInfo> CreateSpatialGDKSnapshot;
+  TSharedPtr<FUICommandInfo> GenerateInteropCode;
 };

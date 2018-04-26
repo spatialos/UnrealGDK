@@ -2,13 +2,11 @@
 
 #include "SpatialGDKSettings.h"
 
-FSpatialGDKWorkerOverrideSettings::FSpatialGDKWorkerOverrideSettings()
-	: bDisableRendering(false)
+FSpatialGDKWorkerOverrideSettings::FSpatialGDKWorkerOverrideSettings() : bDisableRendering(false)
 {
 }
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
-	, bUseUserWorkerConfigurations(false)
+: Super(ObjectInitializer), bUseUserWorkerConfigurations(false)
 {
 }
