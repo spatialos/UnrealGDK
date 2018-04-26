@@ -3,7 +3,7 @@
 #include "TypeStructure.h"
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 
-FString GetFullCPPName(UClass *Class)
+FString GetFullCPPName(UClass* Class)
 {
 	if (Class->IsChildOf(AActor::StaticClass()))
 	{
@@ -17,7 +17,7 @@ FString GetFullCPPName(UClass *Class)
 
 FString GetLifetimeConditionAsString(ELifetimeCondition Condition)
 {
-	const UEnum *EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("ELifetimeCondition"), true);
+	const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("ELifetimeCondition"), true);
 	if (!EnumPtr)
 	{
 		return FString("Invalid");
@@ -56,7 +56,7 @@ TArray<ERPCType> GetRPCTypes()
 	return Groups;
 }
 
-ERPCType GetRPCTypeFromFunction(UFunction *Function)
+ERPCType GetRPCTypeFromFunction(UFunction* Function)
 {
 	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetClient)
 	{
@@ -87,10 +87,10 @@ FString GetRPCTypeName(ERPCType RPCType)
 	}
 }
 
-ERepLayoutCmdType PropertyToRepLayoutType(UProperty *Property)
+ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property)
 {
-	UProperty *UnderlyingProperty = Property;
-	if (UEnumProperty *EnumProperty = Cast<UEnumProperty>(Property))
+	UProperty* UnderlyingProperty = Property;
+	if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
 	{
 		UnderlyingProperty = EnumProperty->GetUnderlyingProperty();
 	}
@@ -98,8 +98,8 @@ ERepLayoutCmdType PropertyToRepLayoutType(UProperty *Property)
 	// Try to special case to custom types we know about
 	if (UnderlyingProperty->IsA(UStructProperty::StaticClass()))
 	{
-		UStructProperty *StructProp = Cast<UStructProperty>(UnderlyingProperty);
-		UScriptStruct *Struct = StructProp->Struct;
+		UStructProperty* StructProp = Cast<UStructProperty>(UnderlyingProperty);
+		UScriptStruct* Struct = StructProp->Struct;
 		if (Struct->GetFName() == NAME_Vector)
 		{
 			return REPCMD_PropertyVector;
@@ -186,7 +186,7 @@ ERepLayoutCmdType PropertyToRepLayoutType(UProperty *Property)
 void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor, bool bRecurseIntoSubobjects)
 {
 	bool bShouldRecurseFurther = Visitor(TypeNode);
-	for (auto &PropertyPair : TypeNode->Properties)
+	for (auto& PropertyPair : TypeNode->Properties)
 	{
 		if (bShouldRecurseFurther && PropertyPair.Value->Type.IsValid())
 		{
@@ -201,7 +201,7 @@ void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr
 
 void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor, bool bRecurseIntoSubobjects)
 {
-	for (auto &PropertyPair : TypeNode->Properties)
+	for (auto& PropertyPair : TypeNode->Properties)
 	{
 		bool bShouldRecurseFurther = Visitor(PropertyPair.Value);
 		if (bShouldRecurseFurther && PropertyPair.Value->Type.IsValid())
@@ -217,7 +217,7 @@ void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TShared
 
 void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor, bool bRecurseIntoSubobjects)
 {
-	for (auto &PropertyPair : RPCNode->Parameters)
+	for (auto& PropertyPair : RPCNode->Parameters)
 	{
 		bool bShouldRecurseFurther = Visitor(PropertyPair.Value);
 		if (bShouldRecurseFurther && PropertyPair.Value->Type.IsValid())
@@ -231,10 +231,10 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPt
 	}
 }
 
-TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct *Type, const TArray<TArray<FName>> &MigratableProperties)
+TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties)
 {
 	// Struct types will set this to nullptr.
-	UClass *Class = Cast<UClass>(Type);
+	UClass* Class = Cast<UClass>(Type);
 
 	// Create type node.
 	TSharedPtr<FUnrealType> TypeNode = MakeShared<FUnrealType>();
@@ -243,7 +243,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct *Type, const TArray<TArray<
 	// Iterate through each property in the struct.
 	for (TFieldIterator<UProperty> It(Type); It; ++It)
 	{
-		UProperty *Property = *It;
+		UProperty* Property = *It;
 
 		// TODO(David): Should we still be skipping this?
 		if (Property->IsA<UMulticastDelegateProperty>())
@@ -267,7 +267,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct *Type, const TArray<TArray<
 		// If this is a struct property, then get the struct type and recurse into it.
 		if (Property->IsA<UStructProperty>())
 		{
-			UStructProperty *StructProperty = Cast<UStructProperty>(Property);
+			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
 			PropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, {});
 			PropertyNode->Type->ParentProperty = PropertyNode;
 			continue;
@@ -283,7 +283,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct *Type, const TArray<TArray<
 		//   2) Obtain the concrete object type stored in this property. For example, the property containing the CharacterMovementComponent
 		//      might be a property which stores a MovementComponent pointer, so we'd need to somehow figure out the real type being stored there
 		//		during runtime. This is determined by getting the CDO of this class to determine what is stored in that property.
-		UObjectProperty *ObjectProperty = Cast<UObjectProperty>(Property);
+		UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property);
 		check(ObjectProperty);
 
 		// If this is a property of a struct, assume it's a weak reference.
@@ -292,11 +292,11 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct *Type, const TArray<TArray<
 			continue;
 		}
 
-		UObject *ContainerCDO = Class->GetDefaultObject();
+		UObject* ContainerCDO = Class->GetDefaultObject();
 		check(ContainerCDO);
 
 		// Obtain the properties actual value from the CDO, so we can figure out its true type.
-		UObject *Value = ObjectProperty->GetPropertyValue_InContainer(ContainerCDO);
+		UObject* Value = ObjectProperty->GetPropertyValue_InContainer(ContainerCDO);
 		if (Value)
 		{
 			// If this is an editor-only property, skip it. As we've already added to the property list at this stage, just remove it.
@@ -351,14 +351,14 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct *Type, const TArray<TArray<
 			// Fill out parameters.
 			for (TFieldIterator<UProperty> It(*RemoteFunction); It; ++It)
 			{
-				UProperty *Parameter = *It;
+				UProperty* Parameter = *It;
 
 				TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
 				PropertyNode->Property = Parameter;
 				RPCNode->Parameters.Add(Parameter, PropertyNode);
 
 				// If this RPC parameter is a struct, recurse into it.
-				UStructProperty *StructParameter = Cast<UStructProperty>(Parameter);
+				UStructProperty* StructParameter = Cast<UStructProperty>(Parameter);
 				if (StructParameter)
 				{
 					PropertyNode->Type = CreateUnrealTypeInfo(StructParameter->Struct, {});
@@ -376,8 +376,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct *Type, const TArray<TArray<
 	RepLayout.InitFromObjectClass(Class);
 	for (int CmdIndex = 0; CmdIndex < RepLayout.Cmds.Num(); ++CmdIndex)
 	{
-		FRepLayoutCmd &Cmd = RepLayout.Cmds[CmdIndex];
-		FRepParentCmd &Parent = RepLayout.Parents[Cmd.ParentIndex];
+		FRepLayoutCmd& Cmd = RepLayout.Cmds[CmdIndex];
+		FRepParentCmd& Parent = RepLayout.Parents[Cmd.ParentIndex];
 
 		if (Cmd.Type == REPCMD_Return || Cmd.Property == nullptr)
 		{
@@ -457,7 +457,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct *Type, const TArray<TArray<
 
 	// Process the migratable properties list.
 	uint16 MigratableDataHandle = 1;
-	for (const TArray<FName> &PropertyNames : MigratableProperties)
+	for (const TArray<FName>& PropertyNames : MigratableProperties)
 	{
 		// Find the property represented by this chain.
 		TSharedPtr<FUnrealProperty> MigratableProperty = nullptr;
@@ -465,7 +465,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct *Type, const TArray<TArray<
 		for (FName PropertyName : PropertyNames)
 		{
 			checkf(CurrentTypeNode.IsValid(), TEXT("A property in the chain (except the leaf) is not a struct property."));
-			UProperty *NextProperty = CurrentTypeNode->Type->FindPropertyByName(PropertyName);
+			UProperty* NextProperty = CurrentTypeNode->Type->FindPropertyByName(PropertyName);
 			checkf(NextProperty, TEXT("Cannot find property %s in container %s"), *PropertyName.ToString(), *CurrentTypeNode->Type->GetName());
 			MigratableProperty = CurrentTypeNode->Properties.FindChecked(NextProperty);
 			CurrentTypeNode = MigratableProperty->Type;
@@ -538,7 +538,7 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 	RPCsByType.Add(RPC_Client);
 	RPCsByType.Add(RPC_Server);
 	VisitAllObjects(TypeInfo, [&RPCsByType](TSharedPtr<FUnrealType> Type) {
-		for (auto &RPC : Type->RPCs)
+		for (auto& RPC : Type->RPCs)
 		{
 			RPCsByType.FindOrAdd(RPC.Value->Type).Add(RPC.Value);
 		}

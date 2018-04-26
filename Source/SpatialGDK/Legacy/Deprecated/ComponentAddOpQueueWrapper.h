@@ -14,7 +14,7 @@ struct FComponentAddOpQueueWrapper
 
 public:
 	UPROPERTY()
-	TArray<UAddComponentOpWrapperBase *> Underlying;
+	TArray<UAddComponentOpWrapperBase*> Underlying;
 
 	FComponentAddOpQueueWrapper()
 	{

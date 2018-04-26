@@ -29,7 +29,7 @@ void FSpatialGDKModule::ShutdownModule()
 
 void FSpatialGDKModule::RegisterSettings()
 {
-	if (ISettingsModule *SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
 	{
 		ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
 
@@ -48,7 +48,7 @@ void FSpatialGDKModule::RegisterSettings()
 
 void FSpatialGDKModule::UnregisterSettings()
 {
-	if (ISettingsModule *SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
 	{
 		SettingsModule->UnregisterSettings("Project", "SpatialGDK", "SpatialGDK");
 	}
@@ -56,7 +56,7 @@ void FSpatialGDKModule::UnregisterSettings()
 
 bool FSpatialGDKModule::HandleSettingsSaved()
 {
-	USpatialGDKSettings *Settings = GetMutableDefault<USpatialGDKSettings>();
+	USpatialGDKSettings* Settings = GetMutableDefault<USpatialGDKSettings>();
 	Settings->SaveConfig();
 
 	return true;

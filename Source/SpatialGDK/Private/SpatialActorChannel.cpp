@@ -19,7 +19,7 @@ namespace
 //This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
 // We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
 // In this function, we poll for any changes in Unreal properties compared to the last time we replicated this actor.
-void UpdateChangelistHistory(FRepState *RepState)
+void UpdateChangelistHistory(FRepState* RepState)
 {
 	check(RepState->HistoryEnd >= RepState->HistoryStart);
 
@@ -30,7 +30,7 @@ void UpdateChangelistHistory(FRepState *RepState)
 	{
 		const int32 HistoryIndex = i % FRepState::MAX_CHANGE_HISTORY;
 
-		FRepChangedHistory &HistoryItem = RepState->ChangeHistory[HistoryIndex];
+		FRepChangedHistory& HistoryItem = RepState->ChangeHistory[HistoryIndex];
 
 		check(HistoryItem.Changed.Num() > 0); // All active history items should contain a change list
 
@@ -49,7 +49,7 @@ void UpdateChangelistHistory(FRepState *RepState)
 }
 }
 
-USpatialActorChannel::USpatialActorChannel(const FObjectInitializer &ObjectInitializer /*= FObjectInitializer::Get()*/)
+USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
 	, ActorEntityId(0)
 	, ReserveEntityIdRequestId(-1)
@@ -60,7 +60,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer &ObjectIniti
 	bCreatingNewEntity = false;
 }
 
-void USpatialActorChannel::Init(UNetConnection *Connection, int32 ChannelIndex, bool bOpenedLocally)
+void USpatialActorChannel::Init(UNetConnection* Connection, int32 ChannelIndex, bool bOpenedLocally)
 {
 	Super::Init(Connection, ChannelIndex, bOpenedLocally);
 
@@ -84,13 +84,13 @@ void USpatialActorChannel::BindToSpatialView()
 	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
 	{
-		ReserveEntityCallback = PinnedView->OnReserveEntityIdResponse([this](const worker::ReserveEntityIdResponseOp &Op) {
+		ReserveEntityCallback = PinnedView->OnReserveEntityIdResponse([this](const worker::ReserveEntityIdResponseOp& Op) {
 			if (Op.RequestId == ReserveEntityIdRequestId)
 			{
 				OnReserveEntityIdResponse(Op);
 			}
 		});
-		CreateEntityCallback = PinnedView->OnCreateEntityResponse([this](const worker::CreateEntityResponseOp &Op) {
+		CreateEntityCallback = PinnedView->OnCreateEntityResponse([this](const worker::CreateEntityResponseOp& Op) {
 			if (Op.RequestId == CreateEntityRequestId)
 			{
 				OnCreateEntityResponse(Op);
@@ -127,9 +127,9 @@ bool USpatialActorChannel::ReplicateActor()
 	check(Connection);
 	check(Connection->PackageMap);
 
-	const UWorld *const ActorWorld = Actor->GetWorld();
+	const UWorld* const ActorWorld = Actor->GetWorld();
 
-	USpatialInterop *Interop = SpatialNetDriver->GetSpatialInterop();
+	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 	check(Interop);
 
 	// Time how long it takes to replicate this particular actor
@@ -184,42 +184,42 @@ bool USpatialActorChannel::ReplicateActor()
 
 	// Epic does this at the net driver level, per connection. See UNetDriver::ServerReplicateActors().
 	// However, we have many player controllers sharing one connection, so we do it at the actor level before replication.
-	APlayerController *PlayerController = Cast<APlayerController>(Actor);
+	APlayerController* PlayerController = Cast<APlayerController>(Actor);
 	if (PlayerController)
 	{
 		PlayerController->SendClientAdjustment();
 	}
 
 	// Update the replicated property change list.
-	FRepChangelistState *ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
+	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
 	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame, ActorReplicator->RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
 
 	const int32 PossibleNewHistoryIndex = ActorReplicator->RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
-	FRepChangedHistory &PossibleNewHistoryItem = ActorReplicator->RepState->ChangeHistory[PossibleNewHistoryIndex];
-	TArray<uint16> &RepChanged = PossibleNewHistoryItem.Changed;
+	FRepChangedHistory& PossibleNewHistoryItem = ActorReplicator->RepState->ChangeHistory[PossibleNewHistoryIndex];
+	TArray<uint16>& RepChanged = PossibleNewHistoryItem.Changed;
 
 	// Gather all change lists that are new since we last looked, and merge them all together into a single CL
 	for (int32 i = ActorReplicator->RepState->LastChangelistIndex; i < ChangelistState->HistoryEnd; i++)
 	{
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
-		FRepChangedHistory &HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
+		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
 		TArray<uint16> Temp = RepChanged;
-		ActorReplicator->RepLayout->MergeChangeList((uint8 *)Actor, HistoryItem.Changed, Temp, RepChanged);
+		ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
 	}
 
 	const bool bCompareIndexSame = ActorReplicator->RepState->LastCompareIndex == ChangelistState->CompareIndex;
 	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
 	// Update the migratable property change list.
-	USpatialTypeBinding *Binding = Interop->GetTypeBindingByClass(Actor->GetClass());
+	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(Actor->GetClass());
 	TArray<uint16> MigratableChanged;
 	if (Binding)
 	{
 		uint32 ShadowDataOffset = 0;
-		for (auto &PropertyInfo : Binding->GetMigratableHandlePropertyMap())
+		for (auto& PropertyInfo : Binding->GetMigratableHandlePropertyMap())
 		{
-			const uint8 *Data = PropertyInfo.Value.GetPropertyData((uint8 *)Actor);
+			const uint8* Data = PropertyInfo.Value.GetPropertyData((uint8*)Actor);
 
 			// Compare and assign.
 			if (RepFlags.bNetInitial || !PropertyInfo.Value.Property->Identical(MigratablePropertyShadowData.GetData() + ShadowDataOffset, Data))
@@ -254,10 +254,10 @@ bool USpatialActorChannel::ReplicateActor()
 			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a
 			// player controller, get the player state.
 			FString PlayerWorkerId;
-			APlayerState *PlayerState = Cast<APlayerState>(Actor);
+			APlayerState* PlayerState = Cast<APlayerState>(Actor);
 			if (!PlayerState)
 			{
-				APawn *Pawn = Cast<APawn>(Actor);
+				APawn* Pawn = Cast<APawn>(Actor);
 				if (Pawn)
 				{
 					PlayerState = Pawn->PlayerState;
@@ -282,7 +282,7 @@ bool USpatialActorChannel::ReplicateActor()
 			// Ensure that the initial changelist contains _every_ property. This ensures that the default properties are written to the entity template.
 			// Otherwise, there will be a mismatch between the rep state shadow data used by CompareProperties and the entity in SpatialOS.
 			TArray<uint16> InitialRepChanged;
-			for (auto &Cmd : ActorReplicator->RepLayout->Cmds)
+			for (auto& Cmd : ActorReplicator->RepLayout->Cmds)
 			{
 				if (Cmd.Type != REPCMD_Return)
 				{
@@ -372,7 +372,7 @@ bool USpatialActorChannel::ReplicateActor()
 	return bWroteSomethingImportant;
 }
 
-void USpatialActorChannel::SetChannelActor(AActor *InActor)
+void USpatialActorChannel::SetChannelActor(AActor* InActor)
 {
 	Super::SetChannelActor(InActor);
 
@@ -382,21 +382,21 @@ void USpatialActorChannel::SetChannelActor(AActor *InActor)
 	}
 
 	// Set up the shadow data for the migratable properties. This is used later to compare the properties and send only changed ones.
-	USpatialInterop *Interop = SpatialNetDriver->GetSpatialInterop();
+	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 	check(Interop);
-	USpatialTypeBinding *Binding = Interop->GetTypeBindingByClass(InActor->GetClass());
+	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(InActor->GetClass());
 	if (Binding)
 	{
-		const FMigratableHandlePropertyMap &MigratableProperties = Binding->GetMigratableHandlePropertyMap();
+		const FMigratableHandlePropertyMap& MigratableProperties = Binding->GetMigratableHandlePropertyMap();
 		uint32 Size = 0;
-		for (auto &Property : MigratableProperties)
+		for (auto& Property : MigratableProperties)
 		{
 			Size += Property.Value.Property->GetSize();
 		}
 		MigratablePropertyShadowData.Empty();
 		MigratablePropertyShadowData.AddZeroed(Size);
 		uint32 Offset = 0;
-		for (auto &Property : MigratableProperties)
+		for (auto& Property : MigratableProperties)
 		{
 			Property.Value.Property->InitializeValue(MigratablePropertyShadowData.GetData() + Offset);
 			Offset += Property.Value.Property->GetSize();
@@ -410,7 +410,7 @@ void USpatialActorChannel::SetChannelActor(AActor *InActor)
 	// If the entity registry has no entry for this actor, this means we need to create it.
 	if (ActorEntityId == 0)
 	{
-		USpatialNetConnection *SpatialConnection = Cast<USpatialNetConnection>(Connection);
+		USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
 		check(SpatialConnection);
 
 		// Mark this channel as being responsible for creating this entity once we have an entity ID.
@@ -435,14 +435,14 @@ void USpatialActorChannel::PreReceiveSpatialUpdate()
 	Actor->PreNetReceive();
 }
 
-void USpatialActorChannel::PostReceiveSpatialUpdate(const TArray<UProperty *> &RepNotifies)
+void USpatialActorChannel::PostReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies)
 {
 	Actor->PostNetReceive();
 	ActorReplicator->RepNotifies = RepNotifies;
 	ActorReplicator->CallRepNotifies(false);
 }
 
-void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp &Op)
+void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op)
 {
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
@@ -459,14 +459,14 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 		PinnedView->Remove(ReserveEntityCallback);
 	}
 
-	USpatialPackageMapClient *PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
+	USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
 	check(PackageMap);
 	ActorEntityId = *Op.EntityId;
 
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
 }
 
-void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp &Op)
+void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
 {
 	check(SpatialNetDriver->GetNetMode() < NM_Client);
 
@@ -502,22 +502,22 @@ void USpatialActorChannel::UpdateSpatialPosition()
 		return;
 	}
 
-	USpatialInterop *Interop = SpatialNetDriver->GetSpatialInterop();
+	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 
 	LastSpatialPosition = ActorSpatialPosition;
 	Interop->SendSpatialPositionUpdate(GetEntityId(), LastSpatialPosition);
 
 	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
-	if (APawn *Pawn = Cast<APawn>(Actor))
+	if (APawn* Pawn = Cast<APawn>(Actor))
 	{
-		if (APlayerController *PlayerController = Cast<APlayerController>(Pawn->GetController()))
+		if (APlayerController* PlayerController = Cast<APlayerController>(Pawn->GetController()))
 		{
-			USpatialActorChannel *ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController));
+			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController));
 			if (ControllerActorChannel)
 			{
 				Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
 			}
-			USpatialActorChannel *PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController->PlayerState));
+			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController->PlayerState));
 			if (PlayerStateActorChannel)
 			{
 				Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
@@ -526,7 +526,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	}
 }
 
-FVector USpatialActorChannel::GetActorSpatialPosition(AActor *Actor)
+FVector USpatialActorChannel::GetActorSpatialPosition(AActor* Actor)
 {
 	// Preferentially uses the owner location over the origin
 	// This is to enable actors like PlayerState to follow their corresponding character

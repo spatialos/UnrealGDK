@@ -22,10 +22,10 @@ USpatialOsComponent::USpatialOsComponent()
 {
 }
 
-void USpatialOsComponent::Init(const TWeakPtr<SpatialOSConnection> &InConnection,
-							   const TWeakPtr<SpatialOSView> &InView,
+void USpatialOsComponent::Init(const TWeakPtr<SpatialOSConnection>& InConnection,
+							   const TWeakPtr<SpatialOSView>& InView,
 							   worker::EntityId InEntityId,
-							   UCallbackDispatcher *CallbackDispatcher)
+							   UCallbackDispatcher* CallbackDispatcher)
 {
 	this->Connection = InConnection;
 	this->View = InView;
@@ -39,7 +39,7 @@ void USpatialOsComponent::BeginDestroy()
 	Callbacks.Reset();
 }
 
-void USpatialOsComponent::ApplyInitialAuthority(const worker::AuthorityChangeOp &AuthChangeOp)
+void USpatialOsComponent::ApplyInitialAuthority(const worker::AuthorityChangeOp& AuthChangeOp)
 {
 	OnAuthorityChangeDispatcherCallback(AuthChangeOp);
 }
@@ -74,7 +74,7 @@ void USpatialOsComponent::SendAuthorityLossImminentAcknowledgement()
 	}
 }
 
-void USpatialOsComponent::OnAuthorityChangeDispatcherCallback(const worker::AuthorityChangeOp &op)
+void USpatialOsComponent::OnAuthorityChangeDispatcherCallback(const worker::AuthorityChangeOp& op)
 {
 	if (op.EntityId != EntityId)
 	{
@@ -96,7 +96,7 @@ void USpatialOsComponent::OnAuthorityChangeDispatcherCallback(const worker::Auth
 	OnAuthorityChange.Broadcast(Authority);
 }
 
-void USpatialOsComponent::OnRemoveComponentDispatcherCallback(const worker::RemoveComponentOp &op)
+void USpatialOsComponent::OnRemoveComponentDispatcherCallback(const worker::RemoveComponentOp& op)
 {
 	if (op.EntityId != EntityId)
 	{
@@ -105,7 +105,7 @@ void USpatialOsComponent::OnRemoveComponentDispatcherCallback(const worker::Remo
 	bIsComponentReady = false;
 }
 
-UCommander *USpatialOsComponent::SendCommand()
+UCommander* USpatialOsComponent::SendCommand()
 {
 	if (Commander == nullptr)
 	{

@@ -7,7 +7,7 @@ FSpatialGDKWorkerOverrideSettings::FSpatialGDKWorkerOverrideSettings()
 {
 }
 
-USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer &ObjectInitializer)
+USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, bUseUserWorkerConfigurations(false)
 {

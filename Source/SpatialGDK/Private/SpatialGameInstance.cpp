@@ -11,7 +11,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDK);
 
-bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString &Error)
+bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 {
 	if (WorldContext->PendingNetGame)
 	{
@@ -53,13 +53,13 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString &Error)
 }
 
 #if WITH_EDITOR
-FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer *LocalPlayer, const FGameInstancePIEParameters &Params)
+FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
 	// This is sadly hacky to avoid a larger engine change. It borrows code from UGameInstance::StartPlayInEditorGameInstance() and
 	//  UEngine::Browse().
 	check(WorldContext);
 
-	ULevelEditorPlaySettings const *PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
+	ULevelEditorPlaySettings const* PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
 	const EPlayNetMode PlayNetMode = [&PlayInSettings] { EPlayNetMode NetMode(PIE_Standalone); return (PlayInSettings->GetPlayNetMode(NetMode) ? NetMode : PIE_Standalone); }();
 
 	// for clients, just connect to the server

@@ -17,33 +17,33 @@ public:
 		Underlying = 0;
 	}
 
-	FORCEINLINE FComponentId(const FComponentId &InComponentId)
+	FORCEINLINE FComponentId(const FComponentId& InComponentId)
 	{
 		Underlying = InComponentId.Underlying;
 	}
 
-	FORCEINLINE FComponentId(const worker::ComponentId &InComponentId)
+	FORCEINLINE FComponentId(const worker::ComponentId& InComponentId)
 	{
 		Underlying = InComponentId;
 	}
 
-	FORCEINLINE FComponentId &operator=(const FComponentId &Other)
+	FORCEINLINE FComponentId& operator=(const FComponentId& Other)
 	{
 		Underlying = Other.Underlying;
 		return *this;
 	}
 
-	FORCEINLINE bool operator==(const FComponentId &Other) const
+	FORCEINLINE bool operator==(const FComponentId& Other) const
 	{
 		return Underlying == Other.Underlying;
 	}
 
-	FORCEINLINE bool operator==(const worker::ComponentId &Other) const
+	FORCEINLINE bool operator==(const worker::ComponentId& Other) const
 	{
 		return Underlying == Other;
 	}
 
-	FORCEINLINE bool operator!=(const FComponentId &Other) const
+	FORCEINLINE bool operator!=(const FComponentId& Other) const
 	{
 		return Underlying != Other.Underlying;
 	}
@@ -56,7 +56,7 @@ public:
 private:
 	worker::ComponentId Underlying;
 
-	friend uint32 GetTypeHash(FComponentId const &Rhs)
+	friend uint32 GetTypeHash(FComponentId const& Rhs)
 	{
 		return FComponentIdentifier::HashEntityId(Rhs.ToSpatialComponentId());
 	}
@@ -65,7 +65,7 @@ private:
 /**
 * Format a SpatialOS ComponentId as a string.
 */
-inline FString ToString(const worker::ComponentId &ComponentId)
+inline FString ToString(const worker::ComponentId& ComponentId)
 {
 	return FString::Printf(TEXT("%dll"), ComponentId);
 }

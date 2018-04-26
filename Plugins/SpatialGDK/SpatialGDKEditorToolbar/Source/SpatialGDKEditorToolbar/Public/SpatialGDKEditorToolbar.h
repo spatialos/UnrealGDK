@@ -39,8 +39,8 @@ private:
 
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
 	void SetupToolbar(TSharedPtr<FUICommandList> PluginCommands);
-	void AddToolbarExtension(FToolBarBuilder &Builder);
-	void AddMenuExtension(FMenuBuilder &Builder);
+	void AddToolbarExtension(FToolBarBuilder& Builder);
+	void AddMenuExtension(FMenuBuilder& Builder);
 
 	void CreateSnapshotButtonClicked();
 	void GenerateInteropCodeButtonClicked();

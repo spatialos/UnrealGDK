@@ -9,12 +9,12 @@ struct FComponentUpdateQueue
 {
 	GENERATED_BODY()
 
-	void AddToQueue(UComponentUpdateOpWrapperBase *Update)
+	void AddToQueue(UComponentUpdateOpWrapperBase* Update)
 	{
 		Updates.AddUnique(Update);
 	}
 
-	TArray<UComponentUpdateOpWrapperBase *> &GetQueue()
+	TArray<UComponentUpdateOpWrapperBase*>& GetQueue()
 	{
 		return Updates;
 	}
@@ -26,5 +26,5 @@ struct FComponentUpdateQueue
 
 private:
 	UPROPERTY()
-	TArray<UComponentUpdateOpWrapperBase *> Updates;
+	TArray<UComponentUpdateOpWrapperBase*> Updates;
 };

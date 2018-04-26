@@ -11,7 +11,7 @@ class USpatialOSEditorToolbarSettings : public UObject
 	GENERATED_BODY()
 
 public:
-	USpatialOSEditorToolbarSettings(const FObjectInitializer &ObjectInitializer);
+	USpatialOSEditorToolbarSettings(const FObjectInitializer& ObjectInitializer);
 
 	/** Root folder of your SpatialOS project */
 	UPROPERTY(EditAnywhere, config, Category = SpatialOSEditor, meta = (ConfigRestartRequired = false))

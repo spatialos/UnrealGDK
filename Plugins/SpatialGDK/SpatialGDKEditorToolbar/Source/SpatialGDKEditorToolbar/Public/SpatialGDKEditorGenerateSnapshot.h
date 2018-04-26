@@ -4,4 +4,4 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSnapshot, Log, All);
 
-void SpatialGDKGenerateSnapshot(const FString &SavePath, UWorld *World);
+void SpatialGDKGenerateSnapshot(const FString& SavePath, UWorld* World);

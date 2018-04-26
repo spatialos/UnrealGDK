@@ -75,7 +75,7 @@ void FSpatialOSEditorToolbarStyle::ReloadTextures()
 	}
 }
 
-const ISlateStyle &FSpatialOSEditorToolbarStyle::Get()
+const ISlateStyle& FSpatialOSEditorToolbarStyle::Get()
 {
 	return *StyleInstance;
 }

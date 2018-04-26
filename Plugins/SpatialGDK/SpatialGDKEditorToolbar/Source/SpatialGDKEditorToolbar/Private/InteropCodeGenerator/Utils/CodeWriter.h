@@ -17,7 +17,7 @@ struct FFunctionSignature
 		return FString::Printf(TEXT("%s %s"), *Type, *NameAndParams);
 	}
 
-	FString Definition(const FString &TypeName) const
+	FString Definition(const FString& TypeName) const
 	{
 		return FString::Printf(TEXT("%s %s::%s"), *Type, *TypeName, *NameAndParams);
 	}
@@ -29,22 +29,22 @@ public:
 	FCodeWriter();
 
 	template <typename... T>
-	FCodeWriter &Printf(const FString &Format, const T &... Args)
+	FCodeWriter& Printf(const FString& Format, const T&... Args)
 	{
 		return Print(FString::Printf(*Format, Args...));
 	}
 
-	FCodeWriter &PrintNewLine();
-	FCodeWriter &Print(const FString &String);
-	FCodeWriter &Indent();
-	FCodeWriter &Outdent();
+	FCodeWriter& PrintNewLine();
+	FCodeWriter& Print(const FString& String);
+	FCodeWriter& Indent();
+	FCodeWriter& Outdent();
 
-	FCodeWriter &BeginScope();
-	FCodeWriter &BeginFunction(const FFunctionSignature &Signature);
-	FCodeWriter &BeginFunction(const FFunctionSignature &Signature, const FString &TypeName);
-	FCodeWriter &End();
+	FCodeWriter& BeginScope();
+	FCodeWriter& BeginFunction(const FFunctionSignature& Signature);
+	FCodeWriter& BeginFunction(const FFunctionSignature& Signature, const FString& TypeName);
+	FCodeWriter& End();
 
-	void WriteToFile(const FString &Filename);
+	void WriteToFile(const FString& Filename);
 	void Dump();
 
 private:

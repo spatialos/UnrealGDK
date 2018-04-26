@@ -14,5 +14,5 @@ class SPATIALGDK_API USpatialOsComponentUpdater : public UObject
 
 public:
 	UFUNCTION()
-	void UpdateComponents(UEntityRegistry *Registry, float DeltaSeconds);
+	void UpdateComponents(UEntityRegistry* Registry, float DeltaSeconds);
 };

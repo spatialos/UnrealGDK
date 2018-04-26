@@ -39,7 +39,7 @@ worker::Entity CreateSpawnerEntity()
 		.Build();
 }
 
-worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld *World)
+worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 {
 	worker::Map<worker::EntityId, worker::Entity> LevelEntities;
 
@@ -49,7 +49,7 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld *World)
 	uint32_t StaticObjectId = 2;
 	for (TActorIterator<AActor> Itr(World); Itr; ++Itr)
 	{
-		AActor *Actor = *Itr;
+		AActor* Actor = *Itr;
 		if (!Actor->IsSupportedForNetworking() || Actor->IsEditorOnly() || Actor->GetIsReplicated())
 		{
 			continue;
@@ -88,7 +88,7 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld *World)
 }
 } // ::
 
-void SpatialGDKGenerateSnapshot(const FString &SavePath, UWorld *World)
+void SpatialGDKGenerateSnapshot(const FString& SavePath, UWorld* World)
 {
 	const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
 

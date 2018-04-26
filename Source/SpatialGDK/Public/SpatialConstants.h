@@ -31,12 +31,12 @@ inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 	return FIRST_COMMAND_RETRY_WAIT_SECONDS * WaitTimeExponentialFactor;
 }
 
-FORCEINLINE improbable::Coordinates LocationToSpatialOSCoordinates(const FVector &Location)
+FORCEINLINE improbable::Coordinates LocationToSpatialOSCoordinates(const FVector& Location)
 {
 	return {Location.Y * 0.01f, Location.Z * 0.01f, Location.X * 0.01f};
 }
 
-FORCEINLINE FVector SpatialOSCoordinatesToLocation(const improbable::Coordinates &Coords)
+FORCEINLINE FVector SpatialOSCoordinatesToLocation(const improbable::Coordinates& Coords)
 {
 	return {float(Coords.z() * 100.0), float(Coords.x() * 100.0), float(Coords.y() * 100.0f)};
 }

@@ -24,7 +24,7 @@ public:
 		bValidId = false;
 	}
 
-	FORCEINLINE FRequestId(const FRequestId &Other)
+	FORCEINLINE FRequestId(const FRequestId& Other)
 	{
 		Underlying = Other.Underlying;
 		bValidId = Other.bValidId;
@@ -36,25 +36,25 @@ public:
 		bValidId = bIsValidId;
 	}
 
-	FORCEINLINE FRequestId &operator=(const FRequestId &Other)
+	FORCEINLINE FRequestId& operator=(const FRequestId& Other)
 	{
 		Underlying = Other.Underlying;
 		bValidId = Other.bValidId;
 		return *this;
 	}
 
-	FORCEINLINE bool operator==(const FRequestId &Other) const
+	FORCEINLINE bool operator==(const FRequestId& Other) const
 	{
 		return Underlying == Other.Underlying && bValidId == Other.bValidId;
 	}
 
 	template <typename T>
-	FORCEINLINE bool operator==(const worker::RequestId<T> &Other) const
+	FORCEINLINE bool operator==(const worker::RequestId<T>& Other) const
 	{
 		return Underlying == Other.Id && bValidId;
 	}
 
-	FORCEINLINE bool operator!=(const FRequestId &Other) const
+	FORCEINLINE bool operator!=(const FRequestId& Other) const
 	{
 		return Underlying != Other.Underlying || bValidId != Other.bValidId;
 	}
@@ -79,7 +79,7 @@ private:
 	std::uint32_t Underlying;
 	bool bValidId;
 
-	friend uint32 GetTypeHash(const FRequestId &Rhs)
+	friend uint32 GetTypeHash(const FRequestId& Rhs)
 	{
 		return FComponentIdentifier::HashRequestId(Rhs.Underlying);
 	}

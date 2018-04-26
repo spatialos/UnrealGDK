@@ -79,7 +79,7 @@ void FSpatialOSEditorToolbarModule::Tick(float DeltaTime)
 
 void FSpatialOSEditorToolbarModule::RegisterSettings()
 {
-	if (ISettingsModule *SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
 	{
 		ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
 
@@ -99,7 +99,7 @@ void FSpatialOSEditorToolbarModule::RegisterSettings()
 
 void FSpatialOSEditorToolbarModule::UnregisterSettings()
 {
-	if (ISettingsModule *SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
 	{
 		SettingsModule->UnregisterSettings("Project", "SpatialOS", "Toolbar");
 	}
@@ -107,7 +107,7 @@ void FSpatialOSEditorToolbarModule::UnregisterSettings()
 
 bool FSpatialOSEditorToolbarModule::HandleSettingsSaved()
 {
-	USpatialOSEditorToolbarSettings *Settings = GetMutableDefault<USpatialOSEditorToolbarSettings>();
+	USpatialOSEditorToolbarSettings* Settings = GetMutableDefault<USpatialOSEditorToolbarSettings>();
 	Settings->SaveConfig();
 
 	return true;
@@ -136,7 +136,7 @@ void FSpatialOSEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> 
 
 void FSpatialOSEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> PluginCommands)
 {
-	FLevelEditorModule &LevelEditorModule =
+	FLevelEditorModule& LevelEditorModule =
 		FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 
 	{
@@ -156,7 +156,7 @@ void FSpatialOSEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList
 	}
 }
 
-void FSpatialOSEditorToolbarModule::AddMenuExtension(FMenuBuilder &Builder)
+void FSpatialOSEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 {
 	Builder.BeginSection("SpatialOS", LOCTEXT("SpatialOS", "SpatialOS"));
 	{
@@ -165,7 +165,7 @@ void FSpatialOSEditorToolbarModule::AddMenuExtension(FMenuBuilder &Builder)
 	Builder.EndSection();
 }
 
-void FSpatialOSEditorToolbarModule::AddToolbarExtension(FToolBarBuilder &Builder)
+void FSpatialOSEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builder)
 {
 	Builder.AddSeparator(NAME_None);
 	Builder.AddToolBarButton(FSpatialOSEditorToolbarCommands::Get().StartSpatialOSStackAction);
@@ -276,10 +276,10 @@ void FSpatialOSEditorToolbarModule::CheckForRunningStack()
 	} while (ProcEnumerator.MoveNext() && !SpatialOSStackProcHandle.IsValid());
 }
 
-void FSpatialOSEditorToolbarModule::OnPropertyChanged(UObject *ObjectBeingModified,
-													  FPropertyChangedEvent &PropertyChangedEvent)
+void FSpatialOSEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModified,
+													  FPropertyChangedEvent& PropertyChangedEvent)
 {
-	if (USpatialOSEditorToolbarSettings *ToolbarSettings =
+	if (USpatialOSEditorToolbarSettings* ToolbarSettings =
 			Cast<USpatialOSEditorToolbarSettings>(ObjectBeingModified))
 	{
 		FName PropertyName = PropertyChangedEvent.Property != nullptr

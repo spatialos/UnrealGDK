@@ -23,7 +23,7 @@ public:
 		View.Reset();
 	}
 
-	FScopedViewCallbacks(const TWeakPtr<SpatialOSView> &InView)
+	FScopedViewCallbacks(const TWeakPtr<SpatialOSView>& InView)
 		: View(InView)
 	{
 	}
@@ -36,7 +36,7 @@ public:
 	/**
   * Initialise the FScopedViewCallbacks. Calling Init() more than once results in an error.
   */
-	void Init(const TWeakPtr<SpatialOSView> &InView)
+	void Init(const TWeakPtr<SpatialOSView>& InView)
 	{
 		auto LockedView = View.Pin();
 		checkf(!LockedView.IsValid(), TEXT("Attempting to call Init() more than once."));

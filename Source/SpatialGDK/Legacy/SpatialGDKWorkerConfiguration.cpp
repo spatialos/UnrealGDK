@@ -7,7 +7,7 @@
 
 namespace
 {
-FString GenerateRandomWorkerIdFromTypeName(const FString &type)
+FString GenerateRandomWorkerIdFromTypeName(const FString& type)
 {
 	return type + FGuid::NewGuid().ToString();
 }
@@ -19,12 +19,12 @@ FSpatialGDKWorkerConfiguration::FSpatialGDKWorkerConfiguration()
 }
 
 FSpatialGDKWorkerConfiguration::FSpatialGDKWorkerConfiguration(
-	const FSpatialGDKWorkerConfigurationData &InWorkerConfigurationData,
-	const TArray<FString> *const InCommandLineOverrides)
+	const FSpatialGDKWorkerConfigurationData& InWorkerConfigurationData,
+	const TArray<FString>* const InCommandLineOverrides)
 	: WorkerConfigurationData(InWorkerConfigurationData)
 {
 	const auto commandLine = FCommandLine::Get();
-	auto &AppConfig = WorkerConfigurationData.SpatialGDKApplication;
+	auto& AppConfig = WorkerConfigurationData.SpatialGDKApplication;
 
 	FParse::Value(commandLine, *FString("appName"), AppConfig.AppName);
 	FParse::Value(commandLine, *FString("projectName"), AppConfig.ProjectName);
@@ -56,7 +56,7 @@ FSpatialGDKWorkerConfiguration::FSpatialGDKWorkerConfiguration(
 
 	FParse::Value(commandLine, *FString("loginToken"), AppConfig.LoginToken);
 
-	auto &NetworkConfig = WorkerConfigurationData.Networking;
+	auto& NetworkConfig = WorkerConfigurationData.Networking;
 	FParse::Value(commandLine, *FString("locatorHost"), NetworkConfig.LocatorHost);
 	FParse::Value(commandLine, *FString("receptionistHost"), NetworkConfig.ReceptionistHost);
 
@@ -77,7 +77,7 @@ FSpatialGDKWorkerConfiguration::FSpatialGDKWorkerConfiguration(
 	FParse::Value(commandLine, *FString("tcpSendBufferSize"), NetworkConfig.TcpSendBufferSize);
 	FParse::Bool(commandLine, *FString("useExternalIpForBridge"), NetworkConfig.UseExternalIp);
 
-	auto &DebuggingConfig = WorkerConfigurationData.Debugging;
+	auto& DebuggingConfig = WorkerConfigurationData.Debugging;
 	FParse::Value(commandLine, *FString("infraServicesUrl"), DebuggingConfig.InfraServiceUrl);
 	FParse::Value(commandLine, *FString("builtInMetricsReportPeriodMillis"), DebuggingConfig.BuiltInMetricsReportPeriodMillis);
 	FParse::Value(commandLine, *FString("logMessageQueueCapacity"), DebuggingConfig.LogMessageQueueCapacity);
@@ -96,52 +96,52 @@ FSpatialGDKWorkerConfiguration::FSpatialGDKWorkerConfiguration(
 	LogWorkerConfiguration();
 }
 
-const FString &FSpatialGDKWorkerConfiguration::GetAppName() const
+const FString& FSpatialGDKWorkerConfiguration::GetAppName() const
 {
 	return WorkerConfigurationData.SpatialGDKApplication.AppName;
 }
 
-const FString &FSpatialGDKWorkerConfiguration::GetAssemblyName() const
+const FString& FSpatialGDKWorkerConfiguration::GetAssemblyName() const
 {
 	return WorkerConfigurationData.SpatialGDKApplication.AssemblyName;
 }
 
-const FString &FSpatialGDKWorkerConfiguration::GetDeploymentName() const
+const FString& FSpatialGDKWorkerConfiguration::GetDeploymentName() const
 {
 	return WorkerConfigurationData.SpatialGDKApplication.DeploymentName;
 }
 
-const FString &FSpatialGDKWorkerConfiguration::GetDeploymentTag() const
+const FString& FSpatialGDKWorkerConfiguration::GetDeploymentTag() const
 {
 	return WorkerConfigurationData.SpatialGDKApplication.DeploymentTag;
 }
 
-const FString &FSpatialGDKWorkerConfiguration::GetProjectName() const
+const FString& FSpatialGDKWorkerConfiguration::GetProjectName() const
 {
 	return WorkerConfigurationData.SpatialGDKApplication.ProjectName;
 }
 
-const FString &FSpatialGDKWorkerConfiguration::GetWorkerType() const
+const FString& FSpatialGDKWorkerConfiguration::GetWorkerType() const
 {
 	return WorkerConfigurationData.SpatialGDKApplication.WorkerPlatform;
 }
 
-const FString &FSpatialGDKWorkerConfiguration::GetWorkerId() const
+const FString& FSpatialGDKWorkerConfiguration::GetWorkerId() const
 {
 	return WorkerConfigurationData.SpatialGDKApplication.WorkerId;
 }
 
-const FString &FSpatialGDKWorkerConfiguration::GetLoginToken() const
+const FString& FSpatialGDKWorkerConfiguration::GetLoginToken() const
 {
 	return WorkerConfigurationData.SpatialGDKApplication.LoginToken;
 }
 
-const FString &FSpatialGDKWorkerConfiguration::GetLocatorHost() const
+const FString& FSpatialGDKWorkerConfiguration::GetLocatorHost() const
 {
 	return WorkerConfigurationData.Networking.LocatorHost;
 }
 
-const FString &FSpatialGDKWorkerConfiguration::GetReceptionistHost() const
+const FString& FSpatialGDKWorkerConfiguration::GetReceptionistHost() const
 {
 	return WorkerConfigurationData.Networking.ReceptionistHost;
 }
@@ -171,7 +171,7 @@ const uint32 FSpatialGDKWorkerConfiguration::GetSendQueueCapacity() const
 	return WorkerConfigurationData.Networking.SendQueueCapacity;
 }
 
-const FString &FSpatialGDKWorkerConfiguration::GetSteamToken() const
+const FString& FSpatialGDKWorkerConfiguration::GetSteamToken() const
 {
 	return WorkerConfigurationData.Networking.SteamToken;
 }
@@ -196,7 +196,7 @@ const uint32 FSpatialGDKWorkerConfiguration::GetTcpSendBufferSize() const
 	return WorkerConfigurationData.Networking.TcpSendBufferSize;
 }
 
-const FString &FSpatialGDKWorkerConfiguration::GetInfraServiceUrl() const
+const FString& FSpatialGDKWorkerConfiguration::GetInfraServiceUrl() const
 {
 	return WorkerConfigurationData.Debugging.InfraServiceUrl;
 }
@@ -216,7 +216,7 @@ const bool FSpatialGDKWorkerConfiguration::GetProtocolLoggingOnStartup() const
 	return WorkerConfigurationData.Debugging.ProtocolLoggingOnStartup;
 }
 
-const FString &FSpatialGDKWorkerConfiguration::GetProtocolLogPrefix() const
+const FString& FSpatialGDKWorkerConfiguration::GetProtocolLogPrefix() const
 {
 	return WorkerConfigurationData.Debugging.ProtocolLogPrefix;
 }
@@ -269,7 +269,7 @@ const bool FSpatialGDKWorkerConfiguration::GetUseExternalIp() const
 void FSpatialGDKWorkerConfiguration::LogWorkerConfiguration() const
 {
 	UE_LOG(LogSpatialOS, Display, TEXT("WorkerConfiguration settings"));
-	const auto &AppConfig = WorkerConfigurationData.SpatialGDKApplication;
+	const auto& AppConfig = WorkerConfigurationData.SpatialGDKApplication;
 	UE_LOG(LogSpatialOS, Display, TEXT("assemblyName = %s"), *AppConfig.AssemblyName);
 	UE_LOG(LogSpatialOS, Display, TEXT("deploymentName = %s"), *AppConfig.DeploymentName);
 	UE_LOG(LogSpatialOS, Display, TEXT("deploymentTag = %s"), *AppConfig.DeploymentTag);
@@ -278,7 +278,7 @@ void FSpatialGDKWorkerConfiguration::LogWorkerConfiguration() const
 	UE_LOG(LogSpatialOS, Display, TEXT("workerId = %s"), *AppConfig.WorkerId);
 	UE_LOG(LogSpatialOS, Display, TEXT("loginToken = %s"), *AppConfig.LoginToken);
 
-	const auto &NetworkConfig = WorkerConfigurationData.Networking;
+	const auto& NetworkConfig = WorkerConfigurationData.Networking;
 	UE_LOG(LogSpatialOS, Display, TEXT("locatorHost = %s"), *NetworkConfig.LocatorHost);
 	UE_LOG(LogSpatialOS, Display, TEXT("receptionistHost = %s"), *NetworkConfig.ReceptionistHost);
 	UE_LOG(LogSpatialOS, Display, TEXT("linkProtocol = %s"), NetworkConfig.LinkProtocol == worker::NetworkConnectionType::kTcp ? TEXT("Tcp") : TEXT("Raknet"));
@@ -293,7 +293,7 @@ void FSpatialGDKWorkerConfiguration::LogWorkerConfiguration() const
 	UE_LOG(LogSpatialOS, Display, TEXT("tcpSendBufferSize = %d"), NetworkConfig.TcpSendBufferSize);
 	UE_LOG(LogSpatialOS, Display, TEXT("UseExternalIp = %s"), NetworkConfig.UseExternalIp ? TEXT("true") : TEXT("false"));
 
-	const auto &DebuggingConfig = WorkerConfigurationData.Debugging;
+	const auto& DebuggingConfig = WorkerConfigurationData.Debugging;
 	UE_LOG(LogSpatialOS, Display, TEXT("infraServicesUrl = %s"), *DebuggingConfig.InfraServiceUrl);
 	UE_LOG(LogSpatialOS, Display, TEXT("logDebugToSpatialOs = %s"), DebuggingConfig.LogDebugToSpatialOs ? TEXT("true") : TEXT("false"));
 	UE_LOG(LogSpatialOS, Display, TEXT("logAssertToSpatialOs = %s"), DebuggingConfig.LogAssertToSpatialOs ? TEXT("true") : TEXT("false"));

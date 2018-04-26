@@ -67,7 +67,7 @@ void FSpatialGDKEditorToolbarStyle::ReloadTextures()
 	}
 }
 
-const ISlateStyle &FSpatialGDKEditorToolbarStyle::Get()
+const ISlateStyle& FSpatialGDKEditorToolbarStyle::Get()
 {
 	return *StyleInstance;
 }

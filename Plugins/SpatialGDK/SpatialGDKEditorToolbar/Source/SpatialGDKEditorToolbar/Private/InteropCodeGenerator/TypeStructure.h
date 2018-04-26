@@ -100,16 +100,16 @@ struct FUnrealMigratableData;
 // A node which represents an unreal type, such as ACharacter or UCharacterMovementComponent.
 struct FUnrealType
 {
-	UStruct *Type;
-	TMap<UProperty *, TSharedPtr<FUnrealProperty>> Properties;
-	TMap<UFunction *, TSharedPtr<FUnrealRPC>> RPCs;
+	UStruct* Type;
+	TMap<UProperty*, TSharedPtr<FUnrealProperty>> Properties;
+	TMap<UFunction*, TSharedPtr<FUnrealRPC>> RPCs;
 	TWeakPtr<FUnrealProperty> ParentProperty;
 };
 
 // A node which represents a single property or parameter in an RPC.
 struct FUnrealProperty
 {
-	UProperty *Property;
+	UProperty* Property;
 	TSharedPtr<FUnrealType> Type;					  // Only set if strong reference to object/struct property.
 	TSharedPtr<FUnrealRepData> ReplicationData;		  // Only set if property is replicated.
 	TSharedPtr<FUnrealMigratableData> MigratableData; // Only set if property is migratable (and not replicated).
@@ -119,10 +119,10 @@ struct FUnrealProperty
 // A node which represents an RPC.
 struct FUnrealRPC
 {
-	UClass *CallerType;
-	UFunction *Function;
+	UClass* CallerType;
+	UFunction* Function;
 	ERPCType Type;
-	TMap<UProperty *, TSharedPtr<FUnrealProperty>> Parameters;
+	TMap<UProperty*, TSharedPtr<FUnrealProperty>> Parameters;
 	bool bReliable;
 };
 
@@ -148,7 +148,7 @@ using FUnrealFlatRepData = TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPt
 using FUnrealRPCsByType = TMap<ERPCType, TArray<TSharedPtr<FUnrealRPC>>>;
 
 // Given a UClass, returns either "AFoo" or "UFoo" depending on whether Foo is a subclass of actor.
-FString GetFullCPPName(UClass *Class);
+FString GetFullCPPName(UClass* Class);
 
 // Utility functions to convert certain enum values to strings.
 FString GetLifetimeConditionAsString(ELifetimeCondition Condition);
@@ -164,13 +164,13 @@ FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group);
 TArray<ERPCType> GetRPCTypes();
 
 // Given a UFunction, determines the RPC type.
-ERPCType GetRPCTypeFromFunction(UFunction *Function);
+ERPCType GetRPCTypeFromFunction(UFunction* Function);
 
 // Converts an RPC type to string. Used to generate component names.
 FString GetRPCTypeName(ERPCType RPCType);
 
 // Given a UProperty, returns the corresponding ERepLayoutCmdType.
-ERepLayoutCmdType PropertyToRepLayoutType(UProperty *Property);
+ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property);
 
 // Given an AST, this applies the function 'Visitor' to all FUnrealType's contained transitively within the properties. bRecurseIntoObjects will control
 // whether this function will recurse into a UObject's properties, which may not always be desirable. However, it will always recurse into substructs.
@@ -190,7 +190,7 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPt
 //	   {"OtherProperty", "PropertyWithinOtherProperty"}
 //   }
 // In the future, we can get this information directly from the UStruct*.
-TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct *Type, const TArray<TArray<FName>> &MigratableProperties);
+TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties);
 
 // Traverses an AST, and generates a flattened list of replicated properties, which will match the Cmds array of FRepLayout.
 // The list of replicated properties will all have the ReplicatedData field set to a valid FUnrealRepData node which contains

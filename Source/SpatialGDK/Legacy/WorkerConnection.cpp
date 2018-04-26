@@ -11,7 +11,7 @@
 
 namespace
 {
-void LogMessage(const worker::LogMessageOp &Message)
+void LogMessage(const worker::LogMessageOp& Message)
 {
 	switch (Message.Level)
 	{
@@ -65,7 +65,7 @@ FWorkerConnection::FWorkerConnection()
 }
 
 void FWorkerConnection::GetDeploymentListAsync(
-	const FString &ProjectName, const FString &LocatorHost, const FString &LoginToken, FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback, std::uint32_t TimeoutMillis)
+	const FString& ProjectName, const FString& LocatorHost, const FString& LoginToken, FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback, std::uint32_t TimeoutMillis)
 {
 	AsyncTask(ENamedThreads::GameThread, [ProjectName, LocatorHost, LoginToken, TimeoutMillis, OnDeploymentsFoundCallback, this]() {
 		WaitForDeploymentFuture(
@@ -73,7 +73,7 @@ void FWorkerConnection::GetDeploymentListAsync(
 	});
 }
 
-void FWorkerConnection::ConnectToReceptionistAsync(const FString &Hostname, std::uint16_t Port, const FString &WorkerId, const worker::ConnectionParameters &Params, FOnConnectedDelegate OnConnectedCallback, std::uint32_t TimeoutMillis)
+void FWorkerConnection::ConnectToReceptionistAsync(const FString& Hostname, std::uint16_t Port, const FString& WorkerId, const worker::ConnectionParameters& Params, FOnConnectedDelegate OnConnectedCallback, std::uint32_t TimeoutMillis)
 {
 	if (!CanCreateNewConnection())
 	{
@@ -88,7 +88,7 @@ void FWorkerConnection::ConnectToReceptionistAsync(const FString &Hostname, std:
 }
 
 void FWorkerConnection::ConnectToLocatorAsync(
-	const FString &ProjectName, const FString &LocatorHost, const FString &DeploymentId, const FString &LoginToken, const worker::ConnectionParameters &Params, FQueueStatusDelegate QueueStatusCallback, FOnConnectedDelegate OnConnectedCallback, std::uint32_t TimeoutMillis)
+	const FString& ProjectName, const FString& LocatorHost, const FString& DeploymentId, const FString& LoginToken, const worker::ConnectionParameters& Params, FQueueStatusDelegate QueueStatusCallback, FOnConnectedDelegate OnConnectedCallback, std::uint32_t TimeoutMillis)
 {
 	if (!CanCreateNewConnection())
 	{
@@ -97,7 +97,7 @@ void FWorkerConnection::ConnectToLocatorAsync(
 		return;
 	}
 
-	auto QueueStatusWrapper = [QueueStatusCallback](const worker::QueueStatus &status) {
+	auto QueueStatusWrapper = [QueueStatusCallback](const worker::QueueStatus& status) {
 		TPromise<bool> QueueStatusCallbackReturnValue;
 		auto QueueStatusReturnValueFuture = QueueStatusCallbackReturnValue.GetFuture();
 		AsyncTask(ENamedThreads::GameThread,
@@ -140,7 +140,7 @@ void FWorkerConnection::ProcessOps()
 	}
 }
 
-void FWorkerConnection::SendLogMessage(ELogVerbosity::Type Level, const FString &Message)
+void FWorkerConnection::SendLogMessage(ELogVerbosity::Type Level, const FString& Message)
 {
 	auto WorkerLogLevel = worker::LogLevel::kInfo;
 
@@ -194,14 +194,14 @@ const TWeakPtr<SpatialOSConnection> FWorkerConnection::GetConnection() const
 	return TWeakPtr<SpatialOSConnection>(Connection);
 }
 
-worker::Metrics &FWorkerConnection::GetMetrics()
+worker::Metrics& FWorkerConnection::GetMetrics()
 {
 	return *Metrics;
 }
 
-SpatialOSLocator FWorkerConnection::CreateLocator(const FString &ProjectName,
-												  const FString &LocatorHost,
-												  const FString &LoginToken)
+SpatialOSLocator FWorkerConnection::CreateLocator(const FString& ProjectName,
+												  const FString& LocatorHost,
+												  const FString& LoginToken)
 {
 	worker::LocatorParameters LocatorParams;
 	LocatorParams.ProjectName = TCHAR_TO_UTF8(*ProjectName);
@@ -262,7 +262,7 @@ void FWorkerConnection::WaitForConnectionFuture(
 	bIsConnecting = false;
 }
 
-void FWorkerConnection::OnMetrics(const worker::MetricsOp &Op)
+void FWorkerConnection::OnMetrics(const worker::MetricsOp& Op)
 {
 	Metrics->Merge(Op.Metrics);
 }

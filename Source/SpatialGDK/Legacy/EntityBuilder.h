@@ -33,7 +33,7 @@ private:
 	}
 
 public:
-	FEntityComponentBuilder(FEntityComponentBuilder &&rhs) = default;
+	FEntityComponentBuilder(FEntityComponentBuilder&& rhs) = default;
 
 protected:
 	worker::Entity InternalEntity;
@@ -54,15 +54,15 @@ private:
 	{
 	}
 
-	FGenericComponentBuilder(FGenericComponentBuilder &&rhs) = default;
+	FGenericComponentBuilder(FGenericComponentBuilder&& rhs) = default;
 
 public:
 	FGenericComponentBuilder() = delete;
-	FGenericComponentBuilder(const FGenericComponentBuilder &rhs) = delete;
+	FGenericComponentBuilder(const FGenericComponentBuilder& rhs) = delete;
 
 	template <class T>
-	FGenericComponentBuilder AddComponent(const typename T::Data &data,
-										  const improbable::WorkerRequirementSet &WriteRequirement)
+	FGenericComponentBuilder AddComponent(const typename T::Data& data,
+										  const improbable::WorkerRequirementSet& WriteRequirement)
 	{
 		InternalEntity.Add<T>(data);
 		ComponentAuthority.emplace(T::ComponentId, WriteRequirement);
@@ -70,7 +70,7 @@ public:
 	}
 
 	FGenericComponentBuilder
-	SetEntityAclComponentWriteAccess(const improbable::WorkerRequirementSet &WriteRequirement)
+	SetEntityAclComponentWriteAccess(const improbable::WorkerRequirementSet& WriteRequirement)
 	{
 		ComponentAuthority.emplace(improbable::EntityAcl::ComponentId, WriteRequirement);
 		return FGenericComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
@@ -96,16 +96,16 @@ private:
 	{
 	}
 
-	FReadAclComponentBuilder(FReadAclComponentBuilder &&rhs)
+	FReadAclComponentBuilder(FReadAclComponentBuilder&& rhs)
 		: FEntityComponentBuilder(std::move(rhs.InternalEntity), std::move(rhs.ComponentAuthority), std::move(rhs.ReadRequirementSet))
 	{
 	}
 
 public:
 	FReadAclComponentBuilder() = delete;
-	FReadAclComponentBuilder(const FReadAclComponentBuilder &rhs) = delete;
+	FReadAclComponentBuilder(const FReadAclComponentBuilder& rhs) = delete;
 
-	FGenericComponentBuilder SetReadAcl(const improbable::WorkerRequirementSet &ReadRequirement)
+	FGenericComponentBuilder SetReadAcl(const improbable::WorkerRequirementSet& ReadRequirement)
 	{
 		ReadRequirementSet = ReadRequirement;
 		return FGenericComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
@@ -124,11 +124,11 @@ private:
 	{
 	}
 
-	FPersistenceComponentBuilder(FPersistenceComponentBuilder &&rhs) = default;
+	FPersistenceComponentBuilder(FPersistenceComponentBuilder&& rhs) = default;
 
 public:
 	FPersistenceComponentBuilder() = delete;
-	FPersistenceComponentBuilder(const FPersistenceComponentBuilder &rhs) = delete;
+	FPersistenceComponentBuilder(const FPersistenceComponentBuilder& rhs) = delete;
 
 	FReadAclComponentBuilder SetPersistence(bool IsPersistent)
 	{
@@ -152,13 +152,13 @@ private:
 	{
 	}
 
-	FMetadataComponentBuilder(FMetadataComponentBuilder &&rhs) = default;
+	FMetadataComponentBuilder(FMetadataComponentBuilder&& rhs) = default;
 
 public:
 	FMetadataComponentBuilder() = delete;
-	FMetadataComponentBuilder(const FMetadataComponentBuilder &rhs) = delete;
+	FMetadataComponentBuilder(const FMetadataComponentBuilder& rhs) = delete;
 
-	FPersistenceComponentBuilder AddMetadataComponent(const improbable::Metadata::Data &data)
+	FPersistenceComponentBuilder AddMetadataComponent(const improbable::Metadata::Data& data)
 	{
 		InternalEntity.Add<improbable::Metadata>(data);
 		return FPersistenceComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
@@ -172,14 +172,14 @@ private:
 	FPositionComponentBuilder()
 	{
 	}
-	FPositionComponentBuilder(FPositionComponentBuilder &&rhs) = default;
+	FPositionComponentBuilder(FPositionComponentBuilder&& rhs) = default;
 
 public:
-	FPositionComponentBuilder(const FPositionComponentBuilder &rhs) = delete;
+	FPositionComponentBuilder(const FPositionComponentBuilder& rhs) = delete;
 
 	FMetadataComponentBuilder
-	AddPositionComponent(const improbable::Position::Data &data,
-						 const improbable::WorkerRequirementSet &WriteRequirement)
+	AddPositionComponent(const improbable::Position::Data& data,
+						 const improbable::WorkerRequirementSet& WriteRequirement)
 	{
 		InternalEntity.Add<improbable::Position>(data);
 		ComponentAuthority.emplace(improbable::Position::ComponentId, WriteRequirement);

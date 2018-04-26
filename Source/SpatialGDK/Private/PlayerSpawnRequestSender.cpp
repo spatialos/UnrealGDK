@@ -26,7 +26,7 @@ FPlayerSpawnRequestSender::~FPlayerSpawnRequestSender()
 	}
 }
 
-void FPlayerSpawnRequestSender::RequestPlayer(USpatialOS *InSpatialOS, FTimerManager *InTimerManager, const FURL &Url)
+void FPlayerSpawnRequestSender::RequestPlayer(USpatialOS* InSpatialOS, FTimerManager* InTimerManager, const FURL& Url)
 {
 	TimerManager = InTimerManager;
 	Connection = InSpatialOS->GetConnection().Pin().Get();
@@ -47,7 +47,7 @@ void FPlayerSpawnRequestSender::SendPlayerSpawnRequest()
 }
 
 void FPlayerSpawnRequestSender::HandlePlayerSpawnResponse(
-	const worker::CommandResponseOp<SpawnPlayerCommand> &Op)
+	const worker::CommandResponseOp<SpawnPlayerCommand>& Op)
 {
 	View->Remove(ResponseCallbackKey.GetValue());
 	ResponseCallbackKey.Reset();

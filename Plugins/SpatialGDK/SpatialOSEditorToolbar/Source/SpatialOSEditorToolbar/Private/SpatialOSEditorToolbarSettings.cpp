@@ -2,7 +2,7 @@
 #include "SpatialOSEditorToolbarSettings.h"
 
 USpatialOSEditorToolbarSettings::USpatialOSEditorToolbarSettings(
-	const FObjectInitializer &ObjectInitializer)
+	const FObjectInitializer& ObjectInitializer)
 	: SpatialOSLaunchArgument(TEXT("default_launch.json"))
 	, bStopSpatialOnExit(false)
 	, Super(ObjectInitializer)

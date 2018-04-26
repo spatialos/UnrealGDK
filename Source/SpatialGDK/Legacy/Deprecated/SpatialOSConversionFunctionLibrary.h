@@ -21,17 +21,17 @@ public:
 	static float GetSpatialOsToUnrealScale();
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Conversions")
-	static FVector UnrealCoordinatesToSpatialOsCoordinates(const FVector &unrealCoordinates);
+	static FVector UnrealCoordinatesToSpatialOsCoordinates(const FVector& unrealCoordinates);
 
 	static improbable::Coordinates
-	UnrealCoordinatesToSpatialOsCoordinatesCast(const FVector &unrealCoordinates);
+	UnrealCoordinatesToSpatialOsCoordinatesCast(const FVector& unrealCoordinates);
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Conversions")
-	static FVector SpatialOsCoordinatesToUnrealCoordinates(const FVector &spatialOsCoordinates);
+	static FVector SpatialOsCoordinatesToUnrealCoordinates(const FVector& spatialOsCoordinates);
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Conversions")
-	static FQuat UnrealRotationToSpatialOsRotation(const FQuat &unrealRotation);
+	static FQuat UnrealRotationToSpatialOsRotation(const FQuat& unrealRotation);
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Conversions")
-	static FQuat SpatialOsRotationToUnrealRotation(const FQuat &spatialOsRotation);
+	static FQuat SpatialOsRotationToUnrealRotation(const FQuat& spatialOsRotation);
 };

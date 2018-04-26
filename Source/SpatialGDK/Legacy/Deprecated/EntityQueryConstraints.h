@@ -38,7 +38,7 @@ public:
 	{
 	}
 
-	FORCEINLINE FEntityIdQueryConstraint(const FEntityId &InEntityId)
+	FORCEINLINE FEntityIdQueryConstraint(const FEntityId& InEntityId)
 	{
 		Underlying = InEntityId;
 	}
@@ -64,7 +64,7 @@ public:
 	{
 	}
 
-	FORCEINLINE FComponentIdQueryConstraint(const FComponentId &InComponentId)
+	FORCEINLINE FComponentIdQueryConstraint(const FComponentId& InComponentId)
 	{
 		Underlying = InComponentId;
 	}
@@ -90,7 +90,7 @@ struct SPATIALGDK_API FSphereQueryConstraint
 	{
 	}
 
-	FORCEINLINE FSphereQueryConstraint(const FVector &InPosition, float InRadius)
+	FORCEINLINE FSphereQueryConstraint(const FVector& InPosition, float InRadius)
 	{
 		Position = InPosition;
 		Radius = InRadius;

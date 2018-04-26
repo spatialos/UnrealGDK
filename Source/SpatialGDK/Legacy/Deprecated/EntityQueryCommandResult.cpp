@@ -34,8 +34,8 @@ UEntityQueryCountCommandResult::UEntityQueryCountCommandResult()
 {
 }
 
-UEntityQueryCommandResultBase *
-UEntityQueryCountCommandResult::Init(const worker::EntityQueryResponseOp &underlying)
+UEntityQueryCommandResultBase*
+UEntityQueryCountCommandResult::Init(const worker::EntityQueryResponseOp& underlying)
 {
 	Underlying = underlying;
 	CachedRequestId = FRequestId(Underlying.RequestId.Id, true);
@@ -54,8 +54,8 @@ UEntityQuerySnapshotCommandResult::UEntityQuerySnapshotCommandResult()
 {
 }
 
-UEntityQueryCommandResultBase *
-UEntityQuerySnapshotCommandResult::Init(const worker::EntityQueryResponseOp &underlying)
+UEntityQueryCommandResultBase*
+UEntityQuerySnapshotCommandResult::Init(const worker::EntityQueryResponseOp& underlying)
 {
 	Underlying = underlying;
 	CachedRequestId = FRequestId(underlying.RequestId.Id, true);

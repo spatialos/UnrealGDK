@@ -22,15 +22,15 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 class FSpatialWorkerUniqueNetId : public FUniqueNetId
 {
 public:
-	FSpatialWorkerUniqueNetId(const FString &WorkerId)
+	FSpatialWorkerUniqueNetId(const FString& WorkerId)
 		: WorkerId{WorkerId}
 	{
 	}
 	~FSpatialWorkerUniqueNetId() override = default;
 
-	const uint8 *GetBytes() const override
+	const uint8* GetBytes() const override
 	{
-		return reinterpret_cast<const uint8 *>(*WorkerId);
+		return reinterpret_cast<const uint8*>(*WorkerId);
 	}
 	int32 GetSize() const override
 	{
@@ -62,15 +62,15 @@ public:
 	virtual void PostInitProperties() override;
 
 	// Begin UNetDriver interface.
-	virtual bool InitBase(bool bInitAsClient, FNetworkNotify *InNotify, const FURL &URL, bool bReuseAddressAndPort, FString &Error) override;
+	virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error) override;
 	virtual int32 ServerReplicateActors(float DeltaSeconds) override;
 	virtual void TickDispatch(float DeltaTime) override;
-	virtual void ProcessRemoteFunction(class AActor *Actor, class UFunction *Function, void *Parameters, struct FOutParmRec *OutParms, struct FFrame *NotStack, class UObject *SubObject = NULL) override;
+	virtual void ProcessRemoteFunction(class AActor* Actor, class UFunction* Function, void* Parameters, struct FOutParmRec* OutParms, struct FFrame* NotStack, class UObject* SubObject = NULL) override;
 	virtual void TickFlush(float DeltaTime) override;
-	virtual bool IsLevelInitializedForActor(const AActor *InActor, const UNetConnection *InConnection) const override;
+	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	// End UNetDriver interface.
 
-	USpatialOS *GetSpatialOS() const
+	USpatialOS* GetSpatialOS() const
 	{
 		return SpatialOSInstance;
 	}
@@ -78,25 +78,25 @@ public:
 	// Returns the "100% reliable" connection to SpatialOS.
 	// On the server, it is designated to be the first client connection.
 	// On the client, this function is not meaningful (as we use ServerConnection)
-	USpatialNetConnection *GetSpatialOSNetConnection() const;
+	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
 	UPROPERTY()
-	USpatialInteropPipelineBlock *InteropPipelineBlock;
+	USpatialInteropPipelineBlock* InteropPipelineBlock;
 
-	UEntityRegistry *GetEntityRegistry()
+	UEntityRegistry* GetEntityRegistry()
 	{
 		return EntityRegistry;
 	}
 
-	USpatialOS *GetSpatialOS()
+	USpatialOS* GetSpatialOS()
 	{
 		return SpatialOSInstance;
 	}
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
-	USpatialNetConnection *AcceptNewPlayer(const FURL &InUrl, bool bExistingPlayer);
+	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer);
 
-	USpatialInterop *GetSpatialInterop() const
+	USpatialInterop* GetSpatialInterop() const
 	{
 		return Interop;
 	}
@@ -105,26 +105,26 @@ protected:
 	FSpatialGDKWorkerConfigurationData WorkerConfig;
 
 	UPROPERTY()
-	USpatialOS *SpatialOSInstance;
+	USpatialOS* SpatialOSInstance;
 
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	UPROPERTY()
-	UEntityRegistry *EntityRegistry;
+	UEntityRegistry* EntityRegistry;
 
 	// Timer manager.
-	FTimerManager *TimerManager;
+	FTimerManager* TimerManager;
 
 	// Update/RPC interop with SpatialOS.
 	UPROPERTY()
-	USpatialInterop *Interop;
+	USpatialInterop* Interop;
 
 	// Package map shared by all connections.
 	UPROPERTY()
-	USpatialPackageMapClient *PackageMap;
+	USpatialPackageMapClient* PackageMap;
 
 	UFUNCTION()
-	void OnMapLoaded(UWorld *LoadedWorld);
+	void OnMapLoaded(UWorld* LoadedWorld);
 
 	UFUNCTION()
 	void OnSpatialOSConnected();
@@ -139,8 +139,8 @@ protected:
 	//SpatialGDK: These functions all exist in UNetDriver, but we need to modify/simplify them in certain ways.
 	// Could have marked them virtual in base class but that's a pointless source change as these functions are not meant to be called from anywhere except USpatialNetDriver::ServerReplicateActors.
 	int32 ServerReplicateActors_PrepConnections(const float DeltaSeconds);
-	int32 ServerReplicateActors_PrioritizeActors(UNetConnection *Connection, const TArray<FNetViewer> &ConnectionViewers, const TArray<FNetworkObjectInfo *> ConsiderList, const bool bCPUSaturated, FActorPriority *&OutPriorityList, FActorPriority **&OutPriorityActors);
-	int32 ServerReplicateActors_ProcessPrioritizedActors(UNetConnection *Connection, const TArray<FNetViewer> &ConnectionViewers, FActorPriority **PriorityActors, const int32 FinalSortedCount, int32 &OutUpdated);
+	int32 ServerReplicateActors_PrioritizeActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors);
+	int32 ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated);
 #endif
 
 private:

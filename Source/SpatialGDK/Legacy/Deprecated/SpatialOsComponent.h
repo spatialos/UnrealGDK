@@ -42,19 +42,19 @@ public:
 
 	virtual void BeginDestroy() override;
 
-	virtual void Init(const TWeakPtr<SpatialOSConnection> &InConnection,
-					  const TWeakPtr<SpatialOSView> &InView,
+	virtual void Init(const TWeakPtr<SpatialOSConnection>& InConnection,
+					  const TWeakPtr<SpatialOSView>& InView,
 					  worker::EntityId InEntityId,
-					  UCallbackDispatcher *InCallbackDispatcher);
+					  UCallbackDispatcher* InCallbackDispatcher);
 
-	virtual void Disable(const worker::EntityId InEntityId, UCallbackDispatcher *CallbackDispatcher)
+	virtual void Disable(const worker::EntityId InEntityId, UCallbackDispatcher* CallbackDispatcher)
 		PURE_VIRTUAL(USpatialOsComponent::Disable(), );
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Component")
 	virtual FComponentId GetComponentId()
 		PURE_VIRTUAL(USpatialOsComponent::GetComponentId, return 0;);
 
-	virtual void ApplyInitialState(const UAddComponentOpWrapperBase &AddComponentOp)
+	virtual void ApplyInitialState(const UAddComponentOpWrapperBase& AddComponentOp)
 		PURE_VIRTUAL(USpatialOsComponent::ApplyInitialState(), );
 
 	virtual void ReplicateChanges(float DeltaSeconds)
@@ -63,7 +63,7 @@ public:
 	virtual void TriggerAutomaticComponentUpdate(float DeltaSeconds)
 		PURE_VIRTUAL(USpatialOsComponent::TriggerAutomaticComponentUpdate, );
 
-	void ApplyInitialAuthority(const worker::AuthorityChangeOp &AuthChangeOp);
+	void ApplyInitialAuthority(const worker::AuthorityChangeOp& AuthChangeOp);
 
 	worker::EntityId GetEntityId();
 
@@ -86,7 +86,7 @@ public:
 	FSpatialComponentReadyDelegate OnComponentReady;
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Component")
-	UCommander *SendCommand();
+	UCommander* SendCommand();
 
 	/** Maximum frequency of automatically generated SpatialOS updates from this component.
   * 0 means manual mode. No automatic updates will be sent.
@@ -97,8 +97,8 @@ public:
 	int MaxUpdatesPerSecond;
 
 protected:
-	virtual void OnAuthorityChangeDispatcherCallback(const worker::AuthorityChangeOp &op);
-	void OnRemoveComponentDispatcherCallback(const worker::RemoveComponentOp &op);
+	virtual void OnAuthorityChangeDispatcherCallback(const worker::AuthorityChangeOp& op);
+	void OnRemoveComponentDispatcherCallback(const worker::RemoveComponentOp& op);
 
 	TWeakPtr<SpatialOSConnection> Connection;
 	TWeakPtr<SpatialOSView> View;
@@ -113,5 +113,5 @@ protected:
 	bool bHasEventQueued;
 
 	UPROPERTY()
-	UCommander *Commander;
+	UCommander* Commander;
 };

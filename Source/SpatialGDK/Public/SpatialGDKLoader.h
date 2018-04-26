@@ -39,9 +39,9 @@ public:
 		}
 	}
 
-	FSpatialGDKLoader(const FSpatialGDKLoader &rhs) = delete;
-	FSpatialGDKLoader &operator=(const FSpatialGDKLoader &rhs) = delete;
+	FSpatialGDKLoader(const FSpatialGDKLoader& rhs) = delete;
+	FSpatialGDKLoader& operator=(const FSpatialGDKLoader& rhs) = delete;
 
 private:
-	void *CoreSdkHandle = nullptr;
+	void* CoreSdkHandle = nullptr;
 };

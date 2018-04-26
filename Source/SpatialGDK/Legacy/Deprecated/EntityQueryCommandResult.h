@@ -45,7 +45,7 @@ class SPATIALGDK_API UEntityQueryCountCommandResult : public UEntityQueryCommand
 
 public:
 	UEntityQueryCountCommandResult();
-	UEntityQueryCommandResultBase *Init(const worker::EntityQueryResponseOp &underlying);
+	UEntityQueryCommandResultBase* Init(const worker::EntityQueryResponseOp& underlying);
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Query Result")
 	int GetCount() const;
@@ -61,7 +61,7 @@ class SPATIALGDK_API UEntityQuerySnapshotCommandResult : public UEntityQueryComm
 
 public:
 	UEntityQuerySnapshotCommandResult();
-	UEntityQueryCommandResultBase *Init(const worker::EntityQueryResponseOp &underlying);
+	UEntityQueryCommandResultBase* Init(const worker::EntityQueryResponseOp& underlying);
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Query Result")
 	int GetSnapshotCount() const;

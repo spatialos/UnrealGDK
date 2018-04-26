@@ -26,7 +26,7 @@ class USpatialGDKSettings : public UObject
 	GENERATED_BODY()
 
 public:
-	USpatialGDKSettings(const FObjectInitializer &ObjectInitializer);
+	USpatialGDKSettings(const FObjectInitializer& ObjectInitializer);
 
 	/** Should user worker configurations be used? */
 	UPROPERTY(EditAnywhere, config, Category = Custom, meta = (ConfigRestartRequired = false))

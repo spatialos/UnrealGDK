@@ -18,33 +18,33 @@ public:
 		Underlying = 0;
 	}
 
-	FORCEINLINE FEntityId(const FEntityId &InEntityId)
+	FORCEINLINE FEntityId(const FEntityId& InEntityId)
 	{
 		Underlying = InEntityId.Underlying;
 	}
 
-	FORCEINLINE FEntityId(const worker::EntityId &InEntityId)
+	FORCEINLINE FEntityId(const worker::EntityId& InEntityId)
 	{
 		Underlying = InEntityId;
 	}
 
-	FORCEINLINE FEntityId &operator=(const FEntityId &Other)
+	FORCEINLINE FEntityId& operator=(const FEntityId& Other)
 	{
 		Underlying = Other.Underlying;
 		return *this;
 	}
 
-	FORCEINLINE bool operator==(const FEntityId &Other) const
+	FORCEINLINE bool operator==(const FEntityId& Other) const
 	{
 		return Underlying == Other.Underlying;
 	}
 
-	FORCEINLINE bool operator==(const worker::EntityId &Other) const
+	FORCEINLINE bool operator==(const worker::EntityId& Other) const
 	{
 		return Underlying == Other;
 	}
 
-	FORCEINLINE bool operator!=(const FEntityId &Other) const
+	FORCEINLINE bool operator!=(const FEntityId& Other) const
 	{
 		return Underlying != Other.Underlying;
 	}
@@ -57,7 +57,7 @@ public:
 private:
 	worker::EntityId Underlying;
 
-	friend uint32 GetTypeHash(FEntityId const &Rhs)
+	friend uint32 GetTypeHash(FEntityId const& Rhs)
 	{
 		return FComponentIdentifier::HashEntityId(Rhs.ToSpatialEntityId());
 	}
@@ -66,7 +66,7 @@ private:
 /**
  * Format a SpatialOS EntityId as a string.
 */
-inline FString ToString(const worker::EntityId &EntityId)
+inline FString ToString(const worker::EntityId& EntityId)
 {
 	return FString::Printf(TEXT("%lld"), EntityId);
 }

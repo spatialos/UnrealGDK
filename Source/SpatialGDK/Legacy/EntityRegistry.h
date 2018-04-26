@@ -15,7 +15,7 @@ struct FSpatialComponentList
 	GENERATED_BODY()
 
 	UPROPERTY()
-	TArray<USpatialOsComponent *> Components;
+	TArray<USpatialOsComponent*> Components;
 };
 
 UCLASS()
@@ -33,7 +33,7 @@ public:
   * assets.
   */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
-	void RegisterEntityBlueprints(const TArray<FString> &BlueprintPaths);
+	void RegisterEntityBlueprints(const TArray<FString>& BlueprintPaths);
 
 	/**
   * Returns the UClass type for a specified class name if the UClass
@@ -41,7 +41,7 @@ public:
   *
   * @param ClassName from which a UClass is acquired.
   **/
-	UClass **GetRegisteredEntityClass(const FString &ClassName);
+	UClass** GetRegisteredEntityClass(const FString& ClassName);
 
 	/**
   * Adds a mapping from an FEntityId to a AActor to the registry
@@ -50,7 +50,7 @@ public:
   * @param Actor the AActor instance to be added to the registry.
   **/
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
-	void AddToRegistry(const FEntityId &EntityId, AActor *Actor);
+	void AddToRegistry(const FEntityId& EntityId, AActor* Actor);
 
 	/**
   * Removes the entry for an AActor in the registry if present in the registry.
@@ -58,7 +58,7 @@ public:
   * @param Actor the AActor instance to be removed from the registry.
   **/
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
-	void RemoveFromRegistry(const AActor *Actor);
+	void RemoveFromRegistry(const AActor* Actor);
 
 	/**
   * Get the FEntityId associated with an Unreal AActor.
@@ -67,7 +67,7 @@ public:
   * @param Actor the AActor for which the FEntityId is requested.
   */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
-	FEntityId GetEntityIdFromActor(const AActor *Actor) const;
+	FEntityId GetEntityIdFromActor(const AActor* Actor) const;
 
 	/**
   * Get the AActor associated with an FEntityId.
@@ -76,7 +76,7 @@ public:
   * @param EntityId the FEntityId for which the AActor is requested.
   */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
-	AActor *GetActorFromEntityId(const FEntityId &EntityId) const;
+	AActor* GetActorFromEntityId(const FEntityId& EntityId) const;
 
 	/**
   * Adds a mapping from an AActor to a USpatialOsComponent to the registry. This cache is
@@ -85,7 +85,7 @@ public:
   * @param Actor the owning AActor for the USpatialOsComponent that is added to the registry.
   * @param Component the USpatialOsComponent owner by the Actor instance.
   **/
-	void RegisterComponent(AActor *Actor, USpatialOsComponent *Component);
+	void RegisterComponent(AActor* Actor, USpatialOsComponent* Component);
 
 	/**
   * Removes the entry for an Actor/Component pair if present in the registry.
@@ -93,20 +93,20 @@ public:
   * @param Actor the AActor that owns the Component.
   * @param Component the USpatialOsComponent which will be removed from the registry.
   **/
-	void UnregisterComponent(AActor *Actor, USpatialOsComponent *Component);
+	void UnregisterComponent(AActor* Actor, USpatialOsComponent* Component);
 
 private:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
-	void RegisterEntityClass(const FString &ClassName, UClass *ClassToSpawn);
+	void RegisterEntityClass(const FString& ClassName, UClass* ClassToSpawn);
 
 	UPROPERTY()
-	TMap<FString, UClass *> ClassMap;
+	TMap<FString, UClass*> ClassMap;
 	UPROPERTY()
-	TMap<FEntityId, AActor *> EntityIdToActor;
+	TMap<FEntityId, AActor*> EntityIdToActor;
 	UPROPERTY()
-	TMap<AActor *, FEntityId> ActorToEntityId;
+	TMap<AActor*, FEntityId> ActorToEntityId;
 	UPROPERTY()
-	TMap<AActor *, FSpatialComponentList> EntityComponentCache;
+	TMap<AActor*, FSpatialComponentList> EntityComponentCache;
 
 	friend class USpatialOsComponentUpdater;
 };

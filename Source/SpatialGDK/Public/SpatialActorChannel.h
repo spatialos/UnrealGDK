@@ -23,7 +23,7 @@ class SPATIALGDK_API USpatialActorChannel : public UActorChannel
 	GENERATED_BODY()
 
 public:
-	USpatialActorChannel(const FObjectInitializer &ObjectInitializer = FObjectInitializer::Get());
+	USpatialActorChannel(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	// SpatialOS Entity ID.
 	FORCEINLINE FEntityId GetEntityId() const
@@ -49,7 +49,7 @@ public:
 		if (View.Get())
 		{
 			// This will never fail because we can't have an actor channel without having checked out the entity.
-			auto &EntityAuthority = View->ComponentAuthority[ActorEntityId.ToSpatialEntityId()];
+			auto& EntityAuthority = View->ComponentAuthority[ActorEntityId.ToSpatialEntityId()];
 			auto ComponentIterator = EntityAuthority.find(ServerRPCsComponentId);
 			if (ComponentIterator != EntityAuthority.end())
 			{
@@ -59,10 +59,10 @@ public:
 		return false;
 	}
 
-	FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16> &RepChanged, const TArray<uint16> &MigChanged) const
+	FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged) const
 	{
 		return {
-			(uint8 *)Actor,
+			(uint8*)Actor,
 			RepChanged,
 			ActorReplicator->RepLayout->Cmds,
 			ActorReplicator->RepLayout->BaseHandleToCmdIndex,
@@ -70,14 +70,14 @@ public:
 	}
 
 	// UChannel interface
-	virtual void Init(UNetConnection *connection, int32 channelIndex, bool bOpenedLocally) override;
+	virtual void Init(UNetConnection* connection, int32 channelIndex, bool bOpenedLocally) override;
 	//Requires source changes to be virtual in base class.
 	virtual bool ReplicateActor() override;
-	virtual void SetChannelActor(AActor *InActor) override;
+	virtual void SetChannelActor(AActor* InActor) override;
 
 	// Called by SpatialInterop when receiving an update.
 	void PreReceiveSpatialUpdate();
-	void PostReceiveSpatialUpdate(const TArray<UProperty *> &RepNotifies);
+	void PostReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies);
 
 	// Distinguishes between channels created for actors that went through the "old" pipeline vs actors that are triggered through SpawnActor() calls.
 	//In the future we may not use an actor channel for non-core actors.
@@ -92,8 +92,8 @@ private:
 	void BindToSpatialView();
 	void UnbindFromSpatialView() const;
 
-	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp &Op);
-	void OnCreateEntityResponse(const worker::CreateEntityResponseOp &Op);
+	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
+	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
 
 	TWeakPtr<worker::Connection> WorkerConnection;
 	TWeakPtr<worker::View> WorkerView;
@@ -106,7 +106,7 @@ private:
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 
 	UPROPERTY(transient)
-	USpatialNetDriver *SpatialNetDriver;
+	USpatialNetDriver* SpatialNetDriver;
 
 	FVector LastSpatialPosition;
 	TArray<uint8> MigratablePropertyShadowData;
@@ -118,5 +118,5 @@ private:
 private:
 	void UpdateSpatialPosition();
 
-	static FVector GetActorSpatialPosition(AActor *Actor);
+	static FVector GetActorSpatialPosition(AActor* Actor);
 };
