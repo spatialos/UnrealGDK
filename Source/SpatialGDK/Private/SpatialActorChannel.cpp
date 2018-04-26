@@ -188,8 +188,7 @@ bool USpatialActorChannel::ReplicateActor()
 	RepFlags.bReplay = ActorWorld && (ActorWorld->DemoNetDriver == Connection->GetDriver());
 	RepFlags.bNetInitial = RepFlags.bNetInitial;
 
-	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"),
-		   *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
+	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
 
 	FMemMark MemMark(FMemStack::Get());  // The calls to ReplicateProperties will allocate memory on
 										 // FMemStack::Get(), and use it in ::PostSendBunch. we free
@@ -213,9 +212,7 @@ bool USpatialActorChannel::ReplicateActor()
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
-	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame,
-										   ActorReplicator->RepState->LastCompareIndex, RepFlags,
-										   bForceCompareProperties);
+	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame, ActorReplicator->RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
 
 	const int32 PossibleNewHistoryIndex =
 		ActorReplicator->RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
@@ -231,8 +228,7 @@ bool USpatialActorChannel::ReplicateActor()
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
 		TArray<uint16> Temp = RepChanged;
-		ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp,
-													RepChanged);
+		ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
 	}
 
 	const bool bCompareIndexSame =
@@ -313,10 +309,9 @@ bool USpatialActorChannel::ReplicateActor()
 			}
 			else
 			{
-				UE_LOG(LogSpatialGDKActorChannel, Log,
-					   TEXT("Unable to find PlayerState for %s, this usually means that this actor "
-							"is not "
-							"owned by a player."),
+				UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Unable to find PlayerState for %s, this usually means that this actor "
+															"is not "
+															"owned by a player."),
 					   *Actor->GetClass()->GetName());
 			}
 
@@ -475,16 +470,14 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		{
 			ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
 		}
-		UE_LOG(LogSpatialGDKActorChannel, Log,
-			   TEXT("Opened channel for actor %s with no entity ID. "
-					"Initiated reserve entity ID. Request id: %d"),
-			   *InActor->GetName(), ReserveEntityIdRequestId.Id);
+		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with no entity ID. "
+													"Initiated reserve entity ID. Request id: %d"),
+			   *InActor->GetName(),
+			   ReserveEntityIdRequestId.Id);
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Log,
-			   TEXT("Opened channel for actor %s with existing entity ID %lld."),
-			   *InActor->GetName(), ActorEntityId.ToSpatialEntityId());
+		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), ActorEntityId.ToSpatialEntityId());
 	}
 }
 
@@ -504,16 +497,14 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 {
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"),
-			   UTF8_TO_TCHAR(Op.Message.c_str()));
+		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.Message.c_str()));
 		// todo: From now on, this actor channel will be useless. We need better error handling, or
 		// a
 		// retry mechanism here.
 		UnbindFromSpatialView();
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received entity id (%d) for: %s. Request id: %d"),
-		   Op.EntityId.value_or(0), *Actor->GetName(), ReserveEntityIdRequestId.Id);
+	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received entity id (%d) for: %s. Request id: %d"), Op.EntityId.value_or(0), *Actor->GetName(), ReserveEntityIdRequestId.Id);
 
 	auto PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
@@ -534,16 +525,14 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"),
-			   *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
+		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
 		// todo: From now on, this actor channel will be useless. We need better error handling, or
 		// a
 		// retry mechanism here.
 		UnbindFromSpatialView();
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Created entity (%lld) for: %s. Request id: %d"),
-		   ActorEntityId.ToSpatialEntityId(), *Actor->GetName(), ReserveEntityIdRequestId.Id);
+	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Created entity (%lld) for: %s. Request id: %d"), ActorEntityId.ToSpatialEntityId(), *Actor->GetName(), ReserveEntityIdRequestId.Id);
 
 	auto PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
@@ -551,8 +540,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		PinnedView->Remove(CreateEntityCallback);
 	}
 
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received create entity response op for %lld"),
-		   ActorEntityId.ToSpatialEntityId());
+	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received create entity response op for %lld"), ActorEntityId.ToSpatialEntityId());
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()

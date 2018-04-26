@@ -94,8 +94,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."),
-		   *LoadedWorld->GetName());
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
 
 	checkf(
 		!SpatialOSInstance->IsConnected(),
@@ -222,9 +221,7 @@ static FORCEINLINE_DEBUGGABLE bool ShouldActorGoDormant(AActor* Actor,
 		for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
 		{
 			if (!Actor->GetNetDormancy(
-					ConnectionViewers[viewerIdx].ViewLocation, ConnectionViewers[viewerIdx].ViewDir,
-					ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget,
-					Channel, Time, bLowNetBandwidth))
+					ConnectionViewers[viewerIdx].ViewLocation, ConnectionViewers[viewerIdx].ViewDir, ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, Channel, Time, bLowNetBandwidth))
 			{
 				return false;
 			}
@@ -367,9 +364,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(
 			{
 				if (ActorConnection == nullptr && Connection == ClientConnections[0])
 				{
-					UE_LOG(LogSpatialOSNetDriver, Verbose,
-						   TEXT("Actor %s will be replicated on the catch-all connection"),
-						   *Actor->GetName());
+					UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());
 				}
 				else
 				{
@@ -378,9 +373,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(
 			}
 			else
 			{
-				UE_LOG(LogSpatialOSNetDriver, Verbose,
-					   TEXT("Actor %s will be replicated on the connection %s"), *Actor->GetName(),
-					   *Connection->GetName());
+				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the connection %s"), *Actor->GetName(), *Connection->GetName());
 			}
 
 			// SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
@@ -398,8 +391,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(
 			// skipped
 			if (Actor->NetTag != NetTag)
 			{
-				UE_LOG(LogNetTraffic, Log, TEXT("Consider %s alwaysrelevant %d frequency %f "),
-					   *Actor->GetName(), Actor->bAlwaysRelevant, Actor->NetUpdateFrequency);
+				UE_LOG(LogNetTraffic, Log, TEXT("Consider %s alwaysrelevant %d frequency %f "), *Actor->GetName(), Actor->bAlwaysRelevant, Actor->NetUpdateFrequency);
 
 				Actor->NetTag = NetTag;
 
@@ -433,7 +425,9 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(
 
 	UE_LOG(LogNetTraffic, Log, TEXT("ServerReplicateActors_PrioritizeActors: Potential %04i "
 									"ConsiderList %03i FinalSortedCount %03i"),
-		   MaxSortedActors, ConsiderList.Num(), FinalSortedCount);
+		   MaxSortedActors,
+		   ConsiderList.Num(),
+		   FinalSortedCount);
 
 	return FinalSortedCount;
 }
@@ -474,7 +468,8 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(
 				UE_LOG(LogNetTraffic, Log, TEXT("Server replicate actor creating destroy channel "
 												"for NetGUID <%s,%s> Priority: %d"),
 					   *PriorityActors[j]->DestructionInfo->NetGUID.ToString(),
-					   *PriorityActors[j]->DestructionInfo->PathName, PriorityActors[j]->Priority);
+					   *PriorityActors[j]->DestructionInfo->PathName,
+					   PriorityActors[j]->Priority);
 
 				Channel->SetChannelActorForDestroy(
 					PriorityActors[j]->DestructionInfo);  // Send a close bunch on the new channel
@@ -497,15 +492,13 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(
 				  DebugObjectCvar->GetString())) ||
 			 (DebugAllObjectsCvar && DebugAllObjectsCvar->GetInt() != 0)))
 		{
-			UE_LOG(LogNetPackageMap, Log, TEXT("Evaluating actor for replication %s"),
-				   *PriorityActors[j]->ActorInfo->Actor->GetName());
+			UE_LOG(LogNetPackageMap, Log, TEXT("Evaluating actor for replication %s"), *PriorityActors[j]->ActorInfo->Actor->GetName());
 		}
 #endif
 
 		// Normal actor replication
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(PriorityActors[j]->Channel);
-		UE_LOG(LogNetTraffic, Log, TEXT(" Maybe Replicate %s"),
-			   *PriorityActors[j]->ActorInfo->Actor->GetName());
+		UE_LOG(LogNetTraffic, Log, TEXT(" Maybe Replicate %s"), *PriorityActors[j]->ActorInfo->Actor->GetName());
 		if (!Channel || Channel->Actor)  // make sure didn't just close this channel
 		{
 			AActor* Actor = PriorityActors[j]->ActorInfo->Actor;
@@ -565,8 +558,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(
 					// updated very infrequently, make sure we update it again soon
 					else if (Actor->NetUpdateFrequency < 1.0f)
 					{
-						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"),
-							   *Actor->GetName());
+						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
 						PriorityActors[j]->ActorInfo->NextUpdateTime =
 							Actor->GetWorld()->TimeSeconds + 0.2f * FMath::FRand();
 					}
@@ -584,8 +576,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(
 					if (Channel->IsNetReady(0))
 					{
 						// replicate the actor
-						UE_LOG(LogNetTraffic, Log, TEXT("- Replicate %s. %d"), *Actor->GetName(),
-							   PriorityActors[j]->Priority);
+						UE_LOG(LogNetTraffic, Log, TEXT("- Replicate %s. %d"), *Actor->GetName(), PriorityActors[j]->Priority);
 						if (DebugRelevantActors)
 						{
 							LastRelevantActors.Add(Actor);
@@ -642,9 +633,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(
 
 				if (!Actor->IsNetStartupActor())
 				{
-					UE_LOG(LogNetTraffic, Log,
-						   TEXT("- Closing channel for no longer relevant actor %s"),
-						   *Actor->GetName());
+					UE_LOG(LogNetTraffic, Log, TEXT("- Closing channel for no longer relevant actor %s"), *Actor->GetName());
 					Channel->Close();
 				}
 			}
@@ -774,8 +763,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 			// Get a sorted list of actors for this connection
 			const int32 FinalSortedCount =
-				ServerReplicateActors_PrioritizeActors(Connection, ConnectionViewers, ConsiderList,
-													   bCPUSaturated, PriorityList, PriorityActors);
+				ServerReplicateActors_PrioritizeActors(Connection, ConnectionViewers, ConsiderList, bCPUSaturated, PriorityList, PriorityActors);
 
 			// Process the sorted list of actors for this connection
 			const int32 LastProcessedActor = ServerReplicateActors_ProcessPrioritizedActors(
@@ -801,9 +789,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 				UE_LOG(LogNetTraffic, Verbose, TEXT("Saturated. %s"), *Actor->GetName());
 				if (Channel != NULL && Time - Channel->RelevantTime <= 1.f)
 				{
-					UE_LOG(LogNetTraffic, Log,
-						   TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"),
-						   *Actor->GetName());
+					UE_LOG(LogNetTraffic, Log, TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"), *Actor->GetName());
 					PriorityActors[k]->ActorInfo->bPendingNetUpdate = true;
 				}
 				else if (IsActorRelevantToConnection(Actor, ConnectionViewers))
@@ -811,9 +797,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 					// If this actor was relevant but didn't get processed, force another update for
 					// next
 					// frame
-					UE_LOG(LogNetTraffic, Log,
-						   TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"),
-						   *Actor->GetName());
+					UE_LOG(LogNetTraffic, Log, TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"), *Actor->GetName());
 					PriorityActors[k]->ActorInfo->bPendingNetUpdate = true;
 					if (Channel != NULL)
 					{
@@ -880,8 +864,7 @@ void USpatialNetDriver::ProcessRemoteFunction(AActor* Actor, UFunction* Function
 		: GetSpatialOSNetConnection();
 	if (!Connection)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error,
-			   TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
 		return;
 	}
 
@@ -932,8 +915,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		// Only log the zero replicated actors once after replicating an actor
 		if ((LastUpdateCount && !Updated) || Updated)
 		{
-			UE_LOG(LogNetTraffic, Verbose, TEXT("%s replicated %d actors"), *GetDescription(),
-				   Updated);
+			UE_LOG(LogNetTraffic, Verbose, TEXT("%s replicated %d actors"), *GetDescription(), Updated);
 		}
 		LastUpdateCount = Updated;
 #endif  // WITH_SERVER_CODE

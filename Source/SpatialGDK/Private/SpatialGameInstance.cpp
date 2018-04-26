@@ -90,8 +90,7 @@ USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer,
 	else
 	{
 		return FGameInstancePIEResult::Failure(
-			FText::Format(NSLOCTEXT("UnrealEd", "Error_CouldntLaunchPIEClient",
-									"Couldn't Launch PIE Client: {0}"),
+			FText::Format(NSLOCTEXT("UnrealEd", "Error_CouldntLaunchPIEClient", "Couldn't Launch PIE Client: {0}"),
 						  FText::FromString(Error)));
 	}
 }
@@ -109,8 +108,7 @@ void USpatialGameInstance::StartGameInstance()
 
 	if (!StartGameInstance_SpatialGDKClient(Error))
 	{
-		UE_LOG(LogSpatialGDK, Fatal,
-			   TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
+		UE_LOG(LogSpatialGDK, Fatal, TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
 		FPlatformMisc::RequestExit(false);
 	}
 }

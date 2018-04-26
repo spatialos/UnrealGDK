@@ -38,12 +38,12 @@ void USpatialOS::ApplyEditorWorkerConfiguration(FWorldContext& InWorldContext)
 	// This WorldContext does not represent a PIE instance
 	if (InWorldContext.WorldType != EWorldType::PIE || InWorldContext.PIEInstance == -1)
 	{
-		UE_LOG(LogSpatialOS, Warning,
-			   TEXT("USpatialOS::ApplyEditorWorkerConfiguration(): The supplied "
-					"WorldContext does not represent a PIE instance. No changes are made. "
-					"Make sure you only call this method when starting a worker instance "
-					"from the Unreal Editor. PIEInstance: %d, WorldType: %d"),
-			   InWorldContext.PIEInstance, static_cast<int>(InWorldContext.WorldType));
+		UE_LOG(LogSpatialOS, Warning, TEXT("USpatialOS::ApplyEditorWorkerConfiguration(): The supplied "
+										   "WorldContext does not represent a PIE instance. No changes are made. "
+										   "Make sure you only call this method when starting a worker instance "
+										   "from the Unreal Editor. PIEInstance: %d, WorldType: %d"),
+			   InWorldContext.PIEInstance,
+			   static_cast<int>(InWorldContext.WorldType));
 		return;
 	}
 
@@ -81,10 +81,7 @@ void USpatialOS::Connect()
 {
 	checkf(!IsConnected(), TEXT("Connection is already established."));
 	// Log parsed input
-	UE_LOG(LogSpatialOS, Warning,
-		   TEXT(": receptionistHost %s, receptionistPort %d, WorkerType %s, WorkerId %s"),
-		   *WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(),
-		   *WorkerConfiguration.GetWorkerType(), *WorkerConfiguration.GetWorkerId())
+	UE_LOG(LogSpatialOS, Warning, TEXT(": receptionistHost %s, receptionistPort %d, WorkerType %s, WorkerId %s"), *WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(), *WorkerConfiguration.GetWorkerType(), *WorkerConfiguration.GetWorkerId())
 
 	auto LockedView = WorkerConnection.GetView().Pin();
 	if (LockedView.IsValid())
@@ -137,8 +134,7 @@ void USpatialOS::Connect()
 	OnQueueStatus.BindLambda([this](const worker::QueueStatus& Status) {
 		if (Status.Error)
 		{
-			UE_LOG(LogSpatialOS, Error, TEXT("Error connecting to deployment: %s"),
-				   UTF8_TO_TCHAR(Status.Error->c_str()));
+			UE_LOG(LogSpatialOS, Error, TEXT("Error connecting to deployment: %s"), UTF8_TO_TCHAR(Status.Error->c_str()));
 			return false;
 		}
 		else
@@ -152,15 +148,12 @@ void USpatialOS::Connect()
 	if (ShouldConnectViaLocator)
 	{
 		WorkerConnection.ConnectToLocatorAsync(
-			WorkerConfiguration.GetProjectName(), WorkerConfiguration.GetLocatorHost(),
-			WorkerConfiguration.GetDeploymentName(), WorkerConfiguration.GetLoginToken(), Params,
-			OnQueueStatus, OnConnected);
+			WorkerConfiguration.GetProjectName(), WorkerConfiguration.GetLocatorHost(), WorkerConfiguration.GetDeploymentName(), WorkerConfiguration.GetLoginToken(), Params, OnQueueStatus, OnConnected);
 	}
 	else
 	{
 		WorkerConnection.ConnectToReceptionistAsync(
-			WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(),
-			WorkerConfiguration.GetWorkerId(), Params, OnConnected);
+			WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(), WorkerConfiguration.GetWorkerId(), Params, OnConnected);
 	}
 }
 

@@ -38,8 +38,7 @@ void FPlayerSpawnRequestSender::RequestPlayer(USpatialOS* InSpatialOS,
 
 void FPlayerSpawnRequestSender::SendPlayerSpawnRequest()
 {
-	Connection->SendCommandRequest<SpawnPlayerCommand>(SpatialConstants::SPAWNER_ENTITY_ID, Request,
-													   0);
+	Connection->SendCommandRequest<SpawnPlayerCommand>(SpatialConstants::SPAWNER_ENTITY_ID, Request, 0);
 	++NumberOfAttempts;
 
 	ResponseCallbackKey = View->OnCommandResponse<SpawnPlayerCommand>(std::bind(
@@ -57,21 +56,16 @@ void FPlayerSpawnRequestSender::HandlePlayerSpawnResponse(
 	}
 	else if (NumberOfAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 	{
-		UE_LOG(LogSpatialOSPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""),
-			   *FString(Op.Message.c_str()));
+		UE_LOG(LogSpatialOSPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""), *FString(Op.Message.c_str()));
 
 		FTimerHandle RetryTimer;
 		FTimerDelegate TimerCallback;
 		TimerCallback.BindLambda([this, RetryTimer]() { SendPlayerSpawnRequest(); });
 
-		TimerManager->SetTimer(RetryTimer, TimerCallback,
-							   SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts),
-							   false);
+		TimerManager->SetTimer(RetryTimer, TimerCallback, SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts), false);
 	}
 	else
 	{
-		UE_LOG(LogSpatialOSPlayerSpawner, Fatal,
-			   TEXT("Player spawn request failed too many times. (%u attempts)"),
-			   SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+		UE_LOG(LogSpatialOSPlayerSpawner, Fatal, TEXT("Player spawn request failed too many times. (%u attempts)"), SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 	}
 }

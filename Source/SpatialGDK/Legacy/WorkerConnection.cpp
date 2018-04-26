@@ -64,8 +64,7 @@ FWorkerConnection::FWorkerConnection()
 void FWorkerConnection::GetDeploymentListAsync(
 	const FString& ProjectName, const FString& LocatorHost, const FString& LoginToken, FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback, std::uint32_t TimeoutMillis)
 {
-	AsyncTask(ENamedThreads::GameThread, [ProjectName, LocatorHost, LoginToken, TimeoutMillis,
-										  OnDeploymentsFoundCallback, this]() {
+	AsyncTask(ENamedThreads::GameThread, [ProjectName, LocatorHost, LoginToken, TimeoutMillis, OnDeploymentsFoundCallback, this]() {
 		WaitForDeploymentFuture(
 			TimeoutMillis,
 			CreateLocator(ProjectName, LocatorHost, LoginToken).GetDeploymentListAsync(),
@@ -87,8 +86,10 @@ void FWorkerConnection::ConnectToReceptionistAsync(const FString& Hostname, std:
 				  WaitForConnectionFuture(TimeoutMillis,
 										  SpatialOSConnection::ConnectAsync(
 											  improbable::unreal::Components{},
-											  std::string{TCHAR_TO_UTF8(*Hostname)}, Port,
-											  std::string{TCHAR_TO_UTF8(*WorkerId)}, Params),
+											  std::string{TCHAR_TO_UTF8(*Hostname)},
+											  Port,
+											  std::string{TCHAR_TO_UTF8(*WorkerId)},
+											  Params),
 										  OnConnectedCallback);
 			  });
 }
@@ -115,12 +116,12 @@ void FWorkerConnection::ConnectToLocatorAsync(
 
 	bIsConnecting = true;
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask,
-			  [ProjectName, LocatorHost, LoginToken, TimeoutMillis, DeploymentId, Params,
-			   QueueStatusWrapper, OnConnectedCallback, this]() {
+			  [ProjectName, LocatorHost, LoginToken, TimeoutMillis, DeploymentId, Params, QueueStatusWrapper, OnConnectedCallback, this]() {
 				  WaitForConnectionFuture(TimeoutMillis,
 										  CreateLocator(ProjectName, LocatorHost, LoginToken)
 											  .ConnectAsync(improbable::unreal::Components{},
-															TCHAR_TO_UTF8(*DeploymentId), Params,
+															TCHAR_TO_UTF8(*DeploymentId),
+															Params,
 															QueueStatusWrapper),
 										  OnConnectedCallback);
 			  });

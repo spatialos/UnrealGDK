@@ -154,8 +154,7 @@ bool USimpleEntitySpawnerBlock::ProcessAddEntityOp(
 					SpawnNewEntity(MetadataAddComponentOp, PositionAddComponentOp, World);
 				EntityRegistry->AddToRegistry(SpatialOperation.ComponentIdentifier.EntityId,
 											  EntityActor);
-				SetupComponentInterests(EntityActor, SpatialOperation.ComponentIdentifier.EntityId,
-										InConnection);
+				SetupComponentInterests(EntityActor, SpatialOperation.ComponentIdentifier.EntityId, InConnection);
 
 				return true;
 			}
@@ -192,8 +191,7 @@ bool USimpleEntitySpawnerBlock::ProcessAddComponentOp(
 		Component->ApplyInitialState(**ComponentBase);
 		AddComponentOpQueue->Underlying.RemoveAt(0);
 
-		Component->Init(InConnection, InView, SpatialOperation.ComponentIdentifier.EntityId,
-						InCallbackDispatcher);
+		Component->Init(InConnection, InView, SpatialOperation.ComponentIdentifier.EntityId, InCallbackDispatcher);
 
 		auto QueuedAuthChangeOp = ComponentAuthorities.Find(SpatialOperation.ComponentIdentifier);
 		if (QueuedAuthChangeOp)
@@ -289,8 +287,7 @@ bool USimpleEntitySpawnerBlock::ProcessOp(const TWeakPtr<SpatialOSView>& InView,
 		case ESpatialOperationType::AddEntity:
 			return ProcessAddEntityOp(World, InConnection, SpatialOperation);
 		case ESpatialOperationType::AddComponent:
-			return ProcessAddComponentOp(InView, InConnection, InCallbackDispatcher,
-										 SpatialOperation);
+			return ProcessAddComponentOp(InView, InConnection, InCallbackDispatcher, SpatialOperation);
 		case ESpatialOperationType::RemoveComponent:
 			return ProcessRemoveComponentOp(InCallbackDispatcher, SpatialOperation);
 		case ESpatialOperationType::RemoveEntity:
@@ -321,8 +318,7 @@ AActor* USimpleEntitySpawnerBlock::SpawnNewEntity(UMetadataAddComponentOp* Metad
 					FVector(Coords.x(), Coords.y(), Coords.z()));
 
 			auto NewActor =
-				World->SpawnActor<AActor>(*EntityClassTemplate, InitialTransform,
-										  FRotator::ZeroRotator, FActorSpawnParameters());
+				World->SpawnActor<AActor>(*EntityClassTemplate, InitialTransform, FRotator::ZeroRotator, FActorSpawnParameters());
 
 			TArray<UActorComponent*> SpatialOSComponents =
 				NewActor->GetComponentsByClass(USpatialOsComponent::StaticClass());
@@ -338,9 +334,7 @@ AActor* USimpleEntitySpawnerBlock::SpawnNewEntity(UMetadataAddComponentOp* Metad
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning,
-				   TEXT("SpawnNewEntity() failed: couldn't find EntityType(`%s`)"),
-				   *EntityTypeString);
+			UE_LOG(LogTemp, Warning, TEXT("SpawnNewEntity() failed: couldn't find EntityType(`%s`)"), *EntityTypeString);
 
 			return nullptr;
 		}

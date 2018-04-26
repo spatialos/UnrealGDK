@@ -255,8 +255,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
 		// TODO(David): Should we still be skipping this?
 		if (Property->IsA<UMulticastDelegateProperty>())
 		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning,
-				   TEXT("%s - multicast delegate property, skipping"), *Property->GetName());
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - multicast delegate property, skipping"), *Property->GetName());
 			continue;
 		}
 
@@ -323,8 +322,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
 			// this stage, just remove it.
 			if (Value->IsEditorOnly())
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning,
-					   TEXT("%s - editor only, skipping"), *Property->GetName());
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - editor only, skipping"), *Property->GetName());
 				TypeNode->Properties.Remove(Property);
 				continue;
 			}
@@ -332,9 +330,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
 			// Check whether the owner of this value is the CDO itself.
 			if (Value->GetOuter() == ContainerCDO)
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning,
-					   TEXT("Property Class: %s Instance Class: %s"),
-					   *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
 				// This property is definitely a strong reference, recurse into it.
 				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {});
@@ -343,17 +339,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
 			else
 			{
 				// The values outer is not us, store as weak reference.
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning,
-					   TEXT("%s - %s weak reference (outer not this)"), *Property->GetName(),
-					   *ObjectProperty->PropertyClass->GetName());
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - %s weak reference (outer not this)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
 			}
 		}
 		else
 		{
 			// If value is just nullptr, then we clearly don't own it.
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning,
-				   TEXT("%s - %s weak reference (null init)"), *Property->GetName(),
-				   *ObjectProperty->PropertyClass->GetName());
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - %s weak reference (null init)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
 		}
 	}
 
@@ -519,8 +511,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
 			checkf(CurrentTypeNode.IsValid(),
 				   TEXT("A property in the chain (except the leaf) is not a struct property."));
 			UProperty* NextProperty = CurrentTypeNode->Type->FindPropertyByName(PropertyName);
-			checkf(NextProperty, TEXT("Cannot find property %s in container %s"),
-				   *PropertyName.ToString(), *CurrentTypeNode->Type->GetName());
+			checkf(NextProperty, TEXT("Cannot find property %s in container %s"), *PropertyName.ToString(), *CurrentTypeNode->Type->GetName());
 			MigratableProperty = CurrentTypeNode->Properties.FindChecked(NextProperty);
 			CurrentTypeNode = MigratableProperty->Type;
 		}

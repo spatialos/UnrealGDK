@@ -73,8 +73,7 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 	OutputListSource.Indent();
 	for (int i = 0; i < Classes.Num(); ++i)
 	{
-		OutputListSource.Printf(TEXT("USpatialTypeBinding_%s::StaticClass()%s"), *Classes[i],
-								i < (Classes.Num() - 1) ? TEXT(",") : TEXT(""));
+		OutputListSource.Printf(TEXT("USpatialTypeBinding_%s::StaticClass()%s"), *Classes[i], i < (Classes.Num() - 1) ? TEXT(",") : TEXT(""));
 	}
 	OutputListSource.Outdent();
 	OutputListSource.Print("};");
@@ -101,11 +100,11 @@ bool CheckClassNameListValidity(const TArray<FString>& Classes)
 
 			if (SchemaTypeA.Equals(SchemaTypeB))
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error,
-					   TEXT("Class name collision after removing underscores: '%s' and '%s' - "
-							"schema not "
-							"generated"),
-					   *ClassA, *ClassB);
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Class name collision after removing underscores: '%s' and '%s' - "
+																	  "schema not "
+																	  "generated"),
+					   *ClassA,
+					   *ClassB);
 				return false;
 			}
 		}
@@ -127,17 +126,13 @@ void SpatialGDKGenerateInteropCode()
 	FString AbsoluteCombinedForwardingCodePath =
 		FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
 
-	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display,
-		   TEXT("Schema path %s - Forwarding code path %s"), *AbsoluteCombinedSchemaPath,
-		   *AbsoluteCombinedForwardingCodePath);
+	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *AbsoluteCombinedSchemaPath, *AbsoluteCombinedForwardingCodePath);
 
 	// Hard coded class information.
 	TArray<FString> Classes = {"PlayerController", "PlayerState", "Character", "WheeledVehicle"};
 	TMap<FString, TArray<TArray<FName>>> MigratableProperties;
 	MigratableProperties.Add("PlayerController", {{"AcknowledgedPawn"}});
-	MigratableProperties.Add("Character", {{"CharacterMovement", "GroundMovementMode"},
-										   {"CharacterMovement", "MovementMode"},
-										   {"CharacterMovement", "CustomMovementMode"}});
+	MigratableProperties.Add("Character", {{"CharacterMovement", "GroundMovementMode"}, {"CharacterMovement", "MovementMode"}, {"CharacterMovement", "CustomMovementMode"}});
 
 	if (!CheckClassNameListValidity(Classes))
 	{
@@ -155,14 +150,12 @@ void SpatialGDKGenerateInteropCode()
 			TArray<TArray<FName>> ClassMigratableProperties =
 				MigratableProperties.FindRef(ClassName);
 			ComponentId +=
-				GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath,
-												ComponentId, Class, ClassMigratableProperties);
+				GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, ClassMigratableProperties);
 		}
 		GenerateTypeBindingList(CombinedForwardingCodePath, Classes);
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error,
-			   TEXT("Path was invalid - schema not generated"));
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Path was invalid - schema not generated"));
 	}
 }

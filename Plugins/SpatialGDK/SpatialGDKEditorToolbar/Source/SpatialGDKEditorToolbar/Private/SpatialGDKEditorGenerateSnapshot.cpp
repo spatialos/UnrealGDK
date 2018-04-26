@@ -61,10 +61,11 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 		StaticActorMap.emplace(StaticObjectId, std::string(TCHAR_TO_UTF8(*PathName)));
 		worker::EntityId EntityId = 0;
 		UE_LOG(
-			LogSpatialGDKSnapshot, Log,
-			TEXT("Found static object in persistent level, adding to level data entity. Path: %s, "
-				 "Object ref: (entity ID: %lld, offset: %u)."),
-			*PathName, EntityId, StaticObjectId);
+			LogSpatialGDKSnapshot, Log, TEXT("Found static object in persistent level, adding to level data entity. Path: %s, "
+											 "Object ref: (entity ID: %lld, offset: %u)."),
+			*PathName,
+			EntityId,
+			StaticObjectId);
 		StaticObjectId++;
 	}
 
@@ -95,8 +96,7 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 	{
 		for (int y = -PlaceholderCountAxis / 2; y < PlaceholderCountAxis / 2; y++)
 		{
-			const Coordinates PlaceholderPosition{x * CHUNK_SIZE + CHUNK_SIZE * 0.5f, 0,
-												  y * CHUNK_SIZE + CHUNK_SIZE * 0.5f};
+			const Coordinates PlaceholderPosition{x * CHUNK_SIZE + CHUNK_SIZE * 0.5f, 0, y * CHUNK_SIZE + CHUNK_SIZE * 0.5f};
 			LevelEntities.emplace(
 				PlaceholderEntityIdCounter,
 				improbable::unreal::FEntityBuilder::Begin()
@@ -136,8 +136,7 @@ void SpatialGDKGenerateSnapshot(const FString& SavePath, UWorld* World)
 		if (!Result.empty())
 		{
 			std::string ErrorString = Result.value_or("");
-			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"),
-				   UTF8_TO_TCHAR(ErrorString.c_str()));
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(ErrorString.c_str()));
 			return;
 		}
 	}

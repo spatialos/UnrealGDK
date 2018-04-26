@@ -83,15 +83,10 @@ void FSpatialOSEditorToolbarModule::RegisterSettings()
 		ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
 
 		SettingsContainer->DescribeCategory(
-			"SpatialOSEditorToolbar", LOCTEXT("RuntimeWDCategoryName", "SpatialOS - Toolbar"),
-			LOCTEXT("RuntimeWDCategoryDescription",
-					"Configuration for the SpatialOS Editor toolbar plugin"));
+			"SpatialOSEditorToolbar", LOCTEXT("RuntimeWDCategoryName", "SpatialOS - Toolbar"), LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialOS Editor toolbar plugin"));
 
 		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings(
-			"Project", "SpatialOS", "Toolbar", LOCTEXT("RuntimeGeneralSettingsName", "Toolbar"),
-			LOCTEXT("RuntimeGeneralSettingsDescription",
-					"Configuration for SpatialOS Editor toolbar plugin."),
-			GetMutableDefault<USpatialOSEditorToolbarSettings>());
+			"Project", "SpatialOS", "Toolbar", LOCTEXT("RuntimeGeneralSettingsName", "Toolbar"), LOCTEXT("RuntimeGeneralSettingsDescription", "Configuration for SpatialOS Editor toolbar plugin."), GetMutableDefault<USpatialOSEditorToolbarSettings>());
 
 		if (SettingsSection.IsValid())
 		{
@@ -147,9 +142,7 @@ void FSpatialOSEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList
 
 	{
 		TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender());
-		MenuExtender->AddMenuExtension("General", EExtensionHook::After, PluginCommands,
-									   FMenuExtensionDelegate::CreateRaw(
-										   this, &FSpatialOSEditorToolbarModule::AddMenuExtension));
+		MenuExtender->AddMenuExtension("General", EExtensionHook::After, PluginCommands, FMenuExtensionDelegate::CreateRaw(this, &FSpatialOSEditorToolbarModule::AddMenuExtension));
 
 		LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
 	}
@@ -157,9 +150,7 @@ void FSpatialOSEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList
 	{
 		TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
 		ToolbarExtender->AddToolBarExtension(
-			"Game", EExtensionHook::After, PluginCommands,
-			FToolBarExtensionDelegate::CreateRaw(
-				this, &FSpatialOSEditorToolbarModule::AddToolbarExtension));
+			"Game", EExtensionHook::After, PluginCommands, FToolBarExtensionDelegate::CreateRaw(this, &FSpatialOSEditorToolbarModule::AddToolbarExtension));
 
 		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
 	}
@@ -192,15 +183,13 @@ void FSpatialOSEditorToolbarModule::StartSpatialOSButtonClicked()
 	const FString SpatialCmdArgument = FString::Printf(
 		TEXT("/c spatial.exe local launch %s"), *SpatialOSToolbarSettings->SpatialOSLaunchArgument);
 
-	UE_LOG(LogSpatialOSEditor, Log, TEXT("Starting cmd.exe with `%s` arguments."),
-		   *SpatialCmdArgument);
+	UE_LOG(LogSpatialOSEditor, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround to get spatial.exe to properly show a window we have to call cmd.exe to
 	// execute it.
 	// We currently can't use pipes to capture output as it doesn't work properly with current
 	// spatial.exe.
 	SpatialOSStackProcHandle = FPlatformProcess::CreateProc(
-		*(CmdExecutable), *SpatialCmdArgument, true, false, false, &SpatialOSStackProcessID, 0,
-		*ExecuteAbsolutePath, nullptr, nullptr);
+		*(CmdExecutable), *SpatialCmdArgument, true, false, false, &SpatialOSStackProcessID, 0, *ExecuteAbsolutePath, nullptr, nullptr);
 
 	FNotificationInfo Info(SpatialOSStackProcHandle.IsValid() == true
 							   ? FText::FromString(TEXT("SpatialOS Starting..."))
@@ -215,9 +204,7 @@ void FSpatialOSEditorToolbarModule::StartSpatialOSButtonClicked()
 		const auto LogPath =
 			SpatialOSToolbarSettings->ProjectRootFolder.Path + FString(TEXT("/logs/spatial.log"));
 		UE_LOG(
-			LogSpatialOSEditor, Error,
-			TEXT("Failed to start SpatialOS, please refer to log file `%s` for more information."),
-			*LogPath);
+			LogSpatialOSEditor, Error, TEXT("Failed to start SpatialOS, please refer to log file `%s` for more information."), *LogPath);
 	}
 	else
 	{
