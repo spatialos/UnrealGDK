@@ -9,17 +9,17 @@ struct FFunctionSignature
 
   FString Declaration() const
   {
-    return FString::Printf(TEXT("%s %s;"), *Type, *NameAndParams);
+	return FString::Printf(TEXT("%s %s;"), *Type, *NameAndParams);
   }
 
   FString Definition() const
   {
-    return FString::Printf(TEXT("%s %s"), *Type, *NameAndParams);
+	return FString::Printf(TEXT("%s %s"), *Type, *NameAndParams);
   }
 
   FString Definition(const FString& TypeName) const
   {
-    return FString::Printf(TEXT("%s %s::%s"), *Type, *TypeName, *NameAndParams);
+	return FString::Printf(TEXT("%s %s::%s"), *Type, *TypeName, *NameAndParams);
   }
 };
 
@@ -31,7 +31,7 @@ public:
   template <typename... T>
   FCodeWriter& Printf(const FString& Format, const T&... Args)
   {
-    return Print(FString::Printf(*Format, Args...));
+	return Print(FString::Printf(*Format, Args...));
   }
 
   FCodeWriter& PrintNewLine();

@@ -21,7 +21,7 @@ class SPATIALGDK_API USpatialGameInstance : public UGameInstance
 #if WITH_EDITOR
   virtual FGameInstancePIEResult
   StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer,
-                                const FGameInstancePIEParameters& Params) override;
+								const FGameInstancePIEParameters& Params) override;
 #endif
   virtual void StartGameInstance() override;
 };

@@ -29,43 +29,43 @@ public:
   // SpatialOS Entity ID.
   FORCEINLINE FEntityId GetEntityId() const
   {
-    return ActorEntityId;
+	return ActorEntityId;
   }
 
   FORCEINLINE bool IsReadyForReplication() const
   {
-    // Wait until we've reserved an entity ID.
-    return ActorEntityId != FEntityId{};
+	// Wait until we've reserved an entity ID.
+	return ActorEntityId != FEntityId{};
   }
 
   // Called on the client when receiving an update.
   FORCEINLINE bool IsClientAutonomousProxy(worker::ComponentId ServerRPCsComponentId)
   {
-    if (SpatialNetDriver->GetNetMode() != NM_Client)
-    {
-      return false;
-    }
+	if (SpatialNetDriver->GetNetMode() != NM_Client)
+	{
+	  return false;
+	}
 
-    TSharedPtr<worker::View> View = WorkerView.Pin();
-    if (View.Get())
-    {
-      // This will never fail because we can't have an actor channel without having checked out the
-      // entity.
-      auto& EntityAuthority = View->ComponentAuthority[ActorEntityId.ToSpatialEntityId()];
-      auto ComponentIterator = EntityAuthority.find(ServerRPCsComponentId);
-      if (ComponentIterator != EntityAuthority.end())
-      {
-        return (*ComponentIterator).second == worker::Authority::kAuthoritative;
-      }
-    }
-    return false;
+	TSharedPtr<worker::View> View = WorkerView.Pin();
+	if (View.Get())
+	{
+	  // This will never fail because we can't have an actor channel without having checked out the
+	  // entity.
+	  auto& EntityAuthority = View->ComponentAuthority[ActorEntityId.ToSpatialEntityId()];
+	  auto ComponentIterator = EntityAuthority.find(ServerRPCsComponentId);
+	  if (ComponentIterator != EntityAuthority.end())
+	  {
+		return (*ComponentIterator).second == worker::Authority::kAuthoritative;
+	  }
+	}
+	return false;
   }
 
   FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16>& RepChanged,
-                                                  const TArray<uint16>& MigChanged) const
+												  const TArray<uint16>& MigChanged) const
   {
-    return {(uint8*)Actor, RepChanged, ActorReplicator->RepLayout->Cmds,
-            ActorReplicator->RepLayout->BaseHandleToCmdIndex, MigChanged};
+	return {(uint8*)Actor, RepChanged, ActorReplicator->RepLayout->Cmds,
+			ActorReplicator->RepLayout->BaseHandleToCmdIndex, MigChanged};
   }
 
   // UChannel interface

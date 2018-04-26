@@ -72,8 +72,8 @@ TArray<FEntityId> UEntityQuerySnapshotCommandResult::GetEntityIDs() const
   TArray<FEntityId> returnArray;
   for (auto it = Underlying.Result.begin(); it != Underlying.Result.end(); ++it)
   {
-    FEntityId id(it->first);
-    returnArray.Emplace(id);
+	FEntityId id(it->first);
+	returnArray.Emplace(id);
   }
 
   return returnArray;

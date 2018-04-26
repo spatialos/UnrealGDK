@@ -13,8 +13,8 @@ void FSpatialOSEditorToolbarStyle::Initialize()
 {
   if (!StyleInstance.IsValid())
   {
-    StyleInstance = Create();
-    FSlateStyleRegistry::RegisterSlateStyle(*StyleInstance);
+	StyleInstance = Create();
+	FSlateStyleRegistry::RegisterSlateStyle(*StyleInstance);
   }
 }
 
@@ -44,23 +44,23 @@ const FVector2D Icon40x40(40.0f, 40.0f);
 TSharedRef<FSlateStyleSet> FSpatialOSEditorToolbarStyle::Create()
 {
   TSharedRef<FSlateStyleSet> Style =
-      MakeShareable(new FSlateStyleSet("SpatialOSEditorToolbarStyle"));
+	  MakeShareable(new FSlateStyleSet("SpatialOSEditorToolbarStyle"));
   Style->SetContentRoot(IPluginManager::Get().FindPlugin("SpatialOSEditorToolbar")->GetBaseDir() /
-                        TEXT("Resources"));
+						TEXT("Resources"));
 
   Style->Set("SpatialOSEditorToolbar.StartSpatialOSStackAction",
-             new IMAGE_BRUSH(TEXT("ImprobableIcon_40x"), Icon40x40));
+			 new IMAGE_BRUSH(TEXT("ImprobableIcon_40x"), Icon40x40));
   Style->Set("SpatialOSEditorToolbar.StopSpatialOSStackAction",
-             new IMAGE_BRUSH(TEXT("ImprobableIconStop_40x"), Icon40x40));
+			 new IMAGE_BRUSH(TEXT("ImprobableIconStop_40x"), Icon40x40));
   Style->Set("SpatialOSEditorToolbar.LaunchInspectorWebPageAction",
-             new IMAGE_BRUSH(TEXT("BrowserIcon_40x"), Icon40x40));
+			 new IMAGE_BRUSH(TEXT("BrowserIcon_40x"), Icon40x40));
 
   Style->Set("SpatialOSEditorToolbar.StartSpatialOSStackAction.Small",
-             new IMAGE_BRUSH(TEXT("ImprobableIcon_40x"), Icon20x20));
+			 new IMAGE_BRUSH(TEXT("ImprobableIcon_40x"), Icon20x20));
   Style->Set("SpatialOSEditorToolbar.StopSpatialOSStackAction.Small",
-             new IMAGE_BRUSH(TEXT("ImprobableIconStop_40x"), Icon20x20));
+			 new IMAGE_BRUSH(TEXT("ImprobableIconStop_40x"), Icon20x20));
   Style->Set("SpatialOSEditorToolbar.LaunchInspectorWebPageAction.Small",
-             new IMAGE_BRUSH(TEXT("BrowserIcon_40x"), Icon20x20));
+			 new IMAGE_BRUSH(TEXT("BrowserIcon_40x"), Icon20x20));
 
   return Style;
 }
@@ -71,7 +71,7 @@ void FSpatialOSEditorToolbarStyle::ReloadTextures()
 {
   if (FSlateApplication::IsInitialized())
   {
-    FSlateApplication::Get().GetRenderer()->ReloadTextureResources();
+	FSlateApplication::Get().GetRenderer()->ReloadTextureResources();
   }
 }
 

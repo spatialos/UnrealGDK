@@ -42,7 +42,7 @@ USpatialOSBlueprintLibrary::MakeEntityIdQueryConstraintFromInt(int InEntityId)
 
 FComponentIdQueryConstraint
 USpatialOSBlueprintLibrary::MakeComponentIdQueryConstraintFromComponentId(
-    const FComponentId& InComponentId)
+	const FComponentId& InComponentId)
 {
   return FComponentIdQueryConstraint(InComponentId);
 }
@@ -60,35 +60,35 @@ USpatialOSBlueprintLibrary::MakeSphereQueryConstraint(const FVector& InPosition,
 }
 
 UEntityQueryConstraint* USpatialOSBlueprintLibrary::SpatialOsEntityAndQuery(
-    const TArray<FEntityIdQueryConstraint>& EntityIds,
-    const TArray<FComponentIdQueryConstraint>& ComponentIds,
-    const TArray<FSphereQueryConstraint>& Spheres)
+	const TArray<FEntityIdQueryConstraint>& EntityIds,
+	const TArray<FComponentIdQueryConstraint>& ComponentIds,
+	const TArray<FSphereQueryConstraint>& Spheres)
 {
   auto NewQuery = NewObject<UEntityQueryConstraint>();
 
   worker::query::AndConstraint WorkerConstraint;
   for (const FEntityIdQueryConstraint& constraint : EntityIds)
   {
-    worker::query::EntityIdConstraint EntityIdConstraint;
-    EntityIdConstraint.EntityId = constraint.Underlying.ToSpatialEntityId();
-    WorkerConstraint.emplace_back(EntityIdConstraint);
+	worker::query::EntityIdConstraint EntityIdConstraint;
+	EntityIdConstraint.EntityId = constraint.Underlying.ToSpatialEntityId();
+	WorkerConstraint.emplace_back(EntityIdConstraint);
   }
 
   for (const FComponentIdQueryConstraint& constraint : ComponentIds)
   {
-    worker::query::ComponentConstraint ComponentConstraint;
-    ComponentConstraint.ComponentId = constraint.Underlying.ToSpatialComponentId();
-    WorkerConstraint.emplace_back(ComponentConstraint);
+	worker::query::ComponentConstraint ComponentConstraint;
+	ComponentConstraint.ComponentId = constraint.Underlying.ToSpatialComponentId();
+	WorkerConstraint.emplace_back(ComponentConstraint);
   }
 
   for (const FSphereQueryConstraint& constraint : Spheres)
   {
-    worker::query::SphereConstraint SphereConstraint;
-    SphereConstraint.Radius = static_cast<double>(constraint.Radius);
-    SphereConstraint.X = static_cast<double>(constraint.Position.X);
-    SphereConstraint.Y = static_cast<double>(constraint.Position.Y);
-    SphereConstraint.Z = static_cast<double>(constraint.Position.Z);
-    WorkerConstraint.emplace_back(SphereConstraint);
+	worker::query::SphereConstraint SphereConstraint;
+	SphereConstraint.Radius = static_cast<double>(constraint.Radius);
+	SphereConstraint.X = static_cast<double>(constraint.Position.X);
+	SphereConstraint.Y = static_cast<double>(constraint.Position.Y);
+	SphereConstraint.Z = static_cast<double>(constraint.Position.Z);
+	WorkerConstraint.emplace_back(SphereConstraint);
   }
 
   NewQuery->Underlying.emplace(WorkerConstraint);
@@ -96,35 +96,35 @@ UEntityQueryConstraint* USpatialOSBlueprintLibrary::SpatialOsEntityAndQuery(
 }
 
 UEntityQueryConstraint* USpatialOSBlueprintLibrary::SpatialOsEntityOrQuery(
-    const TArray<FEntityIdQueryConstraint>& EntityIds,
-    const TArray<FComponentIdQueryConstraint>& ComponentIds,
-    const TArray<FSphereQueryConstraint>& Spheres)
+	const TArray<FEntityIdQueryConstraint>& EntityIds,
+	const TArray<FComponentIdQueryConstraint>& ComponentIds,
+	const TArray<FSphereQueryConstraint>& Spheres)
 {
   auto NewQuery = NewObject<UEntityQueryConstraint>();
 
   worker::query::OrConstraint WorkerConstraint;
   for (const FEntityIdQueryConstraint& constraint : EntityIds)
   {
-    worker::query::EntityIdConstraint EntityIdConstraint;
-    EntityIdConstraint.EntityId = constraint.Underlying.ToSpatialEntityId();
-    WorkerConstraint.emplace_back(EntityIdConstraint);
+	worker::query::EntityIdConstraint EntityIdConstraint;
+	EntityIdConstraint.EntityId = constraint.Underlying.ToSpatialEntityId();
+	WorkerConstraint.emplace_back(EntityIdConstraint);
   }
 
   for (const FComponentIdQueryConstraint& constraint : ComponentIds)
   {
-    worker::query::ComponentConstraint ComponentConstraint;
-    ComponentConstraint.ComponentId = constraint.Underlying.ToSpatialComponentId();
-    WorkerConstraint.emplace_back(ComponentConstraint);
+	worker::query::ComponentConstraint ComponentConstraint;
+	ComponentConstraint.ComponentId = constraint.Underlying.ToSpatialComponentId();
+	WorkerConstraint.emplace_back(ComponentConstraint);
   }
 
   for (const FSphereQueryConstraint& constraint : Spheres)
   {
-    worker::query::SphereConstraint SphereConstraint;
-    SphereConstraint.Radius = static_cast<double>(constraint.Radius);
-    SphereConstraint.X = static_cast<double>(constraint.Position.X);
-    SphereConstraint.Y = static_cast<double>(constraint.Position.Y);
-    SphereConstraint.Z = static_cast<double>(constraint.Position.Z);
-    WorkerConstraint.emplace_back(SphereConstraint);
+	worker::query::SphereConstraint SphereConstraint;
+	SphereConstraint.Radius = static_cast<double>(constraint.Radius);
+	SphereConstraint.X = static_cast<double>(constraint.Position.X);
+	SphereConstraint.Y = static_cast<double>(constraint.Position.Y);
+	SphereConstraint.Z = static_cast<double>(constraint.Position.Z);
+	WorkerConstraint.emplace_back(SphereConstraint);
   }
 
   NewQuery->Underlying.emplace(WorkerConstraint);

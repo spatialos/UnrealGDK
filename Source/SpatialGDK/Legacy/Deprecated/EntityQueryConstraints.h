@@ -40,12 +40,12 @@ public:
 
   FORCEINLINE FEntityIdQueryConstraint(const FEntityId& InEntityId)
   {
-    Underlying = InEntityId;
+	Underlying = InEntityId;
   }
 
   FORCEINLINE FEntityIdQueryConstraint(int InEntityId)
   {
-    Underlying = FEntityId(static_cast<worker::EntityId>(InEntityId));
+	Underlying = FEntityId(static_cast<worker::EntityId>(InEntityId));
   }
 
   FEntityId Underlying;
@@ -66,12 +66,12 @@ public:
 
   FORCEINLINE FComponentIdQueryConstraint(const FComponentId& InComponentId)
   {
-    Underlying = InComponentId;
+	Underlying = InComponentId;
   }
 
   FORCEINLINE FComponentIdQueryConstraint(int InComponentId)
   {
-    Underlying = FComponentId(static_cast<worker::ComponentId>(InComponentId));
+	Underlying = FComponentId(static_cast<worker::ComponentId>(InComponentId));
   }
 
   FComponentId Underlying;
@@ -92,8 +92,8 @@ struct SPATIALGDK_API FSphereQueryConstraint
 
   FORCEINLINE FSphereQueryConstraint(const FVector& InPosition, float InRadius)
   {
-    Position = InPosition;
-    Radius = InRadius;
+	Position = InPosition;
+	Radius = InRadius;
   }
 
   FVector Position;

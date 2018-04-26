@@ -24,12 +24,12 @@ public:
   void Tick(float DeltaTime) override;
   bool IsTickable() const override
   {
-    return true;
+	return true;
   }
 
   TStatId GetStatId() const override
   {
-    RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables);
+	RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables);
   }
 
 private:

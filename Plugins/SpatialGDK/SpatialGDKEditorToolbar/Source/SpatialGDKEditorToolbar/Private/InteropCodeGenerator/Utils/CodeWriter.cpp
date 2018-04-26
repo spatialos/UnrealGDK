@@ -20,51 +20,51 @@ FCodeWriter& FCodeWriter::Print(const FString& String)
 
   if (Lines.Num() == 0)
   {
-    return *this;
+	return *this;
   }
 
   // Remove first line if empty.
   if (Lines[0].IsEmpty())
   {
-    // Early exit if we have no other.
-    if (Lines.Num() == 1)
-    {
-      return *this;
-    }
-    Lines.RemoveAt(0);
+	// Early exit if we have no other.
+	if (Lines.Num() == 1)
+	{
+	  return *this;
+	}
+	Lines.RemoveAt(0);
   }
 
   // Replace 4 spaces with tabs.
   for (auto& Line : Lines)
   {
-    Line.Replace(TEXT("    "), TEXT("\t"));
+	Line.Replace(TEXT("    "), TEXT("\t"));
   }
 
   // Determine scope to trim by.
   int TrimScope = 0;
   for (int i = 0; i < Lines[0].Len(); ++i)
   {
-    if (Lines[0][i] != '\t')
-    {
-      TrimScope = i;
-      break;
-    }
+	if (Lines[0][i] != '\t')
+	{
+	  TrimScope = i;
+	  break;
+	}
   }
 
   // Add lines to output.
   for (auto& Line : Lines)
   {
-    FString TrimmedLine = Line.Mid(TrimScope);
-    if (!TrimmedLine.IsEmpty())
-    {
-      FString ScopeIndent;
-      for (int ScopeLevel = 0; ScopeLevel < Scope; ++ScopeLevel)
-      {
-        ScopeIndent += FString(TEXT("\t"));
-      }
-      TrimmedLine = ScopeIndent + TrimmedLine;
-    }
-    OutputSource += TrimmedLine + TEXT("\r\n");
+	FString TrimmedLine = Line.Mid(TrimScope);
+	if (!TrimmedLine.IsEmpty())
+	{
+	  FString ScopeIndent;
+	  for (int ScopeLevel = 0; ScopeLevel < Scope; ++ScopeLevel)
+	  {
+		ScopeIndent += FString(TEXT("\t"));
+	  }
+	  TrimmedLine = ScopeIndent + TrimmedLine;
+	}
+	OutputSource += TrimmedLine + TEXT("\r\n");
   }
 
   return *this;
@@ -98,7 +98,7 @@ FCodeWriter& FCodeWriter::BeginFunction(const FFunctionSignature& Signature)
 }
 
 FCodeWriter& FCodeWriter::BeginFunction(const FFunctionSignature& Signature,
-                                        const FString& TypeName)
+										const FString& TypeName)
 {
   Print(Signature.Definition(TypeName));
   BeginScope();

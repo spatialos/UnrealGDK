@@ -9,22 +9,22 @@ void USpatialOsComponentUpdater::UpdateComponents(UEntityRegistry* Registry, flo
 {
   if (Registry == nullptr)
   {
-    return;
+	return;
   }
 
   for (auto& Elem : Registry->EntityComponentCache)
   {
-    if (Elem.Key == nullptr || Elem.Key->IsPendingKill())
-    {
-      continue;
-    }
+	if (Elem.Key == nullptr || Elem.Key->IsPendingKill())
+	{
+	  continue;
+	}
 
-    for (auto& Component : Elem.Value.Components)
-    {
-      if (Component != nullptr)
-      {
-        Component->TriggerAutomaticComponentUpdate(DeltaSeconds);
-      }
-    }
+	for (auto& Component : Elem.Value.Components)
+	{
+	  if (Component != nullptr)
+	  {
+		Component->TriggerAutomaticComponentUpdate(DeltaSeconds);
+	  }
+	}
   }
 }

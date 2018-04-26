@@ -22,12 +22,12 @@ public:
 
   bool Success() const
   {
-    return StatusCode == ECommandResponseCode::Success;
+	return StatusCode == ECommandResponseCode::Success;
   }
 
   FString GetErrorMessage() const
   {
-    return ErrorMessage;
+	return ErrorMessage;
   }
 
   UPROPERTY()

@@ -14,43 +14,43 @@ struct SPATIALGDK_API FComponentId
 public:
   FORCEINLINE FComponentId()
   {
-    Underlying = 0;
+	Underlying = 0;
   }
 
   FORCEINLINE FComponentId(const FComponentId& InComponentId)
   {
-    Underlying = InComponentId.Underlying;
+	Underlying = InComponentId.Underlying;
   }
 
   FORCEINLINE FComponentId(const worker::ComponentId& InComponentId)
   {
-    Underlying = InComponentId;
+	Underlying = InComponentId;
   }
 
   FORCEINLINE FComponentId& operator=(const FComponentId& Other)
   {
-    Underlying = Other.Underlying;
-    return *this;
+	Underlying = Other.Underlying;
+	return *this;
   }
 
   FORCEINLINE bool operator==(const FComponentId& Other) const
   {
-    return Underlying == Other.Underlying;
+	return Underlying == Other.Underlying;
   }
 
   FORCEINLINE bool operator==(const worker::ComponentId& Other) const
   {
-    return Underlying == Other;
+	return Underlying == Other;
   }
 
   FORCEINLINE bool operator!=(const FComponentId& Other) const
   {
-    return Underlying != Other.Underlying;
+	return Underlying != Other.Underlying;
   }
 
   worker::ComponentId ToSpatialComponentId() const
   {
-    return Underlying;
+	return Underlying;
   }
 
 private:
@@ -58,7 +58,7 @@ private:
 
   friend uint32 GetTypeHash(FComponentId const& Rhs)
   {
-    return FComponentIdentifier::HashEntityId(Rhs.ToSpatialComponentId());
+	return FComponentIdentifier::HashEntityId(Rhs.ToSpatialComponentId());
   }
 };
 

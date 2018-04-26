@@ -23,8 +23,8 @@ USpatialOsComponent::USpatialOsComponent()
 }
 
 void USpatialOsComponent::Init(const TWeakPtr<SpatialOSConnection>& InConnection,
-                               const TWeakPtr<SpatialOSView>& InView, worker::EntityId InEntityId,
-                               UCallbackDispatcher* CallbackDispatcher)
+							   const TWeakPtr<SpatialOSView>& InView, worker::EntityId InEntityId,
+							   UCallbackDispatcher* CallbackDispatcher)
 {
   this->Connection = InConnection;
   this->View = InView;
@@ -68,8 +68,8 @@ void USpatialOsComponent::SendAuthorityLossImminentAcknowledgement()
   auto LockedConnection = Connection.Pin();
   if (LockedConnection.IsValid())
   {
-    LockedConnection->SendAuthorityLossImminentAcknowledgement(
-        this->EntityId, this->GetComponentId().ToSpatialComponentId());
+	LockedConnection->SendAuthorityLossImminentAcknowledgement(
+		this->EntityId, this->GetComponentId().ToSpatialComponentId());
   }
 }
 
@@ -77,20 +77,20 @@ void USpatialOsComponent::OnAuthorityChangeDispatcherCallback(const worker::Auth
 {
   if (op.EntityId != EntityId)
   {
-    return;
+	return;
   }
 
   switch (op.Authority)
   {
-    case worker::Authority::kNotAuthoritative:
-      Authority = EAuthority::NotAuthoritative;
-      break;
-    case worker::Authority::kAuthoritative:
-      Authority = EAuthority::Authoritative;
-      break;
-    case worker::Authority::kAuthorityLossImminent:
-      Authority = EAuthority::AuthorityLossImminent;
-      break;
+	case worker::Authority::kNotAuthoritative:
+	  Authority = EAuthority::NotAuthoritative;
+	  break;
+	case worker::Authority::kAuthoritative:
+	  Authority = EAuthority::Authoritative;
+	  break;
+	case worker::Authority::kAuthorityLossImminent:
+	  Authority = EAuthority::AuthorityLossImminent;
+	  break;
   }
   OnAuthorityChange.Broadcast(Authority);
 }
@@ -99,7 +99,7 @@ void USpatialOsComponent::OnRemoveComponentDispatcherCallback(const worker::Remo
 {
   if (op.EntityId != EntityId)
   {
-    return;
+	return;
   }
   bIsComponentReady = false;
 }
@@ -108,8 +108,8 @@ UCommander* USpatialOsComponent::SendCommand()
 {
   if (Commander == nullptr)
   {
-    Commander =
-        NewObject<UCommander>(this, UCommander::StaticClass())->Init(this, Connection, View);
+	Commander =
+		NewObject<UCommander>(this, UCommander::StaticClass())->Init(this, Connection, View);
   }
   return Commander;
 }

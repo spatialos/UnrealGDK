@@ -11,17 +11,17 @@ struct FComponentUpdateQueue
 
   void AddToQueue(UComponentUpdateOpWrapperBase* Update)
   {
-    Updates.AddUnique(Update);
+	Updates.AddUnique(Update);
   }
 
   TArray<UComponentUpdateOpWrapperBase*>& GetQueue()
   {
-    return Updates;
+	return Updates;
   }
 
   void Empty()
   {
-    Updates.Empty();
+	Updates.Empty();
   }
 
 private:

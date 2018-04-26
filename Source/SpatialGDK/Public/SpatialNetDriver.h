@@ -29,23 +29,23 @@ public:
 
   const uint8* GetBytes() const override
   {
-    return reinterpret_cast<const uint8*>(*WorkerId);
+	return reinterpret_cast<const uint8*>(*WorkerId);
   }
   int32 GetSize() const override
   {
-    return WorkerId.Len() * sizeof(TCHAR);
+	return WorkerId.Len() * sizeof(TCHAR);
   }
   bool IsValid() const override
   {
-    return true;
+	return true;
   }
   FString ToString() const override
   {
-    return WorkerId;
+	return WorkerId;
   }
   FString ToDebugString() const override
   {
-    return TEXT("workerId:") + WorkerId;
+	return TEXT("workerId:") + WorkerId;
   }
 
 private:
@@ -62,21 +62,21 @@ public:
 
   // Begin UNetDriver interface.
   virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL,
-                        bool bReuseAddressAndPort, FString& Error) override;
+						bool bReuseAddressAndPort, FString& Error) override;
   virtual int32 ServerReplicateActors(float DeltaSeconds) override;
   virtual void TickDispatch(float DeltaTime) override;
   virtual void ProcessRemoteFunction(class AActor* Actor, class UFunction* Function,
-                                     void* Parameters, struct FOutParmRec* OutParms,
-                                     struct FFrame* NotStack,
-                                     class UObject* SubObject = NULL) override;
+									 void* Parameters, struct FOutParmRec* OutParms,
+									 struct FFrame* NotStack,
+									 class UObject* SubObject = NULL) override;
   virtual void TickFlush(float DeltaTime) override;
   virtual bool IsLevelInitializedForActor(const AActor* InActor,
-                                          const UNetConnection* InConnection) const override;
+										  const UNetConnection* InConnection) const override;
   // End UNetDriver interface.
 
   USpatialOS* GetSpatialOS() const
   {
-    return SpatialOSInstance;
+	return SpatialOSInstance;
   }
 
   // Returns the "100% reliable" connection to SpatialOS.
@@ -89,12 +89,12 @@ public:
 
   UEntityRegistry* GetEntityRegistry()
   {
-    return EntityRegistry;
+	return EntityRegistry;
   }
 
   USpatialOS* GetSpatialOS()
   {
-    return SpatialOSInstance;
+	return SpatialOSInstance;
   }
 
   // Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when
@@ -103,7 +103,7 @@ public:
 
   USpatialInterop* GetSpatialInterop() const
   {
-    return Interop;
+	return Interop;
   }
 
 protected:
@@ -148,16 +148,16 @@ protected:
   // USpatialNetDriver::ServerReplicateActors.
   int32 ServerReplicateActors_PrepConnections(const float DeltaSeconds);
   int32 ServerReplicateActors_PrioritizeActors(UNetConnection* Connection,
-                                               const TArray<FNetViewer>& ConnectionViewers,
-                                               const TArray<FNetworkObjectInfo*> ConsiderList,
-                                               const bool bCPUSaturated,
-                                               FActorPriority*& OutPriorityList,
-                                               FActorPriority**& OutPriorityActors);
+											   const TArray<FNetViewer>& ConnectionViewers,
+											   const TArray<FNetworkObjectInfo*> ConsiderList,
+											   const bool bCPUSaturated,
+											   FActorPriority*& OutPriorityList,
+											   FActorPriority**& OutPriorityActors);
   int32 ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* Connection,
-                                                       const TArray<FNetViewer>& ConnectionViewers,
-                                                       FActorPriority** PriorityActors,
-                                                       const int32 FinalSortedCount,
-                                                       int32& OutUpdated);
+													   const TArray<FNetViewer>& ConnectionViewers,
+													   FActorPriority** PriorityActors,
+													   const int32 FinalSortedCount,
+													   int32& OutUpdated);
 #endif
 
 private:

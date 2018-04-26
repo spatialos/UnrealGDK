@@ -20,7 +20,7 @@ class FScopedViewCallbacks
 public:
   FScopedViewCallbacks()
   {
-    View.Reset();
+	View.Reset();
   }
 
   FScopedViewCallbacks(const TWeakPtr<SpatialOSView>& InView) : View(InView)
@@ -29,7 +29,7 @@ public:
 
   ~FScopedViewCallbacks()
   {
-    Reset();
+	Reset();
   }
 
   /**
@@ -37,9 +37,9 @@ public:
   */
   void Init(const TWeakPtr<SpatialOSView>& InView)
   {
-    auto LockedView = View.Pin();
-    checkf(!LockedView.IsValid(), TEXT("Attempting to call Init() more than once."));
-    View = InView;
+	auto LockedView = View.Pin();
+	checkf(!LockedView.IsValid(), TEXT("Attempting to call Init() more than once."));
+	View = InView;
   }
 
   /**
@@ -48,8 +48,8 @@ public:
   */
   void Reset()
   {
-    DeregisterAllCallbacks();
-    View.Reset();
+	DeregisterAllCallbacks();
+	View.Reset();
   }
 
   /**
@@ -57,21 +57,21 @@ public:
   */
   void DeregisterAllCallbacks()
   {
-    auto LockedView = View.Pin();
-    if (LockedView.IsValid())
-    {
-      for (auto handle : Handles)
-      {
-        LockedView->Remove(handle);
-      }
-    }
+	auto LockedView = View.Pin();
+	if (LockedView.IsValid())
+	{
+	  for (auto handle : Handles)
+	  {
+		LockedView->Remove(handle);
+	  }
+	}
   }
 
   /** Add a handle that will be tracked and removed upon destruction. */
   void Add(uint64 handle)
   {
-    checkSlow(Handles.Find(handle) == INDEX_NONE);
-    Handles.Add(handle);
+	checkSlow(Handles.Find(handle) == INDEX_NONE);
+	Handles.Add(handle);
   }
 
   /**
@@ -80,8 +80,8 @@ public:
    */
   void Remove(uint64 handle)
   {
-    auto numRemoved = Handles.RemoveSwap(handle);
-    check(numRemoved == 1);
+	auto numRemoved = Handles.RemoveSwap(handle);
+	check(numRemoved == 1);
   }
 
 private:

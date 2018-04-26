@@ -18,9 +18,9 @@ private:
   friend class FPositionComponentBuilder;
 
   FEntityComponentBuilder(
-      worker::Entity Entity,
-      worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
-      improbable::WorkerRequirementSet ReadRequirement)
+	  worker::Entity Entity,
+	  worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
+	  improbable::WorkerRequirementSet ReadRequirement)
   : InternalEntity(std::move(Entity))
   , ComponentAuthority(std::move(WriteRequirement))
   , ReadRequirementSet(std::move(ReadRequirement))
@@ -46,11 +46,11 @@ class FGenericComponentBuilder : public FEntityComponentBuilder
 private:
   friend class FReadAclComponentBuilder;
   FGenericComponentBuilder(
-      worker::Entity Entity,
-      worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
-      improbable::WorkerRequirementSet ReadRequirement)
+	  worker::Entity Entity,
+	  worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
+	  improbable::WorkerRequirementSet ReadRequirement)
   : FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement),
-                            std::move(ReadRequirement))
+							std::move(ReadRequirement))
   {
   }
 
@@ -62,25 +62,25 @@ public:
 
   template <class T>
   FGenericComponentBuilder AddComponent(const typename T::Data& data,
-                                        const improbable::WorkerRequirementSet& WriteRequirement)
+										const improbable::WorkerRequirementSet& WriteRequirement)
   {
-    InternalEntity.Add<T>(data);
-    ComponentAuthority.emplace(T::ComponentId, WriteRequirement);
-    return FGenericComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
+	InternalEntity.Add<T>(data);
+	ComponentAuthority.emplace(T::ComponentId, WriteRequirement);
+	return FGenericComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
   }
 
   FGenericComponentBuilder
   SetEntityAclComponentWriteAccess(const improbable::WorkerRequirementSet& WriteRequirement)
   {
-    ComponentAuthority.emplace(improbable::EntityAcl::ComponentId, WriteRequirement);
-    return FGenericComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
+	ComponentAuthority.emplace(improbable::EntityAcl::ComponentId, WriteRequirement);
+	return FGenericComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
   }
 
   worker::Entity Build()
   {
-    InternalEntity.Add<improbable::EntityAcl>(
-        improbable::EntityAcl::Data(ReadRequirementSet, ComponentAuthority));
-    return InternalEntity;
+	InternalEntity.Add<improbable::EntityAcl>(
+		improbable::EntityAcl::Data(ReadRequirementSet, ComponentAuthority));
+	return InternalEntity;
   }
 };
 
@@ -89,17 +89,17 @@ class FReadAclComponentBuilder : public FEntityComponentBuilder
 private:
   friend class FPersistenceComponentBuilder;
   FReadAclComponentBuilder(
-      worker::Entity Entity,
-      worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
-      improbable::WorkerRequirementSet ReadRequirement)
+	  worker::Entity Entity,
+	  worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
+	  improbable::WorkerRequirementSet ReadRequirement)
   : FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement),
-                            std::move(ReadRequirement))
+							std::move(ReadRequirement))
   {
   }
 
   FReadAclComponentBuilder(FReadAclComponentBuilder&& rhs)
   : FEntityComponentBuilder(std::move(rhs.InternalEntity), std::move(rhs.ComponentAuthority),
-                            std::move(rhs.ReadRequirementSet))
+							std::move(rhs.ReadRequirementSet))
   {
   }
 
@@ -109,8 +109,8 @@ public:
 
   FGenericComponentBuilder SetReadAcl(const improbable::WorkerRequirementSet& ReadRequirement)
   {
-    ReadRequirementSet = ReadRequirement;
-    return FGenericComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
+	ReadRequirementSet = ReadRequirement;
+	return FGenericComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
   }
 };
 
@@ -119,11 +119,11 @@ class FPersistenceComponentBuilder : public FEntityComponentBuilder
 private:
   friend class FMetadataComponentBuilder;
   FPersistenceComponentBuilder(
-      worker::Entity Entity,
-      worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
-      improbable::WorkerRequirementSet ReadRequirement)
+	  worker::Entity Entity,
+	  worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
+	  improbable::WorkerRequirementSet ReadRequirement)
   : FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement),
-                            std::move(ReadRequirement))
+							std::move(ReadRequirement))
   {
   }
 
@@ -135,11 +135,11 @@ public:
 
   FReadAclComponentBuilder SetPersistence(bool IsPersistent)
   {
-    if (IsPersistent)
-    {
-      InternalEntity.Add<improbable::Persistence>(improbable::Persistence::Data{});
-    }
-    return FReadAclComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
+	if (IsPersistent)
+	{
+	  InternalEntity.Add<improbable::Persistence>(improbable::Persistence::Data{});
+	}
+	return FReadAclComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
   }
 };
 
@@ -148,11 +148,11 @@ class FMetadataComponentBuilder : public FEntityComponentBuilder
 private:
   friend class FPositionComponentBuilder;
   FMetadataComponentBuilder(
-      worker::Entity Entity,
-      worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
-      improbable::WorkerRequirementSet ReadRequirement)
+	  worker::Entity Entity,
+	  worker::Map<std::uint32_t, improbable::WorkerRequirementSet> WriteRequirement,
+	  improbable::WorkerRequirementSet ReadRequirement)
   : FEntityComponentBuilder(std::move(Entity), std::move(WriteRequirement),
-                            std::move(ReadRequirement))
+							std::move(ReadRequirement))
   {
   }
 
@@ -164,8 +164,8 @@ public:
 
   FPersistenceComponentBuilder AddMetadataComponent(const improbable::Metadata::Data& data)
   {
-    InternalEntity.Add<improbable::Metadata>(data);
-    return FPersistenceComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
+	InternalEntity.Add<improbable::Metadata>(data);
+	return FPersistenceComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
   }
 };
 
@@ -183,11 +183,11 @@ public:
 
   FMetadataComponentBuilder
   AddPositionComponent(const improbable::Position::Data& data,
-                       const improbable::WorkerRequirementSet& WriteRequirement)
+					   const improbable::WorkerRequirementSet& WriteRequirement)
   {
-    InternalEntity.Add<improbable::Position>(data);
-    ComponentAuthority.emplace(improbable::Position::ComponentId, WriteRequirement);
-    return FMetadataComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
+	InternalEntity.Add<improbable::Position>(data);
+	ComponentAuthority.emplace(improbable::Position::ComponentId, WriteRequirement);
+	return FMetadataComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
   }
 };
 
@@ -224,7 +224,7 @@ class FEntityBuilder
 public:
   static FPositionComponentBuilder Begin()
   {
-    return FPositionComponentBuilder();
+	return FPositionComponentBuilder();
   }
 };
 }  // ::unreal

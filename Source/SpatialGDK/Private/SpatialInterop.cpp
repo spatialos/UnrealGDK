@@ -23,7 +23,7 @@ USpatialInterop::USpatialInterop()
 }
 
 void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver,
-                           FTimerManager* InTimerManager)
+						   FTimerManager* InTimerManager)
 {
   SpatialOSInstance = Instance;
   NetDriver = Driver;
@@ -34,129 +34,129 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver,
   TArray<UClass*> TypeBindingClasses;
   for (TObjectIterator<UClass> It; It; ++It)
   {
-    if (It->IsChildOf(USpatialTypeBinding::StaticClass()) &&
-        *It != USpatialTypeBinding::StaticClass())
-    {
-      TypeBindingClasses.Add(*It);
-    }
+	if (It->IsChildOf(USpatialTypeBinding::StaticClass()) &&
+		*It != USpatialTypeBinding::StaticClass())
+	{
+	  TypeBindingClasses.Add(*It);
+	}
   }
 
   // Register type binding classes.
   for (UClass* TypeBindingClass : TypeBindingClasses)
   {
-    UClass* BoundClass = TypeBindingClass->GetDefaultObject<USpatialTypeBinding>()->GetBoundClass();
-    UE_LOG(LogSpatialOSInterop, Log,
-           TEXT("Registered type binding class %s handling replicated properties of %s."),
-           *TypeBindingClass->GetName(), *BoundClass->GetName());
-    RegisterInteropType(BoundClass, NewObject<USpatialTypeBinding>(this, TypeBindingClass));
+	UClass* BoundClass = TypeBindingClass->GetDefaultObject<USpatialTypeBinding>()->GetBoundClass();
+	UE_LOG(LogSpatialOSInterop, Log,
+		   TEXT("Registered type binding class %s handling replicated properties of %s."),
+		   *TypeBindingClass->GetName(), *BoundClass->GetName());
+	RegisterInteropType(BoundClass, NewObject<USpatialTypeBinding>(this, TypeBindingClass));
   }
 }
 
 USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 {
   for (const UClass* CurrentClass = Class; CurrentClass;
-       CurrentClass = CurrentClass->GetSuperClass())
+	   CurrentClass = CurrentClass->GetSuperClass())
   {
-    USpatialTypeBinding* const* BindingIterator = TypeBindings.Find(CurrentClass);
-    if (BindingIterator)
-    {
-      return *BindingIterator;
-    }
+	USpatialTypeBinding* const* BindingIterator = TypeBindings.Find(CurrentClass);
+	if (BindingIterator)
+	{
+	  return *BindingIterator;
+	}
   }
   return nullptr;
 }
 
 worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(
-    USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId,
-    const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
+	USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId,
+	const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
 {
   worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
   TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
   if (PinnedConnection.IsValid())
   {
-    AActor* Actor = Channel->Actor;
-    const USpatialTypeBinding* TypeBinding = GetTypeBindingByClass(Actor->GetClass());
+	AActor* Actor = Channel->Actor;
+	const USpatialTypeBinding* TypeBinding = GetTypeBindingByClass(Actor->GetClass());
 
-    FStringAssetReference ActorClassRef(Actor->GetClass());
-    FString PathStr = ActorClassRef.ToString();
+	FStringAssetReference ActorClassRef(Actor->GetClass());
+	FString PathStr = ActorClassRef.ToString();
 
-    if (TypeBinding)
-    {
-      auto Entity =
-          TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr,
-                                         Channel->GetChangeState(RepChanged, MigChanged), Channel);
-      CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(
-          Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
-    }
-    else
-    {
-      std::string ClientWorkerIdString = TCHAR_TO_UTF8(*PlayerWorkerId);
+	if (TypeBinding)
+	{
+	  auto Entity =
+		  TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr,
+										 Channel->GetChangeState(RepChanged, MigChanged), Channel);
+	  CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(
+		  Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
+	}
+	else
+	{
+	  std::string ClientWorkerIdString = TCHAR_TO_UTF8(*PlayerWorkerId);
 
-      improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
-      improbable::WorkerAttributeSet ClientAttribute{{worker::List<std::string>{"UnrealClient"}}};
-      improbable::WorkerAttributeSet OwnClientAttribute{{"workerId:" + ClientWorkerIdString}};
+	  improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
+	  improbable::WorkerAttributeSet ClientAttribute{{worker::List<std::string>{"UnrealClient"}}};
+	  improbable::WorkerAttributeSet OwnClientAttribute{{"workerId:" + ClientWorkerIdString}};
 
-      improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
-      improbable::WorkerRequirementSet ClientsOnly{{ClientAttribute}};
-      improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
-      improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
+	  improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
+	  improbable::WorkerRequirementSet ClientsOnly{{ClientAttribute}};
+	  improbable::WorkerRequirementSet OwnClientOnly{{OwnClientAttribute}};
+	  improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
 
-      // Set up unreal metadata.
-      improbable::unreal::UnrealMetadata::Data UnrealMetadata;
-      if (Channel->Actor->IsFullNameStableForNetworking())
-      {
-        UnrealMetadata.set_static_path(
-            {std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}});
-      }
-      if (!ClientWorkerIdString.empty())
-      {
-        UnrealMetadata.set_owner_worker_id({ClientWorkerIdString});
-      }
+	  // Set up unreal metadata.
+	  improbable::unreal::UnrealMetadata::Data UnrealMetadata;
+	  if (Channel->Actor->IsFullNameStableForNetworking())
+	  {
+		UnrealMetadata.set_static_path(
+			{std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}});
+	  }
+	  if (!ClientWorkerIdString.empty())
+	  {
+		UnrealMetadata.set_owner_worker_id({ClientWorkerIdString});
+	  }
 
-      uint32 CurrentOffset = 0;
-      worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
-      ForEachObjectWithOuter(Channel->Actor, [&UnrealMetadata, &CurrentOffset,
-                                              &SubobjectNameToOffset](UObject* Object) {
-        // Objects can only be allocated NetGUIDs if this is true.
-        if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() &&
-            !Object->IsEditorOnly())
-        {
-          SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
-          CurrentOffset++;
-        }
-      });
-      UnrealMetadata.set_subobject_name_to_offset(SubobjectNameToOffset);
+	  uint32 CurrentOffset = 0;
+	  worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
+	  ForEachObjectWithOuter(Channel->Actor, [&UnrealMetadata, &CurrentOffset,
+											  &SubobjectNameToOffset](UObject* Object) {
+		// Objects can only be allocated NetGUIDs if this is true.
+		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() &&
+			!Object->IsEditorOnly())
+		{
+		  SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+		  CurrentOffset++;
+		}
+	  });
+	  UnrealMetadata.set_subobject_name_to_offset(SubobjectNameToOffset);
 
-      // Build entity.
-      const improbable::Coordinates SpatialPosition =
-          SpatialConstants::LocationToSpatialOSCoordinates(Location);
+	  // Build entity.
+	  const improbable::Coordinates SpatialPosition =
+		  SpatialConstants::LocationToSpatialOSCoordinates(Location);
 
-      auto Entity =
-          improbable::unreal::FEntityBuilder::Begin()
-              .AddPositionComponent(SpatialPosition, WorkersOnly)
-              .AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
-              .SetPersistence(true)
-              .SetReadAcl(AnyUnrealWorkerOrClient)
-              .AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
-              // For now, just a dummy component we add to every such entity to make sure client has
-              // write access to at least one component.
-              // todo-giray: Remove once we're using proper (generated) entity templates here.
-              .AddComponent<improbable::unreal::PlayerControlClient>(
-                  improbable::unreal::PlayerControlClient::Data{}, OwnClientOnly)
-              .Build();
+	  auto Entity =
+		  improbable::unreal::FEntityBuilder::Begin()
+			  .AddPositionComponent(SpatialPosition, WorkersOnly)
+			  .AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
+			  .SetPersistence(true)
+			  .SetReadAcl(AnyUnrealWorkerOrClient)
+			  .AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
+			  // For now, just a dummy component we add to every such entity to make sure client has
+			  // write access to at least one component.
+			  // todo-giray: Remove once we're using proper (generated) entity templates here.
+			  .AddComponent<improbable::unreal::PlayerControlClient>(
+				  improbable::unreal::PlayerControlClient::Data{}, OwnClientOnly)
+			  .Build();
 
-      CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(
-          Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
-    }
-    UE_LOG(LogSpatialOSInterop, Log,
-           TEXT("%s: Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
-           *SpatialOSInstance->GetWorkerId(), *Actor->GetName(),
-           Channel->GetEntityId().ToSpatialEntityId(), CreateEntityRequestId.Id);
+	  CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(
+		  Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
+	}
+	UE_LOG(LogSpatialOSInterop, Log,
+		   TEXT("%s: Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
+		   *SpatialOSInstance->GetWorkerId(), *Actor->GetName(),
+		   Channel->GetEntityId().ToSpatialEntityId(), CreateEntityRequestId.Id);
   }
   else
   {
-    UE_LOG(LogSpatialOSInterop, Warning,
-           TEXT("Failed to obtain reference to SpatialOS connection!"));
+	UE_LOG(LogSpatialOSInterop, Warning,
+		   TEXT("Failed to obtain reference to SpatialOS connection!"));
   }
   return CreateEntityRequestId;
 }
@@ -166,53 +166,53 @@ void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const
   TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
   if (!PinnedConnection.IsValid())
   {
-    UE_LOG(LogSpatialOSInterop, Warning,
-           TEXT("Failed to obtain reference to SpatialOS connection!"));
+	UE_LOG(LogSpatialOSInterop, Warning,
+		   TEXT("Failed to obtain reference to SpatialOS connection!"));
   }
   improbable::Position::Update PositionUpdate;
   PositionUpdate.set_coords(SpatialConstants::LocationToSpatialOSCoordinates(Location));
   PinnedConnection->SendComponentUpdate<improbable::Position>(EntityId.ToSpatialEntityId(),
-                                                              PositionUpdate);
+															  PositionUpdate);
 }
 
 void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel,
-                                        const TArray<uint16>& RepChanged,
-                                        const TArray<uint16>& MigChanged)
+										const TArray<uint16>& RepChanged,
+										const TArray<uint16>& MigChanged)
 {
   const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
   if (!Binding)
   {
-    // UE_LOG(LogSpatialOSInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial
-    // update on unsupported class %s."),
-    //	*Channel->Actor->GetClass()->GetName());
-    return;
+	// UE_LOG(LogSpatialOSInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial
+	// update on unsupported class %s."),
+	//	*Channel->Actor->GetClass()->GetName());
+	return;
   }
   Binding->SendComponentUpdates(Channel->GetChangeState(RepChanged, MigChanged), Channel,
-                                Channel->GetEntityId());
+								Channel->GetEntityId());
 }
 
 void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function,
-                                FFrame* const Frame)
+								FFrame* const Frame)
 {
   USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
   if (!Binding)
   {
-    UE_LOG(LogSpatialOSInterop, Warning,
-           TEXT("SpatialUpdateInterop: Trying to send RPC on unsupported class %s."),
-           *TargetActor->GetClass()->GetName());
-    return;
+	UE_LOG(LogSpatialOSInterop, Warning,
+		   TEXT("SpatialUpdateInterop: Trying to send RPC on unsupported class %s."),
+		   *TargetActor->GetClass()->GetName());
+	return;
   }
 
   Binding->SendRPCCommand(Frame->Object, Function, Frame);
 }
 
 void USpatialInterop::ReceiveAddComponent(USpatialActorChannel* Channel,
-                                          UAddComponentOpWrapperBase* AddComponentOp)
+										  UAddComponentOpWrapperBase* AddComponentOp)
 {
   const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
   if (!Binding)
   {
-    return;
+	return;
   }
   Binding->ReceiveAddComponent(Channel, AddComponentOp);
 }
@@ -223,17 +223,17 @@ void USpatialInterop::PreReceiveSpatialUpdate(USpatialActorChannel* Channel)
 }
 
 void USpatialInterop::PostReceiveSpatialUpdate(USpatialActorChannel* Channel,
-                                               const TArray<UProperty*>& RepNotifies)
+											   const TArray<UProperty*>& RepNotifies)
 {
   Channel->PostReceiveSpatialUpdate(RepNotifies);
 }
 
 void USpatialInterop::ResolvePendingOperations(UObject* Object,
-                                               const improbable::unreal::UnrealObjectRef& ObjectRef)
+											   const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
   UE_LOG(LogSpatialOSInterop, Log,
-         TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."),
-         *Object->GetName(), *ObjectRefToString(ObjectRef));
+		 TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."),
+		 *Object->GetName(), *ObjectRefToString(ObjectRef));
   ResolvePendingOutgoingObjectUpdates(Object);
   ResolvePendingOutgoingRPCs(Object);
   ResolvePendingIncomingObjectUpdates(Object, ObjectRef);
@@ -259,8 +259,8 @@ USpatialActorChannel* USpatialInterop::GetActorChannelByEntityId(const FEntityId
   USpatialActorChannel* const* ActorChannelIt = EntityToActorChannel.Find(EntityId);
   if (!ActorChannelIt)
   {
-    // Can't find actor channel for this entity, give up.
-    return nullptr;
+	// Can't find actor channel for this entity, give up.
+	return nullptr;
   }
   return *ActorChannelIt;
 }
@@ -283,18 +283,18 @@ void USpatialInterop::SendCommandRequest_Internal(FRPCCommandRequestFunc Functio
   auto Result = Function();
   if (Result.UnresolvedObject != nullptr)
   {
-    // Add to pending RPCs if any actors were unresolved.
-    QueueOutgoingRPC_Internal(Result.UnresolvedObject, Function, bReliable);
+	// Add to pending RPCs if any actors were unresolved.
+	QueueOutgoingRPC_Internal(Result.UnresolvedObject, Function, bReliable);
   }
   else
   {
-    // Add to outgoing RPCs if reliable. Otherwise, do nothing, as we don't bother retrying if
-    // unreliable.
-    if (bReliable)
-    {
-      OutgoingReliableRPCs.Emplace(
-          Result.RequestId, TSharedPtr<FOutgoingReliableRPC>(new FOutgoingReliableRPC(Function)));
-    }
+	// Add to outgoing RPCs if reliable. Otherwise, do nothing, as we don't bother retrying if
+	// unreliable.
+	if (bReliable)
+	{
+	  OutgoingReliableRPCs.Emplace(
+		  Result.RequestId, TSharedPtr<FOutgoingReliableRPC>(new FOutgoingReliableRPC(Function)));
+	}
   }
 }
 
@@ -303,142 +303,142 @@ void USpatialInterop::SendCommandResponse_Internal(FRPCCommandResponseFunc Funct
   auto Result = Function();
   if (Result.IsSet())
   {
-    QueueIncomingRPC_Internal(Result.GetValue(), Function);
+	QueueIncomingRPC_Internal(Result.GetValue(), Function);
   }
 }
 
 void USpatialInterop::HandleCommandResponse_Internal(const FString& RPCName,
-                                                     FUntypedRequestId RequestId, const FEntityId&,
-                                                     const worker::StatusCode& StatusCode,
-                                                     const FString& Message)
+													 FUntypedRequestId RequestId, const FEntityId&,
+													 const worker::StatusCode& StatusCode,
+													 const FString& Message)
 {
   TSharedPtr<FOutgoingReliableRPC>* RequestContextIterator = OutgoingReliableRPCs.Find(RequestId);
   if (!RequestContextIterator)
   {
-    // We received a response for an unreliable RPC, ignore.
-    return;
+	// We received a response for an unreliable RPC, ignore.
+	return;
   }
 
   TSharedPtr<FOutgoingReliableRPC> RetryContext = *RequestContextIterator;
   OutgoingReliableRPCs.Remove(RequestId);
   if (StatusCode != worker::StatusCode::kSuccess)
   {
-    if (RetryContext->NumAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-    {
-      float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RetryContext->NumAttempts);
-      UE_LOG(LogSpatialOSInterop, Log,
-             TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"), *RPCName, WaitTime,
-             (int)StatusCode, *Message);
+	if (RetryContext->NumAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+	{
+	  float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RetryContext->NumAttempts);
+	  UE_LOG(LogSpatialOSInterop, Log,
+			 TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"), *RPCName, WaitTime,
+			 (int)StatusCode, *Message);
 
-      // Queue retry.
-      FTimerHandle RetryTimer;
-      FTimerDelegate TimerCallback;
-      TimerCallback.BindLambda([this, RetryContext]() {
-        auto Result = RetryContext->SendCommandRequest();
-        RetryContext->NumAttempts++;
-        // As it's possible for an entity to leave a workers checkout radius (and thus become
-        // unresolved again), we cannot
-        // take for granted that retrying the command will mean that the object is always resolved.
-        // In that case, just
-        // give up and drop the command as it doesn't make sense to retry it anymore.
-        if (Result.UnresolvedObject == nullptr)
-        {
-          OutgoingReliableRPCs.Emplace(Result.RequestId, RetryContext);
-        }
-      });
-      TimerManager->SetTimer(RetryTimer, TimerCallback, WaitTime, false);
-    }
-    else
-    {
-      UE_LOG(LogSpatialOSInterop, Error,
-             TEXT("%s: failed too many times, giving up (%u attempts). Error code: %d Message: %s"),
-             *RPCName, SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)StatusCode, *Message);
-    }
+	  // Queue retry.
+	  FTimerHandle RetryTimer;
+	  FTimerDelegate TimerCallback;
+	  TimerCallback.BindLambda([this, RetryContext]() {
+		auto Result = RetryContext->SendCommandRequest();
+		RetryContext->NumAttempts++;
+		// As it's possible for an entity to leave a workers checkout radius (and thus become
+		// unresolved again), we cannot
+		// take for granted that retrying the command will mean that the object is always resolved.
+		// In that case, just
+		// give up and drop the command as it doesn't make sense to retry it anymore.
+		if (Result.UnresolvedObject == nullptr)
+		{
+		  OutgoingReliableRPCs.Emplace(Result.RequestId, RetryContext);
+		}
+	  });
+	  TimerManager->SetTimer(RetryTimer, TimerCallback, WaitTime, false);
+	}
+	else
+	{
+	  UE_LOG(LogSpatialOSInterop, Error,
+			 TEXT("%s: failed too many times, giving up (%u attempts). Error code: %d Message: %s"),
+			 *RPCName, SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)StatusCode, *Message);
+	}
   }
 }
 
 void USpatialInterop::QueueOutgoingObjectRepUpdate_Internal(UObject* UnresolvedObject,
-                                                            USpatialActorChannel* DependentChannel,
-                                                            uint16 Handle)
+															USpatialActorChannel* DependentChannel,
+															uint16 Handle)
 {
   check(UnresolvedObject);
   check(DependentChannel);
   check(Handle > 0);
 
   UE_LOG(
-      LogSpatialOSPackageMap, Log,
-      TEXT("Added pending outgoing object ref depending on object: %s, channel: %s, handle: %d."),
-      *UnresolvedObject->GetName(), *DependentChannel->GetName(), Handle);
+	  LogSpatialOSPackageMap, Log,
+	  TEXT("Added pending outgoing object ref depending on object: %s, channel: %s, handle: %d."),
+	  *UnresolvedObject->GetName(), *DependentChannel->GetName(), Handle);
   PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject)
-      .FindOrAdd(DependentChannel)
-      .Key.Add(Handle);
+	  .FindOrAdd(DependentChannel)
+	  .Key.Add(Handle);
 }
 
 void USpatialInterop::QueueOutgoingObjectMigUpdate_Internal(UObject* UnresolvedObject,
-                                                            USpatialActorChannel* DependentChannel,
-                                                            uint16 Handle)
+															USpatialActorChannel* DependentChannel,
+															uint16 Handle)
 {
   check(UnresolvedObject);
   check(DependentChannel);
   check(Handle > 0);
 
   UE_LOG(
-      LogSpatialOSPackageMap, Log,
-      TEXT("Added pending outgoing object ref depending on object: %s, channel: %s, handle: %d."),
-      *UnresolvedObject->GetName(), *DependentChannel->GetName(), Handle);
+	  LogSpatialOSPackageMap, Log,
+	  TEXT("Added pending outgoing object ref depending on object: %s, channel: %s, handle: %d."),
+	  *UnresolvedObject->GetName(), *DependentChannel->GetName(), Handle);
   PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject)
-      .FindOrAdd(DependentChannel)
-      .Value.Add(Handle);
+	  .FindOrAdd(DependentChannel)
+	  .Value.Add(Handle);
 }
 
 void USpatialInterop::QueueOutgoingRPC_Internal(UObject* UnresolvedObject,
-                                                FRPCCommandRequestFunc CommandSender,
-                                                bool bReliable)
+												FRPCCommandRequestFunc CommandSender,
+												bool bReliable)
 {
   check(UnresolvedObject);
   UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing RPC depending on object: %s."),
-         *UnresolvedObject->GetName());
+		 *UnresolvedObject->GetName());
   PendingOutgoingRPCs.FindOrAdd(UnresolvedObject)
-      .Add(TPair<FRPCCommandRequestFunc, bool>{CommandSender, bReliable});
+	  .Add(TPair<FRPCCommandRequestFunc, bool>{CommandSender, bReliable});
 }
 
 void USpatialInterop::QueueIncomingObjectRepUpdate_Internal(
-    const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef,
-    USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData)
+	const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef,
+	USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData)
 {
   check(DependentChannel);
   check(RepHandleData);
   UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref depending on object "
-                                           "ref: %s, channel: %s, property: %s."),
-         *ObjectRefToString(UnresolvedObjectRef), *DependentChannel->GetName(),
-         *RepHandleData->Property->GetName());
+										   "ref: %s, channel: %s, property: %s."),
+		 *ObjectRefToString(UnresolvedObjectRef), *DependentChannel->GetName(),
+		 *RepHandleData->Property->GetName());
   PendingIncomingObjectUpdates.FindOrAdd(UnresolvedObjectRef)
-      .FindOrAdd(DependentChannel)
-      .Key.Add(RepHandleData);
+	  .FindOrAdd(DependentChannel)
+	  .Key.Add(RepHandleData);
 }
 
 void USpatialInterop::QueueIncomingObjectMigUpdate_Internal(
-    const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef,
-    USpatialActorChannel* DependentChannel, const FMigratableHandleData* RepHandleData)
+	const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef,
+	USpatialActorChannel* DependentChannel, const FMigratableHandleData* RepHandleData)
 {
   check(DependentChannel);
   check(RepHandleData);
   UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref depending on object "
-                                           "ref: %s, channel: %s, property: %s."),
-         *ObjectRefToString(UnresolvedObjectRef), *DependentChannel->GetName(),
-         *RepHandleData->Property->GetName());
+										   "ref: %s, channel: %s, property: %s."),
+		 *ObjectRefToString(UnresolvedObjectRef), *DependentChannel->GetName(),
+		 *RepHandleData->Property->GetName());
   PendingIncomingObjectUpdates.FindOrAdd(UnresolvedObjectRef)
-      .FindOrAdd(DependentChannel)
-      .Value.Add(RepHandleData);
+	  .FindOrAdd(DependentChannel)
+	  .Value.Add(RepHandleData);
 }
 
 void USpatialInterop::QueueIncomingRPC_Internal(
-    const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef,
-    FRPCCommandResponseFunc Responder)
+	const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef,
+	FRPCCommandResponseFunc Responder)
 {
   UE_LOG(LogSpatialOSPackageMap, Log,
-         TEXT("Added pending incoming RPC depending on object ref: %s."),
-         *ObjectRefToString(UnresolvedObjectRef));
+		 TEXT("Added pending incoming RPC depending on object ref: %s."),
+		 *ObjectRefToString(UnresolvedObjectRef));
   PendingIncomingRPCs.FindOrAdd(UnresolvedObjectRef).Add(Responder);
 }
 
@@ -454,24 +454,24 @@ void USpatialInterop::UnregisterInteropType(UClass* Class)
   USpatialTypeBinding** BindingIterator = TypeBindings.Find(Class);
   if (BindingIterator != nullptr)
   {
-    USpatialTypeBinding* Binding = *BindingIterator;
-    Binding->UnbindFromView();
-    TypeBindings.Remove(Class);
+	USpatialTypeBinding* Binding = *BindingIterator;
+	Binding->UnbindFromView();
+	TypeBindings.Remove(Class);
   }
 }
 
 void USpatialInterop::SendComponentInterests(USpatialActorChannel* ActorChannel,
-                                             const FEntityId& EntityId)
+											 const FEntityId& EntityId)
 {
   UClass* ActorClass = ActorChannel->Actor->GetClass();
 
   const USpatialTypeBinding* Binding = GetTypeBindingByClass(ActorClass);
   if (Binding)
   {
-    auto Interest = Binding->GetInterestOverrideMap(
-        NetDriver->GetNetMode() == NM_Client, ActorChannel->Actor->Role == ROLE_AutonomousProxy);
-    SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId.ToSpatialEntityId(),
-                                                                    Interest);
+	auto Interest = Binding->GetInterestOverrideMap(
+		NetDriver->GetNetMode() == NM_Client, ActorChannel->Actor->Role == ROLE_AutonomousProxy);
+	SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId.ToSpatialEntityId(),
+																	Interest);
   }
 }
 
@@ -480,21 +480,21 @@ void USpatialInterop::ResolvePendingOutgoingObjectUpdates(UObject* Object)
   auto* DependentChannels = PendingOutgoingObjectUpdates.Find(Object);
   if (DependentChannels == nullptr)
   {
-    return;
+	return;
   }
 
   for (auto& ChannelProperties : *DependentChannels)
   {
-    USpatialActorChannel* DependentChannel = ChannelProperties.Key;
-    FPendingOutgoingProperties& Properties = ChannelProperties.Value;
-    if (Properties.Key.Num() > 0)
-    {
-      // Replication change lists always have a 0 at the end.
-      Properties.Key.Add(0);
-    }
+	USpatialActorChannel* DependentChannel = ChannelProperties.Key;
+	FPendingOutgoingProperties& Properties = ChannelProperties.Value;
+	if (Properties.Key.Num() > 0)
+	{
+	  // Replication change lists always have a 0 at the end.
+	  Properties.Key.Add(0);
+	}
 
-    // This function will only send updates if any of the property lists are non-empty.
-    SendSpatialUpdate(DependentChannel, Properties.Key, Properties.Value);
+	// This function will only send updates if any of the property lists are non-empty.
+	SendSpatialUpdate(DependentChannel, Properties.Key, Properties.Value);
   }
   PendingOutgoingObjectUpdates.Remove(Object);
 }
@@ -504,70 +504,70 @@ void USpatialInterop::ResolvePendingOutgoingRPCs(UObject* Object)
   auto* RPCList = PendingOutgoingRPCs.Find(Object);
   if (RPCList)
   {
-    for (auto& RequestFuncPair : *RPCList)
-    {
-      // We can guarantee that SendCommandRequest won't populate PendingOutgoingRPCs[Object] whilst
-      // we're iterating through it,
-      // because Object has been resolved when we call ResolvePendingOutgoingRPCs.
-      SendCommandRequest_Internal(RequestFuncPair.Key, RequestFuncPair.Value);
-    }
-    PendingOutgoingRPCs.Remove(Object);
+	for (auto& RequestFuncPair : *RPCList)
+	{
+	  // We can guarantee that SendCommandRequest won't populate PendingOutgoingRPCs[Object] whilst
+	  // we're iterating through it,
+	  // because Object has been resolved when we call ResolvePendingOutgoingRPCs.
+	  SendCommandRequest_Internal(RequestFuncPair.Key, RequestFuncPair.Value);
+	}
+	PendingOutgoingRPCs.Remove(Object);
   }
 }
 
 void USpatialInterop::ResolvePendingIncomingObjectUpdates(
-    UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
+	UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
   auto* DependentChannels = PendingIncomingObjectUpdates.Find(ObjectRef);
   if (DependentChannels == nullptr)
   {
-    return;
+	return;
   }
 
   for (auto& ChannelProperties : *DependentChannels)
   {
-    USpatialActorChannel* DependentChannel = ChannelProperties.Key;
-    FPendingIncomingProperties& Properties = ChannelProperties.Value;
+	USpatialActorChannel* DependentChannel = ChannelProperties.Key;
+	FPendingIncomingProperties& Properties = ChannelProperties.Value;
 
-    // Trigger pending updates.
-    PreReceiveSpatialUpdate(DependentChannel);
-    TArray<UProperty*> RepNotifies;
-    for (const FRepHandleData* MigData : Properties.Key)
-    {
-      ApplyIncomingReplicatedPropertyUpdate(*MigData, DependentChannel->Actor, &Object,
-                                            RepNotifies);
-      UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object replicated property "
-                                            "update. actor %s (%lld), property %s"),
-             *SpatialOSInstance->GetWorkerId(), *DependentChannel->Actor->GetName(),
-             DependentChannel->GetEntityId().ToSpatialEntityId(), *MigData->Property->GetName());
-    }
-    for (const FMigratableHandleData* MigData : Properties.Value)
-    {
-      ApplyIncomingMigratablePropertyUpdate(*MigData, DependentChannel->Actor, &Object);
-      UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object migratable property "
-                                            "update. actor %s (%lld), property %s"),
-             *SpatialOSInstance->GetWorkerId(), *DependentChannel->Actor->GetName(),
-             DependentChannel->GetEntityId().ToSpatialEntityId(), *MigData->Property->GetName());
-    }
-    PostReceiveSpatialUpdate(DependentChannel, RepNotifies);
+	// Trigger pending updates.
+	PreReceiveSpatialUpdate(DependentChannel);
+	TArray<UProperty*> RepNotifies;
+	for (const FRepHandleData* MigData : Properties.Key)
+	{
+	  ApplyIncomingReplicatedPropertyUpdate(*MigData, DependentChannel->Actor, &Object,
+											RepNotifies);
+	  UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object replicated property "
+											"update. actor %s (%lld), property %s"),
+			 *SpatialOSInstance->GetWorkerId(), *DependentChannel->Actor->GetName(),
+			 DependentChannel->GetEntityId().ToSpatialEntityId(), *MigData->Property->GetName());
+	}
+	for (const FMigratableHandleData* MigData : Properties.Value)
+	{
+	  ApplyIncomingMigratablePropertyUpdate(*MigData, DependentChannel->Actor, &Object);
+	  UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object migratable property "
+											"update. actor %s (%lld), property %s"),
+			 *SpatialOSInstance->GetWorkerId(), *DependentChannel->Actor->GetName(),
+			 DependentChannel->GetEntityId().ToSpatialEntityId(), *MigData->Property->GetName());
+	}
+	PostReceiveSpatialUpdate(DependentChannel, RepNotifies);
   }
 
   PendingIncomingObjectUpdates.Remove(ObjectRef);
 }
 
 void USpatialInterop::ResolvePendingIncomingRPCs(
-    const improbable::unreal::UnrealObjectRef& ObjectRef)
+	const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
   auto* RPCList = PendingIncomingRPCs.Find(ObjectRef);
   if (RPCList)
   {
-    for (auto& Responder : *RPCList)
-    {
-      // We can guarantee that SendCommandResponse won't populate PendingIncomingRPCs[ObjectRef]
-      // whilst we're iterating through it,
-      // because ObjectRef has been resolved when we call ResolvePendingIncomingRPCs.
-      SendCommandResponse_Internal(Responder);
-    }
-    PendingIncomingRPCs.Remove(ObjectRef);
+	for (auto& Responder : *RPCList)
+	{
+	  // We can guarantee that SendCommandResponse won't populate PendingIncomingRPCs[ObjectRef]
+	  // whilst we're iterating through it,
+	  // because ObjectRef has been resolved when we call ResolvePendingIncomingRPCs.
+	  SendCommandResponse_Internal(Responder);
+	}
+	PendingIncomingRPCs.Remove(ObjectRef);
   }
 }

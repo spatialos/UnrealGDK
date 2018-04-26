@@ -10,12 +10,12 @@ struct FComponentIdGenerator
 
   int GetNextAvailableId()
   {
-    return InitialId + (NumIds++);
+	return InitialId + (NumIds++);
   }
 
   int GetNumUsedIds() const
   {
-    return NumIds;
+	return NumIds;
   }
 
 private:

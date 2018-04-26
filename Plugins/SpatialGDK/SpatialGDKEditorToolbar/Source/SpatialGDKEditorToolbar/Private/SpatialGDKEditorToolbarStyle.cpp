@@ -13,8 +13,8 @@ void FSpatialGDKEditorToolbarStyle::Initialize()
 {
   if (!StyleInstance.IsValid())
   {
-    StyleInstance = Create();
-    FSlateStyleRegistry::RegisterSlateStyle(*StyleInstance);
+	StyleInstance = Create();
+	FSlateStyleRegistry::RegisterSlateStyle(*StyleInstance);
   }
 }
 
@@ -44,15 +44,15 @@ const FVector2D Icon40x40(40.0f, 40.0f);
 TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 {
   TSharedRef<FSlateStyleSet> Style =
-      MakeShareable(new FSlateStyleSet("SpatialGDKEditorToolbarStyle"));
+	  MakeShareable(new FSlateStyleSet("SpatialGDKEditorToolbarStyle"));
   Style->SetContentRoot(IPluginManager::Get().FindPlugin("SpatialGDKEditorToolbar")->GetBaseDir() /
-                        TEXT("Resources"));
+						TEXT("Resources"));
 
   Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot",
-             new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon40x40));
+			 new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon40x40));
 
   Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot.Small",
-             new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon20x20));
+			 new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon20x20));
 
   return Style;
 }
@@ -63,7 +63,7 @@ void FSpatialGDKEditorToolbarStyle::ReloadTextures()
 {
   if (FSlateApplication::IsInitialized())
   {
-    FSlateApplication::Get().GetRenderer()->ReloadTextureResources();
+	FSlateApplication::Get().GetRenderer()->ReloadTextureResources();
   }
 }
 

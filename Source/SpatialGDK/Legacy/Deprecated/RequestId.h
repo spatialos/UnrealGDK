@@ -20,43 +20,43 @@ struct SPATIALGDK_API FRequestId
 public:
   FORCEINLINE FRequestId()
   {
-    Underlying = 0;
-    bValidId = false;
+	Underlying = 0;
+	bValidId = false;
   }
 
   FORCEINLINE FRequestId(const FRequestId& Other)
   {
-    Underlying = Other.Underlying;
-    bValidId = Other.bValidId;
+	Underlying = Other.Underlying;
+	bValidId = Other.bValidId;
   }
 
   FORCEINLINE FRequestId(const std::uint32_t UnderlyingRequestId, const bool bIsValidId)
   {
-    Underlying = UnderlyingRequestId;
-    bValidId = bIsValidId;
+	Underlying = UnderlyingRequestId;
+	bValidId = bIsValidId;
   }
 
   FORCEINLINE FRequestId& operator=(const FRequestId& Other)
   {
-    Underlying = Other.Underlying;
-    bValidId = Other.bValidId;
-    return *this;
+	Underlying = Other.Underlying;
+	bValidId = Other.bValidId;
+	return *this;
   }
 
   FORCEINLINE bool operator==(const FRequestId& Other) const
   {
-    return Underlying == Other.Underlying && bValidId == Other.bValidId;
+	return Underlying == Other.Underlying && bValidId == Other.bValidId;
   }
 
   template <typename T>
   FORCEINLINE bool operator==(const worker::RequestId<T>& Other) const
   {
-    return Underlying == Other.Id && bValidId;
+	return Underlying == Other.Id && bValidId;
   }
 
   FORCEINLINE bool operator!=(const FRequestId& Other) const
   {
-    return Underlying != Other.Underlying || bValidId != Other.bValidId;
+	return Underlying != Other.Underlying || bValidId != Other.bValidId;
   }
 
   /**
@@ -64,7 +64,7 @@ public:
   */
   std::uint32_t GetUnderlying() const
   {
-    return Underlying;
+	return Underlying;
   }
 
   /**
@@ -72,7 +72,7 @@ public:
   */
   bool IsValid() const
   {
-    return bValidId;
+	return bValidId;
   }
 
 private:
@@ -81,6 +81,6 @@ private:
 
   friend uint32 GetTypeHash(const FRequestId& Rhs)
   {
-    return FComponentIdentifier::HashRequestId(Rhs.Underlying);
+	return FComponentIdentifier::HashRequestId(Rhs.Underlying);
   }
 };

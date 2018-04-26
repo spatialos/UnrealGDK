@@ -15,16 +15,16 @@ namespace unreal
 namespace core
 {
 DECLARE_DELEGATE_RetVal_OneParam(bool, FQueueStatusDelegate, const worker::QueueStatus&)
-    DECLARE_DELEGATE_OneParam(FOnConnectedDelegate, bool)
-        DECLARE_DELEGATE_OneParam(FOnDeploymentsFoundDelegate, worker::DeploymentList)
+	DECLARE_DELEGATE_OneParam(FOnConnectedDelegate, bool)
+		DECLARE_DELEGATE_OneParam(FOnDeploymentsFoundDelegate, worker::DeploymentList)
 
-    /**
-      * Manages the lifecycle of a connection to SpatialOS.
-      * Periodically reports metrics to the SpatialOS.
-      *
-      * It is not safe to use any member of this class in different threads.
-      */
-    class FWorkerConnection
+	/**
+	  * Manages the lifecycle of a connection to SpatialOS.
+	  * Periodically reports metrics to the SpatialOS.
+	  *
+	  * It is not safe to use any member of this class in different threads.
+	  */
+	class FWorkerConnection
 {
 public:
   /** Returns true if there is an active connection to SpatialOS. */
@@ -40,25 +40,25 @@ public:
   /** Get a list of available deployemnts to connect to. This is non blocking and will call
 * OnDeplymentsFoundCallback when deployments are found, or the timout is reached */
   void GetDeploymentListAsync(const FString& ProjectName, const FString& LocatorHost,
-                              const FString& LoginToken,
-                              FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback,
-                              std::uint32_t TimeoutMillis = DefaultTimeout);
+							  const FString& LoginToken,
+							  FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback,
+							  std::uint32_t TimeoutMillis = DefaultTimeout);
 
   /** Connect to SpatialOS. This is non blocking and will call OnConnectedCallback when either the
    * creation is made or the timeout is reached */
   void ConnectToReceptionistAsync(const FString& Hostname, uint16 Port, const FString& WorkerId,
-                                  const worker::ConnectionParameters& Params,
-                                  FOnConnectedDelegate OnConnectedCallback,
-                                  std::uint32_t TimeoutMillis = DefaultTimeout);
+								  const worker::ConnectionParameters& Params,
+								  FOnConnectedDelegate OnConnectedCallback,
+								  std::uint32_t TimeoutMillis = DefaultTimeout);
 
   /** Connect to SpatialOS. This is non blocking and will call OnConnectedCallback when either the
 * creation is made or the timeout is reached */
   void ConnectToLocatorAsync(const FString& ProjectName, const FString& LocatorHost,
-                             const FString& DeploymentId, const FString& LoginToken,
-                             const worker::ConnectionParameters& Params,
-                             FQueueStatusDelegate QueueStatusCallback,
-                             FOnConnectedDelegate OnConnectedCallback,
-                             std::uint32_t TimeoutMillis = DefaultTimeout);
+							 const FString& DeploymentId, const FString& LoginToken,
+							 const worker::ConnectionParameters& Params,
+							 FQueueStatusDelegate QueueStatusCallback,
+							 FOnConnectedDelegate OnConnectedCallback,
+							 std::uint32_t TimeoutMillis = DefaultTimeout);
 
   /** Terminates an existing connection to SpatialOS. */
   void Disconnect();
@@ -82,15 +82,15 @@ private:
   DECLARE_DELEGATE(FMetricsDelegate);
 
   SpatialOSLocator CreateLocator(const FString& ProjectName, const FString& LocatorHost,
-                                 const FString& LoginToken);
+								 const FString& LoginToken);
   bool CanCreateNewConnection() const;
 
   void WaitForDeploymentFuture(std::uint32_t TimeoutMillis,
-                               SpatialOSFuture<worker::DeploymentList> DeploymentListFuture,
-                               FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback);
+							   SpatialOSFuture<worker::DeploymentList> DeploymentListFuture,
+							   FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback);
 
   void WaitForConnectionFuture(std::uint32_t TimeoutMillis, SpatialOSFuture<SpatialOSConnection>,
-                               FOnConnectedDelegate OnConnectedCallback);
+							   FOnConnectedDelegate OnConnectedCallback);
 
   void OnMetrics(const worker::MetricsOp& Op);
 
