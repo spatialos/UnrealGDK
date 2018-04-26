@@ -42,7 +42,7 @@ USpatialOSBlueprintLibrary::MakeEntityIdQueryConstraintFromInt(int InEntityId)
 
 FComponentIdQueryConstraint
 USpatialOSBlueprintLibrary::MakeComponentIdQueryConstraintFromComponentId(
-const FComponentId& InComponentId)
+	const FComponentId& InComponentId)
 {
 	return FComponentIdQueryConstraint(InComponentId);
 }
@@ -60,9 +60,9 @@ USpatialOSBlueprintLibrary::MakeSphereQueryConstraint(const FVector& InPosition,
 }
 
 UEntityQueryConstraint* USpatialOSBlueprintLibrary::SpatialOsEntityAndQuery(
-const TArray<FEntityIdQueryConstraint>& EntityIds,
-const TArray<FComponentIdQueryConstraint>& ComponentIds,
-const TArray<FSphereQueryConstraint>& Spheres)
+	const TArray<FEntityIdQueryConstraint>& EntityIds,
+	const TArray<FComponentIdQueryConstraint>& ComponentIds,
+	const TArray<FSphereQueryConstraint>& Spheres)
 {
 	auto NewQuery = NewObject<UEntityQueryConstraint>();
 
@@ -96,9 +96,9 @@ const TArray<FSphereQueryConstraint>& Spheres)
 }
 
 UEntityQueryConstraint* USpatialOSBlueprintLibrary::SpatialOsEntityOrQuery(
-const TArray<FEntityIdQueryConstraint>& EntityIds,
-const TArray<FComponentIdQueryConstraint>& ComponentIds,
-const TArray<FSphereQueryConstraint>& Spheres)
+	const TArray<FEntityIdQueryConstraint>& EntityIds,
+	const TArray<FComponentIdQueryConstraint>& ComponentIds,
+	const TArray<FSphereQueryConstraint>& Spheres)
 {
 	auto NewQuery = NewObject<UEntityQueryConstraint>();
 

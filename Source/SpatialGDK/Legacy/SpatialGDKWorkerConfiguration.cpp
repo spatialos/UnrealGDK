@@ -19,8 +19,8 @@ FSpatialGDKWorkerConfiguration::FSpatialGDKWorkerConfiguration()
 }
 
 FSpatialGDKWorkerConfiguration::FSpatialGDKWorkerConfiguration(
-const FSpatialGDKWorkerConfigurationData& InWorkerConfigurationData,
-const TArray<FString>* const InCommandLineOverrides)
+	const FSpatialGDKWorkerConfigurationData& InWorkerConfigurationData,
+	const TArray<FString>* const InCommandLineOverrides)
 	: WorkerConfigurationData(InWorkerConfigurationData)
 {
 	const auto commandLine = FCommandLine::Get();
@@ -63,8 +63,8 @@ const TArray<FString>* const InCommandLineOverrides)
 	auto LinkProtocolString = FString("");
 	FParse::Value(commandLine, *FString("linkProtocol"), LinkProtocolString);
 	NetworkConfig.LinkProtocol = LinkProtocolString == "Tcp"
-								 ? worker::NetworkConnectionType::kTcp
-								 : worker::NetworkConnectionType::kRaknet;
+									 ? worker::NetworkConnectionType::kTcp
+									 : worker::NetworkConnectionType::kRaknet;
 
 	FParse::Value(commandLine, *FString("receptionistPort"), NetworkConfig.ReceptionistPort);
 	FParse::Value(commandLine, *FString("raknetHeartbeatTimeoutMs"), NetworkConfig.RaknetHeartbeatTimeoutMillis);

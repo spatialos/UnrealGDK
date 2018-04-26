@@ -44,7 +44,7 @@ const FVector2D Icon40x40(40.0f, 40.0f);
 TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 {
 	TSharedRef<FSlateStyleSet> Style =
-	MakeShareable(new FSlateStyleSet("SpatialGDKEditorToolbarStyle"));
+		MakeShareable(new FSlateStyleSet("SpatialGDKEditorToolbarStyle"));
 	Style->SetContentRoot(IPluginManager::Get().FindPlugin("SpatialGDKEditorToolbar")->GetBaseDir() /
 						  TEXT("Resources"));
 

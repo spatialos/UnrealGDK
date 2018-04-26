@@ -15,16 +15,16 @@ namespace unreal
 namespace core
 {
 DECLARE_DELEGATE_RetVal_OneParam(bool, FQueueStatusDelegate, const worker::QueueStatus&)
-DECLARE_DELEGATE_OneParam(FOnConnectedDelegate, bool)
-DECLARE_DELEGATE_OneParam(FOnDeploymentsFoundDelegate, worker::DeploymentList)
+	DECLARE_DELEGATE_OneParam(FOnConnectedDelegate, bool)
+		DECLARE_DELEGATE_OneParam(FOnDeploymentsFoundDelegate, worker::DeploymentList)
 
-/**
+	/**
     * Manages the lifecycle of a connection to SpatialOS.
     * Periodically reports metrics to the SpatialOS.
     *
     * It is not safe to use any member of this class in different threads.
     */
-class FWorkerConnection
+	class FWorkerConnection
 {
 public:
 	/** Returns true if there is an active connection to SpatialOS. */

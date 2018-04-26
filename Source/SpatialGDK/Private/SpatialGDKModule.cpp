@@ -34,10 +34,10 @@ void FSpatialGDKModule::RegisterSettings()
 		ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
 
 		SettingsContainer->DescribeCategory(
-		"SpatialGDK", LOCTEXT("RuntimeWDCategoryName", "SpatialGDK"), LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialGDK module"));
+			"SpatialGDK", LOCTEXT("RuntimeWDCategoryName", "SpatialGDK"), LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialGDK module"));
 
 		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings(
-		"Project", "SpatialGDK", "SpatialGDK", LOCTEXT("RuntimeGeneralSettingsName", "SpatialGDK"), LOCTEXT("RuntimeGeneralSettingsDescription", "Base configuration for SpatialGDK module."), GetMutableDefault<USpatialGDKSettings>());
+			"Project", "SpatialGDK", "SpatialGDK", LOCTEXT("RuntimeGeneralSettingsName", "SpatialGDK"), LOCTEXT("RuntimeGeneralSettingsDescription", "Base configuration for SpatialGDK module."), GetMutableDefault<USpatialGDKSettings>());
 
 		if (SettingsSection.IsValid())
 		{

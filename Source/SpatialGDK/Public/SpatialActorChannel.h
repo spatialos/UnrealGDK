@@ -62,11 +62,11 @@ public:
 	FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged) const
 	{
 		return {
-		(uint8*)Actor,
-		RepChanged,
-		ActorReplicator->RepLayout->Cmds,
-		ActorReplicator->RepLayout->BaseHandleToCmdIndex,
-		MigChanged};
+			(uint8*)Actor,
+			RepChanged,
+			ActorReplicator->RepLayout->Cmds,
+			ActorReplicator->RepLayout->BaseHandleToCmdIndex,
+			MigChanged};
 	}
 
 	// UChannel interface

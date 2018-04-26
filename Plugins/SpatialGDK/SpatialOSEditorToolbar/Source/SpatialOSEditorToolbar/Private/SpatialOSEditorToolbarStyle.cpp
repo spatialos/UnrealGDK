@@ -44,7 +44,7 @@ const FVector2D Icon40x40(40.0f, 40.0f);
 TSharedRef<FSlateStyleSet> FSpatialOSEditorToolbarStyle::Create()
 {
 	TSharedRef<FSlateStyleSet> Style =
-	MakeShareable(new FSlateStyleSet("SpatialOSEditorToolbarStyle"));
+		MakeShareable(new FSlateStyleSet("SpatialOSEditorToolbarStyle"));
 	Style->SetContentRoot(IPluginManager::Get().FindPlugin("SpatialOSEditorToolbar")->GetBaseDir() /
 						  TEXT("Resources"));
 

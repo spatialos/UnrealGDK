@@ -16,35 +16,35 @@
 #include "improbable/view.h"
 
 USimpleEntitySpawnerBlock::FSpatialOperation::FSpatialOperation(
-ESpatialOperationType OperationType, FComponentIdentifier ComponentIdentifer)
+	ESpatialOperationType OperationType, FComponentIdentifier ComponentIdentifer)
 	: OperationType(OperationType)
 	, ComponentIdentifier(ComponentIdentifer)
 {
 }
 
 USimpleEntitySpawnerBlock::FSpatialOperation::FSpatialOperation(
-const worker::AddEntityOp& AddEntityOp)
+	const worker::AddEntityOp& AddEntityOp)
 {
 	OperationType = ESpatialOperationType::AddEntity;
 	ComponentIdentifier = FComponentIdentifier{AddEntityOp.EntityId, worker::ComponentId()};
 }
 
 USimpleEntitySpawnerBlock::FSpatialOperation::FSpatialOperation(
-const worker::RemoveEntityOp& RemoveEntityOp)
+	const worker::RemoveEntityOp& RemoveEntityOp)
 {
 	OperationType = ESpatialOperationType::RemoveEntity;
 	ComponentIdentifier = FComponentIdentifier{RemoveEntityOp.EntityId, worker::ComponentId()};
 }
 
 USimpleEntitySpawnerBlock::FSpatialOperation::FSpatialOperation(
-UAddComponentOpWrapperBase* AddComponentOp)
+	UAddComponentOpWrapperBase* AddComponentOp)
 {
 	OperationType = ESpatialOperationType::AddComponent;
 	ComponentIdentifier = FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId};
 }
 
 USimpleEntitySpawnerBlock::FSpatialOperation::FSpatialOperation(
-const worker::ComponentId ComponentId, const worker::RemoveComponentOp& RemoveComponentOp)
+	const worker::ComponentId ComponentId, const worker::RemoveComponentOp& RemoveComponentOp)
 {
 	OperationType = ESpatialOperationType::RemoveComponent;
 	ComponentIdentifier = FComponentIdentifier{RemoveComponentOp.EntityId, ComponentId};
@@ -73,7 +73,7 @@ void USimpleEntitySpawnerBlock::RemoveEntity(const worker::RemoveEntityOp& Remov
 void USimpleEntitySpawnerBlock::AddComponent(UAddComponentOpWrapperBase* AddComponentOp)
 {
 	auto ComponentIdentifier =
-	FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId};
+		FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId};
 	FComponentAddOpQueueWrapper* QueueWrapper = ComponentsToAdd.Find(ComponentIdentifier);
 	if (!QueueWrapper)
 	{
@@ -107,10 +107,10 @@ void USimpleEntitySpawnerBlock::QueueOp(FSpatialOperation SpatialOperation)
 }
 
 bool USimpleEntitySpawnerBlock::ProcessAddEntityOp(
-UWorld* World, const TWeakPtr<SpatialOSConnection>& InConnection, const FSpatialOperation& SpatialOperation)
+	UWorld* World, const TWeakPtr<SpatialOSConnection>& InConnection, const FSpatialOperation& SpatialOperation)
 {
 	TArray<FSpatialOperation>* EntityOpsQueue =
-	QueuedOps.Find(SpatialOperation.ComponentIdentifier.EntityId);
+		QueuedOps.Find(SpatialOperation.ComponentIdentifier.EntityId);
 
 	auto PositionIdentifier = FComponentIdentifier{SpatialOperation.ComponentIdentifier.EntityId,
 												   UPositionComponent::ComponentId};
@@ -118,25 +118,25 @@ UWorld* World, const TWeakPtr<SpatialOSConnection>& InConnection, const FSpatial
 												   UMetadataComponent::ComponentId};
 
 	auto AddPositionComponentOp =
-	FSpatialOperation{ESpatialOperationType::AddComponent, PositionIdentifier};
+		FSpatialOperation{ESpatialOperationType::AddComponent, PositionIdentifier};
 	auto AddMetadataComponentOp =
-	FSpatialOperation{ESpatialOperationType::AddComponent, MetadataIdentifier};
+		FSpatialOperation{ESpatialOperationType::AddComponent, MetadataIdentifier};
 
 	if (EntityOpsQueue->Contains(AddPositionComponentOp) &&
 		EntityOpsQueue->Contains(AddMetadataComponentOp))
 	{
 		// Get pointers to the add component ops queues.
 		FComponentAddOpQueueWrapper* PositionBaseComponentQueue =
-		ComponentsToAdd.Find(PositionIdentifier);
+			ComponentsToAdd.Find(PositionIdentifier);
 		FComponentAddOpQueueWrapper* MetadataBaseComponentQueue =
-		ComponentsToAdd.Find(MetadataIdentifier);
+			ComponentsToAdd.Find(MetadataIdentifier);
 
 		if (PositionBaseComponentQueue != nullptr && MetadataBaseComponentQueue != nullptr)
 		{
 			UAddComponentOpWrapperBase** PositionBaseComponent =
-			PositionBaseComponentQueue->Underlying.GetData();
+				PositionBaseComponentQueue->Underlying.GetData();
 			UAddComponentOpWrapperBase** MetadataBaseComponent =
-			MetadataBaseComponentQueue->Underlying.GetData();
+				MetadataBaseComponentQueue->Underlying.GetData();
 
 			// Only spawn entities for which we have received Position and Metadata components
 			if ((PositionBaseComponent && (*PositionBaseComponent)->IsValidLowLevel()) &&
@@ -144,9 +144,9 @@ UWorld* World, const TWeakPtr<SpatialOSConnection>& InConnection, const FSpatial
 			{
 				// Retrieve the EntityType string from the Metadata component
 				UMetadataAddComponentOp* MetadataAddComponentOp =
-				Cast<UMetadataAddComponentOp>(*MetadataBaseComponent);
+					Cast<UMetadataAddComponentOp>(*MetadataBaseComponent);
 				UPositionAddComponentOp* PositionAddComponentOp =
-				Cast<UPositionAddComponentOp>(*PositionBaseComponent);
+					Cast<UPositionAddComponentOp>(*PositionBaseComponent);
 
 				// Create the actor
 				AActor* EntityActor = SpawnNewEntity(MetadataAddComponentOp, PositionAddComponentOp, World);
@@ -161,10 +161,10 @@ UWorld* World, const TWeakPtr<SpatialOSConnection>& InConnection, const FSpatial
 }
 
 bool USimpleEntitySpawnerBlock::ProcessAddComponentOp(
-const TWeakPtr<SpatialOSView>& InView, const TWeakPtr<SpatialOSConnection>& InConnection, UCallbackDispatcher* InCallbackDispatcher, const FSpatialOperation& SpatialOperation)
+	const TWeakPtr<SpatialOSView>& InView, const TWeakPtr<SpatialOSConnection>& InConnection, UCallbackDispatcher* InCallbackDispatcher, const FSpatialOperation& SpatialOperation)
 {
 	AActor* Actor =
-	EntityRegistry->GetActorFromEntityId(SpatialOperation.ComponentIdentifier.EntityId);
+		EntityRegistry->GetActorFromEntityId(SpatialOperation.ComponentIdentifier.EntityId);
 	if (Actor)
 	{
 		auto ComponentClass = KnownComponents.Find(SpatialOperation.ComponentIdentifier.ComponentId);
@@ -174,14 +174,14 @@ const TWeakPtr<SpatialOSView>& InView, const TWeakPtr<SpatialOSConnection>& InCo
 		}
 
 		USpatialOsComponent* Component =
-		Cast<USpatialOsComponent>(Actor->GetComponentByClass(*ComponentClass));
+			Cast<USpatialOsComponent>(Actor->GetComponentByClass(*ComponentClass));
 		if (!Component)
 		{
 			return true;
 		}
 
 		FComponentAddOpQueueWrapper* AddComponentOpQueue =
-		ComponentsToAdd.Find(SpatialOperation.ComponentIdentifier);
+			ComponentsToAdd.Find(SpatialOperation.ComponentIdentifier);
 		check(AddComponentOpQueue);
 		UAddComponentOpWrapperBase** ComponentBase = AddComponentOpQueue->Underlying.GetData();
 		Component->ApplyInitialState(**ComponentBase);
@@ -205,7 +205,7 @@ bool USimpleEntitySpawnerBlock::ProcessRemoveComponentOp(UCallbackDispatcher* In
 														 const FSpatialOperation& SpatialOperation)
 {
 	AActor* Actor =
-	EntityRegistry->GetActorFromEntityId(SpatialOperation.ComponentIdentifier.EntityId);
+		EntityRegistry->GetActorFromEntityId(SpatialOperation.ComponentIdentifier.EntityId);
 	auto ComponentClass = KnownComponents.Find(SpatialOperation.ComponentIdentifier.ComponentId);
 
 	if (!Actor || !ComponentClass)
@@ -214,7 +214,7 @@ bool USimpleEntitySpawnerBlock::ProcessRemoveComponentOp(UCallbackDispatcher* In
 	}
 
 	USpatialOsComponent* Component =
-	Cast<USpatialOsComponent>(Actor->GetComponentByClass(*ComponentClass));
+		Cast<USpatialOsComponent>(Actor->GetComponentByClass(*ComponentClass));
 
 	if (Component)
 	{
@@ -230,7 +230,7 @@ bool USimpleEntitySpawnerBlock::ProcessRemoveEntityOp(UWorld* World,
 													  const FSpatialOperation& SpatialOperation)
 {
 	auto ActorToRemove =
-	EntityRegistry->GetActorFromEntityId(SpatialOperation.ComponentIdentifier.EntityId);
+		EntityRegistry->GetActorFromEntityId(SpatialOperation.ComponentIdentifier.EntityId);
 	if (ActorToRemove && !ActorToRemove->IsPendingKill() && World)
 	{
 		EntityRegistry->RemoveFromRegistry(ActorToRemove);
@@ -310,13 +310,13 @@ AActor* USimpleEntitySpawnerBlock::SpawnNewEntity(UMetadataAddComponentOp* Metad
 		{
 			auto Coords = PositionComponent->Data->coords();
 			FVector InitialTransform =
-			USpatialOSConversionFunctionLibrary::SpatialOsCoordinatesToUnrealCoordinates(
-			FVector(Coords.x(), Coords.y(), Coords.z()));
+				USpatialOSConversionFunctionLibrary::SpatialOsCoordinatesToUnrealCoordinates(
+					FVector(Coords.x(), Coords.y(), Coords.z()));
 
 			auto NewActor = World->SpawnActor<AActor>(*EntityClassTemplate, InitialTransform, FRotator::ZeroRotator, FActorSpawnParameters());
 
 			TArray<UActorComponent*> SpatialOSComponents =
-			NewActor->GetComponentsByClass(USpatialOsComponent::StaticClass());
+				NewActor->GetComponentsByClass(USpatialOsComponent::StaticClass());
 
 			for (auto Component : SpatialOSComponents)
 			{
@@ -343,10 +343,10 @@ AActor* USimpleEntitySpawnerBlock::SpawnNewEntity(UMetadataAddComponentOp* Metad
 }
 
 void USimpleEntitySpawnerBlock::SetupComponentInterests(
-AActor* Actor, const FEntityId& EntityId, const TWeakPtr<SpatialOSConnection>& Connection)
+	AActor* Actor, const FEntityId& EntityId, const TWeakPtr<SpatialOSConnection>& Connection)
 {
 	TArray<UActorComponent*> SpatialOSComponents =
-	Actor->GetComponentsByClass(USpatialOsComponent::StaticClass());
+		Actor->GetComponentsByClass(USpatialOsComponent::StaticClass());
 
 	worker::Map<worker::ComponentId, worker::InterestOverride> ComponentIdsAndInterestOverrides;
 
@@ -354,8 +354,8 @@ AActor* Actor, const FEntityId& EntityId, const TWeakPtr<SpatialOSConnection>& C
 	{
 		USpatialOsComponent* SpatialOsComponent = Cast<USpatialOsComponent>(Component);
 		ComponentIdsAndInterestOverrides.emplace(
-		std::make_pair(SpatialOsComponent->GetComponentId().ToSpatialComponentId(),
-					   worker::InterestOverride{/* IsInterested */ true}));
+			std::make_pair(SpatialOsComponent->GetComponentId().ToSpatialComponentId(),
+						   worker::InterestOverride{/* IsInterested */ true}));
 	}
 
 	auto LockedConnection = Connection.Pin();

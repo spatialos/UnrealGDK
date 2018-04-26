@@ -477,8 +477,8 @@ void USpatialInteropPipelineBlock::SetupComponentInterests(AActor* Actor, const 
 	{
 		USpatialOsComponent* SpatialOsComponent = Cast<USpatialOsComponent>(Component);
 		ComponentIdsAndInterestOverrides.emplace(std::make_pair(
-		SpatialOsComponent->GetComponentId().ToSpatialComponentId(),
-		worker::InterestOverride{/* IsInterested */ true}));
+			SpatialOsComponent->GetComponentId().ToSpatialComponentId(),
+			worker::InterestOverride{/* IsInterested */ true}));
 	}
 
 	auto LockedConnection = Connection.Pin();

@@ -31,12 +31,12 @@ worker::Entity CreateSpawnerEntity()
 	const Coordinates InitialPosition{0, 0, 0};
 
 	return improbable::unreal::FEntityBuilder::Begin()
-	.AddPositionComponent(Position::Data{InitialPosition}, UnrealWorkerWritePermission)
-	.AddMetadataComponent(Metadata::Data("Spawner"))
-	.SetPersistence(true)
-	.SetReadAcl(AnyWorkerReadPermission)
-	.AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{}, UnrealWorkerWritePermission)
-	.Build();
+		.AddPositionComponent(Position::Data{InitialPosition}, UnrealWorkerWritePermission)
+		.AddMetadataComponent(Metadata::Data("Spawner"))
+		.SetPersistence(true)
+		.SetReadAcl(AnyWorkerReadPermission)
+		.AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{}, UnrealWorkerWritePermission)
+		.Build();
 }
 
 worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
