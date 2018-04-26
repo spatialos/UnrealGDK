@@ -728,12 +728,12 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 }
 
 void USpatialNetDriver::ProcessRemoteFunction(
-	AActor* Actor,
-	UFunction* Function,
-	void* Parameters,
-	FOutParmRec* OutParms,
-	FFrame* Stack,
-	UObject* SubObject)
+AActor* Actor,
+UFunction* Function,
+void* Parameters,
+FOutParmRec* OutParms,
+FFrame* Stack,
+UObject* SubObject)
 {
 	USpatialNetConnection* Connection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
 	if (!Connection)

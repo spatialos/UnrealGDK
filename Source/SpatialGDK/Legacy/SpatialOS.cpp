@@ -27,7 +27,7 @@ void USpatialOS::BeginDestroy()
 }
 
 void USpatialOS::ApplyConfiguration(
-	const FSpatialGDKWorkerConfigurationData& InWorkerConfigurationData)
+const FSpatialGDKWorkerConfigurationData& InWorkerConfigurationData)
 {
 	checkf(!IsConnected(), TEXT("ApplyConfiguration was called after Connect was called."));
 	WorkerConfiguration = FSpatialGDKWorkerConfiguration(InWorkerConfigurationData);
@@ -62,7 +62,7 @@ void USpatialOS::ApplyEditorWorkerConfiguration(FWorldContext& InWorldContext)
 	if (EditorConfigurationArrayIndex < NumWorkerConfigurations)
 	{
 		const auto& WorkerConfig =
-			SpatialGDKSettings->WorkerConfigurations[EditorConfigurationArrayIndex];
+		SpatialGDKSettings->WorkerConfigurations[EditorConfigurationArrayIndex];
 		WorkerConfiguration = FSpatialGDKWorkerConfiguration(WorkerConfig.WorkerConfigurationData);
 
 		// This check is required When a PIE instance is launched as a dedicated server,
@@ -89,17 +89,17 @@ void USpatialOS::Connect()
 	if (LockedView.IsValid())
 	{
 		Callbacks.Add(LockedView->OnDisconnect(
-			std::bind(&USpatialOS::OnDisconnectDispatcherCallback, this, std::placeholders::_1)));
+		std::bind(&USpatialOS::OnDisconnectDispatcherCallback, this, std::placeholders::_1)));
 	}
 
 	worker::ConnectionParameters Params;
 	Params.BuiltInMetricsReportPeriodMillis =
-		WorkerConfiguration.GetBuiltInMetricsReportPeriodMillis();
+	WorkerConfiguration.GetBuiltInMetricsReportPeriodMillis();
 	Params.EnableProtocolLoggingAtStartup = WorkerConfiguration.GetProtocolLoggingOnStartup();
 	Params.LogMessageQueueCapacity = WorkerConfiguration.GetLogMessageQueueCapacity();
 	Params.Network.ConnectionType = WorkerConfiguration.GetLinkProtocol();
 	Params.Network.RakNet.HeartbeatTimeoutMillis =
-		WorkerConfiguration.GetRaknetHeartbeatTimeoutMillis();
+	WorkerConfiguration.GetRaknetHeartbeatTimeoutMillis();
 	Params.Network.Tcp.MultiplexLevel = WorkerConfiguration.GetTcpMultiplexLevel();
 	Params.Network.Tcp.NoDelay = WorkerConfiguration.GetTcpNoDelay();
 	Params.Network.Tcp.ReceiveBufferSize = WorkerConfiguration.GetTcpReceiveBufferSize();
@@ -150,12 +150,12 @@ void USpatialOS::Connect()
 	if (ShouldConnectViaLocator)
 	{
 		WorkerConnection.ConnectToLocatorAsync(
-			WorkerConfiguration.GetProjectName(), WorkerConfiguration.GetLocatorHost(), WorkerConfiguration.GetDeploymentName(), WorkerConfiguration.GetLoginToken(), Params, OnQueueStatus, OnConnected);
+		WorkerConfiguration.GetProjectName(), WorkerConfiguration.GetLocatorHost(), WorkerConfiguration.GetDeploymentName(), WorkerConfiguration.GetLoginToken(), Params, OnQueueStatus, OnConnected);
 	}
 	else
 	{
 		WorkerConnection.ConnectToReceptionistAsync(
-			WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(), WorkerConfiguration.GetWorkerId(), Params, OnConnected);
+		WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(), WorkerConfiguration.GetWorkerId(), Params, OnConnected);
 	}
 }
 

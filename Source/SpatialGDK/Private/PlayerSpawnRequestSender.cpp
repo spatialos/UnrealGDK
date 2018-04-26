@@ -43,11 +43,11 @@ void FPlayerSpawnRequestSender::SendPlayerSpawnRequest()
 	++NumberOfAttempts;
 
 	ResponseCallbackKey = View->OnCommandResponse<SpawnPlayerCommand>(
-		std::bind(&FPlayerSpawnRequestSender::HandlePlayerSpawnResponse, this, std::placeholders::_1));
+	std::bind(&FPlayerSpawnRequestSender::HandlePlayerSpawnResponse, this, std::placeholders::_1));
 }
 
 void FPlayerSpawnRequestSender::HandlePlayerSpawnResponse(
-	const worker::CommandResponseOp<SpawnPlayerCommand>& Op)
+const worker::CommandResponseOp<SpawnPlayerCommand>& Op)
 {
 	View->Remove(ResponseCallbackKey.GetValue());
 	ResponseCallbackKey.Reset();

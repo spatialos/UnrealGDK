@@ -118,15 +118,15 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 			const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Location);
 
 			auto Entity = improbable::unreal::FEntityBuilder::Begin()
-							  .AddPositionComponent(SpatialPosition, WorkersOnly)
-							  .AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
-							  .SetPersistence(true)
-							  .SetReadAcl(AnyUnrealWorkerOrClient)
-							  .AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
-							  // For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
-							  // todo-giray: Remove once we're using proper (generated) entity templates here.
-							  .AddComponent<improbable::unreal::PlayerControlClient>(improbable::unreal::PlayerControlClient::Data{}, OwnClientOnly)
-							  .Build();
+						  .AddPositionComponent(SpatialPosition, WorkersOnly)
+						  .AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
+						  .SetPersistence(true)
+						  .SetReadAcl(AnyUnrealWorkerOrClient)
+						  .AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
+						  // For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
+						  // todo-giray: Remove once we're using proper (generated) entity templates here.
+						  .AddComponent<improbable::unreal::PlayerControlClient>(improbable::unreal::PlayerControlClient::Data{}, OwnClientOnly)
+						  .Build();
 
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
 		}

@@ -13,21 +13,21 @@ FString TypeBindingName(UClass* Class);
 
 // Generates code to copy an Unreal 'PropertyValue' and write it to a SpatialOS component update object 'Update'.
 void GenerateUnrealToSchemaConversion(
-	FCodeWriter& Writer,
-	const FString& Update,
-	const UProperty* Property,
-	const FString& PropertyValue,
-	const bool bIsUpdate,
-	TFunction<void(const FString&)> ObjectResolveFailureGenerator);
+FCodeWriter& Writer,
+const FString& Update,
+const UProperty* Property,
+const FString& PropertyValue,
+const bool bIsUpdate,
+TFunction<void(const FString&)> ObjectResolveFailureGenerator);
 
 // Generates code to extract property data from a SpatialOS component update object and write it to an Unreal 'PropertyValue'
 void GeneratePropertyToUnrealConversion(
-	FCodeWriter& Writer,
-	const FString& Update,
-	const UProperty* Property,
-	const FString& PropertyValue,
-	const bool bIsUpdate,
-	TFunction<void(const FString&)> ObjectResolveFailureGenerator);
+FCodeWriter& Writer,
+const FString& Update,
+const UProperty* Property,
+const FString& PropertyValue,
+const bool bIsUpdate,
+TFunction<void(const FString&)> ObjectResolveFailureGenerator);
 
 // Generates the appropriate macro for Unreal to read a property from an FFrame in scope. This is the same method that
 // Unreal uses in .generated.h files.
@@ -35,19 +35,19 @@ FString GenerateFFramePropertyReader(UProperty* Property);
 
 // Generates the header of a type binding.
 void GenerateTypeBindingHeader(
-	FCodeWriter& HeaderWriter,
-	FString SchemaFilename,
-	FString InteropFilename,
-	UClass* Class,
-	const TSharedPtr<FUnrealType> TypeInfo);
+FCodeWriter& HeaderWriter,
+FString SchemaFilename,
+FString InteropFilename,
+UClass* Class,
+const TSharedPtr<FUnrealType> TypeInfo);
 
 // Generates the source file of a type binding.
 void GenerateTypeBindingSource(
-	FCodeWriter& SourceWriter,
-	FString SchemaFilename,
-	FString InteropFilename,
-	UClass* Class,
-	const TSharedPtr<FUnrealType> TypeInfo);
+FCodeWriter& SourceWriter,
+FString SchemaFilename,
+FString InteropFilename,
+UClass* Class,
+const TSharedPtr<FUnrealType> TypeInfo);
 
 // Helper functions used when generating the source file.
 void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData);

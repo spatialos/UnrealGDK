@@ -422,7 +422,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 				if (Property->Property == Cmd.Property)
 				{
 					checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation."))
-						PropertyNode = Property;
+					PropertyNode = Property;
 				}
 				return true;
 			},

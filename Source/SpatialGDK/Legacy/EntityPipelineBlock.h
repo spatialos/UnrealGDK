@@ -25,19 +25,19 @@ class SPATIALGDK_API UEntityPipelineBlock : public UObject
 
 public:
 	virtual void AddEntity(const worker::AddEntityOp& AddEntityOp)
-		PURE_VIRTUAL(UEntityPipelineBlock::AddEntity(), );
+	PURE_VIRTUAL(UEntityPipelineBlock::AddEntity(), );
 	virtual void RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp)
-		PURE_VIRTUAL(UEntityPipelineBlock::RemoveEntity(), );
+	PURE_VIRTUAL(UEntityPipelineBlock::RemoveEntity(), );
 
 	virtual void AddComponent(UAddComponentOpWrapperBase* AddComponentOp)
-		PURE_VIRTUAL(UEntityPipelineBlock::AddComponent(), );
+	PURE_VIRTUAL(UEntityPipelineBlock::AddComponent(), );
 	virtual void RemoveComponent(const worker::ComponentId ComponentId,
 								 const worker::RemoveComponentOp& RemoveComponentOp)
-		PURE_VIRTUAL(UEntityPipelineBlock::RemoveComponent(), );
+	PURE_VIRTUAL(UEntityPipelineBlock::RemoveComponent(), );
 
 	virtual void ChangeAuthority(const worker::ComponentId ComponentId,
 								 const worker::AuthorityChangeOp& AuthChangeOp)
-		PURE_VIRTUAL(UEntityPipelineBlock::ChangeAuthority(), );
+	PURE_VIRTUAL(UEntityPipelineBlock::ChangeAuthority(), );
 
 	virtual void EnterCriticalSection() PURE_VIRTUAL(UEntityPipelineBlock::EnterCriticalSection(), );
 
@@ -51,5 +51,5 @@ protected:
 							const TWeakPtr<SpatialOSConnection>& InConnection,
 							UWorld* World,
 							::UCallbackDispatcher* CallbackDispatcher)
-		PURE_VIRTUAL(UEntityPipelineBlock::ProcessOps(), );
+	PURE_VIRTUAL(UEntityPipelineBlock::ProcessOps(), );
 };

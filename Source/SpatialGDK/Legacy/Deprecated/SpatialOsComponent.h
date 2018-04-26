@@ -48,20 +48,20 @@ public:
 					  UCallbackDispatcher* InCallbackDispatcher);
 
 	virtual void Disable(const worker::EntityId InEntityId, UCallbackDispatcher* CallbackDispatcher)
-		PURE_VIRTUAL(USpatialOsComponent::Disable(), );
+	PURE_VIRTUAL(USpatialOsComponent::Disable(), );
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Component")
 	virtual FComponentId GetComponentId()
-		PURE_VIRTUAL(USpatialOsComponent::GetComponentId, return 0;);
+	PURE_VIRTUAL(USpatialOsComponent::GetComponentId, return 0;);
 
 	virtual void ApplyInitialState(const UAddComponentOpWrapperBase& AddComponentOp)
-		PURE_VIRTUAL(USpatialOsComponent::ApplyInitialState(), );
+	PURE_VIRTUAL(USpatialOsComponent::ApplyInitialState(), );
 
 	virtual void ReplicateChanges(float DeltaSeconds)
-		PURE_VIRTUAL(USpatialOsComponent::ReplicateChanges, );
+	PURE_VIRTUAL(USpatialOsComponent::ReplicateChanges, );
 
 	virtual void TriggerAutomaticComponentUpdate(float DeltaSeconds)
-		PURE_VIRTUAL(USpatialOsComponent::TriggerAutomaticComponentUpdate, );
+	PURE_VIRTUAL(USpatialOsComponent::TriggerAutomaticComponentUpdate, );
 
 	void ApplyInitialAuthority(const worker::AuthorityChangeOp& AuthChangeOp);
 

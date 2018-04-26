@@ -218,9 +218,9 @@ class SPATIALGDK_API USpatialTypeBinding : public UObject
 
 public:
 	virtual const FRepHandlePropertyMap& GetRepHandlePropertyMap() const
-		PURE_VIRTUAL(USpatialTypeBinding::GetRepHandlePropertyMap, static FRepHandlePropertyMap Map; return Map;);
+	PURE_VIRTUAL(USpatialTypeBinding::GetRepHandlePropertyMap, static FRepHandlePropertyMap Map; return Map;);
 	virtual const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() const
-		PURE_VIRTUAL(USpatialTypeBinding::GetMigratableHandlePropertyMap, static FMigratableHandlePropertyMap Map; return Map;);
+	PURE_VIRTUAL(USpatialTypeBinding::GetMigratableHandlePropertyMap, static FMigratableHandlePropertyMap Map; return Map;);
 
 	virtual void Init(USpatialInterop* Interop, USpatialPackageMapClient* PackageMap);
 	virtual void BindToView() PURE_VIRTUAL(USpatialTypeBinding::BindToView, );

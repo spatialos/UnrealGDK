@@ -70,7 +70,7 @@ void USpatialOsComponent::SendAuthorityLossImminentAcknowledgement()
 	if (LockedConnection.IsValid())
 	{
 		LockedConnection->SendAuthorityLossImminentAcknowledgement(
-			this->EntityId, this->GetComponentId().ToSpatialComponentId());
+		this->EntityId, this->GetComponentId().ToSpatialComponentId());
 	}
 }
 
@@ -110,7 +110,7 @@ UCommander* USpatialOsComponent::SendCommand()
 	if (Commander == nullptr)
 	{
 		Commander =
-			NewObject<UCommander>(this, UCommander::StaticClass())->Init(this, Connection, View);
+		NewObject<UCommander>(this, UCommander::StaticClass())->Init(this, Connection, View);
 	}
 	return Commander;
 }

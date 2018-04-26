@@ -81,27 +81,27 @@ bool FSpatialGDKEditorToolbarModule::HandleSettingsSaved()
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> PluginCommands)
 {
 	PluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot,
-		FExecuteAction::CreateRaw(
-			this, &FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked),
-		FCanExecuteAction());
+	FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot,
+	FExecuteAction::CreateRaw(
+	this, &FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked),
+	FCanExecuteAction());
 
 	PluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode,
-		FExecuteAction::CreateRaw(
-			this, &FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked),
-		FCanExecuteAction());
+	FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode,
+	FExecuteAction::CreateRaw(
+	this, &FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked),
+	FCanExecuteAction());
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> PluginCommands)
 {
 	FLevelEditorModule& LevelEditorModule =
-		FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+	FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 
 	{
 		TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender());
 		MenuExtender->AddMenuExtension(
-			"General", EExtensionHook::After, PluginCommands, FMenuExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddMenuExtension));
+		"General", EExtensionHook::After, PluginCommands, FMenuExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddMenuExtension));
 
 		LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
 	}
@@ -109,7 +109,7 @@ void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandLis
 	{
 		TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
 		ToolbarExtender->AddToolBarExtension(
-			"Game", EExtensionHook::After, PluginCommands, FToolBarExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddToolbarExtension));
+		"Game", EExtensionHook::After, PluginCommands, FToolBarExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddToolbarExtension));
 
 		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
 	}
