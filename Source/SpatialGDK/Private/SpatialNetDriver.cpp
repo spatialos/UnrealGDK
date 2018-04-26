@@ -400,8 +400,8 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				FinalRelevantCount++;
 				UE_LOG(LogNetTraffic, Log, TEXT("Server replicate actor creating destroy channel for NetGUID <%s,%s> Priority: %d"), *PriorityActors[j]->DestructionInfo->NetGUID.ToString(), *PriorityActors[j]->DestructionInfo->PathName, PriorityActors[j]->Priority);
 
-				Channel->SetChannelActorForDestroy(PriorityActors[j]->DestructionInfo);							 // Send a close bunch on the new channel
-				Connection->DestroyedStartupOrDormantActors.Remove(PriorityActors[j]->DestructionInfo->NetGUID); // Remove from connections to-be-destroyed list (close bunch of reliable, so it will make it there)
+				Channel->SetChannelActorForDestroy(PriorityActors[j]->DestructionInfo);							// Send a close bunch on the new channel
+				Connection->DestroyedStartupOrDormantActors.Remove(PriorityActors[j]->DestructionInfo->NetGUID);// Remove from connections to-be-destroyed list (close bunch of reliable, so it will make it there)
 			}
 			continue;
 		}
@@ -420,7 +420,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 		// Normal actor replication
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(PriorityActors[j]->Channel);
 		UE_LOG(LogNetTraffic, Log, TEXT(" Maybe Replicate %s"), *PriorityActors[j]->ActorInfo->Actor->GetName());
-		if (!Channel || Channel->Actor) //make sure didn't just close this channel
+		if (!Channel || Channel->Actor)//make sure didn't just close this channel
 		{
 			AActor* Actor = PriorityActors[j]->ActorInfo->Actor;
 			bool bIsRelevant = false;
@@ -712,7 +712,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	return Updated;
 #else
 	return 0;
-#endif // WITH_SERVER_CODE
+#endif// WITH_SERVER_CODE
 }
 
 void USpatialNetDriver::TickDispatch(float DeltaTime)
@@ -763,7 +763,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 #if USE_SERVER_PERF_COUNTERS
 	double ServerReplicateActorsTimeMs = 0.0f;
-#endif // USE_SERVER_PERF_COUNTERS
+#endif// USE_SERVER_PERF_COUNTERS
 	if (IsServer() && ClientConnections.Num() > 0)
 	{
 // Update all clients.
@@ -771,13 +771,13 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 #if USE_SERVER_PERF_COUNTERS
 		double ServerReplicateActorsTimeStart = FPlatformTime::Seconds();
-#endif // USE_SERVER_PERF_COUNTERS
+#endif// USE_SERVER_PERF_COUNTERS
 
 		int32 Updated = ServerReplicateActors(DeltaTime);
 
 #if USE_SERVER_PERF_COUNTERS
 		ServerReplicateActorsTimeMs = (FPlatformTime::Seconds() - ServerReplicateActorsTimeStart) * 1000.0;
-#endif // USE_SERVER_PERF_COUNTERS
+#endif// USE_SERVER_PERF_COUNTERS
 
 		static int32 LastUpdateCount = 0;
 		// Only log the zero replicated actors once after replicating an actor
@@ -786,7 +786,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 			UE_LOG(LogNetTraffic, Verbose, TEXT("%s replicated %d actors"), *GetDescription(), Updated);
 		}
 		LastUpdateCount = Updated;
-#endif // WITH_SERVER_CODE
+#endif// WITH_SERVER_CODE
 	}
 
 	Super::TickFlush(DeltaTime);
@@ -824,7 +824,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 	const TCHAR* ClientWorkerIdOption = InUrl.GetOption(TEXT("workerId"), nullptr);
 	check(ClientWorkerIdOption);
 	FString ClientWorkerId(ClientWorkerIdOption);
-	ClientWorkerId = ClientWorkerId.Mid(1); // Trim off the = at the beginning.
+	ClientWorkerId = ClientWorkerId.Mid(1);// Trim off the = at the beginning.
 	FUniqueNetIdRepl WorkerId(TSharedPtr<FSpatialWorkerUniqueNetId>(new FSpatialWorkerUniqueNetId(ClientWorkerId)));
 
 	// We will now ask GameMode/GameSession if it's ok for this user to join.

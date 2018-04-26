@@ -103,7 +103,7 @@ bool CheckClassNameListValidity(const TArray<FString>& Classes)
 
 	return true;
 }
-} // ::
+}// ::
 
 void SpatialGDKGenerateInteropCode()
 {

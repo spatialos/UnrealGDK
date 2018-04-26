@@ -171,7 +171,7 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::Unrea
 	auto& LevelDataActors = LevelData.static_actor_map();
 	for (auto& Pair : LevelDataActors)
 	{
-		uint32_t StaticObjectId = Pair.first << 7; // Reserve 127 slots for static objects.
+		uint32_t StaticObjectId = Pair.first << 7;// Reserve 127 slots for static objects.
 		const char* LevelDataActorPath = Pair.second.c_str();
 		AActor* Actor = PersistentActorsInWorld.FindRef(UTF8_TO_TCHAR(LevelDataActorPath));
 

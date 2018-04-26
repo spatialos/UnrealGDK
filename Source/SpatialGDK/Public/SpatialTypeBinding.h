@@ -56,10 +56,10 @@ FORCEINLINE bool HasComponentAuthority(TWeakPtr<worker::View> View, const worker
 struct FPropertyChangeState
 {
 	const uint8* RESTRICT SourceData;
-	const TArray<uint16>& RepChanged; // changed replicated properties
+	const TArray<uint16>& RepChanged;// changed replicated properties
 	TArray<FRepLayoutCmd>& RepCmds;
 	TArray<FHandleToCmdIndex>& RepBaseHandleToCmdIndex;
-	const TArray<uint16>& MigChanged; // changed migratable properties
+	const TArray<uint16>& MigChanged;// changed migratable properties
 };
 
 // A structure containing information about a replicated property.
@@ -149,7 +149,7 @@ public:
 				if (ObjectProperty)
 				{
 					CurrentContainerType = ObjectProperty->PropertyClass;
-					SubobjectProperty = true; // We are now recursing into a subobjects properties.
+					SubobjectProperty = true;// We are now recursing into a subobjects properties.
 					Offset = 0;
 				}
 				else
@@ -201,7 +201,7 @@ public:
 	UProperty* Property;
 
 private:
-	bool SubobjectProperty; // If this is true, then this property refers to a property within a subobject.
+	bool SubobjectProperty;// If this is true, then this property refers to a property within a subobject.
 	uint32 Offset;
 };
 

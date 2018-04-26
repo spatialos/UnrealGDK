@@ -68,7 +68,7 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 		}
 		else
 		{
-			DataType = TEXT("std::string"); //this includes RepMovement and UniqueNetId
+			DataType = TEXT("std::string");//this includes RepMovement and UniqueNetId
 		}
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
@@ -85,7 +85,7 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 	}
 	else if (Property->IsA(UByteProperty::StaticClass()))
 	{
-		DataType = TEXT("std::uint32_t"); // uint8 not supported in schema.
+		DataType = TEXT("std::uint32_t");// uint8 not supported in schema.
 	}
 	else if (Property->IsA(UNameProperty::StaticClass()) || Property->IsA(UStrProperty::StaticClass()))
 	{

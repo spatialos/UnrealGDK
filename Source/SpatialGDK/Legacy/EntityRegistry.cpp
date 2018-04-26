@@ -19,7 +19,7 @@ void UEntityRegistry::RegisterEntityBlueprints(const TArray<FString>& BlueprintP
 				if (BlueprintGeneratedClass != nullptr)
 				{
 					FString BlueprintName = BlueprintGeneratedClass->GetName().LeftChop(
-						2); // generated blueprint class names end with "_C"
+						2);// generated blueprint class names end with "_C"
 					UE_LOG(LogEntityRegistry, Display, TEXT("Registering blueprint in entity spawner with name: %s"), *BlueprintName);
 					RegisterEntityClass(BlueprintName, BlueprintGeneratedClass);
 				}

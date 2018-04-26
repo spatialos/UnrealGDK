@@ -223,5 +223,5 @@ public:
 		return FPositionComponentBuilder();
 	}
 };
-} // ::unreal
-} // ::improbable
+}// ::unreal
+}// ::improbable

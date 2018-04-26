@@ -71,7 +71,7 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 	int PlaceholderCountAxis = sqrt(PlaceholderCount);
 	checkf(PlaceholderCountAxis * PlaceholderCountAxis == PlaceholderCount, TEXT("The number of placeholders must be a square number."));
 	checkf(PlaceholderCountAxis % 2 == 0, TEXT("The number of placeholders on each axis must be even."));
-	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
+	const float CHUNK_SIZE = 5.0f;// in SpatialOS coordinates.
 	int PlaceholderEntityIdCounter = SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST;
 	for (int x = -PlaceholderCountAxis / 2; x < PlaceholderCountAxis / 2; x++)
 	{
@@ -86,7 +86,7 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 	check(PlaceholderEntityIdCounter == SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1);
 	return LevelEntities;
 }
-} // ::
+}// ::
 
 void SpatialGDKGenerateSnapshot(const FString& SavePath, UWorld* World)
 {

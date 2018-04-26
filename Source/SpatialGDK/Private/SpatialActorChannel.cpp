@@ -32,7 +32,7 @@ void UpdateChangelistHistory(FRepState* RepState)
 
 		FRepChangedHistory& HistoryItem = RepState->ChangeHistory[HistoryIndex];
 
-		check(HistoryItem.Changed.Num() > 0); // All active history items should contain a change list
+		check(HistoryItem.Changed.Num() > 0);// All active history items should contain a change list
 
 		HistoryItem.Changed.Empty();
 		HistoryItem.OutPacketIdRange = FPacketIdRange();
@@ -150,7 +150,7 @@ bool USpatialActorChannel::ReplicateActor()
 	{
 		RepFlags.bNetInitial = true;
 		Bunch.bClose = Actor->bNetTemporary;
-		Bunch.bReliable = true; // Net temporary sends need to be reliable as well to force them to retry
+		Bunch.bReliable = true;// Net temporary sends need to be reliable as well to force them to retry
 	}
 
 	//Here, Unreal would have determined if this connection belongs to this actor's Outer.
@@ -176,7 +176,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
 
-	FMemMark MemMark(FMemStack::Get()); // The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in ::PostSendBunch. we free it below
+	FMemMark MemMark(FMemStack::Get());// The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in ::PostSendBunch. we free it below
 
 	// ----------------------------------------------------------
 	// Replicate Actor and Component properties and RPCs
@@ -367,7 +367,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 	bIsReplicatingActor = false;
 
-	bForceCompareProperties = false; // Only do this once per frame when set
+	bForceCompareProperties = false;// Only do this once per frame when set
 
 	return bWroteSomethingImportant;
 }
@@ -495,7 +495,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	// of the PlayerController and PlayerState at the same time as the pawn.
 
 	// Check that it has moved sufficiently far to be updated
-	const float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
+	const float SpatialPositionThreshold = 100.0f * 100.0f;// 1m (100cm)
 	FVector ActorSpatialPosition = GetActorSpatialPosition(Actor);
 	if (FVector::DistSquared(ActorSpatialPosition, LastSpatialPosition) < SpatialPositionThreshold)
 	{

@@ -94,6 +94,6 @@ private:
 	TUniquePtr<worker::Metrics> Metrics;
 	FMetricsDelegate MetricsDelegate;
 };
-} // ::core
-} // ::unreal
-} // ::improbable
+}// ::core
+}// ::unreal
+}// ::improbable

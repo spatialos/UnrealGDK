@@ -11,7 +11,7 @@ FString GenerateRandomWorkerIdFromTypeName(const FString& type)
 {
 	return type + FGuid::NewGuid().ToString();
 }
-} // ::
+}// ::
 
 FSpatialGDKWorkerConfiguration::FSpatialGDKWorkerConfiguration()
 	: WorkerConfigurationData()

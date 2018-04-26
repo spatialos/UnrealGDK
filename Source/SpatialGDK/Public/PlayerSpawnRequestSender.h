@@ -11,7 +11,7 @@ namespace worker
 {
 class Connection;
 class View;
-} // ::worker
+}// ::worker
 
 class USpatialOS;
 struct FURL;

@@ -272,7 +272,7 @@ bool FWorkerConnection::CanCreateNewConnection() const
 	return !(IsConnected() || bIsConnecting);
 }
 
-} // ::core
-} // ::unreal
-} // ::improbable
+}// ::core
+}// ::unreal
+}// ::improbable
 #undef LOCTEXT_NAMESPACE

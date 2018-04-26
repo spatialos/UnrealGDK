@@ -89,6 +89,6 @@ private:
 	TWeakPtr<SpatialOSView> View;
 	TArray<uint64> Handles;
 };
-} // ::callbacks
-} // ::unreal
-} // ::improbable
+}// ::callbacks
+}// ::unreal
+}// ::improbable
