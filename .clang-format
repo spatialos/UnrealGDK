@@ -49,7 +49,7 @@ IncludeCategories:
   - Regex:           '^<.*>'
     Priority:        4
 IndentCaseLabels: true
-IndentWidth: 2
+IndentWidth: 4
 IndentWrappedFunctionNames: false
 KeepEmptyLinesAtTheStartOfBlocks: false
 MacroBlockBegin: ''

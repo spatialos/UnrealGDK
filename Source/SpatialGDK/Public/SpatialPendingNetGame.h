@@ -12,10 +12,10 @@
 UCLASS(transient)
 class USpatialPendingNetGame : public UPendingNetGame
 {
-  GENERATED_UCLASS_BODY()
+	GENERATED_UCLASS_BODY()
 
-  // Made virtual in PendingNetGame.h
-  virtual void InitNetDriver() override;
+	// Made virtual in PendingNetGame.h
+	virtual void InitNetDriver() override;
 
-  virtual void SendJoin() override;
+	virtual void SendJoin() override;
 };

@@ -7,12 +7,12 @@
 UCLASS(abstract)
 class SPATIALGDK_API UComponentUpdateOpWrapperBase : public UObject
 {
-  GENERATED_BODY()
-public:
-  UComponentUpdateOpWrapperBase()
-  {
-  }
+	GENERATED_BODY()
+  public:
+	UComponentUpdateOpWrapperBase()
+	{
+	}
 
-  ::worker::ComponentId ComponentId;
-  ::worker::EntityId EntityId;
+	::worker::ComponentId ComponentId;
+	::worker::EntityId EntityId;
 };

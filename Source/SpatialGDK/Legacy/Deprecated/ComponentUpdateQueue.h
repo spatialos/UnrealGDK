@@ -7,24 +7,24 @@
 USTRUCT(BlueprintType)
 struct FComponentUpdateQueue
 {
-  GENERATED_BODY()
+	GENERATED_BODY()
 
-  void AddToQueue(UComponentUpdateOpWrapperBase* Update)
-  {
-	Updates.AddUnique(Update);
-  }
+	void AddToQueue(UComponentUpdateOpWrapperBase* Update)
+	{
+		Updates.AddUnique(Update);
+	}
 
-  TArray<UComponentUpdateOpWrapperBase*>& GetQueue()
-  {
-	return Updates;
-  }
+	TArray<UComponentUpdateOpWrapperBase*>& GetQueue()
+	{
+		return Updates;
+	}
 
-  void Empty()
-  {
-	Updates.Empty();
-  }
+	void Empty()
+	{
+		Updates.Empty();
+	}
 
-private:
-  UPROPERTY()
-  TArray<UComponentUpdateOpWrapperBase*> Updates;
+  private:
+	UPROPERTY()
+	TArray<UComponentUpdateOpWrapperBase*> Updates;
 };

@@ -21,103 +21,105 @@ class USpatialNetDriver;
 UCLASS(Transient)
 class SPATIALGDK_API USpatialActorChannel : public UActorChannel
 {
-  GENERATED_BODY()
+	GENERATED_BODY()
 
-public:
-  USpatialActorChannel(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+  public:
+	USpatialActorChannel(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-  // SpatialOS Entity ID.
-  FORCEINLINE FEntityId GetEntityId() const
-  {
-	return ActorEntityId;
-  }
-
-  FORCEINLINE bool IsReadyForReplication() const
-  {
-	// Wait until we've reserved an entity ID.
-	return ActorEntityId != FEntityId{};
-  }
-
-  // Called on the client when receiving an update.
-  FORCEINLINE bool IsClientAutonomousProxy(worker::ComponentId ServerRPCsComponentId)
-  {
-	if (SpatialNetDriver->GetNetMode() != NM_Client)
+	// SpatialOS Entity ID.
+	FORCEINLINE FEntityId GetEntityId() const
 	{
-	  return false;
+		return ActorEntityId;
 	}
 
-	TSharedPtr<worker::View> View = WorkerView.Pin();
-	if (View.Get())
+	FORCEINLINE bool IsReadyForReplication() const
 	{
-	  // This will never fail because we can't have an actor channel without having checked out the
-	  // entity.
-	  auto& EntityAuthority = View->ComponentAuthority[ActorEntityId.ToSpatialEntityId()];
-	  auto ComponentIterator = EntityAuthority.find(ServerRPCsComponentId);
-	  if (ComponentIterator != EntityAuthority.end())
-	  {
-		return (*ComponentIterator).second == worker::Authority::kAuthoritative;
-	  }
+		// Wait until we've reserved an entity ID.
+		return ActorEntityId != FEntityId{};
 	}
-	return false;
-  }
 
-  FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16>& RepChanged,
-												  const TArray<uint16>& MigChanged) const
-  {
-	return {(uint8*)Actor, RepChanged, ActorReplicator->RepLayout->Cmds,
-			ActorReplicator->RepLayout->BaseHandleToCmdIndex, MigChanged};
-  }
+	// Called on the client when receiving an update.
+	FORCEINLINE bool IsClientAutonomousProxy(worker::ComponentId ServerRPCsComponentId)
+	{
+		if (SpatialNetDriver->GetNetMode() != NM_Client)
+		{
+			return false;
+		}
 
-  // UChannel interface
-  virtual void Init(UNetConnection* connection, int32 channelIndex, bool bOpenedLocally) override;
-  // Requires source changes to be virtual in base class.
-  virtual bool ReplicateActor() override;
-  virtual void SetChannelActor(AActor* InActor) override;
+		TSharedPtr<worker::View> View = WorkerView.Pin();
+		if (View.Get())
+		{
+			// This will never fail because we can't have an actor channel without having checked
+			// out the
+			// entity.
+			auto& EntityAuthority = View->ComponentAuthority[ActorEntityId.ToSpatialEntityId()];
+			auto ComponentIterator = EntityAuthority.find(ServerRPCsComponentId);
+			if (ComponentIterator != EntityAuthority.end())
+			{
+				return (*ComponentIterator).second == worker::Authority::kAuthoritative;
+			}
+		}
+		return false;
+	}
 
-  // Called by SpatialInterop when receiving an update.
-  void PreReceiveSpatialUpdate();
-  void PostReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies);
+	FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16>& RepChanged,
+													const TArray<uint16>& MigChanged) const
+	{
+		return {(uint8*)Actor, RepChanged, ActorReplicator->RepLayout->Cmds,
+				ActorReplicator->RepLayout->BaseHandleToCmdIndex, MigChanged};
+	}
 
-  // Distinguishes between channels created for actors that went through the "old" pipeline vs
-  // actors that are triggered through SpawnActor() calls.
-  // In the future we may not use an actor channel for non-core actors.
-  UPROPERTY(transient)
-  bool bCoreActor;
+	// UChannel interface
+	virtual void Init(UNetConnection* connection, int32 channelIndex, bool bOpenedLocally) override;
+	// Requires source changes to be virtual in base class.
+	virtual bool ReplicateActor() override;
+	virtual void SetChannelActor(AActor* InActor) override;
 
-protected:
-  // UChannel interface
-  virtual bool CleanUp(const bool bForDestroy) override;
+	// Called by SpatialInterop when receiving an update.
+	void PreReceiveSpatialUpdate();
+	void PostReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies);
 
-private:
-  void BindToSpatialView();
-  void UnbindFromSpatialView() const;
+	// Distinguishes between channels created for actors that went through the "old" pipeline vs
+	// actors that are triggered through SpawnActor() calls.
+	// In the future we may not use an actor channel for non-core actors.
+	UPROPERTY(transient)
+	bool bCoreActor;
 
-  void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
-  void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
+  protected:
+	// UChannel interface
+	virtual bool CleanUp(const bool bForDestroy) override;
 
-  TWeakPtr<worker::Connection> WorkerConnection;
-  TWeakPtr<worker::View> WorkerView;
-  FEntityId ActorEntityId;
+  private:
+	void BindToSpatialView();
+	void UnbindFromSpatialView() const;
 
-  worker::Dispatcher::CallbackKey ReserveEntityCallback;
-  worker::Dispatcher::CallbackKey CreateEntityCallback;
+	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
+	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
 
-  worker::RequestId<worker::ReserveEntityIdRequest> ReserveEntityIdRequestId;
-  worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
+	TWeakPtr<worker::Connection> WorkerConnection;
+	TWeakPtr<worker::View> WorkerView;
+	FEntityId ActorEntityId;
 
-  UPROPERTY(transient)
-  USpatialNetDriver* SpatialNetDriver;
+	worker::Dispatcher::CallbackKey ReserveEntityCallback;
+	worker::Dispatcher::CallbackKey CreateEntityCallback;
 
-  FVector LastSpatialPosition;
-  TArray<uint8> MigratablePropertyShadowData;
+	worker::RequestId<worker::ReserveEntityIdRequest> ReserveEntityIdRequestId;
+	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 
-  // If this actor channel is responsible for creating a new entity, this will be set to true during
-  // initial replication.
-  UPROPERTY(Transient)
-  bool bCreatingNewEntity;
+	UPROPERTY(transient)
+	USpatialNetDriver* SpatialNetDriver;
 
-private:
-  void UpdateSpatialPosition();
+	FVector LastSpatialPosition;
+	TArray<uint8> MigratablePropertyShadowData;
 
-  static FVector GetActorSpatialPosition(AActor* Actor);
+	// If this actor channel is responsible for creating a new entity, this will be set to true
+	// during
+	// initial replication.
+	UPROPERTY(Transient)
+	bool bCreatingNewEntity;
+
+  private:
+	void UpdateSpatialPosition();
+
+	static FVector GetActorSpatialPosition(AActor* Actor);
 };
