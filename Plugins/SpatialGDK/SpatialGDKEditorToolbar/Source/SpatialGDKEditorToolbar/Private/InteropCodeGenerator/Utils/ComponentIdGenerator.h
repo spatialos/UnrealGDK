@@ -4,7 +4,8 @@
 
 struct FComponentIdGenerator
 {
-	FComponentIdGenerator(int StartId) : InitialId(StartId), NumIds(0)
+	FComponentIdGenerator(int StartId)
+	: InitialId(StartId), NumIds(0)
 	{
 	}
 

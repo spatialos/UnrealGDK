@@ -23,7 +23,8 @@ class FScopedViewCallbacks
 		View.Reset();
 	}
 
-	FScopedViewCallbacks(const TWeakPtr<SpatialOSView>& InView) : View(InView)
+	FScopedViewCallbacks(const TWeakPtr<SpatialOSView>& InView)
+	: View(InView)
 	{
 	}
 

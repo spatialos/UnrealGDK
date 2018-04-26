@@ -483,8 +483,8 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(
 					PriorityActors[j]->DestructionInfo);  // Send a close bunch on the new channel
 				Connection->DestroyedStartupOrDormantActors.Remove(
 					PriorityActors[j]->DestructionInfo->NetGUID);  // Remove from connections
-				// to-be-destroyed list (close bunch of
-				// reliable, so it will make it there)
+																   // to-be-destroyed list (close bunch of
+																   // reliable, so it will make it there)
 			}
 			continue;
 		}

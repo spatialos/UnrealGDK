@@ -16,7 +16,8 @@ struct SPATIALGDK_API FSpatialOSCommandResult
 	GENERATED_USTRUCT_BODY();
 
   public:
-	FSpatialOSCommandResult() : StatusCode(ECommandResponseCode::Unknown)
+	FSpatialOSCommandResult()
+	: StatusCode(ECommandResponseCode::Unknown)
 	{
 	}
 

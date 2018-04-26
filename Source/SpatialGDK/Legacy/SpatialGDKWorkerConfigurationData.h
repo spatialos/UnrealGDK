@@ -352,7 +352,8 @@ struct SPATIALGDK_API FSpatialGDKWorkerConfigurationData
 {
 	GENERATED_USTRUCT_BODY()
 
-	FSpatialGDKWorkerConfigurationData() : Debugging(), Networking(), SpatialGDKApplication()
+	FSpatialGDKWorkerConfigurationData()
+	: Debugging(), Networking(), SpatialGDKApplication()
 	{
 	}
 

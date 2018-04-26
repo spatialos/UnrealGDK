@@ -13,7 +13,8 @@ FString GenerateRandomWorkerIdFromTypeName(const FString& type)
 }
 }  // ::
 
-FSpatialGDKWorkerConfiguration::FSpatialGDKWorkerConfiguration() : WorkerConfigurationData()
+FSpatialGDKWorkerConfiguration::FSpatialGDKWorkerConfiguration()
+: WorkerConfigurationData()
 {
 }
 

@@ -27,7 +27,8 @@ class FEntityComponentBuilder
 	{
 	}
 
-	FEntityComponentBuilder() : ReadRequirementSet{{}}
+	FEntityComponentBuilder()
+	: ReadRequirementSet{{}}
 	{
 	}
 

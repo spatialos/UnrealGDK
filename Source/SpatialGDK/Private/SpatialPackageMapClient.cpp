@@ -86,7 +86,8 @@ void USpatialPackageMapClient::RegisterStaticObjects(
 	SpatialGuidCache->RegisterStaticObjects(LevelData);
 }
 
-FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver) : FNetGUIDCache(InDriver)
+FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
+: FNetGUIDCache(InDriver)
 {
 }
 
