@@ -2,16 +2,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialOSComponentUpdater.generated.h"
 #include "UObject/ObjectMacros.h"
+#include "SpatialOSComponentUpdater.generated.h"
 
 class UEntityRegistry;
 
 UCLASS()
-class SPATIALGDK_API USpatialOsComponentUpdater : public UObject {
-  GENERATED_BODY()
+class SPATIALGDK_API USpatialOsComponentUpdater : public UObject
+{
+	GENERATED_BODY()
 
-public:
-  UFUNCTION()
-  void UpdateComponents(UEntityRegistry *Registry, float DeltaSeconds);
+  public:
+	UFUNCTION()
+	void UpdateComponents(UEntityRegistry* Registry, float DeltaSeconds);
 };

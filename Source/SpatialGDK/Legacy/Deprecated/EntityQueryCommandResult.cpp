@@ -3,63 +3,79 @@
 #include "Commander.h"
 #include "RequestId.h"
 
-UEntityQueryCommandResultBase::UEntityQueryCommandResultBase() {}
-
-bool UEntityQueryCommandResultBase::Success() const {
-  return Underlying.StatusCode == worker::StatusCode::kSuccess;
+UEntityQueryCommandResultBase::UEntityQueryCommandResultBase()
+{
 }
 
-FString UEntityQueryCommandResultBase::GetErrorMessage() const {
-  return FString(Underlying.Message.c_str());
+bool UEntityQueryCommandResultBase::Success() const
+{
+	return Underlying.StatusCode == worker::StatusCode::kSuccess;
 }
 
-ECommandResponseCode UEntityQueryCommandResultBase::GetErrorCode() const {
-  return UCommander::GetCommandResponseCode(Underlying.StatusCode);
+FString UEntityQueryCommandResultBase::GetErrorMessage() const
+{
+	return FString(Underlying.Message.c_str());
 }
 
-FRequestId UEntityQueryCommandResultBase::GetRequestId() const {
-  return CachedRequestId;
+ECommandResponseCode UEntityQueryCommandResultBase::GetErrorCode() const
+{
+	return UCommander::GetCommandResponseCode(Underlying.StatusCode);
 }
 
-/**
-*
-*/
-UEntityQueryCountCommandResult::UEntityQueryCountCommandResult() {}
-
-UEntityQueryCommandResultBase *UEntityQueryCountCommandResult::Init(
-    const worker::EntityQueryResponseOp &underlying) {
-  Underlying = underlying;
-  CachedRequestId = FRequestId(Underlying.RequestId.Id, true);
-  return this;
-}
-
-int UEntityQueryCountCommandResult::GetCount() const {
-  return Underlying.ResultCount;
+FRequestId UEntityQueryCommandResultBase::GetRequestId() const
+{
+	return CachedRequestId;
 }
 
 /**
 *
 */
-UEntityQuerySnapshotCommandResult::UEntityQuerySnapshotCommandResult() {}
-
-UEntityQueryCommandResultBase *UEntityQuerySnapshotCommandResult::Init(
-    const worker::EntityQueryResponseOp &underlying) {
-  Underlying = underlying;
-  CachedRequestId = FRequestId(underlying.RequestId.Id, true);
-  return this;
+UEntityQueryCountCommandResult::UEntityQueryCountCommandResult()
+{
 }
 
-int UEntityQuerySnapshotCommandResult::GetSnapshotCount() const {
-  return Underlying.Result.size();
+UEntityQueryCommandResultBase* UEntityQueryCountCommandResult::Init(
+	const worker::EntityQueryResponseOp& underlying)
+{
+	Underlying = underlying;
+	CachedRequestId = FRequestId(Underlying.RequestId.Id, true);
+	return this;
 }
 
-TArray<FEntityId> UEntityQuerySnapshotCommandResult::GetEntityIDs() const {
-  TArray<FEntityId> returnArray;
-  for (auto it = Underlying.Result.begin(); it != Underlying.Result.end();
-       ++it) {
-    FEntityId id(it->first);
-    returnArray.Emplace(id);
-  }
+int UEntityQueryCountCommandResult::GetCount() const
+{
+	return Underlying.ResultCount;
+}
 
-  return returnArray;
+/**
+*
+*/
+UEntityQuerySnapshotCommandResult::UEntityQuerySnapshotCommandResult()
+{
+}
+
+UEntityQueryCommandResultBase* UEntityQuerySnapshotCommandResult::Init(
+	const worker::EntityQueryResponseOp& underlying)
+{
+	Underlying = underlying;
+	CachedRequestId = FRequestId(underlying.RequestId.Id, true);
+	return this;
+}
+
+int UEntityQuerySnapshotCommandResult::GetSnapshotCount() const
+{
+	return Underlying.Result.size();
+}
+
+TArray<FEntityId> UEntityQuerySnapshotCommandResult::GetEntityIDs() const
+{
+	TArray<FEntityId> returnArray;
+	for (auto it = Underlying.Result.begin(); it != Underlying.Result.end();
+		 ++it)
+	{
+		FEntityId id(it->first);
+		returnArray.Emplace(id);
+	}
+
+	return returnArray;
 }

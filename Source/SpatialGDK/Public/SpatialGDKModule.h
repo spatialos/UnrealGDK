@@ -11,15 +11,16 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKModule, Log, All);
 
-class SPATIALGDK_API FSpatialGDKModule : public IModuleInterface {
-public:
-  void StartupModule() override;
-  void ShutdownModule() override;
+class SPATIALGDK_API FSpatialGDKModule : public IModuleInterface
+{
+  public:
+	void StartupModule() override;
+	void ShutdownModule() override;
 
-private:
-  void RegisterSettings();
-  void UnregisterSettings();
-  bool HandleSettingsSaved();
+  private:
+	void RegisterSettings();
+	void UnregisterSettings();
+	bool HandleSettingsSaved();
 
-  FSpatialGDKLoader Loader;
+	FSpatialGDKLoader Loader;
 };

@@ -1,15 +1,18 @@
 #pragma once
 
-#include "ComponentUpdateOpWrapperBase.generated.h"
 #include "SpatialGDKWorkerTypes.h"
 #include "UObject/NoExportTypes.h"
+#include "ComponentUpdateOpWrapperBase.generated.h"
 
 UCLASS(abstract)
-class SPATIALGDK_API UComponentUpdateOpWrapperBase : public UObject {
-  GENERATED_BODY()
-public:
-  UComponentUpdateOpWrapperBase() {}
+class SPATIALGDK_API UComponentUpdateOpWrapperBase : public UObject
+{
+	GENERATED_BODY()
+  public:
+	UComponentUpdateOpWrapperBase()
+	{
+	}
 
-  ::worker::ComponentId ComponentId;
-  ::worker::EntityId EntityId;
+	::worker::ComponentId ComponentId;
+	::worker::EntityId EntityId;
 };

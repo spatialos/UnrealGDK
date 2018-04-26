@@ -14,51 +14,56 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKModule);
 
 IMPLEMENT_MODULE(FSpatialGDKModule, SpatialGDK)
 
-void FSpatialGDKModule::StartupModule() { RegisterSettings(); }
-
-void FSpatialGDKModule::ShutdownModule() {
-  if (UObjectInitialized()) {
-    UnregisterSettings();
-  }
+void FSpatialGDKModule::StartupModule()
+{
+	RegisterSettings();
 }
 
-void FSpatialGDKModule::RegisterSettings() {
-  if (ISettingsModule *SettingsModule =
-          FModuleManager::GetModulePtr<ISettingsModule>("Settings")) {
-    ISettingsContainerPtr SettingsContainer =
-        SettingsModule->GetContainer("Project");
-
-    SettingsContainer->DescribeCategory(
-        "SpatialGDK", LOCTEXT("RuntimeWDCategoryName", "SpatialGDK"),
-        LOCTEXT("RuntimeWDCategoryDescription",
-                "Configuration for the SpatialGDK module"));
-
-    ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings(
-        "Project", "SpatialGDK", "SpatialGDK",
-        LOCTEXT("RuntimeGeneralSettingsName", "SpatialGDK"),
-        LOCTEXT("RuntimeGeneralSettingsDescription",
-                "Base configuration for SpatialGDK module."),
-        GetMutableDefault<USpatialGDKSettings>());
-
-    if (SettingsSection.IsValid()) {
-      SettingsSection->OnModified().BindRaw(
-          this, &FSpatialGDKModule::HandleSettingsSaved);
-    }
-  }
+void FSpatialGDKModule::ShutdownModule()
+{
+	if (UObjectInitialized())
+	{
+		UnregisterSettings();
+	}
 }
 
-void FSpatialGDKModule::UnregisterSettings() {
-  if (ISettingsModule *SettingsModule =
-          FModuleManager::GetModulePtr<ISettingsModule>("Settings")) {
-    SettingsModule->UnregisterSettings("Project", "SpatialGDK", "SpatialGDK");
-  }
+void FSpatialGDKModule::RegisterSettings()
+{
+	if (ISettingsModule* SettingsModule =
+			FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	{
+		ISettingsContainerPtr SettingsContainer =
+			SettingsModule->GetContainer("Project");
+
+		SettingsContainer->DescribeCategory(
+			"SpatialGDK", LOCTEXT("RuntimeWDCategoryName", "SpatialGDK"), LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialGDK module"));
+
+		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings(
+			"Project", "SpatialGDK", "SpatialGDK", LOCTEXT("RuntimeGeneralSettingsName", "SpatialGDK"), LOCTEXT("RuntimeGeneralSettingsDescription", "Base configuration for SpatialGDK module."), GetMutableDefault<USpatialGDKSettings>());
+
+		if (SettingsSection.IsValid())
+		{
+			SettingsSection->OnModified().BindRaw(
+				this, &FSpatialGDKModule::HandleSettingsSaved);
+		}
+	}
 }
 
-bool FSpatialGDKModule::HandleSettingsSaved() {
-  USpatialGDKSettings *Settings = GetMutableDefault<USpatialGDKSettings>();
-  Settings->SaveConfig();
+void FSpatialGDKModule::UnregisterSettings()
+{
+	if (ISettingsModule* SettingsModule =
+			FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	{
+		SettingsModule->UnregisterSettings("Project", "SpatialGDK", "SpatialGDK");
+	}
+}
 
-  return true;
+bool FSpatialGDKModule::HandleSettingsSaved()
+{
+	USpatialGDKSettings* Settings = GetMutableDefault<USpatialGDKSettings>();
+	Settings->SaveConfig();
+
+	return true;
 }
 
 #undef LOCTEXT_NAMESPACE

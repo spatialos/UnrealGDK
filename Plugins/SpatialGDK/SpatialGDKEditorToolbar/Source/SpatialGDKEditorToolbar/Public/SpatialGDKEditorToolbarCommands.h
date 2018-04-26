@@ -7,18 +7,21 @@
 #include "SpatialGDKEditorToolbarStyle.h"
 
 class FSpatialGDKEditorToolbarCommands
-    : public TCommands<FSpatialGDKEditorToolbarCommands> {
-public:
-  FSpatialGDKEditorToolbarCommands()
-      : TCommands<FSpatialGDKEditorToolbarCommands>(
-            TEXT("SpatialGDKEditorToolbar"),
-            NSLOCTEXT("Contexts", "SpatialGDKEditorToolbar",
-                      "SpatialGDKEditorToolbar Plugin"),
-            NAME_None, FSpatialGDKEditorToolbarStyle::GetStyleSetName()) {}
+	: public TCommands<FSpatialGDKEditorToolbarCommands>
+{
+  public:
+	FSpatialGDKEditorToolbarCommands()
+	: TCommands<FSpatialGDKEditorToolbarCommands>(
+		  TEXT("SpatialGDKEditorToolbar"),
+		  NSLOCTEXT("Contexts", "SpatialGDKEditorToolbar", "SpatialGDKEditorToolbar Plugin"),
+		  NAME_None,
+		  FSpatialGDKEditorToolbarStyle::GetStyleSetName())
+	{
+	}
 
-  virtual void RegisterCommands() override;
+	virtual void RegisterCommands() override;
 
-public:
-  TSharedPtr<FUICommandInfo> CreateSpatialGDKSnapshot;
-  TSharedPtr<FUICommandInfo> GenerateInteropCode;
+  public:
+	TSharedPtr<FUICommandInfo> CreateSpatialGDKSnapshot;
+	TSharedPtr<FUICommandInfo> GenerateInteropCode;
 };

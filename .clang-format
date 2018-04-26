@@ -31,7 +31,6 @@ Cpp11BracedListStyle: true
 DerivePointerAlignment: false
 DisableFormat:   false
 ExperimentalAutoDetectBinPacking: false
-FixNamespaceComments: false
 ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH ]
 # Unreal requires ".generated.h" files to be the last includes in any header file
 IncludeCategories: 
