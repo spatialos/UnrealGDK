@@ -3,8 +3,8 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "SpatialOSConversionFunctionLibrary.generated.h"
 #include "improbable/standard_library.h"
+#include "SpatialOSConversionFunctionLibrary.generated.h"
 
 /**
 *

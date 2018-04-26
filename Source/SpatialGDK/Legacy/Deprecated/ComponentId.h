@@ -1,10 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma once
 
-#include "ComponentId.generated.h"
 #include "ComponentIdentifier.h"
 #include "CoreMinimal.h"
 #include "SpatialGDKWorkerTypes.h"
+#include "ComponentId.generated.h"
 
 USTRUCT(BlueprintType)
 struct SPATIALGDK_API FComponentId

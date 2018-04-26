@@ -6,8 +6,8 @@
 #include "EntityId.h"
 #include "EntityQueryConstraints.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "SpatialOSBlueprintLibrary.generated.h"
 #include "SpatialOSCommandResult.h"
+#include "SpatialOSBlueprintLibrary.generated.h"
 
 UCLASS()
 class SPATIALGDK_API USpatialOSBlueprintLibrary : public UBlueprintFunctionLibrary

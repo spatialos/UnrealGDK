@@ -5,9 +5,9 @@
 #include "AddComponentOpWrapperBase.h"
 #include "ComponentIdentifier.h"
 #include "CoreMinimal.h"
-#include "SpatialInterop.generated.h"
 #include "SpatialTypeBinding.h"
 #include "SpatialUnrealObjectRef.h"
+#include "SpatialInterop.generated.h"
 
 class USpatialOS;
 class USpatialActorChannel;

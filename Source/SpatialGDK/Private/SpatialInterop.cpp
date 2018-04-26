@@ -11,10 +11,10 @@
 #include "SpatialPackageMapClient.h"
 
 // Needed for the entity template stuff.
+#include "EntityBuilder.h"
 #include <improbable/standard_library.h>
 #include <improbable/unreal/player.h>
 #include <improbable/unreal/unreal_metadata.h>
-#include "EntityBuilder.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSInterop);
 

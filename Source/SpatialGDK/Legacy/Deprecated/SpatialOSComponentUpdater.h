@@ -2,8 +2,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialOSComponentUpdater.generated.h"
 #include "UObject/ObjectMacros.h"
+#include "SpatialOSComponentUpdater.generated.h"
 
 class UEntityRegistry;
 

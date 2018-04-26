@@ -1,11 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "PlayerSpawnRequestSender.h"
-#include <functional>
 #include "CoreMinimal.h"
 #include "SpatialConstants.h"
 #include "SpatialOS.h"
 #include "TimerManager.h"
+#include <functional>
 
 DEFINE_LOG_CATEGORY(LogSpatialOSPlayerSpawner);
 

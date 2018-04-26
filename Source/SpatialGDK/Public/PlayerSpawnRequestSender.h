@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <improbable/view.h>
-#include <improbable/worker.h>
 #include "LogMacros.h"
 #include "improbable/unreal/spawner.h"
+#include <improbable/view.h>
+#include <improbable/worker.h>
 
 namespace worker
 {

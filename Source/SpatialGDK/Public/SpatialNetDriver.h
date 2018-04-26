@@ -7,8 +7,8 @@
 #include "PlayerSpawnRequestSender.h"
 #include "SpatialInterop.h"
 #include "SpatialInteropPipelineBlock.h"
-#include "SpatialNetDriver.generated.h"
 #include "SpatialOutputDevice.h"
+#include "SpatialNetDriver.generated.h"
 
 class UEntityPipeline;
 class UEntityRegistry;

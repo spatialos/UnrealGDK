@@ -7,8 +7,8 @@
 
 #include "CommanderTypes.h"
 #include "RequestId.h"
-#include "SpatialOSCommandResult.generated.h"
 #include "UObject/NoExportTypes.h"
+#include "SpatialOSCommandResult.generated.h"
 
 USTRUCT(BlueprintType)
 struct SPATIALGDK_API FSpatialOSCommandResult

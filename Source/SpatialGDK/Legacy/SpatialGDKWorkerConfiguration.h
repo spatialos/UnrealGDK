@@ -2,9 +2,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialGDKWorkerConfiguration.generated.h"
 #include "SpatialGDKWorkerConfigurationData.h"
 #include "SpatialGDKWorkerTypes.h"
+#include "SpatialGDKWorkerConfiguration.generated.h"
 
 USTRUCT(BlueprintType)
 struct SPATIALGDK_API FSpatialGDKWorkerConfiguration

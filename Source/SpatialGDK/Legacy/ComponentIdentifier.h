@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ComponentIdentifier.generated.h"
 #include "EngineMinimal.h"
 #include "SpatialGDKWorkerTypes.h"
+#include "ComponentIdentifier.generated.h"
 
 USTRUCT(BlueprintType)
 struct FComponentIdentifier

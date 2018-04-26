@@ -3,9 +3,9 @@
 #pragma once
 
 #include "AddComponentOpWrapperBase.h"
-#include "ComponentAddOpQueueWrapper.generated.h"
 #include "CoreMinimal.h"
 #include "EngineMinimal.h"
+#include "ComponentAddOpQueueWrapper.generated.h"
 
 USTRUCT()
 struct FComponentAddOpQueueWrapper

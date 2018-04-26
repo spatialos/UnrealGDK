@@ -1,8 +1,8 @@
 #pragma once
 
-#include "AddComponentOpWrapperBase.generated.h"
 #include "SpatialGDKWorkerTypes.h"
 #include "UObject/NoExportTypes.h"
+#include "AddComponentOpWrapperBase.generated.h"
 
 UCLASS(abstract)
 class SPATIALGDK_API UAddComponentOpWrapperBase : public UObject

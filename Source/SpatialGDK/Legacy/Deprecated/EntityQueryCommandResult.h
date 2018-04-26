@@ -2,10 +2,10 @@
 
 #include "CommanderTypes.h"
 #include "EntityId.h"
-#include "EntityQueryCommandResult.generated.h"
 #include "RequestId.h"
 #include "SpatialGDKWorkerTypes.h"
 #include "UObject/NoExportTypes.h"
+#include "EntityQueryCommandResult.generated.h"
 
 /**
 *

@@ -3,9 +3,9 @@
 #include "ComponentId.h"
 #include "CoreMinimal.h"
 #include "EntityId.h"
-#include "EntityQueryConstraints.generated.h"
 #include "SpatialGDKWorkerTypes.h"
 #include "improbable/collections.h"
+#include "EntityQueryConstraints.generated.h"
 
 /**
 * Struct defining the result of an AND or OR Entity query constraint

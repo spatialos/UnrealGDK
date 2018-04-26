@@ -6,11 +6,11 @@
 
 #include "Engine/ActorChannel.h"
 #include "EntityId.h"
-#include "SpatialActorChannel.generated.h"
 #include "SpatialNetDriver.h"
 #include "SpatialTypeBinding.h"
 #include "improbable/standard_library.h"
 #include "improbable/worker.h"
+#include "SpatialActorChannel.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKActorChannel, Log, All);
 

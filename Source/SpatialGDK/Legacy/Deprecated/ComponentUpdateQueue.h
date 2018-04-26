@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ComponentUpdateOpWrapperBase.h"
-#include "ComponentUpdateQueue.generated.h"
 #include "EngineMinimal.h"
+#include "ComponentUpdateQueue.generated.h"
 
 USTRUCT(BlueprintType)
 struct FComponentUpdateQueue
