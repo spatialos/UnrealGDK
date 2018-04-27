@@ -24,7 +24,7 @@ DECLARE_DELEGATE_RetVal_OneParam(bool, FQueueStatusDelegate, const worker::Queue
   */
 	class FWorkerConnection
 {
-  public:
+public:
 	/** Returns true if there is an active connection to SpatialOS. */
 	bool IsConnected() const;
 
@@ -71,7 +71,7 @@ DECLARE_DELEGATE_RetVal_OneParam(bool, FQueueStatusDelegate, const worker::Queue
 	/** Returns the metrics object that is reported to SpatialOS. */
 	worker::Metrics& GetMetrics();
 
-  private:
+private:
 	DECLARE_DELEGATE(FMetricsDelegate);
 
 	SpatialOSLocator CreateLocator(const FString& ProjectName, const FString& LocatorHost, const FString& LoginToken);

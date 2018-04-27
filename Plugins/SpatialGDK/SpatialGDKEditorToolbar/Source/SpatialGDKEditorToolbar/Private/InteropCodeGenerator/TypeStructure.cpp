@@ -190,8 +190,7 @@ void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr
 	{
 		if (bShouldRecurseFurther && PropertyPair.Value->Type.IsValid())
 		{
-			// Either recurse into subobjects if they're structs or
-			// bRecurseIntoSubobjects is true.
+			// Either recurse into subobjects if they're structs or bRecurseIntoSubobjects is true.
 			if (bRecurseIntoSubobjects || PropertyPair.Value->Property->IsA<UStructProperty>())
 			{
 				VisitAllObjects(PropertyPair.Value->Type, Visitor, bRecurseIntoSubobjects);
@@ -207,8 +206,7 @@ void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TShared
 		bool bShouldRecurseFurther = Visitor(PropertyPair.Value);
 		if (bShouldRecurseFurther && PropertyPair.Value->Type.IsValid())
 		{
-			// Either recurse into subobjects if they're structs or
-			// bRecurseIntoSubobjects is true.
+			// Either recurse into subobjects if they're structs or bRecurseIntoSubobjects is true.
 			if (bRecurseIntoSubobjects || PropertyPair.Value->Property->IsA<UStructProperty>())
 			{
 				VisitAllProperties(PropertyPair.Value->Type, Visitor, bRecurseIntoSubobjects);
@@ -224,8 +222,7 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPt
 		bool bShouldRecurseFurther = Visitor(PropertyPair.Value);
 		if (bShouldRecurseFurther && PropertyPair.Value->Type.IsValid())
 		{
-			// Either recurse into subobjects if they're structs or
-			// bRecurseIntoSubobjects is true.
+			// Either recurse into subobjects if they're structs or bRecurseIntoSubobjects is true.
 			if (bRecurseIntoSubobjects || PropertyPair.Value->Property->IsA<UStructProperty>())
 			{
 				VisitAllProperties(PropertyPair.Value->Type, Visitor, bRecurseIntoSubobjects);
@@ -261,15 +258,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		PropertyNode->ContainerType = TypeNode;
 		TypeNode->Properties.Add(Property, PropertyNode);
 
-		// If this property not a struct or object (which can contain more
-		// properties), stop here.
+		// If this property not a struct or object (which can contain more properties), stop here.
 		if (!Property->IsA<UStructProperty>() && !Property->IsA<UObjectProperty>())
 		{
 			continue;
 		}
 
-		// If this is a struct property, then get the struct type and recurse into
-		// it.
+		// If this is a struct property, then get the struct type and recurse into it.
 		if (Property->IsA<UStructProperty>())
 		{
 			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
@@ -279,36 +274,15 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		}
 
 		// If this is an object property, then we need to do two things:
-		//	 1) Determine whether this property is a strong or weak reference to the
-		// object. Some
-		// subobjects (such as the CharacterMovementComponent)
-		//		are in fact owned by the character, and can be stored in the
-		// same
-		// entity as the
-		// character
-		// itself. Some subobjects (such as the Controller
-		//		field in AActor) is a weak reference, and should just store a
-		// reference to the real
-		// object. We inspect the CDO to determine whether
-		//		the owner of the property value is equal to itself. As structs
-		// don't
-		// have CDOs, we
-		// assume
-		// that all object properties in structs are
+		//	 1) Determine whether this property is a strong or weak reference to the object. Some subobjects (such as the CharacterMovementComponent)
+		//		are in fact owned by the character, and can be stored in the same entity as the character itself. Some subobjects (such as the Controller
+		//		field in AActor) is a weak reference, and should just store a reference to the real object. We inspect the CDO to determine whether
+		//		the owner of the property value is equal to itself. As structs don't have CDOs, we assume that all object properties in structs are
 		//		weak references.
 		//
-		//   2) Obtain the concrete object type stored in this property. For
-		//   example, the property
-		//   containing the CharacterMovementComponent
-		//      might be a property which stores a MovementComponent pointer, so
-		//      we'd need to
-		//      somehow
-		//      figure out the real type being stored there
-		//		during runtime. This is determined by getting the CDO of this class
-		// to
-		// determine what
-		// is
-		// stored in that property.
+		//   2) Obtain the concrete object type stored in this property. For example, the property containing the CharacterMovementComponent
+		//      might be a property which stores a MovementComponent pointer, so we'd need to somehow figure out the real type being stored there
+		//		during runtime. This is determined by getting the CDO of this class to determine what is stored in that property.
 		UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property);
 		check(ObjectProperty);
 
@@ -321,15 +295,11 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		UObject* ContainerCDO = Class->GetDefaultObject();
 		check(ContainerCDO);
 
-		// Obtain the properties actual value from the CDO, so we can figure out its
-		// true type.
+		// Obtain the properties actual value from the CDO, so we can figure out its true type.
 		UObject* Value = ObjectProperty->GetPropertyValue_InContainer(ContainerCDO);
 		if (Value)
 		{
-			// If this is an editor-only property, skip it. As we've already added to
-			// the property
-			// list at
-			// this stage, just remove it.
+			// If this is an editor-only property, skip it. As we've already added to the property list at this stage, just remove it.
 			if (Value->IsEditorOnly())
 			{
 				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - editor only, skipping"), *Property->GetName());
@@ -359,8 +329,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		}
 	}
 
-	// If this is not a class, exit now, as structs cannot have RPCs or replicated
-	// properties.
+	// If this is not a class, exit now, as structs cannot have RPCs or replicated properties.
 	if (!Class)
 	{
 		return TypeNode;
@@ -398,19 +367,10 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		}
 	}
 
-	// Set up replicated properties by reading the rep layout and matching the
-	// properties with the
-	// ones in the type node.
-	// Based on inspection in InitFromObjectClass, the RepLayout will always
-	// replicate object
-	// properties using NetGUIDs, regardless of
-	// ownership. However, the rep layout will recurse into structs and allocate
-	// rep handles for
-	// their
-	// properties, unless the condition
-	// "Struct->StructFlags & STRUCT_NetSerializeNative" is true. In this case,
-	// the entire struct is
-	// replicated as a whole.
+	// Set up replicated properties by reading the rep layout and matching the properties with the ones in the type node.
+	// Based on inspection in InitFromObjectClass, the RepLayout will always replicate object properties using NetGUIDs, regardless of
+	// ownership. However, the rep layout will recurse into structs and allocate rep handles for their properties, unless the condition
+	// "Struct->StructFlags & STRUCT_NetSerializeNative" is true. In this case, the entire struct is replicated as a whole.
 	FRepLayout RepLayout;
 	RepLayout.InitFromObjectClass(Class);
 	for (int CmdIndex = 0; CmdIndex < RepLayout.Cmds.Num(); ++CmdIndex)
@@ -423,26 +383,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			continue;
 		}
 
-		// In a FRepLayout, all the root level replicated properties in a class are
-		// stored in the
-		// Parents array.
-		// The Cmds array is an expanded version of the Parents array. This usually
-		// maps 1:1 with
-		// the
-		// Parents array (as most properties
-		// don't contain other properties). The main exception are structs which
-		// don't have a native
-		// serialize function. In this case
-		// multiple Cmds map to the structs properties, but they all have the same
-		// ParentIndex
-		// (which
-		// points to the root replicated property
+		// In a FRepLayout, all the root level replicated properties in a class are stored in the Parents array.
+		// The Cmds array is an expanded version of the Parents array. This usually maps 1:1 with the Parents array (as most properties
+		// don't contain other properties). The main exception are structs which don't have a native serialize function. In this case
+		// multiple Cmds map to the structs properties, but they all have the same ParentIndex (which points to the root replicated property
 		// which contains them.
 		//
-		// This might be problematic if we have a property which is inside a struct,
-		// nested in
-		// another
-		// struct which is replicated. For example:
+		// This might be problematic if we have a property which is inside a struct, nested in another struct which is replicated. For example:
 		//
 		//	class Foo
 		//	{
@@ -455,12 +402,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		// 		} Bar;
 		//	}
 		//
-		// The parents array will contain "Bar", and the cmds array will contain
-		// "Nested", but we
-		// have
-		// no reference to "Baz" anywhere in the RepLayout.
-		// What we do here is recurse into all of Bar's properties in the AST until
-		// we find Baz.
+		// The parents array will contain "Bar", and the cmds array will contain "Nested", but we have no reference to "Baz" anywhere in the RepLayout.
+		// What we do here is recurse into all of Bar's properties in the AST until we find Baz.
 
 		TSharedPtr<FUnrealProperty> PropertyNode = nullptr;
 
@@ -471,26 +414,19 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		}
 		else
 		{
-			// Here, the Cmd is some property inside the Parent property. We need to
-			// find it in the
-			// AST.
+			// Here, the Cmd is some property inside the Parent property. We need to find it in the AST.
 			TSharedPtr<FUnrealProperty> RootProperty = TypeNode->Properties[Parent.Property];
-			checkf(RootProperty->Type.IsValid(), TEXT("Properties in the AST which are parent properties "
-													  "in the rep layout must have child properties"));
+			checkf(RootProperty->Type.IsValid(), TEXT("Properties in the AST which are parent properties in the rep layout must have child properties"));
 			VisitAllProperties(RootProperty->Type,
 							   [&PropertyNode, &Cmd](TSharedPtr<FUnrealProperty> Property) {
 								   if (Property->Property == Cmd.Property)
 								   {
-									   checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the "
-																			"same property. This indicates that we have a 'diamond "
-																			"of "
-																			"death' style situation.")) PropertyNode = Property;
+									   checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation.")) PropertyNode = Property;
 								   }
 								   return true;
 							   },
 							   false);
-			checkf(PropertyNode.IsValid(), TEXT("Couldn't find the Cmd property inside the Parent's "
-												"sub-properties. This shouldn't happen."));
+			checkf(PropertyNode.IsValid(), TEXT("Couldn't find the Cmd property inside the Parent's sub-properties. This shouldn't happen."));
 		}
 
 		// We now have the right property node. Fill in the rep data.
@@ -513,8 +449,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 
 		if (Cmd.Type == REPCMD_DynamicArray)
 		{
-			// Bypass the inner properties and null terminator cmd when processing
-			// arrays.
+			// Bypass the inner properties and null terminator cmd when processing arrays.
 			CmdIndex = Cmd.EndCmd - 1;
 		}
 	}
@@ -528,8 +463,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		TSharedPtr<FUnrealType> CurrentTypeNode = TypeNode;
 		for (FName PropertyName : PropertyNames)
 		{
-			checkf(CurrentTypeNode.IsValid(), TEXT("A property in the chain (except the leaf) is not a struct "
-												   "property."));
+			checkf(CurrentTypeNode.IsValid(), TEXT("A property in the chain (except the leaf) is not a struct property."));
 			UProperty* NextProperty = CurrentTypeNode->Type->FindPropertyByName(PropertyName);
 			checkf(NextProperty, TEXT("Cannot find property %s in container %s"), *PropertyName.ToString(), *CurrentTypeNode->Type->GetName());
 			MigratableProperty = CurrentTypeNode->Properties.FindChecked(NextProperty);
@@ -593,8 +527,7 @@ TMap<uint16, TSharedPtr<FUnrealProperty>> GetFlatMigratableData(TSharedPtr<FUnre
 	return MigratableData;
 }
 
-// Goes through all RPCs in the TypeInfo and returns a list of all the unique
-// RPC source classes.
+// Goes through all RPCs in the TypeInfo and returns a list of all the unique RPC source classes.
 TArray<FString> GetRPCTypeOwners(TSharedPtr<FUnrealType> TypeInfo)
 {
 	TArray<FString> RPCTypeOwners;
@@ -641,10 +574,7 @@ TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> 
 							   // Generic struct. Recurse further.
 							   return true;
 						   }
-						   // If the RepType is not a generic struct, such as
-						   // Vector3f or Plane, add
-						   // to
-						   // ParamList and stop recursion.
+						   // If the RepType is not a generic struct, such as Vector3f or Plane, add to ParamList and stop recursion.
 						   ParamList.Add(Property);
 						   return false;
 					   },
@@ -670,9 +600,7 @@ TArray<TSharedPtr<FUnrealProperty>> GetPropertyChain(TSharedPtr<FUnrealProperty>
 		}
 	}
 
-	// As we started at the leaf property and worked our way up, we need to
-	// reverse the list at the
-	// end.
+	// As we started at the leaf property and worked our way up, we need to reverse the list at the end.
 	Algo::Reverse(OutputChain);
 	return OutputChain;
 }

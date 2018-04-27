@@ -67,7 +67,7 @@ struct FPropertyChangeState
 // A structure containing information about a replicated property.
 class FRepHandleData
 {
-  public:
+public:
 	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, ELifetimeCondition Condition, ELifetimeRepNotifyCondition RepNotifyCondition) : Condition(Condition), RepNotifyCondition(RepNotifyCondition), Offset(0)
 	{
 		// Build property chain.
@@ -112,14 +112,14 @@ class FRepHandleData
 	ELifetimeCondition Condition;
 	ELifetimeRepNotifyCondition RepNotifyCondition;
 
-  private:
+private:
 	int32 Offset;
 };
 
 // A structure containing information about a migratable property.
 class FMigratableHandleData
 {
-  public:
+public:
 	FMigratableHandleData(UClass* Class, TArray<FName> PropertyNames) : SubobjectProperty(false), Offset(0)
 	{
 		// Build property chain.
@@ -203,7 +203,7 @@ class FMigratableHandleData
 	TArray<UProperty*> PropertyChain;
 	UProperty* Property;
 
-  private:
+private:
 	bool SubobjectProperty;  // If this is true, then this property refers to a
 							 // property within a
 							 // subobject.
@@ -221,7 +221,7 @@ class SPATIALGDK_API USpatialTypeBinding : public UObject
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	virtual const FRepHandlePropertyMap& GetRepHandlePropertyMap() const PURE_VIRTUAL(USpatialTypeBinding::GetRepHandlePropertyMap, static FRepHandlePropertyMap Map; return Map;);
 	virtual const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() const PURE_VIRTUAL(USpatialTypeBinding::GetMigratableHandlePropertyMap, static FMigratableHandlePropertyMap Map; return Map;);
 
@@ -237,7 +237,7 @@ class SPATIALGDK_API USpatialTypeBinding : public UObject
 	virtual void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const PURE_VIRTUAL(USpatialTypeBinding::ReceiveAddComponent, );
 	virtual worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const PURE_VIRTUAL(USpatialTypeBinding::GetInterestOverrideMap, return {};);
 
-  protected:
+protected:
 	UPROPERTY()
 	USpatialInterop* Interop;
 

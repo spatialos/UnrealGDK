@@ -95,11 +95,7 @@ bool CheckClassNameListValidity(const TArray<FString>& Classes)
 
 			if (SchemaTypeA.Equals(SchemaTypeB))
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Class name collision after removing underscores: '%s' and "
-																	  "'%s' - "
-																	  "schema not "
-																	  "generated"),
-					   *ClassA, *ClassB);
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Class name collision after removing underscores: '%s' and '%s' - schema not generated"), *ClassA, *ClassB);
 				return false;
 			}
 		}

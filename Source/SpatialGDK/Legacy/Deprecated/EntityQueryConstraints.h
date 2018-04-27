@@ -16,7 +16,7 @@ class SPATIALGDK_API UEntityQueryConstraint : public UObject
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	UEntityQueryConstraint()
 	{
 	}
@@ -33,7 +33,7 @@ struct SPATIALGDK_API FEntityIdQueryConstraint
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	FORCEINLINE FEntityIdQueryConstraint()
 	{
 	}
@@ -59,7 +59,7 @@ struct SPATIALGDK_API FComponentIdQueryConstraint
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	FORCEINLINE FComponentIdQueryConstraint()
 	{
 	}

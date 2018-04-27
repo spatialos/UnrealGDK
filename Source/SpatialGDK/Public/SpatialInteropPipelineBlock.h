@@ -44,7 +44,7 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	void Init(UEntityRegistry* Registry, USpatialNetDriver* Driver, UWorld* LoadedWorld);
 
 	void AddEntity(const worker::AddEntityOp& AddEntityOp) override;
@@ -58,7 +58,7 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 	void EnterCriticalSection() override;
 	void LeaveCriticalSection() override;
 
-  private:
+private:
 	bool bInCriticalSection;
 
 	UPROPERTY()
@@ -87,7 +87,7 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 	UPROPERTY()
 	TMap<FComponentId, UClass*> KnownComponents;
 
-  private:
+private:
 	void AddEntityImpl(const FEntityId& EntityId);
 	void InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp);
 	void DisableComponentImpl(const FComponentIdentifier& ComponentIdentifier);
@@ -96,7 +96,7 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 	// Stub.
 	void ProcessOps(const TWeakPtr<SpatialOSView>& InView, const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World, UCallbackDispatcher* CallbackDispatcher) override;
 
-  private:
+private:
 	AActor* GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId);
 	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ClassToSpawn);
 

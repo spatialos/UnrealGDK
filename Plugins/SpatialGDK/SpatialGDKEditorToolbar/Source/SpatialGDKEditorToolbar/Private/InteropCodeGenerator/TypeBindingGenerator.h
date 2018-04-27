@@ -11,19 +11,13 @@ class FCodeWriter;
 // For example: USpatialTypeBinding_Character.
 FString TypeBindingName(UClass* Class);
 
-// Generates code to copy an Unreal 'PropertyValue' and write it to a SpatialOS
-// component update
-// object 'Update'.
+// Generates code to copy an Unreal 'PropertyValue' and write it to a SpatialOS component update object 'Update'.
 void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, const UProperty* Property, const FString& PropertyValue, const bool bIsUpdate, TFunction<void(const FString&)> ObjectResolveFailureGenerator);
 
-// Generates code to extract property data from a SpatialOS component update
-// object and write it to
-// an Unreal 'PropertyValue'
+// Generates code to extract property data from a SpatialOS component update object and write it to an Unreal 'PropertyValue'
 void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Update, const UProperty* Property, const FString& PropertyValue, const bool bIsUpdate, TFunction<void(const FString&)> ObjectResolveFailureGenerator);
 
-// Generates the appropriate macro for Unreal to read a property from an FFrame
-// in scope. This is
-// the same method that
+// Generates the appropriate macro for Unreal to read a property from an FFrame in scope. This is the same method that
 // Unreal uses in .generated.h files.
 FString GenerateFFramePropertyReader(UProperty* Property);
 

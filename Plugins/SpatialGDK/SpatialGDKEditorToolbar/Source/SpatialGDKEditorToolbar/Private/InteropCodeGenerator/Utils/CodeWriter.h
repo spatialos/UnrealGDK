@@ -25,7 +25,7 @@ struct FFunctionSignature
 
 class FCodeWriter
 {
-  public:
+public:
 	FCodeWriter();
 
 	template <typename... T>
@@ -50,7 +50,7 @@ class FCodeWriter
 	FCodeWriter(const FCodeWriter& other) = delete;
 	FCodeWriter& operator=(const FCodeWriter& other) = delete;
 
-  private:
+private:
 	FString OutputSource;
 	int Scope;
 };

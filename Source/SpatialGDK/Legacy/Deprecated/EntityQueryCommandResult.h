@@ -15,7 +15,7 @@ class SPATIALGDK_API UEntityQueryCommandResultBase : public UObject
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	UEntityQueryCommandResultBase();
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Query Result")
@@ -30,7 +30,7 @@ class SPATIALGDK_API UEntityQueryCommandResultBase : public UObject
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Query Result")
 	FRequestId GetRequestId() const;
 
-  protected:
+protected:
 	worker::EntityQueryResponseOp Underlying;
 	FRequestId CachedRequestId;
 };
@@ -43,7 +43,7 @@ class SPATIALGDK_API UEntityQueryCountCommandResult : public UEntityQueryCommand
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	UEntityQueryCountCommandResult();
 	UEntityQueryCommandResultBase* Init(const worker::EntityQueryResponseOp& underlying);
 
@@ -59,7 +59,7 @@ class SPATIALGDK_API UEntityQuerySnapshotCommandResult : public UEntityQueryComm
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	UEntityQuerySnapshotCommandResult();
 	UEntityQueryCommandResultBase* Init(const worker::EntityQueryResponseOp& underlying);
 

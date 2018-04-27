@@ -14,7 +14,7 @@ class SPATIALGDK_API USpatialOSBlueprintLibrary : public UBlueprintFunctionLibra
 {
 	GENERATED_UCLASS_BODY()
 
-  public:
+public:
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Equal (EntityId)", CompactNodeTitle = "=="), Category = "SpatialOS EntityId")
 	static bool EqualEqual_FEntityId(const FEntityId& A, const FEntityId& B);
 

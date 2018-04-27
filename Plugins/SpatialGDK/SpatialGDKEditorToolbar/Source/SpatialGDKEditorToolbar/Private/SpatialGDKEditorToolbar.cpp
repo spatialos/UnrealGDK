@@ -10,7 +10,6 @@
 #include "NotificationManager.h"
 #include "SNotificationList.h"
 #include "SpatialGDKEditorGenerateSnapshot.h"
-#include "SpatialGDKEditorGenerateSnapshot.h"
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 #include "SpatialGDKEditorToolbarCommands.h"
 #include "SpatialGDKEditorToolbarStyle.h"

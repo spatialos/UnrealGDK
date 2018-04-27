@@ -58,7 +58,7 @@ using FRPCCommandResponseFunc = TFunction<FRPCCommandResponseResult()>;
 // Stores the number of attempts when retrying failed commands.
 class FOutgoingReliableRPC
 {
-  public:
+public:
 	FOutgoingReliableRPC(FRPCCommandRequestFunc SendCommandRequest) : SendCommandRequest{SendCommandRequest}, NumAttempts{1}
 	{
 	}
@@ -144,7 +144,7 @@ UCLASS()
 class SPATIALGDK_API USpatialInterop : public UObject
 {
 	GENERATED_BODY()
-  public:
+public:
 	USpatialInterop();
 
 	void Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTimerManager* TimerManager);
@@ -202,7 +202,7 @@ class SPATIALGDK_API USpatialInterop : public UObject
 		return NetDriver;
 	}
 
-  private:
+private:
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
 
@@ -237,7 +237,7 @@ class SPATIALGDK_API USpatialInterop : public UObject
 	// Pending incoming RPCs.
 	FPendingIncomingRPCMap PendingIncomingRPCs;
 
-  private:
+private:
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
 	void UnregisterInteropType(UClass* Class);
 

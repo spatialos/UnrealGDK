@@ -23,7 +23,7 @@ class SPATIALGDK_API UEntityPipelineBlock : public UObject
 	GENERATED_BODY()
 	friend class UEntityPipeline;
 
-  public:
+public:
 	virtual void AddEntity(const worker::AddEntityOp& AddEntityOp) PURE_VIRTUAL(UEntityPipelineBlock::AddEntity(), );
 	virtual void RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp) PURE_VIRTUAL(UEntityPipelineBlock::RemoveEntity(), );
 
@@ -36,7 +36,7 @@ class SPATIALGDK_API UEntityPipelineBlock : public UObject
 
 	virtual void LeaveCriticalSection() PURE_VIRTUAL(UEntityPipelineBlock::LeaveCriticalSection(), );
 
-  protected:
+protected:
 	UPROPERTY()
 	UEntityPipelineBlock* NextBlock;
 

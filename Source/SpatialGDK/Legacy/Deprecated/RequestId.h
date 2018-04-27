@@ -19,7 +19,7 @@ struct SPATIALGDK_API FRequestId
 {
 	GENERATED_USTRUCT_BODY()
 
-  public:
+public:
 	FORCEINLINE FRequestId()
 	{
 		Underlying = 0;
@@ -77,7 +77,7 @@ struct SPATIALGDK_API FRequestId
 		return bValidId;
 	}
 
-  private:
+private:
 	std::uint32_t Underlying;
 	bool bValidId;
 

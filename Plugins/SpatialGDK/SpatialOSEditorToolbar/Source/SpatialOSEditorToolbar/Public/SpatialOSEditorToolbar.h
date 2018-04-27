@@ -13,7 +13,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSEditor, Log, All);
 
 class FSpatialOSEditorToolbarModule : public IModuleInterface, public FTickableEditorObject
 {
-  public:
+public:
 	FSpatialOSEditorToolbarModule();
 
 	void StartupModule() override;
@@ -32,7 +32,7 @@ class FSpatialOSEditorToolbarModule : public IModuleInterface, public FTickableE
 		RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialOSEditorToolbarModule, STATGROUP_Tickables);
 	}
 
-  private:
+private:
 	void RegisterSettings();
 	void UnregisterSettings();
 	bool HandleSettingsSaved();
@@ -55,7 +55,7 @@ class FSpatialOSEditorToolbarModule : public IModuleInterface, public FTickableE
 	void CheckForRunningStack();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
-  private:
+private:
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
 

@@ -11,7 +11,7 @@ struct SPATIALGDK_API FComponentId
 {
 	GENERATED_USTRUCT_BODY()
 
-  public:
+public:
 	FORCEINLINE FComponentId()
 	{
 		Underlying = 0;
@@ -53,7 +53,7 @@ struct SPATIALGDK_API FComponentId
 		return Underlying;
 	}
 
-  private:
+private:
 	worker::ComponentId Underlying;
 
 	friend uint32 GetTypeHash(FComponentId const& Rhs)

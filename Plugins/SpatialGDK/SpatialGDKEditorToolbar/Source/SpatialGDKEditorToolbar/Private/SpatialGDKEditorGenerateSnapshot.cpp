@@ -3,7 +3,7 @@
 #include "SpatialGDKEditorGenerateSnapshot.h"
 #include "EntityBuilder.h"
 #include "SpatialConstants.h"
-#include "SpatialGDKCommon.h"
+#include "SpatialOSCommon.h"
 
 #include "EngineUtils.h"
 #include "GameFramework/Actor.h"
@@ -55,10 +55,7 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 		FString PathName = Actor->GetPathName(World);
 		StaticActorMap.emplace(StaticObjectId, std::string(TCHAR_TO_UTF8(*PathName)));
 		worker::EntityId EntityId = 0;
-		UE_LOG(LogSpatialGDKSnapshot, Log, TEXT("Found static object in persistent level, adding to level data "
-												"entity. Path: %s, "
-												"Object ref: (entity ID: %lld, offset: %u)."),
-			   *PathName, EntityId, StaticObjectId);
+		UE_LOG(LogSpatialGDKSnapshot, Log, TEXT("Found static object in persistent level, adding to level data entity. Path: %s, Object ref: (entity ID: %lld, offset: %u)."), *PathName, EntityId, StaticObjectId);
 		StaticObjectId++;
 	}
 
@@ -66,8 +63,7 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 	const Coordinates InitialPosition{0, 0, 0};
 	LevelEntities.emplace(SpatialConstants::LEVEL_DATA_ENTITY_ID, improbable::unreal::FEntityBuilder::Begin().AddPositionComponent(Position::Data{InitialPosition}, UnrealWorkerWritePermission).AddMetadataComponent(Metadata::Data("LevelData")).SetPersistence(true).SetReadAcl(AnyWorkerReadPermission).AddComponent<unreal::UnrealLevel>(unreal::UnrealLevel::Data{StaticActorMap}, UnrealWorkerWritePermission).Build());
 
-	// Set up grid of "placeholder" entities to allow workers to be authoritative
-	// over _something_.
+	// Set up grid of "placeholder" entities to allow workers to be authoritative over _something_.
 	int PlaceholderCount = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST - SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST + 1;
 	int PlaceholderCountAxis = sqrt(PlaceholderCount);
 	checkf(PlaceholderCountAxis * PlaceholderCountAxis == PlaceholderCount, TEXT("The number of placeholders must be a square number."));
@@ -93,24 +89,26 @@ void SpatialGDKGenerateSnapshot(const FString& SavePath, UWorld* World)
 {
 	const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
 
-	worker::SnapshotOutputStream OutputStream{improbable::unreal::Components{}, TCHAR_TO_UTF8(*FullPath)};
+	std::unordered_map<worker::EntityId, worker::Entity> SnapshotEntities;
 
 	// Create spawner.
-	OutputStream.WriteEntity(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
+	SnapshotEntities.emplace(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
 
 	// Create level entities.
-	worker::Option<std::string> Result;
 	for (auto EntityPair : CreateLevelEntities(World))
 	{
-		Result = OutputStream.WriteEntity(EntityPair.first, EntityPair.second);
-
-		if (!Result.empty())
-		{
-			std::string ErrorString = Result.value_or("");
-			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(ErrorString.c_str()));
-			return;
-		}
+		SnapshotEntities.emplace(std::move(EntityPair));
 	}
 
-	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path %s"), *FullPath);
+	// Save snapshot.
+	worker::Option<std::string> Result = worker::SaveSnapshot(improbable::unreal::Components{}, TCHAR_TO_UTF8(*FullPath), SnapshotEntities);
+	if (!Result.empty())
+	{
+		std::string ErrorString = Result.value_or("");
+		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(ErrorString.c_str()));
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path %s"), *FullPath);
+	}
 }

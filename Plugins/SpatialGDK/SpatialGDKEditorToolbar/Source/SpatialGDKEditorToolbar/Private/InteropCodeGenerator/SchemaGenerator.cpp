@@ -43,25 +43,18 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 	// Transform the property chain into a chain of names.
 	TArray<FString> ChainNames;
 	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString {
-		// Note: Removing underscores to avoid naming mismatch
-		// between how schema
-		// compiler and interop generator process schema
-		// identifiers.
+		// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
 		return Property->Property->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
 	});
 
-	// Prefix is required to disambiguate between properties in the generated code
-	// and
-	// UActorComponent/UObject properties
+	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
 	// which the generated code extends :troll:.
 	return TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
 }
 
 FString SchemaCommandName(UFunction* Function)
 {
-	// Note: Removing underscores to avoid naming mismatch between how schema
-	// compiler and interop
-	// generator process schema identifiers.
+	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
 	return Function->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
 }
 
@@ -175,10 +168,8 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 			FString ParentClassName = TEXT("");
 
-			// This loop will add the owner class of each field in the component.
-			// Meant for short-term debugging only.
-			// TODO UNR-166: Delete this when InteropCodegen is in a more complete
-			// state.
+			// This loop will add the owner class of each field in the component. Meant for short-term debugging only.
+			// TODO UNR-166: Delete this when InteropCodegen is in a more complete state.
 			FString PropertyPath;
 			TSharedPtr<FUnrealProperty> UnrealProperty = RepProp.Value;
 			while (UnrealProperty->ContainerType != nullptr)
@@ -257,8 +248,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			RPCTypeOwnerSchemaWriter->Printf("type %s {", *TypeStr);
 			RPCTypeOwnerSchemaWriter->Indent();
 
-			// Recurse into functions properties and build a complete transitive
-			// property list.
+			// Recurse into functions properties and build a complete transitive property list.
 			TArray<TSharedPtr<FUnrealProperty>> ParamList = GetFlatRPCParameters(RPC);
 
 			// RPC target sub-object offset.

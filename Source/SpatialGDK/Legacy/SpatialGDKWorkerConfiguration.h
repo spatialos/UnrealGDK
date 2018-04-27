@@ -10,7 +10,7 @@ USTRUCT(BlueprintType)
 struct SPATIALGDK_API FSpatialGDKWorkerConfiguration
 {
 	GENERATED_USTRUCT_BODY()
-  public:
+public:
 	FSpatialGDKWorkerConfiguration();
 	FSpatialGDKWorkerConfiguration(const FSpatialGDKWorkerConfigurationData& WorkerConfigurationData, const TArray<FString>* const CommandLineOverrides = nullptr);
 
@@ -58,7 +58,7 @@ struct SPATIALGDK_API FSpatialGDKWorkerConfiguration
 	const bool GetLogErrorToSpatialOs() const;
 	const bool GetUseExternalIp() const;
 
-  private:
+private:
 	void LogWorkerConfiguration() const;
 
 	FSpatialGDKWorkerConfigurationData WorkerConfigurationData;

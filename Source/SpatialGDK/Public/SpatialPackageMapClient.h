@@ -25,7 +25,7 @@ UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()
-  public:
+public:
 	FNetworkGUID ResolveEntityActor(AActor* Actor, FEntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityActor(const FEntityId& EntityId);
 	virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel* Channel, class AActor*& Actor) override;
@@ -39,12 +39,12 @@ class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 	uint32 GetHashFromStaticClass(const UClass* StaticClass) const;
 	UClass* GetStaticClassFromHash(uint32 Hash) const;
 
-  private:
+private:
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 {
-  public:
+public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
 
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, const SubobjectToOffsetMap& SubobjectToOffset);
@@ -59,7 +59,7 @@ class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 	uint32 GetHashFromStaticClass(const UClass* StaticClass) const;
 	UClass* GetStaticClassFromHash(uint32 Hash) const;
 
-  private:
+private:
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(const UObject* Object);
 	void RegisterObjectRef(FNetworkGUID NetGUID, const improbable::unreal::UnrealObjectRef& ObjectRef);
 	FNetworkGUID AssignStaticActorNetGUID(const UObject* Object, const FNetworkGUID& StaticNetGUID);

@@ -23,7 +23,7 @@ class SPATIALGDK_API UEntityRegistry : public UObject
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	/**
   * Finds all Blueprint assets present in the paths specified in the list and
   * registers
@@ -100,7 +100,7 @@ class SPATIALGDK_API UEntityRegistry : public UObject
   **/
 	void UnregisterComponent(AActor* Actor, USpatialOsComponent* Component);
 
-  private:
+private:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
 	void RegisterEntityClass(const FString& ClassName, UClass* ClassToSpawn);
 

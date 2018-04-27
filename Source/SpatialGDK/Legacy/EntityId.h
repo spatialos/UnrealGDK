@@ -12,7 +12,7 @@ struct SPATIALGDK_API FEntityId
 {
 	GENERATED_USTRUCT_BODY()
 
-  public:
+public:
 	FORCEINLINE FEntityId()
 	{
 		Underlying = 0;
@@ -54,7 +54,7 @@ struct SPATIALGDK_API FEntityId
 		return Underlying;
 	}
 
-  private:
+private:
 	worker::EntityId Underlying;
 
 	friend uint32 GetTypeHash(FEntityId const& Rhs)

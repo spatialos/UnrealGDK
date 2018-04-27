@@ -24,7 +24,7 @@ struct FComponentUpdateQueue
 		Updates.Empty();
 	}
 
-  private:
+private:
 	UPROPERTY()
 	TArray<UComponentUpdateOpWrapperBase*> Updates;
 };

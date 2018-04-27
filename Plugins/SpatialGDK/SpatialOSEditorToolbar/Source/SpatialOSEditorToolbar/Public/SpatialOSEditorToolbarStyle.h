@@ -9,7 +9,7 @@ class FSlateStyleSet;
 
 class FSpatialOSEditorToolbarStyle
 {
-  public:
+public:
 	static void Initialize();
 
 	static void Shutdown();
@@ -20,9 +20,9 @@ class FSpatialOSEditorToolbarStyle
 
 	static FName GetStyleSetName();
 
-  private:
+private:
 	static TSharedRef<FSlateStyleSet> Create();
 
-  private:
+private:
 	static TSharedPtr<FSlateStyleSet> StyleInstance;
 };
