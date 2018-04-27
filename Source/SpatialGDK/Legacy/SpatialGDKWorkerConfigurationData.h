@@ -187,8 +187,7 @@ struct SPATIALGDK_API FSpatialGDKDebuggingConfig
   */
 	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
 			  meta = (DeprecatedFunction,
-					  DeprecationMessage =
-						  "This field is deprecated and will be removed in a future release."))
+					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	FString InfraServiceUrl;
 	/**
   * This field is not in use. Setting this field will not affect a worker's
@@ -196,8 +195,7 @@ struct SPATIALGDK_API FSpatialGDKDebuggingConfig
   */
 	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
 			  meta = (DeprecatedFunction,
-					  DeprecationMessage =
-						  "This field is deprecated and will be removed in a future release."))
+					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	bool LogDebugToSpatialOs;
 	/**
   * This field is not in use. Setting this field will not affect a worker's
@@ -205,8 +203,7 @@ struct SPATIALGDK_API FSpatialGDKDebuggingConfig
   */
 	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
 			  meta = (DeprecatedFunction,
-					  DeprecationMessage =
-						  "This field is deprecated and will be removed in a future release."))
+					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	bool LogAssertToSpatialOs;
 	/**
   * This field is not in use. Setting this field will not affect a worker's
@@ -214,8 +211,7 @@ struct SPATIALGDK_API FSpatialGDKDebuggingConfig
   */
 	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
 			  meta = (DeprecatedFunction,
-					  DeprecationMessage =
-						  "This field is deprecated and will be removed in a future release."))
+					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	bool LogWarningToSpatialOs;
 	/**
   * This field is not in use. Setting this field will not affect a worker's
@@ -223,8 +219,7 @@ struct SPATIALGDK_API FSpatialGDKDebuggingConfig
   */
 	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
 			  meta = (DeprecatedFunction,
-					  DeprecationMessage =
-						  "This field is deprecated and will be removed in a future release."))
+					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	bool LogErrorToSpatialOs;
 	/**
   * "BuiltInMetricsReportPeriodMillis" field for an underlying
@@ -285,8 +280,7 @@ struct SPATIALGDK_API FSpatialGDKDebuggingConfig
   */
 	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
 			  meta = (DeprecatedFunction,
-					  DeprecationMessage =
-						  "This field is deprecated and will be removed in a future release."))
+					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	bool ShowDebugTraces;
 	/**
   * This field is not in use. Setting this field will not affect a worker's
@@ -294,8 +288,7 @@ struct SPATIALGDK_API FSpatialGDKDebuggingConfig
   */
 	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
 			  meta = (DeprecatedFunction,
-					  DeprecationMessage =
-						  "This field is deprecated and will be removed in a future release."))
+					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	bool UseInstrumentation;
 };
 
@@ -326,8 +319,7 @@ struct SPATIALGDK_API FSpatialGDKApplicationConfig
   * This field is deprecated. Please use ProjectName instead.
   */
 	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
-			  meta = (DeprecatedFunction,
-					  DeprecationMessage = "This field is deprecated, use ProjectName instead."))
+			  meta = (DeprecatedFunction, DeprecationMessage = "This field is deprecated, use ProjectName instead."))
 	FString AppName;
 	/**
   * This field is not in use. Setting this field will not affect a worker's
@@ -335,8 +327,7 @@ struct SPATIALGDK_API FSpatialGDKApplicationConfig
   */
 	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
 			  meta = (DeprecatedFunction,
-					  DeprecationMessage =
-						  "This field is deprecated and will be removed in a future release."))
+					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	FString AssemblyName;
 	/**
   * "deployment_name" argument for an underlying

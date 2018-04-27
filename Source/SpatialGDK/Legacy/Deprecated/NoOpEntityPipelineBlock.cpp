@@ -35,7 +35,7 @@ void UNoOpEntityPipelineBlock::ChangeAuthority(const worker::ComponentId Compone
 }
 
 void UNoOpEntityPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-										  const TWeakPtr<SpatialOSConnection>& InConnection,
-										  UWorld* World, UCallbackDispatcher* InCallbackDispatcher)
+										  const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
+										  UCallbackDispatcher* InCallbackDispatcher)
 {
 }

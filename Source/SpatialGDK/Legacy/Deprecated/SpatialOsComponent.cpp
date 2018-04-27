@@ -22,9 +22,8 @@ USpatialOsComponent::USpatialOsComponent()
 {
 }
 
-void USpatialOsComponent::Init(const TWeakPtr<SpatialOSConnection>& InConnection,
-							   const TWeakPtr<SpatialOSView>& InView, worker::EntityId InEntityId,
-							   UCallbackDispatcher* CallbackDispatcher)
+void USpatialOsComponent::Init(const TWeakPtr<SpatialOSConnection>& InConnection, const TWeakPtr<SpatialOSView>& InView,
+							   worker::EntityId InEntityId, UCallbackDispatcher* CallbackDispatcher)
 {
 	this->Connection = InConnection;
 	this->View = InView;
@@ -68,8 +67,8 @@ void USpatialOsComponent::SendAuthorityLossImminentAcknowledgement()
 	auto LockedConnection = Connection.Pin();
 	if (LockedConnection.IsValid())
 	{
-		LockedConnection->SendAuthorityLossImminentAcknowledgement(
-			this->EntityId, this->GetComponentId().ToSpatialComponentId());
+		LockedConnection->SendAuthorityLossImminentAcknowledgement(this->EntityId,
+																   this->GetComponentId().ToSpatialComponentId());
 	}
 }
 
@@ -108,8 +107,7 @@ UCommander* USpatialOsComponent::SendCommand()
 {
 	if (Commander == nullptr)
 	{
-		Commander =
-			NewObject<UCommander>(this, UCommander::StaticClass())->Init(this, Connection, View);
+		Commander = NewObject<UCommander>(this, UCommander::StaticClass())->Init(this, Connection, View);
 	}
 	return Commander;
 }

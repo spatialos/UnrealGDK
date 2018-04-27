@@ -12,9 +12,8 @@ struct SPATIALGDK_API FSpatialGDKWorkerConfiguration
 	GENERATED_USTRUCT_BODY()
   public:
 	FSpatialGDKWorkerConfiguration();
-	FSpatialGDKWorkerConfiguration(
-		const FSpatialGDKWorkerConfigurationData& WorkerConfigurationData,
-		const TArray<FString>* const CommandLineOverrides = nullptr);
+	FSpatialGDKWorkerConfiguration(const FSpatialGDKWorkerConfigurationData& WorkerConfigurationData,
+								   const TArray<FString>* const CommandLineOverrides = nullptr);
 
 	DEPRECATED(12.1, "Use GetProjectName instead.")
 	const FString& GetAppName() const;

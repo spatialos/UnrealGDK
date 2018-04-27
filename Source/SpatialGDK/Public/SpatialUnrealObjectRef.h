@@ -6,15 +6,13 @@
 
 FORCEINLINE FString ObjectRefToString(const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
-	return FString::Printf(TEXT("(entity ID: %lld, offset: %u)"), ObjectRef.entity(),
-						   ObjectRef.offset());
+	return FString::Printf(TEXT("(entity ID: %lld, offset: %u)"), ObjectRef.entity(), ObjectRef.offset());
 }
 
 class FHashableUnrealObjectRef
 {
   public:
-	FHashableUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef)
-	: ObjectRef(ObjectRef)
+	FHashableUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) : ObjectRef(ObjectRef)
 	{
 	}
 

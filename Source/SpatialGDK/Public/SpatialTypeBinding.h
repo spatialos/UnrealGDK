@@ -78,8 +78,7 @@ class FRepHandleData
 		UStruct* CurrentContainerType = Class;
 		for (FName PropertyName : PropertyNames)
 		{
-			checkf(CurrentContainerType,
-				   TEXT("A property in the chain (except the end) is not a container."));
+			checkf(CurrentContainerType, TEXT("A property in the chain (except the end) is not a container."));
 			UProperty* CurProperty = CurrentContainerType->FindPropertyByName(PropertyName);
 			PropertyChain.Add(CurProperty);
 			UStructProperty* StructProperty = Cast<UStructProperty>(CurProperty);
@@ -124,16 +123,14 @@ class FRepHandleData
 class FMigratableHandleData
 {
   public:
-	FMigratableHandleData(UClass* Class, TArray<FName> PropertyNames)
-	: SubobjectProperty(false), Offset(0)
+	FMigratableHandleData(UClass* Class, TArray<FName> PropertyNames) : SubobjectProperty(false), Offset(0)
 	{
 		// Build property chain.
 		check(PropertyNames.Num() > 0);
 		UStruct* CurrentContainerType = Class;
 		for (FName PropertyName : PropertyNames)
 		{
-			checkf(CurrentContainerType,
-				   TEXT("A property in the chain (except the end) is not a container."));
+			checkf(CurrentContainerType, TEXT("A property in the chain (except the end) is not a container."));
 			UProperty* CurProperty = CurrentContainerType->FindPropertyByName(PropertyName);
 			check(CurProperty);
 			PropertyChain.Add(CurProperty);
@@ -229,34 +226,27 @@ class SPATIALGDK_API USpatialTypeBinding : public UObject
 
   public:
 	virtual const FRepHandlePropertyMap& GetRepHandlePropertyMap() const
-		PURE_VIRTUAL(USpatialTypeBinding::GetRepHandlePropertyMap, static FRepHandlePropertyMap Map;
-					 return Map;);
+		PURE_VIRTUAL(USpatialTypeBinding::GetRepHandlePropertyMap, static FRepHandlePropertyMap Map; return Map;);
 	virtual const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() const
-		PURE_VIRTUAL(USpatialTypeBinding::GetMigratableHandlePropertyMap,
-					 static FMigratableHandlePropertyMap Map;
+		PURE_VIRTUAL(USpatialTypeBinding::GetMigratableHandlePropertyMap, static FMigratableHandlePropertyMap Map;
 					 return Map;);
 
 	virtual void Init(USpatialInterop* Interop, USpatialPackageMapClient* PackageMap);
 	virtual void BindToView() PURE_VIRTUAL(USpatialTypeBinding::BindToView, );
 	virtual void UnbindFromView() PURE_VIRTUAL(USpatialTypeBinding::UnbindFromView, );
-	virtual UClass* GetBoundClass() const
-		PURE_VIRTUAL(USpatialTypeBinding::GetBoundClass, return nullptr;);
+	virtual UClass* GetBoundClass() const PURE_VIRTUAL(USpatialTypeBinding::GetBoundClass, return nullptr;);
 
 	virtual worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position,
-											 const FString& Metadata,
-											 const FPropertyChangeState& InitialChanges,
+											 const FString& Metadata, const FPropertyChangeState& InitialChanges,
 											 USpatialActorChannel* Channel) const
 		PURE_VIRTUAL(USpatialTypeBinding::CreateActorEntity, return worker::Entity{};);
-	virtual void SendComponentUpdates(const FPropertyChangeState& Changes,
-									  USpatialActorChannel* Channel,
+	virtual void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel,
 									  const FEntityId& EntityId) const
 		PURE_VIRTUAL(USpatialTypeBinding::SendComponentUpdates, );
-	virtual void SendRPCCommand(UObject* TargetObject, const UFunction* const Function,
-								FFrame* const Frame)
+	virtual void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame)
 		PURE_VIRTUAL(USpatialTypeBinding::SendRPCCommand, );
 
-	virtual void ReceiveAddComponent(USpatialActorChannel* Channel,
-									 UAddComponentOpWrapperBase* AddComponentOp) const
+	virtual void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const
 		PURE_VIRTUAL(USpatialTypeBinding::ReceiveAddComponent, );
 	virtual worker::Map<worker::ComponentId, worker::InterestOverride>
 	GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const

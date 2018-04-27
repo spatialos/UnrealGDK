@@ -43,11 +43,9 @@ const FVector2D Icon40x40(40.0f, 40.0f);
 
 TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 {
-	TSharedRef<FSlateStyleSet> Style =
-		MakeShareable(new FSlateStyleSet("SpatialGDKEditorToolbarStyle"));
-	Style->SetContentRoot(
-		IPluginManager::Get().FindPlugin("SpatialGDKEditorToolbar")->GetBaseDir() /
-		TEXT("Resources"));
+	TSharedRef<FSlateStyleSet> Style = MakeShareable(new FSlateStyleSet("SpatialGDKEditorToolbarStyle"));
+	Style->SetContentRoot(IPluginManager::Get().FindPlugin("SpatialGDKEditorToolbar")->GetBaseDir() /
+						  TEXT("Resources"));
 
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot",
 			   new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon40x40));
@@ -55,11 +53,9 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot.Small",
 			   new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon20x20));
 
-	Style->Set("SpatialGDKEditorToolbar.GenerateInteropCode",
-			   new IMAGE_BRUSH(TEXT("CodegenIcon"), Icon40x40));
+	Style->Set("SpatialGDKEditorToolbar.GenerateInteropCode", new IMAGE_BRUSH(TEXT("CodegenIcon"), Icon40x40));
 
-	Style->Set("SpatialGDKEditorToolbar.GenerateInteropCode.Small",
-			   new IMAGE_BRUSH(TEXT("CodegenIcon"), Icon20x20));
+	Style->Set("SpatialGDKEditorToolbar.GenerateInteropCode.Small", new IMAGE_BRUSH(TEXT("CodegenIcon"), Icon20x20));
 
 	return Style;
 }

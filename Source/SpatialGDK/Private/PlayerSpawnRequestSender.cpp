@@ -23,8 +23,7 @@ FPlayerSpawnRequestSender::~FPlayerSpawnRequestSender()
 	}
 }
 
-void FPlayerSpawnRequestSender::RequestPlayer(USpatialOS* InSpatialOS,
-											  FTimerManager* InTimerManager, const FURL& Url)
+void FPlayerSpawnRequestSender::RequestPlayer(USpatialOS* InSpatialOS, FTimerManager* InTimerManager, const FURL& Url)
 {
 	TimerManager = InTimerManager;
 	Connection = InSpatialOS->GetConnection().Pin().Get();
@@ -37,16 +36,14 @@ void FPlayerSpawnRequestSender::RequestPlayer(USpatialOS* InSpatialOS,
 
 void FPlayerSpawnRequestSender::SendPlayerSpawnRequest()
 {
-	Connection->SendCommandRequest<SpawnPlayerCommand>(SpatialConstants::SPAWNER_ENTITY_ID, Request,
-													   0);
+	Connection->SendCommandRequest<SpawnPlayerCommand>(SpatialConstants::SPAWNER_ENTITY_ID, Request, 0);
 	++NumberOfAttempts;
 
-	ResponseCallbackKey = View->OnCommandResponse<SpawnPlayerCommand>(std::bind(
-		&FPlayerSpawnRequestSender::HandlePlayerSpawnResponse, this, std::placeholders::_1));
+	ResponseCallbackKey = View->OnCommandResponse<SpawnPlayerCommand>(
+		std::bind(&FPlayerSpawnRequestSender::HandlePlayerSpawnResponse, this, std::placeholders::_1));
 }
 
-void FPlayerSpawnRequestSender::HandlePlayerSpawnResponse(
-	const worker::CommandResponseOp<SpawnPlayerCommand>& Op)
+void FPlayerSpawnRequestSender::HandlePlayerSpawnResponse(const worker::CommandResponseOp<SpawnPlayerCommand>& Op)
 {
 	View->Remove(ResponseCallbackKey.GetValue());
 	ResponseCallbackKey.Reset();
@@ -64,13 +61,11 @@ void FPlayerSpawnRequestSender::HandlePlayerSpawnResponse(
 		TimerCallback.BindLambda([this, RetryTimer]() { SendPlayerSpawnRequest(); });
 
 		TimerManager->SetTimer(RetryTimer, TimerCallback,
-							   SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts),
-							   false);
+							   SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts), false);
 	}
 	else
 	{
-		UE_LOG(LogSpatialOSPlayerSpawner, Fatal,
-			   TEXT("Player spawn request failed too many times. (%u attempts)"),
+		UE_LOG(LogSpatialOSPlayerSpawner, Fatal, TEXT("Player spawn request failed too many times. (%u attempts)"),
 			   SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 	}
 }

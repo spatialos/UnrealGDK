@@ -61,17 +61,15 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 	virtual void PostInitProperties() override;
 
 	// Begin UNetDriver interface.
-	virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL,
-						  bool bReuseAddressAndPort, FString& Error) override;
+	virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort,
+						  FString& Error) override;
 	virtual int32 ServerReplicateActors(float DeltaSeconds) override;
 	virtual void TickDispatch(float DeltaTime) override;
-	virtual void ProcessRemoteFunction(class AActor* Actor, class UFunction* Function,
-									   void* Parameters, struct FOutParmRec* OutParms,
-									   struct FFrame* NotStack,
+	virtual void ProcessRemoteFunction(class AActor* Actor, class UFunction* Function, void* Parameters,
+									   struct FOutParmRec* OutParms, struct FFrame* NotStack,
 									   class UObject* SubObject = NULL) override;
 	virtual void TickFlush(float DeltaTime) override;
-	virtual bool IsLevelInitializedForActor(const AActor* InActor,
-											const UNetConnection* InConnection) const override;
+	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	// End UNetDriver interface.
 
 	USpatialOS* GetSpatialOS() const
@@ -154,12 +152,12 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 	int32 ServerReplicateActors_PrioritizeActors(UNetConnection* Connection,
 												 const TArray<FNetViewer>& ConnectionViewers,
 												 const TArray<FNetworkObjectInfo*> ConsiderList,
-												 const bool bCPUSaturated,
-												 FActorPriority*& OutPriorityList,
+												 const bool bCPUSaturated, FActorPriority*& OutPriorityList,
 												 FActorPriority**& OutPriorityActors);
-	int32 ServerReplicateActors_ProcessPrioritizedActors(
-		UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers,
-		FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated);
+	int32 ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* Connection,
+														 const TArray<FNetViewer>& ConnectionViewers,
+														 FActorPriority** PriorityActors, const int32 FinalSortedCount,
+														 int32& OutUpdated);
 #endif
 
   private:

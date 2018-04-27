@@ -183,8 +183,8 @@ ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property)
 	}
 }
 
-void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode,
-					 TFunction<bool(TSharedPtr<FUnrealType>)> Visitor, bool bRecurseIntoSubobjects)
+void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor,
+					 bool bRecurseIntoSubobjects)
 {
 	bool bShouldRecurseFurther = Visitor(TypeNode);
 	for (auto& PropertyPair : TypeNode->Properties)
@@ -201,8 +201,7 @@ void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode,
 	}
 }
 
-void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode,
-						TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
+void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
 						bool bRecurseIntoSubobjects)
 {
 	for (auto& PropertyPair : TypeNode->Properties)
@@ -220,8 +219,7 @@ void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode,
 	}
 }
 
-void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode,
-						TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
+void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
 						bool bRecurseIntoSubobjects)
 {
 	for (auto& PropertyPair : RPCNode->Parameters)
@@ -239,8 +237,7 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode,
 	}
 }
 
-TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
-											 const TArray<TArray<FName>>& MigratableProperties)
+TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties)
 {
 	// Struct types will set this to nullptr.
 	UClass* Class = Cast<UClass>(Type);
@@ -257,8 +254,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
 		// TODO(David): Should we still be skipping this?
 		if (Property->IsA<UMulticastDelegateProperty>())
 		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning,
-				   TEXT("%s - multicast delegate property, skipping"), *Property->GetName());
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - multicast delegate property, skipping"),
+				   *Property->GetName());
 			continue;
 		}
 
@@ -339,8 +336,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
 			// this stage, just remove it.
 			if (Value->IsEditorOnly())
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning,
-					   TEXT("%s - editor only, skipping"), *Property->GetName());
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - editor only, skipping"),
+					   *Property->GetName());
 				TypeNode->Properties.Remove(Property);
 				continue;
 			}
@@ -348,8 +345,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
 			// Check whether the owner of this value is the CDO itself.
 			if (Value->GetOuter() == ContainerCDO)
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning,
-					   TEXT("Property Class: %s Instance Class: %s"),
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"),
 					   *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
 				// This property is definitely a strong reference, recurse into it.
@@ -359,17 +355,15 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
 			else
 			{
 				// The values outer is not us, store as weak reference.
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning,
-					   TEXT("%s - %s weak reference (outer not this)"), *Property->GetName(),
-					   *ObjectProperty->PropertyClass->GetName());
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - %s weak reference (outer not this)"),
+					   *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
 			}
 		}
 		else
 		{
 			// If value is just nullptr, then we clearly don't own it.
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning,
-				   TEXT("%s - %s weak reference (null init)"), *Property->GetName(),
-				   *ObjectProperty->PropertyClass->GetName());
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - %s weak reference (null init)"),
+				   *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
 		}
 	}
 
@@ -383,8 +377,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
 	// Iterate through each RPC in the class.
 	for (TFieldIterator<UFunction> RemoteFunction(Class); RemoteFunction; ++RemoteFunction)
 	{
-		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
-			RemoteFunction->FunctionFlags & FUNC_NetServer)
+		if (RemoteFunction->FunctionFlags & FUNC_NetClient || RemoteFunction->FunctionFlags & FUNC_NetServer)
 		{
 			TSharedPtr<FUnrealRPC> RPCNode = MakeShared<FUnrealRPC>();
 			RPCNode->CallerType = Class;
@@ -490,26 +483,23 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
 			// find it in the
 			// AST.
 			TSharedPtr<FUnrealProperty> RootProperty = TypeNode->Properties[Parent.Property];
-			checkf(RootProperty->Type.IsValid(),
-				   TEXT("Properties in the AST which are parent properties "
-						"in the rep layout must have child properties"));
-			VisitAllProperties(
-				RootProperty->Type,
-				[&PropertyNode, &Cmd](TSharedPtr<FUnrealProperty> Property) {
-					if (Property->Property == Cmd.Property)
-					{
-						checkf(!PropertyNode.IsValid(),
-							   TEXT("We've already found a previous property node with the "
-									"same property. This indicates that we have a 'diamond "
-									"of "
-									"death' style situation.")) PropertyNode = Property;
-					}
-					return true;
-				},
-				false);
-			checkf(PropertyNode.IsValid(),
-				   TEXT("Couldn't find the Cmd property inside the Parent's "
-						"sub-properties. This shouldn't happen."));
+			checkf(RootProperty->Type.IsValid(), TEXT("Properties in the AST which are parent properties "
+													  "in the rep layout must have child properties"));
+			VisitAllProperties(RootProperty->Type,
+							   [&PropertyNode, &Cmd](TSharedPtr<FUnrealProperty> Property) {
+								   if (Property->Property == Cmd.Property)
+								   {
+									   checkf(!PropertyNode.IsValid(),
+											  TEXT("We've already found a previous property node with the "
+												   "same property. This indicates that we have a 'diamond "
+												   "of "
+												   "death' style situation.")) PropertyNode = Property;
+								   }
+								   return true;
+							   },
+							   false);
+			checkf(PropertyNode.IsValid(), TEXT("Couldn't find the Cmd property inside the Parent's "
+												"sub-properties. This shouldn't happen."));
 		}
 
 		// We now have the right property node. Fill in the rep data.
@@ -547,12 +537,11 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
 		TSharedPtr<FUnrealType> CurrentTypeNode = TypeNode;
 		for (FName PropertyName : PropertyNames)
 		{
-			checkf(CurrentTypeNode.IsValid(),
-				   TEXT("A property in the chain (except the leaf) is not a struct "
-						"property."));
+			checkf(CurrentTypeNode.IsValid(), TEXT("A property in the chain (except the leaf) is not a struct "
+												   "property."));
 			UProperty* NextProperty = CurrentTypeNode->Type->FindPropertyByName(PropertyName);
-			checkf(NextProperty, TEXT("Cannot find property %s in container %s"),
-				   *PropertyName.ToString(), *CurrentTypeNode->Type->GetName());
+			checkf(NextProperty, TEXT("Cannot find property %s in container %s"), *PropertyName.ToString(),
+				   *CurrentTypeNode->Type->GetName());
 			MigratableProperty = CurrentTypeNode->Properties.FindChecked(NextProperty);
 			CurrentTypeNode = MigratableProperty->Type;
 		}
@@ -560,8 +549,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
 		// Create migratable data.
 		MigratableProperty->MigratableData = MakeShared<FUnrealMigratableData>();
 		MigratableProperty->MigratableData->Handle = MigratableDataHandle++;
-		MigratableProperty->MigratableData->RepLayoutType =
-			PropertyToRepLayoutType(MigratableProperty->Property);
+		MigratableProperty->MigratableData->RepLayoutType = PropertyToRepLayoutType(MigratableProperty->Property);
 	}
 
 	return TypeNode;
@@ -626,9 +614,8 @@ TArray<FString> GetRPCTypeOwners(TSharedPtr<FUnrealType> TypeInfo)
 						{
 							FString RPCOwnerName = *RPC.Value->Function->GetOuter()->GetName();
 							RPCTypeOwners.AddUnique(RPCOwnerName);
-							UE_LOG(LogSpatialGDKInteropCodeGenerator, Log,
-								   TEXT("RPC Type Owner Found - %s ::  %s"), *RPCOwnerName,
-								   *RPC.Value->Function->GetName());
+							UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("RPC Type Owner Found - %s ::  %s"),
+								   *RPCOwnerName, *RPC.Value->Function->GetName());
 						}
 						return true;
 					},
@@ -660,8 +647,7 @@ TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> 
 					   [&ParamList](TSharedPtr<FUnrealProperty> Property) {
 						   // If the RepType is a generic struct, recurse further.
 						   ERepLayoutCmdType RepType = PropertyToRepLayoutType(Property->Property);
-						   if (RepType == REPCMD_Property &&
-							   Property->Property->IsA<UStructProperty>())
+						   if (RepType == REPCMD_Property && Property->Property->IsA<UStructProperty>())
 						   {
 							   // Generic struct. Recurse further.
 							   return true;

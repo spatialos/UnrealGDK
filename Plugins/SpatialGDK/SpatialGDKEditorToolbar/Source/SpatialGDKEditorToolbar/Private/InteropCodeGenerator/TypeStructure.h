@@ -131,12 +131,12 @@ struct FUnrealType
 struct FUnrealProperty
 {
 	UProperty* Property;
-	TSharedPtr<FUnrealType> Type;  // Only set if strong reference to object/struct property.
+	TSharedPtr<FUnrealType> Type;					   // Only set if strong reference to object/struct property.
 	TSharedPtr<FUnrealRepData> ReplicationData;		   // Only set if property is replicated.
 	TSharedPtr<FUnrealMigratableData> MigratableData;  // Only set if property is
 													   // migratable (and not
 													   // replicated).
-	TWeakPtr<FUnrealType> ContainerType;  // Not set if this property is an RPC parameter.
+	TWeakPtr<FUnrealType> ContainerType;			   // Not set if this property is an RPC parameter.
 };
 
 // A node which represents an RPC.
@@ -168,8 +168,7 @@ struct FUnrealMigratableData
 	uint16 Handle;
 };
 
-using FUnrealFlatRepData =
-	TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPtr<FUnrealProperty>>>;
+using FUnrealFlatRepData = TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPtr<FUnrealProperty>>>;
 using FUnrealRPCsByType = TMap<ERPCType, TArray<TSharedPtr<FUnrealRPC>>>;
 
 // Given a UClass, returns either "AFoo" or "UFoo" depending on whether Foo is a
@@ -210,21 +209,19 @@ ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property);
 // If the Visitor function returns false, it will not recurse any further into
 // that part of the
 // tree.
-void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode,
-					 TFunction<bool(TSharedPtr<FUnrealType>)> Visitor, bool bRecurseIntoSubobjects);
+void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor,
+					 bool bRecurseIntoSubobjects);
 
 // Similar to 'VisitAllObjects', but instead applies the Visitor function to all
 // properties which
 // are traversed.
-void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode,
-						TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
+void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
 						bool bRecurseIntoSubobjects);
 
 // Similar to 'VisitAllObjects', but instead applies the Visitor function to all
 // parameters in an
 // RPC (and subproperties of structs/objects where appropriate).
-void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode,
-						TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
+void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
 						bool bRecurseIntoSubobjects);
 
 // Generates an AST from an Unreal UStruct or UClass.
@@ -235,8 +232,7 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode,
 //	   {"OtherProperty", "PropertyWithinOtherProperty"}
 //   }
 // In the future, we can get this information directly from the UStruct*.
-TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
-											 const TArray<TArray<FName>>& MigratableProperties);
+TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties);
 
 // Traverses an AST, and generates a flattened list of replicated properties,
 // which will match the

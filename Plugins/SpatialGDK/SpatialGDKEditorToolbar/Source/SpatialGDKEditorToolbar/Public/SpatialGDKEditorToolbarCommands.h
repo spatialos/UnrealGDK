@@ -12,8 +12,8 @@ class FSpatialGDKEditorToolbarCommands : public TCommands<FSpatialGDKEditorToolb
 	FSpatialGDKEditorToolbarCommands()
 	: TCommands<FSpatialGDKEditorToolbarCommands>(
 		  TEXT("SpatialGDKEditorToolbar"),
-		  NSLOCTEXT("Contexts", "SpatialGDKEditorToolbar", "SpatialGDKEditorToolbar Plugin"),
-		  NAME_None, FSpatialGDKEditorToolbarStyle::GetStyleSetName())
+		  NSLOCTEXT("Contexts", "SpatialGDKEditorToolbar", "SpatialGDKEditorToolbar Plugin"), NAME_None,
+		  FSpatialGDKEditorToolbarStyle::GetStyleSetName())
 	{
 	}
 

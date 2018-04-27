@@ -15,14 +15,12 @@ void UEntityRegistry::RegisterEntityBlueprints(const TArray<FString>& BlueprintP
 		{
 			for (auto Asset : Assets)
 			{
-				UBlueprintGeneratedClass* BlueprintGeneratedClass =
-					Cast<UBlueprintGeneratedClass>(Asset);
+				UBlueprintGeneratedClass* BlueprintGeneratedClass = Cast<UBlueprintGeneratedClass>(Asset);
 				if (BlueprintGeneratedClass != nullptr)
 				{
 					FString BlueprintName = BlueprintGeneratedClass->GetName().LeftChop(
 						2);  // generated blueprint class names end with "_C"
-					UE_LOG(LogEntityRegistry, Display,
-						   TEXT("Registering blueprint in entity spawner with name: %s"),
+					UE_LOG(LogEntityRegistry, Display, TEXT("Registering blueprint in entity spawner with name: %s"),
 						   *BlueprintName);
 					RegisterEntityClass(BlueprintName, BlueprintGeneratedClass);
 				}
@@ -46,8 +44,7 @@ UClass** UEntityRegistry::GetRegisteredEntityClass(const FString& ClassName)
 	auto ClassToSpawn = ClassMap.Find(ClassName);
 	if (ClassToSpawn == nullptr)
 	{
-		UE_LOG(LogEntityRegistry, Log, TEXT("No UClass is associated with ClassName('%s')."),
-			   *ClassName);
+		UE_LOG(LogEntityRegistry, Log, TEXT("No UClass is associated with ClassName('%s')."), *ClassName);
 		return nullptr;
 	}
 
@@ -73,8 +70,7 @@ void UEntityRegistry::RemoveFromRegistry(const AActor* Actor)
 	}
 	else
 	{
-		UE_LOG(LogEntityRegistry, Warning,
-			   TEXT("Couldn't remove Actor from registry: EntityId == -1"));
+		UE_LOG(LogEntityRegistry, Warning, TEXT("Couldn't remove Actor from registry: EntityId == -1"));
 	}
 }
 
@@ -114,8 +110,7 @@ void UEntityRegistry::UnregisterComponent(AActor* Actor, USpatialOsComponent* Co
 	}
 	else
 	{
-		UE_LOG(LogEntityRegistry, Error,
-			   TEXT("UEntityRegistry::UnregisterComponent: Actor is not registered."));
+		UE_LOG(LogEntityRegistry, Error, TEXT("UEntityRegistry::UnregisterComponent: Actor is not registered."));
 		return;
 	}
 }
@@ -124,17 +119,15 @@ void UEntityRegistry::RegisterEntityClass(const FString& ClassName, UClass* Clas
 {
 	if (ClassToSpawn == nullptr)
 	{
-		UE_LOG(LogEntityRegistry, Error,
-			   TEXT("UEntityRegistry::RegisterEntityClass: ClassToSpawn argument "
-					"is null."));
+		UE_LOG(LogEntityRegistry, Error, TEXT("UEntityRegistry::RegisterEntityClass: ClassToSpawn argument "
+											  "is null."));
 		return;
 	}
 
 	auto ExistingClass = ClassMap.Find(ClassName);
 	if (ExistingClass != nullptr)
 	{
-		UE_LOG(LogEntityRegistry, Error,
-			   TEXT("ClassName '%s' has already been registered to '%s'."), *ClassName,
+		UE_LOG(LogEntityRegistry, Error, TEXT("ClassName '%s' has already been registered to '%s'."), *ClassName,
 			   *(*ExistingClass)->GetClass()->GetName());
 		return;
 	}

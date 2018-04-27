@@ -15,8 +15,7 @@ class SPATIALGDK_API FSpatialOutputDevice : public FOutputDevice
 	void AddRedirectCategory(const FName& Category);
 	void RemoveRedirectCategory(const FName& Category);
 	void SetVerbosityFilterLevel(ELogVerbosity::Type Verbosity);
-	void Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity,
-				   const FName& Category) override;
+	void Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const FName& Category) override;
 
 	static worker::LogLevel ConvertLogLevelToSpatial(ELogVerbosity::Type Verbosity);
 

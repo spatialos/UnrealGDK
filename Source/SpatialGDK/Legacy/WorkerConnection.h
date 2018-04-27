@@ -42,8 +42,7 @@ DECLARE_DELEGATE_RetVal_OneParam(bool, FQueueStatusDelegate, const worker::Queue
   * and will call
   * OnDeplymentsFoundCallback when deployments are found, or the timout is reached
   */
-	void GetDeploymentListAsync(const FString& ProjectName, const FString& LocatorHost,
-								const FString& LoginToken,
+	void GetDeploymentListAsync(const FString& ProjectName, const FString& LocatorHost, const FString& LoginToken,
 								FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback,
 								std::uint32_t TimeoutMillis = DefaultTimeout);
 
@@ -58,11 +57,9 @@ DECLARE_DELEGATE_RetVal_OneParam(bool, FQueueStatusDelegate, const worker::Queue
 	/** Connect to SpatialOS. This is non blocking and will call
   * OnConnectedCallback when either the
   * creation is made or the timeout is reached */
-	void ConnectToLocatorAsync(const FString& ProjectName, const FString& LocatorHost,
-							   const FString& DeploymentId, const FString& LoginToken,
-							   const worker::ConnectionParameters& Params,
-							   FQueueStatusDelegate QueueStatusCallback,
-							   FOnConnectedDelegate OnConnectedCallback,
+	void ConnectToLocatorAsync(const FString& ProjectName, const FString& LocatorHost, const FString& DeploymentId,
+							   const FString& LoginToken, const worker::ConnectionParameters& Params,
+							   FQueueStatusDelegate QueueStatusCallback, FOnConnectedDelegate OnConnectedCallback,
 							   std::uint32_t TimeoutMillis = DefaultTimeout);
 
 	/** Terminates an existing connection to SpatialOS. */
@@ -87,8 +84,7 @@ DECLARE_DELEGATE_RetVal_OneParam(bool, FQueueStatusDelegate, const worker::Queue
   private:
 	DECLARE_DELEGATE(FMetricsDelegate);
 
-	SpatialOSLocator CreateLocator(const FString& ProjectName, const FString& LocatorHost,
-								   const FString& LoginToken);
+	SpatialOSLocator CreateLocator(const FString& ProjectName, const FString& LocatorHost, const FString& LoginToken);
 	bool CanCreateNewConnection() const;
 
 	void WaitForDeploymentFuture(std::uint32_t TimeoutMillis,

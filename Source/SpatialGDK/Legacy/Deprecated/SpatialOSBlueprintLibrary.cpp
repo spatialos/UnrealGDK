@@ -34,35 +34,31 @@ USpatialOSBlueprintLibrary::MakeEntityIdQueryConstraintFromEntityId(const FEntit
 	return FEntityIdQueryConstraint(InEntityId);
 }
 
-FEntityIdQueryConstraint
-USpatialOSBlueprintLibrary::MakeEntityIdQueryConstraintFromInt(int InEntityId)
+FEntityIdQueryConstraint USpatialOSBlueprintLibrary::MakeEntityIdQueryConstraintFromInt(int InEntityId)
 {
 	return FEntityIdQueryConstraint(InEntityId);
 }
 
 FComponentIdQueryConstraint
-USpatialOSBlueprintLibrary::MakeComponentIdQueryConstraintFromComponentId(
-	const FComponentId& InComponentId)
+USpatialOSBlueprintLibrary::MakeComponentIdQueryConstraintFromComponentId(const FComponentId& InComponentId)
 {
 	return FComponentIdQueryConstraint(InComponentId);
 }
 
-FComponentIdQueryConstraint
-USpatialOSBlueprintLibrary::MakeComponentIdQueryConstraintFromInt(int InComponentId)
+FComponentIdQueryConstraint USpatialOSBlueprintLibrary::MakeComponentIdQueryConstraintFromInt(int InComponentId)
 {
 	return FComponentIdQueryConstraint(InComponentId);
 }
 
-FSphereQueryConstraint
-USpatialOSBlueprintLibrary::MakeSphereQueryConstraint(const FVector& InPosition, float InRadius)
+FSphereQueryConstraint USpatialOSBlueprintLibrary::MakeSphereQueryConstraint(const FVector& InPosition, float InRadius)
 {
 	return FSphereQueryConstraint(InPosition, InRadius);
 }
 
-UEntityQueryConstraint* USpatialOSBlueprintLibrary::SpatialOsEntityAndQuery(
-	const TArray<FEntityIdQueryConstraint>& EntityIds,
-	const TArray<FComponentIdQueryConstraint>& ComponentIds,
-	const TArray<FSphereQueryConstraint>& Spheres)
+UEntityQueryConstraint*
+USpatialOSBlueprintLibrary::SpatialOsEntityAndQuery(const TArray<FEntityIdQueryConstraint>& EntityIds,
+													const TArray<FComponentIdQueryConstraint>& ComponentIds,
+													const TArray<FSphereQueryConstraint>& Spheres)
 {
 	auto NewQuery = NewObject<UEntityQueryConstraint>();
 
@@ -95,10 +91,10 @@ UEntityQueryConstraint* USpatialOSBlueprintLibrary::SpatialOsEntityAndQuery(
 	return NewQuery;
 }
 
-UEntityQueryConstraint* USpatialOSBlueprintLibrary::SpatialOsEntityOrQuery(
-	const TArray<FEntityIdQueryConstraint>& EntityIds,
-	const TArray<FComponentIdQueryConstraint>& ComponentIds,
-	const TArray<FSphereQueryConstraint>& Spheres)
+UEntityQueryConstraint*
+USpatialOSBlueprintLibrary::SpatialOsEntityOrQuery(const TArray<FEntityIdQueryConstraint>& EntityIds,
+												   const TArray<FComponentIdQueryConstraint>& ComponentIds,
+												   const TArray<FSphereQueryConstraint>& Spheres)
 {
 	auto NewQuery = NewObject<UEntityQueryConstraint>();
 
@@ -136,14 +132,12 @@ bool USpatialOSBlueprintLibrary::IsSuccessful_Command(const FSpatialOSCommandRes
 	return CommandResult.StatusCode == ECommandResponseCode::Success;
 }
 
-ECommandResponseCode
-USpatialOSBlueprintLibrary::GetCommandStatusCode(const FSpatialOSCommandResult& CommandResult)
+ECommandResponseCode USpatialOSBlueprintLibrary::GetCommandStatusCode(const FSpatialOSCommandResult& CommandResult)
 {
 	return CommandResult.StatusCode;
 }
 
-FString
-USpatialOSBlueprintLibrary::GetCommandErrorMessage(const FSpatialOSCommandResult& CommandResult)
+FString USpatialOSBlueprintLibrary::GetCommandErrorMessage(const FSpatialOSCommandResult& CommandResult)
 {
 	return CommandResult.ErrorMessage;
 }

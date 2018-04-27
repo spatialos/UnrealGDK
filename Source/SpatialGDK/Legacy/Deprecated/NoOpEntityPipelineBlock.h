@@ -31,11 +31,9 @@ class SPATIALGDK_API UNoOpEntityPipelineBlock : public UEntityPipelineBlock
 	virtual void RemoveComponent(const worker::ComponentId ComponentId,
 								 const worker::RemoveComponentOp& RemoveComponentOp);
 
-	virtual void ChangeAuthority(const worker::ComponentId ComponentId,
-								 const worker::AuthorityChangeOp& AuthChangeOp);
+	virtual void ChangeAuthority(const worker::ComponentId ComponentId, const worker::AuthorityChangeOp& AuthChangeOp);
 
   private:
-	void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-					const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World,
-					UCallbackDispatcher* InCallbackDispatcher) override;
+	void ProcessOps(const TWeakPtr<SpatialOSView>& InView, const TWeakPtr<SpatialOSConnection>& InConnection,
+					UWorld* World, UCallbackDispatcher* InCallbackDispatcher) override;
 };

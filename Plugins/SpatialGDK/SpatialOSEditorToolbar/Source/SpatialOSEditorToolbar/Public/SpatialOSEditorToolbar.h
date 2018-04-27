@@ -53,8 +53,7 @@ class FSpatialOSEditorToolbarModule : public IModuleInterface, public FTickableE
 	bool StopSpatialOSStackCanExecute() const;
 
 	void CheckForRunningStack();
-	void OnPropertyChanged(UObject* ObjectBeingModified,
-						   FPropertyChangedEvent& PropertyChangedEvent);
+	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
   private:
 	TSharedPtr<FUICommandList> PluginCommands;

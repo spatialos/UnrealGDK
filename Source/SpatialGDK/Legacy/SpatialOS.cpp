@@ -11,8 +11,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialOS);
 
-USpatialOS::USpatialOS()
-: WorkerConfiguration(), WorkerConnection(), bConnectionWasSuccessful(false)
+USpatialOS::USpatialOS() : WorkerConfiguration(), WorkerConnection(), bConnectionWasSuccessful(false)
 {
 	EntityPipeline = CreateDefaultSubobject<UEntityPipeline>(TEXT("EntityPipeline"));
 	CallbackDispatcher = CreateDefaultSubobject<UCallbackDispatcher>(TEXT("CallbackDispatcher"));
@@ -24,8 +23,7 @@ void USpatialOS::BeginDestroy()
 	OnDisconnectInternal();
 }
 
-void USpatialOS::ApplyConfiguration(
-	const FSpatialGDKWorkerConfigurationData& InWorkerConfigurationData)
+void USpatialOS::ApplyConfiguration(const FSpatialGDKWorkerConfigurationData& InWorkerConfigurationData)
 {
 	checkf(!IsConnected(), TEXT("ApplyConfiguration was called after Connect was called."));
 	WorkerConfiguration = FSpatialGDKWorkerConfiguration(InWorkerConfigurationData);
@@ -38,13 +36,12 @@ void USpatialOS::ApplyEditorWorkerConfiguration(FWorldContext& InWorldContext)
 	// This WorldContext does not represent a PIE instance
 	if (InWorldContext.WorldType != EWorldType::PIE || InWorldContext.PIEInstance == -1)
 	{
-		UE_LOG(LogSpatialOS, Warning,
-			   TEXT("USpatialOS::ApplyEditorWorkerConfiguration(): The supplied "
-					"WorldContext does not represent a PIE instance. No changes "
-					"are made. "
-					"Make sure you only call this method when starting a worker "
-					"instance "
-					"from the Unreal Editor. PIEInstance: %d, WorldType: %d"),
+		UE_LOG(LogSpatialOS, Warning, TEXT("USpatialOS::ApplyEditorWorkerConfiguration(): The supplied "
+										   "WorldContext does not represent a PIE instance. No changes "
+										   "are made. "
+										   "Make sure you only call this method when starting a worker "
+										   "instance "
+										   "from the Unreal Editor. PIEInstance: %d, WorldType: %d"),
 			   InWorldContext.PIEInstance, static_cast<int>(InWorldContext.WorldType));
 		return;
 	}
@@ -63,8 +60,7 @@ void USpatialOS::ApplyEditorWorkerConfiguration(FWorldContext& InWorldContext)
 	const int32 NumWorkerConfigurations = SpatialGDKSettings->WorkerConfigurations.Num();
 	if (EditorConfigurationArrayIndex < NumWorkerConfigurations)
 	{
-		const auto& WorkerConfig =
-			SpatialGDKSettings->WorkerConfigurations[EditorConfigurationArrayIndex];
+		const auto& WorkerConfig = SpatialGDKSettings->WorkerConfigurations[EditorConfigurationArrayIndex];
 		WorkerConfiguration = FSpatialGDKWorkerConfiguration(WorkerConfig.WorkerConfigurationData);
 
 		// This check is required When a PIE instance is launched as a dedicated
@@ -99,13 +95,11 @@ void USpatialOS::Connect()
 	}
 
 	worker::ConnectionParameters Params;
-	Params.BuiltInMetricsReportPeriodMillis =
-		WorkerConfiguration.GetBuiltInMetricsReportPeriodMillis();
+	Params.BuiltInMetricsReportPeriodMillis = WorkerConfiguration.GetBuiltInMetricsReportPeriodMillis();
 	Params.EnableProtocolLoggingAtStartup = WorkerConfiguration.GetProtocolLoggingOnStartup();
 	Params.LogMessageQueueCapacity = WorkerConfiguration.GetLogMessageQueueCapacity();
 	Params.Network.ConnectionType = WorkerConfiguration.GetLinkProtocol();
-	Params.Network.RakNet.HeartbeatTimeoutMillis =
-		WorkerConfiguration.GetRaknetHeartbeatTimeoutMillis();
+	Params.Network.RakNet.HeartbeatTimeoutMillis = WorkerConfiguration.GetRaknetHeartbeatTimeoutMillis();
 	Params.Network.Tcp.MultiplexLevel = WorkerConfiguration.GetTcpMultiplexLevel();
 	Params.Network.Tcp.NoDelay = WorkerConfiguration.GetTcpNoDelay();
 	Params.Network.Tcp.ReceiveBufferSize = WorkerConfiguration.GetTcpReceiveBufferSize();
@@ -156,16 +150,16 @@ void USpatialOS::Connect()
 	const bool ShouldConnectViaLocator = !WorkerConfiguration.GetLoginToken().IsEmpty();
 	if (ShouldConnectViaLocator)
 	{
-		WorkerConnection.ConnectToLocatorAsync(
-			WorkerConfiguration.GetProjectName(), WorkerConfiguration.GetLocatorHost(),
-			WorkerConfiguration.GetDeploymentName(), WorkerConfiguration.GetLoginToken(), Params,
-			OnQueueStatus, OnConnected);
+		WorkerConnection.ConnectToLocatorAsync(WorkerConfiguration.GetProjectName(),
+											   WorkerConfiguration.GetLocatorHost(),
+											   WorkerConfiguration.GetDeploymentName(),
+											   WorkerConfiguration.GetLoginToken(), Params, OnQueueStatus, OnConnected);
 	}
 	else
 	{
-		WorkerConnection.ConnectToReceptionistAsync(
-			WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(),
-			WorkerConfiguration.GetWorkerId(), Params, OnConnected);
+		WorkerConnection.ConnectToReceptionistAsync(WorkerConfiguration.GetReceptionistHost(),
+													WorkerConfiguration.GetReceptionistPort(),
+													WorkerConfiguration.GetWorkerId(), Params, OnConnected);
 	}
 }
 

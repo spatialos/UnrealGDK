@@ -23,8 +23,7 @@ class SPATIALGDK_API USpatialOSConversionFunctionLibrary : public UBlueprintFunc
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Conversions")
 	static FVector UnrealCoordinatesToSpatialOsCoordinates(const FVector& unrealCoordinates);
 
-	static improbable::Coordinates
-	UnrealCoordinatesToSpatialOsCoordinatesCast(const FVector& unrealCoordinates);
+	static improbable::Coordinates UnrealCoordinatesToSpatialOsCoordinatesCast(const FVector& unrealCoordinates);
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Conversions")
 	static FVector SpatialOsCoordinatesToUnrealCoordinates(const FVector& spatialOsCoordinates);

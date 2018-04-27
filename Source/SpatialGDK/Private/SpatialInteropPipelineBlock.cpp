@@ -28,8 +28,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKInteropPipelineBlock);
 
-void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDriver* Driver,
-										UWorld* LoadedWorld)
+void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDriver* Driver, UWorld* LoadedWorld)
 {
 	EntityRegistry = Registry;
 	NetDriver = Driver;
@@ -40,8 +39,7 @@ void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDr
 	// Fill KnownComponents.
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
-		if (It->IsChildOf(USpatialOsComponent::StaticClass()) &&
-			!It->HasAnyClassFlags(CLASS_Abstract))
+		if (It->IsChildOf(USpatialOsComponent::StaticClass()) && !It->HasAnyClassFlags(CLASS_Abstract))
 		{
 			USpatialOsComponent* CDO = Cast<USpatialOsComponent>((*It)->GetDefaultObject());
 			KnownComponents.Emplace(CDO->GetComponentId(), *It);
@@ -51,8 +49,8 @@ void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDr
 
 void USpatialInteropPipelineBlock::AddEntity(const worker::AddEntityOp& AddEntityOp)
 {
-	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose,
-		   TEXT("USpatialInteropPipelineBlock: worker::AddEntityOp %lld"), AddEntityOp.EntityId);
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::AddEntityOp %lld"),
+		   AddEntityOp.EntityId);
 	check(bInCriticalSection);
 
 	PendingAddEntities.Emplace(AddEntityOp.EntityId);
@@ -66,8 +64,7 @@ void USpatialInteropPipelineBlock::AddEntity(const worker::AddEntityOp& AddEntit
 void USpatialInteropPipelineBlock::RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp)
 {
 	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose,
-		   TEXT("USpatialInteropPipelineBlock: worker::RemoveEntityOp %lld"),
-		   RemoveEntityOp.EntityId);
+		   TEXT("USpatialInteropPipelineBlock: worker::RemoveEntityOp %lld"), RemoveEntityOp.EntityId);
 
 	if (bInCriticalSection)
 	{
@@ -95,16 +92,14 @@ void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddC
 	if (bInCriticalSection)
 	{
 		FPendingAddComponentWrapper Wrapper;
-		Wrapper.EntityComponent =
-			FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId};
+		Wrapper.EntityComponent = FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId};
 		Wrapper.AddComponentOp = AddComponentOp;
 		PendingAddComponents.Emplace(Wrapper);
 	}
 	else
 	{
-		InitialiseNewComponentImpl(
-			FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId},
-			AddComponentOp);
+		InitialiseNewComponentImpl(FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId},
+								   AddComponentOp);
 	}
 
 	if (NextBlock)
@@ -113,19 +108,17 @@ void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddC
 	}
 }
 
-void USpatialInteropPipelineBlock::RemoveComponent(
-	const worker::ComponentId ComponentId, const worker::RemoveComponentOp& RemoveComponentOp)
+void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId ComponentId,
+												   const worker::RemoveComponentOp& RemoveComponentOp)
 {
-	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose,
-		   TEXT("USpatialInteropPipelineBlock: worker::RemoveComponentOp "
-				"component ID: %u entity ID: "
-				"%lld inCriticalSection: %d"),
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveComponentOp "
+															"component ID: %u entity ID: "
+															"%lld inCriticalSection: %d"),
 		   ComponentId, RemoveComponentOp.EntityId, (int)bInCriticalSection);
 
 	if (bInCriticalSection)
 	{
-		PendingRemoveComponents.Emplace(
-			FComponentIdentifier{RemoveComponentOp.EntityId, ComponentId});
+		PendingRemoveComponents.Emplace(FComponentIdentifier{RemoveComponentOp.EntityId, ComponentId});
 	}
 	else
 	{
@@ -141,10 +134,9 @@ void USpatialInteropPipelineBlock::RemoveComponent(
 void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId ComponentId,
 												   const worker::AuthorityChangeOp& AuthChangeOp)
 {
-	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose,
-		   TEXT("USpatialInteropPipelineBlock: worker::ChangeAuthorityOp "
-				"component ID: %u entity ID: "
-				"%lld inCriticalSection: %d"),
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::ChangeAuthorityOp "
+															"component ID: %u entity ID: "
+															"%lld inCriticalSection: %d"),
 		   ComponentId, AuthChangeOp.EntityId, (int)bInCriticalSection);
 
 	// When a component is initialised, the callback dispatcher will automatically
@@ -157,8 +149,7 @@ void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId Com
 	// in a critical section.
 	if (bInCriticalSection && PendingAddEntities.Contains(FEntityId(AuthChangeOp.EntityId)))
 	{
-		PendingAuthorityChanges.Emplace(FComponentIdentifier{AuthChangeOp.EntityId, ComponentId},
-										AuthChangeOp);
+		PendingAuthorityChanges.Emplace(FComponentIdentifier{AuthChangeOp.EntityId, ComponentId}, AuthChangeOp);
 	}
 
 	if (NextBlock)
@@ -182,12 +173,10 @@ void USpatialInteropPipelineBlock::EnterCriticalSection()
 
 void USpatialInteropPipelineBlock::LeaveCriticalSection()
 {
-	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose,
-		   TEXT("USpatialInteropPipelineBlock: Leaving critical section."));
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: Leaving critical section."));
 	check(bInCriticalSection);
 
-	TSharedPtr<worker::Connection> LockedConnection =
-		NetDriver->GetSpatialOS()->GetConnection().Pin();
+	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
 	TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
 
 	// Add entities.
@@ -199,8 +188,7 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 	// Apply queued add component ops and authority change ops.
 	for (auto& PendingAddComponent : PendingAddComponents)
 	{
-		InitialiseNewComponentImpl(PendingAddComponent.EntityComponent,
-								   PendingAddComponent.AddComponentOp);
+		InitialiseNewComponentImpl(PendingAddComponent.EntityComponent, PendingAddComponent.AddComponentOp);
 	}
 
 	// Apply queued remove component ops.
@@ -231,19 +219,17 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 
 void USpatialInteropPipelineBlock::AddEntityImpl(const FEntityId& EntityId)
 {
-	TSharedPtr<worker::Connection> LockedConnection =
-		NetDriver->GetSpatialOS()->GetConnection().Pin();
+	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
 	TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
 
 	// Create / get actor for this entity.
 	GetOrCreateActor(LockedConnection, LockedView, EntityId);
 }
 
-void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(
-	const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp)
+void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier,
+															  UAddComponentOpWrapperBase* AddComponentOp)
 {
-	TSharedPtr<worker::Connection> LockedConnection =
-		NetDriver->GetSpatialOS()->GetConnection().Pin();
+	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
 	TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
 
 	UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
@@ -256,15 +242,13 @@ void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
 	if (Actor)
 	{
-		USpatialOsComponent* Component =
-			Cast<USpatialOsComponent>(Actor->GetComponentByClass(ComponentClass));
+		USpatialOsComponent* Component = Cast<USpatialOsComponent>(Actor->GetComponentByClass(ComponentClass));
 		if (Component)
 		{
 			Component->Init(LockedConnection, LockedView, ComponentIdentifier.EntityId,
 							NetDriver->GetSpatialOS()->GetCallbackDispatcher());
 			Component->ApplyInitialState(*AddComponentOp);
-			worker::AuthorityChangeOp* QueuedAuthChangeOp =
-				PendingAuthorityChanges.Find(ComponentIdentifier);
+			worker::AuthorityChangeOp* QueuedAuthChangeOp = PendingAuthorityChanges.Find(ComponentIdentifier);
 			if (QueuedAuthChangeOp)
 			{
 				Component->ApplyInitialAuthority(*QueuedAuthChangeOp);
@@ -284,8 +268,7 @@ void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(
 	}
 }
 
-void USpatialInteropPipelineBlock::DisableComponentImpl(
-	const FComponentIdentifier& ComponentIdentifier)
+void USpatialInteropPipelineBlock::DisableComponentImpl(const FComponentIdentifier& ComponentIdentifier)
 {
 	UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
 	check(ComponentClass);
@@ -293,12 +276,10 @@ void USpatialInteropPipelineBlock::DisableComponentImpl(
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
 	if (Actor)
 	{
-		USpatialOsComponent* Component =
-			Cast<USpatialOsComponent>(Actor->GetComponentByClass(ComponentClass));
+		USpatialOsComponent* Component = Cast<USpatialOsComponent>(Actor->GetComponentByClass(ComponentClass));
 		if (Component)
 		{
-			Component->Disable(ComponentIdentifier.EntityId,
-							   NetDriver->GetSpatialOS()->GetCallbackDispatcher());
+			Component->Disable(ComponentIdentifier.EntityId, NetDriver->GetSpatialOS()->GetCallbackDispatcher());
 		}
 	}
 }
@@ -312,28 +293,22 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 		Actor->GetWorld()->DestroyActor(Actor, true);
 	}
 	NetDriver->GetSpatialInterop()->RemoveActorChannel(EntityId.ToSpatialEntityId());
-	auto* PackageMap =
-		Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
+	auto* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
 	PackageMap->RemoveEntityActor(EntityId);
 }
 
-void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>&,
-											  const TWeakPtr<SpatialOSConnection>&, UWorld*,
-											  UCallbackDispatcher*)
+void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>&, const TWeakPtr<SpatialOSConnection>&,
+											  UWorld*, UCallbackDispatcher*)
 {
 }
 
-AActor*
-USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection,
-											   TSharedPtr<worker::View> LockedView,
-											   const FEntityId& EntityId)
+AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection,
+													   TSharedPtr<worker::View> LockedView, const FEntityId& EntityId)
 {
 	checkf(World, TEXT("We should have a world whilst processing ops."));
 
-	improbable::PositionData* PositionComponent =
-		GetComponentDataFromView<improbable::Position>(LockedView, EntityId);
-	improbable::MetadataData* MetadataComponent =
-		GetComponentDataFromView<improbable::Metadata>(LockedView, EntityId);
+	improbable::PositionData* PositionComponent = GetComponentDataFromView<improbable::Position>(LockedView, EntityId);
+	improbable::MetadataData* MetadataComponent = GetComponentDataFromView<improbable::Metadata>(LockedView, EntityId);
 
 	if (!PositionComponent || !MetadataComponent)
 	{
@@ -380,10 +355,10 @@ USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> Lo
 			Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
 		check(PackageMap);
 
-		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(
-			EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
-		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log,
-			   TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
+		FNetworkGUID NetGUID =
+			PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
+		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Received create entity response op for %d"),
+			   EntityId.ToSpatialEntityId());
 	}
 	else
 	{
@@ -391,8 +366,7 @@ USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> Lo
 		if ((ActorClass = GetRegisteredEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 2
-			UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Spawning a registered %s"),
-				   *ActorClass->GetName());
+			UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Spawning a registered %s"), *ActorClass->GetName());
 			EntityActor = SpawnNewEntity(PositionComponent, ActorClass);
 			EntityRegistry->AddToRegistry(EntityId, EntityActor);
 		}
@@ -411,11 +385,9 @@ USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> Lo
 				checkf(!UnrealMetadataComponent->owner_worker_id().empty(),
 					   TEXT("A player controller entity must have an owner worker ID."));
 				FString URLString = FURL().ToString();
-				FString OwnerWorkerId =
-					UTF8_TO_TCHAR(UnrealMetadataComponent->owner_worker_id().data()->c_str());
+				FString OwnerWorkerId = UTF8_TO_TCHAR(UnrealMetadataComponent->owner_worker_id().data()->c_str());
 				URLString += TEXT("?workerId=") + OwnerWorkerId;
-				Connection =
-					NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), true);
+				Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), true);
 				check(Connection);
 				EntityActor = Connection->PlayerController;
 			}
@@ -433,8 +405,7 @@ USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> Lo
 				}
 				else
 				{
-					FString FullPath =
-						UTF8_TO_TCHAR(UnrealMetadataComponent->static_path().data()->c_str());
+					FString FullPath = UTF8_TO_TCHAR(UnrealMetadataComponent->static_path().data()->c_str());
 					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log,
 						   TEXT("Searching for a native static actor %s of class %s in the "
 								"persistent level "
@@ -474,12 +445,10 @@ USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> Lo
 
 			// Set up actor channel.
 			auto PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-			auto Channel = Cast<USpatialActorChannel>(
-				Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
+			auto Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
 			check(Channel);
 
-			PackageMap->ResolveEntityActor(EntityActor, EntityId,
-										   UnrealMetadataComponent->subobject_name_to_offset());
+			PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
 			Channel->SetChannelActor(EntityActor);
 
 			// Inform USpatialInterop of this new actor channel.
@@ -488,8 +457,7 @@ USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> Lo
 			// Apply initial replicated properties.
 			for (FPendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 			{
-				NetDriver->GetSpatialInterop()->ReceiveAddComponent(
-					Channel, PendingAddComponent.AddComponentOp);
+				NetDriver->GetSpatialInterop()->ReceiveAddComponent(Channel, PendingAddComponent.AddComponentOp);
 			}
 
 			// This is a bit of a hack unfortunately, among the core classes only
@@ -522,11 +490,9 @@ USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> Lo
 // Note that in SpatialGDK, this function will not be called on the spawning
 // worker.
 // It's only for client, and in the future, other workers.
-AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* PositionComponent,
-													 UClass* ActorClass)
+AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ActorClass)
 {
-	FVector InitialLocation =
-		SpatialConstants::SpatialOSCoordinatesToLocation(PositionComponent->coords());
+	FVector InitialLocation = SpatialConstants::SpatialOSCoordinatesToLocation(PositionComponent->coords());
 	AActor* NewActor = nullptr;
 	if (ActorClass)
 	{
@@ -536,11 +502,9 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* P
 		SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		SpawnInfo.bRemoteOwned = !NetDriver->IsServer();
 		SpawnInfo.bNoFail = true;
-		FVector SpawnLocation =
-			FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
+		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 
-		NewActor = World->SpawnActorAbsolute(
-			ActorClass, FTransform(FRotator::ZeroRotator, InitialLocation), SpawnInfo);
+		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(FRotator::ZeroRotator, InitialLocation), SpawnInfo);
 		check(NewActor);
 	}
 
@@ -550,8 +514,7 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* P
 // This is for classes that we register explicitly with Unreal, currently used
 // for "non-native"
 // replication. This logic might change soon.
-UClass*
-USpatialInteropPipelineBlock::GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent)
+UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent)
 {
 	FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->entity_type().c_str());
 
@@ -566,8 +529,7 @@ USpatialInteropPipelineBlock::GetRegisteredEntityClass(improbable::MetadataData*
 		int32 LastSlash = -1;
 		if (EntityTypeString.FindLastChar('/', LastSlash))
 		{
-			RegisteredClass =
-				EntityRegistry->GetRegisteredEntityClass(EntityTypeString.RightChop(LastSlash));
+			RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString.RightChop(LastSlash));
 		}
 	}
 	UClass* ClassToSpawn = RegisteredClass ? *RegisteredClass : nullptr;
@@ -578,18 +540,16 @@ USpatialInteropPipelineBlock::GetRegisteredEntityClass(improbable::MetadataData*
 // This is for classes that we derive from meta name, mainly to spawn the
 // corresponding actors on
 // clients.
-UClass*
-USpatialInteropPipelineBlock::GetNativeEntityClass(improbable::MetadataData* MetadataComponent)
+UClass* USpatialInteropPipelineBlock::GetNativeEntityClass(improbable::MetadataData* MetadataComponent)
 {
 	FString Metadata = UTF8_TO_TCHAR(MetadataComponent->entity_type().c_str());
 	return FindObject<UClass>(ANY_PACKAGE, *Metadata);
 }
 
-void USpatialInteropPipelineBlock::SetupComponentInterests(
-	AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection)
+void USpatialInteropPipelineBlock::SetupComponentInterests(AActor* Actor, const FEntityId& EntityId,
+														   const TWeakPtr<worker::Connection>& Connection)
 {
-	TArray<UActorComponent*> SpatialOSComponents =
-		Actor->GetComponentsByClass(USpatialOsComponent::StaticClass());
+	TArray<UActorComponent*> SpatialOSComponents = Actor->GetComponentsByClass(USpatialOsComponent::StaticClass());
 
 	worker::Map<worker::ComponentId, worker::InterestOverride> ComponentIdsAndInterestOverrides;
 
@@ -604,7 +564,6 @@ void USpatialInteropPipelineBlock::SetupComponentInterests(
 	auto LockedConnection = Connection.Pin();
 	if (LockedConnection.IsValid())
 	{
-		LockedConnection->SendComponentInterest(EntityId.ToSpatialEntityId(),
-												ComponentIdsAndInterestOverrides);
+		LockedConnection->SendComponentInterest(EntityId.ToSpatialEntityId(), ComponentIdsAndInterestOverrides);
 	}
 }
