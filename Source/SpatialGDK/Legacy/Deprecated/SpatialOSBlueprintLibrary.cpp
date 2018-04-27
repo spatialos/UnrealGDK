@@ -3,8 +3,7 @@
 #include "SpatialOSBlueprintLibrary.h"
 #include "SpatialGDKWorkerTypes.h"
 
-USpatialOSBlueprintLibrary::USpatialOSBlueprintLibrary(const FObjectInitializer& ObjectInitializer)
-: Super(ObjectInitializer)
+USpatialOSBlueprintLibrary::USpatialOSBlueprintLibrary(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 }
 
@@ -28,8 +27,7 @@ FString USpatialOSBlueprintLibrary::EntityIdToString(const FEntityId& EntityId)
 	return ToString(EntityId.ToSpatialEntityId());
 }
 
-FEntityIdQueryConstraint
-USpatialOSBlueprintLibrary::MakeEntityIdQueryConstraintFromEntityId(const FEntityId& InEntityId)
+FEntityIdQueryConstraint USpatialOSBlueprintLibrary::MakeEntityIdQueryConstraintFromEntityId(const FEntityId& InEntityId)
 {
 	return FEntityIdQueryConstraint(InEntityId);
 }
@@ -39,8 +37,7 @@ FEntityIdQueryConstraint USpatialOSBlueprintLibrary::MakeEntityIdQueryConstraint
 	return FEntityIdQueryConstraint(InEntityId);
 }
 
-FComponentIdQueryConstraint
-USpatialOSBlueprintLibrary::MakeComponentIdQueryConstraintFromComponentId(const FComponentId& InComponentId)
+FComponentIdQueryConstraint USpatialOSBlueprintLibrary::MakeComponentIdQueryConstraintFromComponentId(const FComponentId& InComponentId)
 {
 	return FComponentIdQueryConstraint(InComponentId);
 }
@@ -55,10 +52,7 @@ FSphereQueryConstraint USpatialOSBlueprintLibrary::MakeSphereQueryConstraint(con
 	return FSphereQueryConstraint(InPosition, InRadius);
 }
 
-UEntityQueryConstraint*
-USpatialOSBlueprintLibrary::SpatialOsEntityAndQuery(const TArray<FEntityIdQueryConstraint>& EntityIds,
-													const TArray<FComponentIdQueryConstraint>& ComponentIds,
-													const TArray<FSphereQueryConstraint>& Spheres)
+UEntityQueryConstraint* USpatialOSBlueprintLibrary::SpatialOsEntityAndQuery(const TArray<FEntityIdQueryConstraint>& EntityIds, const TArray<FComponentIdQueryConstraint>& ComponentIds, const TArray<FSphereQueryConstraint>& Spheres)
 {
 	auto NewQuery = NewObject<UEntityQueryConstraint>();
 
@@ -91,10 +85,7 @@ USpatialOSBlueprintLibrary::SpatialOsEntityAndQuery(const TArray<FEntityIdQueryC
 	return NewQuery;
 }
 
-UEntityQueryConstraint*
-USpatialOSBlueprintLibrary::SpatialOsEntityOrQuery(const TArray<FEntityIdQueryConstraint>& EntityIds,
-												   const TArray<FComponentIdQueryConstraint>& ComponentIds,
-												   const TArray<FSphereQueryConstraint>& Spheres)
+UEntityQueryConstraint* USpatialOSBlueprintLibrary::SpatialOsEntityOrQuery(const TArray<FEntityIdQueryConstraint>& EntityIds, const TArray<FComponentIdQueryConstraint>& ComponentIds, const TArray<FSphereQueryConstraint>& Spheres)
 {
 	auto NewQuery = NewObject<UEntityQueryConstraint>();
 

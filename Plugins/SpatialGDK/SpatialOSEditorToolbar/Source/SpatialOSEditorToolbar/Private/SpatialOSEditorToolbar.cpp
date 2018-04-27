@@ -37,8 +37,7 @@ void FSpatialOSEditorToolbarModule::StartupModule()
 	RegisterSettings();
 	CheckForRunningStack();
 
-	OnPropertyChangedDelegateHandle =
-		FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialOSEditorToolbarModule::OnPropertyChanged);
+	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialOSEditorToolbarModule::OnPropertyChanged);
 
 	auto SpatialOSToolbarSettings = GetDefault<USpatialOSEditorToolbarSettings>();
 	bStopSpatialOnExit = SpatialOSToolbarSettings->bStopSpatialOnExit;
@@ -80,14 +79,9 @@ void FSpatialOSEditorToolbarModule::RegisterSettings()
 	{
 		ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
 
-		SettingsContainer->DescribeCategory(
-			"SpatialOSEditorToolbar", LOCTEXT("RuntimeWDCategoryName", "SpatialOS - Toolbar"),
-			LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialOS Editor toolbar plugin"));
+		SettingsContainer->DescribeCategory("SpatialOSEditorToolbar", LOCTEXT("RuntimeWDCategoryName", "SpatialOS - Toolbar"), LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialOS Editor toolbar plugin"));
 
-		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings(
-			"Project", "SpatialOS", "Toolbar", LOCTEXT("RuntimeGeneralSettingsName", "Toolbar"),
-			LOCTEXT("RuntimeGeneralSettingsDescription", "Configuration for SpatialOS Editor toolbar plugin."),
-			GetMutableDefault<USpatialOSEditorToolbarSettings>());
+		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings("Project", "SpatialOS", "Toolbar", LOCTEXT("RuntimeGeneralSettingsName", "Toolbar"), LOCTEXT("RuntimeGeneralSettingsDescription", "Configuration for SpatialOS Editor toolbar plugin."), GetMutableDefault<USpatialOSEditorToolbarSettings>());
 
 		if (SettingsSection.IsValid())
 		{
@@ -114,20 +108,11 @@ bool FSpatialOSEditorToolbarModule::HandleSettingsSaved()
 
 void FSpatialOSEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> PluginCommands)
 {
-	PluginCommands->MapAction(
-		FSpatialOSEditorToolbarCommands::Get().StartSpatialOSStackAction,
-		FExecuteAction::CreateRaw(this, &FSpatialOSEditorToolbarModule::StartSpatialOSButtonClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialOSEditorToolbarModule::StartSpatialOSStackCanExecute));
+	PluginCommands->MapAction(FSpatialOSEditorToolbarCommands::Get().StartSpatialOSStackAction, FExecuteAction::CreateRaw(this, &FSpatialOSEditorToolbarModule::StartSpatialOSButtonClicked), FCanExecuteAction::CreateRaw(this, &FSpatialOSEditorToolbarModule::StartSpatialOSStackCanExecute));
 
-	PluginCommands->MapAction(
-		FSpatialOSEditorToolbarCommands::Get().StopSpatialOSStackAction,
-		FExecuteAction::CreateRaw(this, &FSpatialOSEditorToolbarModule::StopSpatialOSButtonClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialOSEditorToolbarModule::StopSpatialOSStackCanExecute));
+	PluginCommands->MapAction(FSpatialOSEditorToolbarCommands::Get().StopSpatialOSStackAction, FExecuteAction::CreateRaw(this, &FSpatialOSEditorToolbarModule::StopSpatialOSButtonClicked), FCanExecuteAction::CreateRaw(this, &FSpatialOSEditorToolbarModule::StopSpatialOSStackCanExecute));
 
-	PluginCommands->MapAction(
-		FSpatialOSEditorToolbarCommands::Get().LaunchInspectorWebPageAction,
-		FExecuteAction::CreateRaw(this, &FSpatialOSEditorToolbarModule::LaunchInspectorWebpageButtonClicked),
-		FCanExecuteAction());
+	PluginCommands->MapAction(FSpatialOSEditorToolbarCommands::Get().LaunchInspectorWebPageAction, FExecuteAction::CreateRaw(this, &FSpatialOSEditorToolbarModule::LaunchInspectorWebpageButtonClicked), FCanExecuteAction());
 }
 
 void FSpatialOSEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> PluginCommands)
@@ -136,18 +121,14 @@ void FSpatialOSEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList
 
 	{
 		TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender());
-		MenuExtender->AddMenuExtension(
-			"General", EExtensionHook::After, PluginCommands,
-			FMenuExtensionDelegate::CreateRaw(this, &FSpatialOSEditorToolbarModule::AddMenuExtension));
+		MenuExtender->AddMenuExtension("General", EExtensionHook::After, PluginCommands, FMenuExtensionDelegate::CreateRaw(this, &FSpatialOSEditorToolbarModule::AddMenuExtension));
 
 		LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
 	}
 
 	{
 		TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
-		ToolbarExtender->AddToolBarExtension(
-			"Game", EExtensionHook::After, PluginCommands,
-			FToolBarExtensionDelegate::CreateRaw(this, &FSpatialOSEditorToolbarModule::AddToolbarExtension));
+		ToolbarExtender->AddToolBarExtension("Game", EExtensionHook::After, PluginCommands, FToolBarExtensionDelegate::CreateRaw(this, &FSpatialOSEditorToolbarModule::AddToolbarExtension));
 
 		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
 	}
@@ -174,11 +155,9 @@ void FSpatialOSEditorToolbarModule::StartSpatialOSButtonClicked()
 {
 	auto SpatialOSToolbarSettings = GetDefault<USpatialOSEditorToolbarSettings>();
 
-	const FString ExecuteAbsolutePath =
-		FPaths::ConvertRelativePathToFull(SpatialOSToolbarSettings->ProjectRootFolder.Path);
+	const FString ExecuteAbsolutePath = FPaths::ConvertRelativePathToFull(SpatialOSToolbarSettings->ProjectRootFolder.Path);
 	const FString CmdExecutable = TEXT("cmd.exe");
-	const FString SpatialCmdArgument =
-		FString::Printf(TEXT("/c spatial.exe local launch %s"), *SpatialOSToolbarSettings->SpatialOSLaunchArgument);
+	const FString SpatialCmdArgument = FString::Printf(TEXT("/c spatial.exe local launch %s"), *SpatialOSToolbarSettings->SpatialOSLaunchArgument);
 
 	UE_LOG(LogSpatialOSEditor, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround to get spatial.exe to properly show a window we have
@@ -187,13 +166,9 @@ void FSpatialOSEditorToolbarModule::StartSpatialOSButtonClicked()
 	// We currently can't use pipes to capture output as it doesn't work properly
 	// with current
 	// spatial.exe.
-	SpatialOSStackProcHandle =
-		FPlatformProcess::CreateProc(*(CmdExecutable), *SpatialCmdArgument, true, false, false,
-									 &SpatialOSStackProcessID, 0, *ExecuteAbsolutePath, nullptr, nullptr);
+	SpatialOSStackProcHandle = FPlatformProcess::CreateProc(*(CmdExecutable), *SpatialCmdArgument, true, false, false, &SpatialOSStackProcessID, 0, *ExecuteAbsolutePath, nullptr, nullptr);
 
-	FNotificationInfo Info(SpatialOSStackProcHandle.IsValid() == true
-							   ? FText::FromString(TEXT("SpatialOS Starting..."))
-							   : FText::FromString(TEXT("Failed to start SpatialOS")));
+	FNotificationInfo Info(SpatialOSStackProcHandle.IsValid() == true ? FText::FromString(TEXT("SpatialOS Starting...")) : FText::FromString(TEXT("Failed to start SpatialOS")));
 	Info.ExpireDuration = 3.0f;
 	Info.bUseSuccessFailIcons = true;
 	auto NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
@@ -276,13 +251,11 @@ void FSpatialOSEditorToolbarModule::CheckForRunningStack()
 	} while (ProcEnumerator.MoveNext() && !SpatialOSStackProcHandle.IsValid());
 }
 
-void FSpatialOSEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModified,
-													  FPropertyChangedEvent& PropertyChangedEvent)
+void FSpatialOSEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent)
 {
 	if (USpatialOSEditorToolbarSettings* ToolbarSettings = Cast<USpatialOSEditorToolbarSettings>(ObjectBeingModified))
 	{
-		FName PropertyName =
-			PropertyChangedEvent.Property != nullptr ? PropertyChangedEvent.Property->GetFName() : NAME_None;
+		FName PropertyName = PropertyChangedEvent.Property != nullptr ? PropertyChangedEvent.Property->GetFName() : NAME_None;
 		if (PropertyName.ToString() == TEXT("bStopSpatialOnExit"))
 		{
 			bStopSpatialOnExit = ToolbarSettings->bStopSpatialOnExit;

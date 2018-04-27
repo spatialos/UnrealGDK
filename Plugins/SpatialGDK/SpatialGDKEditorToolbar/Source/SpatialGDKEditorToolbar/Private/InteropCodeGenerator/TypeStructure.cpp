@@ -183,8 +183,7 @@ ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property)
 	}
 }
 
-void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor,
-					 bool bRecurseIntoSubobjects)
+void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor, bool bRecurseIntoSubobjects)
 {
 	bool bShouldRecurseFurther = Visitor(TypeNode);
 	for (auto& PropertyPair : TypeNode->Properties)
@@ -201,8 +200,7 @@ void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr
 	}
 }
 
-void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
-						bool bRecurseIntoSubobjects)
+void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor, bool bRecurseIntoSubobjects)
 {
 	for (auto& PropertyPair : TypeNode->Properties)
 	{
@@ -219,8 +217,7 @@ void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TShared
 	}
 }
 
-void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
-						bool bRecurseIntoSubobjects)
+void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor, bool bRecurseIntoSubobjects)
 {
 	for (auto& PropertyPair : RPCNode->Parameters)
 	{
@@ -254,8 +251,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		// TODO(David): Should we still be skipping this?
 		if (Property->IsA<UMulticastDelegateProperty>())
 		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - multicast delegate property, skipping"),
-				   *Property->GetName());
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - multicast delegate property, skipping"), *Property->GetName());
 			continue;
 		}
 
@@ -336,8 +332,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			// this stage, just remove it.
 			if (Value->IsEditorOnly())
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - editor only, skipping"),
-					   *Property->GetName());
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - editor only, skipping"), *Property->GetName());
 				TypeNode->Properties.Remove(Property);
 				continue;
 			}
@@ -345,8 +340,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			// Check whether the owner of this value is the CDO itself.
 			if (Value->GetOuter() == ContainerCDO)
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"),
-					   *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
 				// This property is definitely a strong reference, recurse into it.
 				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {});
@@ -355,15 +349,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			else
 			{
 				// The values outer is not us, store as weak reference.
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - %s weak reference (outer not this)"),
-					   *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - %s weak reference (outer not this)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
 			}
 		}
 		else
 		{
 			// If value is just nullptr, then we clearly don't own it.
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - %s weak reference (null init)"),
-				   *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - %s weak reference (null init)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
 		}
 	}
 
@@ -489,11 +481,10 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 							   [&PropertyNode, &Cmd](TSharedPtr<FUnrealProperty> Property) {
 								   if (Property->Property == Cmd.Property)
 								   {
-									   checkf(!PropertyNode.IsValid(),
-											  TEXT("We've already found a previous property node with the "
-												   "same property. This indicates that we have a 'diamond "
-												   "of "
-												   "death' style situation.")) PropertyNode = Property;
+									   checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the "
+																			"same property. This indicates that we have a 'diamond "
+																			"of "
+																			"death' style situation.")) PropertyNode = Property;
 								   }
 								   return true;
 							   },
@@ -540,8 +531,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			checkf(CurrentTypeNode.IsValid(), TEXT("A property in the chain (except the leaf) is not a struct "
 												   "property."));
 			UProperty* NextProperty = CurrentTypeNode->Type->FindPropertyByName(PropertyName);
-			checkf(NextProperty, TEXT("Cannot find property %s in container %s"), *PropertyName.ToString(),
-				   *CurrentTypeNode->Type->GetName());
+			checkf(NextProperty, TEXT("Cannot find property %s in container %s"), *PropertyName.ToString(), *CurrentTypeNode->Type->GetName());
 			MigratableProperty = CurrentTypeNode->Properties.FindChecked(NextProperty);
 			CurrentTypeNode = MigratableProperty->Type;
 		}
@@ -614,8 +604,7 @@ TArray<FString> GetRPCTypeOwners(TSharedPtr<FUnrealType> TypeInfo)
 						{
 							FString RPCOwnerName = *RPC.Value->Function->GetOuter()->GetName();
 							RPCTypeOwners.AddUnique(RPCOwnerName);
-							UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("RPC Type Owner Found - %s ::  %s"),
-								   *RPCOwnerName, *RPC.Value->Function->GetName());
+							UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("RPC Type Owner Found - %s ::  %s"), *RPCOwnerName, *RPC.Value->Function->GetName());
 						}
 						return true;
 					},

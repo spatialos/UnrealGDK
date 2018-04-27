@@ -185,41 +185,31 @@ struct SPATIALGDK_API FSpatialGDKDebuggingConfig
   * This field is not in use. Setting this field will not affect a worker's
   * behaviour.
   */
-	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
-			  meta = (DeprecatedFunction,
-					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
+	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration, meta = (DeprecatedFunction, DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	FString InfraServiceUrl;
 	/**
   * This field is not in use. Setting this field will not affect a worker's
   * behaviour.
   */
-	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
-			  meta = (DeprecatedFunction,
-					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
+	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration, meta = (DeprecatedFunction, DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	bool LogDebugToSpatialOs;
 	/**
   * This field is not in use. Setting this field will not affect a worker's
   * behaviour.
   */
-	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
-			  meta = (DeprecatedFunction,
-					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
+	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration, meta = (DeprecatedFunction, DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	bool LogAssertToSpatialOs;
 	/**
   * This field is not in use. Setting this field will not affect a worker's
   * behaviour.
   */
-	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
-			  meta = (DeprecatedFunction,
-					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
+	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration, meta = (DeprecatedFunction, DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	bool LogWarningToSpatialOs;
 	/**
   * This field is not in use. Setting this field will not affect a worker's
   * behaviour.
   */
-	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
-			  meta = (DeprecatedFunction,
-					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
+	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration, meta = (DeprecatedFunction, DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	bool LogErrorToSpatialOs;
 	/**
   * "BuiltInMetricsReportPeriodMillis" field for an underlying
@@ -278,17 +268,13 @@ struct SPATIALGDK_API FSpatialGDKDebuggingConfig
   * This field is not in use. Setting this field will not affect a worker's
   * behaviour.
   */
-	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
-			  meta = (DeprecatedFunction,
-					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
+	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration, meta = (DeprecatedFunction, DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	bool ShowDebugTraces;
 	/**
   * This field is not in use. Setting this field will not affect a worker's
   * behaviour.
   */
-	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
-			  meta = (DeprecatedFunction,
-					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
+	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration, meta = (DeprecatedFunction, DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	bool UseInstrumentation;
 };
 
@@ -300,15 +286,7 @@ struct SPATIALGDK_API FSpatialGDKApplicationConfig
 {
 	GENERATED_USTRUCT_BODY()
 
-	FSpatialGDKApplicationConfig()
-	: AppName("")
-	, AssemblyName("")
-	, DeploymentName("")
-	, DeploymentTag("prod")
-	, ProjectName("")
-	, WorkerPlatform("UnrealClient")
-	, WorkerId("")
-	, LoginToken("")
+	FSpatialGDKApplicationConfig() : AppName(""), AssemblyName(""), DeploymentName(""), DeploymentTag("prod"), ProjectName(""), WorkerPlatform("UnrealClient"), WorkerId(""), LoginToken("")
 	{
 	}
 
@@ -318,16 +296,13 @@ struct SPATIALGDK_API FSpatialGDKApplicationConfig
   * service.
   * This field is deprecated. Please use ProjectName instead.
   */
-	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
-			  meta = (DeprecatedFunction, DeprecationMessage = "This field is deprecated, use ProjectName instead."))
+	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration, meta = (DeprecatedFunction, DeprecationMessage = "This field is deprecated, use ProjectName instead."))
 	FString AppName;
 	/**
   * This field is not in use. Setting this field will not affect a worker's
   * behaviour.
   */
-	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration,
-			  meta = (DeprecatedFunction,
-					  DeprecationMessage = "This field is deprecated and will be removed in a future release."))
+	UPROPERTY(EditAnywhere, config, Category = WorkerConfiguration, meta = (DeprecatedFunction, DeprecationMessage = "This field is deprecated and will be removed in a future release."))
 	FString AssemblyName;
 	/**
   * "deployment_name" argument for an underlying

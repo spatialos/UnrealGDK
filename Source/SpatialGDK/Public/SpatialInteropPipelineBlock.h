@@ -51,8 +51,7 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 	void RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp) override;
 
 	void AddComponent(UAddComponentOpWrapperBase* AddComponentOp) override;
-	void RemoveComponent(const worker::ComponentId ComponentId,
-						 const worker::RemoveComponentOp& RemoveComponentOp) override;
+	void RemoveComponent(const worker::ComponentId ComponentId, const worker::RemoveComponentOp& RemoveComponentOp) override;
 
 	void ChangeAuthority(const worker::ComponentId ComponentId, const worker::AuthorityChangeOp& AuthChangeOp) override;
 
@@ -90,25 +89,21 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 
   private:
 	void AddEntityImpl(const FEntityId& EntityId);
-	void InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier,
-									UAddComponentOpWrapperBase* AddComponentOp);
+	void InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp);
 	void DisableComponentImpl(const FComponentIdentifier& ComponentIdentifier);
 	void RemoveEntityImpl(const FEntityId& EntityId);
 
 	// Stub.
-	void ProcessOps(const TWeakPtr<SpatialOSView>& InView, const TWeakPtr<SpatialOSConnection>& InConnection,
-					UWorld* World, UCallbackDispatcher* CallbackDispatcher) override;
+	void ProcessOps(const TWeakPtr<SpatialOSView>& InView, const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World, UCallbackDispatcher* CallbackDispatcher) override;
 
   private:
-	AActor* GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView,
-							 const FEntityId& EntityId);
+	AActor* GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId);
 	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ClassToSpawn);
 
 	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);
 	UClass* GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent);
 
-	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId,
-								 const TWeakPtr<worker::Connection>& Connection);
+	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection);
 
 	template <typename AddOpType, typename Metaclass>
 	typename Metaclass::Data* GetPendingComponentData(const FEntityId& EntityId)
@@ -118,9 +113,7 @@ class SPATIALGDK_API USpatialInteropPipelineBlock : public UEntityPipelineBlock
 		{
 			if (PendingAddComponent.EntityComponent == FComponentIdentifier{EntityId.ToSpatialEntityId(), ComponentId})
 			{
-				return PendingAddComponent.AddComponentOp->IsValidLowLevel()
-					? Cast<AddOpType>(*PendingAddComponent.AddComponentOp)->Data.data()
-					: nullptr;
+				return PendingAddComponent.AddComponentOp->IsValidLowLevel() ? Cast<AddOpType>(*PendingAddComponent.AddComponentOp)->Data.data() : nullptr;
 			}
 		}
 		return nullptr;

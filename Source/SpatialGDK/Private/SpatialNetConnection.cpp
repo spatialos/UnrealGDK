@@ -9,9 +9,7 @@ USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectIni
 	InternalAck = 1;
 }
 
-void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL,
-									 EConnectionState InState, int32 InMaxPacket /*= 0*/,
-									 int32 InPacketOverhead /*= 0*/)
+void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket /*= 0*/, int32 InPacketOverhead /*= 0*/)
 {
 	Super::InitBase(InDriver, InSocket, InURL, InState, InMaxPacket, InPacketOverhead);
 
@@ -30,15 +28,12 @@ void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSock
 	}
 }
 
-void USpatialNetConnection::InitLocalConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL,
-												EConnectionState InState, int32 InMaxPacket, int32 InPacketOverhead)
+void USpatialNetConnection::InitLocalConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket, int32 InPacketOverhead)
 {
 	Super::InitLocalConnection(InDriver, InSocket, InURL, InState, InMaxPacket, InPacketOverhead);
 }
 
-void USpatialNetConnection::InitRemoteConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL,
-												 const class FInternetAddr& InRemoteAddr, EConnectionState InState,
-												 int32 InMaxPacket, int32 InPacketOverhead)
+void USpatialNetConnection::InitRemoteConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, const class FInternetAddr& InRemoteAddr, EConnectionState InState, int32 InMaxPacket, int32 InPacketOverhead)
 {
 	Super::InitRemoteConnection(InDriver, InSocket, InURL, InRemoteAddr, InState, InMaxPacket, InPacketOverhead);
 }

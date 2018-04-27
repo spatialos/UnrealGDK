@@ -35,8 +35,7 @@ FORCEINLINE EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Co
 
 // TODO: Remove once we've upgraded to 14.0 and can disable component short
 // circuiting. See TIG-137.
-FORCEINLINE bool HasComponentAuthority(TWeakPtr<worker::View> View, const worker::EntityId EntityId,
-									   const worker::ComponentId ComponentId)
+FORCEINLINE bool HasComponentAuthority(TWeakPtr<worker::View> View, const worker::EntityId EntityId, const worker::ComponentId ComponentId)
 {
 	TSharedPtr<worker::View> PinnedView = View.Pin();
 	if (PinnedView.IsValid())
@@ -69,9 +68,7 @@ struct FPropertyChangeState
 class FRepHandleData
 {
   public:
-	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, ELifetimeCondition Condition,
-				   ELifetimeRepNotifyCondition RepNotifyCondition)
-	: Condition(Condition), RepNotifyCondition(RepNotifyCondition), Offset(0)
+	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, ELifetimeCondition Condition, ELifetimeRepNotifyCondition RepNotifyCondition) : Condition(Condition), RepNotifyCondition(RepNotifyCondition), Offset(0)
 	{
 		// Build property chain.
 		check(PropertyNames.Num() > 0);
@@ -225,32 +222,20 @@ class SPATIALGDK_API USpatialTypeBinding : public UObject
 	GENERATED_BODY()
 
   public:
-	virtual const FRepHandlePropertyMap& GetRepHandlePropertyMap() const
-		PURE_VIRTUAL(USpatialTypeBinding::GetRepHandlePropertyMap, static FRepHandlePropertyMap Map; return Map;);
-	virtual const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() const
-		PURE_VIRTUAL(USpatialTypeBinding::GetMigratableHandlePropertyMap, static FMigratableHandlePropertyMap Map;
-					 return Map;);
+	virtual const FRepHandlePropertyMap& GetRepHandlePropertyMap() const PURE_VIRTUAL(USpatialTypeBinding::GetRepHandlePropertyMap, static FRepHandlePropertyMap Map; return Map;);
+	virtual const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() const PURE_VIRTUAL(USpatialTypeBinding::GetMigratableHandlePropertyMap, static FMigratableHandlePropertyMap Map; return Map;);
 
 	virtual void Init(USpatialInterop* Interop, USpatialPackageMapClient* PackageMap);
 	virtual void BindToView() PURE_VIRTUAL(USpatialTypeBinding::BindToView, );
 	virtual void UnbindFromView() PURE_VIRTUAL(USpatialTypeBinding::UnbindFromView, );
 	virtual UClass* GetBoundClass() const PURE_VIRTUAL(USpatialTypeBinding::GetBoundClass, return nullptr;);
 
-	virtual worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position,
-											 const FString& Metadata, const FPropertyChangeState& InitialChanges,
-											 USpatialActorChannel* Channel) const
-		PURE_VIRTUAL(USpatialTypeBinding::CreateActorEntity, return worker::Entity{};);
-	virtual void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel,
-									  const FEntityId& EntityId) const
-		PURE_VIRTUAL(USpatialTypeBinding::SendComponentUpdates, );
-	virtual void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame)
-		PURE_VIRTUAL(USpatialTypeBinding::SendRPCCommand, );
+	virtual worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const PURE_VIRTUAL(USpatialTypeBinding::CreateActorEntity, return worker::Entity{};);
+	virtual void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const PURE_VIRTUAL(USpatialTypeBinding::SendComponentUpdates, );
+	virtual void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) PURE_VIRTUAL(USpatialTypeBinding::SendRPCCommand, );
 
-	virtual void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const
-		PURE_VIRTUAL(USpatialTypeBinding::ReceiveAddComponent, );
-	virtual worker::Map<worker::ComponentId, worker::InterestOverride>
-	GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const
-		PURE_VIRTUAL(USpatialTypeBinding::GetInterestOverrideMap, return {};);
+	virtual void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const PURE_VIRTUAL(USpatialTypeBinding::ReceiveAddComponent, );
+	virtual worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const PURE_VIRTUAL(USpatialTypeBinding::GetInterestOverrideMap, return {};);
 
   protected:
 	UPROPERTY()

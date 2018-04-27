@@ -18,10 +18,8 @@ void UEntityRegistry::RegisterEntityBlueprints(const TArray<FString>& BlueprintP
 				UBlueprintGeneratedClass* BlueprintGeneratedClass = Cast<UBlueprintGeneratedClass>(Asset);
 				if (BlueprintGeneratedClass != nullptr)
 				{
-					FString BlueprintName = BlueprintGeneratedClass->GetName().LeftChop(
-						2);  // generated blueprint class names end with "_C"
-					UE_LOG(LogEntityRegistry, Display, TEXT("Registering blueprint in entity spawner with name: %s"),
-						   *BlueprintName);
+					FString BlueprintName = BlueprintGeneratedClass->GetName().LeftChop(2);  // generated blueprint class names end with "_C"
+					UE_LOG(LogEntityRegistry, Display, TEXT("Registering blueprint in entity spawner with name: %s"), *BlueprintName);
 					RegisterEntityClass(BlueprintName, BlueprintGeneratedClass);
 				}
 				else
@@ -127,8 +125,7 @@ void UEntityRegistry::RegisterEntityClass(const FString& ClassName, UClass* Clas
 	auto ExistingClass = ClassMap.Find(ClassName);
 	if (ExistingClass != nullptr)
 	{
-		UE_LOG(LogEntityRegistry, Error, TEXT("ClassName '%s' has already been registered to '%s'."), *ClassName,
-			   *(*ExistingClass)->GetClass()->GetName());
+		UE_LOG(LogEntityRegistry, Error, TEXT("ClassName '%s' has already been registered to '%s'."), *ClassName, *(*ExistingClass)->GetClass()->GetName());
 		return;
 	}
 

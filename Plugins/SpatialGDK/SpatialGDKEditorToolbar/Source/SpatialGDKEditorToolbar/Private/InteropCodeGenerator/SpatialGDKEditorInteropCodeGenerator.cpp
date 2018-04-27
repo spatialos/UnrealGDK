@@ -14,8 +14,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 
 namespace
 {
-int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId,
-									UClass* Class, const TArray<TArray<FName>>& MigratableProperties)
+int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<TArray<FName>>& MigratableProperties)
 {
 	FCodeWriter OutputSchema;
 	FCodeWriter OutputHeader;
@@ -71,8 +70,7 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 	OutputListSource.Indent();
 	for (int i = 0; i < Classes.Num(); ++i)
 	{
-		OutputListSource.Printf(TEXT("USpatialTypeBinding_%s::StaticClass()%s"), *Classes[i],
-								i < (Classes.Num() - 1) ? TEXT(",") : TEXT(""));
+		OutputListSource.Printf(TEXT("USpatialTypeBinding_%s::StaticClass()%s"), *Classes[i], i < (Classes.Num() - 1) ? TEXT(",") : TEXT(""));
 	}
 	OutputListSource.Outdent();
 	OutputListSource.Print("};");
@@ -97,11 +95,10 @@ bool CheckClassNameListValidity(const TArray<FString>& Classes)
 
 			if (SchemaTypeA.Equals(SchemaTypeB))
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error,
-					   TEXT("Class name collision after removing underscores: '%s' and "
-							"'%s' - "
-							"schema not "
-							"generated"),
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Class name collision after removing underscores: '%s' and "
+																	  "'%s' - "
+																	  "schema not "
+																	  "generated"),
 					   *ClassA, *ClassB);
 				return false;
 			}
@@ -114,32 +111,25 @@ bool CheckClassNameListValidity(const TArray<FString>& Classes)
 
 void SpatialGDKGenerateInteropCode()
 {
-	FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()),
-												 TEXT("../../../generatedschema/improbable/unreal/"));
-	FString CombinedForwardingCodePath =
-		FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()),
-						TEXT("../../../workers/unreal/Game/Source/SampleGame/Generated/"));
+	FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../generatedschema/improbable/unreal/"));
+	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/SampleGame/Generated/"));
 	FString AbsoluteCombinedSchemaPath = FPaths::ConvertRelativePathToFull(CombinedSchemaPath);
 	FString AbsoluteCombinedForwardingCodePath = FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
 
-	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"),
-		   *AbsoluteCombinedSchemaPath, *AbsoluteCombinedForwardingCodePath);
+	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *AbsoluteCombinedSchemaPath, *AbsoluteCombinedForwardingCodePath);
 
 	// Hard coded class information.
 	TArray<FString> Classes = {"PlayerController", "PlayerState", "Character", "WheeledVehicle"};
 	TMap<FString, TArray<TArray<FName>>> MigratableProperties;
 	MigratableProperties.Add("PlayerController", {{"AcknowledgedPawn"}});
-	MigratableProperties.Add("Character", {{"CharacterMovement", "GroundMovementMode"},
-										   {"CharacterMovement", "MovementMode"},
-										   {"CharacterMovement", "CustomMovementMode"}});
+	MigratableProperties.Add("Character", {{"CharacterMovement", "GroundMovementMode"}, {"CharacterMovement", "MovementMode"}, {"CharacterMovement", "CustomMovementMode"}});
 
 	if (!CheckClassNameListValidity(Classes))
 	{
 		return;
 	}
 
-	if (FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath) &&
-		FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
+	if (FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath) && FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
 	{
 		// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 		int ComponentId = 100010;
@@ -147,8 +137,7 @@ void SpatialGDKGenerateInteropCode()
 		{
 			UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassName);
 			TArray<TArray<FName>> ClassMigratableProperties = MigratableProperties.FindRef(ClassName);
-			ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId,
-														   Class, ClassMigratableProperties);
+			ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, ClassMigratableProperties);
 		}
 	}
 	else

@@ -18,8 +18,7 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 		if (WorldContext->PendingNetGame->NetDriver && WorldContext->PendingNetGame->NetDriver->ServerConnection)
 		{
 			WorldContext->PendingNetGame->NetDriver->ServerConnection->Close();
-			GetEngine()->DestroyNamedNetDriver(WorldContext->PendingNetGame,
-											   WorldContext->PendingNetGame->NetDriver->NetDriverName);
+			GetEngine()->DestroyNamedNetDriver(WorldContext->PendingNetGame, WorldContext->PendingNetGame->NetDriver->NetDriverName);
 			WorldContext->PendingNetGame->NetDriver = nullptr;
 		}
 
@@ -45,8 +44,7 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 		// UPendingNetGame will set the appropriate error code and connection lost
 		// type, so
 		// we just have to propagate that message to the game.
-		GetEngine()->BroadcastTravelFailure(WorldContext->World(), ETravelFailure::PendingNetGameCreateFailure,
-											WorldContext->PendingNetGame->ConnectionError);
+		GetEngine()->BroadcastTravelFailure(WorldContext->World(), ETravelFailure::PendingNetGameCreateFailure, WorldContext->PendingNetGame->ConnectionError);
 		Error = WorldContext->PendingNetGame->ConnectionError;
 		WorldContext->PendingNetGame = NULL;
 		bOk = false;
@@ -56,8 +54,7 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 }
 
 #if WITH_EDITOR
-FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer,
-																		   const FGameInstancePIEParameters& Params)
+FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
 	// This is sadly hacky to avoid a larger engine change. It borrows code from
 	// UGameInstance::StartPlayInEditorGameInstance() and
@@ -86,9 +83,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 	}
 	else
 	{
-		return FGameInstancePIEResult::Failure(
-			FText::Format(NSLOCTEXT("UnrealEd", "Error_CouldntLaunchPIEClient", "Couldn't Launch PIE Client: {0}"),
-						  FText::FromString(Error)));
+		return FGameInstancePIEResult::Failure(FText::Format(NSLOCTEXT("UnrealEd", "Error_CouldntLaunchPIEClient", "Couldn't Launch PIE Client: {0}"), FText::FromString(Error)));
 	}
 }
 #endif

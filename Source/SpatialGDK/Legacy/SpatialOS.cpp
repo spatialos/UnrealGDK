@@ -84,14 +84,12 @@ void USpatialOS::Connect()
 	// Log parsed input
 	UE_LOG(LogSpatialOS, Warning, TEXT(": receptionistHost %s, receptionistPort "
 									   "%d, WorkerType %s, WorkerId %s"),
-		   *WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(),
-		   *WorkerConfiguration.GetWorkerType(), *WorkerConfiguration.GetWorkerId())
+		   *WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(), *WorkerConfiguration.GetWorkerType(), *WorkerConfiguration.GetWorkerId())
 
 	auto LockedView = WorkerConnection.GetView().Pin();
 	if (LockedView.IsValid())
 	{
-		Callbacks.Add(LockedView->OnDisconnect(
-			std::bind(&USpatialOS::OnDisconnectDispatcherCallback, this, std::placeholders::_1)));
+		Callbacks.Add(LockedView->OnDisconnect(std::bind(&USpatialOS::OnDisconnectDispatcherCallback, this, std::placeholders::_1)));
 	}
 
 	worker::ConnectionParameters Params;
@@ -136,8 +134,7 @@ void USpatialOS::Connect()
 	OnQueueStatus.BindLambda([this](const worker::QueueStatus& Status) {
 		if (Status.Error)
 		{
-			UE_LOG(LogSpatialOS, Error, TEXT("Error connecting to deployment: %s"),
-				   UTF8_TO_TCHAR(Status.Error->c_str()));
+			UE_LOG(LogSpatialOS, Error, TEXT("Error connecting to deployment: %s"), UTF8_TO_TCHAR(Status.Error->c_str()));
 			return false;
 		}
 		else
@@ -150,16 +147,11 @@ void USpatialOS::Connect()
 	const bool ShouldConnectViaLocator = !WorkerConfiguration.GetLoginToken().IsEmpty();
 	if (ShouldConnectViaLocator)
 	{
-		WorkerConnection.ConnectToLocatorAsync(WorkerConfiguration.GetProjectName(),
-											   WorkerConfiguration.GetLocatorHost(),
-											   WorkerConfiguration.GetDeploymentName(),
-											   WorkerConfiguration.GetLoginToken(), Params, OnQueueStatus, OnConnected);
+		WorkerConnection.ConnectToLocatorAsync(WorkerConfiguration.GetProjectName(), WorkerConfiguration.GetLocatorHost(), WorkerConfiguration.GetDeploymentName(), WorkerConfiguration.GetLoginToken(), Params, OnQueueStatus, OnConnected);
 	}
 	else
 	{
-		WorkerConnection.ConnectToReceptionistAsync(WorkerConfiguration.GetReceptionistHost(),
-													WorkerConfiguration.GetReceptionistPort(),
-													WorkerConfiguration.GetWorkerId(), Params, OnConnected);
+		WorkerConnection.ConnectToReceptionistAsync(WorkerConfiguration.GetReceptionistHost(), WorkerConfiguration.GetReceptionistPort(), WorkerConfiguration.GetWorkerId(), Params, OnConnected);
 	}
 }
 

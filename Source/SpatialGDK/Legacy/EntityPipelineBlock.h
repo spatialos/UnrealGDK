@@ -25,17 +25,12 @@ class SPATIALGDK_API UEntityPipelineBlock : public UObject
 
   public:
 	virtual void AddEntity(const worker::AddEntityOp& AddEntityOp) PURE_VIRTUAL(UEntityPipelineBlock::AddEntity(), );
-	virtual void RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp)
-		PURE_VIRTUAL(UEntityPipelineBlock::RemoveEntity(), );
+	virtual void RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp) PURE_VIRTUAL(UEntityPipelineBlock::RemoveEntity(), );
 
-	virtual void AddComponent(UAddComponentOpWrapperBase* AddComponentOp)
-		PURE_VIRTUAL(UEntityPipelineBlock::AddComponent(), );
-	virtual void RemoveComponent(const worker::ComponentId ComponentId,
-								 const worker::RemoveComponentOp& RemoveComponentOp)
-		PURE_VIRTUAL(UEntityPipelineBlock::RemoveComponent(), );
+	virtual void AddComponent(UAddComponentOpWrapperBase* AddComponentOp) PURE_VIRTUAL(UEntityPipelineBlock::AddComponent(), );
+	virtual void RemoveComponent(const worker::ComponentId ComponentId, const worker::RemoveComponentOp& RemoveComponentOp) PURE_VIRTUAL(UEntityPipelineBlock::RemoveComponent(), );
 
-	virtual void ChangeAuthority(const worker::ComponentId ComponentId, const worker::AuthorityChangeOp& AuthChangeOp)
-		PURE_VIRTUAL(UEntityPipelineBlock::ChangeAuthority(), );
+	virtual void ChangeAuthority(const worker::ComponentId ComponentId, const worker::AuthorityChangeOp& AuthChangeOp) PURE_VIRTUAL(UEntityPipelineBlock::ChangeAuthority(), );
 
 	virtual void EnterCriticalSection() PURE_VIRTUAL(UEntityPipelineBlock::EnterCriticalSection(), );
 
@@ -45,7 +40,5 @@ class SPATIALGDK_API UEntityPipelineBlock : public UObject
 	UPROPERTY()
 	UEntityPipelineBlock* NextBlock;
 
-	virtual void ProcessOps(const TWeakPtr<SpatialOSView>& InView, const TWeakPtr<SpatialOSConnection>& InConnection,
-							UWorld* World, ::UCallbackDispatcher* CallbackDispatcher)
-		PURE_VIRTUAL(UEntityPipelineBlock::ProcessOps(), );
+	virtual void ProcessOps(const TWeakPtr<SpatialOSView>& InView, const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World, ::UCallbackDispatcher* CallbackDispatcher) PURE_VIRTUAL(UEntityPipelineBlock::ProcessOps(), );
 };

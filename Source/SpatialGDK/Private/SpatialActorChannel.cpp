@@ -56,12 +56,7 @@ void UpdateChangelistHistory(FRepState* RepState)
 }
 }
 
-USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
-: Super(ObjectInitializer)
-, ActorEntityId(0)
-, ReserveEntityIdRequestId(-1)
-, CreateEntityRequestId(-1)
-, SpatialNetDriver(nullptr)
+USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/) : Super(ObjectInitializer), ActorEntityId(0), ReserveEntityIdRequestId(-1), CreateEntityRequestId(-1), SpatialNetDriver(nullptr)
 {
 	bCoreActor = true;
 	bCreatingNewEntity = false;
@@ -91,13 +86,12 @@ void USpatialActorChannel::BindToSpatialView()
 	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
 	{
-		ReserveEntityCallback =
-			PinnedView->OnReserveEntityIdResponse([this](const worker::ReserveEntityIdResponseOp& Op) {
-				if (Op.RequestId == ReserveEntityIdRequestId)
-				{
-					OnReserveEntityIdResponse(Op);
-				}
-			});
+		ReserveEntityCallback = PinnedView->OnReserveEntityIdResponse([this](const worker::ReserveEntityIdResponseOp& Op) {
+			if (Op.RequestId == ReserveEntityIdRequestId)
+			{
+				OnReserveEntityIdResponse(Op);
+			}
+		});
 		CreateEntityCallback = PinnedView->OnCreateEntityResponse([this](const worker::CreateEntityResponseOp& Op) {
 			if (Op.RequestId == CreateEntityRequestId)
 			{
@@ -194,8 +188,7 @@ bool USpatialActorChannel::ReplicateActor()
 	RepFlags.bReplay = ActorWorld && (ActorWorld->DemoNetDriver == Connection->GetDriver());
 	RepFlags.bNetInitial = RepFlags.bNetInitial;
 
-	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(),
-		   RepFlags.bNetInitial, RepFlags.bNetOwner);
+	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
 
 	FMemMark MemMark(FMemStack::Get());  // The calls to ReplicateProperties will
 										 // allocate memory on
@@ -221,9 +214,7 @@ bool USpatialActorChannel::ReplicateActor()
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
-	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame,
-										   ActorReplicator->RepState->LastCompareIndex, RepFlags,
-										   bForceCompareProperties);
+	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame, ActorReplicator->RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
 
 	const int32 PossibleNewHistoryIndex = ActorReplicator->RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
 	FRepChangedHistory& PossibleNewHistoryItem = ActorReplicator->RepState->ChangeHistory[PossibleNewHistoryIndex];
@@ -254,13 +245,10 @@ bool USpatialActorChannel::ReplicateActor()
 			const uint8* Data = PropertyInfo.Value.GetPropertyData((uint8*)Actor);
 
 			// Compare and assign.
-			if (RepFlags.bNetInitial ||
-				!PropertyInfo.Value.Property->Identical(MigratablePropertyShadowData.GetData() + ShadowDataOffset,
-														Data))
+			if (RepFlags.bNetInitial || !PropertyInfo.Value.Property->Identical(MigratablePropertyShadowData.GetData() + ShadowDataOffset, Data))
 			{
 				MigratableChanged.Add(PropertyInfo.Key);
-				PropertyInfo.Value.Property->CopyCompleteValue(
-					MigratablePropertyShadowData.GetData() + ShadowDataOffset, Data);
+				PropertyInfo.Value.Property->CopyCompleteValue(MigratablePropertyShadowData.GetData() + ShadowDataOffset, Data);
 			}
 			ShadowDataOffset += PropertyInfo.Value.Property->GetSize();
 		}
@@ -364,8 +352,7 @@ bool USpatialActorChannel::ReplicateActor()
 			// and create the
 			// entity.
 			LastSpatialPosition = GetActorSpatialPosition(Actor);
-			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId,
-																	 InitialRepChanged, MigratableChanged);
+			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialRepChanged, MigratableChanged);
 			bCreatingNewEntity = false;
 		}
 		else
@@ -513,8 +500,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."),
-			   *InActor->GetName(), ActorEntityId.ToSpatialEntityId());
+		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), ActorEntityId.ToSpatialEntityId());
 	}
 }
 
@@ -534,8 +520,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 {
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"),
-			   UTF8_TO_TCHAR(Op.Message.c_str()));
+		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.Message.c_str()));
 		// todo: From now on, this actor channel will be useless. We need better
 		// error handling, or
 		// a
@@ -543,8 +528,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 		UnbindFromSpatialView();
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received entity id (%d) for: %s. Request id: %d"),
-		   Op.EntityId.value_or(0), *Actor->GetName(), ReserveEntityIdRequestId.Id);
+	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received entity id (%d) for: %s. Request id: %d"), Op.EntityId.value_or(0), *Actor->GetName(), ReserveEntityIdRequestId.Id);
 
 	auto PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
@@ -565,8 +549,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(),
-			   UTF8_TO_TCHAR(Op.Message.c_str()));
+		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
 		// todo: From now on, this actor channel will be useless. We need better
 		// error handling, or
 		// a
@@ -574,8 +557,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		UnbindFromSpatialView();
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Created entity (%lld) for: %s. Request id: %d"),
-		   ActorEntityId.ToSpatialEntityId(), *Actor->GetName(), ReserveEntityIdRequestId.Id);
+	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Created entity (%lld) for: %s. Request id: %d"), ActorEntityId.ToSpatialEntityId(), *Actor->GetName(), ReserveEntityIdRequestId.Id);
 
 	auto PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
@@ -583,8 +565,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		PinnedView->Remove(CreateEntityCallback);
 	}
 
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received create entity response op for %lld"),
-		   ActorEntityId.ToSpatialEntityId());
+	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received create entity response op for %lld"), ActorEntityId.ToSpatialEntityId());
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()
@@ -618,14 +599,12 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	{
 		if (APlayerController* PlayerController = Cast<APlayerController>(Pawn->GetController()))
 		{
-			USpatialActorChannel* ControllerActorChannel =
-				Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController));
+			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController));
 			if (ControllerActorChannel)
 			{
 				Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
 			}
-			USpatialActorChannel* PlayerStateActorChannel =
-				Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController->PlayerState));
+			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController->PlayerState));
 			if (PlayerStateActorChannel)
 			{
 				Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);

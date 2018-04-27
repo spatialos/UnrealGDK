@@ -80,15 +80,9 @@ bool FSpatialGDKEditorToolbarModule::HandleSettingsSaved()
 
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> PluginCommands)
 {
-	PluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked),
-		FCanExecuteAction());
+	PluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot, FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked), FCanExecuteAction());
 
-	PluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked),
-		FCanExecuteAction());
+	PluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode, FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked), FCanExecuteAction());
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> PluginCommands)
@@ -97,18 +91,14 @@ void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandLis
 
 	{
 		TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender());
-		MenuExtender->AddMenuExtension(
-			"General", EExtensionHook::After, PluginCommands,
-			FMenuExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddMenuExtension));
+		MenuExtender->AddMenuExtension("General", EExtensionHook::After, PluginCommands, FMenuExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddMenuExtension));
 
 		LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
 	}
 
 	{
 		TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
-		ToolbarExtender->AddToolBarExtension(
-			"Game", EExtensionHook::After, PluginCommands,
-			FToolBarExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddToolbarExtension));
+		ToolbarExtender->AddToolBarExtension("Game", EExtensionHook::After, PluginCommands, FToolBarExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddToolbarExtension));
 
 		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
 	}
@@ -133,8 +123,7 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 
 void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 {
-	FString ProjectFilePath =
-		IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::GetPath(FPaths::GetProjectFilePath()));
+	FString ProjectFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::GetPath(FPaths::GetProjectFilePath()));
 	FString CombinedPath = FPaths::Combine(*ProjectFilePath, TEXT("../../../snapshots"));
 	UE_LOG(LogTemp, Display, TEXT("Combined path %s"), *CombinedPath);
 	if (FPaths::CollapseRelativeDirectories(CombinedPath))

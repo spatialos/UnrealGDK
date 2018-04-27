@@ -8,22 +8,11 @@
 #include "SpatialGDKViewTypes.h"
 #include "SpatialGDKWorkerTypes.h"
 
-USpatialOsComponent::USpatialOsComponent()
-: MaxUpdatesPerSecond(30)
-, Connection(nullptr)
-, View(nullptr)
-, EntityId(0)
-, Callbacks(nullptr)
-, TimeUntilNextUpdate(0)
-, Authority(EAuthority::NotAuthoritative)
-, bIsComponentReady(false)
-, bHasEventQueued(false)
-, Commander(nullptr)
+USpatialOsComponent::USpatialOsComponent() : MaxUpdatesPerSecond(30), Connection(nullptr), View(nullptr), EntityId(0), Callbacks(nullptr), TimeUntilNextUpdate(0), Authority(EAuthority::NotAuthoritative), bIsComponentReady(false), bHasEventQueued(false), Commander(nullptr)
 {
 }
 
-void USpatialOsComponent::Init(const TWeakPtr<SpatialOSConnection>& InConnection, const TWeakPtr<SpatialOSView>& InView,
-							   worker::EntityId InEntityId, UCallbackDispatcher* CallbackDispatcher)
+void USpatialOsComponent::Init(const TWeakPtr<SpatialOSConnection>& InConnection, const TWeakPtr<SpatialOSView>& InView, worker::EntityId InEntityId, UCallbackDispatcher* CallbackDispatcher)
 {
 	this->Connection = InConnection;
 	this->View = InView;
@@ -67,8 +56,7 @@ void USpatialOsComponent::SendAuthorityLossImminentAcknowledgement()
 	auto LockedConnection = Connection.Pin();
 	if (LockedConnection.IsValid())
 	{
-		LockedConnection->SendAuthorityLossImminentAcknowledgement(this->EntityId,
-																   this->GetComponentId().ToSpatialComponentId());
+		LockedConnection->SendAuthorityLossImminentAcknowledgement(this->EntityId, this->GetComponentId().ToSpatialComponentId());
 	}
 }
 

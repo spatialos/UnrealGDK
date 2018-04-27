@@ -15,12 +15,10 @@ class SPATIALGDK_API USpatialOSBlueprintLibrary : public UBlueprintFunctionLibra
 	GENERATED_UCLASS_BODY()
 
   public:
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Equal (EntityId)", CompactNodeTitle = "=="),
-			  Category = "SpatialOS EntityId")
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Equal (EntityId)", CompactNodeTitle = "=="), Category = "SpatialOS EntityId")
 	static bool EqualEqual_FEntityId(const FEntityId& A, const FEntityId& B);
 
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Not Equal (EntityId)", CompactNodeTitle = "!="),
-			  Category = "SpatialOS EntityId")
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Not Equal (EntityId)", CompactNodeTitle = "!="), Category = "SpatialOS EntityId")
 	static bool NotEqual_FEntityId(const FEntityId& A, const FEntityId& B);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Is Valid"), Category = "SpatialOS EntityId")
@@ -44,19 +42,11 @@ class SPATIALGDK_API USpatialOSBlueprintLibrary : public UBlueprintFunctionLibra
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Queries", meta = (Keywords = "construct build", NativeMakeFunc))
 	static FSphereQueryConstraint MakeSphereQueryConstraint(const FVector& InPosition, float InRadius);
 
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS Queries",
-			  meta = (AutoCreateRefTerm = "EntityIds, ComponentIds, Spheres",
-					  DisplayName = "SpatialOs Entity AND Query"))
-	static UEntityQueryConstraint* SpatialOsEntityAndQuery(const TArray<FEntityIdQueryConstraint>& EntityIds,
-														   const TArray<FComponentIdQueryConstraint>& ComponentIds,
-														   const TArray<FSphereQueryConstraint>& Spheres);
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS Queries", meta = (AutoCreateRefTerm = "EntityIds, ComponentIds, Spheres", DisplayName = "SpatialOs Entity AND Query"))
+	static UEntityQueryConstraint* SpatialOsEntityAndQuery(const TArray<FEntityIdQueryConstraint>& EntityIds, const TArray<FComponentIdQueryConstraint>& ComponentIds, const TArray<FSphereQueryConstraint>& Spheres);
 
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS Queries",
-			  meta = (AutoCreateRefTerm = "EntityIds, ComponentIds, Spheres",
-					  DisplayName = "SpatialOs Entity OR Query"))
-	static UEntityQueryConstraint* SpatialOsEntityOrQuery(const TArray<FEntityIdQueryConstraint>& EntityIds,
-														  const TArray<FComponentIdQueryConstraint>& ComponentIds,
-														  const TArray<FSphereQueryConstraint>& Spheres);
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS Queries", meta = (AutoCreateRefTerm = "EntityIds, ComponentIds, Spheres", DisplayName = "SpatialOs Entity OR Query"))
+	static UEntityQueryConstraint* SpatialOsEntityOrQuery(const TArray<FEntityIdQueryConstraint>& EntityIds, const TArray<FComponentIdQueryConstraint>& ComponentIds, const TArray<FSphereQueryConstraint>& Spheres);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Is Command Successful"), Category = "SpatialOS Commands")
 	static bool IsSuccessful_Command(const FSpatialOSCommandResult& CommandResult);
@@ -67,12 +57,10 @@ class SPATIALGDK_API USpatialOSBlueprintLibrary : public UBlueprintFunctionLibra
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Command Error Message"), Category = "SpatialOS Commands")
 	static FString GetCommandErrorMessage(const FSpatialOSCommandResult& CommandResult);
 
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Equal (RequestId)", CompactNodeTitle = "=="),
-			  Category = "SpatialOS RequestId")
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Equal (RequestId)", CompactNodeTitle = "=="), Category = "SpatialOS RequestId")
 	static bool EqualEqual_FRequestId(const FRequestId& A, const FRequestId& B);
 
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Not Equal (RequestId)", CompactNodeTitle = "!="),
-			  Category = "SpatialOS RequestId")
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Not Equal (RequestId)", CompactNodeTitle = "!="), Category = "SpatialOS RequestId")
 	static bool NotEqual_FRequestId(const FRequestId& A, const FRequestId& B);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Is RequestId Valid"), Category = "SpatialOS RequestId")

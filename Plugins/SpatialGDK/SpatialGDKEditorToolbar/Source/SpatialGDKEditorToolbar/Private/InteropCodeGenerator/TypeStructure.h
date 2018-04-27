@@ -209,20 +209,17 @@ ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property);
 // If the Visitor function returns false, it will not recurse any further into
 // that part of the
 // tree.
-void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor,
-					 bool bRecurseIntoSubobjects);
+void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor, bool bRecurseIntoSubobjects);
 
 // Similar to 'VisitAllObjects', but instead applies the Visitor function to all
 // properties which
 // are traversed.
-void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
-						bool bRecurseIntoSubobjects);
+void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor, bool bRecurseIntoSubobjects);
 
 // Similar to 'VisitAllObjects', but instead applies the Visitor function to all
 // parameters in an
 // RPC (and subproperties of structs/objects where appropriate).
-void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
-						bool bRecurseIntoSubobjects);
+void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor, bool bRecurseIntoSubobjects);
 
 // Generates an AST from an Unreal UStruct or UClass.
 // At the moment, this function receives a manual list of migratable property

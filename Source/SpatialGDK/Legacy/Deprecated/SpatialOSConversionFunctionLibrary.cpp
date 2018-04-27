@@ -13,19 +13,16 @@ float USpatialOSConversionFunctionLibrary::GetSpatialOsToUnrealScale()
 
 FVector USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinates(const FVector& unrealCoordinates)
 {
-	return GetSpatialOsToUnrealCoordinateSpace().GetInverse().RotateVector(unrealCoordinates) /
-		GetSpatialOsToUnrealScale();
+	return GetSpatialOsToUnrealCoordinateSpace().GetInverse().RotateVector(unrealCoordinates) / GetSpatialOsToUnrealScale();
 }
 
-improbable::Coordinates
-USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(const FVector& unrealCoordinates)
+improbable::Coordinates USpatialOSConversionFunctionLibrary::UnrealCoordinatesToSpatialOsCoordinatesCast(const FVector& unrealCoordinates)
 {
 	FVector spatialCoords = UnrealCoordinatesToSpatialOsCoordinates(unrealCoordinates);
 	return improbable::Coordinates{spatialCoords.X, spatialCoords.Y, spatialCoords.Z};
 }
 
-FVector
-USpatialOSConversionFunctionLibrary::SpatialOsCoordinatesToUnrealCoordinates(const FVector& spatialOsCoordinates)
+FVector USpatialOSConversionFunctionLibrary::SpatialOsCoordinatesToUnrealCoordinates(const FVector& spatialOsCoordinates)
 {
 	return GetSpatialOsToUnrealCoordinateSpace().RotateVector(spatialOsCoordinates) * GetSpatialOsToUnrealScale();
 }

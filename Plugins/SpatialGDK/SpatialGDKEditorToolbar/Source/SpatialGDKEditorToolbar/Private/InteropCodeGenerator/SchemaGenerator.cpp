@@ -15,8 +15,7 @@ FString UnrealNameToSchemaTypeName(const FString& UnrealName)
 
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type)
 {
-	return FString::Printf(TEXT("Unreal%s%sRepData"), *UnrealNameToSchemaTypeName(Type->GetName()),
-						   *GetReplicatedPropertyGroupName(Group));
+	return FString::Printf(TEXT("Unreal%s%sRepData"), *UnrealNameToSchemaTypeName(Type->GetName()), *GetReplicatedPropertyGroupName(Group));
 }
 
 FString SchemaMigratableDataName(UStruct* Type)
@@ -26,8 +25,7 @@ FString SchemaMigratableDataName(UStruct* Type)
 
 FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type)
 {
-	return FString::Printf(TEXT("Unreal%s%sRPCs"), *UnrealNameToSchemaTypeName(Type->GetName()),
-						   *GetRPCTypeName(RpcType));
+	return FString::Printf(TEXT("Unreal%s%sRPCs"), *UnrealNameToSchemaTypeName(Type->GetName()), *GetRPCTypeName(RpcType));
 }
 
 FString SchemaRPCRequestType(UFunction* Function)
@@ -82,9 +80,7 @@ FString PropertyToSchemaType(UProperty* Property)
 	{
 		UStructProperty* StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct* Struct = StructProp->Struct;
-		if (Struct->GetFName() == NAME_Vector || Struct->GetName() == TEXT("Vector_NetQuantize100") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize10") ||
-			Struct->GetName() == TEXT("Vector_NetQuantizeNormal") || Struct->GetName() == TEXT("Vector_NetQuantize"))
+		if (Struct->GetFName() == NAME_Vector || Struct->GetName() == TEXT("Vector_NetQuantize100") || Struct->GetName() == TEXT("Vector_NetQuantize10") || Struct->GetName() == TEXT("Vector_NetQuantizeNormal") || Struct->GetName() == TEXT("Vector_NetQuantize"))
 		{
 			DataType = TEXT("improbable.Vector3f");  // not well supported
 		}
@@ -151,8 +147,7 @@ FString PropertyToSchemaType(UProperty* Property)
 	return DataType;
 }
 
-int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo,
-							  FString SchemaPath)
+int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
 {
 	FComponentIdGenerator IdGenerator(ComponentId);
 
@@ -195,8 +190,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 					TSharedPtr<FUnrealProperty> ParentProperty = ContainerType->ParentProperty.Pin();
 					if (ParentProperty.IsValid())
 					{
-						PropertyPath += FString::Printf(TEXT("%s::%s"), *ContainerType->Type->GetName(),
-														*ParentProperty->Property->GetName());
+						PropertyPath += FString::Printf(TEXT("%s::%s"), *ContainerType->Type->GetName(), *ParentProperty->Property->GetName());
 					}
 					UnrealProperty = ParentProperty;
 				}
@@ -211,9 +205,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 				PropertyPath += FString::Printf(TEXT("::%s"), *ObjOuter->GetName());
 			}
 
-			Writer.Printf("%s %s = %d; // %s // %s", *PropertyToSchemaType(RepProp.Value->Property),
-						  *SchemaFieldName(RepProp.Value), FieldCounter,
-						  *GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition), *PropertyPath);
+			Writer.Printf("%s %s = %d; // %s // %s", *PropertyToSchemaType(RepProp.Value->Property), *SchemaFieldName(RepProp.Value), FieldCounter, *GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition), *PropertyPath);
 		}
 		Writer.Outdent().Print("}");
 	}
@@ -226,8 +218,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	for (auto& Prop : GetFlatMigratableData(TypeInfo))
 	{
 		FieldCounter++;
-		Writer.Printf("%s %s = %d;", *PropertyToSchemaType(Prop.Value->Property), *SchemaFieldName(Prop.Value),
-					  FieldCounter);
+		Writer.Printf("%s %s = %d;", *PropertyToSchemaType(Prop.Value->Property), *SchemaFieldName(Prop.Value), FieldCounter);
 	}
 	Writer.Outdent().Print("}");
 
@@ -276,8 +267,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			for (auto& Param : ParamList)
 			{
 				FieldCounter++;
-				RPCTypeOwnerSchemaWriter->Printf("%s %s = %d;", *PropertyToSchemaType(Param->Property),
-												 *SchemaFieldName(Param), FieldCounter);
+				RPCTypeOwnerSchemaWriter->Printf("%s %s = %d;", *PropertyToSchemaType(Param->Property), *SchemaFieldName(Param), FieldCounter);
 			}
 			RPCTypeOwnerSchemaWriter->Outdent().Print("}");
 		}
@@ -288,8 +278,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	{
 		TSharedPtr<FCodeWriter> RPCTypeOwnerSchemaWriter = RPCTypeCodeWriterMap[*RPCTypeOwner];
 		FString RPCTypeOwnerSchemaFilename = FString::Printf(TEXT("Unreal%sTypes"), *RPCTypeOwner);
-		RPCTypeOwnerSchemaWriter->WriteToFile(
-			FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *RPCTypeOwnerSchemaFilename));
+		RPCTypeOwnerSchemaWriter->WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *RPCTypeOwnerSchemaFilename));
 	}
 
 	for (auto Group : GetRPCTypes())
@@ -300,8 +289,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		Writer.Printf("id = %i;", IdGenerator.GetNextAvailableId());
 		for (auto& RPC : RPCsByType[Group])
 		{
-			Writer.Printf("command UnrealRPCCommandResponse %s(%s);", *SchemaCommandName(RPC->Function),
-						  *SchemaRPCRequestType(RPC->Function));
+			Writer.Printf("command UnrealRPCCommandResponse %s(%s);", *SchemaCommandName(RPC->Function), *SchemaRPCRequestType(RPC->Function));
 		}
 		Writer.Outdent().Print("}");
 	}

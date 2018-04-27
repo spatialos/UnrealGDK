@@ -64,11 +64,9 @@ class SPATIALGDK_API USpatialActorChannel : public UActorChannel
 		return false;
 	}
 
-	FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16>& RepChanged,
-													const TArray<uint16>& MigChanged) const
+	FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged) const
 	{
-		return {(uint8*)Actor, RepChanged, ActorReplicator->RepLayout->Cmds,
-				ActorReplicator->RepLayout->BaseHandleToCmdIndex, MigChanged};
+		return {(uint8*)Actor, RepChanged, ActorReplicator->RepLayout->Cmds, ActorReplicator->RepLayout->BaseHandleToCmdIndex, MigChanged};
 	}
 
 	// UChannel interface
