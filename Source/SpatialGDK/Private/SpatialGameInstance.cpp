@@ -91,7 +91,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(
 	{
 		return FGameInstancePIEResult::Failure(
 			FText::Format(NSLOCTEXT("UnrealEd", "Error_CouldntLaunchPIEClient", "Couldn't Launch PIE Client: {0}"),
-						  FText::FromString(Error)));
+				FText::FromString(Error)));
 	}
 }
 #endif

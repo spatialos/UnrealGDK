@@ -12,7 +12,7 @@ class FSpatialConditionMapFilter
 {
   public:
 	FSpatialConditionMapFilter(USpatialActorChannel* ActorChannel,
-							   bool bAuthoritative)
+		bool bAuthoritative)
 	{
 		// Reconstruct replication flags on the client side.
 		FReplicationFlags RepFlags;

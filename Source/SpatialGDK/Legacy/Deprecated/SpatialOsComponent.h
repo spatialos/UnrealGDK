@@ -43,12 +43,12 @@ class SPATIALGDK_API USpatialOsComponent : public UActorComponent
 	virtual void BeginDestroy() override;
 
 	virtual void Init(const TWeakPtr<SpatialOSConnection>& InConnection,
-					  const TWeakPtr<SpatialOSView>& InView,
-					  worker::EntityId InEntityId,
-					  UCallbackDispatcher* InCallbackDispatcher);
+		const TWeakPtr<SpatialOSView>& InView,
+		worker::EntityId InEntityId,
+		UCallbackDispatcher* InCallbackDispatcher);
 
 	virtual void Disable(const worker::EntityId InEntityId,
-						 UCallbackDispatcher* CallbackDispatcher)
+		UCallbackDispatcher* CallbackDispatcher)
 		PURE_VIRTUAL(USpatialOsComponent::Disable(), );
 
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Component")

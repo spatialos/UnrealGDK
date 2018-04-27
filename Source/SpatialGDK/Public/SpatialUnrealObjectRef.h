@@ -8,8 +8,8 @@ FORCEINLINE FString
 ObjectRefToString(const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
 	return FString::Printf(TEXT("(entity ID: %lld, offset: %u)"),
-						   ObjectRef.entity(),
-						   ObjectRef.offset());
+		ObjectRef.entity(),
+		ObjectRef.offset());
 }
 
 class FHashableUnrealObjectRef

@@ -90,7 +90,7 @@ void FSpatialOSEditorToolbarModule::RegisterSettings()
 			"SpatialOSEditorToolbar",
 			LOCTEXT("RuntimeWDCategoryName", "SpatialOS - Toolbar"),
 			LOCTEXT("RuntimeWDCategoryDescription",
-					"Configuration for the SpatialOS Editor toolbar plugin"));
+				"Configuration for the SpatialOS Editor toolbar plugin"));
 
 		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings(
 			"Project", "SpatialOS", "Toolbar", LOCTEXT("RuntimeGeneralSettingsName", "Toolbar"), LOCTEXT("RuntimeGeneralSettingsDescription", "Configuration for SpatialOS Editor toolbar plugin."), GetMutableDefault<USpatialOSEditorToolbarSettings>());
@@ -201,7 +201,7 @@ void FSpatialOSEditorToolbarModule::StartSpatialOSButtonClicked()
 	const FString CmdExecutable = TEXT("cmd.exe");
 	const FString SpatialCmdArgument =
 		FString::Printf(TEXT("/c spatial.exe local launch %s"),
-						*SpatialOSToolbarSettings->SpatialOSLaunchArgument);
+			*SpatialOSToolbarSettings->SpatialOSLaunchArgument);
 
 	UE_LOG(LogSpatialOSEditor, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround to get spatial.exe to properly show a window we have
@@ -229,7 +229,7 @@ void FSpatialOSEditorToolbarModule::StartSpatialOSButtonClicked()
 			FString(TEXT("/logs/spatial.log"));
 		UE_LOG(LogSpatialOSEditor, Error, TEXT("Failed to start SpatialOS, please refer to log file `%s` for "
 											   "more information."),
-			   *LogPath);
+			*LogPath);
 	}
 	else
 	{
@@ -261,8 +261,8 @@ void FSpatialOSEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 {
 	FString WebError;
 	FPlatformProcess::LaunchURL(TEXT("http://localhost:21000/inspector"),
-								TEXT(""),
-								&WebError);
+		TEXT(""),
+		&WebError);
 	if (!WebError.IsEmpty())
 	{
 		FNotificationInfo Info(FText::FromString(WebError));

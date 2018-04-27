@@ -29,7 +29,7 @@ void UEntityRegistry::RegisterEntityBlueprints(
 				{
 					UE_LOG(LogEntityRegistry, Warning, TEXT("Found asset in the EntityBlueprints "
 															"folder which is not a blueprint: %s"),
-						   *(Asset->GetFullName()));
+						*(Asset->GetFullName()));
 				}
 			}
 		}
@@ -96,7 +96,7 @@ AActor* UEntityRegistry::GetActorFromEntityId(const FEntityId& EntityId) const
 }
 
 void UEntityRegistry::RegisterComponent(AActor* Actor,
-										USpatialOsComponent* Component)
+	USpatialOsComponent* Component)
 {
 	auto& ComponentCache = EntityComponentCache.FindOrAdd(Actor);
 	check(ComponentCache.Components.Find(Component) == INDEX_NONE);
@@ -104,7 +104,7 @@ void UEntityRegistry::RegisterComponent(AActor* Actor,
 }
 
 void UEntityRegistry::UnregisterComponent(AActor* Actor,
-										  USpatialOsComponent* Component)
+	USpatialOsComponent* Component)
 {
 	if (auto ComponentCache = EntityComponentCache.Find(Actor))
 	{
@@ -120,7 +120,7 @@ void UEntityRegistry::UnregisterComponent(AActor* Actor,
 }
 
 void UEntityRegistry::RegisterEntityClass(const FString& ClassName,
-										  UClass* ClassToSpawn)
+	UClass* ClassToSpawn)
 {
 	if (ClassToSpawn == nullptr)
 	{

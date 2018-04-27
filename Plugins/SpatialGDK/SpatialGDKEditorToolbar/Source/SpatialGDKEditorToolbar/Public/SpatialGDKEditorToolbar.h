@@ -31,7 +31,7 @@ class FSpatialGDKEditorToolbarModule : public IModuleInterface,
 	TStatId GetStatId() const override
 	{
 		RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule,
-										STATGROUP_Tickables);
+			STATGROUP_Tickables);
 	}
 
   private:

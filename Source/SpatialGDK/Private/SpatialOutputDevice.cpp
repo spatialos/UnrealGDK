@@ -3,7 +3,7 @@
 #include "SpatialOutputDevice.h"
 
 FSpatialOutputDevice::FSpatialOutputDevice(USpatialOS* SpatialOSInstance,
-										   FString LoggerName)
+	FString LoggerName)
 {
 	SpatialOS = SpatialOSInstance;
 	Name = LoggerName;
@@ -18,8 +18,8 @@ FSpatialOutputDevice::~FSpatialOutputDevice()
 }
 
 void FSpatialOutputDevice::Serialize(const TCHAR* InData,
-									 ELogVerbosity::Type Verbosity,
-									 const class FName& Category)
+	ELogVerbosity::Type Verbosity,
+	const class FName& Category)
 {
 	if (Verbosity > FilterLevel ||
 		/*!CategoriesToRedirect.Contains(Category) ||*/ !IsValid(SpatialOS))
@@ -31,8 +31,8 @@ void FSpatialOutputDevice::Serialize(const TCHAR* InData,
 	if (Connection.IsValid())
 	{
 		Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity),
-								   TCHAR_TO_UTF8(*Name),
-								   TCHAR_TO_UTF8(InData));
+			TCHAR_TO_UTF8(*Name),
+			TCHAR_TO_UTF8(InData));
 	}
 }
 

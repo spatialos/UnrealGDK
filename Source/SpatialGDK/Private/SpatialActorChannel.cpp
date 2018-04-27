@@ -39,7 +39,7 @@ void UpdateChangelistHistory(FRepState* RepState)
 		FRepChangedHistory& HistoryItem = RepState->ChangeHistory[HistoryIndex];
 
 		check(HistoryItem.Changed.Num() >
-			  0);  // All active history items should contain a change list
+			0);  // All active history items should contain a change list
 
 		HistoryItem.Changed.Empty();
 		HistoryItem.OutPacketIdRange = FPacketIdRange();
@@ -335,7 +335,7 @@ bool USpatialActorChannel::ReplicateActor()
 															"that this actor "
 															"is not "
 															"owned by a player."),
-					   *Actor->GetClass()->GetName());
+					*Actor->GetClass()->GetName());
 			}
 
 			// Ensure that the initial changelist contains _every_ property. This
@@ -511,8 +511,8 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		}
 		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with no entity ID. "
 													"Initiated reserve entity ID. Request id: %d"),
-			   *InActor->GetName(),
-			   ReserveEntityIdRequestId.Id);
+			*InActor->GetName(),
+			ReserveEntityIdRequestId.Id);
 	}
 	else
 	{
@@ -560,7 +560,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(
 	ActorEntityId = *Op.EntityId;
 
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId,
-														 GetActor());
+		GetActor());
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(

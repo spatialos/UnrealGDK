@@ -33,7 +33,7 @@ struct SPATIALGDK_API FRequestId
 	}
 
 	FORCEINLINE FRequestId(const std::uint32_t UnderlyingRequestId,
-						   const bool bIsValidId)
+		const bool bIsValidId)
 	{
 		Underlying = UnderlyingRequestId;
 		bValidId = bIsValidId;

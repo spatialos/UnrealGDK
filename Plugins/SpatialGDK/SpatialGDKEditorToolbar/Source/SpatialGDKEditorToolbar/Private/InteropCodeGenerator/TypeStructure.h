@@ -212,22 +212,22 @@ ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property);
 // that part of the
 // tree.
 void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode,
-					 TFunction<bool(TSharedPtr<FUnrealType>)> Visitor,
-					 bool bRecurseIntoSubobjects);
+	TFunction<bool(TSharedPtr<FUnrealType>)> Visitor,
+	bool bRecurseIntoSubobjects);
 
 // Similar to 'VisitAllObjects', but instead applies the Visitor function to all
 // properties which
 // are traversed.
 void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode,
-						TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
-						bool bRecurseIntoSubobjects);
+	TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
+	bool bRecurseIntoSubobjects);
 
 // Similar to 'VisitAllObjects', but instead applies the Visitor function to all
 // parameters in an
 // RPC (and subproperties of structs/objects where appropriate).
 void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode,
-						TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
-						bool bRecurseIntoSubobjects);
+	TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
+	bool bRecurseIntoSubobjects);
 
 // Generates an AST from an Unreal UStruct or UClass.
 // At the moment, this function receives a manual list of migratable property
@@ -239,7 +239,7 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode,
 // In the future, we can get this information directly from the UStruct*.
 TSharedPtr<FUnrealType>
 CreateUnrealTypeInfo(UStruct* Type,
-					 const TArray<TArray<FName>>& MigratableProperties);
+	const TArray<TArray<FName>>& MigratableProperties);
 
 // Traverses an AST, and generates a flattened list of replicated properties,
 // which will match the

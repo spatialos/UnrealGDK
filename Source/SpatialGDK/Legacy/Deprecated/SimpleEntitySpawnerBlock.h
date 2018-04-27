@@ -37,10 +37,10 @@ class SPATIALGDK_API USimpleEntitySpawnerBlock : public UEntityPipelineBlock
 	void AddComponent(UAddComponentOpWrapperBase* AddComponentOp) override;
 	void
 	RemoveComponent(const worker::ComponentId ComponentId,
-					const worker::RemoveComponentOp& RemoveComponentOp) override;
+		const worker::RemoveComponentOp& RemoveComponentOp) override;
 
 	void ChangeAuthority(const worker::ComponentId ComponentId,
-						 const worker::AuthorityChangeOp& AuthChangeOp) override;
+		const worker::AuthorityChangeOp& AuthChangeOp) override;
 
   private:
 	enum class ESpatialOperationType
@@ -59,7 +59,7 @@ class SPATIALGDK_API USimpleEntitySpawnerBlock : public UEntityPipelineBlock
 		explicit FSpatialOperation(const worker::AddEntityOp& AddEntityOp);
 		explicit FSpatialOperation(const worker::RemoveEntityOp& RemoveEntityOp);
 		explicit FSpatialOperation(ESpatialOperationType OperationType,
-								   FComponentIdentifier ComponentIdentifer);
+			FComponentIdentifier ComponentIdentifer);
 		explicit FSpatialOperation(UAddComponentOpWrapperBase* AddComponentOp);
 		explicit FSpatialOperation(
 			const worker::ComponentId ComponentId,
@@ -84,31 +84,31 @@ class SPATIALGDK_API USimpleEntitySpawnerBlock : public UEntityPipelineBlock
 	TArray<FEntityId> EmptyOpsQueues;
 
 	void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-					const TWeakPtr<SpatialOSConnection>& InConnection,
-					UWorld* World,
-					UCallbackDispatcher* InCallbackDispatcher) override;
+		const TWeakPtr<SpatialOSConnection>& InConnection,
+		UWorld* World,
+		UCallbackDispatcher* InCallbackDispatcher) override;
 	bool ProcessOp(const TWeakPtr<SpatialOSView>& InView,
-				   const TWeakPtr<SpatialOSConnection>& InConnection,
-				   UWorld* World,
-				   UCallbackDispatcher* InCallbackDispatcher,
-				   FSpatialOperation SpatialOperation);
+		const TWeakPtr<SpatialOSConnection>& InConnection,
+		UWorld* World,
+		UCallbackDispatcher* InCallbackDispatcher,
+		FSpatialOperation SpatialOperation);
 
 	bool ProcessAddEntityOp(UWorld* World,
-							const TWeakPtr<SpatialOSConnection>& InConnection,
-							const FSpatialOperation& SpatialOperation);
+		const TWeakPtr<SpatialOSConnection>& InConnection,
+		const FSpatialOperation& SpatialOperation);
 	bool ProcessAddComponentOp(const TWeakPtr<SpatialOSView>& InView,
-							   const TWeakPtr<SpatialOSConnection>& InConnection,
-							   UCallbackDispatcher* InCallbackDispatcher,
-							   const FSpatialOperation& SpatialOperation);
+		const TWeakPtr<SpatialOSConnection>& InConnection,
+		UCallbackDispatcher* InCallbackDispatcher,
+		const FSpatialOperation& SpatialOperation);
 	bool ProcessRemoveComponentOp(UCallbackDispatcher* InCallbackDispatcher,
-								  const FSpatialOperation& SpatialOperation);
+		const FSpatialOperation& SpatialOperation);
 	bool ProcessRemoveEntityOp(UWorld* World,
-							   const FSpatialOperation& SpatialOperation);
+		const FSpatialOperation& SpatialOperation);
 
 	void QueueOp(FSpatialOperation SpatialOperation);
 
 	AActor* SpawnNewEntity(UMetadataAddComponentOp* MetadataComponent,
-						   UPositionAddComponentOp* PositionComponent,
-						   UWorld* World);
+		UPositionAddComponentOp* PositionComponent,
+		UWorld* World);
 	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<SpatialOSConnection>& Connection);
 };

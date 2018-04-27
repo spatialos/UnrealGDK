@@ -43,7 +43,7 @@ USimpleEntitySpawnerBlock::FSpatialOperation::FSpatialOperation(
 {
 	OperationType = ESpatialOperationType::AddComponent;
 	ComponentIdentifier = FComponentIdentifier{AddComponentOp->EntityId,
-											   AddComponentOp->ComponentId};
+		AddComponentOp->ComponentId};
 }
 
 USimpleEntitySpawnerBlock::FSpatialOperation::FSpatialOperation(
@@ -59,7 +59,7 @@ bool USimpleEntitySpawnerBlock::FSpatialOperation::
 operator==(const FSpatialOperation& Other) const
 {
 	return (OperationType == Other.OperationType &&
-			ComponentIdentifier == Other.ComponentIdentifier);
+		ComponentIdentifier == Other.ComponentIdentifier);
 }
 
 void USimpleEntitySpawnerBlock::Init(UEntityRegistry* Registry)
@@ -83,13 +83,13 @@ void USimpleEntitySpawnerBlock::AddComponent(
 	UAddComponentOpWrapperBase* AddComponentOp)
 {
 	auto ComponentIdentifier = FComponentIdentifier{AddComponentOp->EntityId,
-													AddComponentOp->ComponentId};
+		AddComponentOp->ComponentId};
 	FComponentAddOpQueueWrapper* QueueWrapper =
 		ComponentsToAdd.Find(ComponentIdentifier);
 	if (!QueueWrapper)
 	{
 		QueueWrapper = &ComponentsToAdd.Emplace(ComponentIdentifier,
-												FComponentAddOpQueueWrapper());
+			FComponentAddOpQueueWrapper());
 	}
 	QueueWrapper->Underlying.Add(AddComponentOp);
 	QueueOp(FSpatialOperation{AddComponentOp});
@@ -129,10 +129,10 @@ bool USimpleEntitySpawnerBlock::ProcessAddEntityOp(
 
 	auto PositionIdentifier =
 		FComponentIdentifier{SpatialOperation.ComponentIdentifier.EntityId,
-							 UPositionComponent::ComponentId};
+			UPositionComponent::ComponentId};
 	auto MetadataIdentifier =
 		FComponentIdentifier{SpatialOperation.ComponentIdentifier.EntityId,
-							 UMetadataComponent::ComponentId};
+			UMetadataComponent::ComponentId};
 
 	auto AddPositionComponentOp = FSpatialOperation{
 		ESpatialOperationType::AddComponent, PositionIdentifier};
@@ -159,9 +159,9 @@ bool USimpleEntitySpawnerBlock::ProcessAddEntityOp(
 			// Only spawn entities for which we have received Position and Metadata
 			// components
 			if ((PositionBaseComponent &&
-				 (*PositionBaseComponent)->IsValidLowLevel()) &&
+					(*PositionBaseComponent)->IsValidLowLevel()) &&
 				(MetadataBaseComponent &&
-				 (*MetadataBaseComponent)->IsValidLowLevel()))
+					(*MetadataBaseComponent)->IsValidLowLevel()))
 			{
 				// Retrieve the EntityType string from the Metadata component
 				UMetadataAddComponentOp* MetadataAddComponentOp =
@@ -171,13 +171,13 @@ bool USimpleEntitySpawnerBlock::ProcessAddEntityOp(
 
 				// Create the actor
 				AActor* EntityActor = SpawnNewEntity(MetadataAddComponentOp,
-													 PositionAddComponentOp,
-													 World);
+					PositionAddComponentOp,
+					World);
 				EntityRegistry->AddToRegistry(
 					SpatialOperation.ComponentIdentifier.EntityId, EntityActor);
 				SetupComponentInterests(EntityActor,
-										SpatialOperation.ComponentIdentifier.EntityId,
-										InConnection);
+					SpatialOperation.ComponentIdentifier.EntityId,
+					InConnection);
 
 				return true;
 			}
@@ -253,7 +253,7 @@ bool USimpleEntitySpawnerBlock::ProcessRemoveComponentOp(
 	if (Component)
 	{
 		Component->Disable(SpatialOperation.ComponentIdentifier.EntityId,
-						   InCallbackDispatcher);
+			InCallbackDispatcher);
 	}
 
 	EntityRegistry->UnregisterComponent(Actor, Component);
@@ -408,6 +408,6 @@ void USimpleEntitySpawnerBlock::SetupComponentInterests(
 	if (LockedConnection.IsValid())
 	{
 		LockedConnection->SendComponentInterest(EntityId.ToSpatialEntityId(),
-												ComponentIdsAndInterestOverrides);
+			ComponentIdsAndInterestOverrides);
 	}
 }

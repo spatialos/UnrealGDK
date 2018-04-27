@@ -33,11 +33,11 @@ class SPATIALGDK_API UEntityPipelineBlock : public UObject
 		PURE_VIRTUAL(UEntityPipelineBlock::AddComponent(), );
 	virtual void
 	RemoveComponent(const worker::ComponentId ComponentId,
-					const worker::RemoveComponentOp& RemoveComponentOp)
+		const worker::RemoveComponentOp& RemoveComponentOp)
 		PURE_VIRTUAL(UEntityPipelineBlock::RemoveComponent(), );
 
 	virtual void ChangeAuthority(const worker::ComponentId ComponentId,
-								 const worker::AuthorityChangeOp& AuthChangeOp)
+		const worker::AuthorityChangeOp& AuthChangeOp)
 		PURE_VIRTUAL(UEntityPipelineBlock::ChangeAuthority(), );
 
 	virtual void EnterCriticalSection()
@@ -51,8 +51,8 @@ class SPATIALGDK_API UEntityPipelineBlock : public UObject
 	UEntityPipelineBlock* NextBlock;
 
 	virtual void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-							const TWeakPtr<SpatialOSConnection>& InConnection,
-							UWorld* World,
-							::UCallbackDispatcher* CallbackDispatcher)
+		const TWeakPtr<SpatialOSConnection>& InConnection,
+		UWorld* World,
+		::UCallbackDispatcher* CallbackDispatcher)
 		PURE_VIRTUAL(UEntityPipelineBlock::ProcessOps(), );
 };

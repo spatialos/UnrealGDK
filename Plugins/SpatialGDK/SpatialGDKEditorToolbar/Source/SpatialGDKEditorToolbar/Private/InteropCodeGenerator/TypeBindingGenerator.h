@@ -31,17 +31,17 @@ FString GenerateFFramePropertyReader(UProperty* Property);
 
 // Generates the header of a type binding.
 void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter,
-							   FString SchemaFilename,
-							   FString InteropFilename,
-							   UClass* Class,
-							   const TSharedPtr<FUnrealType> TypeInfo);
+	FString SchemaFilename,
+	FString InteropFilename,
+	UClass* Class,
+	const TSharedPtr<FUnrealType> TypeInfo);
 
 // Generates the source file of a type binding.
 void GenerateTypeBindingSource(FCodeWriter& SourceWriter,
-							   FString SchemaFilename,
-							   FString InteropFilename,
-							   UClass* Class,
-							   const TSharedPtr<FUnrealType> TypeInfo);
+	FString SchemaFilename,
+	FString InteropFilename,
+	UClass* Class,
+	const TSharedPtr<FUnrealType> TypeInfo);
 
 // Helper functions used when generating the source file.
 void GenerateFunction_GetRepHandlePropertyMap(
@@ -53,30 +53,30 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType);
 void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter,
-										UClass* Class);
+	UClass* Class);
 void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter,
-										   UClass* Class);
+	UClass* Class);
 void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter,
-										  UClass* Class);
+	UClass* Class);
 void GenerateFunction_GetInterestOverrideMap(FCodeWriter& SourceWriter,
-											 UClass* Class);
+	UClass* Class);
 void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter,
-												  UClass* Class);
+	UClass* Class);
 void GenerateFunction_ServerSendUpdate_RepData(
 	FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData, EReplicatedPropertyGroup Group);
 void GenerateFunction_ServerSendUpdate_MigratableData(
 	FCodeWriter& SourceWriter, UClass* Class, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData);
 void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter,
-											UClass* Class,
-											const FUnrealFlatRepData& RepData,
-											EReplicatedPropertyGroup Group);
+	UClass* Class,
+	const FUnrealFlatRepData& RepData,
+	EReplicatedPropertyGroup Group);
 void GenerateFunction_ReceiveUpdate_MigratableData(
 	FCodeWriter& SourceWriter, UClass* Class, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData);
 void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC);
 void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter,
-										  UClass* Class,
-										  const TSharedPtr<FUnrealRPC> RPC);
+	UClass* Class,
+	const TSharedPtr<FUnrealRPC> RPC);
 void GenerateFunction_RPCOnCommandResponse(FCodeWriter& SourceWriter,
-										   UClass* Class,
-										   const TSharedPtr<FUnrealRPC> RPC);
+	UClass* Class,
+	const TSharedPtr<FUnrealRPC> RPC);

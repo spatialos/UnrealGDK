@@ -54,10 +54,10 @@ class SPATIALGDK_API USpatialInteropPipelineBlock
 	void AddComponent(UAddComponentOpWrapperBase* AddComponentOp) override;
 	void
 	RemoveComponent(const worker::ComponentId ComponentId,
-					const worker::RemoveComponentOp& RemoveComponentOp) override;
+		const worker::RemoveComponentOp& RemoveComponentOp) override;
 
 	void ChangeAuthority(const worker::ComponentId ComponentId,
-						 const worker::AuthorityChangeOp& AuthChangeOp) override;
+		const worker::AuthorityChangeOp& AuthChangeOp) override;
 
 	void EnterCriticalSection() override;
 	void LeaveCriticalSection() override;
@@ -95,22 +95,22 @@ class SPATIALGDK_API USpatialInteropPipelineBlock
 	void AddEntityImpl(const FEntityId& EntityId);
 	void
 	InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier,
-							   UAddComponentOpWrapperBase* AddComponentOp);
+		UAddComponentOpWrapperBase* AddComponentOp);
 	void DisableComponentImpl(const FComponentIdentifier& ComponentIdentifier);
 	void RemoveEntityImpl(const FEntityId& EntityId);
 
 	// Stub.
 	void ProcessOps(const TWeakPtr<SpatialOSView>& InView,
-					const TWeakPtr<SpatialOSConnection>& InConnection,
-					UWorld* World,
-					UCallbackDispatcher* CallbackDispatcher) override;
+		const TWeakPtr<SpatialOSConnection>& InConnection,
+		UWorld* World,
+		UCallbackDispatcher* CallbackDispatcher) override;
 
   private:
 	AActor* GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection,
-							 TSharedPtr<worker::View> LockedView,
-							 const FEntityId& EntityId);
+		TSharedPtr<worker::View> LockedView,
+		const FEntityId& EntityId);
 	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent,
-						   UClass* ClassToSpawn);
+		UClass* ClassToSpawn);
 
 	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);
 	UClass* GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent);
@@ -122,7 +122,7 @@ class SPATIALGDK_API USpatialInteropPipelineBlock
 	{
 		const auto ComponentId = Metaclass::ComponentId;
 		for (FPendingAddComponentWrapper& PendingAddComponent :
-			 PendingAddComponents)
+			PendingAddComponents)
 		{
 			if (PendingAddComponent.EntityComponent ==
 				FComponentIdentifier{EntityId.ToSpatialEntityId(), ComponentId})
@@ -139,7 +139,7 @@ class SPATIALGDK_API USpatialInteropPipelineBlock
 	template <typename Metaclass>
 	typename Metaclass::Data*
 	GetComponentDataFromView(TSharedPtr<worker::View> LockedView,
-							 const FEntityId& EntityId)
+		const FEntityId& EntityId)
 	{
 		auto EntityIterator =
 			LockedView->Entities.find(EntityId.ToSpatialEntityId());

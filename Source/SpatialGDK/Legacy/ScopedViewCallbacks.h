@@ -42,7 +42,7 @@ class FScopedViewCallbacks
 	{
 		auto LockedView = View.Pin();
 		checkf(!LockedView.IsValid(),
-			   TEXT("Attempting to call Init() more than once."));
+			TEXT("Attempting to call Init() more than once."));
 		View = InView;
 	}
 

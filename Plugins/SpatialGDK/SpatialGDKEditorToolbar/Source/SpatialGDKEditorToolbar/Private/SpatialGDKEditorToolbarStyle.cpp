@@ -33,7 +33,7 @@ FName FSpatialGDKEditorToolbarStyle::GetStyleSetName()
 
 #define IMAGE_BRUSH(RelativePath, ...)                                    \
 	FSlateImageBrush(Style->RootToContentDir(RelativePath, TEXT(".png")), \
-					 __VA_ARGS__)
+		__VA_ARGS__)
 
 namespace
 {
@@ -49,13 +49,13 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 	Style->SetContentRoot(IPluginManager::Get()
 							  .FindPlugin("SpatialGDKEditorToolbar")
 							  ->GetBaseDir() /
-						  TEXT("Resources"));
+		TEXT("Resources"));
 
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot",
-			   new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon40x40));
+		new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon40x40));
 
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot.Small",
-			   new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon20x20));
+		new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon20x20));
 
 	return Style;
 }

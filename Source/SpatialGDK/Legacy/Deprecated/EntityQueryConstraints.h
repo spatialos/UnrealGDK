@@ -91,7 +91,7 @@ struct SPATIALGDK_API FSphereQueryConstraint
 	}
 
 	FORCEINLINE FSphereQueryConstraint(const FVector& InPosition,
-									   float InRadius)
+		float InRadius)
 	{
 		Position = InPosition;
 		Radius = InRadius;

@@ -64,7 +64,7 @@ class FGenericComponentBuilder : public FEntityComponentBuilder
 	template <class T>
 	FGenericComponentBuilder
 	AddComponent(const typename T::Data& data,
-				 const improbable::WorkerRequirementSet& WriteRequirement)
+		const improbable::WorkerRequirementSet& WriteRequirement)
 	{
 		InternalEntity.Add<T>(data);
 		ComponentAuthority.emplace(T::ComponentId, WriteRequirement);
@@ -75,7 +75,7 @@ class FGenericComponentBuilder : public FEntityComponentBuilder
 		const improbable::WorkerRequirementSet& WriteRequirement)
 	{
 		ComponentAuthority.emplace(improbable::EntityAcl::ComponentId,
-								   WriteRequirement);
+			WriteRequirement);
 		return FGenericComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
 	}
 
@@ -102,8 +102,8 @@ class FReadAclComponentBuilder : public FEntityComponentBuilder
 
 	FReadAclComponentBuilder(FReadAclComponentBuilder&& rhs)
 	: FEntityComponentBuilder(std::move(rhs.InternalEntity),
-							  std::move(rhs.ComponentAuthority),
-							  std::move(rhs.ReadRequirementSet))
+		  std::move(rhs.ComponentAuthority),
+		  std::move(rhs.ReadRequirementSet))
 	{
 	}
 
@@ -195,7 +195,7 @@ class FPositionComponentBuilder : public FEntityComponentBuilder
 	{
 		InternalEntity.Add<improbable::Position>(data);
 		ComponentAuthority.emplace(improbable::Position::ComponentId,
-								   WriteRequirement);
+			WriteRequirement);
 		return FMetadataComponentBuilder(InternalEntity, ComponentAuthority, ReadRequirementSet);
 	}
 };

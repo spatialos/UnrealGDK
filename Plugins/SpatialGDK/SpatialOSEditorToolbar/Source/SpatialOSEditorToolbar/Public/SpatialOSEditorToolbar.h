@@ -31,7 +31,7 @@ class FSpatialOSEditorToolbarModule : public IModuleInterface,
 	TStatId GetStatId() const override
 	{
 		RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialOSEditorToolbarModule,
-										STATGROUP_Tickables);
+			STATGROUP_Tickables);
 	}
 
   private:
@@ -56,7 +56,7 @@ class FSpatialOSEditorToolbarModule : public IModuleInterface,
 
 	void CheckForRunningStack();
 	void OnPropertyChanged(UObject* ObjectBeingModified,
-						   FPropertyChangedEvent& PropertyChangedEvent);
+		FPropertyChangedEvent& PropertyChangedEvent);
 
   private:
 	TSharedPtr<FUICommandList> PluginCommands;

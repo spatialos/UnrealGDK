@@ -48,7 +48,7 @@ class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 
 	FNetworkGUID
 	AssignNewEntityActorNetGUID(AActor* Actor,
-								const SubobjectToOffsetMap& SubobjectToOffset);
+		const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityNetGUID(worker::EntityId EntityId);
 
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(
@@ -63,9 +63,9 @@ class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
   private:
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(const UObject* Object);
 	void RegisterObjectRef(FNetworkGUID NetGUID,
-						   const improbable::unreal::UnrealObjectRef& ObjectRef);
+		const improbable::unreal::UnrealObjectRef& ObjectRef);
 	FNetworkGUID AssignStaticActorNetGUID(const UObject* Object,
-										  const FNetworkGUID& StaticNetGUID);
+		const FNetworkGUID& StaticNetGUID);
 
 	TMap<FNetworkGUID, FHashableUnrealObjectRef> NetGUIDToUnrealObjectRef;
 	TMap<FHashableUnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;

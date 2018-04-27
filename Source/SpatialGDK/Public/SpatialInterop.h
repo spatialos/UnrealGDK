@@ -76,7 +76,7 @@ using FPendingOutgoingProperties = TPair<
 	TArray<uint16>,
 	TArray<uint16>>;  // Pending incoming properties (replicated and migratable).
 using FPendingIncomingProperties = TPair<TArray<const FRepHandleData*>,
-										 TArray<const FMigratableHandleData*>>;
+	TArray<const FMigratableHandleData*>>;
 
 // Map types for pending objects/RPCs. For pending updates, they store a map
 // from an unresolved
@@ -91,16 +91,16 @@ using FPendingOutgoingRPCMap =
 	TMap<UObject*, TArray<TPair<FRPCCommandRequestFunc, bool>>>;
 using FPendingIncomingObjectUpdateMap =
 	TMap<FHashableUnrealObjectRef,
-		 TMap<USpatialActorChannel*, FPendingIncomingProperties>>;
+		TMap<USpatialActorChannel*, FPendingIncomingProperties>>;
 using FPendingIncomingRPCMap =
 	TMap<FHashableUnrealObjectRef, TArray<FRPCCommandResponseFunc>>;
 
 // Helper function to write incoming replicated property data to an object.
 FORCEINLINE void
 ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& RepHandleData,
-									  UObject* Object,
-									  const void* Value,
-									  TArray<UProperty*>& RepNotifies)
+	UObject* Object,
+	const void* Value,
+	TArray<UProperty*>& RepNotifies)
 {
 	uint8* Dest =
 		RepHandleData.GetPropertyData(reinterpret_cast<uint8*>(Object));
@@ -177,16 +177,16 @@ class SPATIALGDK_API USpatialInterop : public UObject
 	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(
 		USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged);
 	void SendSpatialPositionUpdate(const FEntityId& EntityId,
-								   const FVector& Location);
+		const FVector& Location);
 	void SendSpatialUpdate(USpatialActorChannel* Channel,
-						   const TArray<uint16>& RepChanged,
-						   const TArray<uint16>& MigChanged);
+		const TArray<uint16>& RepChanged,
+		const TArray<uint16>& MigChanged);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
 	void ReceiveAddComponent(USpatialActorChannel* Channel,
-							 UAddComponentOpWrapperBase* AddComponentOp);
+		UAddComponentOpWrapperBase* AddComponentOp);
 	void PreReceiveSpatialUpdate(USpatialActorChannel* Channel);
 	void PostReceiveSpatialUpdate(USpatialActorChannel* Channel,
-								  const TArray<UProperty*>& RepNotifies);
+		const TArray<UProperty*>& RepNotifies);
 
 	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a
 	// unreal object ref.
@@ -200,7 +200,7 @@ class SPATIALGDK_API USpatialInterop : public UObject
 	// Called by USpatialInteropPipelineBlock when an actor channel is opened on
 	// the client.
 	void AddActorChannel(const FEntityId& EntityId,
-						 USpatialActorChannel* Channel);
+		USpatialActorChannel* Channel);
 	void RemoveActorChannel(const FEntityId& EntityId);
 
 	// Used by generated type bindings to map an entity ID to its actor channel.
@@ -209,27 +209,27 @@ class SPATIALGDK_API USpatialInterop : public UObject
 
 	// RPC handlers. Used by generated type bindings.
 	void SendCommandRequest_Internal(FRPCCommandRequestFunc Function,
-									 bool bReliable);
+		bool bReliable);
 	void SendCommandResponse_Internal(FRPCCommandResponseFunc Function);
 	void HandleCommandResponse_Internal(const FString& RPCName,
-										FUntypedRequestId RequestId,
-										const FEntityId& EntityId,
-										const worker::StatusCode& StatusCode,
-										const FString& Message);
+		FUntypedRequestId RequestId,
+		const FEntityId& EntityId,
+		const worker::StatusCode& StatusCode,
+		const FString& Message);
 
 	// Used to queue incoming/outgoing object updates/RPCs. Used by generated type
 	// bindings.
 	void
 	QueueOutgoingObjectRepUpdate_Internal(UObject* UnresolvedObject,
-										  USpatialActorChannel* DependentChannel,
-										  uint16 Handle);
+		USpatialActorChannel* DependentChannel,
+		uint16 Handle);
 	void
 	QueueOutgoingObjectMigUpdate_Internal(UObject* UnresolvedObject,
-										  USpatialActorChannel* DependentChannel,
-										  uint16 Handle);
+		USpatialActorChannel* DependentChannel,
+		uint16 Handle);
 	void QueueOutgoingRPC_Internal(UObject* UnresolvedObject,
-								   FRPCCommandRequestFunc CommandSender,
-								   bool bReliable);
+		FRPCCommandRequestFunc CommandSender,
+		bool bReliable);
 	void QueueIncomingObjectRepUpdate_Internal(
 		const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef,
 		USpatialActorChannel* DependentChannel,
@@ -294,7 +294,7 @@ class SPATIALGDK_API USpatialInterop : public UObject
 	void UnregisterInteropType(UClass* Class);
 
 	void SendComponentInterests(USpatialActorChannel* ActorChannel,
-								const FEntityId& EntityId);
+		const FEntityId& EntityId);
 
 	void ResolvePendingOutgoingObjectUpdates(UObject* Object);
 	void ResolvePendingOutgoingRPCs(UObject* Object);

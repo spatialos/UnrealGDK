@@ -4,7 +4,7 @@
 #include "SpatialPackageMapClient.h"
 
 void USpatialTypeBinding::Init(USpatialInterop* InInterop,
-							   USpatialPackageMapClient* InPackageMap)
+	USpatialPackageMapClient* InPackageMap)
 {
 	check(InInterop);
 	check(InPackageMap);

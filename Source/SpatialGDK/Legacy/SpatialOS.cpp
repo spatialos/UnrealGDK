@@ -30,7 +30,7 @@ void USpatialOS::ApplyConfiguration(
 	const FSpatialGDKWorkerConfigurationData& InWorkerConfigurationData)
 {
 	checkf(!IsConnected(),
-		   TEXT("ApplyConfiguration was called after Connect was called."));
+		TEXT("ApplyConfiguration was called after Connect was called."));
 	WorkerConfiguration =
 		FSpatialGDKWorkerConfiguration(InWorkerConfigurationData);
 }
@@ -38,7 +38,7 @@ void USpatialOS::ApplyConfiguration(
 void USpatialOS::ApplyEditorWorkerConfiguration(FWorldContext& InWorldContext)
 {
 	checkf(!IsConnected(),
-		   TEXT("ApplyConfiguration was called after Connect was called."));
+		TEXT("ApplyConfiguration was called after Connect was called."));
 
 	// This WorldContext does not represent a PIE instance
 	if (InWorldContext.WorldType != EWorldType::PIE ||
@@ -50,8 +50,8 @@ void USpatialOS::ApplyEditorWorkerConfiguration(FWorldContext& InWorldContext)
 										   "Make sure you only call this method when starting a worker "
 										   "instance "
 										   "from the Unreal Editor. PIEInstance: %d, WorldType: %d"),
-			   InWorldContext.PIEInstance,
-			   static_cast<int>(InWorldContext.WorldType));
+			InWorldContext.PIEInstance,
+			static_cast<int>(InWorldContext.WorldType));
 		return;
 	}
 
@@ -99,10 +99,10 @@ void USpatialOS::Connect()
 	// Log parsed input
 	UE_LOG(LogSpatialOS, Warning, TEXT(": receptionistHost %s, receptionistPort "
 									   "%d, WorkerType %s, WorkerId %s"),
-		   *WorkerConfiguration.GetReceptionistHost(),
-		   WorkerConfiguration.GetReceptionistPort(),
-		   *WorkerConfiguration.GetWorkerType(),
-		   *WorkerConfiguration.GetWorkerId())
+		*WorkerConfiguration.GetReceptionistHost(),
+		WorkerConfiguration.GetReceptionistPort(),
+		*WorkerConfiguration.GetWorkerType(),
+		*WorkerConfiguration.GetWorkerId())
 
 	auto LockedView = WorkerConnection.GetView().Pin();
 	if (LockedView.IsValid())

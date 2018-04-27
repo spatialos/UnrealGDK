@@ -153,7 +153,7 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 	if (FPaths::CollapseRelativeDirectories(CombinedPath))
 	{
 		SpatialGDKGenerateSnapshot(CombinedPath,
-								   GEditor->GetEditorWorldContext().World());
+			GEditor->GetEditorWorldContext().World());
 	}
 	else
 	{

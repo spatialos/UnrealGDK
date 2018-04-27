@@ -55,8 +55,8 @@ void USpatialPackageMapClient::RemoveEntityActor(const FEntityId& EntityId)
 }
 
 bool USpatialPackageMapClient::SerializeNewActor(FArchive& Ar,
-												 UActorChannel* Channel,
-												 AActor*& Actor)
+	UActorChannel* Channel,
+	AActor*& Actor)
 {
 	bool bResult = Super::SerializeNewActor(Ar, Channel, Actor);
 	// will remove the override if remains unused.
@@ -119,13 +119,13 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(
 	// Set up the NetGUID and ObjectRef for this actor.
 	FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
 	improbable::unreal::UnrealObjectRef ObjectRef{EntityId.ToSpatialEntityId(),
-												  0};
+		0};
 	RegisterObjectRef(NetGUID, ObjectRef);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity "
 											 "ID: %lld"),
-		   *Actor->GetName(),
-		   *NetGUID.ToString(),
-		   EntityId.ToSpatialEntityId());
+		*Actor->GetName(),
+		*NetGUID.ToString(),
+		EntityId.ToSpatialEntityId());
 	Interop->ResolvePendingOperations(Actor, ObjectRef);
 
 	// Allocate NetGUIDs for each subobject, sorting alphabetically to ensure
@@ -147,10 +147,10 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(
 			RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
 			UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside "
 													 "actor %s. NetGUID: %s, object ref: %s"),
-				   *Subobject->GetName(),
-				   *Actor->GetName(),
-				   *SubobjectNetGUID.ToString(),
-				   *ObjectRefToString(SubobjectRef));
+				*Subobject->GetName(),
+				*Actor->GetName(),
+				*SubobjectNetGUID.ToString(),
+				*ObjectRefToString(SubobjectRef));
 			Interop->ResolvePendingOperations(Subobject, SubobjectRef);
 		}
 	}
@@ -241,11 +241,11 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(
 		RegisterObjectRef(NetGUID, ObjectRef);
 		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new static object ref for actor: %s. NetGUID: %s, "
 												 "object ref: %s"),
-			   *Actor->GetName(),
-			   *NetGUID.ToString(),
-			   *ObjectRefToString(ObjectRef));
+			*Actor->GetName(),
+			*NetGUID.ToString(),
+			*ObjectRefToString(ObjectRef));
 		Interop->ResolvePendingOperations(Actor,
-										  GetUnrealObjectRefFromNetGUID(NetGUID));
+			GetUnrealObjectRefFromNetGUID(NetGUID));
 
 		// Deal with sub-objects of static objects.
 		TArray<UObject*> StaticSubobjects;
@@ -254,17 +254,17 @@ void FSpatialNetGUIDCache::RegisterStaticObjects(
 		for (UObject* Subobject : StaticSubobjects)
 		{
 			checkf((SubobjectOffset >> 7) == 0,
-				   TEXT("Static object has exceeded 127 subobjects."));
+				TEXT("Static object has exceeded 127 subobjects."));
 			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
 			improbable::unreal::UnrealObjectRef SubobjectRef{
 				0, StaticObjectId + SubobjectOffset++};
 			RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
 			UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new static object ref for subobject %s "
 													 "inside actor %s. NetGUID: %s, object ref: %s"),
-				   *Subobject->GetName(),
-				   *Actor->GetName(),
-				   *SubobjectNetGUID.ToString(),
-				   *ObjectRefToString(SubobjectRef));
+				*Subobject->GetName(),
+				*Actor->GetName(),
+				*SubobjectNetGUID.ToString(),
+				*ObjectRefToString(SubobjectRef));
 			Interop->ResolvePendingOperations(
 				Subobject, GetUnrealObjectRefFromNetGUID(SubobjectNetGUID));
 		}
@@ -277,10 +277,10 @@ FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(const UObject* Object)
 	FNetworkGUID NetGUID = GetOrAssignNetGUID(Object);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: GetOrAssignNetGUID for object %s returned %s. "
 											 "IsDynamicObject: %d"),
-		   *Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
-		   *Object->GetName(),
-		   *NetGUID.ToString(),
-		   (int)IsDynamicObject(Object));
+		*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
+		*Object->GetName(),
+		*NetGUID.ToString(),
+		(int)IsDynamicObject(Object));
 
 	// One major difference between how Unreal does NetGUIDs vs us is, we don't
 	// attempt to make them
@@ -307,9 +307,9 @@ FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(const UObject* Object)
 
 		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: NetGUID for object %s was not found in the cache. "
 												 "Generated new NetGUID %s."),
-			   *Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
-			   *Object->GetName(),
-			   *NetGUID.ToString());
+			*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
+			*Object->GetName(),
+			*NetGUID.ToString());
 	}
 
 	check(NetGUID.IsValid());
@@ -322,11 +322,11 @@ void FSpatialNetGUIDCache::RegisterObjectRef(
 	const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
 	checkSlow(!NetGUIDToUnrealObjectRef.Contains(NetGUID) ||
-			  (NetGUIDToUnrealObjectRef.Contains(NetGUID) &&
-			   NetGUIDToUnrealObjectRef.FindChecked(NetGUID) == ObjectRef));
+		(NetGUIDToUnrealObjectRef.Contains(NetGUID) &&
+			NetGUIDToUnrealObjectRef.FindChecked(NetGUID) == ObjectRef));
 	checkSlow(!UnrealObjectRefToNetGUID.Contains(ObjectRef) ||
-			  (UnrealObjectRefToNetGUID.Contains(ObjectRef) &&
-			   UnrealObjectRefToNetGUID.FindChecked(ObjectRef) == NetGUID));
+		(UnrealObjectRefToNetGUID.Contains(ObjectRef) &&
+			UnrealObjectRefToNetGUID.FindChecked(ObjectRef) == NetGUID));
 	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjectRef);
 	UnrealObjectRefToNetGUID.Emplace(ObjectRef, NetGUID);
 }

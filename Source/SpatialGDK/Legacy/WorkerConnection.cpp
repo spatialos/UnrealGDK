@@ -68,9 +68,9 @@ void FWorkerConnection::GetDeploymentListAsync(
 {
 	AsyncTask(ENamedThreads::GameThread, [ProjectName, LocatorHost, LoginToken, TimeoutMillis, OnDeploymentsFoundCallback, this]() {
 		WaitForDeploymentFuture(TimeoutMillis,
-								CreateLocator(ProjectName, LocatorHost, LoginToken)
-									.GetDeploymentListAsync(),
-								OnDeploymentsFoundCallback);
+			CreateLocator(ProjectName, LocatorHost, LoginToken)
+				.GetDeploymentListAsync(),
+			OnDeploymentsFoundCallback);
 	});
 }
 
@@ -85,17 +85,17 @@ void FWorkerConnection::ConnectToReceptionistAsync(
 	UE_LOG(LogSpatialOS, Log, TEXT("Connecting to %s:%i..."), *Hostname, Port);
 	bIsConnecting = true;
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask,
-			  [TimeoutMillis, Hostname, Port, WorkerId, Params, OnConnectedCallback, this]() {
-				  WaitForConnectionFuture(
-					  TimeoutMillis,
-					  SpatialOSConnection::ConnectAsync(
-						  improbable::unreal::Components{},
-						  std::string{TCHAR_TO_UTF8(*Hostname)},
-						  Port,
-						  std::string{TCHAR_TO_UTF8(*WorkerId)},
-						  Params),
-					  OnConnectedCallback);
-			  });
+		[TimeoutMillis, Hostname, Port, WorkerId, Params, OnConnectedCallback, this]() {
+			WaitForConnectionFuture(
+				TimeoutMillis,
+				SpatialOSConnection::ConnectAsync(
+					improbable::unreal::Components{},
+					std::string{TCHAR_TO_UTF8(*Hostname)},
+					Port,
+					std::string{TCHAR_TO_UTF8(*WorkerId)},
+					Params),
+				OnConnectedCallback);
+		});
 }
 
 void FWorkerConnection::ConnectToLocatorAsync(
@@ -114,25 +114,25 @@ void FWorkerConnection::ConnectToLocatorAsync(
 		auto QueueStatusReturnValueFuture =
 			QueueStatusCallbackReturnValue.GetFuture();
 		AsyncTask(ENamedThreads::GameThread,
-				  [QueueStatusCallback, status, &QueueStatusCallbackReturnValue]() {
-					  QueueStatusCallbackReturnValue.SetValue(
-						  QueueStatusCallback.Execute(status));
-				  });
+			[QueueStatusCallback, status, &QueueStatusCallbackReturnValue]() {
+				QueueStatusCallbackReturnValue.SetValue(
+					QueueStatusCallback.Execute(status));
+			});
 		return QueueStatusReturnValueFuture.Get();
 	};
 
 	bIsConnecting = true;
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask,
-			  [ProjectName, LocatorHost, LoginToken, TimeoutMillis, DeploymentId, Params, QueueStatusWrapper, OnConnectedCallback, this]() {
-				  WaitForConnectionFuture(
-					  TimeoutMillis,
-					  CreateLocator(ProjectName, LocatorHost, LoginToken)
-						  .ConnectAsync(improbable::unreal::Components{},
-										TCHAR_TO_UTF8(*DeploymentId),
-										Params,
-										QueueStatusWrapper),
-					  OnConnectedCallback);
-			  });
+		[ProjectName, LocatorHost, LoginToken, TimeoutMillis, DeploymentId, Params, QueueStatusWrapper, OnConnectedCallback, this]() {
+			WaitForConnectionFuture(
+				TimeoutMillis,
+				CreateLocator(ProjectName, LocatorHost, LoginToken)
+					.ConnectAsync(improbable::unreal::Components{},
+						TCHAR_TO_UTF8(*DeploymentId),
+						Params,
+						QueueStatusWrapper),
+				OnConnectedCallback);
+		});
 }
 
 void FWorkerConnection::Disconnect()
@@ -156,7 +156,7 @@ void FWorkerConnection::ProcessOps()
 }
 
 void FWorkerConnection::SendLogMessage(ELogVerbosity::Type Level,
-									   const FString& Message)
+	const FString& Message)
 {
 	auto WorkerLogLevel = worker::LogLevel::kInfo;
 
@@ -216,8 +216,8 @@ worker::Metrics& FWorkerConnection::GetMetrics()
 }
 
 SpatialOSLocator FWorkerConnection::CreateLocator(const FString& ProjectName,
-												  const FString& LocatorHost,
-												  const FString& LoginToken)
+	const FString& LocatorHost,
+	const FString& LoginToken)
 {
 	worker::LocatorParameters LocatorParams;
 	LocatorParams.ProjectName = TCHAR_TO_UTF8(*ProjectName);
@@ -236,9 +236,9 @@ void FWorkerConnection::WaitForDeploymentFuture(
 	{
 		auto DeploymentList = DeploymentListFuture.Get();
 		AsyncTask(ENamedThreads::GameThread,
-				  [DeploymentList, OnDeploymentsFoundCallback]() {
-					  OnDeploymentsFoundCallback.Execute(DeploymentList);
-				  });
+			[DeploymentList, OnDeploymentsFoundCallback]() {
+				OnDeploymentsFoundCallback.Execute(DeploymentList);
+			});
 	}
 	else
 	{
@@ -262,10 +262,10 @@ void FWorkerConnection::WaitForConnectionFuture(
 		if (WorkerConnection->IsConnected())
 		{
 			AsyncTask(ENamedThreads::GameThread,
-					  [OnConnectedCallback, WorkerConnection, this]() {
-						  Connection = WorkerConnection;
-						  OnConnectedCallback.Execute(true);
-					  });
+				[OnConnectedCallback, WorkerConnection, this]() {
+					Connection = WorkerConnection;
+					OnConnectedCallback.Execute(true);
+				});
 			UE_LOG(LogSpatialOS, Log, TEXT("Connected."));
 		}
 		else
@@ -279,7 +279,7 @@ void FWorkerConnection::WaitForConnectionFuture(
 	else
 	{
 		AsyncTask(ENamedThreads::GameThread,
-				  [OnConnectedCallback]() { OnConnectedCallback.Execute(false); });
+			[OnConnectedCallback]() { OnConnectedCallback.Execute(false); });
 		UE_LOG(LogSpatialOS, Error, TEXT("Connection timed out."));
 	}
 

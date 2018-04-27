@@ -17,7 +17,7 @@ namespace core
 DECLARE_DELEGATE_RetVal_OneParam(bool, FQueueStatusDelegate, const worker::QueueStatus&)
 	DECLARE_DELEGATE_OneParam(FOnConnectedDelegate, bool)
 		DECLARE_DELEGATE_OneParam(FOnDeploymentsFoundDelegate,
-								  worker::DeploymentList)
+			worker::DeploymentList)
 
 	/**
       * Manages the lifecycle of a connection to SpatialOS.
@@ -55,13 +55,13 @@ DECLARE_DELEGATE_RetVal_OneParam(bool, FQueueStatusDelegate, const worker::Queue
 * OnConnectedCallback when either the
 * creation is made or the timeout is reached */
 	void ConnectToLocatorAsync(const FString& ProjectName,
-							   const FString& LocatorHost,
-							   const FString& DeploymentId,
-							   const FString& LoginToken,
-							   const worker::ConnectionParameters& Params,
-							   FQueueStatusDelegate QueueStatusCallback,
-							   FOnConnectedDelegate OnConnectedCallback,
-							   std::uint32_t TimeoutMillis = DefaultTimeout);
+		const FString& LocatorHost,
+		const FString& DeploymentId,
+		const FString& LoginToken,
+		const worker::ConnectionParameters& Params,
+		FQueueStatusDelegate QueueStatusCallback,
+		FOnConnectedDelegate OnConnectedCallback,
+		std::uint32_t TimeoutMillis = DefaultTimeout);
 
 	/** Terminates an existing connection to SpatialOS. */
 	void Disconnect();
@@ -86,8 +86,8 @@ DECLARE_DELEGATE_RetVal_OneParam(bool, FQueueStatusDelegate, const worker::Queue
 	DECLARE_DELEGATE(FMetricsDelegate);
 
 	SpatialOSLocator CreateLocator(const FString& ProjectName,
-								   const FString& LocatorHost,
-								   const FString& LoginToken);
+		const FString& LocatorHost,
+		const FString& LoginToken);
 	bool CanCreateNewConnection() const;
 
 	void WaitForDeploymentFuture(
@@ -96,8 +96,8 @@ DECLARE_DELEGATE_RetVal_OneParam(bool, FQueueStatusDelegate, const worker::Queue
 		FOnDeploymentsFoundDelegate OnDeploymentsFoundCallback);
 
 	void WaitForConnectionFuture(std::uint32_t TimeoutMillis,
-								 SpatialOSFuture<SpatialOSConnection>,
-								 FOnConnectedDelegate OnConnectedCallback);
+		SpatialOSFuture<SpatialOSConnection>,
+		FOnConnectedDelegate OnConnectedCallback);
 
 	void OnMetrics(const worker::MetricsOp& Op);
 

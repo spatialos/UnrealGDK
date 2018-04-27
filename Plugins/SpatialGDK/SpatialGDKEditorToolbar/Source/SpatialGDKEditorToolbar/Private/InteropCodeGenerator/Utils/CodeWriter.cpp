@@ -100,7 +100,7 @@ FCodeWriter& FCodeWriter::BeginFunction(const FFunctionSignature& Signature)
 }
 
 FCodeWriter& FCodeWriter::BeginFunction(const FFunctionSignature& Signature,
-										const FString& TypeName)
+	const FString& TypeName)
 {
 	Print(Signature.Definition(TypeName));
 	BeginScope();

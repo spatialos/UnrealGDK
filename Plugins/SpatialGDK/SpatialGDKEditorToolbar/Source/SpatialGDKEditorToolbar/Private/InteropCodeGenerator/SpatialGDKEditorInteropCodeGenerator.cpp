@@ -46,7 +46,7 @@ int GenerateCompleteSchemaFromClass(
 }
 
 void GenerateTypeBindingList(const FString& ForwardingCodePath,
-							 const TArray<FString>& Classes)
+	const TArray<FString>& Classes)
 {
 	FCodeWriter OutputListHeader;
 	FCodeWriter OutputListSource;
@@ -80,8 +80,8 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath,
 	for (int i = 0; i < Classes.Num(); ++i)
 	{
 		OutputListSource.Printf(TEXT("USpatialTypeBinding_%s::StaticClass()%s"),
-								*Classes[i],
-								i < (Classes.Num() - 1) ? TEXT(",") : TEXT(""));
+			*Classes[i],
+			i < (Classes.Num() - 1) ? TEXT(",") : TEXT(""));
 	}
 	OutputListSource.Outdent();
 	OutputListSource.Print("};");
@@ -112,8 +112,8 @@ bool CheckClassNameListValidity(const TArray<FString>& Classes)
 																	  "'%s' - "
 																	  "schema not "
 																	  "generated"),
-					   *ClassA,
-					   *ClassB);
+					*ClassA,
+					*ClassB);
 				return false;
 			}
 		}
@@ -127,7 +127,7 @@ void SpatialGDKGenerateInteropCode()
 {
 	FString CombinedSchemaPath =
 		FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()),
-						TEXT("../../../generatedschema/improbable/unreal/"));
+			TEXT("../../../generatedschema/improbable/unreal/"));
 	FString CombinedForwardingCodePath = FPaths::Combine(
 		*FPaths::GetPath(FPaths::GetProjectFilePath()),
 		TEXT("../../../workers/unreal/Game/Source/SampleGame/Generated/"));
@@ -143,9 +143,9 @@ void SpatialGDKGenerateInteropCode()
 	TMap<FString, TArray<TArray<FName>>> MigratableProperties;
 	MigratableProperties.Add("PlayerController", {{"AcknowledgedPawn"}});
 	MigratableProperties.Add("Character",
-							 {{"CharacterMovement", "GroundMovementMode"},
-							  {"CharacterMovement", "MovementMode"},
-							  {"CharacterMovement", "CustomMovementMode"}});
+		{{"CharacterMovement", "GroundMovementMode"},
+			{"CharacterMovement", "MovementMode"},
+			{"CharacterMovement", "CustomMovementMode"}});
 
 	if (!CheckClassNameListValidity(Classes))
 	{

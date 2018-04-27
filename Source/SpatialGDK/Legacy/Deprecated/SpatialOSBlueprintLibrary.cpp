@@ -10,13 +10,13 @@ USpatialOSBlueprintLibrary::USpatialOSBlueprintLibrary(
 }
 
 bool USpatialOSBlueprintLibrary::EqualEqual_FEntityId(const FEntityId& A,
-													  const FEntityId& B)
+	const FEntityId& B)
 {
 	return A == B;
 }
 
 bool USpatialOSBlueprintLibrary::NotEqual_FEntityId(const FEntityId& A,
-													const FEntityId& B)
+	const FEntityId& B)
 {
 	return A != B;
 }
@@ -61,7 +61,7 @@ USpatialOSBlueprintLibrary::MakeComponentIdQueryConstraintFromInt(
 
 FSphereQueryConstraint
 USpatialOSBlueprintLibrary::MakeSphereQueryConstraint(const FVector& InPosition,
-													  float InRadius)
+	float InRadius)
 {
 	return FSphereQueryConstraint(InPosition, InRadius);
 }
@@ -159,13 +159,13 @@ FString USpatialOSBlueprintLibrary::GetCommandErrorMessage(
 }
 
 bool USpatialOSBlueprintLibrary::EqualEqual_FRequestId(const FRequestId& A,
-													   const FRequestId& B)
+	const FRequestId& B)
 {
 	return A == B;
 }
 
 bool USpatialOSBlueprintLibrary::NotEqual_FRequestId(const FRequestId& A,
-													 const FRequestId& B)
+	const FRequestId& B)
 {
 	return A != B;
 }

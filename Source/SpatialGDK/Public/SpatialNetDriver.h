@@ -66,15 +66,15 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 	virtual int32 ServerReplicateActors(float DeltaSeconds) override;
 	virtual void TickDispatch(float DeltaTime) override;
 	virtual void ProcessRemoteFunction(class AActor* Actor,
-									   class UFunction* Function,
-									   void* Parameters,
-									   struct FOutParmRec* OutParms,
-									   struct FFrame* NotStack,
-									   class UObject* SubObject = NULL) override;
+		class UFunction* Function,
+		void* Parameters,
+		struct FOutParmRec* OutParms,
+		struct FFrame* NotStack,
+		class UObject* SubObject = NULL) override;
 	virtual void TickFlush(float DeltaTime) override;
 	virtual bool
 	IsLevelInitializedForActor(const AActor* InActor,
-							   const UNetConnection* InConnection) const override;
+		const UNetConnection* InConnection) const override;
 	// End UNetDriver interface.
 
 	USpatialOS* GetSpatialOS() const
@@ -105,7 +105,7 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 	// (when
 	// player controllers are migrated).
 	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl,
-										   bool bExistingPlayer);
+		bool bExistingPlayer);
 
 	USpatialInterop* GetSpatialInterop() const
 	{

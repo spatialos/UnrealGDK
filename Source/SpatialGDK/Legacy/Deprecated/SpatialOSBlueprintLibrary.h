@@ -17,8 +17,8 @@ class SPATIALGDK_API USpatialOSBlueprintLibrary
 
   public:
 	UFUNCTION(BlueprintPure,
-			  meta = (DisplayName = "Equal (EntityId)", CompactNodeTitle = "=="),
-			  Category = "SpatialOS EntityId")
+		meta = (DisplayName = "Equal (EntityId)", CompactNodeTitle = "=="),
+		Category = "SpatialOS EntityId")
 	static bool EqualEqual_FEntityId(const FEntityId& A, const FEntityId& B);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Not Equal (EntityId)", CompactNodeTitle = "!="), Category = "SpatialOS EntityId")
@@ -76,8 +76,8 @@ class SPATIALGDK_API USpatialOSBlueprintLibrary
 	GetCommandErrorMessage(const FSpatialOSCommandResult& CommandResult);
 
 	UFUNCTION(BlueprintPure,
-			  meta = (DisplayName = "Equal (RequestId)", CompactNodeTitle = "=="),
-			  Category = "SpatialOS RequestId")
+		meta = (DisplayName = "Equal (RequestId)", CompactNodeTitle = "=="),
+		Category = "SpatialOS RequestId")
 	static bool EqualEqual_FRequestId(const FRequestId& A, const FRequestId& B);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Not Equal (RequestId)", CompactNodeTitle = "!="), Category = "SpatialOS RequestId")

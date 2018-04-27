@@ -37,8 +37,8 @@ GetGroupFromCondition(ELifetimeCondition Condition)
 // TODO: Remove once we've upgraded to 14.0 and can disable component short
 // circuiting. See TIG-137.
 FORCEINLINE bool HasComponentAuthority(TWeakPtr<worker::View> View,
-									   const worker::EntityId EntityId,
-									   const worker::ComponentId ComponentId)
+	const worker::EntityId EntityId,
+	const worker::ComponentId ComponentId)
 {
 	TSharedPtr<worker::View> PinnedView = View.Pin();
 	if (PinnedView.IsValid())
@@ -247,7 +247,7 @@ class SPATIALGDK_API USpatialTypeBinding : public UObject
 					 return Map;);
 
 	virtual void Init(USpatialInterop* Interop,
-					  USpatialPackageMapClient* PackageMap);
+		USpatialPackageMapClient* PackageMap);
 	virtual void BindToView() PURE_VIRTUAL(USpatialTypeBinding::BindToView, );
 	virtual void UnbindFromView()
 		PURE_VIRTUAL(USpatialTypeBinding::UnbindFromView, );
@@ -259,17 +259,17 @@ class SPATIALGDK_API USpatialTypeBinding : public UObject
 		PURE_VIRTUAL(USpatialTypeBinding::CreateActorEntity,
 					 return worker::Entity{};);
 	virtual void SendComponentUpdates(const FPropertyChangeState& Changes,
-									  USpatialActorChannel* Channel,
-									  const FEntityId& EntityId) const
+		USpatialActorChannel* Channel,
+		const FEntityId& EntityId) const
 		PURE_VIRTUAL(USpatialTypeBinding::SendComponentUpdates, );
 	virtual void SendRPCCommand(UObject* TargetObject,
-								const UFunction* const Function,
-								FFrame* const Frame)
+		const UFunction* const Function,
+		FFrame* const Frame)
 		PURE_VIRTUAL(USpatialTypeBinding::SendRPCCommand, );
 
 	virtual void
 	ReceiveAddComponent(USpatialActorChannel* Channel,
-						UAddComponentOpWrapperBase* AddComponentOp) const
+		UAddComponentOpWrapperBase* AddComponentOp) const
 		PURE_VIRTUAL(USpatialTypeBinding::ReceiveAddComponent, );
 	virtual worker::Map<worker::ComponentId, worker::InterestOverride>
 	GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const

@@ -42,7 +42,7 @@ class FCodeWriter
 	FCodeWriter& BeginScope();
 	FCodeWriter& BeginFunction(const FFunctionSignature& Signature);
 	FCodeWriter& BeginFunction(const FFunctionSignature& Signature,
-							   const FString& TypeName);
+		const FString& TypeName);
 	FCodeWriter& End();
 
 	void WriteToFile(const FString& Filename);

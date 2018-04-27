@@ -37,12 +37,12 @@ worker::Entity CreateSpawnerEntity()
 
 	return improbable::unreal::FEntityBuilder::Begin()
 		.AddPositionComponent(Position::Data{InitialPosition},
-							  UnrealWorkerWritePermission)
+			UnrealWorkerWritePermission)
 		.AddMetadataComponent(Metadata::Data("Spawner"))
 		.SetPersistence(true)
 		.SetReadAcl(AnyWorkerReadPermission)
 		.AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{},
-											 UnrealWorkerWritePermission)
+			UnrealWorkerWritePermission)
 		.Build();
 }
 
@@ -66,14 +66,14 @@ CreateLevelEntities(UWorld* World)
 
 		FString PathName = Actor->GetPathName(World);
 		StaticActorMap.emplace(StaticObjectId,
-							   std::string(TCHAR_TO_UTF8(*PathName)));
+			std::string(TCHAR_TO_UTF8(*PathName)));
 		worker::EntityId EntityId = 0;
 		UE_LOG(LogSpatialGDKSnapshot, Log, TEXT("Found static object in persistent level, adding to level data "
 												"entity. Path: %s, "
 												"Object ref: (entity ID: %lld, offset: %u)."),
-			   *PathName,
-			   EntityId,
-			   StaticObjectId);
+			*PathName,
+			EntityId,
+			StaticObjectId);
 		StaticObjectId++;
 	}
 
@@ -83,7 +83,7 @@ CreateLevelEntities(UWorld* World)
 		SpatialConstants::LEVEL_DATA_ENTITY_ID,
 		improbable::unreal::FEntityBuilder::Begin()
 			.AddPositionComponent(Position::Data{InitialPosition},
-								  UnrealWorkerWritePermission)
+				UnrealWorkerWritePermission)
 			.AddMetadataComponent(Metadata::Data("LevelData"))
 			.SetPersistence(true)
 			.SetReadAcl(AnyWorkerReadPermission)
@@ -98,9 +98,9 @@ CreateLevelEntities(UWorld* World)
 		SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST + 1;
 	int PlaceholderCountAxis = sqrt(PlaceholderCount);
 	checkf(PlaceholderCountAxis * PlaceholderCountAxis == PlaceholderCount,
-		   TEXT("The number of placeholders must be a square number."));
+		TEXT("The number of placeholders must be a square number."));
 	checkf(PlaceholderCountAxis % 2 == 0,
-		   TEXT("The number of placeholders on each axis must be even."));
+		TEXT("The number of placeholders on each axis must be even."));
 	const float CHUNK_SIZE = 5.0f;  // in SpatialOS coordinates.
 	int PlaceholderEntityIdCounter =
 		SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST;
@@ -109,13 +109,13 @@ CreateLevelEntities(UWorld* World)
 		for (int y = -PlaceholderCountAxis / 2; y < PlaceholderCountAxis / 2; y++)
 		{
 			const Coordinates PlaceholderPosition{x * CHUNK_SIZE + CHUNK_SIZE * 0.5f,
-												  0,
-												  y * CHUNK_SIZE + CHUNK_SIZE * 0.5f};
+				0,
+				y * CHUNK_SIZE + CHUNK_SIZE * 0.5f};
 			LevelEntities.emplace(
 				PlaceholderEntityIdCounter,
 				improbable::unreal::FEntityBuilder::Begin()
 					.AddPositionComponent(Position::Data{PlaceholderPosition},
-										  UnrealWorkerWritePermission)
+						UnrealWorkerWritePermission)
 					.AddMetadataComponent(Metadata::Data("Placeholder"))
 					.SetPersistence(true)
 					.SetReadAcl(AnyWorkerReadPermission)
@@ -128,7 +128,7 @@ CreateLevelEntities(UWorld* World)
 	}
 	// Sanity check.
 	check(PlaceholderEntityIdCounter ==
-		  SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1);
+		SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1);
 	return LevelEntities;
 }
 }  // ::
@@ -138,11 +138,11 @@ void SpatialGDKGenerateSnapshot(const FString& SavePath, UWorld* World)
 	const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
 
 	worker::SnapshotOutputStream OutputStream{improbable::unreal::Components{},
-											  TCHAR_TO_UTF8(*FullPath)};
+		TCHAR_TO_UTF8(*FullPath)};
 
 	// Create spawner.
 	OutputStream.WriteEntity(SpatialConstants::SPAWNER_ENTITY_ID,
-							 CreateSpawnerEntity());
+		CreateSpawnerEntity());
 
 	// Create level entities.
 	worker::Option<std::string> Result;
