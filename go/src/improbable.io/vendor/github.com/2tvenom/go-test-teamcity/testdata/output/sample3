@@ -1,0 +1,10 @@
+##teamcity[testStarted timestamp='2017-01-02T04:05:06.789' name='TestConstWithPrecision' captureStandardOutput='true']
+##teamcity[testFinished timestamp='2017-01-02T04:05:06.789' name='TestConstWithPrecision' duration='0']
+##teamcity[testStarted timestamp='2017-01-02T04:05:06.789' name='TestConstBlah' captureStandardOutput='true']
+##teamcity[testFinished timestamp='2017-01-02T04:05:06.789' name='TestConstBlah' duration='0']
+##teamcity[testStarted timestamp='2017-01-02T04:05:06.789' name='TestConstSub' captureStandardOutput='true']
+##teamcity[testFinished timestamp='2017-01-02T04:05:06.789' name='TestConstSub' duration='0']
+##teamcity[testStarted timestamp='2017-01-02T04:05:06.789' name='TestConstSub/subtest' captureStandardOutput='true']
+##teamcity[testFinished timestamp='2017-01-02T04:05:06.789' name='TestConstSub/subtest' duration='0']
+PASS
+ok  	github.com/cockroachdb/apd	0.009s
