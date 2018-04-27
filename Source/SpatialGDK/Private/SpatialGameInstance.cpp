@@ -41,8 +41,7 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 
 	if (!WorldContext->PendingNetGame->NetDriver)
 	{
-		// UPendingNetGame will set the appropriate error code and connection lost
-		// type, so
+		// UPendingNetGame will set the appropriate error code and connection lost type, so
 		// we just have to propagate that message to the game.
 		GetEngine()->BroadcastTravelFailure(WorldContext->World(), ETravelFailure::PendingNetGameCreateFailure, WorldContext->PendingNetGame->ConnectionError);
 		Error = WorldContext->PendingNetGame->ConnectionError;
@@ -56,8 +55,7 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 #if WITH_EDITOR
 FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
-	// This is sadly hacky to avoid a larger engine change. It borrows code from
-	// UGameInstance::StartPlayInEditorGameInstance() and
+	// This is sadly hacky to avoid a larger engine change. It borrows code from UGameInstance::StartPlayInEditorGameInstance() and 
 	//  UEngine::Browse().
 	check(WorldContext);
 

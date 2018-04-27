@@ -19,11 +19,8 @@ SPATIALGDK_API DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInterop, Log, All);
 // An general version of worker::RequestId.
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
 
-// Stores the result of an attempt to call an RPC sender function. Either we
-// have an unresolved
-// object which needs
-// to be resolved before we can send this RPC, or we successfully sent a command
-// request.
+// Stores the result of an attempt to call an RPC sender function. Either we have an unresolved object which needs
+// to be resolved before we can send this RPC, or we successfully sent a command request.
 struct FRPCCommandRequestResult
 {
 	UObject* UnresolvedObject;
@@ -38,21 +35,15 @@ struct FRPCCommandRequestResult
 	}
 };
 
-// Function storing a command request operation, capturing all arguments by
-// value.
+// Function storing a command request operation, capturing all arguments by value.
 using FRPCCommandRequestFunc = TFunction<FRPCCommandRequestResult()>;
 
-// Stores the result of attempting to receive an RPC command. We either return
-// an unresolved object
-// which needs
-// to be resolved before the RPC implementation can be called successfully, or
-// nothing, which
-// indicates that
+// Stores the result of attempting to receive an RPC command. We either return an unresolved object which needs
+// to be resolved before the RPC implementation can be called successfully, or nothing, which indicates that
 // the RPC implementation was called successfully.
 using FRPCCommandResponseResult = TOptional<improbable::unreal::UnrealObjectRef>;
 
-// Function storing a command response operation, capturing the command request
-// op by value.
+// Function storing a command response operation, capturing the command request op by value.
 using FRPCCommandResponseFunc = TFunction<FRPCCommandResponseResult()>;
 
 // Stores the number of attempts when retrying failed commands.
@@ -68,15 +59,11 @@ public:
 };
 
 // Helper types used by the maps below.
-using FPendingOutgoingProperties = TPair<TArray<uint16>, TArray<uint16>>;  // Pending incoming properties (replicated and migratable).
+using FPendingOutgoingProperties = TPair<TArray<uint16>, TArray<uint16>>; // Pending incoming properties (replicated and migratable).
 using FPendingIncomingProperties = TPair<TArray<const FRepHandleData*>, TArray<const FMigratableHandleData*>>;
 
-// Map types for pending objects/RPCs. For pending updates, they store a map
-// from an unresolved
-// object to a map of channels to properties
-// within those channels which depend on the unresolved object. For pending
-// RPCs, they store a map
-// from an unresolved object to a list of
+// Map types for pending objects/RPCs. For pending updates, they store a map from an unresolved object to a map of channels to properties
+// within those channels which depend on the unresolved object. For pending RPCs, they store a map from an unresolved object to a list of
 // RPC functor objects which need to be re-executed when the object is resolved.
 using FPendingOutgoingObjectUpdateMap = TMap<UObject*, TMap<USpatialActorChannel*, FPendingOutgoingProperties>>;
 using FPendingOutgoingRPCMap = TMap<UObject*, TArray<TPair<FRPCCommandRequestFunc, bool>>>;
@@ -101,11 +88,8 @@ FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& Rep
 	UBoolProperty* BoolProperty = Cast<UBoolProperty>(RepHandleData.Property);
 	if (BoolProperty)
 	{
-		// We use UBoolProperty::SetPropertyValue here explicitly to ensure that
-		// packed boolean
-		// properties
-		// are de-serialized correctly without clobbering neighboring boolean values
-		// in memory.
+		// We use UBoolProperty::SetPropertyValue here explicitly to ensure that packed boolean properties
+		// are de-serialized correctly without clobbering neighboring boolean values in memory.
 		BoolProperty->SetPropertyValue(Dest, *static_cast<const bool*>(Value));
 	}
 	else
@@ -123,11 +107,8 @@ FORCEINLINE void ApplyIncomingMigratablePropertyUpdate(const FMigratableHandleDa
 	UBoolProperty* BoolProperty = Cast<UBoolProperty>(MigratableHandleData.Property);
 	if (BoolProperty)
 	{
-		// We use UBoolProperty::SetPropertyValue here explicitly to ensure that
-		// packed boolean
-		// properties
-		// are de-serialized correctly without clobbering neighboring boolean values
-		// in memory.
+		// We use UBoolProperty::SetPropertyValue here explicitly to ensure that packed boolean properties
+		// are de-serialized correctly without clobbering neighboring boolean values in memory.
 		BoolProperty->SetPropertyValue(Dest, *static_cast<const bool*>(Value));
 	}
 	else
@@ -136,9 +117,7 @@ FORCEINLINE void ApplyIncomingMigratablePropertyUpdate(const FMigratableHandleDa
 	}
 }
 
-// The system which is responsible for converting and sending Unreal updates to
-// SpatialOS, and
-// receiving updates from SpatialOS and
+// The system which is responsible for converting and sending Unreal updates to SpatialOS, and receiving updates from SpatialOS and
 // applying them to Unreal objects.
 UCLASS()
 class SPATIALGDK_API USpatialInterop : public UObject
@@ -161,16 +140,11 @@ public:
 	void PreReceiveSpatialUpdate(USpatialActorChannel* Channel);
 	void PostReceiveSpatialUpdate(USpatialActorChannel* Channel, const TArray<UProperty*>& RepNotifies);
 
-	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a
-	// unreal object ref.
-	// This will dequeue pending object ref updates and RPCs which depend on this
-	// UObject existing
-	// in
-	// the package map.
+	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.
+	// This will dequeue pending object ref updates and RPCs which depend on this UObject existing in the package map.
 	void ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 
-	// Called by USpatialInteropPipelineBlock when an actor channel is opened on
-	// the client.
+	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
 	void AddActorChannel(const FEntityId& EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(const FEntityId& EntityId);
 
@@ -182,8 +156,7 @@ public:
 	void SendCommandResponse_Internal(FRPCCommandResponseFunc Function);
 	void HandleCommandResponse_Internal(const FString& RPCName, FUntypedRequestId RequestId, const FEntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
 
-	// Used to queue incoming/outgoing object updates/RPCs. Used by generated type
-	// bindings.
+	// Used to queue incoming/outgoing object updates/RPCs. Used by generated type bindings.
 	void QueueOutgoingObjectRepUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void QueueOutgoingObjectMigUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable);

@@ -16,9 +16,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKActorChannel, Log, All);
 
 class USpatialNetDriver;
 
-// A replacement actor channel that plugs into the Engine's replication system
-// and works with
-// SpatialOS
+// A replacement actor channel that plugs into the Engine's replication system and works with SpatialOS
 UCLASS(Transient)
 class SPATIALGDK_API USpatialActorChannel : public UActorChannel
 {
@@ -50,10 +48,7 @@ public:
 		TSharedPtr<worker::View> View = WorkerView.Pin();
 		if (View.Get())
 		{
-			// This will never fail because we can't have an actor channel without
-			// having checked
-			// out the
-			// entity.
+			// This will never fail because we can't have an actor channel without having checked out the entity.
 			auto& EntityAuthority = View->ComponentAuthority[ActorEntityId.ToSpatialEntityId()];
 			auto ComponentIterator = EntityAuthority.find(ServerRPCsComponentId);
 			if (ComponentIterator != EntityAuthority.end())
@@ -79,10 +74,8 @@ public:
 	void PreReceiveSpatialUpdate();
 	void PostReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies);
 
-	// Distinguishes between channels created for actors that went through the
-	// "old" pipeline vs
-	// actors that are triggered through SpawnActor() calls.
-	// In the future we may not use an actor channel for non-core actors.
+	// Distinguishes between channels created for actors that went through the "old" pipeline vs actors that are triggered through SpawnActor() calls.
+	//In the future we may not use an actor channel for non-core actors.
 	UPROPERTY(transient)
 	bool bCoreActor;
 
@@ -113,10 +106,7 @@ private:
 	FVector LastSpatialPosition;
 	TArray<uint8> MigratablePropertyShadowData;
 
-	// If this actor channel is responsible for creating a new entity, this will
-	// be set to true
-	// during
-	// initial replication.
+	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
 	UPROPERTY(Transient)
 	bool bCreatingNewEntity;
 

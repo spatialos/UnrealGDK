@@ -16,16 +16,10 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
 
 namespace
 {
-// This is a bookkeeping function that is similar to the one in RepLayout.cpp,
-// modified for our
-// needs (e.g. no NaKs)
-// We can't use the one in RepLayout.cpp because it's private and it cannot
-// account for our
-// approach.
-// In this function, we poll for any changes in Unreal properties compared to
-// the last time we
-// replicated this actor.
-void UpdateChangelistHistory(FRepState* RepState)
+//This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
+// We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
+// In this function, we poll for any changes in Unreal properties compared to the last time we replicated this actor.
+void UpdateChangelistHistory(FRepState * RepState)
 {
 	check(RepState->HistoryEnd >= RepState->HistoryStart);
 
@@ -45,8 +39,7 @@ void UpdateChangelistHistory(FRepState* RepState)
 		RepState->HistoryStart++;
 	}
 
-	// Remove any tiling in the history markers to keep them from wrapping over
-	// time
+	// Remove any tiling in the history markers to keep them from wrapping over time
 	const int32 NewHistoryCount = RepState->HistoryEnd - RepState->HistoryStart;
 
 	check(NewHistoryCount <= FRepState::MAX_CHANGE_HISTORY);
@@ -103,10 +96,7 @@ void USpatialActorChannel::BindToSpatialView()
 
 void USpatialActorChannel::UnbindFromSpatialView() const
 {
-	// todo-giray: Uncomment the rest when worker sdk finishes the FR that
-	// gracefully handles
-	// removing
-	// unbound callback keys.
+	//todo-giray: Uncomment the rest when worker sdk finishes the FR that gracefully handles removing unbound callback keys.
 	return;
 	/*
   TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
@@ -159,24 +149,16 @@ bool USpatialActorChannel::ReplicateActor()
 								 // to force them to retry
 	}
 
-	// Here, Unreal would have determined if this connection belongs to this
-	// actor's Outer.
-	// We don't have this concept when it comes to connections, our
-	// ownership-based logic is in the
-	// interop layer.
-	// Setting this to true, but should not matter in the end.
+	//Here, Unreal would have determined if this connection belongs to this actor's Outer.
+	//We don't have this concept when it comes to connections, our ownership-based logic is in the interop layer.
+	//Setting this to true, but should not matter in the end.
 	RepFlags.bNetOwner = true;
 
 	// If initial, send init data.
 	if (RepFlags.bNetInitial && OpenedLocally)
 	{
-		// TODO(David): Note that initial actor data is stored in the header to
-		// encode the
-		// NetGUID/Class/etc.
-		// We don't care about this as we can distinguish this already based on the
-		// components in
-		// the
-		// entity,
+		// TODO(David): Note that initial actor data is stored in the header to encode the NetGUID/Class/etc.
+		// We don't care about this as we can distinguish this already based on the components in the entity,
 		// so SerializeNewActor will probably do nothing.
 		Connection->PackageMap->SerializeNewActor(Bunch, this, Actor);
 
@@ -190,21 +172,14 @@ bool USpatialActorChannel::ReplicateActor()
 
 	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
 
-	FMemMark MemMark(FMemStack::Get());  // The calls to ReplicateProperties will
-										 // allocate memory on
-	// FMemStack::Get(), and use it in ::PostSendBunch. we free
-	// it below
+	FMemMark MemMark(FMemStack::Get());	// The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in ::PostSendBunch. we free it below
 
 	// ----------------------------------------------------------
 	// Replicate Actor and Component properties and RPCs
 	// ----------------------------------------------------------
 
-	// Epic does this at the net driver level, per connection. See
-	// UNetDriver::ServerReplicateActors().
-	// However, we have many player controllers sharing one connection, so we do
-	// it at the actor
-	// level
-	// before replication.
+	// Epic does this at the net driver level, per connection. See UNetDriver::ServerReplicateActors().
+	// However, we have many player controllers sharing one connection, so we do it at the actor level before replication.
 	APlayerController* PlayerController = Cast<APlayerController>(Actor);
 	if (PlayerController)
 	{
@@ -220,9 +195,7 @@ bool USpatialActorChannel::ReplicateActor()
 	FRepChangedHistory& PossibleNewHistoryItem = ActorReplicator->RepState->ChangeHistory[PossibleNewHistoryIndex];
 	TArray<uint16>& RepChanged = PossibleNewHistoryItem.Changed;
 
-	// Gather all change lists that are new since we last looked, and merge them
-	// all together into a
-	// single CL
+	// Gather all change lists that are new since we last looked, and merge them all together into a single CL
 	for (int32 i = ActorReplicator->RepState->LastChangelistIndex; i < ChangelistState->HistoryEnd; i++)
 	{
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
@@ -254,8 +227,7 @@ bool USpatialActorChannel::ReplicateActor()
 		}
 	}
 
-	// We can early out if we know for sure there are no new changelists to send,
-	// and we are not creating a new entity.
+	// We can early out if we know for sure there are no new changelists to send, and we are not creating a new entity.
 	if (!bCreatingNewEntity && MigratableChanged.Num() == 0)
 	{
 		if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
@@ -266,24 +238,16 @@ bool USpatialActorChannel::ReplicateActor()
 		}
 	}
 
-	// todo-giray: We currently don't take replication of custom delta properties
-	// into account here
-	// because it doesn't use changelists.
+	//todo-giray: We currently don't take replication of custom delta properties into account here because it doesn't use changelists.
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
 	// If any properties have changed, send a component update.
 	if (RepFlags.bNetInitial || RepChanged.Num() > 0 || MigratableChanged.Num() > 0)
-	{
+	{		
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
-			// When a player is connected, a FUniqueNetIdRepl is created with the
-			// players worker ID.
-			// This
-			// eventually gets stored
-			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If
-			// this actor
-			// channel
-			// is managing a pawn or a
+			// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
+			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
 			// player controller, get the player state.
 			FString PlayerWorkerId;
 			APlayerState* PlayerState = Cast<APlayerState>(Actor);
@@ -315,13 +279,8 @@ bool USpatialActorChannel::ReplicateActor()
 					   *Actor->GetClass()->GetName());
 			}
 
-			// Ensure that the initial changelist contains _every_ property. This
-			// ensures that the
-			// default
-			// properties are written to the entity template.
-			// Otherwise, there will be a mismatch between the rep state shadow data
-			// used by
-			// CompareProperties and the entity in SpatialOS.
+			// Ensure that the initial changelist contains _every_ property. This ensures that the default properties are written to the entity template.
+			// Otherwise, there will be a mismatch between the rep state shadow data used by CompareProperties and the entity in SpatialOS.
 			TArray<uint16> InitialRepChanged;
 			bool bInDynamicArray = false;
 			for (uint16 CmdIdx = 0; CmdIdx < ActorReplicator->RepLayout->Cmds.Num(); ++CmdIdx)
@@ -334,12 +293,9 @@ bool USpatialActorChannel::ReplicateActor()
 				{
 					checkf(!bInDynamicArray, TEXT("Encountered nested array"));
 					bInDynamicArray = true;
-					// Add the number of array properties to comform to Unreal's RepLayout
-					// design and
-					// allow FRepHandleIterator to jump over arrays. Cmd.EndCmd is an
-					// index into
-					// RepLayout->Cmds[] that points to the value after the termination
-					// NULL of this array.
+					// Add the number of array properties to comform to Unreal's RepLayout design and 
+					// allow FRepHandleIterator to jump over arrays. Cmd.EndCmd is an index into 
+					// RepLayout->Cmds[] that points to the value after the termination NULL of this array.
 					InitialRepChanged.Add((Cmd.EndCmd - CmdIdx) - 2);
 				}
 				else if (Cmd.Type == REPCMD_Return)
@@ -348,9 +304,7 @@ bool USpatialActorChannel::ReplicateActor()
 				}
 			}
 
-			// Calculate initial spatial position (but don't send component update)
-			// and create the
-			// entity.
+			// Calculate initial spatial position (but don't send component update) and create the entity.
 			LastSpatialPosition = GetActorSpatialPosition(Actor);
 			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialRepChanged, MigratableChanged);
 			bCreatingNewEntity = false;
@@ -375,56 +329,49 @@ bool USpatialActorChannel::ReplicateActor()
 	}
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
-	// todo-giray: The rest of this function is taken from Unreal's own
-	// implementation. It is mostly
-	// redundant in our case,
-	// but keeping it here for now to give us a chance to investigate if we need
-	// to write our own
-	// implementation for any of
+	//todo-giray: The rest of this function is taken from Unreal's own implementation. It is mostly redundant in our case,
+	// but keeping it here for now to give us a chance to investigate if we need to write our own implementation for any of
 	// any code block below.
 
 	/*
-  // The Actor
-  WroteSomethingImportant |= ActorReplicator->ReplicateProperties(Bunch,
-  RepFlags);
+	// The Actor
+	WroteSomethingImportant |= ActorReplicator->ReplicateProperties(Bunch, RepFlags);
 
-  //todo-giray: Implement subobject replication
-  // The SubObjects
-  WroteSomethingImportant |= Actor->ReplicateSubobjects(this, &Bunch,
-  &RepFlags);
+	//todo-giray: Implement subobject replication
+	// The SubObjects
+	WroteSomethingImportant |= Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 
-  // Look for deleted subobjects
-  for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
-  {
-  if (!RepComp.Key().IsValid())
-  {
-	  // Write a deletion content header:
-	  WriteContentBlockForSubObjectDelete(Bunch,
-  RepComp.Value()->ObjectNetGUID);
+	// Look for deleted subobjects
+	for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
+	{
+		if (!RepComp.Key().IsValid())
+		{
+			// Write a deletion content header:
+			WriteContentBlockForSubObjectDelete(Bunch, RepComp.Value()->ObjectNetGUID);
 
-	  bWroteSomethingImportant = true;
-	  Bunch.bReliable = true;
+			bWroteSomethingImportant = true;
+			Bunch.bReliable = true;
 
-	  RepComp.Value()->CleanUp();
-	  RepComp.RemoveCurrent();
-  }
-  }
+			RepComp.Value()->CleanUp();
+			RepComp.RemoveCurrent();
+		}
+	}
 
-  // -----------------------------
-  // Send if necessary
-  // -----------------------------
-  bool SentBunch = false;
-  if (bWroteSomethingImportant)
-  {
-  FPacketIdRange PacketRange = SendBunch(&Bunch, 1);
+	// -----------------------------
+	// Send if necessary
+	// -----------------------------
+	bool SentBunch = false;
+	if (bWroteSomethingImportant)
+	{
+		FPacketIdRange PacketRange = SendBunch(&Bunch, 1);
 
-  for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
-  {
-	  RepComp.Value()->PostSendBunch(PacketRange, Bunch.bReliable);
-  }
-  SentBunch = true;
-  }
-  */
+		for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
+		{
+			RepComp.Value()->PostSendBunch(PacketRange, Bunch.bReliable);
+		}
+		SentBunch = true;
+	}
+	*/
 
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
 	LastUpdateTime = Connection->Driver->Time;
@@ -447,9 +394,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		return;
 	}
 
-	// Set up the shadow data for the migratable properties. This is used later to
-	// compare the
-	// properties and send only changed ones.
+	// Set up the shadow data for the migratable properties. This is used later to compare the properties and send only changed ones.
 	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 	check(Interop);
 	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(InActor->GetClass());
@@ -471,21 +416,17 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		}
 	}
 
-	// Get the entity ID from the entity registry (or return 0 if it doesn't
-	// exist).
+	// Get the entity ID from the entity registry (or return 0 if it doesn't exist).
 	check(SpatialNetDriver->GetEntityRegistry());
 	ActorEntityId = SpatialNetDriver->GetEntityRegistry()->GetEntityIdFromActor(InActor).ToSpatialEntityId();
 
-	// If the entity registry has no entry for this actor, this means we need to
-	// create it.
+	// If the entity registry has no entry for this actor, this means we need to create it.
 	if (ActorEntityId == 0)
 	{
 		USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
 		check(SpatialConnection);
 
-		// Mark this channel as being responsible for creating this entity once we
-		// have an entity
-		// ID.
+		// Mark this channel as being responsible for creating this entity once we have an entity ID.
 		bCreatingNewEntity = true;
 
 		// Reserve an entity ID for this channel.
@@ -521,10 +462,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
 		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.Message.c_str()));
-		// todo: From now on, this actor channel will be useless. We need better
-		// error handling, or
-		// a
-		// retry mechanism here.
+		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		UnbindFromSpatialView();
 		return;
 	}
@@ -549,11 +487,8 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
-		// todo: From now on, this actor channel will be useless. We need better
-		// error handling, or
-		// a
-		// retry mechanism here.
+		UE_LOG(LogSpatialOSActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
+		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		UnbindFromSpatialView();
 		return;
 	}
@@ -570,12 +505,8 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 
 void USpatialActorChannel::UpdateSpatialPosition()
 {
-	// PlayerController's and PlayerState's are a special case here. To ensure
-	// that they and their
-	// associated pawn are
-	// migrated between workers at the same time (which is not guaranteed), we
-	// ensure that we update
-	// the position component
+	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
+	// migrated between workers at the same time (which is not guaranteed), we ensure that we update the position component 
 	// of the PlayerController and PlayerState at the same time as the pawn.
 
 	// Check that it has moved sufficiently far to be updated
@@ -591,10 +522,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	LastSpatialPosition = ActorSpatialPosition;
 	Interop->SendSpatialPositionUpdate(GetEntityId(), LastSpatialPosition);
 
-	// If we're a pawn and are controlled by a player controller, update the
-	// player controller and
-	// the
-	// player state positions too.
+	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
 	if (APawn* Pawn = Cast<APawn>(Actor))
 	{
 		if (APlayerController* PlayerController = Cast<APlayerController>(Pawn->GetController()))
@@ -616,8 +544,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 FVector USpatialActorChannel::GetActorSpatialPosition(AActor* Actor)
 {
 	// Preferentially uses the owner location over the origin
-	// This is to enable actors like PlayerState to follow their corresponding
-	// character
+	// This is to enable actors like PlayerState to follow their corresponding character
 
 	// If the actor has a well defined location then use that
 	// Otherwise if it has a parent use its location

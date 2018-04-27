@@ -33,8 +33,7 @@ FORCEINLINE EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Co
 	}
 }
 
-// TODO: Remove once we've upgraded to 14.0 and can disable component short
-// circuiting. See TIG-137.
+// TODO: Remove once we've upgraded to 14.0 and can disable component short circuiting. See TIG-137.
 FORCEINLINE bool HasComponentAuthority(TWeakPtr<worker::View> View, const worker::EntityId EntityId, const worker::ComponentId ComponentId)
 {
 	TSharedPtr<worker::View> PinnedView = View.Pin();
@@ -53,8 +52,7 @@ FORCEINLINE bool HasComponentAuthority(TWeakPtr<worker::View> View, const worker
 	return false;
 }
 
-// Storage for a changelist created by the replication system when replicating
-// from the server.
+// Storage for a changelist created by the replication system when replicating from the server.
 struct FPropertyChangeState
 {
 	const uint8* RESTRICT SourceData;
@@ -151,10 +149,7 @@ public:
 				}
 				else
 				{
-					// We should only encounter a non-container style property if this is
-					// the final
-					// property
-					// in the chain.
+					// We should only encounter a non-container style property if this is the final property in the chain.
 					// Otherwise, the above check will be hit.
 					CurrentContainerType = nullptr;
 				}
@@ -175,10 +170,7 @@ public:
 				// If we're not the last property in the chain.
 				if (i < (PropertyChain.Num() - 1))
 				{
-					// Migratable property chains can cross into subobjects, so we will
-					// need to deal
-					// with
-					// objects which are not inlined into the container.
+					// Migratable property chains can cross into subobjects, so we will need to deal with objects which are not inlined into the container.
 					UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyChain[i]);
 					if (ObjectProperty)
 					{
@@ -204,10 +196,8 @@ public:
 	UProperty* Property;
 
 private:
-	bool SubobjectProperty;  // If this is true, then this property refers to a
-							 // property within a
-							 // subobject.
-	uint32 Offset;
+  bool SubobjectProperty; // If this is true, then this property refers to a property within a subobject.
+  uint32 Offset;
 };
 
 // A map from rep handle to rep handle data.

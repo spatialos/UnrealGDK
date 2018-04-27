@@ -81,10 +81,8 @@ void USpatialInteropPipelineBlock::RemoveEntity(const worker::RemoveEntityOp& Re
 
 void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddComponentOp)
 {
-	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::AddComponentOp component "
-															"ID: %u entity ID: "
-															"%lld inCriticalSection: %d"),
-		   AddComponentOp->ComponentId, AddComponentOp->EntityId, (int)bInCriticalSection);
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::AddComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"),
+		AddComponentOp->ComponentId, AddComponentOp->EntityId, (int)bInCriticalSection);
 
 	if (bInCriticalSection)
 	{
@@ -106,10 +104,8 @@ void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddC
 
 void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId ComponentId, const worker::RemoveComponentOp& RemoveComponentOp)
 {
-	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveComponentOp "
-															"component ID: %u entity ID: "
-															"%lld inCriticalSection: %d"),
-		   ComponentId, RemoveComponentOp.EntityId, (int)bInCriticalSection);
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"),
+		ComponentId, RemoveComponentOp.EntityId, (int)bInCriticalSection);
 
 	if (bInCriticalSection)
 	{
@@ -128,19 +124,11 @@ void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId Com
 
 void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId ComponentId, const worker::AuthorityChangeOp& AuthChangeOp)
 {
-	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::ChangeAuthorityOp "
-															"component ID: %u entity ID: "
-															"%lld inCriticalSection: %d"),
-		   ComponentId, AuthChangeOp.EntityId, (int)bInCriticalSection);
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::ChangeAuthorityOp component ID: %u entity ID: %lld inCriticalSection: %d"),
+		ComponentId, AuthChangeOp.EntityId, (int)bInCriticalSection);
 
-	// When a component is initialised, the callback dispatcher will automatically
-	// deal with
-	// authority
-	// changes. Therefore, we need
-	// to only queue changes if the entity itself has been queued for addition,
-	// which can only
-	// happen
-	// in a critical section.
+	// When a component is initialised, the callback dispatcher will automatically deal with authority changes. Therefore, we need
+	// to only queue changes if the entity itself has been queued for addition, which can only happen in a critical section.
 	if (bInCriticalSection && PendingAddEntities.Contains(FEntityId(AuthChangeOp.EntityId)))
 	{
 		PendingAuthorityChanges.Emplace(FComponentIdentifier{AuthChangeOp.EntityId, ComponentId}, AuthChangeOp);
@@ -227,10 +215,7 @@ void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentId
 	UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
 	check(ComponentClass);
 
-	// An actor might not be created for a particular entity ID if that entity
-	// doesn't have all of
-	// the
-	// required components.
+	// An actor might not be created for a particular entity ID if that entity doesn't have all of the required components.
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
 	if (Actor)
 	{
@@ -307,31 +292,17 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
 	UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Checked out entity with entity ID %lld"), EntityId.ToSpatialEntityId());
 
-	// There are 3 main options when we get here with regards to how this entity
-	// was created:
-	// 1) A SpawnActor() call (through interop) on this worker, which means it
-	// already has an actor
-	// associated with it.
-	//	  This usually happens on the Unreal server only (as servers are the
-	// only workers which can
-	// spawn actors).
-	// 2) A "pure" Spatial create entity request, which means we need to spawn an
-	// actor that was
-	// manually registered to correspond to it.
-	// 3) A SpawnActor() call that was initiated from a different worker, which
-	// means we need to
-	// find
-	// and spawn the corresponding "native" actor that corresponds to it.
-	//	  This can happen on either the client (for all actors) or server (for
-	// actors which were
-	// spawned by a different server worker, or are migrated).
+	// There are 3 main options when we get here with regards to how this entity was created:
+	// 1) A SpawnActor() call (through interop) on this worker, which means it already has an actor associated with it.
+	//	  This usually happens on the Unreal server only (as servers are the only workers which can spawn actors).
+	// 2) A "pure" Spatial create entity request, which means we need to spawn an actor that was manually registered to correspond to it.
+	// 3) A SpawnActor() call that was initiated from a different worker, which means we need to find and spawn the corresponding "native" actor that corresponds to it.
+	//	  This can happen on either the client (for all actors) or server (for actors which were spawned by a different server worker, or are migrated).
 
 	if (EntityActor)
 	{
 		// Option 1
-		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker "
-															"which spawned it."),
-			   *EntityActor->GetName());
+		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 		SetupComponentInterests(EntityActor, EntityId, LockedConnection);
 
 		improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
@@ -360,8 +331,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
 			check(UnrealMetadataComponent);
 
-			// If we're checking out a player controller, spawn it via
-			// "USpatialNetDriver::AcceptNewPlayer"
+			// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
 			if (NetDriver->IsServer() && ActorClass == APlayerController::StaticClass())
 			{
 				checkf(!UnrealMetadataComponent->owner_worker_id().empty(), TEXT("A player controller entity must have an owner worker ID."));
@@ -374,22 +344,16 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			}
 			else
 			{
-				// Either spawn the actor or get it from the level if it has a
-				// persistent name.
+				// Either spawn the actor or get it from the level if it has a persistent name.
 				if (UnrealMetadataComponent->static_path().empty())
 				{
-					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Spawning a native dynamic %s whilst checking out an "
-																		"entity."),
-						   *ActorClass->GetFullName());
+					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
 					EntityActor = SpawnNewEntity(PositionComponent, ActorClass);
 				}
 				else
 				{
 					FString FullPath = UTF8_TO_TCHAR(UnrealMetadataComponent->static_path().data()->c_str());
-					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Searching for a native static actor %s of class %s in the "
-																		"persistent level "
-																		"whilst checking out an entity."),
-						   *FullPath, *ActorClass->GetName());
+					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
 					EntityActor = FindObject<AActor>(World, *FullPath);
 				}
 				check(EntityActor);
@@ -397,19 +361,9 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 				// Get the net connection for this actor.
 				if (NetDriver->IsServer())
 				{
-					// TODO(David): Currently, we just create an actor channel on the
-					// "catch-all"
-					// connection,
-					// then create a new actor channel once we check out the player
-					// controller
-					// and create a new connection. This is fine due to lazy actor channel
-					// creation
-					// in
-					// USpatialNetDriver::ServerReplicateActors. However, the "right"
-					// thing to do
-					// would be to make sure to create anything which depends on the
-					// PlayerController _after_
-					// the PlayerController's connection is set up so we can use the right
+					// TODO(David): Currently, we just create an actor channel on the "catch-all" connection, then create a new actor channel once we check out the player controller
+					// and create a new connection. This is fine due to lazy actor channel creation in USpatialNetDriver::ServerReplicateActors. However, the "right" thing to do
+					// would be to make sure to create anything which depends on the PlayerController _after_ the PlayerController's connection is set up so we can use the right
 					// one here.
 					Connection = NetDriver->GetSpatialOSNetConnection();
 				}
@@ -439,11 +393,8 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 				NetDriver->GetSpatialInterop()->ReceiveAddComponent(Channel, PendingAddComponent.AddComponentOp);
 			}
 
-			// This is a bit of a hack unfortunately, among the core classes only
-			// PlayerController
-			// implements this function and it requires
-			// a player index. For now we don't support split screen, so the number is
-			// always 0.
+			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
+			// a player index. For now we don't support split screen, so the number is always 0.
 			if (NetDriver->ServerConnection)
 			{
 				if (EntityActor->IsA(APlayerController::StaticClass()))
@@ -466,8 +417,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 	return EntityActor;
 }
 
-// Note that in SpatialGDK, this function will not be called on the spawning
-// worker.
+// Note that in SpatialGDK, this function will not be called on the spawning worker.
 // It's only for client, and in the future, other workers.
 AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ActorClass)
 {
@@ -475,8 +425,7 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* P
 	AActor* NewActor = nullptr;
 	if (ActorClass)
 	{
-		// bRemoteOwned needs to be public in source code. This might be a
-		// controversial change.
+		//bRemoteOwned needs to be public in source code. This might be a controversial change.
 		FActorSpawnParameters SpawnInfo;
 		SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		SpawnInfo.bRemoteOwned = !NetDriver->IsServer();
@@ -490,19 +439,15 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* P
 	return NewActor;
 }
 
-// This is for classes that we register explicitly with Unreal, currently used
-// for "non-native"
-// replication. This logic might change soon.
+// This is for classes that we register explicitly with Unreal, currently used for "non-native" replication. This logic might change soon.
 UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent)
 {
 	FString EntityTypeString = UTF8_TO_TCHAR(MetadataComponent->entity_type().c_str());
 
-	// Initially, attempt to find the class that has been registered to the
-	// EntityType string
+	// Initially, attempt to find the class that has been registered to the EntityType string
 	UClass** RegisteredClass = EntityRegistry->GetRegisteredEntityClass(EntityTypeString);
 
-	// Try without the full path. This should not be necessary, but for now the
-	// pawn class needs it.
+	// Try without the full path. This should not be necessary, but for now the pawn class needs it.
 	if (!RegisteredClass)
 	{
 		int32 LastSlash = -1;
@@ -516,9 +461,7 @@ UClass* USpatialInteropPipelineBlock::GetRegisteredEntityClass(improbable::Metad
 	return ClassToSpawn;
 }
 
-// This is for classes that we derive from meta name, mainly to spawn the
-// corresponding actors on
-// clients.
+// This is for classes that we derive from meta name, mainly to spawn the corresponding actors on clients.
 UClass* USpatialInteropPipelineBlock::GetNativeEntityClass(improbable::MetadataData* MetadataComponent)
 {
 	FString Metadata = UTF8_TO_TCHAR(MetadataComponent->entity_type().c_str());

@@ -21,8 +21,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSPlayerSpawner, Log, All);
 
 /**
  * Sends PlayerSpawn command requests from a newly connected client.
- * Handles retries, in the event of a recoverable failure, by waiting and trying
- * again.
+ * Handles retries, in the event of a recoverable failure, by waiting and trying again.
  */
 class SPATIALGDK_API FPlayerSpawnRequestSender
 {
