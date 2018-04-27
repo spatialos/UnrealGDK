@@ -2,23 +2,23 @@
 #include "SpatialOSEditorToolbarSettings.h"
 
 USpatialOSEditorToolbarSettings::USpatialOSEditorToolbarSettings(
-	const FObjectInitializer& ObjectInitializer)
-: SpatialOSLaunchArgument(TEXT("default_launch.json")), bStopSpatialOnExit(false), Super(ObjectInitializer)
+    const FObjectInitializer& ObjectInitializer)
+: SpatialOSLaunchArgument(TEXT("default_launch.json"))
+, bStopSpatialOnExit(false)
+, Super(ObjectInitializer)
 {
-	ProjectRootFolder.Path = FPaths::ConvertRelativePathToFull(
-		FPaths::GetPath(FPaths::GetProjectFilePath()) +
-		FString(TEXT("/../../../")));
+  ProjectRootFolder.Path = FPaths::ConvertRelativePathToFull(
+      FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../../../")));
 }
 
 FString USpatialOSEditorToolbarSettings::ToString()
 {
-	TArray<FStringFormatArg> Args;
-	Args.Add(ProjectRootFolder.Path);
-	Args.Add(SpatialOSLaunchArgument);
-	Args.Add(bStopSpatialOnExit);
+  TArray<FStringFormatArg> Args;
+  Args.Add(ProjectRootFolder.Path);
+  Args.Add(SpatialOSLaunchArgument);
+  Args.Add(bStopSpatialOnExit);
 
-	return FString::Format(
-		TEXT("ProjectRootFolder={0}, SpatialOSLaunchArgument={1}, "
-			 "bStopSpatialOnExit={2}"),
-		Args);
+  return FString::Format(TEXT("ProjectRootFolder={0}, SpatialOSLaunchArgument={1}, "
+                              "bStopSpatialOnExit={2}"),
+                         Args);
 }

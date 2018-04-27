@@ -10,15 +10,15 @@ class FSlateStyleSet;
 class FSpatialGDKEditorToolbarStyle
 {
 public:
-	static void Initialize();
-	static void Shutdown();
-	static void ReloadTextures();
-	static const ISlateStyle& Get();
-	static FName GetStyleSetName();
+  static void Initialize();
+  static void Shutdown();
+  static void ReloadTextures();
+  static const ISlateStyle& Get();
+  static FName GetStyleSetName();
 
 private:
-	static TSharedRef<FSlateStyleSet> Create();
+  static TSharedRef<FSlateStyleSet> Create();
 
 private:
-	static TSharedPtr<FSlateStyleSet> StyleInstance;
+  static TSharedPtr<FSlateStyleSet> StyleInstance;
 };

@@ -4,22 +4,21 @@
 
 struct FComponentIdGenerator
 {
-	FComponentIdGenerator(int StartId)
-	: InitialId(StartId), NumIds(0)
-	{
-	}
+  FComponentIdGenerator(int StartId) : InitialId(StartId), NumIds(0)
+  {
+  }
 
-	int GetNextAvailableId()
-	{
-		return InitialId + (NumIds++);
-	}
+  int GetNextAvailableId()
+  {
+    return InitialId + (NumIds++);
+  }
 
-	int GetNumUsedIds() const
-	{
-		return NumIds;
-	}
+  int GetNumUsedIds() const
+  {
+    return NumIds;
+  }
 
 private:
-	int InitialId;
-	int NumIds;
+  int InitialId;
+  int NumIds;
 };
