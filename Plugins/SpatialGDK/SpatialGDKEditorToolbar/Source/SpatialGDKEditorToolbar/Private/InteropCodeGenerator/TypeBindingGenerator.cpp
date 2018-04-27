@@ -563,7 +563,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	HeaderWriter.Print("};");
 }
 
-void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo)
+void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo, TArray<FString> TypeBindingHeaders)
 {
 	SourceWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -585,17 +585,13 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 		#include "SpatialNetDriver.h"
 		#include "SpatialInterop.h")""", *InteropFilename);
 
-	// TODO: Temporary Hack, need to come up with generic solution. See TIG-138
-	if (Class->GetName().Contains("WheeledVehicle"))
+	// Add the header files specified in DefaultEditorSpatialGDK.ini.
+	for (FString& Header : TypeBindingHeaders)
 	{
-		SourceWriter.Printf(R"""(
-		#include "WheeledVehicle.h"
-		#include "WheeledVehicleMovementComponent.h")""");
-	}
-	else if (Class->GetName().Contains("PlayerController"))
-	{
-		SourceWriter.Printf(R"""(
-		#include "Camera/CameraAnim.h")""");
+		if (!Header.IsEmpty())
+		{
+			SourceWriter.Printf("#include \"%s\"", *Header);
+		}
 	}
 
 	SourceWriter.PrintNewLine();
