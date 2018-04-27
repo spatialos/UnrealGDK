@@ -10,6 +10,8 @@
 
 #include "Misc/FileHelper.h"
 
+#include "CoreMinimal.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 
 namespace
@@ -113,6 +115,36 @@ void SpatialGDKGenerateInteropCode()
 	FString AbsoluteCombinedForwardingCodePath = FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
 
 	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *AbsoluteCombinedSchemaPath, *AbsoluteCombinedForwardingCodePath);
+
+	// ---- Start method
+
+	// SpatialGDK config file definitions.
+	const FString FileName = "DefaultEditorSpatialGDK.ini";
+	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
+	const FString UserClassesSectionName = "UserInteropCodeGenSettings";
+
+	// Load the SpatialGDK config file
+	GConfig->LoadFile(ConfigFilePath);
+	FConfigFile* SpatialGDKConfigFile = GConfig->Find(ConfigFilePath, false);
+	FConfigSection* UserInteropCodeGenSection = SpatialGDKConfigFile->FindOrAddSection(UserClassesSectionName);
+	TArray<FName> AllConfigKeys;
+	UserInteropCodeGenSection->GenerateKeyArray(AllConfigKeys);
+	//auto pairs = SpatialGDKConfigFile->ProcessInputFileContents();
+	TArray<FString> StorageArray;
+
+	for (FName Key : AllConfigKeys)
+	{
+		// Key = ClassName
+		// Value = Includes
+		auto value = UserInteropCodeGenSection->FindRef(Key).GetValue();
+		auto name = UserClassesSectionName.GetCharArray().GetData();
+		auto result = SpatialGDKConfigFile->GetArray(UserClassesSectionName.GetCharArray().GetData(), Key.ToString().GetCharArray().GetData(), StorageArray);
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("------------- Found key %s, with value %s"), *Key.GetPlainNameString(), *value);
+	}
+
+
+
+	// ---- End method
 
 	// Hard coded class information.
 	TArray<FString> Classes = {"PlayerController", "PlayerState", "Character", "WheeledVehicle"};
