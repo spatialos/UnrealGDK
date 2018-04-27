@@ -1,0 +1,33 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#
+
+#>
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// =========== 
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "UObject/NoExportTypes.h"
+#include "AddComponentOpWrapperBase.h"
+#include "SpatialOSWorkerTypes.h"
+#include "<#= unrealComponent.UnderlyingPackageDetails.Include #>"
+#include "<#= unrealComponent.CapitalisedName #>AddComponentOp.generated.h"
+
+/**
+*
+*/
+UCLASS()
+class SPATIALOS_API U<#= unrealComponent.CapitalisedName #>AddComponentOp : public UAddComponentOpWrapperBase
+{
+	GENERATED_BODY()
+
+public:
+	U<#= unrealComponent.CapitalisedName #>AddComponentOp() {}
+
+    ::worker::Option<<#= unrealComponent.QualifiedCapitalisedDataName #>> Data;
+private:
+};

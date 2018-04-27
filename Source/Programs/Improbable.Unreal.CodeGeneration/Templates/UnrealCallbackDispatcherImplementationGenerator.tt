@@ -1,0 +1,144 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#
+
+#>
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// =========== 
+
+
+#include "CallbackDispatcher.h"
+#include "ComponentUpdateOpWrapperBase.h"
+<# foreach (var unrealComponent in unrealComponents) { #>
+#include "<#= unrealComponent.CapitalisedName #>ComponentUpdate.h"
+<# } #>
+#include "ScopedViewCallbacks.h"
+#include "SpatialOSViewTypes.h"
+
+
+DECLARE_LOG_CATEGORY_EXTERN(LogCallbackDispatcher, Log, All);
+DEFINE_LOG_CATEGORY(LogCallbackDispatcher);
+
+UCallbackDispatcher::UCallbackDispatcher() : bInitialised(false)
+{
+}
+
+void UCallbackDispatcher::Init(const TWeakPtr<SpatialOSView>& InView)
+{
+	checkf(!bInitialised, TEXT("Attempting to call Init more than once!"));
+	Callbacks.Init(InView);
+
+	auto LockedView = InView.Pin();
+	if(LockedView.IsValid())
+	{
+<# foreach (var unrealComponent in unrealComponents) { #>
+		Callbacks.Add(LockedView->OnComponentUpdate<<#= unrealComponent.UnderlyingQualifiedName #>>(std::bind(
+			&UCallbackDispatcher::On<#= unrealComponent.CapitalisedName #>ComponentUpdateOp, this, std::placeholders::_1)));
+		Callbacks.Add(LockedView->OnAuthorityChange<<#= unrealComponent.UnderlyingQualifiedName #>>(std::bind(
+			&UCallbackDispatcher::On<#= unrealComponent.CapitalisedName #>AuthorityChangeOp, this, std::placeholders::_1)));
+<# } #>
+	}
+	bInitialised = true;
+}
+
+void UCallbackDispatcher::Reset()
+{
+	ComponentUpdateCallbacks.Reset();
+	AuthorityChangeCallbacks.Reset();
+	QueuedUpdates.Reset();
+	Callbacks.Reset();
+	bInitialised = false;
+}
+
+void UCallbackDispatcher::AddComponentUpdateCallback(worker::EntityId EntityId, worker::ComponentId ComponentId, TFunction<void(UComponentUpdateOpWrapperBase&)> Callback)
+{
+	FComponentIdentifier Id{ EntityId, ComponentId };
+	ComponentUpdateCallbacks.Emplace(Id, Callback);
+	DispatchQueuedUpdates(Id);
+}
+
+void UCallbackDispatcher::AddAuthorityChangeCallback(worker::EntityId EntityId, worker::ComponentId ComponentId, TFunction<void(const worker::AuthorityChangeOp&)> Callback)
+{
+	AuthorityChangeCallbacks.Emplace(FComponentIdentifier{EntityId, ComponentId}, Callback);
+}
+
+void UCallbackDispatcher::RemoveComponentUpdateCallback(worker::EntityId EntityId, worker::ComponentId ComponentId)
+{
+	ComponentUpdateCallbacks.Remove(FComponentIdentifier{EntityId, ComponentId});
+}
+
+void UCallbackDispatcher::RemoveAuthorityChangeCallback(worker::EntityId EntityId, worker::ComponentId ComponentId)
+{
+	AuthorityChangeCallbacks.Remove(FComponentIdentifier{EntityId, ComponentId});
+}
+
+void UCallbackDispatcher::HandleUpdate(UComponentUpdateOpWrapperBase* Update)
+{
+	FComponentIdentifier Id{ Update->EntityId, Update->ComponentId };
+
+	auto Callback = ComponentUpdateCallbacks.Find(Id);
+	if (Callback != nullptr && (*Callback) != nullptr)
+	{
+		(*Callback)(*Update);
+	}
+	else
+	{
+		EnqueueUpdate(Id, Update);
+	}
+}
+
+void UCallbackDispatcher::EnqueueUpdate(const FComponentIdentifier& Id, UComponentUpdateOpWrapperBase* Update)
+{
+	FComponentUpdateQueue* Queue = QueuedUpdates.Find(Id);
+	if (!Queue)
+	{
+		Queue = &QueuedUpdates.Emplace(Id, FComponentUpdateQueue());
+	}
+	Queue->AddToQueue(Update);
+}
+
+void UCallbackDispatcher::DispatchQueuedUpdates(const FComponentIdentifier& Id)
+{
+	FComponentUpdateQueue* PendingUpdateQueue = QueuedUpdates.Find(Id);
+	if (PendingUpdateQueue)
+	{
+		auto Callback = ComponentUpdateCallbacks.Find(Id);
+		if (Callback != nullptr && (*Callback) != nullptr)
+		{
+			for (auto QueuedUpdate : PendingUpdateQueue->GetQueue())
+			{
+				(*Callback)(*QueuedUpdate);
+			}
+		}
+		QueuedUpdates.Remove(Id);
+	}
+}
+
+<# foreach (var unrealComponent in unrealComponents) { #>
+void UCallbackDispatcher::On<#= unrealComponent.CapitalisedName #>ComponentUpdateOp(const worker::ComponentUpdateOp<<#= unrealComponent.UnderlyingQualifiedName #>>& Op) {
+	U<#= unrealComponent.CapitalisedName #>ComponentUpdate* WrappedUpdate = NewObject<U<#= unrealComponent.CapitalisedName #>ComponentUpdate>();
+	if (WrappedUpdate)
+	{
+		WrappedUpdate->InitInternal(Op.Update);
+		WrappedUpdate->ComponentId = <#= unrealComponent.UnderlyingQualifiedName #>::ComponentId;
+		WrappedUpdate->EntityId = Op.EntityId;
+
+		HandleUpdate(WrappedUpdate);
+	}
+}
+
+void UCallbackDispatcher::On<#= unrealComponent.CapitalisedName #>AuthorityChangeOp(const worker::AuthorityChangeOp& Op) {
+	const worker::ComponentId ComponentId = <#= unrealComponent.UnderlyingQualifiedName #>::ComponentId;
+
+	auto Callback = AuthorityChangeCallbacks.Find(FComponentIdentifier{Op.EntityId, ComponentId});
+	if(Callback != nullptr && (*Callback) != nullptr)
+	{
+		(*Callback)(Op);
+	}
+
+	OnAuthorityChangeOpReceived.Broadcast(ComponentId, Op);
+}
+
+<# } #>

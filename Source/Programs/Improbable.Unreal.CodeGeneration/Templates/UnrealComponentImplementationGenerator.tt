@@ -1,0 +1,275 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#
+
+#>
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// =========== 
+
+#include "<#= unrealComponent.CapitalisedName #>Component.h"
+#include "CallbackDispatcher.h"
+
+<#var requiredRequestIncludes = unrealComponent.CommandDetailsList
+									.SelectMany(commandDetail => { return commandDetail.UnrealRequestTypeDetails.RequiredIncludes; })
+									.Where(include => include != null)
+									.Distinct();
+
+foreach (var requiredRequestInclude in requiredRequestIncludes) { #>
+#include <#= requiredRequestInclude #>
+<# } #>
+#include "SpatialOSViewTypes.h"
+
+const worker::ComponentId U<#= unrealComponent.CapitalisedName #>Component::ComponentId = <#= unrealComponent.ComponentId #>;
+
+U<#= unrealComponent.CapitalisedName #>Component::U<#= unrealComponent.CapitalisedName #>Component()
+<#= FillComponentInitializerList() #>
+{
+}
+
+void U<#= unrealComponent.CapitalisedName #>Component::BeginDestroy()
+{
+	Super::BeginDestroy();
+
+	Callbacks.Reset(nullptr);
+	
+	delete Snapshot;
+	Snapshot = nullptr;
+}
+
+FComponentId U<#= unrealComponent.CapitalisedName #>Component::GetComponentId()
+{
+    return FComponentId(ComponentId);
+}
+
+void U<#= unrealComponent.CapitalisedName #>Component::Init(const TWeakPtr<SpatialOSConnection>& InConnection, const TWeakPtr<SpatialOSView>& InView,
+                          worker::EntityId InEntityId, UCallbackDispatcher* InCallbackDispatcher)
+{
+    USpatialOsComponent::Init(InConnection, InView, InEntityId, InCallbackDispatcher);
+
+	InCallbackDispatcher->AddComponentUpdateCallback(InEntityId, ComponentId, [this](UComponentUpdateOpWrapperBase& Op) { OnComponentUpdateDispatcherCallback(Op); });
+	InCallbackDispatcher->AddAuthorityChangeCallback(InEntityId, ComponentId, [this](const worker::AuthorityChangeOp& Op) { OnAuthorityChangeDispatcherCallback(Op); });
+	ComponentUpdater = NewObject<U<#= unrealComponent.CapitalisedName #>ComponentUpdate>(this);
+
+	auto LockedView = View.Pin();
+	if(LockedView.IsValid())
+	{
+<# foreach (var commandDetails in unrealComponent.CommandDetailsList) { #>
+		Callbacks->Add(LockedView->OnCommandRequest<<#= unrealComponent.UnderlyingQualifiedName #>::Commands::<#= commandDetails.UnderlyingCapitalisedName #>>(
+			std::bind(&U<#= unrealComponent.CapitalisedName #>Component::On<#= commandDetails.UnderlyingCapitalisedName #>CommandRequestDispatcherCallback, this,
+					  std::placeholders::_1)));
+<# } #>	
+	}
+}
+
+void  U<#= unrealComponent.CapitalisedName #>Component::Disable(const worker::EntityId InEntityId, UCallbackDispatcher* CallbackDispatcher)
+{
+	if(CallbackDispatcher)
+	{
+		CallbackDispatcher->RemoveComponentUpdateCallback(InEntityId, ComponentId);
+		CallbackDispatcher->RemoveAuthorityChangeCallback(InEntityId, ComponentId);
+	}
+}
+
+void U<#= unrealComponent.CapitalisedName #>Component::SendComponentUpdate(U<#= unrealComponent.CapitalisedName #>ComponentUpdate* update)
+{
+	SendComponentUpdateInternal(update);
+}
+
+void U<#= unrealComponent.CapitalisedName #>Component::ApplyInitialState(const UAddComponentOpWrapperBase& AddComponentOp)
+{
+	const U<#= unrealComponent.CapitalisedName #>AddComponentOp& DerivedOp = dynamic_cast<const U<#= unrealComponent.CapitalisedName #>AddComponentOp&>(AddComponentOp);
+    auto update = <#= unrealComponent.UnderlyingQualifiedName #>::Update::FromInitialData(*(DerivedOp.Data.data()));
+    ApplyComponentUpdate(update);
+}
+
+void U<#= unrealComponent.CapitalisedName #>Component::GenerateSnapshot()
+{
+	if (Snapshot)
+	{
+		return;
+	}
+
+	Snapshot = new F<#= unrealComponent.CapitalisedName #>ComponentSnapshot();
+	check(Snapshot);
+
+<# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
+	Snapshot-><#= fieldDetails.CapitalisedName #> = <#= fieldDetails.TypeReference.ConvertUnrealValueToSnapshotValue(fieldDetails.CapitalisedName) #>;
+<# } #>
+}
+
+void U<#= unrealComponent.CapitalisedName #>Component::ReplicateChanges(float DeltaSeconds)
+{
+	TriggerAutomaticComponentUpdate(DeltaSeconds);
+}
+
+void U<#= unrealComponent.CapitalisedName #>Component::TriggerAutomaticComponentUpdate(float DeltaSeconds)
+{
+	if (GetAuthority() == EAuthority::NotAuthoritative || MaxUpdatesPerSecond == 0)
+	{
+		return;
+	}
+
+	TimeUntilNextUpdate -= DeltaSeconds;
+	if (TimeUntilNextUpdate > 0.0f)
+	{
+		return;
+	}
+
+	TimeUntilNextUpdate = 1.0f / static_cast<float>(MaxUpdatesPerSecond);
+
+	ReplicateChangesInternal();
+}
+
+void U<#= unrealComponent.CapitalisedName #>Component::TriggerManualComponentUpdate()
+{
+	if (GetAuthority() == EAuthority::NotAuthoritative)
+	{
+		return;
+	}
+
+	ReplicateChangesInternal();
+}
+
+<# foreach (var eventDetails in unrealComponent.EventDetailsList) { #>
+<# if (eventDetails.NumTypeFields() > 0) { #>
+void U<#= unrealComponent.CapitalisedName #>Component::<#= eventDetails.CapitalisedName #>(<#= eventDetails.EventTypeReference.ArgumentName #> Data)
+{
+	ComponentUpdater->Add<#= eventDetails.CapitalisedName #>Internal(Data);
+	bHasEventQueued = true;
+}
+
+<# } #>
+<# else { #>
+void U<#= unrealComponent.CapitalisedName #>Component::<#= eventDetails.CapitalisedName #>()
+{
+	<#= eventDetails.EventTypeReference.AssignUnderlyingValueToUnrealMemberVariable(eventDetails.CapitalisedName + "Wrapper", "{}") #>;
+	ComponentUpdater->Add<#= eventDetails.CapitalisedName #>Internal(<#=eventDetails.CapitalisedName + "Wrapper"#>);
+	bHasEventQueued = true;
+}
+
+<# } #>	
+<# } #>
+
+
+void U<#= unrealComponent.CapitalisedName #>Component::OnComponentUpdateDispatcherCallback(UComponentUpdateOpWrapperBase& Op)
+{
+	U<#= unrealComponent.CapitalisedName #>ComponentUpdate& ThisOp = dynamic_cast<U<#= unrealComponent.CapitalisedName #>ComponentUpdate&>(Op);
+    ApplyComponentUpdate(ThisOp.GetUnderlyingInternal());
+}
+
+void U<#= unrealComponent.CapitalisedName #>Component::OnAuthorityChangeDispatcherCallback(const worker::AuthorityChangeOp& Op)
+{
+	if (Op.Authority == worker::Authority::kNotAuthoritative)
+	{
+		delete Snapshot;
+		Snapshot = nullptr;
+	}
+	else
+	{
+		GenerateSnapshot();
+	}
+
+	Super::OnAuthorityChangeDispatcherCallback(Op);	
+}
+
+void U<#= unrealComponent.CapitalisedName #>Component::ReplicateChangesInternal()
+{
+	checkSlow(Snapshot);
+		
+	bool bShouldSendUpdate = false;
+		
+<# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
+	if (<#= fieldDetails.TypeReference.CheckInequality(fieldDetails.CapitalisedName,"Snapshot->" + fieldDetails.CapitalisedName) #>)
+	{
+		ComponentUpdater->Set<#= fieldDetails.CapitalisedName #>Internal(<#= fieldDetails.CapitalisedName #>);
+		Snapshot-><#= fieldDetails.CapitalisedName #> = <#= fieldDetails.TypeReference.ConvertUnrealValueToSnapshotValue(fieldDetails.CapitalisedName) #>;
+		bShouldSendUpdate = true;
+	}
+<# } #>
+	bShouldSendUpdate |= bHasEventQueued;
+	if (bShouldSendUpdate)
+	{
+		SendComponentUpdateInternal(ComponentUpdater);
+		ComponentUpdater->ResetInternal();
+		bHasEventQueued = false;
+	}
+}
+
+void U<#= unrealComponent.CapitalisedName #>Component::SendComponentUpdateInternal(U<#= unrealComponent.CapitalisedName #>ComponentUpdate* update)
+{
+	auto LockedConnection = Connection.Pin();
+
+	if(LockedConnection.IsValid())
+	{
+	    LockedConnection->SendComponentUpdate<<#= unrealComponent.UnderlyingQualifiedName #>>(EntityId, update->GetUnderlyingInternal());
+	}
+}
+
+void U<#= unrealComponent.CapitalisedName #>Component::ApplyComponentUpdate(const <#= unrealComponent.UnderlyingQualifiedName #>::Update& update)
+{
+<# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
+    if (!update.<#= fieldDetails.LowercaseName #>().empty())
+    {
+		<#= fieldDetails.TypeReference.AssignUnderlyingValueToUnrealMemberVariable(fieldDetails.CapitalisedName, "(*(update." + fieldDetails.LowercaseName + "().data()))") #>;
+    }
+
+<# } #>
+
+	NotifyUpdate(update);
+}
+
+void U<#= unrealComponent.CapitalisedName #>Component::NotifyUpdate(const <#= unrealComponent.UnderlyingQualifiedName #>::Update& update)
+{
+<# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
+    if (!update.<#= fieldDetails.LowercaseName #>().empty())
+    {
+        On<#= fieldDetails.CapitalisedName #>Update.Broadcast();
+    }
+
+<# } #>
+<# foreach (var eventDetails in unrealComponent.EventDetailsList) { #>
+    if (!update.<#= eventDetails.LowercaseName #>().empty())
+    {
+        for (auto& val : update.<#= eventDetails.LowercaseName #>())
+        {
+			<#= eventDetails.EventTypeReference.AssignUnderlyingValueToUnrealMemberVariable(eventDetails.CapitalisedName + "Wrapper", "val") #>;
+            On<#= eventDetails.CapitalisedName #>.Broadcast(<#= eventDetails.CapitalisedName + "Wrapper" #>);
+        }
+    }
+
+<# } #>
+
+    OnComponentUpdate.Broadcast();
+
+    if (!bIsComponentReady)
+    {
+        bIsComponentReady = true;
+        OnComponentReady.Broadcast();
+    }
+}
+
+<# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
+<#= fieldDetails.TypeReference.UnrealType #> U<#= unrealComponent.CapitalisedName #>Component::Get<#= fieldDetails.CapitalisedName #>()
+{
+    return <#= fieldDetails.CapitalisedName #>;
+}
+<# } #>
+
+<# foreach (var commandDetails in unrealComponent.CommandDetailsList) { #>
+void U<#= unrealComponent.CapitalisedName #>Component::On<#= commandDetails.UnderlyingCapitalisedName #>CommandRequestDispatcherCallback(
+    const worker::CommandRequestOp<<#= unrealComponent.UnderlyingQualifiedName #>::Commands::<#= commandDetails.UnderlyingCapitalisedName #>>& op)
+{
+    if (op.EntityId != EntityId)
+    {
+        return;
+    }
+    auto request = <#= commandDetails.UnrealRequestTypeDetails.ConvertUnderlyingValueToUnrealLocalVariable("op.Request") #>;
+	
+	U<#= commandDetails.CapitalisedName #>CommandResponder* <#= commandDetails.CapitalisedName #>Responder = NewObject<U<#= commandDetails.CapitalisedName #>CommandResponder>(this);
+	<#= commandDetails.CapitalisedName #>Responder->Init(Connection, op.RequestId, request, op.CallerWorkerId);
+	
+    On<#= commandDetails.UnderlyingCapitalisedName #>CommandRequest.Broadcast(<#= commandDetails.CapitalisedName #>Responder);
+}
+<# } #>
