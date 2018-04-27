@@ -563,7 +563,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	HeaderWriter.Print("};");
 }
 
-void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo, TArray<FString> TypeBindingHeaders)
+void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo, const TArray<FString>& TypeBindingHeaders)
 {
 	SourceWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -586,7 +586,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 		#include "SpatialInterop.h")""", *InteropFilename);
 
 	// Add the header files specified in DefaultEditorSpatialGDK.ini.
-	for (FString& Header : TypeBindingHeaders)
+	for (const FString& Header : TypeBindingHeaders)
 	{
 		if (!Header.IsEmpty())
 		{

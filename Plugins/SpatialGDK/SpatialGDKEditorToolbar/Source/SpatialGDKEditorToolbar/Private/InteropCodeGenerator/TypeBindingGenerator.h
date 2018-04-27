@@ -48,7 +48,7 @@ void GenerateTypeBindingSource(
 	FString InteropFilename,
 	UClass* Class,
 	const TSharedPtr<FUnrealType> TypeInfo,
-	TArray<FString> TypeBindingHeaders);
+	const TArray<FString>& TypeBindingHeaders);
 
 // Helper functions used when generating the source file.
 void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData);

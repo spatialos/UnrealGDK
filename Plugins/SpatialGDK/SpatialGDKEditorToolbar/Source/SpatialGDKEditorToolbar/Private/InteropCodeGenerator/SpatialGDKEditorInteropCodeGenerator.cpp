@@ -10,13 +10,14 @@
 
 #include "Misc/FileHelper.h"
 
-#include "CoreMinimal.h"
-
 DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 
 namespace
 {
-int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<TArray<FName>>& MigratableProperties, TArray<FString> TypeBindingHeaders)
+
+typedef TMap<FString, TArray<FString>> ClassHeaderMap;
+
+int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<TArray<FName>>& MigratableProperties, const TArray<FString>& TypeBindingHeaders)
 {
 	FCodeWriter OutputSchema;
 	FCodeWriter OutputHeader;
@@ -83,31 +84,29 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 	OutputListSource.WriteToFile(FString::Printf(TEXT("%sSpatialTypeBindingList.cpp"), *ForwardingCodePath));
 }
 
-bool CheckClassNameListValidity(const TArray<FString>& Classes)
+bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
 {
-	for (int i = 0; i < Classes.Num() - 1; ++i)
+	TArray<FString> ClassNames;
+	Classes.GetKeys(ClassNames);
+
+	for (auto& ClassName : ClassNames)
 	{
-		const FString& ClassA = Classes[i];
-		const FString SchemaTypeA = UnrealNameToSchemaTypeName(ClassA);
-
-		for (int j = i + 1; j < Classes.Num(); ++j)
+		const FString SchemaType = UnrealNameToSchemaTypeName(ClassName);
+		if (SchemaType == ClassName)
 		{
-			const FString& ClassB = Classes[j];
-			const FString SchemaTypeB = UnrealNameToSchemaTypeName(ClassB);
+			continue;
+		}
 
-			if (SchemaTypeA.Equals(SchemaTypeB))
-			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Class name collision after removing underscores: '%s' and '%s' - schema not generated"), *ClassA, *ClassB);
-				return false;
-			}
+		if(ClassNames.FindByKey(SchemaType))
+		{
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Class name collision after removing underscores: '%s' and '%s' - schema not generated"), *ClassName, *SchemaType);
+			return false;
 		}
 	}
 
 	return true;
 }
-} // ::
-
-
+}// ::
 
 void SpatialGDKGenerateInteropCode()
 {
@@ -126,21 +125,23 @@ void SpatialGDKGenerateInteropCode()
 	// Load the SpatialGDK config file
 	GConfig->LoadFile(ConfigFilePath);
 	FConfigFile* SpatialGDKConfigFile = GConfig->Find(ConfigFilePath, false);
+	if (!SpatialGDKConfigFile)
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not open .ini file for class generation: \"%s\""), *ConfigFilePath);
+		return;
+	}
+
+	// Get the key-value pairs in the InteropCodeGenSection.
 	FConfigSection* UserInteropCodeGenSection = SpatialGDKConfigFile->FindOrAddSection(UserClassesSectionName);
 	TArray<FName> AllCodeGenKeys;
 	UserInteropCodeGenSection->GetKeys(AllCodeGenKeys);
-
-	TMap<FString, TArray<FString>> ClassHeaderMap;
-	TArray<FString> Classes;
+	ClassHeaderMap Classes;
 	
 	for (FName ClassKey : AllCodeGenKeys)
 	{
-		//auto value = UserInteropCodeGenSection->FindRef(ClassKey).GetValue();
 		TArray<FString> HeaderValueArray;
 		UserInteropCodeGenSection->MultiFind(ClassKey, HeaderValueArray);
-
-		ClassHeaderMap.Add(ClassKey.ToString(), HeaderValueArray);
-		Classes.Add(ClassKey.ToString());
+		Classes.Add(ClassKey.ToString(), HeaderValueArray);
 		
 		// Just for some user facing logging.
 		FString Headers;
@@ -170,19 +171,19 @@ void SpatialGDKGenerateInteropCode()
 	{
 		// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 		int ComponentId = 100010;
-		for (auto& ClassName : Classes)
+		for (auto& ClassHeaderList : Classes)
 		{
-			UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassName);
+			UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
 
 			// If the class doesn't exist then print an error and carry on.
 			if (!Class) 
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Cloud not find unreal class for interop code generation: '%s', skipping."), *ClassName);
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Cloud not find unreal class for interop code generation: '%s', skipping."), *ClassHeaderList.Key);
 				continue;
 			}
 
-			TArray<TArray<FName>> ClassMigratableProperties = MigratableProperties.FindRef(ClassName);
-			TArray<FString> TypeBindingHeaders = ClassHeaderMap.FindRef(ClassName);
+			TArray<TArray<FName>> ClassMigratableProperties = MigratableProperties.FindRef(ClassHeaderList.Key);
+			const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
 			ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, ClassMigratableProperties, TypeBindingHeaders);
 		}
 	}
