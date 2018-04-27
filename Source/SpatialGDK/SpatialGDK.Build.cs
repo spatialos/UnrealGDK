@@ -10,13 +10,7 @@ using UnrealBuildTool;
 
 public class SpatialGDK : ModuleRules
 {
-#if !WITH_FORWARDED_MODULE_RULES_CTOR
-    // Backwards compatibility with Unreal 4.15
-    public SpatialGDK(TargetInfo Target)
-#else
-    // Unreal 4.16+
     public SpatialGDK(ReadOnlyTargetRules Target) : base(Target)
-#endif
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
         bFasterWithoutUnity = true;
@@ -50,7 +44,8 @@ public class SpatialGDK : ModuleRules
                 "InputCore"
             });
 
-		if (UEBuildConfiguration.bBuildEditor == true)
+		// Check if we're building in the editor.
+		if (Target.bBuildEditor)
 		{
 			// Required by USpatialGameInstance::StartPlayInEditorGameInstance.
 			PublicDependencyModuleNames.Add("UnrealEd");

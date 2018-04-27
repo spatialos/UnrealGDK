@@ -57,6 +57,12 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot.Small",
 		new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon20x20));
 
+	Style->Set("SpatialGDKEditorToolbar.GenerateInteropCode",
+		new IMAGE_BRUSH(TEXT("CodegenIcon"), Icon40x40));
+
+	Style->Set("SpatialGDKEditorToolbar.GenerateInteropCode.Small",
+		new IMAGE_BRUSH(TEXT("CodegenIcon"), Icon20x20));
+
 	return Style;
 }
 

@@ -48,6 +48,9 @@ class FCodeWriter
 	void WriteToFile(const FString& Filename);
 	void Dump();
 
+	FCodeWriter(const FCodeWriter& other) = delete;
+	FCodeWriter& operator=(const FCodeWriter& other) = delete;
+
   private:
 	FString OutputSource;
 	int Scope;

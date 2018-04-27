@@ -31,8 +31,7 @@ class SPATIALGDK_API USpatialNetConnection : public UIpConnection
 		int32 InMaxPacket = 0,
 		int32 InPacketOverhead = 0) override;
 	virtual void LowLevelSend(void* Data, int32 CountBytes, int32 CountBits) override;
-	virtual bool
-	ClientHasInitializedLevelFor(const UObject* TestObject) const override;
+	virtual bool ClientHasInitializedLevelFor(const AActor* TestActor) const override;
 	virtual void Tick() override;
 
 	// These functions don't make a lot of sense in a SpatialOS implementation.

@@ -34,15 +34,17 @@ namespace
 worker::Entity CreateSpawnerEntity()
 {
 	const Coordinates InitialPosition{0, 0, 0};
+	improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
+	improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
+	improbable::unreal::UnrealMetadata::Data UnrealMetadata;
 
 	return improbable::unreal::FEntityBuilder::Begin()
-		.AddPositionComponent(Position::Data{InitialPosition},
-			UnrealWorkerWritePermission)
-		.AddMetadataComponent(Metadata::Data("Spawner"))
+		.AddPositionComponent(Position::Data{InitialPosition}, UnrealWorkerWritePermission)
+		.AddMetadataComponent(Metadata::Data("SpatialSpawner"))
 		.SetPersistence(true)
 		.SetReadAcl(AnyWorkerReadPermission)
-		.AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{},
-			UnrealWorkerWritePermission)
+		.AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{}, UnrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
 		.Build();
 }
 

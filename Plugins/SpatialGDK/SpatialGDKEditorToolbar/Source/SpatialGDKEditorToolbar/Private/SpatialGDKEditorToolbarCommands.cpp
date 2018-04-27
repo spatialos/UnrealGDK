@@ -8,7 +8,7 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 {
 	UI_COMMAND(CreateSpatialGDKSnapshot, "SpatialGDK Snapshot", "Creates SpatialGDK snapshot.", EUserInterfaceActionType::Button, FInputGesture());
 
-	UI_COMMAND(GenerateInteropCode, "Generate Interop", "Generates SpatialGDK interop code.", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(GenerateInteropCode, "Interop Codegen", "Generates SpatialGDK interop code.", EUserInterfaceActionType::Button, FInputGesture());
 }
 
 #undef LOCTEXT_NAMESPACE

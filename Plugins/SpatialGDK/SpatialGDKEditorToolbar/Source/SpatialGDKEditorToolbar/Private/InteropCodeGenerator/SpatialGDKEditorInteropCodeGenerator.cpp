@@ -30,10 +30,8 @@ int GenerateCompleteSchemaFromClass(
 		CreateUnrealTypeInfo(Class, MigratableProperties);
 
 	// Generate schema.
-	int NumComponents =
-		GenerateTypeBindingSchema(OutputSchema, ComponentId, Class, TypeInfo);
-	OutputSchema.WriteToFile(
-		FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFilename));
+	int NumComponents = GenerateTypeBindingSchema(OutputSchema, ComponentId, Class, TypeInfo, SchemaPath);
+	OutputSchema.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFilename));
 
 	// Generate forwarding code.
 	GenerateTypeBindingHeader(OutputHeader, SchemaFilename, TypeBindingFilename, Class, TypeInfo);
@@ -165,7 +163,6 @@ void SpatialGDKGenerateInteropCode()
 			ComponentId += GenerateCompleteSchemaFromClass(
 				CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, ClassMigratableProperties);
 		}
-		GenerateTypeBindingList(CombinedForwardingCodePath, Classes);
 	}
 	else
 	{

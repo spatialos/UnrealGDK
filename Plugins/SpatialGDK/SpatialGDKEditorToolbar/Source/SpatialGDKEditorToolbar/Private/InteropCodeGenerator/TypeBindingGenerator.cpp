@@ -168,21 +168,33 @@ void GenerateUnrealToSchemaConversion(
 				*PropertyValue,
 				*PropertyValue);
 		}
-		else
+		else if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
-			// A generic struct, RepMovement or UniqueNetIdRepl needs to be replicated
-			// using
-			// NetSerialize.
+			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
 			Writer.BeginScope();
 			Writer.Printf(R"""(
 				TArray<uint8> ValueData;
 				FMemoryWriter ValueDataWriter(ValueData);
 				bool Success;
-				%s.NetSerialize(ValueDataWriter, PackageMap, Success);
+				(const_cast<%s&>(%s)).NetSerialize(ValueDataWriter, PackageMap, Success);
 				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""",
+				*Struct->GetStructCPPName(),
 				*PropertyValue,
 				*Update);
 			Writer.End();
+		}
+		else
+		{
+			// We do a basic binary serialization for the generic struct.
+			Writer.Printf(R"""(
+				TArray<uint8> ValueData;
+				FMemoryWriter ValueDataWriter(ValueData);
+				%s::StaticStruct()->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&%s)));
+				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""",
+				*Property->GetCPPType(),
+				*Property->GetCPPType(),
+				*PropertyValue,
+				*Update);
 		}
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
@@ -203,9 +215,7 @@ void GenerateUnrealToSchemaConversion(
 	}
 	else if (Property->IsA(UClassProperty::StaticClass()))
 	{
-		// todo David: UClasses are yet to be implemented.
-		// this is above UObjectProperty to make sure it isn't caught there.
-		Writer.Printf("// UNSUPPORTED UClassProperty %s(%s);", *Update, *PropertyValue);
+		Writer.Printf("%s(PackageMap->GetHashFromStaticClass(%s));", *Update, *PropertyValue);
 	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
@@ -261,10 +271,7 @@ void GenerateUnrealToSchemaConversion(
 		Writer.Printf("for(int i = 0; i < %s.Num(); i++)", *PropertyValue);
 		Writer.BeginScope();
 
-		GenerateUnrealToSchemaConversion(
-			Writer, "const auto& ElementData = ", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), bIsUpdate, ObjectResolveFailureGenerator);
-
-		Writer.Print("List.emplace_back(ElementData);");
+		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), bIsUpdate, ObjectResolveFailureGenerator);
 
 		Writer.End();
 
@@ -329,22 +336,32 @@ void GeneratePropertyToUnrealConversion(
 			Writer.Printf("%s.W = Plane.w();", *PropertyValue);
 			Writer.Outdent().Print("}");
 		}
-		else
+		else if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
-			// A generic struct, RepMovement or UniqueNetIdRepl needs to be replicated
-			// using
-			// NetSerialize.
+			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
 			Writer.BeginScope();
-			Writer.Print(FString::Printf(TEXT(R"""(
+			Writer.Printf(R"""(
 				auto& ValueDataStr = %s;
 				TArray<uint8> ValueData;
 				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
 				bool bSuccess;
-				%s.NetSerialize(ValueDataReader, PackageMap, bSuccess);)"""),
+				%s.NetSerialize(ValueDataReader, PackageMap, bSuccess);)""",
 				*Update,
-				*PropertyValue));
+				*PropertyValue);
 			Writer.End();
+		}
+		else
+		{
+			Writer.Printf(R"""(
+				auto& ValueDataStr = %s;
+				TArray<uint8> ValueData;
+				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
+				FMemoryReader ValueDataReader(ValueData);
+				%s::StaticStruct()->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&%s));)""",
+				*Update,
+				*PropertyType,
+				*PropertyValue);
 		}
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
@@ -373,9 +390,7 @@ void GeneratePropertyToUnrealConversion(
 	}
 	else if (Property->IsA(UClassProperty::StaticClass()))
 	{
-		// todo David: UClasses are yet to be implemented.
-		// this is above UObjectProperty to make sure it isn't caught there.
-		Writer.Printf("// UNSUPPORTED UClassProperty %s %s", *PropertyValue, *Update);
+		Writer.Printf("%s = PackageMap->GetStaticClassFromHash(%s);", *PropertyValue, *Update);
 	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
@@ -1041,12 +1056,15 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter,
 		TypeBindingName(Class));
 
 	// Set up initial data.
-	SourceWriter.Print(
-		TEXT("checkf(GetRepHandlePropertyMap().Num() >= "
-			 "InitialChanges.RepChanged.Num() - 1, "
-			 "TEXT(\"Attempting to replicate more properties than typebinding is "
-			 "aware of. Have "
-			 "additional replicated properties been added in a subobject?\"))"));
+	SourceWriter.Print(R"""(
+		// Validate replication list.
+		const uint16 RepHandlePropertyMapCount = GetRepHandlePropertyMap().Num();
+		for (auto& Rep : InitialChanges.RepChanged)
+		{
+			checkf(Rep <= RepHandlePropertyMapCount, TEXT("Attempting to replicate a property with a handle that the type binding is not aware of. Have additional replicated properties been added in a non generated child object?"))
+		}
+		)""");
+
 	SourceWriter.Print(TEXT("// Setup initial data."));
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
@@ -1376,6 +1394,14 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter,
 		SourceWriter.Print("break;");
 	}
 	SourceWriter.End();
+	SourceWriter.Print(R"""(
+		if (Cmd.Type == REPCMD_DynamicArray)
+		{
+			if (!HandleIterator.JumpOverArray())
+			{
+				break;
+			}
+		})""");
 	SourceWriter.End();
 	SourceWriter.End();
 
@@ -1454,6 +1480,10 @@ void GenerateFunction_ServerSendUpdate_RepData(
 					*ArrayProperty->Inner->GetCPPType(),
 					*PropertyValueName,
 					*ArrayProperty->Inner->GetCPPType());
+			}
+			else if (Property->IsA<UStructProperty>())
+			{
+				SourceWriter.Printf("const %s& %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
 			}
 			else
 			{
@@ -1893,6 +1923,15 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 		SourceWriter.Print("FFrame& Stack = *RPCFrame;");
 		for (TFieldIterator<UProperty> Param(RPC->Function); Param; ++Param)
 		{
+			// TODO: UNR-152
+			if (Param->IsA(UArrayProperty::StaticClass()))
+			{
+				FString ParamTypeName = GetFullCPPName((*Param)->GetClass());
+				FString ParamName = (*Param)->GetName();
+				SourceWriter.Printf("// UNSUPPORTED TArray parameters (%s %s)", *ParamTypeName, *ParamName);
+				continue;
+			}
+
 			SourceWriter.Print(*GenerateFFramePropertyReader(*Param));
 		}
 		SourceWriter.PrintNewLine();
@@ -1903,6 +1942,12 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 	CapturedArguments.Add(TEXT("TargetObject"));
 	for (TFieldIterator<UProperty> Param(RPC->Function); Param; ++Param)
 	{
+		// TODO: UNR-152
+		if (Param->IsA(UArrayProperty::StaticClass()))
+		{
+			continue;
+		}
+
 		CapturedArguments.Add((*Param)->GetName());
 	}
 	SourceWriter.Printf(
@@ -1928,6 +1973,14 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 	TArray<TSharedPtr<FUnrealProperty>> RPCParameters = GetFlatRPCParameters(RPC);
 	for (auto Param : RPCParameters)
 	{
+		// TODO: UNR-152
+		if (Param->Property->IsA(UArrayProperty::StaticClass()))
+		{
+			FString ParamName = CPPFieldName(Param);
+			SourceWriter.Printf("// UNSUPPORTED TArray parameters (%s)", *ParamName);
+			continue;
+		}
+
 		FString SpatialValueSetter = TEXT("Request.set_") + SchemaFieldName(Param);
 
 		GenerateUnrealToSchemaConversion(
@@ -2028,9 +2081,21 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter,
 		SourceWriter.Print("// Declare parameters.");
 		for (auto Param : RPC->Parameters)
 		{
-			FString PropertyValueCppType = Param.Value->Property->GetCPPType();
+			FString PropertyTemplateType;
+			FString PropertyValueCppType = Param.Value->Property->GetCPPType(&PropertyTemplateType);
 			FString PropertyValueName = Param.Value->Property->GetNameCPP();
-			SourceWriter.Printf("%s %s;", *PropertyValueCppType, *PropertyValueName);
+
+			// TODO: UNR-152 - this should be factored out to a utility function somewhere
+			if (Param.Value->Property->IsA(UArrayProperty::StaticClass()) && PropertyTemplateType.Len() > 0)
+			{
+				// Append the template type if it exists.
+				SourceWriter.Printf("%s%s %s;", *PropertyValueCppType, *PropertyTemplateType, *PropertyValueName);
+			}
+			else
+			{
+				SourceWriter.Printf("%s %s;", *PropertyValueCppType, *PropertyValueName);
+			}
+
 			RPCParameters.Add(PropertyValueName);
 		}
 
@@ -2040,8 +2105,16 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter,
 
 		for (auto Param : GetFlatRPCParameters(RPC))
 		{
-			FString SpatialValue = FString::Printf(
-				TEXT("%s.%s()"), TEXT("Op.Request"), *SchemaFieldName(Param));
+			// TODO: UNR-152
+			if (Param->Property->IsA(UArrayProperty::StaticClass()))
+			{
+				FString PropertyValueCppType = Param->Property->GetCPPType();
+				FString PropertyValueName = Param->Property->GetNameCPP();
+				SourceWriter.Printf("// UNSUPPORTED TArray parameters (%s %s)", *PropertyValueCppType, *PropertyValueName);
+				continue;
+			}
+
+			FString SpatialValue = FString::Printf(TEXT("%s.%s()"), TEXT("Op.Request"), *SchemaFieldName(Param));
 
 			GeneratePropertyToUnrealConversion(
 				SourceWriter, SpatialValue, Param->Property, CPPFieldName(Param), false, std::bind(ObjectResolveFailureGenerator, std::placeholders::_1, "ObjectRef"));
