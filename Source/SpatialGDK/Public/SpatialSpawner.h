@@ -14,15 +14,15 @@ UCLASS()
 class SPATIALGDK_API ASpatialSpawner : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	ASpatialSpawner();
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void PostInitializeComponents() override;
 	virtual void BeginDestroy() override;
-	
+
 	UFUNCTION()
 	virtual void HandleSpawnRequest(USpawnPlayerCommandResponder* Responder);
 

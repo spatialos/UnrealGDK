@@ -3,16 +3,16 @@
 #include "SpatialSpawner.h"
 #include "Commander.h"
 #include "CoreMinimal.h"
-#include "SpatialNetDriver.h"
-#include "SpatialConstants.h"
-#include "SpawnPlayerRequest.h"
-#include "PlayerSpawnerComponent.h"
 #include "Engine/NetDriver.h"
+#include "PlayerSpawnerComponent.h"
+#include "SpatialConstants.h"
 #include "SpatialNetConnection.h"
+#include "SpatialNetDriver.h"
+#include "SpawnPlayerRequest.h"
 
 ASpatialSpawner::ASpatialSpawner()
 {
- 	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = false;
 
 	PlayerSpawnerComponent = CreateDefaultSubobject<UPlayerSpawnerComponent>(TEXT("PlayerSpawnerComponent"));
 }
@@ -27,7 +27,7 @@ void ASpatialSpawner::PostInitializeComponents()
 
 void ASpatialSpawner::BeginPlay()
 {
-	Super::BeginPlay();	
+	Super::BeginPlay();
 }
 
 void ASpatialSpawner::BeginDestroy()
@@ -35,14 +35,14 @@ void ASpatialSpawner::BeginDestroy()
 	if (PlayerSpawnerComponent)
 	{
 		PlayerSpawnerComponent->OnSpawnPlayerCommandRequest.RemoveDynamic(this, &ASpatialSpawner::HandleSpawnRequest);
-	}	
-	
-	Super::BeginDestroy();	
+	}
+
+	Super::BeginDestroy();
 }
 
 void ASpatialSpawner::HandleSpawnRequest(USpawnPlayerCommandResponder* Responder)
 {
-	check(GetWorld());	
+	check(GetWorld());
 
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
 

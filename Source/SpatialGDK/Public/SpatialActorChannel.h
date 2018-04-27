@@ -75,7 +75,7 @@ public:
 	void PostReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies);
 
 	// Distinguishes between channels created for actors that went through the "old" pipeline vs actors that are triggered through SpawnActor() calls.
-	//In the future we may not use an actor channel for non-core actors.
+	// In the future we may not use an actor channel for non-core actors.
 	UPROPERTY(transient)
 	bool bCoreActor;
 

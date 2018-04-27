@@ -141,7 +141,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		Notify->NotifyAcceptedConnection(Connection);
 		Connection->bReliableSpatialConnection = true;
 		AddClientConnection(Connection);
-		//Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
+		// Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
 		Connection->SetClientLoginState(EClientLoginState::Welcomed);
 	}
 
@@ -160,17 +160,17 @@ void USpatialNetDriver::OnSpatialOSConnectFailed()
 
 bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const
 {
-	//In our case, the connection is not specific to a client. Thus, it's not relevant whether the level is initialized.
+	// In our case, the connection is not specific to a client. Thus, it's not relevant whether the level is initialized.
 	return true;
 }
 
-//SpatialGDK: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.
+// SpatialGDK: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.
 #if WITH_SERVER_CODE
 
 // Returns true if this actor should replicate to *any* of the passed in connections
 static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, const TArray<FNetViewer>& ConnectionViewers)
 {
-	//SpatialGDK: Currently we're just returning true as a worker replicates all the known actors in our design.
+	// SpatialGDK: Currently we're just returning true as a worker replicates all the known actors in our design.
 	// We might make some exceptions in the future, so keeping this function.
 	return true;
 }
@@ -222,8 +222,8 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 		//@note: we cannot add Connection->IsNetReady(0) here to check for saturation, as if that's the case we still want to figure out the list of relevant actors
 		//			to reset their NetUpdateTime so that they will get sent as soon as the connection is no longer saturated
 		AActor* OwningActor = Connection->OwningActor;
-		
-		//SpatialGDK: We allow a connection without an owner to process if it's meant to be the connection to the fake SpatialOS client.
+
+		// SpatialGDK: We allow a connection without an owner to process if it's meant to be the connection to the fake SpatialOS client.
 		if ((Connection->bReliableSpatialConnection || OwningActor != NULL) && Connection->State == USOCK_Open && (Connection->Driver->Time - Connection->LastReceiveTime < 1.5f))
 		{
 			check(Connection->bReliableSpatialConnection || World == OwningActor->GetWorld());
@@ -326,8 +326,8 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			{
 				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the connection %s"), *Actor->GetName(), *Connection->GetName());
 			}
-			
-			//SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
+
+			// SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
 			// We have removed the level load check because it doesn't apply.
 			// Relevancy checking is also mostly just a pass through, might be removed later.
 			if (!IsActorRelevantToConnection(Actor, ConnectionViewers))
@@ -371,7 +371,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 	}
 
 	UE_LOG(LogNetTraffic, Log, TEXT("ServerReplicateActors_PrioritizeActors: Potential %04i ConsiderList %03i FinalSortedCount %03i"), MaxSortedActors, ConsiderList.Num(), FinalSortedCount);
-		
+
 	return FinalSortedCount;
 }
 
@@ -405,8 +405,8 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				FinalRelevantCount++;
 				UE_LOG(LogNetTraffic, Log, TEXT("Server replicate actor creating destroy channel for NetGUID <%s,%s> Priority: %d"), *PriorityActors[j]->DestructionInfo->NetGUID.ToString(), *PriorityActors[j]->DestructionInfo->PathName, PriorityActors[j]->Priority);
 
-				Channel->SetChannelActorForDestroy(PriorityActors[j]->DestructionInfo);						   // Send a close bunch on the new channel
-				Connection->DestroyedStartupOrDormantActors.Remove(PriorityActors[j]->DestructionInfo->NetGUID); // Remove from connections to-be-destroyed list (close bunch of reliable, so it will make it there)
+				Channel->SetChannelActorForDestroy(PriorityActors[j]->DestructionInfo);							  // Send a close bunch on the new channel
+				Connection->DestroyedStartupOrDormantActors.Remove(PriorityActors[j]->DestructionInfo->NetGUID);  // Remove from connections to-be-destroyed list (close bunch of reliable, so it will make it there)
 			}
 			continue;
 		}
@@ -428,7 +428,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			AActor* Actor = PriorityActors[j]->ActorInfo->Actor;
 			bool bIsRelevant = false;
 
-			//SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
+			// SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
 			// only check visibility on already visible actors every 1.0 + 0.5R seconds
 			// bTearOff actors should never be checked
 			if (!Actor->bTearOff && (!Channel || Time - Channel->RelevantTime > 1.f))
@@ -542,7 +542,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 }
 #endif
 
-//SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
+// SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
 // In our implementation, connections on the server do not represent clients. They represent direct connections to SpatialOS.
 // For this reason, things like ready checks, acks, throttling based on number of updated connections, interest management are irrelevant at this level.
 int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
@@ -562,7 +562,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 	const int32 NumClientsToTick = ServerReplicateActors_PrepConnections(DeltaSeconds);
 
-	//SpatialGDK: This is a formality as there is at least one "perfect" Spatial connection in our design.
+	// SpatialGDK: This is a formality as there is at least one "perfect" Spatial connection in our design.
 	if (NumClientsToTick == 0)
 	{
 		// No connections are ready this frame
@@ -598,9 +598,9 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		// if this client shouldn't be ticked this frame
 		if (i >= NumClientsToTick)
 		{
-			//SpatialGDK: This should not really happen in our case because we only replicate to SpatialOS and not to individual clients. Leaving the code here just in case.
+			// SpatialGDK: This should not really happen in our case because we only replicate to SpatialOS and not to individual clients. Leaving the code here just in case.
 
-			//UE_LOG(LogNet, Log, TEXT("skipping update to %s"),*Connection->GetName());
+			// UE_LOG(LogNet, Log, TEXT("skipping update to %s"),*Connection->GetName());
 			// then mark each considered actor as bPendingNetUpdate so that they will be considered again the next frame when the connection is actually ticked
 			for (int32 ConsiderIdx = 0; ConsiderIdx < ConsiderList.Num(); ConsiderIdx++)
 			{
@@ -609,11 +609,11 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 				if (Actor != NULL && !ConsiderList[ConsiderIdx]->bPendingNetUpdate)
 				{
 					// find the channel
-					UActorChannel *Channel = Connection->ActorChannels.FindRef(Actor);
+					UActorChannel* Channel = Connection->ActorChannels.FindRef(Actor);
 					// and if the channel last update time doesn't match the last net update time for the actor
 					if (Channel != NULL && Channel->LastUpdateTime < ConsiderList[ConsiderIdx]->LastNetUpdateTime)
 					{
-						//UE_LOG(LogNet, Log, TEXT("flagging %s for a future update"),*Actor->GetName());
+						// UE_LOG(LogNet, Log, TEXT("flagging %s for a future update"),*Actor->GetName());
 						// flag it for a pending update
 						ConsiderList[ConsiderIdx]->bPendingNetUpdate = true;
 					}
@@ -693,7 +693,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		while (NumConnectionsToMove > 0)
 		{
 			// move all the ticked connections to the end of the list so that the other connections are considered first for the next frame
-			UNetConnection *Connection = ClientConnections[0];
+			UNetConnection* Connection = ClientConnections[0];
 			ClientConnections.RemoveAt(0, 1);
 			ClientConnections.Add(Connection);
 			NumConnectionsToMove--;
@@ -750,13 +750,13 @@ void USpatialNetDriver::ProcessRemoteFunction(AActor* Actor, UFunction* Function
 	}
 
 	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver
-	//UIpNetDriver::ProcessRemoteFunction(Actor, Function, Parameters, OutParms, Stack, SubObject);
+	// UIpNetDriver::ProcessRemoteFunction(Actor, Function, Parameters, OutParms, Stack, SubObject);
 }
 
 void USpatialNetDriver::TickFlush(float DeltaTime)
 {
-	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
-	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
+// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
+// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
 
 #if USE_SERVER_PERF_COUNTERS
 	double ServerReplicateActorsTimeMs = 0.0f;
@@ -807,7 +807,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 
 	USpatialNetConnection* Connection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(Connection);
-	
+
 	// We create a "dummy" connection that corresponds to this player. This connection won't transmit any data.
 	// We may not need to keep it in the future, but for now it looks like path of least resistance is to have one UPlayer (UConnection) per player.
 	ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();

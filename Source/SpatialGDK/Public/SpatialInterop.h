@@ -59,7 +59,7 @@ public:
 };
 
 // Helper types used by the maps below.
-using FPendingOutgoingProperties = TPair<TArray<uint16>, TArray<uint16>>; // Pending incoming properties (replicated and migratable).
+using FPendingOutgoingProperties = TPair<TArray<uint16>, TArray<uint16>>;  // Pending incoming properties (replicated and migratable).
 using FPendingIncomingProperties = TPair<TArray<const FRepHandleData*>, TArray<const FMigratableHandleData*>>;
 
 // Map types for pending objects/RPCs. For pending updates, they store a map from an unresolved object to a map of channels to properties

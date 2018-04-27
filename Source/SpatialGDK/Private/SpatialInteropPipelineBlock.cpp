@@ -81,8 +81,7 @@ void USpatialInteropPipelineBlock::RemoveEntity(const worker::RemoveEntityOp& Re
 
 void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddComponentOp)
 {
-	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::AddComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"),
-		AddComponentOp->ComponentId, AddComponentOp->EntityId, (int)bInCriticalSection);
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::AddComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"), AddComponentOp->ComponentId, AddComponentOp->EntityId, (int)bInCriticalSection);
 
 	if (bInCriticalSection)
 	{
@@ -104,8 +103,7 @@ void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddC
 
 void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId ComponentId, const worker::RemoveComponentOp& RemoveComponentOp)
 {
-	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"),
-		ComponentId, RemoveComponentOp.EntityId, (int)bInCriticalSection);
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"), ComponentId, RemoveComponentOp.EntityId, (int)bInCriticalSection);
 
 	if (bInCriticalSection)
 	{
@@ -124,8 +122,7 @@ void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId Com
 
 void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId ComponentId, const worker::AuthorityChangeOp& AuthChangeOp)
 {
-	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::ChangeAuthorityOp component ID: %u entity ID: %lld inCriticalSection: %d"),
-		ComponentId, AuthChangeOp.EntityId, (int)bInCriticalSection);
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::ChangeAuthorityOp component ID: %u entity ID: %lld inCriticalSection: %d"), ComponentId, AuthChangeOp.EntityId, (int)bInCriticalSection);
 
 	// When a component is initialised, the callback dispatcher will automatically deal with authority changes. Therefore, we need
 	// to only queue changes if the entity itself has been queued for addition, which can only happen in a critical section.
@@ -425,7 +422,7 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* P
 	AActor* NewActor = nullptr;
 	if (ActorClass)
 	{
-		//bRemoteOwned needs to be public in source code. This might be a controversial change.
+		// bRemoteOwned needs to be public in source code. This might be a controversial change.
 		FActorSpawnParameters SpawnInfo;
 		SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		SpawnInfo.bRemoteOwned = !NetDriver->IsServer();

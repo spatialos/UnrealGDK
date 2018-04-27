@@ -55,7 +55,7 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 #if WITH_EDITOR
 FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
-	// This is sadly hacky to avoid a larger engine change. It borrows code from UGameInstance::StartPlayInEditorGameInstance() and 
+	// This is sadly hacky to avoid a larger engine change. It borrows code from UGameInstance::StartPlayInEditorGameInstance() and
 	//  UEngine::Browse().
 	check(WorldContext);
 

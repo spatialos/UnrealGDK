@@ -196,8 +196,8 @@ public:
 	UProperty* Property;
 
 private:
-  bool SubobjectProperty; // If this is true, then this property refers to a property within a subobject.
-  uint32 Offset;
+	bool SubobjectProperty;  // If this is true, then this property refers to a property within a subobject.
+	uint32 Offset;
 };
 
 // A map from rep handle to rep handle data.

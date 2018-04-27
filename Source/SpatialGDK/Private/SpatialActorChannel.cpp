@@ -16,10 +16,10 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
 
 namespace
 {
-//This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
+// This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
 // We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
 // In this function, we poll for any changes in Unreal properties compared to the last time we replicated this actor.
-void UpdateChangelistHistory(FRepState * RepState)
+void UpdateChangelistHistory(FRepState* RepState)
 {
 	check(RepState->HistoryEnd >= RepState->HistoryStart);
 
@@ -96,7 +96,7 @@ void USpatialActorChannel::BindToSpatialView()
 
 void USpatialActorChannel::UnbindFromSpatialView() const
 {
-	//todo-giray: Uncomment the rest when worker sdk finishes the FR that gracefully handles removing unbound callback keys.
+	// todo-giray: Uncomment the rest when worker sdk finishes the FR that gracefully handles removing unbound callback keys.
 	return;
 	/*
   TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
@@ -149,9 +149,9 @@ bool USpatialActorChannel::ReplicateActor()
 								 // to force them to retry
 	}
 
-	//Here, Unreal would have determined if this connection belongs to this actor's Outer.
-	//We don't have this concept when it comes to connections, our ownership-based logic is in the interop layer.
-	//Setting this to true, but should not matter in the end.
+	// Here, Unreal would have determined if this connection belongs to this actor's Outer.
+	// We don't have this concept when it comes to connections, our ownership-based logic is in the interop layer.
+	// Setting this to true, but should not matter in the end.
 	RepFlags.bNetOwner = true;
 
 	// If initial, send init data.
@@ -172,7 +172,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
 
-	FMemMark MemMark(FMemStack::Get());	// The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in ::PostSendBunch. we free it below
+	FMemMark MemMark(FMemStack::Get());  // The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in ::PostSendBunch. we free it below
 
 	// ----------------------------------------------------------
 	// Replicate Actor and Component properties and RPCs
@@ -238,16 +238,16 @@ bool USpatialActorChannel::ReplicateActor()
 		}
 	}
 
-	//todo-giray: We currently don't take replication of custom delta properties into account here because it doesn't use changelists.
+	// todo-giray: We currently don't take replication of custom delta properties into account here because it doesn't use changelists.
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
 	// If any properties have changed, send a component update.
 	if (RepFlags.bNetInitial || RepChanged.Num() > 0 || MigratableChanged.Num() > 0)
-	{		
+	{
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
 			// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
-			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
+			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a
 			// player controller, get the player state.
 			FString PlayerWorkerId;
 			APlayerState* PlayerState = Cast<APlayerState>(Actor);
@@ -293,8 +293,8 @@ bool USpatialActorChannel::ReplicateActor()
 				{
 					checkf(!bInDynamicArray, TEXT("Encountered nested array"));
 					bInDynamicArray = true;
-					// Add the number of array properties to comform to Unreal's RepLayout design and 
-					// allow FRepHandleIterator to jump over arrays. Cmd.EndCmd is an index into 
+					// Add the number of array properties to comform to Unreal's RepLayout design and
+					// allow FRepHandleIterator to jump over arrays. Cmd.EndCmd is an index into
 					// RepLayout->Cmds[] that points to the value after the termination NULL of this array.
 					InitialRepChanged.Add((Cmd.EndCmd - CmdIdx) - 2);
 				}
@@ -329,7 +329,7 @@ bool USpatialActorChannel::ReplicateActor()
 	}
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
-	//todo-giray: The rest of this function is taken from Unreal's own implementation. It is mostly redundant in our case,
+	// todo-giray: The rest of this function is taken from Unreal's own implementation. It is mostly redundant in our case,
 	// but keeping it here for now to give us a chance to investigate if we need to write our own implementation for any of
 	// any code block below.
 
@@ -462,7 +462,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
 		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.Message.c_str()));
-		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
+		// todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		UnbindFromSpatialView();
 		return;
 	}
@@ -488,7 +488,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
 		UE_LOG(LogSpatialOSActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
-		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
+		// todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		UnbindFromSpatialView();
 		return;
 	}
@@ -505,8 +505,8 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 
 void USpatialActorChannel::UpdateSpatialPosition()
 {
-	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
-	// migrated between workers at the same time (which is not guaranteed), we ensure that we update the position component 
+	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are
+	// migrated between workers at the same time (which is not guaranteed), we ensure that we update the position component
 	// of the PlayerController and PlayerState at the same time as the pawn.
 
 	// Check that it has moved sufficiently far to be updated
