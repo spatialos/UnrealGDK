@@ -436,6 +436,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		// Note that this file has been generated automatically
 		#pragma once
 
+		#include "CoreMinimal.h"
 		#include <improbable/worker.h>
 		#include <improbable/view.h>
 		#include <improbable/unreal/core_types.h>
@@ -563,7 +564,9 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 		// Note that this file has been generated automatically
 
 		#include "%s.h"
-		#include "Engine.h"
+
+		#include "GameFramework/PlayerState.h"
+		#include "NetworkGuid.h"
 
 		#include "SpatialOS.h"
 		#include "EntityBuilder.h"
@@ -583,9 +586,14 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 		#include "WheeledVehicle.h"
 		#include "WheeledVehicleMovementComponent.h")""");
 	}
-	else if (Class->GetName().Contains("NUFCharacter")) {
+	else if (Class->GetName().Contains("PlayerController"))
+	{
 		SourceWriter.Printf(R"""(
-		#include "NUFCharacter.h")""");
+		#include "Camera/CameraAnim.h")""");
+	}
+	else if (Class->GetName().Contains("SampleGameCharacter")) {
+		SourceWriter.Printf(R"""(
+		#include "SampleGameCharacter.h")""");
 	}
 
 	SourceWriter.PrintNewLine();
