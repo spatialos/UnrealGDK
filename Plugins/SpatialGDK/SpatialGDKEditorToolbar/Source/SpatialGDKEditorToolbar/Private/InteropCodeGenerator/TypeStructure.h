@@ -110,10 +110,10 @@ struct FUnrealType
 struct FUnrealProperty
 {
 	UProperty* Property;
-	TSharedPtr<FUnrealType> Type; // Only set if strong reference to object/struct property.
-	TSharedPtr<FUnrealRepData> ReplicationData; // Only set if property is replicated.
-	TSharedPtr<FUnrealMigratableData> MigratableData; // Only set if property is migratable (and not replicated).
-	TWeakPtr<FUnrealType> ContainerType; // Not set if this property is an RPC parameter.
+	TSharedPtr<FUnrealType> Type;					   // Only set if strong reference to object/struct property.
+	TSharedPtr<FUnrealRepData> ReplicationData;		   // Only set if property is replicated.
+	TSharedPtr<FUnrealMigratableData> MigratableData;  // Only set if property is migratable (and not replicated).
+	TWeakPtr<FUnrealType> ContainerType;			   // Not set if this property is an RPC parameter.
 };
 
 // A node which represents an RPC.

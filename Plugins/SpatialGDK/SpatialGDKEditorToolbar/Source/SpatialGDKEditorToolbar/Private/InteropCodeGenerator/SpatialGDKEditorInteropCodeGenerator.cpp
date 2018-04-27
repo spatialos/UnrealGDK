@@ -2,11 +2,11 @@
 
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 
-#include "Utils/CodeWriter.h"
-#include "Utils/ComponentIdGenerator.h"
-#include "TypeStructure.h"
 #include "SchemaGenerator.h"
 #include "TypeBindingGenerator.h"
+#include "TypeStructure.h"
+#include "Utils/CodeWriter.h"
+#include "Utils/ComponentIdGenerator.h"
 
 #include "Misc/FileHelper.h"
 
@@ -103,11 +103,11 @@ bool CheckClassNameListValidity(const TArray<FString>& Classes)
 
 	return true;
 }
-} // ::
+}  // ::
 
 void SpatialGDKGenerateInteropCode()
 {
-	FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../schema/improbable/unreal/generated/"));
+	FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../generatedschema/improbable/unreal/"));
 	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/SampleGame/Generated/"));
 	FString AbsoluteCombinedSchemaPath = FPaths::ConvertRelativePathToFull(CombinedSchemaPath);
 	FString AbsoluteCombinedForwardingCodePath = FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
@@ -117,14 +117,8 @@ void SpatialGDKGenerateInteropCode()
 	// Hard coded class information.
 	TArray<FString> Classes = {"PlayerController", "PlayerState", "Character", "WheeledVehicle"};
 	TMap<FString, TArray<TArray<FName>>> MigratableProperties;
-	MigratableProperties.Add("PlayerController", {
-		{"AcknowledgedPawn"}
-	});
-	MigratableProperties.Add("Character", {
-		{"CharacterMovement", "GroundMovementMode"},
-		{"CharacterMovement", "MovementMode"},
-		{"CharacterMovement", "CustomMovementMode"}
-	});
+	MigratableProperties.Add("PlayerController", {{"AcknowledgedPawn"}});
+	MigratableProperties.Add("Character", {{"CharacterMovement", "GroundMovementMode"}, {"CharacterMovement", "MovementMode"}, {"CharacterMovement", "CustomMovementMode"}});
 
 	if (!CheckClassNameListValidity(Classes))
 	{

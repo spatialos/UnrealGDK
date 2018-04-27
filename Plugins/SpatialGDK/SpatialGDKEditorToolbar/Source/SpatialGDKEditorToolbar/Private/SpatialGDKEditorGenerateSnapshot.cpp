@@ -5,13 +5,13 @@
 #include "SpatialConstants.h"
 #include "SpatialOSCommon.h"
 
-#include "GameFramework/Actor.h"
 #include "EngineUtils.h"
+#include "GameFramework/Actor.h"
 
-#include <improbable/worker.h>
 #include <improbable/standard_library.h>
-#include <improbable/unreal/spawner.h>
 #include <improbable/unreal/level_data.h>
+#include <improbable/unreal/spawner.h>
+#include <improbable/worker.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
@@ -24,22 +24,16 @@ const WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet
 const WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
 const WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
 
-namespace {
+namespace
+{
 worker::Entity CreateSpawnerEntity()
 {
 	const Coordinates InitialPosition{0, 0, 0};
-	improbable::WorkerAttributeSet WorkerAttribute{ { worker::List<std::string>{"UnrealWorker"} } };
-	improbable::WorkerRequirementSet WorkersOnly{ { WorkerAttribute } };
+	improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
+	improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
 	improbable::unreal::UnrealMetadata::Data UnrealMetadata;
 
-	return improbable::unreal::FEntityBuilder::Begin()
-		.AddPositionComponent(Position::Data{InitialPosition}, UnrealWorkerWritePermission)
-		.AddMetadataComponent(Metadata::Data("SpatialSpawner"))
-		.SetPersistence(true)
-		.SetReadAcl(AnyWorkerReadPermission)
-		.AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{}, UnrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
-		.Build();
+	return improbable::unreal::FEntityBuilder::Begin().AddPositionComponent(Position::Data{InitialPosition}, UnrealWorkerWritePermission).AddMetadataComponent(Metadata::Data("SpatialSpawner")).SetPersistence(true).SetReadAcl(AnyWorkerReadPermission).AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{}, UnrealWorkerWritePermission).AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly).Build();
 }
 
 worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
@@ -67,33 +61,21 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 
 	// Set up level data entity.
 	const Coordinates InitialPosition{0, 0, 0};
-	LevelEntities.emplace(SpatialConstants::LEVEL_DATA_ENTITY_ID, improbable::unreal::FEntityBuilder::Begin()
-		.AddPositionComponent(Position::Data{InitialPosition}, UnrealWorkerWritePermission)
-		.AddMetadataComponent(Metadata::Data("LevelData"))
-		.SetPersistence(true)
-		.SetReadAcl(AnyWorkerReadPermission)
-		.AddComponent<unreal::UnrealLevel>(unreal::UnrealLevel::Data{StaticActorMap}, UnrealWorkerWritePermission)
-		.Build());
+	LevelEntities.emplace(SpatialConstants::LEVEL_DATA_ENTITY_ID, improbable::unreal::FEntityBuilder::Begin().AddPositionComponent(Position::Data{InitialPosition}, UnrealWorkerWritePermission).AddMetadataComponent(Metadata::Data("LevelData")).SetPersistence(true).SetReadAcl(AnyWorkerReadPermission).AddComponent<unreal::UnrealLevel>(unreal::UnrealLevel::Data{StaticActorMap}, UnrealWorkerWritePermission).Build());
 
 	// Set up grid of "placeholder" entities to allow workers to be authoritative over _something_.
 	int PlaceholderCount = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST - SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST + 1;
 	int PlaceholderCountAxis = sqrt(PlaceholderCount);
 	checkf(PlaceholderCountAxis * PlaceholderCountAxis == PlaceholderCount, TEXT("The number of placeholders must be a square number."));
 	checkf(PlaceholderCountAxis % 2 == 0, TEXT("The number of placeholders on each axis must be even."));
-	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
+	const float CHUNK_SIZE = 5.0f;  // in SpatialOS coordinates.
 	int PlaceholderEntityIdCounter = SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST;
 	for (int x = -PlaceholderCountAxis / 2; x < PlaceholderCountAxis / 2; x++)
 	{
 		for (int y = -PlaceholderCountAxis / 2; y < PlaceholderCountAxis / 2; y++)
 		{
 			const Coordinates PlaceholderPosition{x * CHUNK_SIZE + CHUNK_SIZE * 0.5f, 0, y * CHUNK_SIZE + CHUNK_SIZE * 0.5f};
-			LevelEntities.emplace(PlaceholderEntityIdCounter, improbable::unreal::FEntityBuilder::Begin()
-				.AddPositionComponent(Position::Data{PlaceholderPosition}, UnrealWorkerWritePermission)
-				.AddMetadataComponent(Metadata::Data("Placeholder"))
-				.SetPersistence(true)
-				.SetReadAcl(AnyWorkerReadPermission)
-				.AddComponent<unreal::UnrealLevelPlaceholder>(unreal::UnrealLevelPlaceholder::Data{}, UnrealWorkerWritePermission)
-				.Build());
+			LevelEntities.emplace(PlaceholderEntityIdCounter, improbable::unreal::FEntityBuilder::Begin().AddPositionComponent(Position::Data{PlaceholderPosition}, UnrealWorkerWritePermission).AddMetadataComponent(Metadata::Data("Placeholder")).SetPersistence(true).SetReadAcl(AnyWorkerReadPermission).AddComponent<unreal::UnrealLevelPlaceholder>(unreal::UnrealLevelPlaceholder::Data{}, UnrealWorkerWritePermission).Build());
 			PlaceholderEntityIdCounter++;
 		}
 	}
@@ -101,14 +83,14 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 	check(PlaceholderEntityIdCounter == SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1);
 	return LevelEntities;
 }
-} // ::
+}  // ::
 
 void SpatialGDKGenerateSnapshot(const FString& SavePath, UWorld* World)
 {
 	const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
 
 	std::unordered_map<worker::EntityId, worker::Entity> SnapshotEntities;
-	
+
 	// Create spawner.
 	SnapshotEntities.emplace(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
 
