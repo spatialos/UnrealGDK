@@ -487,7 +487,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 
 	if (Op.StatusCode != worker::StatusCode::kSuccess)
 	{
-		UE_LOG(LogSpatialOSActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
+		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
 		// todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		UnbindFromSpatialView();
 		return;
