@@ -10,38 +10,38 @@
  */
 class FSpatialGDKLoader
 {
-public:
-  FSpatialGDKLoader()
-  {
-    // Disable FPaths::GameDir deprecation warning until <= 4.17 is unsupported.
-    PRAGMA_DISABLE_DEPRECATION_WARNINGS
-    FString Path = FPaths::GameDir() / TEXT("Binaries/ThirdParty/Improbable");
-    PRAGMA_ENABLE_DEPRECATION_WARNINGS
+  public:
+	FSpatialGDKLoader()
+	{
+		// Disable FPaths::GameDir deprecation warning until <= 4.17 is unsupported.
+		PRAGMA_DISABLE_DEPRECATION_WARNINGS
+		FString Path = FPaths::GameDir() / TEXT("Binaries/ThirdParty/Improbable");
+		PRAGMA_ENABLE_DEPRECATION_WARNINGS
 
 #if PLATFORM_WINDOWS
 #if PLATFORM_64BITS
-    Path = Path / TEXT("Win64");
+		Path = Path / TEXT("Win64");
 #else
-    Path = Path / TEXT("Win32");
+		Path = Path / TEXT("Win32");
 #endif
 
-    Path = Path / TEXT("CoreSdkDll.dll");
-    CoreSdkHandle = FPlatformProcess::GetDllHandle(*Path);
+		Path = Path / TEXT("CoreSdkDll.dll");
+		CoreSdkHandle = FPlatformProcess::GetDllHandle(*Path);
 #endif
-  }
+	}
 
-  ~FSpatialGDKLoader()
-  {
-    if (CoreSdkHandle != nullptr)
-    {
-      FPlatformProcess::FreeDllHandle(CoreSdkHandle);
-      CoreSdkHandle = nullptr;
-    }
-  }
+	~FSpatialGDKLoader()
+	{
+		if (CoreSdkHandle != nullptr)
+		{
+			FPlatformProcess::FreeDllHandle(CoreSdkHandle);
+			CoreSdkHandle = nullptr;
+		}
+	}
 
-  FSpatialGDKLoader(const FSpatialGDKLoader& rhs) = delete;
-  FSpatialGDKLoader& operator=(const FSpatialGDKLoader& rhs) = delete;
+	FSpatialGDKLoader(const FSpatialGDKLoader& rhs) = delete;
+	FSpatialGDKLoader& operator=(const FSpatialGDKLoader& rhs) = delete;
 
-private:
-  void* CoreSdkHandle = nullptr;
+  private:
+	void* CoreSdkHandle = nullptr;
 };

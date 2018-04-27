@@ -34,58 +34,58 @@ An example AST generated from ACharacter:
 FUnrealType
   + Type: Character
   + Properties:
-        [0] FUnrealProperty
-          + Property: "MovementComp"
-          + Type: FUnrealType
-                + Type: CharacterMovementComponent
-                + Properties:
-                  [0] ....
-                  ...
-                + RPCs:
-                  [0] FUnrealRPC
-                        + CallerType: CharacterMovementComponent
-                        + Function: "ServerMove"
-                        + Type: RPC_Server
-                        + bReliable: false
-                        + Parameters:
-                          [0] FUnrealProperty
-                          ...
-                  [1] ....
-          + ReplicationData: FUnrealRepData
-                + RepLayoutType: REPCMD_PropertyObject
-                + Handle: 29
-                + ...
-        [1] FUnrealProperty
-          + Property: "bIsCrouched"
-          + Type: nullptr
-          + ReplicationData: FUnrealRepData
-                + RepLayoutType: REPCMD_PropertyBool
-                + Handle: 15
-                ...
-        [2] FUnrealProperty
-          + Property: "Controller":
-          + Type: nullptr						<- weak
+		[0] FUnrealProperty
+		  + Property: "MovementComp"
+		  + Type: FUnrealType
+				+ Type: CharacterMovementComponent
+				+ Properties:
+				  [0] ....
+				  ...
+				+ RPCs:
+				  [0] FUnrealRPC
+						+ CallerType: CharacterMovementComponent
+						+ Function: "ServerMove"
+						+ Type: RPC_Server
+						+ bReliable: false
+						+ Parameters:
+						  [0] FUnrealProperty
+						  ...
+				  [1] ....
+		  + ReplicationData: FUnrealRepData
+				+ RepLayoutType: REPCMD_PropertyObject
+				+ Handle: 29
+				+ ...
+		[1] FUnrealProperty
+		  + Property: "bIsCrouched"
+		  + Type: nullptr
+		  + ReplicationData: FUnrealRepData
+				+ RepLayoutType: REPCMD_PropertyBool
+				+ Handle: 15
+				...
+		[2] FUnrealProperty
+		  + Property: "Controller":
+		  + Type: nullptr						<- weak
 reference
 so not set.
-          + ReplicationData: FUnrealRepData
-                + RepLayoutType: REPCMD_PropertyObject
-                + Handle: 19
-                ...
-        [3] FUnrealProperty
-          + Property: "SomeTransientProperty"
-          + Type: nullptr
-          + ReplicationData: nullptr
-          + MigratableData: FUnrealMigratableData
-                + RepLayoutType: REPCMD_PropertyFloat
-                + Handle: 1
-                ...
+		  + ReplicationData: FUnrealRepData
+				+ RepLayoutType: REPCMD_PropertyObject
+				+ Handle: 19
+				...
+		[3] FUnrealProperty
+		  + Property: "SomeTransientProperty"
+		  + Type: nullptr
+		  + ReplicationData: nullptr
+		  + MigratableData: FUnrealMigratableData
+				+ RepLayoutType: REPCMD_PropertyFloat
+				+ Handle: 1
+				...
   + RPCs:
-        [0] FUnrealRPC
-          + CallerType: Character
-          + Function: ClientRestart
-          + Type: RPC_Client
-          + bReliable: true
-        [1] ....
+		[0] FUnrealRPC
+		  + CallerType: Character
+		  + Function: ClientRestart
+		  + Type: RPC_Client
+		  + bReliable: true
+		[1] ....
 */
 
 // As we cannot fully implement replication conditions using SpatialOS's
@@ -97,8 +97,8 @@ so not set.
 // client (AutonomousProxy/OwnerOnly), or many clients (everything else).
 enum EReplicatedPropertyGroup
 {
-  REP_SingleClient,
-  REP_MultiClient
+	REP_SingleClient,
+	REP_MultiClient
 };
 
 // RPC Type. This matches the tag specified in UPROPERTY. For example,
@@ -107,9 +107,9 @@ enum EReplicatedPropertyGroup
 // the client (such as ClientAckGoodMove etc).
 enum ERPCType
 {
-  RPC_Client,
-  RPC_Server,
-  RPC_Unknown
+	RPC_Client,
+	RPC_Server,
+	RPC_Unknown
 };
 
 struct FUnrealProperty;
@@ -121,55 +121,55 @@ struct FUnrealMigratableData;
 // UCharacterMovementComponent.
 struct FUnrealType
 {
-  UStruct* Type;
-  TMap<UProperty*, TSharedPtr<FUnrealProperty>> Properties;
-  TMap<UFunction*, TSharedPtr<FUnrealRPC>> RPCs;
-  TWeakPtr<FUnrealProperty> ParentProperty;
+	UStruct* Type;
+	TMap<UProperty*, TSharedPtr<FUnrealProperty>> Properties;
+	TMap<UFunction*, TSharedPtr<FUnrealRPC>> RPCs;
+	TWeakPtr<FUnrealProperty> ParentProperty;
 };
 
 // A node which represents a single property or parameter in an RPC.
 struct FUnrealProperty
 {
-  UProperty* Property;
-  TSharedPtr<FUnrealType> Type;  // Only set if strong reference to object/struct property.
-  TSharedPtr<FUnrealRepData> ReplicationData;        // Only set if property is replicated.
-  TSharedPtr<FUnrealMigratableData> MigratableData;  // Only set if property is
-                                                     // migratable (and not
-                                                     // replicated).
-  TWeakPtr<FUnrealType> ContainerType;  // Not set if this property is an RPC parameter.
+	UProperty* Property;
+	TSharedPtr<FUnrealType> Type;  // Only set if strong reference to object/struct property.
+	TSharedPtr<FUnrealRepData> ReplicationData;		   // Only set if property is replicated.
+	TSharedPtr<FUnrealMigratableData> MigratableData;  // Only set if property is
+													   // migratable (and not
+													   // replicated).
+	TWeakPtr<FUnrealType> ContainerType;  // Not set if this property is an RPC parameter.
 };
 
 // A node which represents an RPC.
 struct FUnrealRPC
 {
-  UClass* CallerType;
-  UFunction* Function;
-  ERPCType Type;
-  TMap<UProperty*, TSharedPtr<FUnrealProperty>> Parameters;
-  bool bReliable;
+	UClass* CallerType;
+	UFunction* Function;
+	ERPCType Type;
+	TMap<UProperty*, TSharedPtr<FUnrealProperty>> Parameters;
+	bool bReliable;
 };
 
 // A node which represents replication data generated by the FRepLayout
 // instantiated from a UClass.
 struct FUnrealRepData
 {
-  ERepLayoutCmdType RepLayoutType;
-  ELifetimeCondition Condition;
-  ELifetimeRepNotifyCondition RepNotifyCondition;
-  int32 CmdIndex;
-  uint16 Handle;
-  int32 RoleSwapHandle;
+	ERepLayoutCmdType RepLayoutType;
+	ELifetimeCondition Condition;
+	ELifetimeRepNotifyCondition RepNotifyCondition;
+	int32 CmdIndex;
+	uint16 Handle;
+	int32 RoleSwapHandle;
 };
 
 // A node which represents migratable data.
 struct FUnrealMigratableData
 {
-  ERepLayoutCmdType RepLayoutType;
-  uint16 Handle;
+	ERepLayoutCmdType RepLayoutType;
+	uint16 Handle;
 };
 
 using FUnrealFlatRepData =
-    TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPtr<FUnrealProperty>>>;
+	TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPtr<FUnrealProperty>>>;
 using FUnrealRPCsByType = TMap<ERPCType, TArray<TSharedPtr<FUnrealRPC>>>;
 
 // Given a UClass, returns either "AFoo" or "UFoo" depending on whether Foo is a
@@ -211,21 +211,21 @@ ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property);
 // that part of the
 // tree.
 void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode,
-                     TFunction<bool(TSharedPtr<FUnrealType>)> Visitor, bool bRecurseIntoSubobjects);
+					 TFunction<bool(TSharedPtr<FUnrealType>)> Visitor, bool bRecurseIntoSubobjects);
 
 // Similar to 'VisitAllObjects', but instead applies the Visitor function to all
 // properties which
 // are traversed.
 void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode,
-                        TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
-                        bool bRecurseIntoSubobjects);
+						TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
+						bool bRecurseIntoSubobjects);
 
 // Similar to 'VisitAllObjects', but instead applies the Visitor function to all
 // parameters in an
 // RPC (and subproperties of structs/objects where appropriate).
 void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode,
-                        TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
-                        bool bRecurseIntoSubobjects);
+						TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor,
+						bool bRecurseIntoSubobjects);
 
 // Generates an AST from an Unreal UStruct or UClass.
 // At the moment, this function receives a manual list of migratable property
@@ -236,7 +236,7 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode,
 //   }
 // In the future, we can get this information directly from the UStruct*.
 TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type,
-                                             const TArray<TArray<FName>>& MigratableProperties);
+											 const TArray<TArray<FName>>& MigratableProperties);
 
 // Traverses an AST, and generates a flattened list of replicated properties,
 // which will match the

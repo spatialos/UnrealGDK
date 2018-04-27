@@ -17,72 +17,72 @@
 USTRUCT(BlueprintType)
 struct SPATIALGDK_API FRequestId
 {
-  GENERATED_USTRUCT_BODY()
+	GENERATED_USTRUCT_BODY()
 
-public:
-  FORCEINLINE FRequestId()
-  {
-    Underlying = 0;
-    bValidId = false;
-  }
+  public:
+	FORCEINLINE FRequestId()
+	{
+		Underlying = 0;
+		bValidId = false;
+	}
 
-  FORCEINLINE FRequestId(const FRequestId& Other)
-  {
-    Underlying = Other.Underlying;
-    bValidId = Other.bValidId;
-  }
+	FORCEINLINE FRequestId(const FRequestId& Other)
+	{
+		Underlying = Other.Underlying;
+		bValidId = Other.bValidId;
+	}
 
-  FORCEINLINE FRequestId(const std::uint32_t UnderlyingRequestId, const bool bIsValidId)
-  {
-    Underlying = UnderlyingRequestId;
-    bValidId = bIsValidId;
-  }
+	FORCEINLINE FRequestId(const std::uint32_t UnderlyingRequestId, const bool bIsValidId)
+	{
+		Underlying = UnderlyingRequestId;
+		bValidId = bIsValidId;
+	}
 
-  FORCEINLINE FRequestId& operator=(const FRequestId& Other)
-  {
-    Underlying = Other.Underlying;
-    bValidId = Other.bValidId;
-    return *this;
-  }
+	FORCEINLINE FRequestId& operator=(const FRequestId& Other)
+	{
+		Underlying = Other.Underlying;
+		bValidId = Other.bValidId;
+		return *this;
+	}
 
-  FORCEINLINE bool operator==(const FRequestId& Other) const
-  {
-    return Underlying == Other.Underlying && bValidId == Other.bValidId;
-  }
+	FORCEINLINE bool operator==(const FRequestId& Other) const
+	{
+		return Underlying == Other.Underlying && bValidId == Other.bValidId;
+	}
 
-  template <typename T>
-  FORCEINLINE bool operator==(const worker::RequestId<T>& Other) const
-  {
-    return Underlying == Other.Id && bValidId;
-  }
+	template <typename T>
+	FORCEINLINE bool operator==(const worker::RequestId<T>& Other) const
+	{
+		return Underlying == Other.Id && bValidId;
+	}
 
-  FORCEINLINE bool operator!=(const FRequestId& Other) const
-  {
-    return Underlying != Other.Underlying || bValidId != Other.bValidId;
-  }
+	FORCEINLINE bool operator!=(const FRequestId& Other) const
+	{
+		return Underlying != Other.Underlying || bValidId != Other.bValidId;
+	}
 
-  /**
-* This method returns the wrapped uint32_t request id
-*/
-  std::uint32_t GetUnderlying() const
-  {
-    return Underlying;
-  }
+	/**
+  * This method returns the wrapped uint32_t request id
+  */
+	std::uint32_t GetUnderlying() const
+	{
+		return Underlying;
+	}
 
-  /**
-* return if the request id is a valid request id or not
-*/
-  bool IsValid() const
-  {
-    return bValidId;
-  }
+	/**
+  * return if the request id is a valid request id or not
+  */
+	bool IsValid() const
+	{
+		return bValidId;
+	}
 
-private:
-  std::uint32_t Underlying;
-  bool bValidId;
+  private:
+	std::uint32_t Underlying;
+	bool bValidId;
 
-  friend uint32 GetTypeHash(const FRequestId& Rhs)
-  {
-    return FComponentIdentifier::HashRequestId(Rhs.Underlying);
-  }
+	friend uint32 GetTypeHash(const FRequestId& Rhs)
+	{
+		return FComponentIdentifier::HashRequestId(Rhs.Underlying);
+	}
 };

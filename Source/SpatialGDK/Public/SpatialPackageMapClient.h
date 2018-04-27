@@ -24,57 +24,57 @@ using SubobjectToOffsetMap = ::worker::Map<std::string, std::uint32_t>;
 UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
-  GENERATED_BODY()
-public:
-  FNetworkGUID ResolveEntityActor(AActor* Actor, FEntityId EntityId,
-                                  const SubobjectToOffsetMap& SubobjectToOffset);
-  void RemoveEntityActor(const FEntityId& EntityId);
-  virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel* Channel,
-                                 class AActor*& Actor) override;
+	GENERATED_BODY()
+  public:
+	FNetworkGUID ResolveEntityActor(AActor* Actor, FEntityId EntityId,
+									const SubobjectToOffsetMap& SubobjectToOffset);
+	void RemoveEntityActor(const FEntityId& EntityId);
+	virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel* Channel,
+								   class AActor*& Actor) override;
 
-  improbable::unreal::UnrealObjectRef
-  GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
-  FNetworkGUID
-  GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
-  FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
+	improbable::unreal::UnrealObjectRef
+	GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
+	FNetworkGUID
+	GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
+	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 
-  void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);
+	void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);
 
-  uint32 GetHashFromStaticClass(const UClass* StaticClass) const;
-  UClass* GetStaticClassFromHash(uint32 Hash) const;
+	uint32 GetHashFromStaticClass(const UClass* StaticClass) const;
+	UClass* GetStaticClassFromHash(uint32 Hash) const;
 
-private:
+  private:
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 {
-public:
-  FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
+  public:
+	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
 
-  FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor,
-                                           const SubobjectToOffsetMap& SubobjectToOffset);
-  void RemoveEntityNetGUID(worker::EntityId EntityId);
+	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor,
+											 const SubobjectToOffsetMap& SubobjectToOffset);
+	void RemoveEntityNetGUID(worker::EntityId EntityId);
 
-  FNetworkGUID
-  GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
-  improbable::unreal::UnrealObjectRef
-  GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
-  FNetworkGUID GetNetGUIDFromEntityId(worker::EntityId EntityId) const;
+	FNetworkGUID
+	GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
+	improbable::unreal::UnrealObjectRef
+	GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
+	FNetworkGUID GetNetGUIDFromEntityId(worker::EntityId EntityId) const;
 
-  void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);
+	void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);
 
-  uint32 GetHashFromStaticClass(const UClass* StaticClass) const;
-  UClass* GetStaticClassFromHash(uint32 Hash) const;
+	uint32 GetHashFromStaticClass(const UClass* StaticClass) const;
+	UClass* GetStaticClassFromHash(uint32 Hash) const;
 
-private:
-  FNetworkGUID GetOrAssignNetGUID_SpatialGDK(const UObject* Object);
-  void RegisterObjectRef(FNetworkGUID NetGUID,
-                         const improbable::unreal::UnrealObjectRef& ObjectRef);
-  FNetworkGUID AssignStaticActorNetGUID(const UObject* Object, const FNetworkGUID& StaticNetGUID);
+  private:
+	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(const UObject* Object);
+	void RegisterObjectRef(FNetworkGUID NetGUID,
+						   const improbable::unreal::UnrealObjectRef& ObjectRef);
+	FNetworkGUID AssignStaticActorNetGUID(const UObject* Object, const FNetworkGUID& StaticNetGUID);
 
-  void CreateStaticClassMapping();
+	void CreateStaticClassMapping();
 
-  TMap<FNetworkGUID, FHashableUnrealObjectRef> NetGUIDToUnrealObjectRef;
-  TMap<FHashableUnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
-  TMap<uint32, UClass*> StaticClassHashMap;
+	TMap<FNetworkGUID, FHashableUnrealObjectRef> NetGUIDToUnrealObjectRef;
+	TMap<FHashableUnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
+	TMap<uint32, UClass*> StaticClassHashMap;
 };
