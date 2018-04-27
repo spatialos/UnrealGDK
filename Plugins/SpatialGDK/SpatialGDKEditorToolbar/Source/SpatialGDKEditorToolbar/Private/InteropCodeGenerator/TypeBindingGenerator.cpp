@@ -591,10 +591,6 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 		SourceWriter.Printf(R"""(
 		#include "Camera/CameraAnim.h")""");
 	}
-	else if (Class->GetName().Contains("SampleGameCharacter")) {
-		SourceWriter.Printf(R"""(
-		#include "SampleGameCharacter.h")""");
-	}
 
 	SourceWriter.PrintNewLine();
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
