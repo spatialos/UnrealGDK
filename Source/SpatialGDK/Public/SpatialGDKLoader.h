@@ -10,7 +10,7 @@
  */
 class FSpatialGDKLoader
 {
-  public:
+public:
 	FSpatialGDKLoader()
 	{
 		// Disable FPaths::GameDir deprecation warning until <= 4.17 is unsupported.
@@ -42,6 +42,6 @@ class FSpatialGDKLoader
 	FSpatialGDKLoader(const FSpatialGDKLoader& rhs) = delete;
 	FSpatialGDKLoader& operator=(const FSpatialGDKLoader& rhs) = delete;
 
-  private:
+private:
 	void* CoreSdkHandle = nullptr;
 };

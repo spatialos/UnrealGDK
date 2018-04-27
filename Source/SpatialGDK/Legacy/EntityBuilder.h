@@ -10,7 +10,7 @@ namespace unreal
 {
 class FEntityComponentBuilder
 {
-  private:
+private:
 	friend class FGenericComponentBuilder;
 	friend class FReadAclComponentBuilder;
 	friend class FPersistenceComponentBuilder;
@@ -31,10 +31,10 @@ class FEntityComponentBuilder
 	{
 	}
 
-  public:
+public:
 	FEntityComponentBuilder(FEntityComponentBuilder&& rhs) = default;
 
-  protected:
+protected:
 	worker::Entity InternalEntity;
 
 	worker::Map<std::uint32_t, improbable::WorkerRequirementSet>
@@ -44,7 +44,7 @@ class FEntityComponentBuilder
 
 class FGenericComponentBuilder : public FEntityComponentBuilder
 {
-  private:
+private:
 	friend class FReadAclComponentBuilder;
 	FGenericComponentBuilder(
 		worker::Entity Entity,
@@ -57,7 +57,7 @@ class FGenericComponentBuilder : public FEntityComponentBuilder
 
 	FGenericComponentBuilder(FGenericComponentBuilder&& rhs) = default;
 
-  public:
+public:
 	FGenericComponentBuilder() = delete;
 	FGenericComponentBuilder(const FGenericComponentBuilder& rhs) = delete;
 
@@ -89,7 +89,7 @@ class FGenericComponentBuilder : public FEntityComponentBuilder
 
 class FReadAclComponentBuilder : public FEntityComponentBuilder
 {
-  private:
+private:
 	friend class FPersistenceComponentBuilder;
 	FReadAclComponentBuilder(
 		worker::Entity Entity,
@@ -107,7 +107,7 @@ class FReadAclComponentBuilder : public FEntityComponentBuilder
 	{
 	}
 
-  public:
+public:
 	FReadAclComponentBuilder() = delete;
 	FReadAclComponentBuilder(const FReadAclComponentBuilder& rhs) = delete;
 
@@ -121,7 +121,7 @@ class FReadAclComponentBuilder : public FEntityComponentBuilder
 
 class FPersistenceComponentBuilder : public FEntityComponentBuilder
 {
-  private:
+private:
 	friend class FMetadataComponentBuilder;
 	FPersistenceComponentBuilder(
 		worker::Entity Entity,
@@ -134,7 +134,7 @@ class FPersistenceComponentBuilder : public FEntityComponentBuilder
 
 	FPersistenceComponentBuilder(FPersistenceComponentBuilder&& rhs) = default;
 
-  public:
+public:
 	FPersistenceComponentBuilder() = delete;
 	FPersistenceComponentBuilder(const FPersistenceComponentBuilder& rhs) =
 		delete;
@@ -152,7 +152,7 @@ class FPersistenceComponentBuilder : public FEntityComponentBuilder
 
 class FMetadataComponentBuilder : public FEntityComponentBuilder
 {
-  private:
+private:
 	friend class FPositionComponentBuilder;
 	FMetadataComponentBuilder(
 		worker::Entity Entity,
@@ -165,7 +165,7 @@ class FMetadataComponentBuilder : public FEntityComponentBuilder
 
 	FMetadataComponentBuilder(FMetadataComponentBuilder&& rhs) = default;
 
-  public:
+public:
 	FMetadataComponentBuilder() = delete;
 	FMetadataComponentBuilder(const FMetadataComponentBuilder& rhs) = delete;
 
@@ -179,14 +179,14 @@ class FMetadataComponentBuilder : public FEntityComponentBuilder
 
 class FPositionComponentBuilder : public FEntityComponentBuilder
 {
-  private:
+private:
 	friend class FEntityBuilder;
 	FPositionComponentBuilder()
 	{
 	}
 	FPositionComponentBuilder(FPositionComponentBuilder&& rhs) = default;
 
-  public:
+public:
 	FPositionComponentBuilder(const FPositionComponentBuilder& rhs) = delete;
 
 	FMetadataComponentBuilder AddPositionComponent(
@@ -233,7 +233,7 @@ class FPositionComponentBuilder : public FEntityComponentBuilder
 
 class FEntityBuilder
 {
-  public:
+public:
 	static FPositionComponentBuilder Begin()
 	{
 		return FPositionComponentBuilder();

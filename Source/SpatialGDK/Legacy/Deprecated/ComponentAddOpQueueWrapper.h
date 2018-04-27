@@ -12,7 +12,7 @@ struct FComponentAddOpQueueWrapper
 {
 	GENERATED_USTRUCT_BODY()
 
-  public:
+public:
 	UPROPERTY()
 	TArray<UAddComponentOpWrapperBase*> Underlying;
 

@@ -14,7 +14,7 @@ class SPATIALGDK_API USpatialOSConversionFunctionLibrary
 	: public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
-  public:
+public:
 	UFUNCTION(BlueprintPure, Category = "SpatialOS Conversions")
 	static FRotator GetSpatialOsToUnrealCoordinateSpace();
 

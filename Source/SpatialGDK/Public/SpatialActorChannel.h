@@ -24,7 +24,7 @@ class SPATIALGDK_API USpatialActorChannel : public UActorChannel
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	USpatialActorChannel(
 		const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
@@ -91,11 +91,11 @@ class SPATIALGDK_API USpatialActorChannel : public UActorChannel
 	UPROPERTY(transient)
 	bool bCoreActor;
 
-  protected:
+protected:
 	// UChannel interface
 	virtual bool CleanUp(const bool bForDestroy) override;
 
-  private:
+private:
 	void BindToSpatialView();
 	void UnbindFromSpatialView() const;
 
@@ -125,7 +125,7 @@ class SPATIALGDK_API USpatialActorChannel : public UActorChannel
 	UPROPERTY(Transient)
 	bool bCreatingNewEntity;
 
-  private:
+private:
 	void UpdateSpatialPosition();
 
 	static FVector GetActorSpatialPosition(AActor* Actor);

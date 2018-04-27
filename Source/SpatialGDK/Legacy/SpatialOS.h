@@ -31,7 +31,7 @@ UCLASS()
 class SPATIALGDK_API USpatialOS : public UObject
 {
 	GENERATED_BODY()
-  public:
+public:
 	USpatialOS();
 
 	virtual void BeginDestroy() override;
@@ -194,7 +194,7 @@ class SPATIALGDK_API USpatialOS : public UObject
 	UPROPERTY(BlueprintAssignable, Category = "SpatialOS")
 	FOnConnectionFailedDelegate OnConnectionFailedDelegate;
 
-  private:
+private:
 	UPROPERTY()
 	FSpatialGDKWorkerConfiguration WorkerConfiguration;
 

@@ -18,7 +18,7 @@ namespace callbacks
  */
 class FScopedViewCallbacks
 {
-  public:
+public:
 	FScopedViewCallbacks()
 	{
 		View.Reset();
@@ -89,7 +89,7 @@ class FScopedViewCallbacks
 		check(numRemoved == 1);
 	}
 
-  private:
+private:
 	TWeakPtr<SpatialOSView> View;
 	TArray<uint64> Handles;
 };

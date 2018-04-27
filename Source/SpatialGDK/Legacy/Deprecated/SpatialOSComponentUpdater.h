@@ -12,7 +12,7 @@ class SPATIALGDK_API USpatialOsComponentUpdater : public UObject
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	UFUNCTION()
 	void UpdateComponents(UEntityRegistry* Registry, float DeltaSeconds);
 };

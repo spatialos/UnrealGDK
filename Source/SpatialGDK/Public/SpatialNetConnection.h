@@ -13,7 +13,7 @@ UCLASS(transient)
 class SPATIALGDK_API USpatialNetConnection : public UIpConnection
 {
 	GENERATED_BODY()
-  public:
+public:
 	USpatialNetConnection(const FObjectInitializer& ObjectInitializer);
 
 	virtual void InitBase(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket = 0, int32 InPacketOverhead = 0) override;

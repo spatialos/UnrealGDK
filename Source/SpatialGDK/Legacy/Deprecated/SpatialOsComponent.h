@@ -36,7 +36,7 @@ class SPATIALGDK_API USpatialOsComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	USpatialOsComponent();
 	virtual ~USpatialOsComponent() = default;
 
@@ -100,7 +100,7 @@ class SPATIALGDK_API USpatialOsComponent : public UActorComponent
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int MaxUpdatesPerSecond;
 
-  protected:
+protected:
 	virtual void
 	OnAuthorityChangeDispatcherCallback(const worker::AuthorityChangeOp& op);
 	void OnRemoveComponentDispatcherCallback(const worker::RemoveComponentOp& op);

@@ -19,7 +19,7 @@ struct FComponentIdGenerator
 		return NumIds;
 	}
 
-  private:
+private:
 	int InitialId;
 	int NumIds;
 };

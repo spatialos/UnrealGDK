@@ -8,7 +8,7 @@ UCLASS(abstract)
 class SPATIALGDK_API UComponentUpdateOpWrapperBase : public UObject
 {
 	GENERATED_BODY()
-  public:
+public:
 	UComponentUpdateOpWrapperBase()
 	{
 	}

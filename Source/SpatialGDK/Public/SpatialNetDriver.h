@@ -21,7 +21,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
 class FSpatialWorkerUniqueNetId : public FUniqueNetId
 {
-  public:
+public:
 	FSpatialWorkerUniqueNetId(const FString& WorkerId)
 	: WorkerId{WorkerId}
 	{
@@ -49,7 +49,7 @@ class FSpatialWorkerUniqueNetId : public FUniqueNetId
 		return TEXT("workerId:") + WorkerId;
 	}
 
-  private:
+private:
 	FString WorkerId;
 };
 
@@ -58,7 +58,7 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	virtual void PostInitProperties() override;
 
 	// Begin UNetDriver interface.
@@ -112,7 +112,7 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 		return Interop;
 	}
 
-  protected:
+protected:
 	FSpatialGDKWorkerConfigurationData WorkerConfig;
 
 	UPROPERTY()
@@ -161,7 +161,7 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 		UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated);
 #endif
 
-  private:
+private:
 	FPlayerSpawnRequestSender PlayerSpawner;
 
 	friend class USpatialNetConnection;

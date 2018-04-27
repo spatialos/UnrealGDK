@@ -70,7 +70,7 @@ struct FPropertyChangeState
 // A structure containing information about a replicated property.
 class FRepHandleData
 {
-  public:
+public:
 	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, ELifetimeCondition Condition, ELifetimeRepNotifyCondition RepNotifyCondition)
 	: Condition(Condition), RepNotifyCondition(RepNotifyCondition), Offset(0)
 	{
@@ -119,14 +119,14 @@ class FRepHandleData
 	ELifetimeCondition Condition;
 	ELifetimeRepNotifyCondition RepNotifyCondition;
 
-  private:
+private:
 	int32 Offset;
 };
 
 // A structure containing information about a migratable property.
 class FMigratableHandleData
 {
-  public:
+public:
 	FMigratableHandleData(UClass* Class, TArray<FName> PropertyNames)
 	: SubobjectProperty(false), Offset(0)
 	{
@@ -217,7 +217,7 @@ class FMigratableHandleData
 	TArray<UProperty*> PropertyChain;
 	UProperty* Property;
 
-  private:
+private:
 	bool SubobjectProperty;  // If this is true, then this property refers to a
 							 // property within a
 							 // subobject.
@@ -235,7 +235,7 @@ class SPATIALGDK_API USpatialTypeBinding : public UObject
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	virtual const FRepHandlePropertyMap& GetRepHandlePropertyMap() const
 		PURE_VIRTUAL(USpatialTypeBinding::GetRepHandlePropertyMap,
 					 static FRepHandlePropertyMap Map;
@@ -275,7 +275,7 @@ class SPATIALGDK_API USpatialTypeBinding : public UObject
 	GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const
 		PURE_VIRTUAL(USpatialTypeBinding::GetInterestOverrideMap, return {};);
 
-  protected:
+protected:
 	UPROPERTY()
 	USpatialInterop* Interop;
 

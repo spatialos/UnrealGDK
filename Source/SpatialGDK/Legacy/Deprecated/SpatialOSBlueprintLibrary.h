@@ -15,7 +15,7 @@ class SPATIALGDK_API USpatialOSBlueprintLibrary
 {
 	GENERATED_UCLASS_BODY()
 
-  public:
+public:
 	UFUNCTION(BlueprintPure,
 		meta = (DisplayName = "Equal (EntityId)", CompactNodeTitle = "=="),
 		Category = "SpatialOS EntityId")

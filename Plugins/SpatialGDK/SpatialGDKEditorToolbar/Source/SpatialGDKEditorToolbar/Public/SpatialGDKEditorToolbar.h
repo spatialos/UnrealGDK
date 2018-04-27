@@ -14,7 +14,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditor, Log, All);
 class FSpatialGDKEditorToolbarModule : public IModuleInterface,
 									   public FTickableEditorObject
 {
-  public:
+public:
 	FSpatialGDKEditorToolbarModule();
 
 	void StartupModule() override;
@@ -34,7 +34,7 @@ class FSpatialGDKEditorToolbarModule : public IModuleInterface,
 			STATGROUP_Tickables);
 	}
 
-  private:
+private:
 	void RegisterSettings();
 	void UnregisterSettings();
 	bool HandleSettingsSaved();
@@ -47,6 +47,6 @@ class FSpatialGDKEditorToolbarModule : public IModuleInterface,
 	void CreateSnapshotButtonClicked();
 	void GenerateInteropCodeButtonClicked();
 
-  private:
+private:
 	TSharedPtr<FUICommandList> PluginCommands;
 };

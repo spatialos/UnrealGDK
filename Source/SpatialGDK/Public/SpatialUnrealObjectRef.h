@@ -14,7 +14,7 @@ ObjectRefToString(const improbable::unreal::UnrealObjectRef& ObjectRef)
 
 class FHashableUnrealObjectRef
 {
-  public:
+public:
 	FHashableUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef)
 	: ObjectRef(ObjectRef)
 	{
@@ -37,6 +37,6 @@ class FHashableUnrealObjectRef
 			HashableObjectRef.ObjectRef);
 	}
 
-  private:
+private:
 	improbable::unreal::UnrealObjectRef ObjectRef;
 };

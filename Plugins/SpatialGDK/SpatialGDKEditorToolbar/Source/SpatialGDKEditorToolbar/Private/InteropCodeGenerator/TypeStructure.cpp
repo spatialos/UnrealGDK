@@ -629,8 +629,7 @@ GetFlatMigratableData(TSharedPtr<FUnrealType> TypeInfo)
 TArray<FString> GetRPCTypeOwners(TSharedPtr<FUnrealType> TypeInfo)
 {
 	TArray<FString> RPCTypeOwners;
-	VisitAllObjects(TypeInfo, [&RPCTypeOwners](TSharedPtr<FUnrealType> Type)
-	{
+	VisitAllObjects(TypeInfo, [&RPCTypeOwners](TSharedPtr<FUnrealType> Type) {
 		for (auto& RPC : Type->RPCs)
 		{
 			FString RPCOwnerName = *RPC.Value->Function->GetOuter()->GetName();
@@ -638,7 +637,8 @@ TArray<FString> GetRPCTypeOwners(TSharedPtr<FUnrealType> TypeInfo)
 			UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("RPC Type Owner Found - %s ::  %s"), *RPCOwnerName, *RPC.Value->Function->GetName());
 		}
 		return true;
-	}, true);
+	},
+		true);
 	return RPCTypeOwners;
 }
 

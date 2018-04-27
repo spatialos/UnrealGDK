@@ -10,7 +10,7 @@
 
 class FSpatialConditionMapFilter
 {
-  public:
+public:
 	FSpatialConditionMapFilter(USpatialActorChannel* ActorChannel,
 		bool bAuthoritative)
 	{
@@ -68,6 +68,6 @@ class FSpatialConditionMapFilter
 		return ConditionMap[Condition];
 	}
 
-  private:
+private:
 	bool ConditionMap[COND_Max];
 };

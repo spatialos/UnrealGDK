@@ -26,13 +26,13 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSPlayerSpawner, Log, All);
  */
 class SPATIALGDK_API FPlayerSpawnRequestSender
 {
-  public:
+public:
 	FPlayerSpawnRequestSender();
 	~FPlayerSpawnRequestSender();
 
 	void RequestPlayer(USpatialOS* InSpatialOS, FTimerManager* InTimerManager, const FURL& Url);
 
-  private:
+private:
 	using SpawnPlayerCommand =
 		improbable::unreal::PlayerSpawner::Commands::SpawnPlayer;
 

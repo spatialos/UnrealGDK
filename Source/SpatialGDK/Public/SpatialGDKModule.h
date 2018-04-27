@@ -13,11 +13,11 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKModule, Log, All);
 
 class SPATIALGDK_API FSpatialGDKModule : public IModuleInterface
 {
-  public:
+public:
 	void StartupModule() override;
 	void ShutdownModule() override;
 
-  private:
+private:
 	void RegisterSettings();
 	void UnregisterSettings();
 	bool HandleSettingsSaved();

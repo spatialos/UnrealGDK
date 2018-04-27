@@ -25,7 +25,7 @@ class USpatialGDKSettings : public UObject
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	USpatialGDKSettings(const FObjectInitializer& ObjectInitializer);
 
 	/** Should user worker configurations be used? */

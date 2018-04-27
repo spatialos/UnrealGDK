@@ -28,7 +28,7 @@ class SPATIALGDK_API USimpleEntitySpawnerBlock : public UEntityPipelineBlock
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	void Init(UEntityRegistry* Registry);
 
 	void AddEntity(const worker::AddEntityOp& AddEntityOp) override;
@@ -42,7 +42,7 @@ class SPATIALGDK_API USimpleEntitySpawnerBlock : public UEntityPipelineBlock
 	void ChangeAuthority(const worker::ComponentId ComponentId,
 		const worker::AuthorityChangeOp& AuthChangeOp) override;
 
-  private:
+private:
 	enum class ESpatialOperationType
 	{
 		AddEntity,

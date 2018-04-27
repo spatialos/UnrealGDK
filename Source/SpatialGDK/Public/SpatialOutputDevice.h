@@ -8,7 +8,7 @@
 
 class SPATIALGDK_API FSpatialOutputDevice : public FOutputDevice
 {
-  public:
+public:
 	FSpatialOutputDevice(USpatialOS* SpatialOSInstance, FString LoggerName);
 	~FSpatialOutputDevice();
 
@@ -20,7 +20,7 @@ class SPATIALGDK_API FSpatialOutputDevice : public FOutputDevice
 	static worker::LogLevel
 	ConvertLogLevelToSpatial(ELogVerbosity::Type Verbosity);
 
-  protected:
+protected:
 	ELogVerbosity::Type FilterLevel;
 	TSet<FName> CategoriesToRedirect;
 	USpatialOS* SpatialOS;

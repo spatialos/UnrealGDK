@@ -10,7 +10,7 @@ class USpatialOSEditorToolbarSettings : public UObject
 {
 	GENERATED_BODY()
 
-  public:
+public:
 	USpatialOSEditorToolbarSettings(const FObjectInitializer& ObjectInitializer);
 
 	/** Root folder of your SpatialOS project */

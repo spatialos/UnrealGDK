@@ -25,7 +25,7 @@ UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()
-  public:
+public:
 	FNetworkGUID
 	ResolveEntityActor(AActor* Actor, FEntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityActor(const FEntityId& EntityId);
@@ -43,17 +43,16 @@ class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 	UClass* GetStaticClassFromHash(uint32 Hash) const;
 
 private:
-
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 {
-  public:
+public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
-		
+
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityNetGUID(worker::EntityId EntityId);
-	
+
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
 	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(worker::EntityId EntityId) const;
@@ -74,4 +73,3 @@ private:
 	TMap<FHashableUnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
 	TMap<uint32, UClass*> StaticClassHashMap;
 };
-

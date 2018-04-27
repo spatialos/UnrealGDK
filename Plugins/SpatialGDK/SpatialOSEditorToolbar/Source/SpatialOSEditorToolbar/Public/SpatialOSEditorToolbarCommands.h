@@ -9,7 +9,7 @@
 class FSpatialOSEditorToolbarCommands
 	: public TCommands<FSpatialOSEditorToolbarCommands>
 {
-  public:
+public:
 	FSpatialOSEditorToolbarCommands()
 	: TCommands<FSpatialOSEditorToolbarCommands>(
 		  TEXT("SpatialOSEditorToolbar"),
@@ -21,7 +21,7 @@ class FSpatialOSEditorToolbarCommands
 
 	virtual void RegisterCommands() override;
 
-  public:
+public:
 	TSharedPtr<FUICommandInfo> StartSpatialOSStackAction;
 	TSharedPtr<FUICommandInfo> StopSpatialOSStackAction;
 	TSharedPtr<FUICommandInfo> LaunchInspectorWebPageAction;
