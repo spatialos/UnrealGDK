@@ -230,6 +230,13 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	// RPC components.
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
 	TArray<FString> RPCTypeOwners = GetRPCTypeOwners(TypeInfo);
+
+	// Remove underscores
+	for(auto& RPCTypeOwner : RPCTypeOwners)
+	{
+		RPCTypeOwner = UnrealNameToSchemaTypeName(RPCTypeOwner);
+	}
+
 	TMap<FString, TSharedPtr<FCodeWriter>> RPCTypeCodeWriterMap;
 
 	for (auto& RPCTypeOwner : RPCTypeOwners)
