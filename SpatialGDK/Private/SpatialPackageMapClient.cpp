@@ -265,8 +265,9 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(const UObject* 
 		const int32 IsStatic = IsDynamicObject(Object) ? 0 : 1;
 
 		NetGUID = FNetworkGUID(ALLOC_NEW_NET_GUID(IsStatic));
+
 		FNetGuidCacheObject CacheObject;
-		CacheObject.Object = Object;
+		CacheObject.Object = MakeWeakObjectPtr(const_cast<UObject*>(Object));
 		CacheObject.PathName = Object->GetFName();
 		RegisterNetGUID_Internal(NetGUID, CacheObject);
 
@@ -294,7 +295,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignStaticActorNetGUID(const UObject* Objec
 	check(!NetGUIDLookup.FindRef(Object).IsValid());
 
 	FNetGuidCacheObject CacheObject;
-	CacheObject.Object = Object;
+	CacheObject.Object = MakeWeakObjectPtr(const_cast<UObject*>(Object));
 	CacheObject.PathName = Object->GetFName();
 	RegisterNetGUID_Internal(StaticNetGUID, CacheObject);
 
