@@ -1,0 +1,33 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#
+
+#>
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// =========== 
+
+#include "EntityTemplate.h"
+
+UEntityTemplate::UEntityTemplate()
+{
+}
+
+UEntityTemplate* UEntityTemplate::Init(const worker::Entity& underlying)
+{
+    Underlying = worker::Entity(underlying);
+    return this;
+}
+
+<# foreach (var unrealComponent in unrealComponents) { #>
+UEntityTemplate* UEntityTemplate::Add<#= unrealComponent.CapitalisedName #>Component(U<#= unrealComponent.CapitalisedDataName #>* data)
+{
+    Underlying.Add<<#= unrealComponent.UnderlyingQualifiedName #>>(data->GetUnderlying());
+	return this;
+}
+
+<# } #>
+worker::Entity UEntityTemplate::GetUnderlying()
+{
+	return Underlying;
+}

@@ -2,11 +2,11 @@
 
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 
-#include "Utils/CodeWriter.h"
-#include "Utils/ComponentIdGenerator.h"
-#include "TypeStructure.h"
 #include "SchemaGenerator.h"
 #include "TypeBindingGenerator.h"
+#include "TypeStructure.h"
+#include "Utils/CodeWriter.h"
+#include "Utils/ComponentIdGenerator.h"
 
 #include "Misc/FileHelper.h"
 

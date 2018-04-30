@@ -1,8 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "TypeBindingGenerator.h"
-#include "TypeStructure.h"
 #include "SchemaGenerator.h"
+#include "TypeStructure.h"
 
 #include "Utils/CodeWriter.h"
 
@@ -42,7 +42,8 @@ FString CPPFieldName(TSharedPtr<FUnrealProperty> Property)
 	return CPPFieldName;
 }
 
-FString PropertyToWorkerSDKType(UProperty* Property) {
+FString PropertyToWorkerSDKType(UProperty* Property)
+{
 	FString DataType;
 
 	if (Property->IsA(UStructProperty::StaticClass()))
@@ -107,7 +108,8 @@ FString PropertyToWorkerSDKType(UProperty* Property) {
 		DataType = PropertyToWorkerSDKType(Cast<UArrayProperty>(Property)->Inner);
 		DataType = FString::Printf(TEXT("::worker::List<%s>"), *DataType);
 	}
-	else {
+	else
+	{
 		DataType = TEXT("std::string");
 	}
 

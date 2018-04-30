@@ -12,7 +12,7 @@ public class SpatialGDKEditorToolbar : ModuleRules
 		PublicIncludePaths.AddRange(
 			new string[] {
 				"SpatialGDKEditorToolbar/Public",
-				"SpatialOS/Public"
+				"SpatialGDK/Public"
 			});
 				
 		
@@ -42,7 +42,6 @@ public class SpatialGDKEditorToolbar : ModuleRules
 				"Projects",
 				"Slate",
 				"SlateCore",
-				"SpatialOS",
 				"SpatialGDK",
 				"UnrealEd"
 			});

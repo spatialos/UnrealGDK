@@ -1,0 +1,43 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#
+
+#>
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// =========== 
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "UObject/NoExportTypes.h"
+<# foreach (var unrealComponent in unrealComponents) { #>
+#include "<#= unrealComponent.CapitalisedDataName #>.h"
+<# } #>
+<# foreach (var packageInclude in packageIncludes) { #>
+#include "<#= packageInclude #>"
+<# } #>
+#include "EntityTemplate.generated.h"
+
+/**
+ *
+ */
+UCLASS(BlueprintType)
+class SPATIALOS_API UEntityTemplate : public UObject
+{
+    GENERATED_BODY()
+
+  public:
+    UEntityTemplate();
+    UEntityTemplate* Init(const worker::Entity& underlying);
+
+<# foreach (var unrealComponent in unrealComponents) { #>
+    UFUNCTION(BlueprintCallable, Category = "EntityTemplate")
+    UEntityTemplate* Add<#= unrealComponent.CapitalisedName #>Component(U<#= unrealComponent.CapitalisedDataName #>* data);
+
+<# } #>
+    worker::Entity GetUnderlying();
+
+  private:
+    worker::Entity Underlying;
+};
