@@ -29,12 +29,10 @@ FString GetRepNotifyLifetimeConditionAsString(ELifetimeRepNotifyCondition Condit
 {
 	switch (Condition)
 	{
-		case REPNOTIFY_OnChanged:
-			return FString(TEXT("REPNOTIFY_OnChanged"));
-		case REPNOTIFY_Always:
-			return FString(TEXT("REPNOTIFY_Always"));
-		default:
-			checkNoEntry();
+	case REPNOTIFY_OnChanged: return FString(TEXT("REPNOTIFY_OnChanged"));
+	case REPNOTIFY_Always: return FString(TEXT("REPNOTIFY_Always"));
+	default:
+		checkNoEntry();
 	}
 	return FString();
 }
@@ -77,20 +75,20 @@ FString GetRPCTypeName(ERPCType RPCType)
 {
 	switch (RPCType)
 	{
-		case ERPCType::RPC_Client:
-			return "Client";
-		case ERPCType::RPC_Server:
-			return "Server";
-		default:
-			checkf(false, TEXT("RPCType is invalid!"));
-			return "";
+	case ERPCType::RPC_Client:
+		return "Client";
+	case ERPCType::RPC_Server:
+		return "Server";
+	default:
+		checkf(false, TEXT("RPCType is invalid!"));
+		return "";
 	}
 }
 
 ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property)
 {
-	UProperty* UnderlyingProperty = Property;
-	if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
+	UProperty * UnderlyingProperty = Property;
+	if (UEnumProperty * EnumProperty = Cast< UEnumProperty >(Property))
 	{
 		UnderlyingProperty = EnumProperty->GetUnderlyingProperty();
 	}
@@ -98,8 +96,8 @@ ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property)
 	// Try to special case to custom types we know about
 	if (UnderlyingProperty->IsA(UStructProperty::StaticClass()))
 	{
-		UStructProperty* StructProp = Cast<UStructProperty>(UnderlyingProperty);
-		UScriptStruct* Struct = StructProp->Struct;
+		UStructProperty * StructProp = Cast< UStructProperty >(UnderlyingProperty);
+		UScriptStruct * Struct = StructProp->Struct;
 		if (Struct->GetFName() == NAME_Vector)
 		{
 			return REPCMD_PropertyVector;
@@ -110,7 +108,7 @@ ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property)
 		}
 		else if (Struct->GetFName() == NAME_Plane)
 		{
-			return REPCMD_PropertyPlane;
+			return  REPCMD_PropertyPlane;
 		}
 		else if (Struct->GetName() == TEXT("Vector_NetQuantize100"))
 		{
@@ -251,7 +249,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - multicast delegate property, skipping"), *Property->GetName());
 			continue;
 		}
-
+		
 		// Create property node and add it to the AST.
 		TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
 		PropertyNode->Property = Property;
@@ -291,7 +289,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		{
 			continue;
 		}
-
+		
 		UObject* ContainerCDO = Class->GetDefaultObject();
 		check(ContainerCDO);
 
@@ -338,7 +336,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 	// Iterate through each RPC in the class.
 	for (TFieldIterator<UFunction> RemoteFunction(Class); RemoteFunction; ++RemoteFunction)
 	{
-		if (RemoteFunction->FunctionFlags & FUNC_NetClient || RemoteFunction->FunctionFlags & FUNC_NetServer)
+		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
+			RemoteFunction->FunctionFlags & FUNC_NetServer)
 		{
 			TSharedPtr<FUnrealRPC> RPCNode = MakeShared<FUnrealRPC>();
 			RPCNode->CallerType = Class;
@@ -417,18 +416,18 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			// Here, the Cmd is some property inside the Parent property. We need to find it in the AST.
 			TSharedPtr<FUnrealProperty> RootProperty = TypeNode->Properties[Parent.Property];
 			checkf(RootProperty->Type.IsValid(), TEXT("Properties in the AST which are parent properties in the rep layout must have child properties"));
-			VisitAllProperties(RootProperty->Type,
-							   [&PropertyNode, &Cmd](TSharedPtr<FUnrealProperty> Property) {
-								   if (Property->Property == Cmd.Property)
-								   {
-									   checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation.")) PropertyNode = Property;
-								   }
-								   return true;
-							   },
-							   false);
+			VisitAllProperties(RootProperty->Type, [&PropertyNode, &Cmd](TSharedPtr<FUnrealProperty> Property)
+			{
+				if (Property->Property == Cmd.Property)
+				{
+					checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation."))
+					PropertyNode = Property;
+				}
+				return true;
+			}, false);
 			checkf(PropertyNode.IsValid(), TEXT("Couldn't find the Cmd property inside the Parent's sub-properties. This shouldn't happen."));
 		}
-
+		
 		// We now have the right property node. Fill in the rep data.
 		TSharedPtr<FUnrealRepData> RepDataNode = MakeShared<FUnrealRepData>();
 		RepDataNode->RepLayoutType = (ERepLayoutCmdType)Cmd.Type;
@@ -485,45 +484,52 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 	RepData.Add(REP_MultiClient);
 	RepData.Add(REP_SingleClient);
 
-	VisitAllProperties(TypeInfo,
-					   [&RepData](TSharedPtr<FUnrealProperty> Property) {
-						   if (Property->ReplicationData.IsValid())
-						   {
-							   EReplicatedPropertyGroup Group = REP_MultiClient;
-							   switch (Property->ReplicationData->Condition)
-							   {
-								   case COND_AutonomousOnly:
-								   case COND_OwnerOnly:
-									   Group = REP_SingleClient;
-									   break;
-							   }
-							   RepData[Group].Add(Property->ReplicationData->Handle, Property);
-						   }
-						   return true;
-					   },
-					   false);
+	VisitAllProperties(TypeInfo, [&RepData](TSharedPtr<FUnrealProperty> Property)
+	{
+		if (Property->ReplicationData.IsValid())
+		{
+			EReplicatedPropertyGroup Group = REP_MultiClient;
+			switch (Property->ReplicationData->Condition)
+			{
+			case COND_AutonomousOnly:
+			case COND_OwnerOnly:
+				Group = REP_SingleClient;
+				break;
+			}
+			RepData[Group].Add(Property->ReplicationData->Handle, Property);
+		}
+		return true;
+	}, false);
 
 	// Sort by replication handle.
-	RepData[REP_MultiClient].KeySort([](uint16 A, uint16 B) { return A < B; });
-	RepData[REP_SingleClient].KeySort([](uint16 A, uint16 B) { return A < B; });
+	RepData[REP_MultiClient].KeySort([](uint16 A, uint16 B)
+	{
+		return A < B;
+	});
+	RepData[REP_SingleClient].KeySort([](uint16 A, uint16 B)
+	{
+		return A < B;
+	});
 	return RepData;
 }
 
 TMap<uint16, TSharedPtr<FUnrealProperty>> GetFlatMigratableData(TSharedPtr<FUnrealType> TypeInfo)
 {
 	TMap<uint16, TSharedPtr<FUnrealProperty>> MigratableData;
-	VisitAllProperties(TypeInfo,
-					   [&MigratableData](TSharedPtr<FUnrealProperty> Property) {
-						   if (Property->MigratableData.IsValid())
-						   {
-							   MigratableData.Add(Property->MigratableData->Handle, Property);
-						   }
-						   return true;
-					   },
-					   true);
+	VisitAllProperties(TypeInfo, [&MigratableData](TSharedPtr<FUnrealProperty> Property)
+	{
+		if (Property->MigratableData.IsValid())
+		{
+			MigratableData.Add(Property->MigratableData->Handle, Property);
+		}
+		return true;
+	}, true);
 
 	// Sort by property handle.
-	MigratableData.KeySort([](uint16 A, uint16 B) { return A < B; });
+	MigratableData.KeySort([](uint16 A, uint16 B)
+	{
+		return A < B;
+	});
 	return MigratableData;
 }
 
@@ -531,17 +537,16 @@ TMap<uint16, TSharedPtr<FUnrealProperty>> GetFlatMigratableData(TSharedPtr<FUnre
 TArray<FString> GetRPCTypeOwners(TSharedPtr<FUnrealType> TypeInfo)
 {
 	TArray<FString> RPCTypeOwners;
-	VisitAllObjects(TypeInfo,
-					[&RPCTypeOwners](TSharedPtr<FUnrealType> Type) {
-						for (auto& RPC : Type->RPCs)
-						{
-							FString RPCOwnerName = *RPC.Value->Function->GetOuter()->GetName();
-							RPCTypeOwners.AddUnique(RPCOwnerName);
-							UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("RPC Type Owner Found - %s ::  %s"), *RPCOwnerName, *RPC.Value->Function->GetName());
-						}
-						return true;
-					},
-					true);
+	VisitAllObjects(TypeInfo, [&RPCTypeOwners](TSharedPtr<FUnrealType> Type)
+	{
+		for (auto& RPC : Type->RPCs)
+		{
+			FString RPCOwnerName = *RPC.Value->Function->GetOuter()->GetName();
+			RPCTypeOwners.AddUnique(RPCOwnerName);
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("RPC Type Owner Found - %s ::  %s"), *RPCOwnerName, *RPC.Value->Function->GetName());
+		}
+		return true;
+	}, true);
 	return RPCTypeOwners;
 }
 
@@ -550,35 +555,33 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 	FUnrealRPCsByType RPCsByType;
 	RPCsByType.Add(RPC_Client);
 	RPCsByType.Add(RPC_Server);
-	VisitAllObjects(TypeInfo,
-					[&RPCsByType](TSharedPtr<FUnrealType> Type) {
-						for (auto& RPC : Type->RPCs)
-						{
-							RPCsByType.FindOrAdd(RPC.Value->Type).Add(RPC.Value);
-						}
-						return true;
-					},
-					true);
+	VisitAllObjects(TypeInfo, [&RPCsByType](TSharedPtr<FUnrealType> Type)
+	{
+		for (auto& RPC : Type->RPCs)
+		{
+			RPCsByType.FindOrAdd(RPC.Value->Type).Add(RPC.Value);
+		}
+		return true;
+	}, true);
 	return RPCsByType;
 }
 
 TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode)
 {
 	TArray<TSharedPtr<FUnrealProperty>> ParamList;
-	VisitAllProperties(RPCNode,
-					   [&ParamList](TSharedPtr<FUnrealProperty> Property) {
-						   // If the RepType is a generic struct, recurse further.
-						   ERepLayoutCmdType RepType = PropertyToRepLayoutType(Property->Property);
-						   if (RepType == REPCMD_Property && Property->Property->IsA<UStructProperty>())
-						   {
-							   // Generic struct. Recurse further.
-							   return true;
-						   }
-						   // If the RepType is not a generic struct, such as Vector3f or Plane, add to ParamList and stop recursion.
-						   ParamList.Add(Property);
-						   return false;
-					   },
-					   false);
+	VisitAllProperties(RPCNode, [&ParamList](TSharedPtr<FUnrealProperty> Property)
+	{
+		// If the RepType is a generic struct, recurse further.
+		ERepLayoutCmdType RepType = PropertyToRepLayoutType(Property->Property);
+		if (RepType == REPCMD_Property && Property->Property->IsA<UStructProperty>())
+		{
+			// Generic struct. Recurse further.
+			return true;
+		}
+		// If the RepType is not a generic struct, such as Vector3f or Plane, add to ParamList and stop recursion.
+		ParamList.Add(Property);
+		return false;
+	}, false);
 	return ParamList;
 }
 
