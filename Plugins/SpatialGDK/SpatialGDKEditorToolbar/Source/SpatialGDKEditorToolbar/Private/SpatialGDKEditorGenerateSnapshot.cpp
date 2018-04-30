@@ -5,13 +5,13 @@
 #include "SpatialConstants.h"
 #include "SpatialOSCommon.h"
 
-#include "GameFramework/Actor.h"
 #include "EngineUtils.h"
+#include "GameFramework/Actor.h"
 
-#include <improbable/worker.h>
 #include <improbable/standard_library.h>
-#include <improbable/unreal/spawner.h>
 #include <improbable/unreal/level_data.h>
+#include <improbable/unreal/spawner.h>
+#include <improbable/worker.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
@@ -24,12 +24,13 @@ const WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet
 const WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
 const WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
 
-namespace {
+namespace
+{
 worker::Entity CreateSpawnerEntity()
 {
 	const Coordinates InitialPosition{0, 0, 0};
-	improbable::WorkerAttributeSet WorkerAttribute{ { worker::List<std::string>{"UnrealWorker"} } };
-	improbable::WorkerRequirementSet WorkersOnly{ { WorkerAttribute } };
+	improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
+	improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
 	improbable::unreal::UnrealMetadata::Data UnrealMetadata;
 
 	return improbable::unreal::FEntityBuilder::Begin()

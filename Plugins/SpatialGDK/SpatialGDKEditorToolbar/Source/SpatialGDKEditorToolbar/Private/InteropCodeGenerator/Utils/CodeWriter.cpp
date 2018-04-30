@@ -104,7 +104,8 @@ FCodeWriter& FCodeWriter::BeginFunction(const FFunctionSignature& Signature, con
 	return *this;
 }
 
-FCodeWriter& FCodeWriter::End() {
+FCodeWriter& FCodeWriter::End()
+{
 	Outdent();
 	Print("}");
 	return *this;
@@ -116,6 +117,7 @@ void FCodeWriter::WriteToFile(const FString& Filename)
 	FFileHelper::SaveStringToFile(OutputSource, *Filename);
 }
 
-void FCodeWriter::Dump() {
+void FCodeWriter::Dump()
+{
 	UE_LOG(LogTemp, Warning, TEXT("%s"), *OutputSource);
 }
