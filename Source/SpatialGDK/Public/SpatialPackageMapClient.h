@@ -5,8 +5,8 @@
 #include "CoreMinimal.h"
 #include "Engine/PackageMapClient.h"
 #include "EntityId.h"
-#include "SpatialUnrealObjectRef.h"
 #include "SpatialInterop.h"
+#include "SpatialUnrealObjectRef.h"
 
 #include <improbable/unreal/level_data.h>
 

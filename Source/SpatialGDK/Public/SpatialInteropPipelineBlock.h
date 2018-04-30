@@ -1,10 +1,10 @@
 #pragma once
 
+#include "AddComponentOpWrapperBase.h"
+#include "ComponentId.h"
 #include "ComponentIdentifier.h"
 #include "EntityId.h"
 #include "EntityPipelineBlock.h"
-#include "ComponentId.h"
-#include "AddComponentOpWrapperBase.h"
 #include "SpatialInteropPipelineBlock.generated.h"
 
 namespace worker
@@ -24,7 +24,7 @@ class USpatialOsComponent;
 class USpatialActorChannel;
 class USpatialNetDriver;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInteropPipelineBlock, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInteropPipelineBlock, Log, All);
 
 // Needed because UHT does not support nested types.
 USTRUCT()

@@ -1,32 +1,32 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #include "SpatialInteropPipelineBlock.h"
 
-#include "SpatialConstants.h"
-#include "SpatialActorChannel.h"
-#include "SpatialNetDriver.h"
-#include "SpatialNetConnection.h"
-#include "SpatialPackageMapClient.h"
 #include "AddComponentOpWrapperBase.h"
 #include "CallbackDispatcher.h"
 #include "EngineMinimal.h"
 #include "EntityRegistry.h"
 #include "GameFramework/PlayerController.h"
+#include "SpatialActorChannel.h"
+#include "SpatialConstants.h"
+#include "SpatialNetConnection.h"
+#include "SpatialNetDriver.h"
+#include "SpatialPackageMapClient.h"
 #include "improbable/view.h"
 #include "improbable/worker.h"
 
-#include "PositionAddComponentOp.h"
-#include "PositionComponent.h"
 #include "MetadataAddComponentOp.h"
 #include "MetadataComponent.h"
-#include "UnrealMetadataAddComponentOp.h"
+#include "PositionAddComponentOp.h"
+#include "PositionComponent.h"
 #include "SpatialConstants.h"
-#include "UnrealMetadataComponent.h"
 #include "UnrealLevelComponent.h"
+#include "UnrealMetadataAddComponentOp.h"
+#include "UnrealMetadataComponent.h"
 
 // TODO(David): Needed for ApplyNetworkMovementMode hack below.
 #include "GameFramework/CharacterMovementComponent.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialOSInteropPipelineBlock);
+DEFINE_LOG_CATEGORY(LogSpatialGDKInteropPipelineBlock);
 
 void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDriver* Driver, UWorld* LoadedWorld)
 {
@@ -49,7 +49,7 @@ void USpatialInteropPipelineBlock::Init(UEntityRegistry* Registry, USpatialNetDr
 
 void USpatialInteropPipelineBlock::AddEntity(const worker::AddEntityOp& AddEntityOp)
 {
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::AddEntityOp %lld"), AddEntityOp.EntityId);
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::AddEntityOp %lld"), AddEntityOp.EntityId);
 	check(bInCriticalSection);
 
 	PendingAddEntities.Emplace(AddEntityOp.EntityId);
@@ -62,7 +62,7 @@ void USpatialInteropPipelineBlock::AddEntity(const worker::AddEntityOp& AddEntit
 
 void USpatialInteropPipelineBlock::RemoveEntity(const worker::RemoveEntityOp& RemoveEntityOp)
 {
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveEntityOp %lld"), RemoveEntityOp.EntityId);
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveEntityOp %lld"), RemoveEntityOp.EntityId);
 
 	if (bInCriticalSection)
 	{
@@ -81,7 +81,7 @@ void USpatialInteropPipelineBlock::RemoveEntity(const worker::RemoveEntityOp& Re
 
 void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddComponentOp)
 {
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::AddComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"),
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::AddComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"),
 		AddComponentOp->ComponentId, AddComponentOp->EntityId, (int)bInCriticalSection);
 
 	if (bInCriticalSection)
@@ -105,7 +105,7 @@ void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddC
 void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId ComponentId,
 	const worker::RemoveComponentOp& RemoveComponentOp)
 {
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"),
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::RemoveComponentOp component ID: %u entity ID: %lld inCriticalSection: %d"),
 		ComponentId, RemoveComponentOp.EntityId, (int)bInCriticalSection);
 
 	if (bInCriticalSection)
@@ -126,7 +126,7 @@ void USpatialInteropPipelineBlock::RemoveComponent(const worker::ComponentId Com
 void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId ComponentId,
 	const worker::AuthorityChangeOp& AuthChangeOp)
 {
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::ChangeAuthorityOp component ID: %u entity ID: %lld inCriticalSection: %d"),
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::ChangeAuthorityOp component ID: %u entity ID: %lld inCriticalSection: %d"),
 		ComponentId, AuthChangeOp.EntityId, (int)bInCriticalSection);
 
 	// When a component is initialised, the callback dispatcher will automatically deal with authority changes. Therefore, we need
@@ -144,7 +144,7 @@ void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId Com
 
 void USpatialInteropPipelineBlock::EnterCriticalSection()
 {
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: Entering critical section."));
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: Entering critical section."));
 	check(!bInCriticalSection);
 	bInCriticalSection = true;
 
@@ -156,7 +156,7 @@ void USpatialInteropPipelineBlock::EnterCriticalSection()
 
 void USpatialInteropPipelineBlock::LeaveCriticalSection()
 {
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: Leaving critical section."));
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: Leaving critical section."));
 	check(bInCriticalSection);
 
 	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
@@ -292,7 +292,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 	}
 
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
-	UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Checked out entity with entity ID %lld"), EntityId.ToSpatialEntityId());
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Checked out entity with entity ID %lld"), EntityId.ToSpatialEntityId());
 
 	// There are 3 main options when we get here with regards to how this entity was created:
 	// 1) A SpawnActor() call (through interop) on this worker, which means it already has an actor associated with it.
@@ -304,7 +304,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 	if (EntityActor)
 	{
 		// Option 1
-		UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
+		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 		SetupComponentInterests(EntityActor, EntityId, LockedConnection);
 
 		improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
@@ -314,7 +314,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		check(PackageMap);
 
 		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
-		UE_LOG(LogSpatialOSActorChannel, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());	
+		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
 	}
 	else
 	{
@@ -322,7 +322,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		if ((ActorClass = GetRegisteredEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 2
-			UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Spawning a registered %s"), *ActorClass->GetName());
+			UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Spawning a registered %s"), *ActorClass->GetName());
 			EntityActor = SpawnNewEntity(PositionComponent, ActorClass);
 			EntityRegistry->AddToRegistry(EntityId, EntityActor);
 		}
@@ -349,13 +349,13 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 				// Either spawn the actor or get it from the level if it has a persistent name.
 				if (UnrealMetadataComponent->static_path().empty())
 				{
-					UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
+					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
 					EntityActor = SpawnNewEntity(PositionComponent, ActorClass);
 				}
 				else
 				{
 					FString FullPath = UTF8_TO_TCHAR(UnrealMetadataComponent->static_path().data()->c_str());
-					UE_LOG(LogSpatialOSInteropPipelineBlock, Log, TEXT("Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
+					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
 					EntityActor = FindObject<AActor>(World, *FullPath);
 				}
 				check(EntityActor);

@@ -5,8 +5,8 @@
 #include "SpatialNetDriver.h"
 #include "SpatialPendingNetGame.h"
 #if WITH_EDITOR
-#include "Settings/LevelEditorPlaySettings.h"
 #include "Editor/EditorEngine.h"
+#include "Settings/LevelEditorPlaySettings.h"
 #endif
 
 DEFINE_LOG_CATEGORY(LogSpatialGDK);

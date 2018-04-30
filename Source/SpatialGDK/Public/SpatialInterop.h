@@ -2,10 +2,11 @@
 
 #pragma once
 
+#include "AddComponentOpWrapperBase.h"
+#include "ComponentIdentifier.h"
 #include "CoreMinimal.h"
 #include "SpatialTypeBinding.h"
 #include "SpatialUnrealObjectRef.h"
-#include "ComponentIdentifier.h"
 #include "SpatialInterop.generated.h"
 
 class USpatialOS;

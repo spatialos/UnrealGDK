@@ -1,22 +1,21 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialNetDriver.h"
-#include "SpatialNetConnection.h"
-#include "EntityRegistry.h"
-#include "EntityPipeline.h"
-#include "SocketSubsystem.h"
-#include "SpatialConstants.h"
-#include "SpatialInteropPipelineBlock.h"
-#include "SpatialOS.h"
-#include "SpatialOSComponentUpdater.h"
 #include "Engine/ActorChannel.h"
 #include "Engine/NetworkObjectList.h"
+#include "EntityPipeline.h"
+#include "EntityRegistry.h"
 #include "GameFramework/GameNetworkManager.h"
-#include "Net/RepLayout.h"
 #include "Net/DataReplication.h"
+#include "Net/RepLayout.h"
+#include "SocketSubsystem.h"
+#include "SpatialActorChannel.h"
+#include "SpatialConstants.h"
+#include "SpatialInteropPipelineBlock.h"
+#include "SpatialNetConnection.h"
+#include "SpatialOS.h"
 #include "SpatialPackageMapClient.h"
 #include "SpatialPendingNetGame.h"
-#include "SpatialActorChannel.h"
 
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
 
@@ -44,7 +43,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// Set up the worker config.
 	// todo-giray: Give this the correct value
 	WorkerConfig.Networking.UseExternalIp = false;
-	WorkerConfig.SpatialOSApplication.WorkerPlatform = bInitAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
+	WorkerConfig.SpatialGDKApplication.WorkerPlatform = bInitAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
 
 	// We do this here straight away to trigger LoadMap.
 	if (bInitAsClient)
@@ -101,7 +100,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	SpatialOSInstance->Connect();
 
 	// Set up manager objects.
-	SpatialOSComponentUpdater = NewObject<USpatialOSComponentUpdater>(this);
 	EntityRegistry = NewObject<UEntityRegistry>(this);
 	Interop = NewObject<USpatialInterop>(this);
 }
@@ -733,7 +731,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		SpatialOSInstance->ProcessOps();
 		SpatialOSInstance->GetEntityPipeline()->ProcessOps(SpatialOSInstance->GetView(), SpatialOSInstance->GetConnection(), GetWorld());
-		SpatialOSComponentUpdater->UpdateComponents(EntityRegistry, DeltaTime);
 	}
 }
 

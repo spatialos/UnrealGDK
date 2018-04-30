@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include "Engine/NetConnection.h"
 #include "Net/RepLayout.h"
 #include "SpatialActorChannel.h"
 #include "SpatialNetDriver.h"
-#include "Engine/NetConnection.h"
 #include "SpatialOS.h"
 
 class FSpatialConditionMapFilter

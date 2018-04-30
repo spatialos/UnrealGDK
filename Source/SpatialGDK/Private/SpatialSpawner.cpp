@@ -3,12 +3,12 @@
 #include "SpatialSpawner.h"
 #include "Commander.h"
 #include "CoreMinimal.h"
-#include "SpatialNetDriver.h"
-#include "SpatialConstants.h"
-#include "SpawnPlayerRequest.h"
-#include "PlayerSpawnerComponent.h"
 #include "Engine/NetDriver.h"
+#include "PlayerSpawnerComponent.h"
+#include "SpatialConstants.h"
 #include "SpatialNetConnection.h"
+#include "SpatialNetDriver.h"
+#include "SpawnPlayerRequest.h"
 
 ASpatialSpawner::ASpatialSpawner()
 {

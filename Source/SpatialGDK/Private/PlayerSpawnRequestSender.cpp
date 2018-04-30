@@ -2,8 +2,8 @@
 
 #include "PlayerSpawnRequestSender.h"
 #include "CoreMinimal.h"
-#include "SpatialOS.h"
 #include "SpatialConstants.h"
+#include "SpatialOS.h"
 #include "TimerManager.h"
 #include <functional>
 

@@ -4,16 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "IpNetDriver.h"
-#include "SpatialInteropPipelineBlock.h"
-#include "SpatialInterop.h"
 #include "PlayerSpawnRequestSender.h"
+#include "SpatialInterop.h"
+#include "SpatialInteropPipelineBlock.h"
 #include "SpatialOutputDevice.h"
 #include "SpatialNetDriver.generated.h"
 
 class UEntityPipeline;
 class UEntityRegistry;
 class UCallbackDispatcher;
-class USpatialOSComponentUpdater;
 class USpatialOS;
 class USpatialNetConnection;
 
@@ -67,8 +66,6 @@ public:
 
 	UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
 
-	USpatialOS* GetSpatialOS() { return SpatialOSInstance; }
-	
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer);
 
@@ -78,15 +75,9 @@ public:
 	}
 
 protected:
-	FSOSWorkerConfigurationData WorkerConfig;
-
-	UPROPERTY()
-	USpatialOS* SpatialOSInstance;
+	FSpatialGDKWorkerConfigurationData WorkerConfig;
 
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
-
-	UPROPERTY()
-	USpatialOSComponentUpdater* SpatialOSComponentUpdater;
 
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;

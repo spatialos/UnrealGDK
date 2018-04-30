@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include <improbable/worker.h>
 #include <improbable/view.h>
+#include <improbable/worker.h>
 
-#include "CoreMinimal.h"
-#include "Net/RepLayout.h"
 #include "AddComponentOpWrapperBase.h"
+#include "CoreMinimal.h"
 #include "EntityId.h"
+#include "Net/RepLayout.h"
 #include "SpatialTypeBinding.generated.h"
 
 class USpatialInterop;
@@ -195,15 +195,15 @@ public:
 
 	FORCEINLINE const uint8* GetPropertyData(const uint8* Container) const
 	{
-    return GetPropertyData((uint8*)Container);
+		return GetPropertyData((uint8*)Container);
 	}
 
 	TArray<UProperty*> PropertyChain;
 	UProperty* Property;
 
 private:
-  bool SubobjectProperty; // If this is true, then this property refers to a property within a subobject.
-  uint32 Offset;
+	bool SubobjectProperty;  // If this is true, then this property refers to a property within a subobject.
+	uint32 Offset;
 };
 
 // A map from rep handle to rep handle data.

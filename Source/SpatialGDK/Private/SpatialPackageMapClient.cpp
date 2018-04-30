@@ -1,11 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialPackageMapClient.h"
-#include "SpatialConstants.h"
 #include "EntityRegistry.h"
-#include "SpatialNetDriver.h"
-#include "SpatialInterop.h"
 #include "SpatialActorChannel.h"
+#include "SpatialConstants.h"
+#include "SpatialInterop.h"
+#include "SpatialNetDriver.h"
 #include "SpatialTypeBinding.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSPackageMap);

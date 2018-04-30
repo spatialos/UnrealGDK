@@ -2,20 +2,19 @@
 
 #include "SpatialInterop.h"
 
-#include "SpatialConstants.h"
+#include "EntityRegistry.h"
 #include "SpatialActorChannel.h"
+#include "SpatialConstants.h"
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
 #include "SpatialOS.h"
-#include "EntityRegistry.h"
 #include "SpatialPackageMapClient.h"
 
 // Needed for the entity template stuff.
+#include "EntityBuilder.h"
 #include <improbable/standard_library.h>
 #include <improbable/unreal/player.h>
 #include <improbable/unreal/unreal_metadata.h>
-#include "EntityBuilder.h"
-#include "EntityTemplate.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSInterop);
 
@@ -289,8 +288,7 @@ void USpatialInterop::HandleCommandResponse_Internal(const FString& RPCName, FUn
 			// Queue retry.
 			FTimerHandle RetryTimer;
 			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([this, RetryContext]()
-			{
+			TimerCallback.BindLambda([this, RetryContext]() {
 				auto Result = RetryContext->SendCommandRequest();
 				RetryContext->NumAttempts++;
 				// As it's possible for an entity to leave a workers checkout radius (and thus become unresolved again), we cannot
@@ -305,8 +303,7 @@ void USpatialInterop::HandleCommandResponse_Internal(const FString& RPCName, FUn
 		}
 		else
 		{
-			UE_LOG(LogSpatialOSInterop, Error, TEXT("%s: failed too many times, giving up (%u attempts). Error code: %d Message: %s"),
-				*RPCName, SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)StatusCode, *Message);
+			UE_LOG(LogSpatialOSInterop, Error, TEXT("%s: failed too many times, giving up (%u attempts). Error code: %d Message: %s"), *RPCName, SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)StatusCode, *Message);
 		}
 	}
 }
@@ -317,8 +314,7 @@ void USpatialInterop::QueueOutgoingObjectRepUpdate_Internal(UObject* UnresolvedO
 	check(DependentChannel);
 	check(Handle > 0);
 
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing object ref depending on object: %s, channel: %s, handle: %d."),
-		*UnresolvedObject->GetName(), *DependentChannel->GetName(), Handle);
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing object ref depending on object: %s, channel: %s, handle: %d."), *UnresolvedObject->GetName(), *DependentChannel->GetName(), Handle);
 	PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel).Key.Add(Handle);
 }
 
