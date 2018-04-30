@@ -13,7 +13,6 @@
 class UEntityPipeline;
 class UEntityRegistry;
 class UCallbackDispatcher;
-class USpatialOsComponentUpdater;
 class USpatialOS;
 class USpatialNetConnection;
 
@@ -22,31 +21,14 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 class FSpatialWorkerUniqueNetId : public FUniqueNetId
 {
 public:
-	FSpatialWorkerUniqueNetId(const FString& WorkerId) : WorkerId{WorkerId}
-	{
-	}
+	FSpatialWorkerUniqueNetId(const FString& WorkerId) : WorkerId{WorkerId} {}
 	~FSpatialWorkerUniqueNetId() override = default;
 
-	const uint8* GetBytes() const override
-	{
-		return reinterpret_cast<const uint8*>(*WorkerId);
-	}
-	int32 GetSize() const override
-	{
-		return WorkerId.Len() * sizeof(TCHAR);
-	}
-	bool IsValid() const override
-	{
-		return true;
-	}
-	FString ToString() const override
-	{
-		return WorkerId;
-	}
-	FString ToDebugString() const override
-	{
-		return TEXT("workerId:") + WorkerId;
-	}
+	const uint8* GetBytes() const override { return reinterpret_cast<const uint8*>(*WorkerId); }
+	int32 GetSize() const override { return WorkerId.Len() * sizeof(TCHAR); }
+	bool IsValid() const override { return true; }
+	FString ToString() const override { return WorkerId; }
+	FString ToDebugString() const override { return TEXT("workerId:") + WorkerId; }
 
 private:
 	FString WorkerId;
@@ -64,7 +46,7 @@ public:
 	virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error) override;
 	virtual int32 ServerReplicateActors(float DeltaSeconds) override;
 	virtual void TickDispatch(float DeltaTime) override;
-	virtual void ProcessRemoteFunction(class AActor* Actor, class UFunction* Function, void* Parameters, struct FOutParmRec* OutParms, struct FFrame* NotStack, class UObject* SubObject = NULL) override;
+	virtual void ProcessRemoteFunction(class AActor* Actor, class UFunction* Function, void* Parameters, struct FOutParmRec* OutParms, struct FFrame* NotStack, class UObject* SubObject = NULL ) override;
 	virtual void TickFlush(float DeltaTime) override;
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	// End UNetDriver interface.
@@ -82,15 +64,7 @@ public:
 	UPROPERTY()
 	USpatialInteropPipelineBlock* InteropPipelineBlock;
 
-	UEntityRegistry* GetEntityRegistry()
-	{
-		return EntityRegistry;
-	}
-
-	USpatialOS* GetSpatialOS()
-	{
-		return SpatialOSInstance;
-	}
+	UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer);
@@ -102,9 +76,6 @@ public:
 
 protected:
 	FSpatialGDKWorkerConfigurationData WorkerConfig;
-
-	UPROPERTY()
-	USpatialOS* SpatialOSInstance;
 
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
@@ -133,9 +104,9 @@ protected:
 
 	UFUNCTION()
 	void OnSpatialOSDisconnected();
-
+		
 #if WITH_SERVER_CODE
-	// SpatialGDK: These functions all exist in UNetDriver, but we need to modify/simplify them in certain ways.
+	//SpatialGDK: These functions all exist in UNetDriver, but we need to modify/simplify them in certain ways.
 	// Could have marked them virtual in base class but that's a pointless source change as these functions are not meant to be called from anywhere except USpatialNetDriver::ServerReplicateActors.
 	int32 ServerReplicateActors_PrepConnections(const float DeltaSeconds);
 	int32 ServerReplicateActors_PrioritizeActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors);

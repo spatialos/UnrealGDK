@@ -14,7 +14,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDK, Log, All);
 UCLASS()
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
 {
-	GENERATED_BODY()
+GENERATED_BODY()
 
 	bool StartGameInstance_SpatialGDKClient(FString& Error);
 

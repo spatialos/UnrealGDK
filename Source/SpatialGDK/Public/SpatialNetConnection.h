@@ -7,7 +7,7 @@
 #include "SpatialNetConnection.generated.h"
 
 /**
- *
+ * 
  */
 UCLASS(transient)
 class SPATIALGDK_API USpatialNetConnection : public UIpConnection
@@ -24,18 +24,9 @@ public:
 	virtual void Tick() override;
 
 	// These functions don't make a lot of sense in a SpatialOS implementation.
-	virtual FString LowLevelGetRemoteAddress(bool bAppendPort = false) override
-	{
-		return TEXT("");
-	}
-	virtual FString LowLevelDescribe() override
-	{
-		return TEXT("");
-	}
-	virtual FString RemoteAddressToString() override
-	{
-		return TEXT("");
-	}
+	virtual FString LowLevelGetRemoteAddress(bool bAppendPort = false) override { return TEXT(""); }
+	virtual FString LowLevelDescribe() override { return TEXT(""); }
+	virtual FString RemoteAddressToString() override { return TEXT(""); }
 	///////
 
 	UPROPERTY()

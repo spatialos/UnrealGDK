@@ -12,9 +12,7 @@ FORCEINLINE FString ObjectRefToString(const improbable::unreal::UnrealObjectRef&
 class FHashableUnrealObjectRef
 {
 public:
-	FHashableUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) : ObjectRef(ObjectRef)
-	{
-	}
+	FHashableUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) : ObjectRef(ObjectRef) {}
 
 	operator improbable::unreal::UnrealObjectRef() const
 	{

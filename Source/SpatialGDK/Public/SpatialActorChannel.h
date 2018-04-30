@@ -23,7 +23,7 @@ class SPATIALGDK_API USpatialActorChannel : public UActorChannel
 	GENERATED_BODY()
 
 public:
-	USpatialActorChannel(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	USpatialActorChannel(const FObjectInitializer & ObjectInitializer = FObjectInitializer::Get());
 
 	// SpatialOS Entity ID.
 	FORCEINLINE FEntityId GetEntityId() const
@@ -33,7 +33,7 @@ public:
 
 	FORCEINLINE bool IsReadyForReplication() const
 	{
-		// Wait until we've reserved an entity ID.
+		// Wait until we've reserved an entity ID.		
 		return ActorEntityId != FEntityId{};
 	}
 
@@ -61,12 +61,18 @@ public:
 
 	FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged) const
 	{
-		return {(uint8*)Actor, RepChanged, ActorReplicator->RepLayout->Cmds, ActorReplicator->RepLayout->BaseHandleToCmdIndex, MigChanged};
+		return {
+			(uint8*)Actor,
+			RepChanged,
+			ActorReplicator->RepLayout->Cmds,
+			ActorReplicator->RepLayout->BaseHandleToCmdIndex,
+			MigChanged
+		};
 	}
 
 	// UChannel interface
-	virtual void Init(UNetConnection* connection, int32 channelIndex, bool bOpenedLocally) override;
-	// Requires source changes to be virtual in base class.
+	virtual void Init(UNetConnection * connection, int32 channelIndex, bool bOpenedLocally) override;
+	//Requires source changes to be virtual in base class.
 	virtual bool ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
 
@@ -75,14 +81,13 @@ public:
 	void PostReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies);
 
 	// Distinguishes between channels created for actors that went through the "old" pipeline vs actors that are triggered through SpawnActor() calls.
-	// In the future we may not use an actor channel for non-core actors.
+	//In the future we may not use an actor channel for non-core actors.
 	UPROPERTY(transient)
 	bool bCoreActor;
 
 protected:
 	// UChannel interface
 	virtual bool CleanUp(const bool bForDestroy) override;
-
 private:
 	void BindToSpatialView();
 	void UnbindFromSpatialView() const;
@@ -96,7 +101,7 @@ private:
 
 	worker::Dispatcher::CallbackKey ReserveEntityCallback;
 	worker::Dispatcher::CallbackKey CreateEntityCallback;
-
+	
 	worker::RequestId<worker::ReserveEntityIdRequest> ReserveEntityIdRequestId;
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 
