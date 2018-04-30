@@ -12,7 +12,7 @@
 
 ASpatialSpawner::ASpatialSpawner()
 {
-	PrimaryActorTick.bCanEverTick = false;
+ 	PrimaryActorTick.bCanEverTick = false;
 
 	PlayerSpawnerComponent = CreateDefaultSubobject<UPlayerSpawnerComponent>(TEXT("PlayerSpawnerComponent"));
 }
@@ -27,7 +27,7 @@ void ASpatialSpawner::PostInitializeComponents()
 
 void ASpatialSpawner::BeginPlay()
 {
-	Super::BeginPlay();
+	Super::BeginPlay();	
 }
 
 void ASpatialSpawner::BeginDestroy()
@@ -35,14 +35,14 @@ void ASpatialSpawner::BeginDestroy()
 	if (PlayerSpawnerComponent)
 	{
 		PlayerSpawnerComponent->OnSpawnPlayerCommandRequest.RemoveDynamic(this, &ASpatialSpawner::HandleSpawnRequest);
-	}
-
-	Super::BeginDestroy();
+	}	
+	
+	Super::BeginDestroy();	
 }
 
 void ASpatialSpawner::HandleSpawnRequest(USpawnPlayerCommandResponder* Responder)
 {
-	check(GetWorld());
+	check(GetWorld());	
 
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
 

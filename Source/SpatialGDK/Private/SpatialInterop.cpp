@@ -43,9 +43,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	for (UClass* TypeBindingClass : TypeBindingClasses)
 	{
 		UClass* BoundClass = TypeBindingClass->GetDefaultObject<USpatialTypeBinding>()->GetBoundClass();
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("Registered type binding class %s handling replicated "
-											  "properties of %s."),
-			   *TypeBindingClass->GetName(), *BoundClass->GetName());
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("Registered type binding class %s handling replicated properties of %s."), *TypeBindingClass->GetName(), *BoundClass->GetName());
 		RegisterInteropType(BoundClass, NewObject<USpatialTypeBinding>(this, TypeBindingClass));
 	}
 }
@@ -106,7 +104,8 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 
 			uint32 CurrentOffset = 0;
 			worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
-			ForEachObjectWithOuter(Channel->Actor, [&UnrealMetadata, &CurrentOffset, &SubobjectNameToOffset](UObject* Object) {
+			ForEachObjectWithOuter(Channel->Actor, [&UnrealMetadata, &CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+			{
 				// Objects can only be allocated NetGUIDs if this is true.
 				if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
 				{
@@ -120,19 +119,20 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 			const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Location);
 
 			auto Entity = improbable::unreal::FEntityBuilder::Begin()
-							  .AddPositionComponent(SpatialPosition, WorkersOnly)
-							  .AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
-							  .SetPersistence(true)
-							  .SetReadAcl(AnyUnrealWorkerOrClient)
-							  .AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
-							  // For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
-							  // todo-giray: Remove once we're using proper (generated) entity templates here.
-							  .AddComponent<improbable::unreal::PlayerControlClient>(improbable::unreal::PlayerControlClient::Data{}, OwnClientOnly)
-							  .Build();
+				.AddPositionComponent(SpatialPosition, WorkersOnly)
+				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
+				.SetPersistence(true)
+				.SetReadAcl(AnyUnrealWorkerOrClient)
+				.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
+				// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
+				// todo-giray: Remove once we're using proper (generated) entity templates here.
+				.AddComponent<improbable::unreal::PlayerControlClient>(improbable::unreal::PlayerControlClient::Data{}, OwnClientOnly)
+				.Build();
 
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
 		}
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"), *SpatialOSInstance->GetWorkerId(), *Actor->GetName(), Channel->GetEntityId().ToSpatialEntityId(), CreateEntityRequestId.Id);
+		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
+			*SpatialOSInstance->GetWorkerId(), *Actor->GetName(), Channel->GetEntityId().ToSpatialEntityId(), CreateEntityRequestId.Id);
 	}
 	else
 	{
@@ -158,7 +158,7 @@ void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TAr
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
 	{
-		// UE_LOG(LogSpatialOSInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
+		//UE_LOG(LogSpatialOSInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
 		//	*Channel->Actor->GetClass()->GetName());
 		return;
 	}
@@ -170,7 +170,8 @@ void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Func
 	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
 	if (!Binding)
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send RPC on unsupported class %s."), *TargetActor->GetClass()->GetName());
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send RPC on unsupported class %s."),
+			*TargetActor->GetClass()->GetName());
 		return;
 	}
 
@@ -323,7 +324,8 @@ void USpatialInterop::QueueOutgoingObjectMigUpdate_Internal(UObject* UnresolvedO
 	check(DependentChannel);
 	check(Handle > 0);
 
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing object ref depending on object: %s, channel: %s, handle: %d."), *UnresolvedObject->GetName(), *DependentChannel->GetName(), Handle);
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing object ref depending on object: %s, channel: %s, handle: %d."),
+		*UnresolvedObject->GetName(), *DependentChannel->GetName(), Handle);
 	PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel).Value.Add(Handle);
 }
 
@@ -338,7 +340,8 @@ void USpatialInterop::QueueIncomingObjectRepUpdate_Internal(const improbable::un
 {
 	check(DependentChannel);
 	check(RepHandleData);
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref depending on object ref: %s, channel: %s, property: %s."), *ObjectRefToString(UnresolvedObjectRef), *DependentChannel->GetName(), *RepHandleData->Property->GetName());
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref depending on object ref: %s, channel: %s, property: %s."),
+		*ObjectRefToString(UnresolvedObjectRef), *DependentChannel->GetName(), *RepHandleData->Property->GetName());
 	PendingIncomingObjectUpdates.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Key.Add(RepHandleData);
 }
 
@@ -346,7 +349,8 @@ void USpatialInterop::QueueIncomingObjectMigUpdate_Internal(const improbable::un
 {
 	check(DependentChannel);
 	check(RepHandleData);
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref depending on object ref: %s, channel: %s, property: %s."), *ObjectRefToString(UnresolvedObjectRef), *DependentChannel->GetName(), *RepHandleData->Property->GetName());
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref depending on object ref: %s, channel: %s, property: %s."),
+		*ObjectRefToString(UnresolvedObjectRef), *DependentChannel->GetName(), *RepHandleData->Property->GetName());
 	PendingIncomingObjectUpdates.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Value.Add(RepHandleData);
 }
 
@@ -444,12 +448,20 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 		for (const FRepHandleData* MigData : Properties.Key)
 		{
 			ApplyIncomingReplicatedPropertyUpdate(*MigData, DependentChannel->Actor, &Object, RepNotifies);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object replicated property update. actor %s (%lld), property %s"), *SpatialOSInstance->GetWorkerId(), *DependentChannel->Actor->GetName(), DependentChannel->GetEntityId().ToSpatialEntityId(), *MigData->Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object replicated property update. actor %s (%lld), property %s"),
+				*SpatialOSInstance->GetWorkerId(),
+				*DependentChannel->Actor->GetName(),
+				DependentChannel->GetEntityId().ToSpatialEntityId(),
+				*MigData->Property->GetName());
 		}
 		for (const FMigratableHandleData* MigData : Properties.Value)
 		{
 			ApplyIncomingMigratablePropertyUpdate(*MigData, DependentChannel->Actor, &Object);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object migratable property update. actor %s (%lld), property %s"), *SpatialOSInstance->GetWorkerId(), *DependentChannel->Actor->GetName(), DependentChannel->GetEntityId().ToSpatialEntityId(), *MigData->Property->GetName());
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object migratable property update. actor %s (%lld), property %s"),
+				*SpatialOSInstance->GetWorkerId(),
+				*DependentChannel->Actor->GetName(),
+				DependentChannel->GetEntityId().ToSpatialEntityId(),
+				*MigData->Property->GetName());
 		}
 		PostReceiveSpatialUpdate(DependentChannel, RepNotifies);
 	}

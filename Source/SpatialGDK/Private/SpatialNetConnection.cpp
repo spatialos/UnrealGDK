@@ -35,18 +35,19 @@ void USpatialNetConnection::InitLocalConnection(UNetDriver* InDriver, class FSoc
 void USpatialNetConnection::InitRemoteConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, const class FInternetAddr& InRemoteAddr, EConnectionState InState, int32 InMaxPacket, int32 InPacketOverhead)
 {
 	Super::InitRemoteConnection(InDriver, InSocket, InURL, InRemoteAddr, InState, InMaxPacket, InPacketOverhead);
+
 }
 
 bool USpatialNetConnection::ClientHasInitializedLevelFor(const AActor* TestActor) const
 {
 	check(Driver->IsServer());
 	return true;
-	// Intentionally does not call Super::
+	//Intentionally does not call Super::
 }
 
-void USpatialNetConnection::LowLevelSend(void* Data, int32 CountBytes, int32 CountBits)
+void USpatialNetConnection::LowLevelSend(void * Data, int32 CountBytes, int32 CountBits)
 {
-	// Intentionally does not call Super::
+	//Intentionally does not call Super::
 }
 
 void USpatialNetConnection::Tick()
