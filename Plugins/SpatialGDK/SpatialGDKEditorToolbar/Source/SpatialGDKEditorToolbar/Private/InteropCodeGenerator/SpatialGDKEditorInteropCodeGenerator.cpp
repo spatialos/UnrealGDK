@@ -86,21 +86,26 @@ void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FSt
 
 bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
 {
+	// Pull out all the class names from the map. (These might contain underscores like "One_TwoThree" and "OneTwo_Three").
 	TArray<FString> ClassNames;
 	Classes.GetKeys(ClassNames);
 
-	for (auto& ClassName : ClassNames)
+	// Remove all underscores from the class names, check for duplicates.
+	for (int i = 0; i < ClassNames.Num() - 1; ++i)
 	{
-		const FString SchemaType = UnrealNameToSchemaTypeName(ClassName);
-		if (SchemaType == ClassName)
-		{
-			continue;
-		}
+		const FString& ClassA = ClassNames[i];
+		const FString SchemaTypeA = UnrealNameToSchemaTypeName(ClassA);
 
-		if(ClassNames.FindByKey(SchemaType))
+		for (int j = i + 1; j < ClassNames.Num(); ++j)
 		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Class name collision after removing underscores: '%s' and '%s' - schema not generated"), *ClassName, *SchemaType);
-			return false;
+			const FString& ClassB = ClassNames[j];
+			const FString SchemaTypeB = UnrealNameToSchemaTypeName(ClassB);
+
+			if (SchemaTypeA.Equals(SchemaTypeB))
+			{
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Class name collision after removing underscores: '%s' and '%s' - schema not generated"), *ClassA, *ClassB);
+				return false;
+			}
 		}
 	}
 
@@ -132,11 +137,17 @@ void SpatialGDKGenerateInteropCode()
 	}
 
 	// Get the key-value pairs in the InteropCodeGenSection.
-	FConfigSection* UserInteropCodeGenSection = SpatialGDKConfigFile->FindOrAddSection(UserClassesSectionName);
+	FConfigSection* UserInteropCodeGenSection = SpatialGDKConfigFile->Find(UserClassesSectionName);
+	if (!UserInteropCodeGenSection)
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find section '%s' in '%s' for class generation, terminating."), *UserClassesSectionName, *ConfigFilePath);
+		return;
+	}
 	TArray<FName> AllCodeGenKeys;
 	UserInteropCodeGenSection->GetKeys(AllCodeGenKeys);
 	ClassHeaderMap Classes;
 	
+	// Iterate over the keys (class names) and extract header includes.
 	for (FName ClassKey : AllCodeGenKeys)
 	{
 		TArray<FString> HeaderValueArray;
@@ -178,7 +189,7 @@ void SpatialGDKGenerateInteropCode()
 			// If the class doesn't exist then print an error and carry on.
 			if (!Class) 
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Cloud not find unreal class for interop code generation: '%s', skipping."), *ClassHeaderList.Key);
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find unreal class for interop code generation: '%s', skipping."), *ClassHeaderList.Key);
 				continue;
 			}
 
