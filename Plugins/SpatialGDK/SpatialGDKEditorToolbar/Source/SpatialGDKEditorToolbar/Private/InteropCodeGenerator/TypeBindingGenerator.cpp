@@ -408,33 +408,47 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	}
 }
 
-FString GenerateFFramePropertyReader(UProperty* Property)
+void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC>& RPC, const FString& StructName)
 {
-	if (Property->IsA<UBoolProperty>())
+	Writer.Printf("struct %s", *StructName);
+	Writer.Print("{").Indent();
+
+	for (UProperty* Prop : TFieldRange<UProperty>(RPC->Function))
 	{
-		return FString::Printf(TEXT("P_GET_UBOOL(%s);"), *Property->GetName());
+		if (!(Prop->PropertyFlags & CPF_Parm))
+		{
+			continue;
+		}
+
+		FStringOutputDevice PropertyText;
+
+		// COPY-PASTE: Copied from UnrealHeaderTool/Private/CodeGenerator.cpp:3587
+		bool bEmitConst = Prop->HasAnyPropertyFlags(CPF_ConstParm) && Prop->IsA<UObjectProperty>();
+
+		//@TODO: UCREMOVAL: This is awful code duplication to avoid a double-const
+		{
+			// export 'const' for parameters
+			const bool bIsConstParam = (Prop->IsA(UInterfaceProperty::StaticClass()) && !Prop->HasAllPropertyFlags(CPF_OutParm)); //@TODO: This should be const once that flag exists
+			const bool bIsOnConstClass = (Prop->IsA(UObjectProperty::StaticClass()) && ((UObjectProperty*)Prop)->PropertyClass != NULL && ((UObjectProperty*)Prop)->PropertyClass->HasAnyClassFlags(CLASS_Const));
+
+			if (bIsConstParam || bIsOnConstClass)
+			{
+				bEmitConst = false; // ExportCppDeclaration will do it for us
+			}
+		}
+		// COPY-PASTE END
+
+		if (bEmitConst)
+		{
+			PropertyText.Logf(TEXT("const "));
+		}
+
+		Prop->ExportCppDeclaration(PropertyText, EExportedDeclaration::Local, nullptr);
+
+		Writer.Printf("%s;", *PropertyText);
 	}
-	else if (Property->IsA<UObjectProperty>())
-	{
-		return FString::Printf(TEXT("P_GET_OBJECT(%s, %s);"),
-			*GetFullCPPName(Cast<UObjectProperty>(Property)->PropertyClass),
-			*Property->GetName());
-	}
-	else if (Property->IsA<UStructProperty>())
-	{
-		return FString::Printf(TEXT("P_GET_STRUCT(%s, %s)"),
-			*Cast<UStructProperty>(Property)->Struct->GetStructCPPName(),
-			*Property->GetName());
-	}
-	else if (Property->IsA<UArrayProperty>())
-	{
-		return FString::Printf(TEXT("P_GET_TARRAY(%s, %s)"),
-			*Cast<UArrayProperty>(Property)->Inner->GetCPPType(),
-			*Property->GetName());
-	}
-	return FString::Printf(TEXT("P_GET_PROPERTY(%s, %s);"),
-		*GetFullCPPName(Property->GetClass()),
-		*Property->GetName());
+
+	Writer.Outdent().Print("};");
 }
 
 void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo)
@@ -474,7 +488,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 		worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
 		void SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const override;
-		void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame) override;
+		void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, void* Parameters) override;
 
 		void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;
 		worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const override;)""");
@@ -484,7 +498,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	HeaderWriter.PrintNewLine();
 	HeaderWriter.Printf(R"""(
 		// RPC to sender map.
-		using FRPCSender = void (%s::*)(worker::Connection* const, struct FFrame* const, UObject*);
+		using FRPCSender = void (%s::*)(worker::Connection* const, void*, UObject*);
 		TMap<FName, FRPCSender> RPCToSenderMap;)""", *TypeBindingName(Class));
 	HeaderWriter.PrintNewLine();
 
@@ -530,7 +544,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	{
 		for (auto& RPC : RPCsByType[Group])
 		{
-			HeaderWriter.Printf("void %s_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject);",
+			HeaderWriter.Printf("void %s_SendCommand(worker::Connection* const Connection, void* Params, UObject* TargetObject);",
 				*RPC->Function->GetName());
 		}
 	}
@@ -786,7 +800,16 @@ void GenerateFunction_GetMigratableHandlePropertyMap(FCodeWriter& SourceWriter, 
 void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 {
 	SourceWriter.BeginFunction({"UClass*", "GetBoundClass() const"}, TypeBindingName(Class));
-	SourceWriter.Printf("return %s::StaticClass();", *GetFullCPPName(Class));
+	if (Class->ClassGeneratedBy)
+	{
+		// This is a blueprint class, so use Unreal's reflection to find UClass pointer at runtime.
+		// TODO: Cache this value for faster access?
+		SourceWriter.Printf("return FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));", *Class->GetName());
+	}
+	else
+	{
+		SourceWriter.Printf("return %s::StaticClass();", *GetFullCPPName(Class));
+	}
 	SourceWriter.End();
 }
 
@@ -1063,13 +1086,13 @@ void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Cl
 void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class)
 {
 	SourceWriter.BeginFunction(
-		{"void", "SendRPCCommand(UObject* TargetObject, const UFunction* const Function, FFrame* const Frame)"},
+		{"void", "SendRPCCommand(UObject* TargetObject, const UFunction* const Function, void* Parameters)"},
 		TypeBindingName(Class));
 	SourceWriter.Print(R"""(
 		TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();
 		auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
 		checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
-		(this->*(*SenderFuncIterator))(Connection.Get(), Frame, TargetObject);)""");
+		(this->*(*SenderFuncIterator))(Connection.Get(), Parameters, TargetObject);)""");
 	SourceWriter.End();
 }
 
@@ -1587,7 +1610,7 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 {
 	FFunctionSignature SendCommandSignature{
 		"void",
-		FString::Printf(TEXT("%s_SendCommand(worker::Connection* const Connection, struct FFrame* const RPCFrame, UObject* TargetObject)"),
+		FString::Printf(TEXT("%s_SendCommand(worker::Connection* const Connection, void* Params, UObject* TargetObject)"),
 			*RPC->Function->GetName())
 	};
 	SourceWriter.BeginFunction(SendCommandSignature, TypeBindingName(Class));
@@ -1595,21 +1618,20 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 	// Extract RPC arguments from the stack.
 	if (RPC->Function->NumParms > 0)
 	{
-		// Note that macros returned by GeneratePropertyReader require this FFrame variable to be named "Stack"
-		SourceWriter.Print("FFrame& Stack = *RPCFrame;");
-		for (TFieldIterator<UProperty> Param(RPC->Function); Param; ++Param)
-		{
-			SourceWriter.Print(*GenerateFFramePropertyReader(*Param));
-		}
+		FString ParametersStructName = FString::Printf(TEXT("%s_Params"), *RPC->Function->GetName());
+		GenerateRPCArgumentsStruct(SourceWriter, RPC, ParametersStructName);
+		SourceWriter.PrintNewLine();
+
+		SourceWriter.Printf("%s StructuredParams = *static_cast<%s*>(Params);", *ParametersStructName, *ParametersStructName);
 		SourceWriter.PrintNewLine();
 	}
 
 	// Build closure to send the command request.
 	TArray<FString> CapturedArguments;
 	CapturedArguments.Add(TEXT("TargetObject"));
-	for (TFieldIterator<UProperty> Param(RPC->Function); Param; ++Param)
+	if (RPC->Function->NumParms > 0)
 	{
-		CapturedArguments.Add((*Param)->GetName());
+		CapturedArguments.Add(TEXT("StructuredParams"));
 	}
 	SourceWriter.Printf("auto Sender = [this, Connection, %s]() mutable -> FRPCCommandRequestResult", *FString::Join(CapturedArguments, TEXT(", ")));
 	SourceWriter.Print("{").Indent();
@@ -1632,7 +1654,7 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 		FString SpatialValueSetter = TEXT("Request.set_") + SchemaFieldName(Param);
 
 		GenerateUnrealToSchemaConversion(
-			SourceWriter, SpatialValueSetter, Param->Property, CPPFieldName(Param), false,
+			SourceWriter, SpatialValueSetter, Param->Property, FString::Printf(TEXT("StructuredParams.%s"), *CPPFieldName(Param)), false,
 			[&SourceWriter, &RPC](const FString& PropertyValue)
 		{
 			SourceWriter.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"%%s: RPC %s queued. %s is unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
@@ -1695,39 +1717,42 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 	SourceWriter.Print("{").Indent();
 	ObjectResolveFailureGenerator("Target object", "TargetObjectRef");
 	SourceWriter.Outdent().Print("}");
+
 	SourceWriter.Printf(R"""(
-		UObject* TargetObjectUntyped = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
-		%s* TargetObject = Cast<%s>(TargetObjectUntyped);
-		checkf(TargetObjectUntyped, TEXT("%%s: %s_OnCommandRequest: Object Ref %%s (NetGUID %%s) does not correspond to a UObject."),
+		UObject* TargetObject = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+		checkf(TargetObject, TEXT("%%s: %s_OnCommandRequest: Object Ref %%s (NetGUID %%s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*ObjectRefToString(TargetObjectRef),
-			*TargetNetGUID.ToString());
-		checkf(TargetObject, TEXT("%%s: %s_OnCommandRequest: Object Ref %%s (NetGUID %%s) is the wrong type. Name: %%s"),
-			*Interop->GetSpatialOS()->GetWorkerId(),
-			*ObjectRefToString(TargetObjectRef),
-			*TargetNetGUID.ToString(),
-			*TargetObjectUntyped->GetName());)""",
-		*GetFullCPPName(RPC->CallerType),
-		*GetFullCPPName(RPC->CallerType),
-		*RPC->Function->GetName(),
+			*TargetNetGUID.ToString());)""",
 		*RPC->Function->GetName());
 
 	// Create RPC argument variables.
-	TArray<FString> RPCParameters;
+	FString RPCParametersStruct;
 	if (RPC->Parameters.Num() > 0)
 	{
 		SourceWriter.PrintNewLine();
 		SourceWriter.Print("// Declare parameters.");
-		for (auto Param : RPC->Parameters)
+
+		// This is what I wanted to do: only generate these structs for blueprints, otherwise use the one from .generated.h
+		// The problem is that if an RPC declared in a parent class, the struct name will be e.g. "Character_eventClientSetRotation_Parms"
+		// but the name we generate is "PlayerCharacter_eventClientSetRotation_Parms" because at this point we don't know the class which
+		// actually declared the RPC.
+		/*
+		// The name of the struct is consistent with the one in .generated.h
+		FString ParametersStructName = FString::Printf(TEXT("%s_event%s_Parms"), *RPC->CallerType->GetName(), *RPC->Function->GetName());
+		if (Class->ClassGeneratedBy)
 		{
-			FString PropertyTemplateType;
-			FString PropertyValueCppType = Param.Value->Property->GetCPPType(&PropertyTemplateType);
-			FString PropertyValueName = Param.Value->Property->GetNameCPP();
-
-			SourceWriter.Printf("%s%s %s;", *PropertyValueCppType, *PropertyTemplateType, *PropertyValueName);
-
-			RPCParameters.Add(PropertyValueName);
+			// This is a blueprint class, so we need to generate the Params struct based on the RPC arguments
+			GenerateRPCArgumentsStruct(SourceWriter, RPC, ParametersStructName);
+			SourceWriter.PrintNewLine();
 		}
+		*/
+
+		FString ParametersStructName = FString::Printf(TEXT("%s_Params"), *RPC->Function->GetName());
+		GenerateRPCArgumentsStruct(SourceWriter, RPC, ParametersStructName);
+		SourceWriter.PrintNewLine();
+
+		SourceWriter.Printf("%s Parameters;", *ParametersStructName);
 
 		// Extract RPC arguments from request data.
 		SourceWriter.PrintNewLine();
@@ -1738,9 +1763,15 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 			FString SpatialValue = FString::Printf(TEXT("%s.%s()"), TEXT("Op.Request"), *SchemaFieldName(Param));
 
 			GeneratePropertyToUnrealConversion(
-				SourceWriter, SpatialValue, Param->Property, CPPFieldName(Param), false,
+				SourceWriter, SpatialValue, Param->Property, FString::Printf(TEXT("Parameters.%s"), *CPPFieldName(Param)), false,
 				std::bind(ObjectResolveFailureGenerator, std::placeholders::_1, "ObjectRef"));
 		}
+
+		RPCParametersStruct = FString(TEXT("&Parameters"));
+	}
+	else
+	{
+		RPCParametersStruct = FString(TEXT("nullptr"));
 	}
 
 	// Call implementation and send response.
@@ -1752,9 +1783,12 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 					*TargetObject->GetName(),
 					*ObjectRefToString(TargetObjectRef));)""",
 		*RPC->Function->GetName());
-	SourceWriter.Printf("TargetObject->%s_Implementation(%s);",
-		*RPC->Function->GetName(), *FString::Join(RPCParameters, TEXT(", ")));
 	SourceWriter.PrintNewLine();
+	SourceWriter.Printf("UFunction* Function = GetBoundClass()->FindFunctionByName(FName(TEXT(\"%s\")));",
+		*RPC->Function->GetName());
+	SourceWriter.Printf("TargetObject->ProcessEvent(Function, %s);", *RPCParametersStruct);
+	SourceWriter.PrintNewLine();
+
 	SourceWriter.Print("// Send command response.");
 	SourceWriter.Print("TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();");
 	SourceWriter.Printf("Connection->SendCommandResponse<improbable::unreal::%s::Commands::%s>(Op.RequestId, {});",

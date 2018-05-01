@@ -29,9 +29,10 @@ void GeneratePropertyToUnrealConversion(
 	const bool bIsUpdate,
 	TFunction<void(const FString&)> ObjectResolveFailureGenerator);
 
-// Generates the appropriate macro for Unreal to read a property from an FFrame in scope. This is the same method that
-// Unreal uses in .generated.h files.
-FString GenerateFFramePropertyReader(UProperty* Property);
+void GenerateRPCArgumentsStruct(
+	FCodeWriter& Writer,
+	const TSharedPtr<FUnrealRPC>& RPC,
+	const FString& StructName);
 
 // Generates the header of a type binding.
 void GenerateTypeBindingHeader(
