@@ -6,7 +6,7 @@
 #>
 // ===========
 // DO NOT EDIT - this file is automatically regenerated.
-// =========== 
+// ===========
 
 #include "<#= unrealComponent.CapitalisedName #>Component.h"
 #include "CallbackDispatcher.h"
@@ -19,7 +19,7 @@
 foreach (var requiredRequestInclude in requiredRequestIncludes) { #>
 #include <#= requiredRequestInclude #>
 <# } #>
-#include "SpatialOSViewTypes.h"
+#include "SpatialGDKViewTypes.h"
 
 const worker::ComponentId U<#= unrealComponent.CapitalisedName #>Component::ComponentId = <#= unrealComponent.ComponentId #>;
 
@@ -33,7 +33,7 @@ void U<#= unrealComponent.CapitalisedName #>Component::BeginDestroy()
 	Super::BeginDestroy();
 
 	Callbacks.Reset(nullptr);
-	
+
 	delete Snapshot;
 	Snapshot = nullptr;
 }
@@ -59,7 +59,7 @@ void U<#= unrealComponent.CapitalisedName #>Component::Init(const TWeakPtr<Spati
 		Callbacks->Add(LockedView->OnCommandRequest<<#= unrealComponent.UnderlyingQualifiedName #>::Commands::<#= commandDetails.UnderlyingCapitalisedName #>>(
 			std::bind(&U<#= unrealComponent.CapitalisedName #>Component::On<#= commandDetails.UnderlyingCapitalisedName #>CommandRequestDispatcherCallback, this,
 					  std::placeholders::_1)));
-<# } #>	
+<# } #>
 	}
 }
 
@@ -149,7 +149,7 @@ void U<#= unrealComponent.CapitalisedName #>Component::<#= eventDetails.Capitali
 	bHasEventQueued = true;
 }
 
-<# } #>	
+<# } #>
 <# } #>
 
 
@@ -171,15 +171,15 @@ void U<#= unrealComponent.CapitalisedName #>Component::OnAuthorityChangeDispatch
 		GenerateSnapshot();
 	}
 
-	Super::OnAuthorityChangeDispatcherCallback(Op);	
+	Super::OnAuthorityChangeDispatcherCallback(Op);
 }
 
 void U<#= unrealComponent.CapitalisedName #>Component::ReplicateChangesInternal()
 {
 	checkSlow(Snapshot);
-		
+
 	bool bShouldSendUpdate = false;
-		
+
 <# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
 	if (<#= fieldDetails.TypeReference.CheckInequality(fieldDetails.CapitalisedName,"Snapshot->" + fieldDetails.CapitalisedName) #>)
 	{
@@ -266,10 +266,10 @@ void U<#= unrealComponent.CapitalisedName #>Component::On<#= commandDetails.Unde
         return;
     }
     auto request = <#= commandDetails.UnrealRequestTypeDetails.ConvertUnderlyingValueToUnrealLocalVariable("op.Request") #>;
-	
+
 	U<#= commandDetails.CapitalisedName #>CommandResponder* <#= commandDetails.CapitalisedName #>Responder = NewObject<U<#= commandDetails.CapitalisedName #>CommandResponder>(this);
 	<#= commandDetails.CapitalisedName #>Responder->Init(Connection, op.RequestId, request, op.CallerWorkerId);
-	
+
     On<#= commandDetails.UnderlyingCapitalisedName #>CommandRequest.Broadcast(<#= commandDetails.CapitalisedName #>Responder);
 }
 <# } #>

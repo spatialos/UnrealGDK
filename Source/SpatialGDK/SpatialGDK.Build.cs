@@ -16,7 +16,7 @@ public class SpatialGDK : ModuleRules
         bFasterWithoutUnity = true;
 
         PublicIncludePaths.AddRange(
-            new string[] 
+            new string[]
             {
                 "SpatialGDK/Public",
                 "SpatialGDK/Public/WorkerSdk",
@@ -26,9 +26,9 @@ public class SpatialGDK : ModuleRules
                 "SpatialGDK/Legacy",
                 "SpatialGDK/Legacy/Deprecated"
             });
-        
-        PrivateIncludePaths.AddRange( 
-            new string[] 
+
+        PrivateIncludePaths.AddRange(
+            new string[]
             {
                 "SpatialGDK/Private"
             });
@@ -71,6 +71,6 @@ public class SpatialGDK : ModuleRules
         PublicDelayLoadDLLs.Add("CoreSdkDll.dll");
 
         // Point generated code to the correct API spec.
-        Definitions.Add("IMPROBABLE_DLL_API=SPATIALGDK_API");
+        PublicDefinitions.Add("IMPROBABLE_DLL_API=SPATIALGDK_API");
 	}
 }

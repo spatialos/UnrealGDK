@@ -146,14 +146,14 @@ void SpatialGDKGenerateInteropCode()
 	TArray<FName> AllCodeGenKeys;
 	UserInteropCodeGenSection->GetKeys(AllCodeGenKeys);
 	ClassHeaderMap Classes;
-	
+
 	// Iterate over the keys (class names) and extract header includes.
 	for (FName ClassKey : AllCodeGenKeys)
 	{
 		TArray<FString> HeaderValueArray;
 		UserInteropCodeGenSection->MultiFind(ClassKey, HeaderValueArray);
 		Classes.Add(ClassKey.ToString(), HeaderValueArray);
-		
+
 		// Just for some user facing logging.
 		FString Headers;
 		for (FString& Header : HeaderValueArray)
@@ -187,7 +187,7 @@ void SpatialGDKGenerateInteropCode()
 			UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
 
 			// If the class doesn't exist then print an error and carry on.
-			if (!Class) 
+			if (!Class)
 			{
 				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find unreal class for interop code generation: '%s', skipping."), *ClassHeaderList.Key);
 				continue;

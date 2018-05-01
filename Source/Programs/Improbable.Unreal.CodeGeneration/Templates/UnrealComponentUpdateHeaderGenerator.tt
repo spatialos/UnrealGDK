@@ -36,7 +36,7 @@ foreach(var eventDetails in unrealComponent.EventDetailsList)
  *
  */
 UCLASS(BlueprintType)
-class SPATIALOS_API U<#= unrealComponent.CapitalisedName #>ComponentUpdate : public UComponentUpdateOpWrapperBase
+class SPATIALGDK_API U<#= unrealComponent.CapitalisedName #>ComponentUpdate : public UComponentUpdateOpWrapperBase
 {
     GENERATED_BODY()
 

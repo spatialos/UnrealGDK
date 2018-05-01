@@ -66,6 +66,8 @@ public:
 
 	UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
 
+	USpatialOS* GetSpatialOS() { return SpatialOSInstance; }
+	
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer);
 
@@ -76,6 +78,9 @@ public:
 
 protected:
 	FSpatialGDKWorkerConfigurationData WorkerConfig;
+
+	UPROPERTY()
+	USpatialOS* SpatialOSInstance;
 
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 

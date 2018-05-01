@@ -6,14 +6,14 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // ===========
 // DO NOT EDIT - this file is automatically regenerated.
-// =========== 
+// ===========
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "AddComponentOpWrapperBase.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "<#= unrealComponent.UnderlyingPackageDetails.Include #>"
 #include "<#= unrealComponent.CapitalisedName #>AddComponentOp.generated.h"
 
@@ -21,7 +21,7 @@
 *
 */
 UCLASS()
-class SPATIALOS_API U<#= unrealComponent.CapitalisedName #>AddComponentOp : public UAddComponentOpWrapperBase
+class SPATIALGDK_API U<#= unrealComponent.CapitalisedName #>AddComponentOp : public UAddComponentOpWrapperBase
 {
 	GENERATED_BODY()
 

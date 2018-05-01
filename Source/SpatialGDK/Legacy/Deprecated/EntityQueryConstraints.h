@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "ComponentId.h"
@@ -14,14 +16,14 @@
 UCLASS(Blueprintable, NotPlaceable)
 class SPATIALGDK_API UEntityQueryConstraint : public UObject
 {
-	GENERATED_BODY()
+  GENERATED_BODY()
 
 public:
-	UEntityQueryConstraint()
-	{
-	}
+  UEntityQueryConstraint()
+  {
+  }
 
-	worker::Option<worker::query::Constraint> Underlying;
+  worker::Option<worker::query::Constraint> Underlying;
 };
 
 /**
@@ -31,24 +33,24 @@ public:
 USTRUCT(BlueprintType)
 struct SPATIALGDK_API FEntityIdQueryConstraint
 {
-	GENERATED_BODY()
+  GENERATED_BODY()
 
 public:
-	FORCEINLINE FEntityIdQueryConstraint()
-	{
-	}
+  FORCEINLINE FEntityIdQueryConstraint()
+  {
+  }
 
-	FORCEINLINE FEntityIdQueryConstraint(const FEntityId& InEntityId)
-	{
-		Underlying = InEntityId;
-	}
+  FORCEINLINE FEntityIdQueryConstraint(const FEntityId& InEntityId)
+  {
+    Underlying = InEntityId;
+  }
 
-	FORCEINLINE FEntityIdQueryConstraint(int InEntityId)
-	{
-		Underlying = FEntityId(static_cast<worker::EntityId>(InEntityId));
-	}
+  FORCEINLINE FEntityIdQueryConstraint(int InEntityId)
+  {
+    Underlying = FEntityId(static_cast<worker::EntityId>(InEntityId));
+  }
 
-	FEntityId Underlying;
+  FEntityId Underlying;
 };
 
 /**
@@ -57,24 +59,24 @@ public:
 USTRUCT(BlueprintType)
 struct SPATIALGDK_API FComponentIdQueryConstraint
 {
-	GENERATED_BODY()
+  GENERATED_BODY()
 
 public:
-	FORCEINLINE FComponentIdQueryConstraint()
-	{
-	}
+  FORCEINLINE FComponentIdQueryConstraint()
+  {
+  }
 
-	FORCEINLINE FComponentIdQueryConstraint(const FComponentId& InComponentId)
-	{
-		Underlying = InComponentId;
-	}
+  FORCEINLINE FComponentIdQueryConstraint(const FComponentId& InComponentId)
+  {
+    Underlying = InComponentId;
+  }
 
-	FORCEINLINE FComponentIdQueryConstraint(int InComponentId)
-	{
-		Underlying = FComponentId(static_cast<worker::ComponentId>(InComponentId));
-	}
+  FORCEINLINE FComponentIdQueryConstraint(int InComponentId)
+  {
+    Underlying = FComponentId(static_cast<worker::ComponentId>(InComponentId));
+  }
 
-	FComponentId Underlying;
+  FComponentId Underlying;
 };
 
 /**
@@ -84,18 +86,18 @@ public:
 USTRUCT(BlueprintType)
 struct SPATIALGDK_API FSphereQueryConstraint
 {
-	GENERATED_BODY()
+  GENERATED_BODY()
 
-	FORCEINLINE FSphereQueryConstraint()
-	{
-	}
+  FORCEINLINE FSphereQueryConstraint()
+  {
+  }
 
-	FORCEINLINE FSphereQueryConstraint(const FVector& InPosition, float InRadius)
-	{
-		Position = InPosition;
-		Radius = InRadius;
-	}
+  FORCEINLINE FSphereQueryConstraint(const FVector& InPosition, float InRadius)
+  {
+    Position = InPosition;
+    Radius = InRadius;
+  }
 
-	FVector Position;
-	float Radius;
+  FVector Position;
+  float Radius;
 };

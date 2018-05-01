@@ -8,7 +8,7 @@
 #>
 // ===========
 // DO NOT EDIT - this file is automatically regenerated.
-// =========== 
+// ===========
 #include "Commander.h"
 #include "RequestId.h"
 <#var requiredResponseIncludes = commandDetailsList
@@ -29,8 +29,8 @@ foreach (var requiredRequestInclude in requiredRequestIncludes) { #>
 <# } #>
 #include "SpatialOSCommandResult.h"
 #include "SpatialOsComponent.h"
-#include "SpatialOSViewTypes.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 
 ECommandResponseCode UCommander::GetCommandResponseCode(const worker::StatusCode UnderlyingStatusCode)
 {
@@ -50,7 +50,7 @@ ECommandResponseCode UCommander::GetCommandResponseCode(const worker::StatusCode
 			return ECommandResponseCode::ApplicationError;
 		default:
 			return ECommandResponseCode::Unknown;
-	}	
+	}
 }
 
 UCommander::UCommander()
@@ -70,7 +70,7 @@ UCommander* UCommander::Init(USpatialOsComponent* InComponent, const TWeakPtr<Sp
 	Connection = InConnection;
 	View = InView;
 	Component = InComponent;
-		
+
 <# foreach (var commandDetails in commandDetailsList) { #>
 <# if (commandDetails.UnrealResponseTypeDetails.ReferenceType == ReferenceType.UserType) { #>
 	<#= commandDetails.CapitalisedName #>Response = NewObject<<#= commandDetails.UnrealResponseTypeDetails.UClassName #>>(this, <#= commandDetails.UnrealResponseTypeDetails.UClassName #>::StaticClass());
@@ -102,7 +102,7 @@ UCommander* UCommander::Init(USpatialOsComponent* InComponent, const TWeakPtr<Sp
 		Callbacks->Add(LockedView->OnCommandResponse<<#= commandDetails.QualifiedOwnerName #>::Commands::<#= commandDetails.UnderlyingCapitalisedName #>>(std::bind(
 			&UCommander::On<#= commandDetails.CapitalisedName #>CommandResponseDispatcherCallback, this, std::placeholders::_1)));
 
-		<# } #>	
+		<# } #>
 	}
 
 	return this;
@@ -171,7 +171,7 @@ FRequestId UCommander::ReserveEntityIds(int NumEntitiesToReserve, const FReserve
 		CommandResult.ErrorMessage = FString("Tried to reserve entity ids from a component you do not have authority on.");
 		callback.ExecuteIfBound(CommandResult, EmptyResult);
 	}
-	else 
+	else
 	{
 		auto LockedConnection = Connection.Pin();
 
@@ -203,7 +203,7 @@ void UCommander::OnReserveEntityIdsResponseDispatcherCallback(const worker::Rese
 			TEXT("OnReserveEntityIdsResponse callback is no longer bound!"),
 			*GetName())
 	}
-	else 
+	else
 	{
 		TArray<FEntityId> ReservedEntityIds;
 		if (CommandResult.StatusCode == ECommandResponseCode::Success && !op.FirstEntityId.empty())
@@ -279,7 +279,7 @@ FRequestId UCommander::DeleteEntity(FEntityId entityId, const FDeleteEntityResul
 
 		callback.ExecuteIfBound(CommandResult);
 	}
-	else 
+	else
 	{
 		auto LockedConnection = Connection.Pin();
 
@@ -395,14 +395,14 @@ void UCommander::OnEntityQueryCommandResponseDispatcherCallback(const worker::En
 
 <# foreach (var commandDetails in commandDetailsList) { #>
 FRequestId UCommander::<#= commandDetails.CapitalisedName #>(FEntityId entityId, <#= commandDetails.UnrealRequestTypeDetails.UnrealType #> request, const F<#= commandDetails.CapitalisedName #>CommandResultDelegate& callback, int timeoutMs, ECommandDelivery commandDelivery)
-{	
+{
 	FRequestId WrappedRequestId;
 	if (Component != nullptr && Component->GetAuthority() != EAuthority::Authoritative && Component->GetAuthority() != EAuthority::AuthorityLossImminent)
 	{
 		FSpatialOSCommandResult CommandResult;
 		CommandResult.StatusCode = ECommandResponseCode::PermissionDenied;
 		CommandResult.ErrorMessage = FString("Error sending command: Tried to send a <#= commandDetails.CapitalisedName #> command from a component which the worker does not have authority on.");
-				
+
 		callback.ExecuteIfBound(CommandResult, <#= commandDetails.UnrealResponseTypeDetails.DefaultValue #>);
 	}
 	else

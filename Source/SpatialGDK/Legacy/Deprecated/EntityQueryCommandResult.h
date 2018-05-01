@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "CommanderTypes.h"
@@ -13,26 +15,26 @@
 UCLASS(abstract, BlueprintType)
 class SPATIALGDK_API UEntityQueryCommandResultBase : public UObject
 {
-	GENERATED_BODY()
+  GENERATED_BODY()
 
 public:
-	UEntityQueryCommandResultBase();
+  UEntityQueryCommandResultBase();
 
-	UFUNCTION(BlueprintPure, Category = "SpatialOS Query Result")
-	bool Success() const;
+  UFUNCTION(BlueprintPure, Category = "SpatialOS Query Result")
+  bool Success() const;
 
-	UFUNCTION(BlueprintPure, Category = "SpatialOS Query Result")
-	FString GetErrorMessage() const;
+  UFUNCTION(BlueprintPure, Category = "SpatialOS Query Result")
+  FString GetErrorMessage() const;
 
-	UFUNCTION(BlueprintPure, Category = "SpatialOS Query Result")
-	ECommandResponseCode GetErrorCode() const;
+  UFUNCTION(BlueprintPure, Category = "SpatialOS Query Result")
+  ECommandResponseCode GetErrorCode() const;
 
-	UFUNCTION(BlueprintPure, Category = "SpatialOS Query Result")
-	FRequestId GetRequestId() const;
+  UFUNCTION(BlueprintPure, Category = "SpatialOS Query Result")
+  FRequestId GetRequestId() const;
 
 protected:
-	worker::EntityQueryResponseOp Underlying;
-	FRequestId CachedRequestId;
+  worker::EntityQueryResponseOp Underlying;
+  FRequestId CachedRequestId;
 };
 
 /**

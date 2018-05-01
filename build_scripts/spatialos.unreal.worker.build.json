@@ -24,7 +24,6 @@
             "--output=Game/Source/SpatialGDK/Generated/User",
             "--language=cpp",
             "--input=../../schema",
-            "--input=../../generatedschema",
             "--repository=../../build/dependencies/schema",
             "--version=%core_sdk_version%"
           ]
@@ -50,7 +49,6 @@
             "--output=Game/Intermediate/Improbable/json/User",
             "--language=ast_json",
             "--input=../../schema",
-            "--input=../../generatedschema",
             "--repository=../../build/dependencies/schema",
             "--version=%core_sdk_version%"
           ]
@@ -62,14 +60,6 @@
           "arguments": [
             "--json-dir=Game/Intermediate/Improbable/json",
             "--output-dir=Game/Source/SpatialGDK/Generated/UClasses"
-          ]
-        },
-        {
-          "name": "Patch generated code",
-          "description": "Post processing the legace generated code.",
-          "command": "bash",
-          "arguments": [
-            "Game/Scripts/patch_sdk_code_gen.sh"
           ]
         }
       ]

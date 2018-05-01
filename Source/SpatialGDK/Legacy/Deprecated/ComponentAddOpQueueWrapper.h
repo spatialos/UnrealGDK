@@ -10,13 +10,13 @@
 USTRUCT()
 struct FComponentAddOpQueueWrapper
 {
-	GENERATED_USTRUCT_BODY()
+  GENERATED_USTRUCT_BODY()
 
 public:
-	UPROPERTY()
-	TArray<UAddComponentOpWrapperBase*> Underlying;
+  UPROPERTY()
+  TArray<UAddComponentOpWrapperBase*> Underlying;
 
-	FComponentAddOpQueueWrapper()
-	{
-	}
+  FComponentAddOpQueueWrapper()
+  {
+  }
 };

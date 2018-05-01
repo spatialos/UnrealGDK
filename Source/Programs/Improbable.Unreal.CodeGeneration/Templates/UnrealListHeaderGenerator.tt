@@ -23,7 +23,7 @@
  *
  */
 UCLASS(BlueprintType)
-class SPATIALOS_API U<#= listTypeReference.UnderlyingCapitalisedName #>List : public UObject
+class SPATIALGDK_API U<#= listTypeReference.UnderlyingCapitalisedName #>List : public UObject
 {
     GENERATED_BODY()
 

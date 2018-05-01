@@ -28,7 +28,7 @@
  *
  */
 UCLASS(BlueprintType)
-class SPATIALOS_API U<#= unrealType.CapitalisedName #> : public UObject
+class SPATIALGDK_API U<#= unrealType.CapitalisedName #> : public UObject
 {
     GENERATED_BODY()
 

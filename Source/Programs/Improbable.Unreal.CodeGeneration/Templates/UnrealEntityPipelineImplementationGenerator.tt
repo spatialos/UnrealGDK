@@ -6,14 +6,14 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // ===========
 // DO NOT EDIT - this file is automatically regenerated.
-// =========== 
+// ===========
 
 #include "EntityPipeline.h"
 #include "EntityPipelineBlock.h"
 #include "CoreMinimal.h"
 
-#include "SpatialOSViewTypes.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "CallbackDispatcher.h"
 <# foreach (var unrealComponent in unrealComponents) { #>
 #include "<#= unrealComponent.CapitalisedName #>AddComponentOp.h"
@@ -51,6 +51,9 @@ void UEntityPipeline::Init(const TWeakPtr<SpatialOSView>& InView, UCallbackDispa
 
 		Callbacks.Add(LockedView->OnRemoveEntity(
 			std::bind(&UEntityPipeline::OnRemoveEntity, this, std::placeholders::_1)));
+
+		Callbacks.Add(LockedView->OnCriticalSection(
+			std::bind(&UEntityPipeline::OnCriticalSection, this, std::placeholders::_1)));
 
 <# foreach (var unrealComponent in unrealComponents) { #>
 		Callbacks.Add(LockedView->OnAddComponent<<#= unrealComponent.UnderlyingQualifiedName #>>(

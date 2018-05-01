@@ -7,7 +7,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // ===========
 // DO NOT EDIT - this file is automatically regenerated.
-// =========== 
+// ===========
 
 #pragma once
 
@@ -17,8 +17,8 @@
 #include "<#= unrealComponent.CapitalisedName #>ComponentUpdate.h"
 #include "<#= unrealComponent.CapitalisedName #>AddComponentOp.h"
 #include "ComponentId.h"
-#include "SpatialOSViewTypes.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "<#= unrealComponent.UnderlyingPackageDetails.Include #>"
 
 <#var requiredIncludes = unrealComponent.FieldDetailsList.SelectMany(fieldDetails => { return fieldDetails.TypeReference.RequiredIncludes; })
@@ -55,7 +55,7 @@ struct F<#= unrealComponent.CapitalisedName #>ComponentSnapshot
 };
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class SPATIALOS_API U<#= unrealComponent.CapitalisedName #>Component : public USpatialOsComponent
+class SPATIALGDK_API U<#= unrealComponent.CapitalisedName #>Component : public USpatialOsComponent
 {
     GENERATED_BODY()
 

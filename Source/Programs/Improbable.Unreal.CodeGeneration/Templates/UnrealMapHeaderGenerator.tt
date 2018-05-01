@@ -27,7 +27,7 @@
  *
  */
 UCLASS(BlueprintType)
-class SPATIALOS_API U<#= mapTypeReference.KeyType.UnderlyingCapitalisedName #>To<#= mapTypeReference.ValueType.UnderlyingCapitalisedName #>Map : public UObject
+class SPATIALGDK_API U<#= mapTypeReference.KeyType.UnderlyingCapitalisedName #>To<#= mapTypeReference.ValueType.UnderlyingCapitalisedName #>Map : public UObject
 {
     GENERATED_BODY()
 

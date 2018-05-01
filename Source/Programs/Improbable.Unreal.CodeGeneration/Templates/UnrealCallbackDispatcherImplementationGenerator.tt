@@ -6,7 +6,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // ===========
 // DO NOT EDIT - this file is automatically regenerated.
-// =========== 
+// ===========
 
 
 #include "CallbackDispatcher.h"
@@ -15,7 +15,7 @@
 #include "<#= unrealComponent.CapitalisedName #>ComponentUpdate.h"
 <# } #>
 #include "ScopedViewCallbacks.h"
-#include "SpatialOSViewTypes.h"
+#include "SpatialGDKViewTypes.h"
 
 
 DECLARE_LOG_CATEGORY_EXTERN(LogCallbackDispatcher, Log, All);

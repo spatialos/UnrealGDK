@@ -7,12 +7,12 @@ public class SpatialOSEditorToolbar : ModuleRules
 	public SpatialOSEditorToolbar(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-        bFasterWithoutUnity = true;
+		bFasterWithoutUnity = true;
 
-        PublicIncludePaths.AddRange(
+		PublicIncludePaths.AddRange(
 			new string[] {
 				"SpatialOSEditorToolbar/Public",
-                "SpatialOS/Public"
+				"SpatialOS/Public"
 			});
 				
 		
@@ -26,9 +26,9 @@ public class SpatialOSEditorToolbar : ModuleRules
 			new string[]
 			{
 				"Core",
-                "Json",
-                "JsonUtilities"
-            });
+				"Json",
+				"JsonUtilities"
+			});
 			
 		
 		PrivateDependencyModuleNames.AddRange(

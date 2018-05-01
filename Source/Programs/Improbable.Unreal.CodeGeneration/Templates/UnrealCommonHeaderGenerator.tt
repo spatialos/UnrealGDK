@@ -7,11 +7,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // ===========
 // DO NOT EDIT - this file is automatically regenerated.
-// =========== 
+// ===========
 
 #pragma once
 
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 <#var requiredIncludes = new List<string>();#>
 <# foreach (var unrealComponent in unrealComponents)
 {

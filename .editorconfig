@@ -1,0 +1,22 @@
+# EditorConfig is awesome: http://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.version]
+insert_final_newline = false
+
+[*.cs]
+indent_size = 4
+
+[*.{cpp,h}]
+indent_style = tab
+
+[*.json]
+indent_size = 2

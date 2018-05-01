@@ -9,7 +9,7 @@ source ci/profiling.sh
 source ci/force_spatial_cli_structure.sh
 
 if ! isWindows ; then
-  echo "Unreal Sdk is only supported on Windows."
+  echo "Unreal GDK is only supported on Windows."
   exit 0
 fi
 
@@ -125,7 +125,7 @@ markEndOfBlock "Build CodeGeneration"
 
 markStartOfBlock "Process build scripts"
 
-cp -a "build_scripts/."                                                     "${UNREAL_GDK_DIR}/Scripts"
+cp -a "build_scripts/."                                                    "${UNREAL_GDK_DIR}/Scripts"
 sed -i "s/%core_sdk_version%/${PINNED_CORE_SDK_VERSION}/g"                 "${UNREAL_GDK_DIR}/Scripts/"spatialos.*.build.json
 
 markEndOfBlock "Process build scripts"

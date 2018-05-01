@@ -6,13 +6,13 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // ===========
 // DO NOT EDIT - this file is automatically regenerated.
-// =========== 
+// ===========
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialOSViewTypes.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "EntityPipelineBlock.h"
 #include "ScopedViewCallbacks.h"
 <# foreach (var unrealComponent in unrealComponents) { #>
@@ -21,7 +21,7 @@
 #include "EntityPipeline.generated.h"
 
 UCLASS()
-class SPATIALOS_API UEntityPipeline : public UObject
+class SPATIALGDK_API UEntityPipeline : public UObject
 {
 	GENERATED_BODY()
 
@@ -43,6 +43,7 @@ public:
 
 	void OnAddEntity(const worker::AddEntityOp& Op) { FirstBlock->AddEntity(Op); }
 	void OnRemoveEntity(const worker::RemoveEntityOp& Op) { FirstBlock->RemoveEntity(Op); }
+	void OnCriticalSection(const worker::CriticalSectionOp& Op) { if (Op.InCriticalSection) { FirstBlock->EnterCriticalSection(); } else { FirstBlock->LeaveCriticalSection(); } }
 	void OnRemoveComponent(const worker::ComponentId ComponentId, const worker::RemoveComponentOp& Op) { FirstBlock->RemoveComponent(ComponentId, Op); }
 	void OnAuthorityChange(const worker::ComponentId ComponentId, const worker::AuthorityChangeOp& Op) { FirstBlock->ChangeAuthority(ComponentId, Op); }
 

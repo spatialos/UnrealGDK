@@ -23,7 +23,7 @@
  *
  */
 UCLASS(BlueprintType)
-class SPATIALOS_API UEntityTemplate : public UObject
+class SPATIALGDK_API UEntityTemplate : public UObject
 {
     GENERATED_BODY()
 

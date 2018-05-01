@@ -7,7 +7,7 @@
 #>
 // ===========
 // DO NOT EDIT - this file is automatically regenerated.
-// =========== 
+// ===========
 
 #pragma once
 
@@ -26,8 +26,8 @@
 #include "EntityQueryCommandResult.h"
 #include "SpatialOSCommandResult.h"
 #include "SpatialOsComponent.h"
-#include "SpatialOSViewTypes.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 
 #include "Commander.generated.h"
 
@@ -43,14 +43,14 @@ DECLARE_DYNAMIC_DELEGATE_OneParam(FDeleteEntityResultDelegate, const FSpatialOSC
 DECLARE_DYNAMIC_DELEGATE_OneParam(FEntityQueryCountResultDelegate, UEntityQueryCountCommandResult*, result);
 DECLARE_DYNAMIC_DELEGATE_OneParam(FEntityQuerySnapshotResultDelegate, UEntityQuerySnapshotCommandResult*, result);
 <# foreach (var commandDetails in commandDetailsList) { #>
-DECLARE_DYNAMIC_DELEGATE_TwoParams(F<#= commandDetails.CapitalisedName #>CommandResultDelegate, const FSpatialOSCommandResult&, result, <#= commandDetails.UnrealResponseTypeDetails.UnrealType #>, response);	
+DECLARE_DYNAMIC_DELEGATE_TwoParams(F<#= commandDetails.CapitalisedName #>CommandResultDelegate, const FSpatialOSCommandResult&, result, <#= commandDetails.UnrealResponseTypeDetails.UnrealType #>, response);
 <# } #>
 
 /**
 *
 */
 UCLASS(BlueprintType)
-class SPATIALOS_API UCommander : public UObject
+class SPATIALGDK_API UCommander : public UObject
 {
 	GENERATED_BODY()
 
@@ -60,20 +60,20 @@ public:
 	UCommander* Init(USpatialOsComponent* component, const TWeakPtr<SpatialOSConnection>& InConnection, const TWeakPtr<SpatialOSView>& InView);
 
 	virtual void BeginDestroy() override;
-		
+
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS Commands")
 	FRequestId ReserveEntityId(const FReserveEntityIdResultDelegate& callback, int timeoutMs);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS Commands")
 	FRequestId ReserveEntityIds(int NumEntitiesToReserve, const FReserveEntityIdsResultDelegate& callback, int timeoutMs);
-	    
+
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS Commands")
 	FRequestId CreateEntity(UEntityTemplate* entityTemplate, FEntityId entityId, const FCreateEntityResultDelegate& callback, int timeoutMs);
-	    
+
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS Commands")
 	FRequestId DeleteEntity(FEntityId entityId, const FDeleteEntityResultDelegate& callback, int timeoutMs);
 
-	UFUNCTION(BlueprintCallable, Category = "Commands") 
+	UFUNCTION(BlueprintCallable, Category = "Commands")
 	FRequestId EntityQueryCountRequest(UEntityQueryConstraint* EntityQuery, const FEntityQueryCountResultDelegate& callback, int timeoutMs);
 
 	UFUNCTION(BlueprintCallable, Category = "Commands", meta = (AutoCreateRefTerm = "ComponentIds"))

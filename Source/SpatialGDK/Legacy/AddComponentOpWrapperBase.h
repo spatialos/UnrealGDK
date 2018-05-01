@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "SpatialGDKWorkerTypes.h"
@@ -7,12 +9,12 @@
 UCLASS(abstract)
 class SPATIALGDK_API UAddComponentOpWrapperBase : public UObject
 {
-	GENERATED_BODY()
+  GENERATED_BODY()
 public:
-	UAddComponentOpWrapperBase()
-	{
-	}
+  UAddComponentOpWrapperBase()
+  {
+  }
 
-	::worker::ComponentId ComponentId;
-	::worker::EntityId EntityId;
+  ::worker::ComponentId ComponentId;
+  ::worker::EntityId EntityId;
 };

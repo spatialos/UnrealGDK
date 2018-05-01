@@ -5,11 +5,11 @@
 #>
 // ===========
 // DO NOT EDIT - this file is automatically regenerated.
-// =========== 
+// ===========
 
 #include "<#= commandDetails.CapitalisedName #>CommandResponder.h"
 
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 
 U<#= commandDetails.CapitalisedName #>CommandResponder::U<#= commandDetails.CapitalisedName #>CommandResponder()
 {
@@ -18,9 +18,9 @@ U<#= commandDetails.CapitalisedName #>CommandResponder::U<#= commandDetails.Capi
 U<#= commandDetails.CapitalisedName #>CommandResponder* U<#= commandDetails.CapitalisedName #>CommandResponder::Init(
     const TWeakPtr<SpatialOSConnection>& InConnection,
     worker::RequestId<
-        worker::IncomingCommandRequest<<#= commandDetails.QualifiedOwnerName #>::Commands::<#= commandDetails.UnderlyingCapitalisedName #>>> 
+        worker::IncomingCommandRequest<<#= commandDetails.QualifiedOwnerName #>::Commands::<#= commandDetails.UnderlyingCapitalisedName #>>>
 	InRequestId,
-    <#= commandDetails.UnrealRequestTypeDetails.UnrealType #> InRequest, 
+    <#= commandDetails.UnrealRequestTypeDetails.UnrealType #> InRequest,
 	const std::string& InCallerWorkerId
 )
 {

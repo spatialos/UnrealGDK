@@ -6,13 +6,13 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // ===========
 // DO NOT EDIT - this file is automatically regenerated.
-// =========== 
+// ===========
 
 #pragma once
 
 #include "UObject/Class.h"
-#include "SpatialOSViewTypes.h"
-#include "SpatialOSWorkerTypes.h"
+#include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "ComponentIdentifier.h"
 #include "ComponentUpdateQueue.h"
 <# foreach (var packageInclude in packageIncludes) { #>
@@ -27,7 +27,7 @@ class UComponentUpdateOpWrapperBase;
 DECLARE_EVENT_TwoParams( UCallbackDispatcher, FAuthorityChangeOpReceivedEvent, worker::ComponentId, const worker::AuthorityChangeOp&);
 
 UCLASS()
-class SPATIALOS_API UCallbackDispatcher : public UObject
+class SPATIALGDK_API UCallbackDispatcher : public UObject
 {
 	GENERATED_BODY()
 
@@ -61,10 +61,10 @@ public:
 private:
 	TMap<FComponentIdentifier, TFunction<void(UComponentUpdateOpWrapperBase&)>> ComponentUpdateCallbacks;
 	TMap<FComponentIdentifier, TFunction<void(const worker::AuthorityChangeOp&)>> AuthorityChangeCallbacks;
-	
+
 	UPROPERTY()
 	TMap<FComponentIdentifier, FComponentUpdateQueue> QueuedUpdates;
-	
+
 	void HandleUpdate(UComponentUpdateOpWrapperBase* Update);
 	void EnqueueUpdate(const FComponentIdentifier& Id, UComponentUpdateOpWrapperBase* Update);
 	void DispatchQueuedUpdates(const FComponentIdentifier& Id);
