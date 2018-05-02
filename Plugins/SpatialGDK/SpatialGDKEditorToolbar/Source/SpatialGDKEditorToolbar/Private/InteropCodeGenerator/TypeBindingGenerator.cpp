@@ -429,19 +429,19 @@ void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC
 		{
 			// export 'const' for parameters
 			const bool bIsConstParam = (Prop->IsA(UInterfaceProperty::StaticClass()) && !Prop->HasAllPropertyFlags(CPF_OutParm)); //@TODO: This should be const once that flag exists
-			const bool bIsOnConstClass = (Prop->IsA(UObjectProperty::StaticClass()) && ((UObjectProperty*)Prop)->PropertyClass != NULL && ((UObjectProperty*)Prop)->PropertyClass->HasAnyClassFlags(CLASS_Const));
+			const bool bIsOnConstClass = (Prop->IsA(UObjectProperty::StaticClass()) && static_cast<UObjectProperty*>(Prop)->PropertyClass != NULL && static_cast<UObjectProperty*>(Prop)->PropertyClass->HasAnyClassFlags(CLASS_Const));
 
 			if (bIsConstParam || bIsOnConstClass)
 			{
 				bEmitConst = false; // ExportCppDeclaration will do it for us
 			}
 		}
-		// COPY-PASTE END
 
 		if (bEmitConst)
 		{
 			PropertyText.Logf(TEXT("const "));
 		}
+		// COPY-PASTE END
 
 		Prop->ExportCppDeclaration(PropertyText, EExportedDeclaration::Local, nullptr);
 
@@ -803,7 +803,6 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	if (Class->ClassGeneratedBy)
 	{
 		// This is a blueprint class, so use Unreal's reflection to find UClass pointer at runtime.
-		// TODO: Cache this value for faster access?
 		SourceWriter.Printf("return FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));", *Class->GetName());
 	}
 	else
@@ -1618,9 +1617,14 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 	// Extract RPC arguments from the stack.
 	if (RPC->Function->NumParms > 0)
 	{
-		FString ParametersStructName = FString::Printf(TEXT("%s_Params"), *RPC->Function->GetName());
-		GenerateRPCArgumentsStruct(SourceWriter, RPC, ParametersStructName);
-		SourceWriter.PrintNewLine();
+		// The name of the struct is consistent with the one in .generated.h
+		FString ParametersStructName = FString::Printf(TEXT("%s_event%s_Parms"), *RPC->Function->GetOwnerClass()->GetName(), *RPC->Function->GetName());
+		if (Class->ClassGeneratedBy)
+		{
+			// This is a blueprint class, so we need to generate the Params struct based on the RPC arguments
+			GenerateRPCArgumentsStruct(SourceWriter, RPC, ParametersStructName);
+			SourceWriter.PrintNewLine();
+		}
 
 		SourceWriter.Printf("%s StructuredParams = *static_cast<%s*>(Params);", *ParametersStructName, *ParametersStructName);
 		SourceWriter.PrintNewLine();
@@ -1733,24 +1737,14 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 		SourceWriter.PrintNewLine();
 		SourceWriter.Print("// Declare parameters.");
 
-		// This is what I wanted to do: only generate these structs for blueprints, otherwise use the one from .generated.h
-		// The problem is that if an RPC declared in a parent class, the struct name will be e.g. "Character_eventClientSetRotation_Parms"
-		// but the name we generate is "PlayerCharacter_eventClientSetRotation_Parms" because at this point we don't know the class which
-		// actually declared the RPC.
-		/*
 		// The name of the struct is consistent with the one in .generated.h
-		FString ParametersStructName = FString::Printf(TEXT("%s_event%s_Parms"), *RPC->CallerType->GetName(), *RPC->Function->GetName());
+		FString ParametersStructName = FString::Printf(TEXT("%s_event%s_Parms"), *RPC->Function->GetOwnerClass()->GetName(), *RPC->Function->GetName());
 		if (Class->ClassGeneratedBy)
 		{
 			// This is a blueprint class, so we need to generate the Params struct based on the RPC arguments
 			GenerateRPCArgumentsStruct(SourceWriter, RPC, ParametersStructName);
 			SourceWriter.PrintNewLine();
 		}
-		*/
-
-		FString ParametersStructName = FString::Printf(TEXT("%s_Params"), *RPC->Function->GetName());
-		GenerateRPCArgumentsStruct(SourceWriter, RPC, ParametersStructName);
-		SourceWriter.PrintNewLine();
 
 		SourceWriter.Printf("%s Parameters;", *ParametersStructName);
 
@@ -1783,10 +1777,24 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 					*TargetObject->GetName(),
 					*ObjectRefToString(TargetObjectRef));)""",
 		*RPC->Function->GetName());
+
 	SourceWriter.PrintNewLine();
-	SourceWriter.Printf("UFunction* Function = GetBoundClass()->FindFunctionByName(FName(TEXT(\"%s\")));",
+	SourceWriter.Printf(R"""(
+		UFunction* Function = TargetObject->FindFunction(FName(TEXT("%s")));
+		if (Function)
+		{
+			TargetObject->ProcessEvent(Function, %s);
+		}
+		else
+		{
+			UE_LOG(LogSpatialOSInterop, Error, TEXT("%%s: %s_OnCommandRequest: Function not found. Object: %%s, Function: %s."),
+				*Interop->GetSpatialOS()->GetWorkerId(),
+				*TargetObject->GetFullName());
+		})""",
+		*RPC->Function->GetName(),
+		*RPCParametersStruct,
+		*RPC->Function->GetName(),
 		*RPC->Function->GetName());
-	SourceWriter.Printf("TargetObject->ProcessEvent(Function, %s);", *RPCParametersStruct);
 	SourceWriter.PrintNewLine();
 
 	SourceWriter.Print("// Send command response.");
