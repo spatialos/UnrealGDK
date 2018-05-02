@@ -263,7 +263,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			FString TypeStr = SchemaRPCRequestType(RPC->Function);
 
 			// Get the correct code writer for this RPC.
-			FString RPCOwnerName = *RPC->Function->GetOuter()->GetName();
+			FString RPCOwnerName = UnrealNameToSchemaTypeName(*RPC->Function->GetOuter()->GetName());
 			TSharedPtr<FCodeWriter> RPCTypeOwnerSchemaWriter = RPCTypeCodeWriterMap[*RPCOwnerName];
 
 			RPCTypeOwnerSchemaWriter->Printf("type %s {" , *TypeStr);
