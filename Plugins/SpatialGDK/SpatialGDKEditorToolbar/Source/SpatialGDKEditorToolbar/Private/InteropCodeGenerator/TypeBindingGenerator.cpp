@@ -1617,11 +1617,12 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 	// Extract RPC arguments from the stack.
 	if (RPC->Function->NumParms > 0)
 	{
+		UClass* RPCOwnerClass = RPC->Function->GetOwnerClass();
 		// The name of the struct is consistent with the one in .generated.h
-		FString ParametersStructName = FString::Printf(TEXT("%s_event%s_Parms"), *RPC->Function->GetOwnerClass()->GetName(), *RPC->Function->GetName());
-		if (Class->ClassGeneratedBy)
+		FString ParametersStructName = FString::Printf(TEXT("%s_event%s_Parms"), *RPCOwnerClass->GetName(), *RPC->Function->GetName());
+		if (RPCOwnerClass->ClassGeneratedBy)
 		{
-			// This is a blueprint class, so we need to generate the Params struct based on the RPC arguments
+			// This RPC is generated from a blueprint class, so we need to generate the Params struct based on the RPC arguments
 			GenerateRPCArgumentsStruct(SourceWriter, RPC, ParametersStructName);
 			SourceWriter.PrintNewLine();
 		}
@@ -1737,11 +1738,12 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 		SourceWriter.PrintNewLine();
 		SourceWriter.Print("// Declare parameters.");
 
+		UClass* RPCOwnerClass = RPC->Function->GetOwnerClass();
 		// The name of the struct is consistent with the one in .generated.h
-		FString ParametersStructName = FString::Printf(TEXT("%s_event%s_Parms"), *RPC->Function->GetOwnerClass()->GetName(), *RPC->Function->GetName());
-		if (Class->ClassGeneratedBy)
+		FString ParametersStructName = FString::Printf(TEXT("%s_event%s_Parms"), *RPCOwnerClass->GetName(), *RPC->Function->GetName());
+		if (RPCOwnerClass->ClassGeneratedBy)
 		{
-			// This is a blueprint class, so we need to generate the Params struct based on the RPC arguments
+			// This RPC is generated from a blueprint class, so we need to generate the Params struct based on the RPC arguments
 			GenerateRPCArgumentsStruct(SourceWriter, RPC, ParametersStructName);
 			SourceWriter.PrintNewLine();
 		}
