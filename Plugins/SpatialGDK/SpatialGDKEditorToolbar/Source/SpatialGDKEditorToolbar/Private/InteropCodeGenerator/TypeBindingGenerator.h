@@ -29,10 +29,13 @@ void GeneratePropertyToUnrealConversion(
 	const bool bIsUpdate,
 	TFunction<void(const FString&)> ObjectResolveFailureGenerator);
 
+// For blueprint RPCs, declares a struct with RPC arguments.
+// For C++ RPCs, writes a comment about where the Unreal-generated struct is taken from.
+// Sets StructName to the name of the struct.
 void GenerateRPCArgumentsStruct(
 	FCodeWriter& Writer,
 	const TSharedPtr<FUnrealRPC>& RPC,
-	const FString& StructName);
+	FString& StructName);
 
 // Generates the header of a type binding.
 void GenerateTypeBindingHeader(
