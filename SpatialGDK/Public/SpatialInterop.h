@@ -80,6 +80,19 @@ FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& Rep
 			RepNotifies.Add(RepHandleData.Property);
 		}
 	}
+	else if (RepHandleData.PropertyChain.Num() > 1)
+	{
+		// If the root of the property chain has a RepNotify flag and has changed, add it to the rep notify list.
+		UProperty* RootProperty = RepHandleData.PropertyChain[0];
+		if (RootProperty->IsA(UStructProperty::StaticClass()) && RootProperty->HasAnyPropertyFlags(CPF_RepNotify))
+		{
+			if (RepHandleData.RepNotifyCondition == REPNOTIFY_Always || !RepHandleData.Property->Identical(Dest, Value))
+			{
+				// TODO: these need to be de-duped, since multiple properties in a struct will add multiple RepNotifies
+				RepNotifies.Add(RootProperty);
+			}
+		}
+	}
 
 	// Write value to destination.
 	UBoolProperty* BoolProperty = Cast<UBoolProperty>(RepHandleData.Property);
