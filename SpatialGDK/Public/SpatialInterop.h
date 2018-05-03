@@ -68,28 +68,29 @@ using FPendingIncomingObjectUpdateMap = TMap<FHashableUnrealObjectRef, TMap<USpa
 using FPendingIncomingRPCMap = TMap<FHashableUnrealObjectRef, TArray<FRPCCommandResponseFunc>>;
 
 // Helper function to write incoming replicated property data to an object.
-FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& RepHandleData, UObject* Object, const void* Value, TArray<UProperty*>& RepNotifies)
+FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& RepHandleData, UObject* Object, const void* Value, TArray<UProperty*>& RepNotifies, TSet<UProperty*>& AlreadyNotifiedProperties)
 {
 	uint8* Dest = RepHandleData.GetPropertyData(reinterpret_cast<uint8*>(Object));
 
 	// If value has changed, add to rep notify list.
-	if (RepHandleData.Property->HasAnyPropertyFlags(CPF_RepNotify))
+	if (RepHandleData.Property->HasAnyPropertyFlags(CPF_RepNotify) && !AlreadyNotifiedProperties.Contains(RepHandleData.Property))
 	{
 		if (RepHandleData.RepNotifyCondition == REPNOTIFY_Always || !RepHandleData.Property->Identical(Dest, Value))
 		{
 			RepNotifies.Add(RepHandleData.Property);
+			AlreadyNotifiedProperties.Add(RepHandleData.Property);
 		}
 	}
 	else if (RepHandleData.PropertyChain.Num() > 1)
 	{
 		// If the root of the property chain has a RepNotify flag and has changed, add it to the rep notify list.
 		UProperty* RootProperty = RepHandleData.PropertyChain[0];
-		if (RootProperty->IsA(UStructProperty::StaticClass()) && RootProperty->HasAnyPropertyFlags(CPF_RepNotify))
+		if (RootProperty->IsA(UStructProperty::StaticClass()) && RootProperty->HasAnyPropertyFlags(CPF_RepNotify) && !AlreadyNotifiedProperties.Contains(RootProperty))
 		{
 			if (RepHandleData.RepNotifyCondition == REPNOTIFY_Always || !RepHandleData.Property->Identical(Dest, Value))
 			{
-				// TODO: these need to be de-duped, since multiple properties in a struct will add multiple RepNotifies
 				RepNotifies.Add(RootProperty);
+				AlreadyNotifiedProperties.Add(RootProperty);
 			}
 		}
 	}

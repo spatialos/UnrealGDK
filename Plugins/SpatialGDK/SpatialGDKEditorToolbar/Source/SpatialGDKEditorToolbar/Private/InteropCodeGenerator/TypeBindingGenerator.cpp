@@ -1351,7 +1351,8 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 	SourceWriter.Printf(R"""(
 			Interop->PreReceiveSpatialUpdate(ActorChannel);
 
-			TArray<UProperty*> RepNotifies;)""");
+			TArray<UProperty*> RepNotifies;
+			TSet<UProperty*> AlreadyNotifiedProperties;)""");
 	if (RepData[Group].Num() > 0)
 	{
 		SourceWriter.Printf(R"""(
@@ -1455,7 +1456,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 				SourceWriter.BeginScope();
 			}
 
-			SourceWriter.Print("ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);");
+			SourceWriter.Print("ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies, AlreadyNotifiedProperties);");
 			SourceWriter.PrintNewLine();
 
 			SourceWriter.Print(R"""(

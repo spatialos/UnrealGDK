@@ -449,9 +449,10 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 		// Trigger pending updates.
 		PreReceiveSpatialUpdate(DependentChannel);
 		TArray<UProperty*> RepNotifies;
+		TSet<UProperty*> AlreadyNotifiedProperties;
 		for (const FRepHandleData* MigData : Properties.Key)
 		{
-			ApplyIncomingReplicatedPropertyUpdate(*MigData, DependentChannel->Actor, &Object, RepNotifies);
+			ApplyIncomingReplicatedPropertyUpdate(*MigData, DependentChannel->Actor, &Object, RepNotifies, AlreadyNotifiedProperties);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object replicated property update. actor %s (%lld), property %s"),
 				*SpatialOSInstance->GetWorkerId(),
 				*DependentChannel->Actor->GetName(),
