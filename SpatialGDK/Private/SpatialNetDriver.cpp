@@ -843,7 +843,8 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 	// For example we can check whether a user is banned by checking against an OnlineSubsystem.
 
 	// skip to the first option in the URL
-	const TCHAR* Tmp = *InUrl.ToString();
+	const FString UrlString = InUrl.ToString();
+	const TCHAR* Tmp = *UrlString;
 	for (; *Tmp && *Tmp != '?'; Tmp++);
 
 	FString ErrorMsg;
