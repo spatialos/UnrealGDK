@@ -1,11 +1,11 @@
 {
   "name": "demo",
   "project_version": "0.0.1",
-  "sdk_version": "13.0.0",
+  "sdk_version": "12.2.2-b3640-026da-WORKER-SNAPSHOT",
   "dependencies": [
     {
       "name": "standard_library",
-      "version": "13.0.0"
+      "version": "12.2.2-b3640-026da-WORKER-SNAPSHOT"
     }
   ]
 }
