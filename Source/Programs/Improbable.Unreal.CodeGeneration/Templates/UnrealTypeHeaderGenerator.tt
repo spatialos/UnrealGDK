@@ -1,0 +1,55 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#
+
+#>
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// =========== 
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "UObject/NoExportTypes.h"
+#include "<#= unrealType.UnderlyingPackageDetails.Include #>"
+
+<#var requiredIncludes = unrealType.FieldDetailsList
+									.SelectMany(fieldDetails => { return fieldDetails.TypeReference.RequiredIncludes; })
+									.Where(include => include != null)
+									.Distinct(); 
+
+ foreach (var requiredInclude in requiredIncludes) { #>
+#include <#= requiredInclude #>
+<# } #>
+#include "<#= unrealType.CapitalisedName #>.generated.h"
+
+/**
+ *
+ */
+UCLASS(BlueprintType)
+class SPATIALGDK_API U<#= unrealType.CapitalisedName #> : public UObject
+{
+    GENERATED_BODY()
+
+  public:
+    U<#= unrealType.CapitalisedName #>();
+    U<#= unrealType.CapitalisedName #>* Init(const <#= unrealType.UnderlyingQualifiedName #>& underlying);
+
+<# foreach (var fieldDetails in unrealType.FieldDetailsList) { #>
+    UFUNCTION(BlueprintPure, Category = "<#= unrealType.CapitalisedName #>")
+    <#= fieldDetails.TypeReference.UnrealType #> Get<#= fieldDetails.CapitalisedName #>();
+	UFUNCTION(BlueprintCallable, Category = "<#= unrealType.CapitalisedName #>")
+    U<#= unrealType.CapitalisedName #>* Set<#= fieldDetails.CapitalisedName #>(<#= fieldDetails.TypeReference.UnrealType #> <#= fieldDetails.LowercaseName #>);
+
+<# } #>
+
+	<#= unrealType.UnderlyingQualifiedName #> GetUnderlying();
+
+  private:
+    TUniquePtr<<#= unrealType.UnderlyingQualifiedName #>> Underlying;
+};
+
+<# if (unrealType.EventsUsingThisType) {#> 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(F<#= unrealType.CapitalisedName #>Delegate, U<#= unrealType.CapitalisedName #>*, newEvent);
+<# } #>

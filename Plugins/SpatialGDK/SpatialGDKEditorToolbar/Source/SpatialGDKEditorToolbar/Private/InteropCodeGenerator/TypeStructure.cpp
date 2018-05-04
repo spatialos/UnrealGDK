@@ -66,7 +66,7 @@ ERPCType GetRPCTypeFromFunction(UFunction* Function)
 	}
 	else
 	{
-		checkNoEntry()
+		checkNoEntry();
 		return ERPCType::RPC_Unknown;
 	}
 }

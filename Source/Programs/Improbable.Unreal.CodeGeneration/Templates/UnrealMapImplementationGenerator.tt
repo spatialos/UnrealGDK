@@ -1,0 +1,73 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#
+
+#>
+#include "<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map.h"
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// =========== 
+
+U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map::U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map()
+{
+}
+
+U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map* U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map::Init(const worker::Map<<#= mapType.KeyType.UnderlyingQualifiedName #>, <#= mapType.ValueType.UnderlyingQualifiedName #>>& underlying)
+{
+	Underlying = worker::Map<<#= mapType.KeyType.UnderlyingQualifiedName #>, <#= mapType.ValueType.UnderlyingQualifiedName #>>(underlying);
+	return this;
+}
+
+U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map* U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map::Emplace(<#= mapType.KeyType.ArgumentName #> key, <#= mapType.ValueType.ArgumentName #> value)
+{
+	<#= mapType.KeyType.UnderlyingQualifiedName #> underlyingKey = <#= mapType.KeyType.ConvertUnrealValueToUnderlyingValue("key") #>;
+	auto underlyingValue = <#= mapType.ValueType.ConvertUnrealValueToUnderlyingValue("value") #>;
+	Underlying.emplace(underlyingKey, underlyingValue);
+	return this;
+}
+
+U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map* U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map::Remove(<#= mapType.KeyType.ArgumentName #> key)
+{
+	<#= mapType.KeyType.UnderlyingQualifiedName #> underlyingKey = <#= mapType.KeyType.ConvertUnrealValueToUnderlyingValue("key") #>;
+	Underlying.erase(underlyingKey);
+	return this;
+}
+
+bool U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map::Contains(<#= mapType.KeyType.ArgumentName #> key)
+{
+	<#= mapType.KeyType.UnderlyingQualifiedName #> underlyingKey = <#= mapType.KeyType.ConvertUnrealValueToUnderlyingValue("key") #>;
+	return Underlying.find(underlyingKey) != Underlying.end();
+}
+
+<#= mapType.ValueType.UnrealType #> U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map::Get(<#= mapType.KeyType.ArgumentName #> key)
+{
+	<#= mapType.KeyType.UnderlyingQualifiedName #> underlyingKey = <#= mapType.KeyType.ConvertUnrealValueToUnderlyingValue("key") #>;
+	auto iterator = Underlying.find(underlyingKey);
+	return <#= mapType.ValueType.ConvertUnderlyingValueToUnrealLocalVariable("iterator->second") #>;
+}
+
+U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map* U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map::Clear()
+{
+	Underlying.clear();
+	return this;
+}
+
+bool U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map::IsEmpty()
+{
+	return Underlying.empty();
+}
+
+bool U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map::operator==(const worker::Map<<#= mapType.KeyType.UnderlyingQualifiedName #>, <#= mapType.ValueType.UnderlyingQualifiedName #>>& OtherUnderlying) const
+{
+	return Underlying == OtherUnderlying;
+}
+
+bool U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map::operator!=(const worker::Map<<#= mapType.KeyType.UnderlyingQualifiedName #>, <#= mapType.ValueType.UnderlyingQualifiedName #>>& OtherUnderlying) const
+{
+	return Underlying != OtherUnderlying;
+}
+
+worker::Map<<#= mapType.KeyType.UnderlyingQualifiedName #>, <#= mapType.ValueType.UnderlyingQualifiedName #>> U<#= mapType.KeyType.UnderlyingCapitalisedName #>To<#= mapType.ValueType.UnderlyingCapitalisedName #>Map::GetUnderlying()
+{
+	return Underlying;
+}

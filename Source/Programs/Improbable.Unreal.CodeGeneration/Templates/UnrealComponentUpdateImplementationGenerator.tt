@@ -1,0 +1,89 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#
+
+#>
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// =========== 
+
+#include "<#= unrealComponent.CapitalisedName #>ComponentUpdate.h"
+
+<#= unrealComponent.UnderlyingQualifiedName #>::Update U<#= unrealComponent.CapitalisedName #>ComponentUpdate::DefaultUnderlying = <#= unrealComponent.UnderlyingQualifiedName #>::Update();
+
+U<#= unrealComponent.CapitalisedName #>ComponentUpdate::U<#= unrealComponent.CapitalisedName #>ComponentUpdate()<#= FillComponentUpdateInitializerList() #>
+{
+}
+
+U<#= unrealComponent.CapitalisedName #>ComponentUpdate* U<#= unrealComponent.CapitalisedName #>ComponentUpdate::Init(const <#= unrealComponent.UnderlyingQualifiedName #>::Update& underlying)
+{
+	return InitInternal(underlying);
+}
+
+U<#= unrealComponent.CapitalisedName #>ComponentUpdate* U<#= unrealComponent.CapitalisedName #>ComponentUpdate::Reset()
+{
+	return ResetInternal();
+}
+
+<# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
+bool U<#= unrealComponent.CapitalisedName #>ComponentUpdate::Has<#= fieldDetails.CapitalisedName #>()
+{
+    return !Underlying.<#= fieldDetails.LowercaseName #>().empty();
+}
+
+<#= fieldDetails.TypeReference.UnrealType #> U<#= unrealComponent.CapitalisedName #>ComponentUpdate::Get<#= fieldDetails.CapitalisedName #>()
+{
+	<#= fieldDetails.TypeReference.AssignUnderlyingValueToUnrealMemberVariable(fieldDetails.CapitalisedName, "(*(Underlying." + fieldDetails.LowercaseName + "().data()))") #>;
+    return <#= fieldDetails.CapitalisedName #>;
+}
+
+U<#= unrealComponent.CapitalisedName #>ComponentUpdate* U<#= unrealComponent.CapitalisedName #>ComponentUpdate::Set<#= fieldDetails.CapitalisedName #>(<#= fieldDetails.TypeReference.UnrealType #> newValue)
+{
+    return Set<#= fieldDetails.CapitalisedName #>Internal(newValue);
+}
+
+<# } #>
+<# foreach (var eventDetails in unrealComponent.EventDetailsList) { #>
+U<#= unrealComponent.CapitalisedName #>ComponentUpdate* U<#= unrealComponent.CapitalisedName #>ComponentUpdate::Add<#= eventDetails.CapitalisedName #>(<#= eventDetails.EventTypeReference.UnrealType #> event)
+{
+    return Add<#= eventDetails.CapitalisedName #>Internal(event);
+}
+
+<# } #>
+const <#= unrealComponent.UnderlyingQualifiedName #>::Update U<#= unrealComponent.CapitalisedName #>ComponentUpdate::GetUnderlying()
+{
+    return GetUnderlyingInternal();
+}
+
+U<#= unrealComponent.CapitalisedName #>ComponentUpdate* U<#= unrealComponent.CapitalisedName #>ComponentUpdate::InitInternal(const <#= unrealComponent.UnderlyingQualifiedName #>::Update& underlying)
+{
+    Underlying = <#= unrealComponent.UnderlyingQualifiedName #>::Update(underlying);
+	return this;
+}
+
+U<#= unrealComponent.CapitalisedName #>ComponentUpdate* U<#= unrealComponent.CapitalisedName #>ComponentUpdate::ResetInternal()
+{
+	return InitInternal(DefaultUnderlying);
+}
+
+<# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
+U<#= unrealComponent.CapitalisedName #>ComponentUpdate* U<#= unrealComponent.CapitalisedName #>ComponentUpdate::Set<#= fieldDetails.CapitalisedName #>Internal(<#= fieldDetails.TypeReference.UnrealType #> newValue)
+{
+    Underlying.set_<#= fieldDetails.LowercaseName #>(<#= fieldDetails.TypeReference.ConvertUnrealValueToUnderlyingValue("newValue") #>);
+	return this;
+}
+
+<# } #>
+<# foreach (var eventDetails in unrealComponent.EventDetailsList) { #>
+U<#= unrealComponent.CapitalisedName #>ComponentUpdate* U<#= unrealComponent.CapitalisedName #>ComponentUpdate::Add<#= eventDetails.CapitalisedName #>Internal(<#= eventDetails.EventTypeReference.UnrealType #> event)
+{
+    Underlying.add_<#= eventDetails.LowercaseName #>(<#= eventDetails.EventTypeReference.ConvertUnrealValueToUnderlyingValue("event") #>);
+    return this;
+}
+
+<# } #>
+const <#= unrealComponent.UnderlyingQualifiedName #>::Update U<#= unrealComponent.CapitalisedName #>ComponentUpdate::GetUnderlyingInternal()
+{
+    return Underlying;
+}

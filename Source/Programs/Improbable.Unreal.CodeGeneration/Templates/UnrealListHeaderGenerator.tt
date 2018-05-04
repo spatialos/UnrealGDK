@@ -1,0 +1,56 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#
+
+#>
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// =========== 
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "improbable/collections.h"
+#include "UObject/NoExportTypes.h"
+
+<# foreach (var requiredInclude in listTypeReference.UnderlyingValueType.RequiredIncludes) { #>
+#include <#= requiredInclude #>
+<# } #>
+
+#include "<#= listTypeReference.UnderlyingCapitalisedName #>List.generated.h"
+
+/**
+ *
+ */
+UCLASS(BlueprintType)
+class SPATIALGDK_API U<#= listTypeReference.UnderlyingCapitalisedName #>List : public UObject
+{
+    GENERATED_BODY()
+
+  public:
+    U<#= listTypeReference.UnderlyingCapitalisedName #>List();
+    U<#= listTypeReference.UnderlyingCapitalisedName #>List* Init(const worker::List<<#= listTypeReference.UnderlyingQualifiedName #>>& underlying);
+
+    UFUNCTION(BlueprintCallable, Category = "<#= listTypeReference.UnderlyingCapitalisedName #>List")
+    U<#= listTypeReference.UnderlyingCapitalisedName #>List* Add(<#= listTypeReference.UnderlyingValueType.ArgumentName #> value);
+
+    UFUNCTION(BlueprintPure, Category = "<#= listTypeReference.UnderlyingCapitalisedName #>List")
+    <#= listTypeReference.UnderlyingValueType.UnrealType #> Get(int pos);
+
+    UFUNCTION(BlueprintCallable, Category = "<#= listTypeReference.UnderlyingCapitalisedName #>List")
+    U<#= listTypeReference.UnderlyingCapitalisedName #>List* Clear();
+
+    UFUNCTION(BlueprintPure, Category = "<#= listTypeReference.UnderlyingCapitalisedName #>List")
+    bool IsEmpty();
+
+	UFUNCTION(BlueprintPure, Category = "<#= listTypeReference.UnderlyingCapitalisedName #>List")
+    int Size();
+
+	bool operator==(const worker::List<<#= listTypeReference.UnderlyingValueType.UnderlyingQualifiedName #>>& OtherUnderlying) const;
+	bool operator!=(const worker::List<<#= listTypeReference.UnderlyingValueType.UnderlyingQualifiedName #>>& OtherUnderlying) const;	
+
+    worker::List<<#= listTypeReference.UnderlyingQualifiedName #>> GetUnderlying();
+
+  private:
+    worker::List<<#= listTypeReference.UnderlyingQualifiedName #>> Underlying;
+};

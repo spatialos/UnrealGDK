@@ -9,13 +9,13 @@
 #include "Misc/MessageDialog.h"
 #include "NotificationManager.h"
 #include "SNotificationList.h"
-#include "SpatialGDKEditorToolbarCommands.h"
-#include "SpatialGDKEditorToolbarStyle.h"
 #include "SpatialGDKEditorGenerateSnapshot.h"
 #include "SpatialGDKEditorInteropCodeGenerator.h"
+#include "SpatialGDKEditorToolbarCommands.h"
+#include "SpatialGDKEditorToolbarStyle.h"
 
-#include "HAL/FileManager.h"
 #include "Editor/EditorEngine.h"
+#include "HAL/FileManager.h"
 
 #include "LevelEditor.h"
 

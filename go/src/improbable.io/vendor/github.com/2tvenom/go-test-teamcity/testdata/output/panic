@@ -1,0 +1,31 @@
+##teamcity[testStarted timestamp='2017-01-02T04:05:06.789' name='TestConstWithPrecision' captureStandardOutput='true']
+##teamcity[testFinished timestamp='2017-01-02T04:05:06.789' name='TestConstWithPrecision' duration='0']
+##teamcity[testStarted timestamp='2017-01-02T04:05:06.789' name='TestConstBlah' captureStandardOutput='true']
+##teamcity[testFinished timestamp='2017-01-02T04:05:06.789' name='TestConstBlah' duration='0']
+##teamcity[testStarted timestamp='2017-01-02T04:05:06.789' name='TestConstError' captureStandardOutput='true']
+##teamcity[testFailed timestamp='2017-01-02T04:05:06.789' name='TestConstError' details='const_test.go:56: nope']
+##teamcity[testFinished timestamp='2017-01-02T04:05:06.789' name='TestConstError' duration='0']
+##teamcity[testStarted timestamp='2017-01-02T04:05:06.789' name='TestConstSub/subtest' captureStandardOutput='true']
+panic: hi [recovered]
+	panic: hi
+
+goroutine 9 [running]:
+panic(0x5a7ea0, 0xc42000fc10)
+	/usr/local/go/src/runtime/panic.go:500 +0x1a1
+testing.tRunner.func1(0xc420242a80)
+	/usr/local/go/src/testing/testing.go:579 +0x25d
+panic(0x5a7ea0, 0xc42000fc10)
+	/usr/local/go/src/runtime/panic.go:458 +0x243
+github.com/cockroachdb/apd.TestConstSub.func1(0xc420242a80)
+	/home/mjibson/src/github.com/cockroachdb/apd/const_test.go:62 +0xfb
+testing.tRunner(0xc420242a80, 0x605568)
+	/usr/local/go/src/testing/testing.go:610 +0x81
+created by testing.(*T).Run
+	/usr/local/go/src/testing/testing.go:646 +0x2ec
+##teamcity[testFailed timestamp='2017-01-02T04:05:06.789' name='TestConstSub/subtest' message='Test ended in panic.' details='']
+##teamcity[testFinished timestamp='2017-01-02T04:05:06.789' name='TestConstSub/subtest' duration='0']
+##teamcity[testStarted timestamp='2017-01-02T04:05:06.789' name='TestConstSub' captureStandardOutput='true']
+##teamcity[testFailed timestamp='2017-01-02T04:05:06.789' name='TestConstSub' message='Test ended in panic.' details='']
+##teamcity[testFinished timestamp='2017-01-02T04:05:06.789' name='TestConstSub' duration='0']
+exit status 2
+FAIL	github.com/cockroachdb/apd	0.008s

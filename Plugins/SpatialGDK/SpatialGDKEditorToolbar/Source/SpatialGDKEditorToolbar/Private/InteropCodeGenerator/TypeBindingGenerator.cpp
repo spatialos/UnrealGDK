@@ -1,8 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "TypeBindingGenerator.h"
-#include "TypeStructure.h"
 #include "SchemaGenerator.h"
+#include "TypeStructure.h"
 
 #include "Utils/CodeWriter.h"
 
@@ -42,7 +42,8 @@ FString CPPFieldName(TSharedPtr<FUnrealProperty> Property)
 	return CPPFieldName;
 }
 
-FString PropertyToWorkerSDKType(UProperty* Property) {
+FString PropertyToWorkerSDKType(UProperty* Property)
+{
 	FString DataType;
 
 	if (Property->IsA(UStructProperty::StaticClass()))
@@ -65,7 +66,7 @@ FString PropertyToWorkerSDKType(UProperty* Property) {
 		{
 			DataType = TEXT("improbable::unreal::UnrealFPlane");
 		}
-		else 
+		else
 		{
 			DataType = TEXT("std::string"); //this includes RepMovement and UniqueNetId
 		}
@@ -107,7 +108,8 @@ FString PropertyToWorkerSDKType(UProperty* Property) {
 		DataType = PropertyToWorkerSDKType(Cast<UArrayProperty>(Property)->Inner);
 		DataType = FString::Printf(TEXT("::worker::List<%s>"), *DataType);
 	}
-	else {
+	else
+	{
 		DataType = TEXT("std::string");
 	}
 
@@ -981,7 +983,7 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 			}
 		});
 		UnrealMetadata.set_subobject_name_to_offset(SubobjectNameToOffset);
-		
+
 		// Build entity.
 		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);)""");
 	SourceWriter.Print("return improbable::unreal::FEntityBuilder::Begin()");
@@ -1054,7 +1056,7 @@ void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Cl
 	SourceWriter.Printf("Connection->SendComponentUpdate<improbable::unreal::%s>(EntityId.ToSpatialEntityId(), MigratableDataUpdate);",
 		*SchemaMigratableDataName(Class));
 	SourceWriter.End();
-	
+
 	SourceWriter.End();
 }
 
@@ -1144,7 +1146,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 
 	SourceWriter.BeginFunction(BuildComponentUpdateSignature, TypeBindingName(Class));
 	SourceWriter.Print("const FRepHandlePropertyMap& RepPropertyMap = GetRepHandlePropertyMap();");
-	SourceWriter.Print("const FMigratableHandlePropertyMap& MigPropertyMap = GetMigratableHandlePropertyMap();"); 
+	SourceWriter.Print("const FMigratableHandlePropertyMap& MigPropertyMap = GetMigratableHandlePropertyMap();");
 	SourceWriter.Print("if (Changes.RepChanged.Num() > 0)");
 	SourceWriter.BeginScope();
 
@@ -1316,9 +1318,9 @@ void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter,
 				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
 			}
 			SourceWriter.PrintNewLine();
-			
+
 			FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(MigProp.Value);
-			
+
 			GenerateUnrealToSchemaConversion(
 				SourceWriter, SpatialValueSetter, MigProp.Value->Property, PropertyValueName, true,
 				[&SourceWriter, Handle](const FString& PropertyValue)
@@ -1375,7 +1377,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 			SourceWriter.Printf("uint16 Handle = %d;", Handle);
 			SourceWriter.Print("const FRepHandleData* RepData = &HandleToPropertyMap[Handle];");
 			SourceWriter.Print("if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))");
-				
+
 			SourceWriter.BeginScope();
 
 			if (Property->IsA<UObjectPropertyBase>())
@@ -1590,7 +1592,7 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 		// Note that macros returned by GeneratePropertyReader require this FFrame variable to be named "Stack"
 		SourceWriter.Print("FFrame& Stack = *RPCFrame;");
 		for (TFieldIterator<UProperty> Param(RPC->Function); Param; ++Param)
-		{			
+		{
 			SourceWriter.Print(*GenerateFFramePropertyReader(*Param));
 		}
 		SourceWriter.PrintNewLine();
@@ -1715,18 +1717,18 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 			FString PropertyTemplateType;
 			FString PropertyValueCppType = Param.Value->Property->GetCPPType(&PropertyTemplateType);
 			FString PropertyValueName = Param.Value->Property->GetNameCPP();
-			
+
 			SourceWriter.Printf("%s%s %s;", *PropertyValueCppType, *PropertyTemplateType, *PropertyValueName);
-			
+
 			RPCParameters.Add(PropertyValueName);
 		}
 
 		// Extract RPC arguments from request data.
 		SourceWriter.PrintNewLine();
 		SourceWriter.Print("// Extract from request data.");
-		
+
 		for (auto Param : GetFlatRPCParameters(RPC))
-		{			
+		{
 			FString SpatialValue = FString::Printf(TEXT("%s.%s()"), TEXT("Op.Request"), *SchemaFieldName(Param));
 
 			GeneratePropertyToUnrealConversion(
@@ -1756,7 +1758,7 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 	SourceWriter.Outdent().Print("};");
 
 	SourceWriter.Print("Interop->SendCommandResponse_Internal(Receiver);");
-	
+
 	SourceWriter.End();
 }
 

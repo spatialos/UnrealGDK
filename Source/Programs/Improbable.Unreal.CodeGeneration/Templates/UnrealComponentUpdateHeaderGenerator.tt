@@ -1,0 +1,98 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#
+
+#>
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// =========== 
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "UObject/NoExportTypes.h"
+#include "ComponentUpdateOpWrapperBase.h"
+#include "<#= unrealComponent.UnderlyingPackageDetails.Include #>"
+
+<#var requiredIncludes = unrealComponent.FieldDetailsList
+										.SelectMany(fieldDetails => { return fieldDetails.TypeReference.RequiredIncludes; })
+										.Where(include => include != null)
+										.ToList();
+
+foreach(var eventDetails in unrealComponent.EventDetailsList)
+{
+	requiredIncludes.AddRange(eventDetails.EventTypeReference.RequiredIncludes);
+}
+
+ foreach (var requiredInclude in requiredIncludes.Distinct()) { #>
+#include <#= requiredInclude #>
+<# } #>
+
+#include "<#= unrealComponent.CapitalisedName #>ComponentUpdate.generated.h"
+
+/**
+ *
+ */
+UCLASS(BlueprintType)
+class SPATIALGDK_API U<#= unrealComponent.CapitalisedName #>ComponentUpdate : public UComponentUpdateOpWrapperBase
+{
+    GENERATED_BODY()
+
+  public:
+    U<#= unrealComponent.CapitalisedName #>ComponentUpdate();
+    
+	DEPRECATED(12.1, "This class is deprecated, please access the Component properties directly and use automatic component updates or explicitly trigger a manual update with TriggerManualComponentUpdate.")
+	U<#= unrealComponent.CapitalisedName #>ComponentUpdate* Init(const <#= unrealComponent.UnderlyingQualifiedName #>::Update& underlying);
+	DEPRECATED(12.1, "This class is deprecated, please access the Component properties directly and use automatic component updates or explicitly trigger a manual update with TriggerManualComponentUpdate.")
+	U<#= unrealComponent.CapitalisedName #>ComponentUpdate* Reset();
+
+<# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
+	DEPRECATED(12.1, "This class is deprecated, please access the Component properties directly and use automatic component updates or explicitly trigger a manual update with TriggerManualComponentUpdate.")
+    UFUNCTION(BlueprintPure, Category = "<#= unrealComponent.CapitalisedName #>ComponentUpdate")
+    bool Has<#= fieldDetails.CapitalisedName #>();
+
+	DEPRECATED(12.1, "This class is deprecated, please access the Component properties directly and use automatic component updates or explicitly trigger a manual update with TriggerManualComponentUpdate.")
+    UFUNCTION(BlueprintPure, Category = "<#= unrealComponent.CapitalisedName #>ComponentUpdate", meta=(DeprecatedFunction, DeprecationMessage="This class is deprecated, please access the Component properties directly and use automatic component updates or explicitly trigger a manual update with TriggerManualComponentUpdate."))
+    <#= fieldDetails.TypeReference.UnrealType #> Get<#= fieldDetails.CapitalisedName #>();
+
+	DEPRECATED(12.1, "This class is deprecated, please access the Component properties directly and use automatic component updates or explicitly trigger a manual update with TriggerManualComponentUpdate.")
+    UFUNCTION(BlueprintCallable, Category = "<#= unrealComponent.CapitalisedName #>ComponentUpdate", meta=(DeprecatedFunction, DeprecationMessage="This class is deprecated, please access the Component properties directly and use automatic component updates or explicitly trigger a manual update with TriggerManualComponentUpdate."))
+    U<#= unrealComponent.CapitalisedName #>ComponentUpdate* Set<#= fieldDetails.CapitalisedName #>(<#= fieldDetails.TypeReference.UnrealType #> newValue);
+
+<# } #>
+<# foreach (var eventDetails in unrealComponent.EventDetailsList) { #>
+	DEPRECATED(12.1, "This class is deprecated, please access the Component properties directly and use automatic component updates or explicitly trigger a manual update with TriggerManualComponentUpdate.")
+    UFUNCTION(BlueprintCallable, Category = "<#= unrealComponent.CapitalisedName #>ComponentUpdate", meta=(DeprecatedFunction, DeprecationMessage="This class is deprecated, please access the Component properties directly and use automatic component updates or explicitly trigger a manual update with TriggerManualComponentUpdate."))
+    U<#= unrealComponent.CapitalisedName #>ComponentUpdate* Add<#= eventDetails.CapitalisedName #>(<#= eventDetails.EventTypeReference.UnrealType #> event);
+
+<# } #>
+	DEPRECATED(12.1, "This class is deprecated, please access the Component properties directly and use automatic component updates or explicitly trigger a manual update with TriggerManualComponentUpdate.")
+    const <#= unrealComponent.UnderlyingQualifiedName #>::Update GetUnderlying();
+
+  private:
+    friend class U<#= unrealComponent.CapitalisedName #>Component;
+	friend class UCallbackDispatcher;
+
+	U<#= unrealComponent.CapitalisedName #>ComponentUpdate* InitInternal(const <#= unrealComponent.UnderlyingQualifiedName #>::Update& underlying);
+	U<#= unrealComponent.CapitalisedName #>ComponentUpdate* ResetInternal();
+
+<# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
+    U<#= unrealComponent.CapitalisedName #>ComponentUpdate* Set<#= fieldDetails.CapitalisedName #>Internal(<#= fieldDetails.TypeReference.UnrealType #> newValue);
+
+<# } #>
+<# foreach (var eventDetails in unrealComponent.EventDetailsList) { #>
+    U<#= unrealComponent.CapitalisedName #>ComponentUpdate* Add<#= eventDetails.CapitalisedName #>Internal(<#= eventDetails.EventTypeReference.UnrealType #> event);
+
+<# } #>
+    const <#= unrealComponent.UnderlyingQualifiedName #>::Update GetUnderlyingInternal();
+
+<# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
+	UPROPERTY()
+	<#= fieldDetails.TypeReference.UnrealType #> <#= fieldDetails.CapitalisedName #>;
+<# } #>
+
+    <#= unrealComponent.UnderlyingQualifiedName #>::Update Underlying;
+	static <#= unrealComponent.UnderlyingQualifiedName #>::Update DefaultUnderlying;
+};
