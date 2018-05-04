@@ -402,7 +402,8 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 				if (EntityActor->IsA(APlayerController::StaticClass()))
 				{
 					uint8 PlayerIndex = 0;
-					FInBunch Bunch(NetDriver->ServerConnection, &PlayerIndex, sizeof(PlayerIndex));
+					// FInBunch takes size in bits not bytes
+					FInBunch Bunch(NetDriver->ServerConnection, &PlayerIndex, sizeof(PlayerIndex)*8);
 					EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
 				}
 				else
