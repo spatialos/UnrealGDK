@@ -21,12 +21,12 @@ INSTALL_PATH="$1"
 BUILT_PLUGINSPATH="Plugins\SpatialGDK"
 BUILT_MODULEPATH="Source\SpatialGDK"
 BUILT_SCRIPTSPATH="Scripts"
-BUILT_BINARIESPATH="Binaries\ThirdParty\Improbable"
+BUILT_BINARIESPATH="Binaries"
 
 TARGET_PLUGINSPATH="${INSTALL_PATH}\workers\unreal\Game\Plugins"
 TARGET_MODULEPATH="${INSTALL_PATH}\workers\unreal\Game\Source"
-TARGET_SCRIPTSPATH="${INSTALL_PATH}\workers\unreal\Game\Scripts"
-TARGET_BINARIESPATH="${INSTALL_PATH}\workers\unreal\Game\Binaries\ThirdParty\Improbable"
+TARGET_SCRIPTSPATH="${INSTALL_PATH}\workers\unreal\Game"
+TARGET_BINARIESPATH="${INSTALL_PATH}\workers\unreal\Game"
 
 markStartOfBlock "$0"
 
