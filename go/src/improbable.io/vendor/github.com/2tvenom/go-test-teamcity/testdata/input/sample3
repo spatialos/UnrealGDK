@@ -1,0 +1,35 @@
+=== RUN   TestConstWithPrecision
+--- PASS: TestConstWithPrecision (0.00s)
+	const_test.go:30: message 0: 1E+2
+	const_test.go:30: message 1: 1E+2
+	const_test.go:30: message 2: 1.2E+2
+	const_test.go:30: message 3: 123.5
+	const_test.go:30: message 4: 123.5
+	const_test.go:30: message 5: 123.45679
+	const_test.go:30: message 6: 123.45679
+	const_test.go:30: message 7: 123.45679
+	const_test.go:30: message 8: 123.45679
+	const_test.go:30: message 9: 123.456789
+	const_test.go:30: message 10: 123.456789
+	const_test.go:30: message 11: 123.456789
+=== RUN   TestConstBlah
+--- PASS: TestConstBlah (0.00s)
+	const_test.go:48: log 1E+2: 0
+	const_test.go:48: log 1E+2: 1
+	const_test.go:48: log 1.2E+2: 2
+	const_test.go:48: log 123.5: 3
+	const_test.go:48: log 123.5: 4
+	const_test.go:48: log 123.45679: 5
+	const_test.go:48: log 123.45679: 6
+	const_test.go:48: log 123.45679: 7
+	const_test.go:48: log 123.45679: 8
+	const_test.go:48: log 123.456789: 9
+	const_test.go:48: log 123.456789: 10
+	const_test.go:48: log 123.456789: 11
+=== RUN   TestConstSub
+=== RUN   TestConstSub/subtest
+--- PASS: TestConstSub (0.00s)
+    --- PASS: TestConstSub/subtest (0.00s)
+    	const_test.go:57: ok
+PASS
+ok  	github.com/cockroachdb/apd	0.009s

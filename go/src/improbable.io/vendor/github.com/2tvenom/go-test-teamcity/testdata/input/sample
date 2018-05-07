@@ -1,0 +1,17 @@
+=== RUN TestSomething
+log output
+--- PASS: TestSomething (0.04s)
+=== RUN TestNegativeDuration
+--- PASS: TestNegativeDuration (-0.04s)
+=== RUN TestFailWithMessage
+--- FAIL: TestFailWithMessage (0.04s)
+foo
+bar
+baz
+=== RUN TestPanic
+explode
+=== RUN TestBlah
+--- PASS: TestBlah (3.05s)
+FAIL
+exit status 1
+FAIL  	github.com/garbageday	0.005s
