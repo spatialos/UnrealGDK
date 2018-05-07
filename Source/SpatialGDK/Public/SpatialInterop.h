@@ -73,6 +73,10 @@ FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& Rep
 {
 	uint8* Dest = RepHandleData.GetPropertyData(reinterpret_cast<uint8*>(Object));
 
+	check(RepHandleData.PropertyChain.Num() > 0);
+	check(RepHandleData.PropertyChain[0] != nullptr);
+	check(RepHandleData.Property != nullptr);
+
 	// If the root of the property chain has a RepNotify flag and the leaf value has changed, add it to the rep notify list.
 	UProperty* PropertyToNotify = RepHandleData.PropertyChain[0];
 	if (PropertyToNotify->HasAnyPropertyFlags(CPF_RepNotify))
