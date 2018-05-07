@@ -444,11 +444,10 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 
 		// Trigger pending updates.
 		PreReceiveSpatialUpdate(DependentChannel);
-		TArray<UProperty*> RepNotifies;
-		TSet<UProperty*> AlreadyNotifiedProperties;
+		TSet<UProperty*> RepNotifies;
 		for (const FRepHandleData* MigData : Properties.Key)
 		{
-			ApplyIncomingReplicatedPropertyUpdate(*MigData, DependentChannel->Actor, &Object, RepNotifies, AlreadyNotifiedProperties);
+			ApplyIncomingReplicatedPropertyUpdate(*MigData, DependentChannel->Actor, &Object, RepNotifies);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object replicated property update. actor %s (%lld), property %s"),
 				*SpatialOSInstance->GetWorkerId(),
 				*DependentChannel->Actor->GetName(),
@@ -464,7 +463,7 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 				DependentChannel->GetEntityId().ToSpatialEntityId(),
 				*MigData->Property->GetName());
 		}
-		PostReceiveSpatialUpdate(DependentChannel, RepNotifies);
+		PostReceiveSpatialUpdate(DependentChannel, RepNotifies.Array());
 	}
 
 	PendingIncomingObjectUpdates.Remove(ObjectRef);
