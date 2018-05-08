@@ -1351,12 +1351,12 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 	SourceWriter.BeginFunction(ReceiveUpdateSignature, TypeBindingName(Class));
 
 	SourceWriter.Printf(R"""(
-			Interop->PreReceiveSpatialUpdate(ActorChannel);
-
-			TArray<UProperty*> RepNotifies;)""");
+			Interop->PreReceiveSpatialUpdate(ActorChannel);)""");
 	if (RepData[Group].Num() > 0)
 	{
 		SourceWriter.Printf(R"""(
+				TSet<UProperty*> RepNotifies;
+
 				const bool bIsServer = Interop->GetNetDriver()->IsServer();
 				const bool bAutonomousProxy = ActorChannel->IsClientAutonomousProxy(improbable::unreal::%s::ComponentId);
 				const FRepHandlePropertyMap& HandleToPropertyMap = GetRepHandlePropertyMap();
@@ -1476,8 +1476,14 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 			SourceWriter.End();
 			SourceWriter.End();
 		}
+		SourceWriter.Print("Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies.Array());");
 	}
-	SourceWriter.Print("Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);");
+	else
+	{
+		SourceWriter.Print(R"""(
+			TArray<UProperty*> RepNotifies;
+			Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);)""");
+	}
 
 	SourceWriter.End();
 }

@@ -69,16 +69,21 @@ using FPendingIncomingObjectUpdateMap = TMap<FHashableUnrealObjectRef, TMap<USpa
 using FPendingIncomingRPCMap = TMap<FHashableUnrealObjectRef, TArray<FRPCCommandResponseFunc>>;
 
 // Helper function to write incoming replicated property data to an object.
-FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& RepHandleData, UObject* Object, const void* Value, TArray<UProperty*>& RepNotifies)
+FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& RepHandleData, UObject* Object, const void* Value, TSet<UProperty*>& RepNotifies)
 {
 	uint8* Dest = RepHandleData.GetPropertyData(reinterpret_cast<uint8*>(Object));
 
-	// If value has changed, add to rep notify list.
-	if (RepHandleData.Property->HasAnyPropertyFlags(CPF_RepNotify))
+	check(RepHandleData.PropertyChain.Num() > 0);
+	check(RepHandleData.PropertyChain[0] != nullptr);
+	check(RepHandleData.Property != nullptr);
+
+	// If the root of the property chain has a RepNotify flag and the leaf value has changed, add it to the rep notify list.
+	UProperty* PropertyToNotify = RepHandleData.PropertyChain[0];
+	if (PropertyToNotify->HasAnyPropertyFlags(CPF_RepNotify))
 	{
 		if (RepHandleData.RepNotifyCondition == REPNOTIFY_Always || !RepHandleData.Property->Identical(Dest, Value))
 		{
-			RepNotifies.Add(RepHandleData.Property);
+			RepNotifies.Add(PropertyToNotify);
 		}
 	}
 
