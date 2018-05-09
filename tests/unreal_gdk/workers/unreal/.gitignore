@@ -1,11 +1,9 @@
 /Game/**/Binaries/
 /Game/**/Intermediate/
 /Game/DerivedDataCache/
-/Game/Plugins/SpatialOS/
-/Game/Source/SpatialOS/Generated/
-/Game/Source/SpatialOS/Public/
-/Game/Source/SpatialOS/Private/
-/Game/Source/SpatialOS/SpatialOS.Build.cs
+/Game/Plugins/
+/Game/Scripts/
+/Game/Source/SpatialGDK/
 /Game/Saved/
 /Game/Sdk.sln
 /Game/Sdk.VC.*

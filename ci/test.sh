@@ -74,14 +74,16 @@ markStartOfBlock "CodeGeneration tests"
 
 markEndOfBlock "CodeGeneration tests"
 
-# #####
-# # Unpack dependencies
-# #####
-# markStartOfBlock "Unpack dependencies"
+#####
+# Install the GDK
+#####
+markStartOfBlock "Install the GDK in the test project"
+
+./setup.sh tests/unreal_gdk/
 
 # unpackTo "build/worker_packages/unified_unreal_sdk/unified_unreal_sdk" "${UNREAL_SDK_TEST_DIR}"
 
-# markEndOfBlock "Unpack dependencies"
+markEndOfBlock "Install the GDK in the test project"
 
 # #####
 # # Generate code.
