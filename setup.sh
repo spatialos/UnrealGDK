@@ -30,12 +30,6 @@ TARGET_BINARIESPATH="${INSTALL_PATH}\workers\unreal\Game"
 
 markStartOfBlock "$0"
 
-markStartOfBlock "Build the SpatialOS Unreal GDK"
-
-ci/build.sh
-
-markEndOfBlock "Build the SpatialOS Unreal GDK"
-
 markStartOfBlock "Ensure directories exist"
 
 mkdir -p "${TARGET_PLUGINSPATH}"
