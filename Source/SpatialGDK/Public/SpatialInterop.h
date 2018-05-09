@@ -138,7 +138,7 @@ public:
 	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged);
 	void SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged);
-	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, FFrame* const Frame);
+	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, UObject* CallingObject, void* Parameters);
 	void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp);
 	void PreReceiveSpatialUpdate(USpatialActorChannel* Channel);
 	void PostReceiveSpatialUpdate(USpatialActorChannel* Channel, const TArray<UProperty*>& RepNotifies);
@@ -209,7 +209,7 @@ private:
 
 	// Pending incoming object ref property updates.
 	FPendingIncomingObjectUpdateMap PendingIncomingObjectUpdates;
-	
+
 	// Pending incoming RPCs.
 	FPendingIncomingRPCMap PendingIncomingRPCs;
 

@@ -224,7 +224,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 		//@note: we cannot add Connection->IsNetReady(0) here to check for saturation, as if that's the case we still want to figure out the list of relevant actors
 		//			to reset their NetUpdateTime so that they will get sent as soon as the connection is no longer saturated
 		AActor* OwningActor = Connection->OwningActor;
-		
+
 		//SpatialGDK: We allow a connection without an owner to process if it's meant to be the connection to the fake SpatialOS client.
 		if ((Connection->bReliableSpatialConnection || OwningActor != NULL) && Connection->State == USOCK_Open && (Connection->Driver->Time - Connection->LastReceiveTime < 1.5f))
 		{
@@ -263,7 +263,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 }
 
 int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors)
-{	
+{
 	// Get list of visible/relevant actors.
 
 	NetTag++;
@@ -283,7 +283,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 	{
 		OutPriorityList = new (FMemStack::Get(), MaxSortedActors) FActorPriority;
 		OutPriorityActors = new (FMemStack::Get(), MaxSortedActors) FActorPriority*;
-				
+
 		AGameNetworkManager* const NetworkManager = World->NetworkManager;
 		const bool bLowNetBandwidth = NetworkManager ? NetworkManager->IsInLowBandwidthMode() : false;
 
@@ -300,7 +300,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			{
 				continue;
 			}
-	
+
 			// See of actor wants to try and go dormant
 			if (ShouldActorGoDormant(Actor, ConnectionViewers, Channel, Time, bLowNetBandwidth))
 			{
@@ -328,7 +328,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			{
 				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the connection %s"), *Actor->GetName(), *Connection->GetName());
 			}
-			
+
 			//SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
 			// We have removed the level load check because it doesn't apply.
 			// Relevancy checking is also mostly just a pass through, might be removed later.
@@ -373,7 +373,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 	}
 
 	UE_LOG(LogNetTraffic, Log, TEXT("ServerReplicateActors_PrioritizeActors: Potential %04i ConsiderList %03i FinalSortedCount %03i"), MaxSortedActors, ConsiderList.Num(), FinalSortedCount);
-		
+
 	return FinalSortedCount;
 }
 
@@ -469,7 +469,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 						{
 							Channel->bCoreActor = false;
 						}
-						
+
 						Channel->SetChannelActor(Actor);
 					}
 					// if we couldn't replicate it for a reason that should be temporary, and this Actor is updated very infrequently, make sure we update it again soon
@@ -517,7 +517,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 						ActorUpdatesThisConnection++;
 						OutUpdated++;
 					}
-					
+
 					// second check for channel saturation
 					if (!Connection->IsNetReady(0))
 					{
@@ -550,7 +550,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 // In our implementation, connections on the server do not represent clients. They represent direct connections to SpatialOS.
 // For this reason, things like ready checks, acks, throttling based on number of updated connections, interest management are irrelevant at this level.
 int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
-{	
+{
 #if WITH_SERVER_CODE
 	if (ClientConnections.Num() == 0)
 	{
@@ -572,7 +572,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		// No connections are ready this frame
 		return 0;
 	}
-	
+
 	AWorldSettings* WorldSettings = World->GetWorldSettings();
 
 	bool bCPUSaturated = false;
@@ -598,7 +598,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	{
 		USpatialNetConnection* Connection = Cast<USpatialNetConnection>(ClientConnections[i]);
 		check(Connection);
-				
+
 		// if this client shouldn't be ticked this frame
 		if (i >= NumClientsToTick)
 		{
@@ -642,7 +642,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 						new(ConnectionViewers)FNetViewer(Connection->Children[ViewerIndex], DeltaSeconds);
 					}
 				}
-			}			
+			}
 
 			FMemMark RelevantActorMark(FMemStack::Get());
 
@@ -726,7 +726,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 {
 	// Not calling Super:: on purpose.
 	UNetDriver::TickDispatch(DeltaTime);
-	
+
 	if (SpatialOSInstance != nullptr && SpatialOSInstance->GetEntityPipeline() != nullptr)
 	{
 		SpatialOSInstance->ProcessOps();
@@ -752,11 +752,9 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	// The RPC might have been called by an actor directly, or by a subobject on that actor (e.g. UCharacterMovementComponent).
 	UObject* CallingObject = SubObject ? SubObject : Actor;
 
-	// Reading properties from an FFrame changes the FFrame (internal pointer to the last property read). So we need to make a new one.
-	FFrame TempRpcFrameForReading{CallingObject, Function, Parameters, nullptr, Function->Children};
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		Interop->InvokeRPC(Actor, Function, &TempRpcFrameForReading);
+		Interop->InvokeRPC(Actor, Function, CallingObject, Parameters);
 	}
 
 	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver
@@ -814,10 +812,10 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer)
 {
 	bool bOk = true;
-	
+
 	USpatialNetConnection* Connection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(Connection);
-	
+
 	// We create a "dummy" connection that corresponds to this player. This connection won't transmit any data.
 	// We may not need to keep it in the future, but for now it looks like path of least resistance is to have one UPlayer (UConnection) per player.
 	ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
@@ -850,11 +848,11 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 	{
 		GameMode->PreLogin(Tmp, Connection->LowLevelGetRemoteAddress(), WorkerId, ErrorMsg);
 	}
-	
+
 	if (!ErrorMsg.IsEmpty())
 	{
 		UE_LOG(LogNet, Log, TEXT("PreLogin failure: %s"), *ErrorMsg);
-		bOk = false;		
+		bOk = false;
 	}
 
 	if (bOk)
@@ -879,7 +877,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 			// Most of this is taken from "World->SpawnPlayActor", excluding the logic to spawn a pawn which happens during
 			// GameMode->PostLogin(...).
 			APlayerController* NewPlayerController = GameMode->SpawnPlayerController(ROLE_AutonomousProxy, FVector::ZeroVector, FRotator::ZeroRotator);
-			
+
 			// Destroy the player state (as we'll be replacing it anyway).
 			NewPlayerController->CleanupPlayerState();
 
@@ -928,7 +926,7 @@ void USpatialPendingNetGame::InitNetDriver()
 
 	// This is a trimmed down version of UPendingNetGame::InitNetDriver(). We don't send any Unreal connection packets, just set up the net driver.
 	if (!GDisallowNetworkTravel)
-	{		
+	{
 		// Try to create network driver.
 		if (GEngine->CreateNamedNetDriver(this, NAME_PendingNetDriver, NAME_GameNetDriver))
 		{
