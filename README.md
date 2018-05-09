@@ -41,13 +41,20 @@ The following steps are required to get the GDK built and installed to the Sampl
 
 1. Clone the [SampleGame repo](https://github.com/improbable/unreal-gdk-sample-game/)
 2. Run the script `setup.sh <path to your SampleGame root foder>`. This will build the GDK and copy the `Binaries`, `Script`, `SpatialGDK` and `Plugins/SpatialGDK` folders from the GDK repo to the right location in your SampleGame repo.
-3. Build the SampleGame using `spatial build --target=local`
+3. Locate the Unreal project file for the SampleGame. You’ll find this under the SampleGame's root directory in `/workers/unreal/Game`.
+4. Right-click on `SampleGame.uproject` and select **Switch Unreal Engine version...**
+5. Select the path of the engine version you just downloaded.
+6. Build the SampleGame using `spatial build --target=local`
 
 ### For Local development
 
 1. Clone the [GDK repo](https://github.com/improbable/unreal-gdk).
 2. Run the script `ci/build.sh`
 3. Run the script `create_spatialGDK_symlink.bat` within the SampleGame repo.
+4. Locate the Unreal project file for the SampleGame. You’ll find this under the SampleGame's root directory in `/workers/unreal/Game`.
+5. Right-click on `SampleGame.uproject` and select **Switch Unreal Engine version...**
+6. Select the path of the engine version you just downloaded.
+7. Build the SampleGame using `spatial build --target=local`
 
 ------
 
@@ -123,7 +130,7 @@ Note that Spatial GDK does not use any other channel type currently. Data that i
 
 ## Engine changes
 
-There is a small number of changes to UE4 source code we have to make. These changes are mostly limited in scope and they only consist of class access, polymorphism, and dll export related changes. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. Our changes can be seen in our `UnrealEngine` repo, `UnrealEngine419_SpatialGDK` branch.
+There is a small number of changes to UE4 source code we have to make. These changes are mostly limited in scope and they only consist of class access, polymorphism, and dll export related changes. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. Our changes can be seen in our [UnrealEngine repo, `UnrealEngine419_SpatialGDK` branch](https://github.com/improbable/UnrealEngine/tree/UnrealEngine419_SpatialGDK).
 
 ## Known issues
 The focus of this project is de-risking SpatialOS interoperability with native code. Some code organization, feature coverage and efficiency trade-offs have been made temporarily to expedite implementation.
