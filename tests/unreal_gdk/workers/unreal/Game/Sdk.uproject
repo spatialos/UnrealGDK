@@ -1,0 +1,18 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{288B5AD2-4CA3-4936-D0C5-B4967DD6EC97}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "Sdk",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "SpatialOS",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}

@@ -1,0 +1,37 @@
+{
+  "build": {
+    "tasks_filename": "Game/Source/SpatialOS/spatialos.unreal.client.build.json"
+  },
+  "bridge": {
+    "worker_attribute_set": {
+      "attributes": [
+        "UnrealClient"
+      ]
+    },
+    "entity_interest": {
+      "range_entity_interest": {
+        "radius": 2
+      }
+    },
+    "streaming_query": [],
+    "component_delivery": {
+      "default": "RELIABLE_ORDERED",
+      "checkout_all_initially": true
+    }
+  },
+  "external": {
+    "default": {
+      "run_type": "EXECUTABLE",
+      "windows": {
+        "command": "${UNREAL_HOME}\\Engine\\Binaries\\Win64\\UE4Editor.exe",
+        "arguments": [
+          "${IMPROBABLE_WORKER_DIR}/Game/Sdk.uproject",
+          "-game",
+          "-stdout",
+          "+workerType",
+          "UnrealClient"
+        ]
+      }
+    }
+  }
+}

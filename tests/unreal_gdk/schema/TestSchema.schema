@@ -1,0 +1,68 @@
+package improbable;
+
+import "improbable/standard_library.schema";
+import "improbable/vector3.schema";
+
+type TestType1 {
+	string string_property = 1;
+	int32 int32_property = 2;
+	Coordinates coordinates_property = 3;
+}
+
+type TestType2 {
+	int32 int32_property = 1;
+}
+
+type BuiltInTypesData {
+  bool bool_property = 1;
+  
+  uint32 uint32_property = 2;
+  
+  int32 int32_property = 4;
+
+  float float_property = 12;
+  double double_property = 13;
+
+  string string_property = 14;
+  bytes bytes_property = 15;
+
+  Coordinates coordinates_property = 16;
+  Vector3d vector3d_property = 17;
+  Vector3f vector3f_property = 18;
+
+  EntityId entity_id_property = 19;
+} 
+
+type TextEvent {
+	string text = 1;
+}
+
+component TestData1 {
+  id = 1100;
+  data TestType1;
+
+  event TextEvent one_text_event;
+
+  command TestType2 request_testdata2(TestType1);
+}
+
+component TestData2 {
+  id = 1101;
+  data TestType2;
+
+  event TextEvent two_text_event;
+
+  command TestType1 request_testdata1(TestType2);
+}
+
+component BuiltInTypes {
+  id = 1102;
+  data BuiltInTypesData;
+}
+
+component CommandWithSameDelegate {
+  id = 1103;
+  
+  command TestType1 ping_test1(TestType2);
+  command TestType1 ping_test2(TestType2);
+}

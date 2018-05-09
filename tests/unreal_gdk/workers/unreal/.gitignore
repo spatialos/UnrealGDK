@@ -1,0 +1,12 @@
+/Game/**/Binaries/
+/Game/**/Intermediate/
+/Game/DerivedDataCache/
+/Game/Plugins/SpatialOS/
+/Game/Source/SpatialOS/Generated/
+/Game/Source/SpatialOS/Public/
+/Game/Source/SpatialOS/Private/
+/Game/Source/SpatialOS/SpatialOS.Build.cs
+/Game/Saved/
+/Game/Sdk.sln
+/Game/Sdk.VC.*
+target.spatialos_worker_packages.json.md5
