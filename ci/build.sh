@@ -130,4 +130,10 @@ sed -i "s/%core_sdk_version%/${PINNED_CORE_SDK_VERSION}/g"                 "${UN
 
 markEndOfBlock "Process build scripts"
 
+markStartOfBlock "Run Tests (Temporary hack)"
+
+./ci/test.sh
+
+markEndOfBlock "Run Tests (Temporary hack)"
+
 markEndOfBlock "$0"
