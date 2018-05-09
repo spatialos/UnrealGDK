@@ -1,5 +1,20 @@
 # Spatial GDK: Unreal Module for Spatial OS development
 
+## TOC
+
+* [How does the Spatial GDK work?](#how-does-the-spatial-gdk-work?)
+    * [GenerateInteropCodeCommandlet](#generateinteropcodecommandlet)
+    * [USpatialNetDriver](#uspatialnetdriver)
+    * [USpatialNetConnection](#uspatialnetconnection)
+    * [USpatialInterop](#uspatialinterop)
+    * [USpatialInteropPipelineBlock](#uspatialinteroppipelineblock)
+    * [USpatialPackageMapClient](#uspatialpackagemapclient)
+    * [USpatialActorChannel](#uspatialactorchannel)
+* [Current limitations](#current-limitations)
+* [Engine changes](#engine-changes)
+
+------
+
 ## How does the Spatial GDK work?
 At a very high level, Spatial GDK does 3 things:
 1) Simulate the handshake process of an Unreal client and server, using SpatialOS commands
@@ -48,7 +63,7 @@ This class is in charge of triggering initial serialization and SpatialOS entity
 
 Note that Spatial GDK does not use any other channel type currently. Data that is regularly routed through control channels (e.g. login request) is meant to be implemented directly using SpatialOS commands. See `ASpatialSpawner` for an example.
 
-## Current limitations:
+## Current limitations
 The focus of this project is de-risking SpatialOS interoperability with native code. Some code organization, feature coverage and efficiency trade-offs have been made temporarily to expedite implementation.
 
 Note that a majority of the items below are on our short term roadmap.
@@ -57,9 +72,9 @@ Note that a majority of the items below are on our short term roadmap.
 - Listen servers haven't been tested extensively. Please use dedicated servers for now.
 - For more miscellaneous caveats, see [this](https://docs.google.com/document/d/1dOpA0I2jBNgnxUuFFXtmtu_J1vIPBrlC8r1hAFWHF5I/edit) doc.
 
-## Engine changes:
+## Engine changes
 
-There is a small number of changes to UE4 source code we have to make. These changes are mostly limited in scope and they only consist of class access, polymorphism, and dll export related changes. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. Our changes can be seen in our `UnrealEngine` repo, `UnrealEngine419_SpatialGDK` branch. 
+There is a small number of changes to UE4 source code we have to make. These changes are mostly limited in scope and they only consist of class access, polymorphism, and dll export related changes. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. Our changes can be seen in our `UnrealEngine` repo, `UnrealEngine419_SpatialGDK` branch.
 
 ## How to use:
 
