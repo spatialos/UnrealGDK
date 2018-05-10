@@ -22,8 +22,8 @@ if isTeamCity; then
   CODE_GENERATION_TEAMCITY_OPTION="--teamcity"
 fi
 
-UNREAL_SDK_TEST_DIR="$(pwd)/tests/unreal_sdk/workers/unreal"
-UNREAL_SDK_TEST_PROJECT="${UNREAL_SDK_TEST_DIR}/Game/Sdk.uproject"
+UNREAL_GDK_TEST_DIR="$(pwd)/tests/unreal_gdk/workers/unreal"
+UNREAL_GDK_TEST_PROJECT="${UNREAL_GDK_TEST_DIR}/Game/Sdk.uproject"
 PROJECT_LOGFILE="${LOG_DIR}/AutomationTests.log"
 
 markEndOfBlock "Setup variables"
@@ -81,30 +81,28 @@ markStartOfBlock "Install the GDK in the test project"
 
 ./setup.sh tests/unreal_gdk/
 
-# unpackTo "build/worker_packages/unified_unreal_sdk/unified_unreal_sdk" "${UNREAL_SDK_TEST_DIR}"
-
 markEndOfBlock "Install the GDK in the test project"
 
-# #####
-# # Generate code.
+#####
+# Generate code.
+#####
 
-# #####
-# markStartOfBlock "Generate code"
+markStartOfBlock "Generate code"
 
-# pushd "${UNREAL_SDK_TEST_DIR}"
+pushd "${UNREAL_GDK_TEST_DIR}"
 
-#     spatial codegen UnrealClient --log_level=debug
+  spatial codegen UnrealClient --log_level=debug
 
 #   # *********
 #   # Giant hack to inject our mocked worker types into the test application
 #   # *********
-#   sed -i -e 's/SpatialOS\/Generated\/UClasses/SpatialOS\/Generated\/UClasses\",\n\"SpatialOS\/Mock/g' "${UNREAL_SDK_TEST_DIR}/Game/Source/SpatialOS/SpatialOS.Build.cs"
-#   echo '#include "SpatialOSMockViewTypes.h"' > "${UNREAL_SDK_TEST_DIR}/Game/Source/SpatialOS/Public/SpatialOSViewTypes.h"
-#   echo '#include "SpatialOSMockWorkerTypes.h"' > "${UNREAL_SDK_TEST_DIR}/Game/Source/SpatialOS/Public/SpatialOSWorkerTypes.h"
+#   sed -i -e 's/SpatialOS\/Generated\/UClasses/SpatialOS\/Generated\/UClasses\",\n\"SpatialOS\/Mock/g' "${UNREAL_GDK_TEST_DIR}/Game/Source/SpatialOS/SpatialOS.Build.cs"
+#   echo '#include "SpatialOSMockViewTypes.h"' > "${UNREAL_GDK_TEST_DIR}/Game/Source/SpatialOS/Public/SpatialOSViewTypes.h"
+#   echo '#include "SpatialOSMockWorkerTypes.h"' > "${UNREAL_GDK_TEST_DIR}/Game/Source/SpatialOS/Public/SpatialOSWorkerTypes.h"
 
-# popd
+popd
 
-# markEndOfBlock "Generate code"
+markEndOfBlock "Generate code"
 
 # #####
 # # Ensure we compile with the previous version of Unreal.
@@ -112,14 +110,14 @@ markEndOfBlock "Install the GDK in the test project"
 # markStartOfBlock "Compile with ${PREVIOUS_UNREAL_VERSION}"
 
 # # Reset intermediate files to avoid UBT-related errors that occur when switching between engine versions.
-# rm -rf "${UNREAL_SDK_TEST_DIR}/Game/Intermediate/Build"
+# rm -rf "${UNREAL_GDK_TEST_DIR}/Game/Intermediate/Build"
 
 # # Build against the previously supported version of Unreal, but don't run tests as Unreal assets can be incompatible between versions.
-# "${PREVIOUS_UNREAL_HOME}/Engine/Build/BatchFiles/Build.bat" SdkEditor Win64 Development "${UNREAL_SDK_TEST_PROJECT}"
+# "${PREVIOUS_UNREAL_HOME}/Engine/Build/BatchFiles/Build.bat" SdkEditor Win64 Development "${UNREAL_GDK_TEST_PROJECT}"
 
 # # Skip Linux builds as we do not have capacity in our CI for building without Incredibuild when targeting linux.
 # # if isTeamCity; then
-# #  "${PREVIOUS_UNREAL_HOME}\Engine\Build\BatchFiles\Build.bat" SdkServer Linux Development "${UNREAL_SDK_TEST_PROJECT}"
+# #  "${PREVIOUS_UNREAL_HOME}\Engine\Build\BatchFiles\Build.bat" SdkServer Linux Development "${UNREAL_GDK_TEST_PROJECT}"
 # # fi
 
 # markEndOfBlock "Compile with ${PREVIOUS_UNREAL_VERSION}"
@@ -130,12 +128,12 @@ markEndOfBlock "Install the GDK in the test project"
 # markStartOfBlock "Compile with ${UNREAL_VERSION}"
 
 # # Reset intermediate files to avoid UBT-related errors that occur when switching between engine versions.
-# rm -rf "${UNREAL_SDK_TEST_DIR}/Game/Intermediate/Build"
-# "${UNREAL_HOME}/Engine/Build/BatchFiles/Build.bat" SdkEditor Win64 Development "${UNREAL_SDK_TEST_PROJECT}"
+# rm -rf "${UNREAL_GDK_TEST_DIR}/Game/Intermediate/Build"
+# "${UNREAL_HOME}/Engine/Build/BatchFiles/Build.bat" SdkEditor Win64 Development "${UNREAL_GDK_TEST_PROJECT}"
 
 # # Skip Linux builds as we do not have capacity in our CI for building without incredibuild when targeting linux.
 # # if isTeamCity; then
-# #  "${UNREAL_HOME}\Engine\Build\BatchFiles\Build.bat" SdkServer Linux Development "${UNREAL_SDK_TEST_PROJECT}"
+# #  "${UNREAL_HOME}\Engine\Build\BatchFiles\Build.bat" SdkServer Linux Development "${UNREAL_GDK_TEST_PROJECT}"
 # # fi
 
 # markEndOfBlock "Compile with ${UNREAL_VERSION}"
@@ -146,7 +144,7 @@ markEndOfBlock "Install the GDK in the test project"
 # markStartOfBlock "Run Unreal tests (Unreal ${UNREAL_VERSION})"
 
 # "${UNREAL_HOME}\Engine\Binaries\Win64\UE4Editor-Cmd.exe" \
-#   "${UNREAL_SDK_TEST_PROJECT}" \
+#   "${UNREAL_GDK_TEST_PROJECT}" \
 #   -server \
 #   -stdout \
 #   -unattended \

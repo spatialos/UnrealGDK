@@ -1,6 +1,6 @@
 {
   "build": {
-    "tasks_filename": "Game/Source/SpatialOS/spatialos.unreal.client.build.json"
+    "tasks_filename": "Game/Scripts/spatialos.unreal.client.build.json"
   },
   "bridge": {
     "worker_attribute_set": {
