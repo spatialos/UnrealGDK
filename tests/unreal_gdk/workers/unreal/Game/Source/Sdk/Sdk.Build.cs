@@ -11,7 +11,7 @@ public class Sdk : ModuleRules
 
         PublicDependencyModuleNames.AddRange(new string[]
         {
-            "Core", "CoreUObject", "Engine", "InputCore", "SpatialOS"
+            "Core", "CoreUObject", "Engine", "InputCore", "SpatialGDK"
         });
     }
 }
