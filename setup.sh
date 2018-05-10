@@ -28,7 +28,7 @@ TARGET_PLUGINSPATH="${INSTALL_PATH}/workers/unreal/Game/Plugins"
 TARGET_MODULEPATH="${INSTALL_PATH}/workers/unreal/Game/Source"
 TARGET_SCRIPTSPATH="${INSTALL_PATH}/workers/unreal/Game"
 TARGET_BINARIESPATH="${INSTALL_PATH}/workers/unreal/Game"
-TARGET_SCHEMAPATH="${INSTALL_PATH}/schema/improbable/unreal/gdk"
+TARGET_SCHEMAPATH="${INSTALL_PATH}/schema/improbable/unreal"
 
 markStartOfBlock "$0"
 
