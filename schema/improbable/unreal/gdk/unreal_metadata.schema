@@ -1,6 +1,6 @@
-package improbable.unreal;
+package improbable.unreal.gdk;
 
-import "improbable/unreal/core_types.schema";
+import "improbable/unreal/gdk/core_types.schema";
 
 component UnrealMetadata
 {
