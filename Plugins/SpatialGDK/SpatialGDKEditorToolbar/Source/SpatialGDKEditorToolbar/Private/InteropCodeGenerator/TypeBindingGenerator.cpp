@@ -17,6 +17,16 @@ FString TypeBindingName(UClass* Class)
 	return FString::Printf(TEXT("USpatialTypeBinding_%s"), *Class->GetName());
 }
 
+FString NativeClassName(const UObjectPropertyBase* Property)
+{
+	const UClass* Class = Property->PropertyClass;
+	while (!Class->HasAnyClassFlags(CLASS_Native))
+	{
+		Class = Class->GetSuperClass();
+	}
+	return FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName());
+}
+
 FString CPPFieldName(TSharedPtr<FUnrealProperty> Property)
 {
 	// Transform the property chain into a chain of C++ names, joined by either -> or . (UObject or UStruct respectively).
@@ -364,9 +374,9 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 			{
 				UObject* Object_Raw = PackageMap->GetObjectFromNetGUID(NetGUID, true);
 				checkf(Object_Raw, TEXT("An object ref %%s should map to a valid object."), *ObjectRefToString(ObjectRef));
-				%s = dynamic_cast<%s>(Object_Raw);
+				%s = Cast<%s>(Object_Raw);
 				checkf(%s, TEXT("Object ref %%s maps to object %%s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
-			})""", *PropertyValue, *PropertyType, *PropertyValue);
+			})""", *PropertyValue, *NativeClassName(Cast<UObjectPropertyBase>(Property)), *PropertyValue);
 		Writer.Print("else");
 		Writer.BeginScope();
 		ObjectResolveFailureGenerator(*PropertyValue);
@@ -1291,6 +1301,15 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 			{
 				SourceWriter.Printf("const %s& %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
 			}
+			else if (Property->IsA<UClassProperty>())
+			{
+				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+			}
+			else if (Property->IsA<UObjectPropertyBase>())
+			{
+				FString ClassName = NativeClassName(Cast<UObjectPropertyBase>(Property));
+				SourceWriter.Printf("%s* %s = *(reinterpret_cast<%s* const*>(Data));", *ClassName, *PropertyValueName, *ClassName);
+			}
 			else
 			{
 				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
@@ -1445,9 +1464,19 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 			{
 				SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(%s)->GetPropertyValue(PropertyData);", *PropertyValueName, *PropertyName);
 			}
-			else if (Property->IsA<UArrayProperty>()) {
+			else if (Property->IsA<UArrayProperty>()) 
+			{
 				UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 				SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));", *(ArrayProperty->Inner->GetCPPType()), *PropertyValueName, *(ArrayProperty->Inner->GetCPPType()));
+			}
+			else if (Property->IsA<UClassProperty>())
+			{
+				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+			}
+			else if (Property->IsA<UObjectPropertyBase>())
+			{
+				FString ClassName = NativeClassName(Cast<UObjectPropertyBase>(Property));
+				SourceWriter.Printf("%s* %s = *(reinterpret_cast<%s* const*>(PropertyData));", *ClassName, *PropertyValueName, *ClassName);
 			}
 			else
 			{
