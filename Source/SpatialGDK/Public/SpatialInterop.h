@@ -37,7 +37,7 @@ using FRPCCommandRequestFunc = TFunction<FRPCCommandRequestResult()>;
 // Stores the result of attempting to receive an RPC command. We either return an unresolved object which needs
 // to be resolved before the RPC implementation can be called successfully, or nothing, which indicates that
 // the RPC implementation was called successfully.
-using FRPCCommandResponseResult = TOptional<improbable::unreal::gdk::UnrealObjectRef>;
+using FRPCCommandResponseResult = TOptional<improbable::unreal::UnrealObjectRef>;
 
 // Function storing a command response operation, capturing the command request op by value.
 using FRPCCommandResponseFunc = TFunction<FRPCCommandResponseResult()>;
@@ -145,7 +145,7 @@ public:
 
 	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.
 	// This will dequeue pending object ref updates and RPCs which depend on this UObject existing in the package map.
-	void ResolvePendingOperations(UObject* Object, const improbable::unreal::gdk::UnrealObjectRef& ObjectRef);
+	void ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
 	void AddActorChannel(const FEntityId& EntityId, USpatialActorChannel* Channel);
@@ -163,9 +163,9 @@ public:
 	void QueueOutgoingObjectRepUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void QueueOutgoingObjectMigUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable);
-	void QueueIncomingObjectRepUpdate_Internal(const improbable::unreal::gdk::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData);
-	void QueueIncomingObjectMigUpdate_Internal(const improbable::unreal::gdk::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FMigratableHandleData* MigHandleData);
-	void QueueIncomingRPC_Internal(const improbable::unreal::gdk::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder);
+	void QueueIncomingObjectRepUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData);
+	void QueueIncomingObjectMigUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FMigratableHandleData* MigHandleData);
+	void QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder);
 
 	// Accessors.
 	USpatialOS* GetSpatialOS() const
@@ -221,6 +221,6 @@ private:
 
 	void ResolvePendingOutgoingObjectUpdates(UObject* Object);
 	void ResolvePendingOutgoingRPCs(UObject* Object);
-	void ResolvePendingIncomingObjectUpdates(UObject* Object, const improbable::unreal::gdk::UnrealObjectRef& ObjectRef);
-	void ResolvePendingIncomingRPCs(const improbable::unreal::gdk::UnrealObjectRef& ObjectRef);
+	void ResolvePendingIncomingObjectUpdates(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
+	void ResolvePendingIncomingRPCs(const improbable::unreal::UnrealObjectRef& ObjectRef);
 };

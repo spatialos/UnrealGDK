@@ -4,7 +4,7 @@
 
 #include <improbable/unreal/gdk/core_types.h>
 
-FORCEINLINE FString ObjectRefToString(const improbable::unreal::gdk::UnrealObjectRef& ObjectRef)
+FORCEINLINE FString ObjectRefToString(const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
 	return FString::Printf(TEXT("(entity ID: %lld, offset: %u)"), ObjectRef.entity(), ObjectRef.offset());
 }
@@ -12,9 +12,9 @@ FORCEINLINE FString ObjectRefToString(const improbable::unreal::gdk::UnrealObjec
 class FHashableUnrealObjectRef
 {
 public:
-	FHashableUnrealObjectRef(const improbable::unreal::gdk::UnrealObjectRef& ObjectRef) : ObjectRef(ObjectRef) {}
+	FHashableUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) : ObjectRef(ObjectRef) {}
 
-	operator improbable::unreal::gdk::UnrealObjectRef() const
+	operator improbable::unreal::UnrealObjectRef() const
 	{
 		return ObjectRef;
 	}
@@ -26,9 +26,9 @@ public:
 
 	friend FORCEINLINE uint32 GetTypeHash(const FHashableUnrealObjectRef& HashableObjectRef)
 	{
-		return std::hash<improbable::unreal::gdk::UnrealObjectRef>{}(HashableObjectRef.ObjectRef);
+		return std::hash<improbable::unreal::UnrealObjectRef>{}(HashableObjectRef.ObjectRef);
 	}
 
 private:
-	improbable::unreal::gdk::UnrealObjectRef ObjectRef;
+	improbable::unreal::UnrealObjectRef ObjectRef;
 };
