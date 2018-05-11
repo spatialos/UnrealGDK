@@ -92,7 +92,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 			improbable::WorkerRequirementSet AnyUnrealWorkerOrClient{{WorkerAttribute, ClientAttribute}};
 
 			// Set up unreal metadata.
-			improbable::unreal::UnrealMetadata::Data UnrealMetadata;
+			improbable::unreal::gdk::UnrealMetadata::Data UnrealMetadata;
 			if (Channel->Actor->IsFullNameStableForNetworking())
 			{
 				UnrealMetadata.set_static_path({std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}});
@@ -123,10 +123,10 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
 				.SetPersistence(true)
 				.SetReadAcl(AnyUnrealWorkerOrClient)
-				.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
+				.AddComponent<improbable::unreal::gdk::UnrealMetadata>(UnrealMetadata, WorkersOnly)
 				// For now, just a dummy component we add to every such entity to make sure client has write access to at least one component.
 				// todo-giray: Remove once we're using proper (generated) entity templates here.
-				.AddComponent<improbable::unreal::PlayerControlClient>(improbable::unreal::PlayerControlClient::Data{}, OwnClientOnly)
+				.AddComponent<improbable::unreal::gdk::PlayerControlClient>(improbable::unreal::gdk::PlayerControlClient::Data{}, OwnClientOnly)
 				.Build();
 
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
@@ -198,7 +198,7 @@ void USpatialInterop::PostReceiveSpatialUpdate(USpatialActorChannel* Channel, co
 	Channel->PostReceiveSpatialUpdate(RepNotifies);
 }
 
-void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
+void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable::unreal::gdk::UnrealObjectRef& ObjectRef)
 {
 	UE_LOG(LogSpatialOSInterop, Log, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRefToString(ObjectRef));
 	ResolvePendingOutgoingObjectUpdates(Object);
@@ -336,7 +336,7 @@ void USpatialInterop::QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCC
 	PendingOutgoingRPCs.FindOrAdd(UnresolvedObject).Add(TPair<FRPCCommandRequestFunc, bool>{CommandSender, bReliable});
 }
 
-void USpatialInterop::QueueIncomingObjectRepUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData)
+void USpatialInterop::QueueIncomingObjectRepUpdate_Internal(const improbable::unreal::gdk::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData)
 {
 	check(DependentChannel);
 	check(RepHandleData);
@@ -345,7 +345,7 @@ void USpatialInterop::QueueIncomingObjectRepUpdate_Internal(const improbable::un
 	PendingIncomingObjectUpdates.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Key.Add(RepHandleData);
 }
 
-void USpatialInterop::QueueIncomingObjectMigUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FMigratableHandleData* RepHandleData)
+void USpatialInterop::QueueIncomingObjectMigUpdate_Internal(const improbable::unreal::gdk::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FMigratableHandleData* RepHandleData)
 {
 	check(DependentChannel);
 	check(RepHandleData);
@@ -354,7 +354,7 @@ void USpatialInterop::QueueIncomingObjectMigUpdate_Internal(const improbable::un
 	PendingIncomingObjectUpdates.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Value.Add(RepHandleData);
 }
 
-void USpatialInterop::QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder)
+void USpatialInterop::QueueIncomingRPC_Internal(const improbable::unreal::gdk::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder)
 {
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming RPC depending on object ref: %s."), *ObjectRefToString(UnresolvedObjectRef));
 	PendingIncomingRPCs.FindOrAdd(UnresolvedObjectRef).Add(Responder);
@@ -429,7 +429,7 @@ void USpatialInterop::ResolvePendingOutgoingRPCs(UObject* Object)
 	}
 }
 
-void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
+void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const improbable::unreal::gdk::UnrealObjectRef& ObjectRef)
 {
 	auto* DependentChannels = PendingIncomingObjectUpdates.Find(ObjectRef);
 	if (DependentChannels == nullptr)
@@ -469,7 +469,7 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 	PendingIncomingObjectUpdates.Remove(ObjectRef);
 }
 
-void USpatialInterop::ResolvePendingIncomingRPCs(const improbable::unreal::UnrealObjectRef& ObjectRef)
+void USpatialInterop::ResolvePendingIncomingRPCs(const improbable::unreal::gdk::UnrealObjectRef& ObjectRef)
 {
 	auto* RPCList = PendingIncomingRPCs.Find(ObjectRef);
 	if (RPCList)

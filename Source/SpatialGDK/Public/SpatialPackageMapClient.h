@@ -30,11 +30,11 @@ public:
 	void RemoveEntityActor(const FEntityId& EntityId);
 	virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel *Channel, class AActor*& Actor) override;
 
-	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
-	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
+	improbable::unreal::gdk::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
+	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::gdk::UnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 
-	void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);
+	void RegisterStaticObjects(const improbable::unreal::gdk::UnrealLevelData& LevelData);
 
 	uint32 GetHashFromStaticClass(const UClass* StaticClass) const;
 	UClass* GetStaticClassFromHash(uint32 Hash) const;
@@ -51,18 +51,18 @@ public:
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityNetGUID(worker::EntityId EntityId);
 	
-	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
-	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
+	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::gdk::UnrealObjectRef& ObjectRef) const;
+	improbable::unreal::gdk::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(worker::EntityId EntityId) const;
 
-	void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);
+	void RegisterStaticObjects(const improbable::unreal::gdk::UnrealLevelData& LevelData);
 
 	uint32 GetHashFromStaticClass(const UClass* StaticClass) const;
 	UClass* GetStaticClassFromHash(uint32 Hash) const;
 
 private:
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(const UObject* Object);
-	void RegisterObjectRef(FNetworkGUID NetGUID, const improbable::unreal::UnrealObjectRef& ObjectRef);
+	void RegisterObjectRef(FNetworkGUID NetGUID, const improbable::unreal::gdk::UnrealObjectRef& ObjectRef);
 	FNetworkGUID AssignStaticActorNetGUID(const UObject* Object, const FNetworkGUID& StaticNetGUID);
 
 	void CreateStaticClassMapping();

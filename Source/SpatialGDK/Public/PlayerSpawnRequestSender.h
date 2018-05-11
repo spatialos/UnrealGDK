@@ -32,7 +32,7 @@ public:
 	void RequestPlayer(USpatialOS* InSpatialOS, FTimerManager* InTimerManager, const FURL& Url);
 
 private:
-	using SpawnPlayerCommand = improbable::unreal::PlayerSpawner::Commands::SpawnPlayer;
+	using SpawnPlayerCommand = improbable::unreal::gdk::PlayerSpawner::Commands::SpawnPlayer;
 
 	void SendPlayerSpawnRequest();
 	void HandlePlayerSpawnResponse(const worker::CommandResponseOp<SpawnPlayerCommand>& Op);
@@ -43,7 +43,7 @@ private:
 	worker::View* View;
 
 	TOptional<uint32> ResponseCallbackKey;
-	improbable::unreal::SpawnPlayerRequest Request;
+	improbable::unreal::gdk::SpawnPlayerRequest Request;
 
 	uint32 NumberOfAttempts;
 };

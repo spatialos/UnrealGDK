@@ -12,9 +12,9 @@ FORCEINLINE FString ObjectRefToString(const improbable::unreal::UnrealObjectRef&
 class FHashableUnrealObjectRef
 {
 public:
-	FHashableUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) : ObjectRef(ObjectRef) {}
+	FHashableUnrealObjectRef(const improbable::unrea::gdk::UnrealObjectRef& ObjectRef) : ObjectRef(ObjectRef) {}
 
-	operator improbable::unreal::UnrealObjectRef() const
+	operator improbable::unrea::gdk::UnrealObjectRef() const
 	{
 		return ObjectRef;
 	}
@@ -26,9 +26,9 @@ public:
 
 	friend FORCEINLINE uint32 GetTypeHash(const FHashableUnrealObjectRef& HashableObjectRef)
 	{
-		return std::hash<improbable::unreal::UnrealObjectRef>{}(HashableObjectRef.ObjectRef);
+		return std::hash<improbable::unrea::gdk::UnrealObjectRef>{}(HashableObjectRef.ObjectRef);
 	}
 
 private:
-	improbable::unreal::UnrealObjectRef ObjectRef;
+	improbable::unrea::gdk::UnrealObjectRef ObjectRef;
 };
