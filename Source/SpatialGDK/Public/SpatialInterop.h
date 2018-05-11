@@ -164,8 +164,8 @@ public:
 	void QueueOutgoingObjectMigUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable);
 	void QueueIncomingObjectRepUpdate_Internal(const improbable::unreal::gdk::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData);
-	void QueueIncomingObjectMigUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FMigratableHandleData* MigHandleData);
-	void QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder);
+	void QueueIncomingObjectMigUpdate_Internal(const improbable::unreal::gdk::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FMigratableHandleData* MigHandleData);
+	void QueueIncomingRPC_Internal(const improbable::unreal::gdk::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder);
 
 	// Accessors.
 	USpatialOS* GetSpatialOS() const
