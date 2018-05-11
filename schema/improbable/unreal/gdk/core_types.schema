@@ -1,5 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-package improbable.unreal.gdk;
+package improbable.unreal;
 
 type UnrealFRotator {
     float pitch = 1;
