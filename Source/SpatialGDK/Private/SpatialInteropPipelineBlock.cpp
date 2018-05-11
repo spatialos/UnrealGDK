@@ -307,7 +307,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 		SetupComponentInterests(EntityActor, EntityId, LockedConnection);
 
-		improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
+		improbable::unreal::gdk::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::gdk::UnrealMetadata>(LockedView, EntityId);
 		check(UnrealMetadataComponent);
 
 		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
@@ -330,7 +330,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		{
 			// Option 3
 			UNetConnection* Connection = nullptr;
-			improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
+			improbable::unreal::gdk::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::gdk::UnrealMetadata>(LockedView, EntityId);
 			check(UnrealMetadataComponent);
 
 			// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
