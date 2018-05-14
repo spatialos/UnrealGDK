@@ -14,12 +14,14 @@ class MockFuture;
 class MockLocator;
 class MockOpList;
 
+#ifdef SPATIALOS_WORKER_SDK_MOCK_ENABLED
 using SpatialOSConnection = MockConnection;
 using SpatialOSLocator = MockLocator;
 using SpatialOSOpList = MockOpList;
 using SpatialOSDispatcher = MockDispatcher;
 template <class T>
 using SpatialOSFuture = MockFuture<T>;
+#endif
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSMock, Log, All);
 
@@ -112,7 +114,7 @@ using MockOp = worker::Variant<worker::ReserveEntityIdResponseOp, worker::AddEnt
                                MockAddComponentOp, MockUpdateComponentOp,
                                MockCommandRequestWrapperOp, MockCommandResponseWrapperOp>;
 
-class SPATIALOS_API MockOpList
+class SDK_API MockOpList
 {
 public:
   MockOpList(const MockOpList&) = default;
@@ -126,7 +128,7 @@ public:
   MockOpList() = default;
 };
 
-class SPATIALOS_API MockConnection
+class SDK_API MockConnection
 {
 public:
   static MockFuture<MockConnection> ConnectAsync(const worker::ComponentRegistry& registry,
@@ -241,7 +243,7 @@ public:
                                       const typename T::Update& update);
 };
 
-class SPATIALOS_API MockLocator
+class SDK_API MockLocator
 {
 public:
   MockLocator(const std::string& hostname, const worker::LocatorParameters& params);
@@ -262,7 +264,7 @@ public:
                                           const QueueStatusCallback& callback);
 };
 
-class SPATIALOS_API MockDispatcher
+class SDK_API MockDispatcher
 {
 public:
   template <typename T>
