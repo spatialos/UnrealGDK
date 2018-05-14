@@ -2,7 +2,11 @@
 
 #pragma once
 
-#ifndef SPATIALOS_WORKER_SDK_MOCK_ENABLED
+#ifdef SPATIALOS_WORKER_SDK_MOCK_ENABLED
+
+#include "Mock/SpatialOSMockWorkerTypes.h"
+
+#else
 
 #include <improbable/worker.h>
 
