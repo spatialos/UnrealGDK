@@ -4,7 +4,7 @@
 
 #ifdef SPATIALOS_WORKER_SDK_MOCK_ENABLED
 
-#include "Mock/SpatialOSMockWorkerTypes.h"
+#include <Mock/SpatialOSMockWorkerTypes.h>
 
 #else
 
