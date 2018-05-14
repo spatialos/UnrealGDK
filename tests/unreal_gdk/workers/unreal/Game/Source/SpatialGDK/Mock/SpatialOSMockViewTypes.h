@@ -2,7 +2,7 @@
 #include "SpatialOSMockWorkerTypes.h"
 #include "improbable/view.h"
 
-class SDK_API MockView : public MockDispatcher
+class SPATIALGDK_API MockView : public MockDispatcher
 {
 public:
   template <typename... T>

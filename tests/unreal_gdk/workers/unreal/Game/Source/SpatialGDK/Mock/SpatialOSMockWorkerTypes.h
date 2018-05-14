@@ -112,7 +112,7 @@ using MockOp = worker::Variant<worker::ReserveEntityIdResponseOp, worker::AddEnt
                                MockAddComponentOp, MockUpdateComponentOp,
                                MockCommandRequestWrapperOp, MockCommandResponseWrapperOp>;
 
-class SDK_API MockOpList
+class SPATIALGDK_API MockOpList
 {
 public:
   MockOpList(const MockOpList&) = default;
@@ -126,7 +126,7 @@ public:
   MockOpList() = default;
 };
 
-class SDK_API MockConnection
+class SPATIALGDK_API MockConnection
 {
 public:
   static MockFuture<MockConnection> ConnectAsync(const worker::ComponentRegistry& registry,
@@ -241,7 +241,7 @@ public:
                                       const typename T::Update& update);
 };
 
-class SDK_API MockLocator
+class SPATIALGDK_API MockLocator
 {
 public:
   MockLocator(const std::string& hostname, const worker::LocatorParameters& params);
@@ -262,7 +262,7 @@ public:
                                           const QueueStatusCallback& callback);
 };
 
-class SDK_API MockDispatcher
+class SPATIALGDK_API MockDispatcher
 {
 public:
   template <typename T>

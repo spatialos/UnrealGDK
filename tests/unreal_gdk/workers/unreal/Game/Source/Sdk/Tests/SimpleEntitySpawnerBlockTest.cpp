@@ -6,10 +6,8 @@
 #include "EntityRegistry.h"
 
 #include "SimpleEntitySpawnerBlock.h"
-#include "SpatialOSMockViewTypes.h"
-#include "SpatialOSMockViewTypes.h"
-#include "SpatialOSMockWorkerTypes.h"
-#include "SpatialOSMockWorkerTypes.h"
+#include "Mock/SpatialOSMockViewTypes.h"
+#include "Mock/SpatialOSMockWorkerTypes.h"
 #include "TestData2Component.h"
 #include "Utils/MockSpatialOS.h"
 
