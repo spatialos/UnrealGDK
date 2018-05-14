@@ -3,8 +3,14 @@
 /Game/DerivedDataCache/
 /Game/Plugins/
 /Game/Scripts/
-/Game/Source/SpatialGDK/
+/Game/Source/SpatialGDK/Legacy
+/Game/Source/SpatialGDK/Generated
+/Game/Source/SpatialGDK/Public
+/Game/Source/SpatialGDK/Private
+/Game/Source/SpatialGDK/SpatialGDk.build.cs
+/Game/Source/SpatialGDK/.gitignore
 /Game/Saved/
 /Game/Sdk.sln
 /Game/Sdk.VC.*
 target.spatialos_worker_packages.json.md5
+

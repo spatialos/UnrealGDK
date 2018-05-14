@@ -14,14 +14,12 @@ class MockFuture;
 class MockLocator;
 class MockOpList;
 
-#ifdef SPATIALOS_WORKER_SDK_MOCK_ENABLED
 using SpatialOSConnection = MockConnection;
 using SpatialOSLocator = MockLocator;
 using SpatialOSOpList = MockOpList;
 using SpatialOSDispatcher = MockDispatcher;
 template <class T>
 using SpatialOSFuture = MockFuture<T>;
-#endif
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSMock, Log, All);
 
