@@ -128,8 +128,8 @@ markEndOfBlock "Generate code"
 markStartOfBlock "Compile with ${UNREAL_VERSION}"
 
 # Reset intermediate files to avoid UBT-related errors that occur when switching between engine versions.
-# rm -rf "${UNREAL_GDK_TEST_DIR}/Game/Intermediate/Build"
-#"${UNREAL_HOME}/Engine/Build/BatchFiles/Build.bat" SdkEditor Win64 Development "${UNREAL_GDK_TEST_PROJECT}"
+rm -rf "${UNREAL_GDK_TEST_DIR}/Game/Intermediate/Build"
+"${UNREAL_HOME}/Engine/Build/BatchFiles/Build.bat" SdkEditor Win64 Development "${UNREAL_GDK_TEST_PROJECT}"
 
 # Skip Linux builds as we do not have capacity in our CI for building without incredibuild when targeting linux.
 # if isTeamCity; then
