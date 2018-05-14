@@ -6,7 +6,7 @@
 #include <improbable/standard_library.h>
 
 // Needed for UnrealObjectRef.
-#include <improbable/unreal/core_types.h>
+#include <improbable/unreal/gdk/core_types.h>
 
 namespace SpatialConstants
 {

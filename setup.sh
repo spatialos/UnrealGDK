@@ -18,15 +18,17 @@ if [ -z "${1+x}" ]; then
 fi
 
 INSTALL_PATH="$1"
-BUILT_PLUGINSPATH="Plugins\SpatialGDK"
-BUILT_MODULEPATH="Source\SpatialGDK"
+BUILT_PLUGINSPATH="Plugins/SpatialGDK"
+BUILT_MODULEPATH="Source/SpatialGDK"
 BUILT_SCRIPTSPATH="Scripts"
 BUILT_BINARIESPATH="Binaries"
+BUILT_SCHEMAPATH="schema/improbable/unreal/gdk"
 
-TARGET_PLUGINSPATH="${INSTALL_PATH}\workers\unreal\Game\Plugins"
-TARGET_MODULEPATH="${INSTALL_PATH}\workers\unreal\Game\Source"
-TARGET_SCRIPTSPATH="${INSTALL_PATH}\workers\unreal\Game"
-TARGET_BINARIESPATH="${INSTALL_PATH}\workers\unreal\Game"
+TARGET_PLUGINSPATH="${INSTALL_PATH}/workers/unreal/Game/Plugins"
+TARGET_MODULEPATH="${INSTALL_PATH}/workers/unreal/Game/Source"
+TARGET_SCRIPTSPATH="${INSTALL_PATH}/workers/unreal/Game"
+TARGET_BINARIESPATH="${INSTALL_PATH}/workers/unreal/Game"
+TARGET_SCHEMAPATH="${INSTALL_PATH}/schema/improbable/unreal"
 
 markStartOfBlock "$0"
 
@@ -36,6 +38,7 @@ mkdir -p "${TARGET_PLUGINSPATH}"
 mkdir -p "${TARGET_MODULEPATH}"
 mkdir -p "${TARGET_SCRIPTSPATH}"
 mkdir -p "${TARGET_BINARIESPATH}"
+mkdir -p "${TARGET_SCHEMAPATH}"
 
 markEndOfBlock "Ensure directories exist"
 
@@ -45,6 +48,7 @@ cp -r "${BUILT_PLUGINSPATH}" "${TARGET_PLUGINSPATH}"
 cp -r "${BUILT_MODULEPATH}" "${TARGET_MODULEPATH}"
 cp -r "${BUILT_SCRIPTSPATH}" "${TARGET_SCRIPTSPATH}"
 cp -r "${BUILT_BINARIESPATH}" "${TARGET_BINARIESPATH}"
+cp -r "${BUILT_SCHEMAPATH}" "${TARGET_SCHEMAPATH}"
 
 markEndOfBlock "Copy build artifacts to the install path"
 
