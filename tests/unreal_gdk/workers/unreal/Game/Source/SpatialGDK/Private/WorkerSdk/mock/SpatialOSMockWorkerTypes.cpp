@@ -88,7 +88,7 @@ worker::Option<std::string> MockConnection::GetWorkerFlag(const std::string& fla
   return flag_value;
 }
 
-SpatialOSOpList MockConnection::GetOpList(std::uint32_t timeout_millis)
+MockOpList MockConnection::GetOpList(std::uint32_t timeout_millis)
 {
   auto opsList = CurrentOpList;
   CurrentOpList = MockOpList();
