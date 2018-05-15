@@ -59,9 +59,11 @@ FString SchemaCommandName(UFunction* Function)
 	return Function->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
 }
 
-FString CPPCommandClassName(UFunction* Function)
+FString CPPCommandClassName(UClass* Class, UFunction* Function)
 {
-	FString SchemaName = SchemaCommandName(Function);
+	// Prepending the name of the class to the command name enables sibling classes. 
+	FString SchemaName = Class->GetName().ToLower();
+	SchemaName += SchemaCommandName(Function);
 	SchemaName[0] = FChar::ToUpper(SchemaName[0]);
 	return SchemaName;
 }
@@ -138,6 +140,7 @@ FString PropertyToSchemaType(UProperty* Property)
 	}
 	else
 	{
+		// Here the enum is being translated to bytes
 		DataType = TEXT("bytes");
 	}
 
@@ -304,7 +307,8 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		Writer.Printf("id = %i;", IdGenerator.GetNextAvailableId());
 		for (auto& RPC : RPCsByType[Group])
 		{
-			Writer.Printf("command UnrealRPCCommandResponse %s(%s);",
+			Writer.Printf("command UnrealRPCCommandResponse %s%s(%s);",
+				*Class->GetName().ToLower(),
 				*SchemaCommandName(RPC->Function),
 				*SchemaRPCRequestType(RPC->Function));
 		}

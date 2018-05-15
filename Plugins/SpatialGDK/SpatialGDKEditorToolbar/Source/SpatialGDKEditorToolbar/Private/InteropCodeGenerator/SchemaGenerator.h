@@ -39,7 +39,7 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property);
 FString SchemaCommandName(UFunction* Function);
 
 // Given a UFunction, generates the c++ command name. Identical to the schema name with the first letter being uppercase.
-FString CPPCommandClassName(UFunction* Function);
+FString CPPCommandClassName(UClass* Class, UFunction* Function);
 
 // Given a RepLayout cmd type (a data type supported by the replication system). Generates the corresponding
 // type used in schema.
