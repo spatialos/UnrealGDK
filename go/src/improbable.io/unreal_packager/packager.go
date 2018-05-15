@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 const (
@@ -172,11 +171,7 @@ func runBuildScriptInCurrentDirectory(cmd *cobra.Command, scriptName string, arg
 
 	unrealCommand := exec.Command(binaryLocation, allArgs...)
 
-	if terminal.IsTerminal(int(os.Stdout.Fd())) {
-		unrealCommand.Stdout = os.Stdout
-	} else {
-		unrealCommand.Stdout = newInfoLevelWriter()
-	}
+	unrealCommand.Stdout = os.Stdout
 	unrealCommand.Stderr = os.Stderr
 
 	return unrealCommand.Run()
@@ -237,12 +232,7 @@ func runUnrealCookingAndPackaging(cmd *cobra.Command, stagingDir string, additio
 
 	unrealCommand := exec.Command(command, inputArguments...)
 
-	if terminal.IsTerminal(int(os.Stdout.Fd())) {
-		unrealCommand.Stdout = os.Stdout
-	} else {
-		unrealCommand.Stdout = newInfoLevelWriter()
-	}
-
+    unrealCommand.Stdout = os.Stdout
 	unrealCommand.Stderr = os.Stderr
 
 	return unrealCommand.Run()
