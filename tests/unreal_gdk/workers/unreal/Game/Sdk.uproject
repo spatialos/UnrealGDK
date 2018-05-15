@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{288B5AD2-4CA3-4936-D0C5-B4967DD6EC97}",
+	"EngineAssociation": "{AD63C9CA-4E14-B025-434B-93B2522A7DA4}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -10,7 +10,7 @@
 			"LoadingPhase": "Default"
 		},
 		{
-			"Name": "SpatialOS",
+			"Name": "SpatialGDK",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		}
