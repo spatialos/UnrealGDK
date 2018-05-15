@@ -14,13 +14,6 @@ class MockFuture;
 class MockLocator;
 class MockOpList;
 
-using SpatialOSConnection = MockConnection;
-using SpatialOSLocator = MockLocator;
-using SpatialOSOpList = MockOpList;
-using SpatialOSDispatcher = MockDispatcher;
-template <class T>
-using SpatialOSFuture = MockFuture<T>;
-
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSMock, Log, All);
 
 template <typename T>

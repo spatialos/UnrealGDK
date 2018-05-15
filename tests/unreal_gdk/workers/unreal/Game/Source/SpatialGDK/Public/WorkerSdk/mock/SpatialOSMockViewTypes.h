@@ -43,5 +43,3 @@ public:
   worker::Map<worker::EntityId, worker::Map<worker::ComponentId, worker::Authority>>
       ComponentAuthority;
 };
-
-using SpatialOSView = MockView;
