@@ -9,6 +9,11 @@ Game/Source/SpatialGDK/Public/*
 !Game/Source/SpatialGDK/Public/WorkerSdk
 Game/Source/SpatialGDK/Public/WorkerSdk/*
 !Game/Source/SpatialGDK/Public/WorkerSdk/mock
+!Game/Source/SpatialGDK/Private
+Game/Source/SpatialGDK/Private/*
+!Game/Source/SpatialGDK/Private/WorkerSdk
+Game/Source/SpatialGDK/Private/WorkerSdk/*
+!Game/Source/SpatialGDK/Private/WorkerSdk/mock
 
 /Game/Saved/
 /Game/Sdk.sln
