@@ -3,8 +3,8 @@
 #include "CommanderTest.h"
 
 #include "Commander.h"
-#include "Mock/SpatialGDKViewTypes.h"
-#include "Mock/SpatialOSMockWorkerTypes.h"
+#include "SpatialGDKViewTypes.h"
+#include "SpatialOSMockWorkerTypes.h"
 #include "SpatialOSCommon.h"
 #include "Utils/RequestCallbackWrapper.h"
 #include "Utils/ReserveEntityIdCallbackWrapper.h"

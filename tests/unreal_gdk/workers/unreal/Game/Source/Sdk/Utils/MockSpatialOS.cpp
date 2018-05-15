@@ -1,8 +1,8 @@
 #include "MockSpatialOS.h"
 
 #include "SpatialOSCommon.h"
-#include "Mock/SpatialOSMockViewTypes.h"
-#include "Mock/SpatialOSMockWorkerTypes.h"
+#include "SpatialOSMockViewTypes.h"
+#include "SpatialOSMockWorkerTypes.h"
 #include "worker.h"
 
 namespace MockSpatialOS
