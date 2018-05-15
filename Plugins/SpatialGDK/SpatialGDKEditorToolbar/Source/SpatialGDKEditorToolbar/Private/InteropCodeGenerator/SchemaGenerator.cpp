@@ -154,7 +154,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		package improbable.unreal;
 
 		import "improbable/vector3.schema";
-		import "improbable/unreal/core_types.schema";)""");
+		import "improbable/unreal/gdk/core_types.schema";)""");
 	Writer.PrintNewLine();
 
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
@@ -250,7 +250,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			package improbable.unreal;
 
 			import "improbable/vector3.schema";
-			import "improbable/unreal/core_types.schema";)""");
+			import "improbable/unreal/gdk/core_types.schema";)""");
 		RPCTypeOwnerSchemaWriter->PrintNewLine();
 	}
 	Writer.PrintNewLine();

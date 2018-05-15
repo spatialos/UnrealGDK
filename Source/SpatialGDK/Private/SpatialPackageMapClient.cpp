@@ -236,7 +236,7 @@ uint32 FSpatialNetGUIDCache::GetHashFromStaticClass(const UClass* StaticClass) c
 
 UClass* FSpatialNetGUIDCache::GetStaticClassFromHash(uint32 Hash) const
 {
-	// This should never fail in production code, but might in development if the client and server are running versions 
+	// This should never fail in production code, but might in development if the client and server are running versions
 	// with inconsistent static class lists.
 	bool bContainsHash = StaticClassHashMap.Contains(Hash);
 	checkf(bContainsHash, TEXT("Failed to find static class for hash: %d"), Hash);

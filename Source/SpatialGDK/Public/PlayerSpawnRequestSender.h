@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include "improbable/unreal/spawner.h"
+#include "improbable/unreal/gdk/spawner.h"
 #include "LogMacros.h"
 #include <improbable/worker.h>
 #include <improbable/view.h>
 
-namespace worker 
-{ 
+namespace worker
+{
 class Connection;
 class View;
 }  // ::worker

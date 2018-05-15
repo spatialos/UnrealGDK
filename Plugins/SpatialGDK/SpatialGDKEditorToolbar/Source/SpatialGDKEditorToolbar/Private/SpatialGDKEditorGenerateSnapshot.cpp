@@ -9,8 +9,8 @@
 #include "GameFramework/Actor.h"
 
 #include <improbable/standard_library.h>
-#include <improbable/unreal/level_data.h>
-#include <improbable/unreal/spawner.h>
+#include <improbable/unreal/gdk/level_data.h>
+#include <improbable/unreal/gdk/spawner.h>
 #include <improbable/worker.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
@@ -109,7 +109,7 @@ void SpatialGDKGenerateSnapshot(const FString& SavePath, UWorld* World)
 	const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
 
 	std::unordered_map<worker::EntityId, worker::Entity> SnapshotEntities;
-	
+
 	// Create spawner.
 	SnapshotEntities.emplace(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
 
