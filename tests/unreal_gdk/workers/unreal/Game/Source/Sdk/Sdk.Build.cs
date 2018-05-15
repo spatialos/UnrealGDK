@@ -14,5 +14,6 @@ public class Sdk : ModuleRules
             "Core", "CoreUObject", "Engine", "InputCore", "SpatialGDK"
         });
 
+        PublicDefinitions.Add("SPATIALOS_WORKER_SDK_MOCK_ENABLED");
     }
 }
