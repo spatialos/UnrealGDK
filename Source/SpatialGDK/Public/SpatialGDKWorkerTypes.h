@@ -6,6 +6,13 @@
 
 #include "SpatialOSMockWorkerTypes.h"
 
+using SpatialOSConnection = MockConnection;
+using SpatialOSLocator = MockLocator;
+using SpatialOSOpList = MockOpList;
+using SpatialOSDispatcher = MockDispatcher;
+template <class T>
+using SpatialOSFuture = MockFuture<T>;
+
 #else
 
 #include <improbable/worker.h>
