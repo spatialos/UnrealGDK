@@ -6,6 +6,8 @@
 
 #include "SpatialOSMockViewTypes.h"
 
+using SpatialOSView = MockView;
+
 #else
 
 #include "improbable/view.h"
