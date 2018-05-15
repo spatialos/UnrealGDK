@@ -210,14 +210,23 @@ void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable
 void USpatialInterop::AddActorChannel(const FEntityId& EntityId, USpatialActorChannel* Channel)
 {
 	EntityToActorChannel.Add(EntityId, Channel);
-
-	// Set up component interests to adjust which components are being received.
-	SendComponentInterests(Channel, EntityId);
 }
 
 void USpatialInterop::RemoveActorChannel(const FEntityId& EntityId)
 {
 	EntityToActorChannel.Remove(EntityId);
+}
+
+void USpatialInterop::SendComponentInterests(USpatialActorChannel* ActorChannel, const FEntityId& EntityId)
+{
+	UClass* ActorClass = ActorChannel->Actor->GetClass();
+
+	const USpatialTypeBinding* Binding = GetTypeBindingByClass(ActorClass);
+	if (Binding)
+	{
+		auto Interest = Binding->GetInterestOverrideMap(NetDriver->GetNetMode() == NM_Client, ActorChannel->Actor->Role == ROLE_AutonomousProxy);
+		SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId.ToSpatialEntityId(), Interest);
+	}
 }
 
 USpatialActorChannel* USpatialInterop::GetActorChannelByEntityId(const FEntityId& EntityId) const
@@ -375,18 +384,6 @@ void USpatialInterop::UnregisterInteropType(UClass* Class)
 		USpatialTypeBinding* Binding = *BindingIterator;
 		Binding->UnbindFromView();
 		TypeBindings.Remove(Class);
-	}
-}
-
-void USpatialInterop::SendComponentInterests(USpatialActorChannel* ActorChannel, const FEntityId& EntityId)
-{
-	UClass* ActorClass = ActorChannel->Actor->GetClass();
-
-	const USpatialTypeBinding* Binding = GetTypeBindingByClass(ActorClass);
-	if (Binding)
-	{
-		auto Interest = Binding->GetInterestOverrideMap(NetDriver->GetNetMode() == NM_Client, ActorChannel->Actor->Role == ROLE_AutonomousProxy);
-		SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId.ToSpatialEntityId(), Interest);
 	}
 }
 
