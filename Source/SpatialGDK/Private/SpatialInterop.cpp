@@ -13,8 +13,8 @@
 // Needed for the entity template stuff.
 #include "EntityBuilder.h"
 #include <improbable/standard_library.h>
-#include <improbable/unreal/player.h>
-#include <improbable/unreal/unreal_metadata.h>
+#include <improbable/unreal/gdk/player.h>
+#include <improbable/unreal/gdk/unreal_metadata.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialOSInterop);
 
