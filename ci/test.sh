@@ -93,13 +93,6 @@ pushd "${UNREAL_GDK_TEST_DIR}"
 
   spatial codegen UnrealClient --log_level=debug
 
-#   # *********
-#   # Giant hack to inject our mocked worker types into the test application
-#   # *********
-#   sed -i -e 's/SpatialOS\/Generated\/UClasses/SpatialOS\/Generated\/UClasses\",\n\"SpatialOS\/Mock/g' "${UNREAL_GDK_TEST_DIR}/Game/Source/SpatialOS/SpatialOS.Build.cs"
-#   echo '#include "SpatialOSMockViewTypes.h"' > "${UNREAL_GDK_TEST_DIR}/Game/Source/SpatialOS/Public/SpatialOSViewTypes.h"
-#   echo '#include "SpatialOSMockWorkerTypes.h"' > "${UNREAL_GDK_TEST_DIR}/Game/Source/SpatialOS/Public/SpatialOSWorkerTypes.h"
-
 popd
 
 markEndOfBlock "Generate code"
@@ -138,22 +131,22 @@ rm -rf "${UNREAL_GDK_TEST_DIR}/Game/Intermediate/Build"
 
 markEndOfBlock "Compile with ${UNREAL_VERSION}"
 
-# #####
-# # Test current version.
-# #####
-# markStartOfBlock "Run Unreal tests (Unreal ${UNREAL_VERSION})"
+#####
+# Test current version.
+#####
+markStartOfBlock "Run Unreal tests (Unreal ${UNREAL_VERSION})"
 
-# "${UNREAL_HOME}\Engine\Binaries\Win64\UE4Editor-Cmd.exe" \
-#   "${UNREAL_GDK_TEST_PROJECT}" \
-#   -server \
-#   -stdout \
-#   -unattended \
-#   -buildmachine \
-#   -execcmds="automation list;runtests SpatialOS;quit" \
-#   -abslog="${PROJECT_LOGFILE}" \
-#   -nullrhi \
-#   -CrashForUAT
+"${UNREAL_HOME}\Engine\Binaries\Win64\UE4Editor-Cmd.exe" \
+  "${UNREAL_GDK_TEST_PROJECT}" \
+  -server \
+  -stdout \
+  -unattended \
+  -buildmachine \
+  -execcmds="automation list;runtests SpatialOS;quit" \
+  -abslog="${PROJECT_LOGFILE}" \
+  -nullrhi \
+  -CrashForUAT
 
-# markEndOfBlock "Run Unreal tests (Unreal ${UNREAL_VERSION})"
+markEndOfBlock "Run Unreal tests (Unreal ${UNREAL_VERSION})"
 
 markEndOfBlock "$0"
