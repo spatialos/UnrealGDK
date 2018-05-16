@@ -159,8 +159,8 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: Leaving critical section."));
 	check(bInCriticalSection);
 
-	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
-	TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
+	TSharedPtr<SpatialOSConnection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
+	TSharedPtr<SpatialOSView> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
 
 	// Add entities.
 	for (auto& PendingAddEntity : PendingAddEntities)
@@ -202,8 +202,8 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 
 void USpatialInteropPipelineBlock::AddEntityImpl(const FEntityId& EntityId)
 {
-	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
-	TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
+	TSharedPtr<SpatialOSConnection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
+	TSharedPtr<SpatialOSView> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
 
 	// Create / get actor for this entity.
 	GetOrCreateActor(LockedConnection, LockedView, EntityId);
@@ -211,8 +211,8 @@ void USpatialInteropPipelineBlock::AddEntityImpl(const FEntityId& EntityId)
 
 void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp)
 {
-	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
-	TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
+	TSharedPtr<SpatialOSConnection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
+	TSharedPtr<SpatialOSView> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
 
 	UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
 	check(ComponentClass);
@@ -279,7 +279,7 @@ void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>&, co
 {
 }
 
-AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId)
+AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<SpatialOSConnection> LockedConnection, TSharedPtr<SpatialOSView> LockedView, const FEntityId& EntityId)
 {
 	checkf(World, TEXT("We should have a world whilst processing ops."));
 
@@ -471,7 +471,7 @@ UClass* USpatialInteropPipelineBlock::GetNativeEntityClass(improbable::MetadataD
 	return FindObject<UClass>(ANY_PACKAGE, *Metadata);	
 }
 
-void USpatialInteropPipelineBlock::SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection)
+void USpatialInteropPipelineBlock::SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<SpatialOSConnection>& Connection)
 {
 	TArray<UActorComponent*> SpatialOSComponents = Actor->GetComponentsByClass(USpatialOsComponent::StaticClass());
 

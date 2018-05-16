@@ -81,7 +81,7 @@ void USpatialActorChannel::BindToSpatialView()
 		return;
 	}
 
-	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
+	TSharedPtr<SpatialOSView> PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
 	{
 		ReserveEntityCallback = PinnedView->OnReserveEntityIdResponse([this](const worker::ReserveEntityIdResponseOp& Op)
@@ -106,7 +106,7 @@ void USpatialActorChannel::UnbindFromSpatialView() const
 	//todo-giray: Uncomment the rest when worker sdk finishes the FR that gracefully handles removing unbound callback keys.
 	return;
 	/*
-	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
+	TSharedPtr<SpatialOSView> PinnedView = WorkerView.Pin();
 	PinnedView->Remove(ReserveEntityCallback);
 	PinnedView->Remove(CreateEntityCallback);*/
 }
@@ -432,7 +432,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		bCreatingNewEntity = true;
 
 		// Reserve an entity ID for this channel.
-		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
+		TSharedPtr<SpatialOSConnection> PinnedConnection = WorkerConnection.Pin();
 		if (PinnedConnection.IsValid())
 		{
 			ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);

@@ -64,7 +64,7 @@ USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
 {
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
-	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
+	TSharedPtr<SpatialOSConnection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
 	if (PinnedConnection.IsValid())
 	{
 		AActor* Actor = Channel->Actor;
@@ -143,7 +143,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 
 void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location)
 {
-	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
+	TSharedPtr<SpatialOSConnection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
 	if (!PinnedConnection.IsValid())
 	{
 		UE_LOG(LogSpatialOSInterop, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));

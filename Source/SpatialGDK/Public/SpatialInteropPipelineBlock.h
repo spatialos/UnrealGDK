@@ -7,6 +7,8 @@
 #include "ComponentIdentifier.h"
 #include "EntityId.h"
 #include "EntityPipelineBlock.h"
+#include "SpatialGDKWorkerTypes.h"
+#include "SpatialGDKViewTypes.h"
 #include "SpatialInteropPipelineBlock.generated.h"
 
 namespace worker
@@ -101,13 +103,13 @@ private:
 		UCallbackDispatcher* CallbackDispatcher) override;
 
 private:
-	AActor* GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId);
+	AActor* GetOrCreateActor(TSharedPtr<SpatialOSConnection> LockedConnection, TSharedPtr<SpatialOSView> LockedView, const FEntityId& EntityId);
 	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ClassToSpawn);
-	
+
 	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);
 	UClass* GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent);
-	
-	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<worker::Connection>& Connection);
+
+	void SetupComponentInterests(AActor* Actor, const FEntityId& EntityId, const TWeakPtr<SpatialOSConnection>& Connection);
 
 	template <typename AddOpType, typename Metaclass>
 	typename Metaclass::Data* GetPendingComponentData(const FEntityId& EntityId)
@@ -124,7 +126,7 @@ private:
 	}
 
 	template <typename Metaclass>
-	typename Metaclass::Data* GetComponentDataFromView(TSharedPtr<worker::View> LockedView, const FEntityId& EntityId)
+	typename Metaclass::Data* GetComponentDataFromView(TSharedPtr<SpatialOSView> LockedView, const FEntityId& EntityId)
 	{
 		auto EntityIterator = LockedView->Entities.find(EntityId.ToSpatialEntityId());
 		if (EntityIterator == LockedView->Entities.end())
