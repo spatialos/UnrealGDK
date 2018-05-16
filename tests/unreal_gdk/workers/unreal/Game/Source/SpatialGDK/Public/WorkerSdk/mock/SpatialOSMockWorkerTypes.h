@@ -3,6 +3,10 @@
 
 #include "LogMacros.h"
 #include "TestSchema.h"
+#include "improbable/unreal/gdk/level_data.h"
+#include "improbable/unreal/gdk/player.h"
+#include "improbable/unreal/gdk/spawner.h"
+#include "improbable/unreal/gdk/unreal_metadata.h"
 #include "improbable/worker_protocol.h"
 #include <assert.h>
 #include <queue>
@@ -39,15 +43,20 @@ private:
 };
 
 using ComponentDataType =
-    worker::Variant<improbable::EntityAclData, improbable::MetadataData, improbable::PositionData,
-                    improbable::PersistenceData, improbable::TestType1, improbable::TestType2,
-                    improbable::BuiltInTypesData, improbable::CommandWithSameDelegateData>;
+    worker::Variant<improbable::EntityAcl::Data, improbable::Metadata::Data, improbable::Position::Data,
+                    improbable::Persistence::Data, improbable::TestData1::Data, improbable::TestData2::Data,
+                    improbable::BuiltInTypes::Data, improbable::CommandWithSameDelegate::Data, improbable::unreal::UnrealLevel::Data,
+					improbable::unreal::UnrealLevelPlaceholder::Data, improbable::unreal::PlayerControlClient::Data,
+					improbable::unreal::PlayerSpawner::Data, improbable::unreal::UnrealMetadata::Data>;
 
 using ComponentUpdateType =
     worker::Variant<improbable::EntityAcl::Update, improbable::Metadata::Update,
                     improbable::Position::Update, improbable::Persistence::Update,
                     improbable::TestData1::Update, improbable::TestData2::Update,
-                    improbable::BuiltInTypes::Update, improbable::CommandWithSameDelegate::Update>;
+					improbable::BuiltInTypes::Update, improbable::CommandWithSameDelegate::Update, 
+					improbable::unreal::UnrealLevel::Update, improbable::unreal::UnrealLevelPlaceholder::Update,
+					improbable::unreal::PlayerControlClient::Update, improbable::unreal::PlayerSpawner::Update,
+					improbable::unreal::UnrealMetadata::Update>;
 
 struct MockAddComponentOp
 {
@@ -67,7 +76,8 @@ using ComponentCommandObject =
     worker::Variant<improbable::detail::GenericCommandObject_TestData2,
                     improbable::detail::GenericCommandObject_TestData1,
                     improbable::detail::GenericCommandObject_BuiltInTypes,
-                    improbable::detail::GenericCommandObject_CommandWithSameDelegate>;
+                    improbable::detail::GenericCommandObject_CommandWithSameDelegate,
+					improbable::unreal::detail::GenericCommandObject_PlayerSpawner>;
 
 struct MockCommandRequest
 {
