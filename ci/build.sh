@@ -78,7 +78,8 @@ markStartOfBlock "Unpack dependencies"
 
 # Include the WorkerSdk header files
 unpackTo "${CORE_SDK_DIR}/cpp-static-x86_64-msvc_mtd-win32" "${CORE_SDK_DIR}/cpp-src"
-cp -r "${CORE_SDK_DIR}/cpp-src/include/" "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
+rm -rf "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
+cp -r "${CORE_SDK_DIR}/cpp-src/include" "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
 
 unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86-win32"      "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win32"
 unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-win32"   "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win64"

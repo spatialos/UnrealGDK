@@ -18,6 +18,8 @@ namespace Improbable
                 Console.WriteLine("\t--skip-codegen  : Don't run the code generator.");
                 Console.WriteLine("\t--local         : Build only enough for local testing.");
                 Console.WriteLine("\t--cloud         : Build only enough for cloud uploads.");
+
+                return;
             }
 
             if( localOnly && cloudOnly)
@@ -29,8 +31,13 @@ namespace Improbable
             {
                 Codegen.Main(args);
             }
+            else
+            {
+                Console.WriteLine("Skipping code generation.");
+            }
 
             // Always build the editor - it's required for everything else.
+            Console.WriteLine("Building editor.");
             Common.RunRedirected(@"Game\Binaries\ThirdParty\Improbable\Programs\unreal_packager", new [] {
                 "build",
                 "--target=Editor",
@@ -40,6 +47,7 @@ namespace Improbable
 
             if(localOnly)
             {
+                Console.WriteLine("Building local.");
                 Common.RunRedirected(@"Game\Binaries\ThirdParty\Improbable\Programs\unreal_packager", new [] {
                 "build",
                 "--target=",
@@ -50,7 +58,8 @@ namespace Improbable
 
             if(cloudOnly)
             {
-                    Common.RunRedirected(@"Game\Binaries\ThirdParty\Improbable\Programs\unreal_packager", new [] {
+                Console.WriteLine("Building cloud.");
+                Common.RunRedirected(@"Game\Binaries\ThirdParty\Improbable\Programs\unreal_packager", new [] {
                     "build",
                     "--target=Server",
                     "--configuration=Development",

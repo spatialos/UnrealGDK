@@ -41,8 +41,20 @@ namespace Improbable
             using(var process = Process.Start(startInfo))
             {
                 process.EnableRaisingEvents = true;
-                process.OutputDataReceived += (sender, e) => Console.WriteLine("{0}", e.Data);
-                process.ErrorDataReceived += (sender, e) => Console.Error.WriteLine("{0}", e.Data);
+                process.OutputDataReceived += (sender, e) =>
+                {
+                    if(!string.IsNullOrEmpty(e.Data))
+                    {
+                        Console.WriteLine("{0}", e.Data);
+                    }
+                };
+                process.ErrorDataReceived += (sender, e) =>
+                {
+                    if(!string.IsNullOrEmpty(e.Data))
+                    {
+                        Console.Error.WriteLine("{0}", e.Data);
+                    }
+                };
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
 
