@@ -53,17 +53,17 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 	return TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
 }
 
-FString SchemaCommandName(UFunction* Function)
+FString SchemaCommandName(UClass* Class, UFunction* Function)
 {
+	// Prepending the name of the class to the command name enables sibling classes. 
+	FString ClassName = Class->GetName().ToLower();
 	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-	return Function->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
+	return ClassName += Function->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
 }
 
 FString CPPCommandClassName(UClass* Class, UFunction* Function)
 {
-	// Prepending the name of the class to the command name enables sibling classes. 
-	FString SchemaName = Class->GetName().ToLower();
-	SchemaName += SchemaCommandName(Function);
+	FString SchemaName = SchemaCommandName(Class, Function);
 	SchemaName[0] = FChar::ToUpper(SchemaName[0]);
 	return SchemaName;
 }
@@ -140,7 +140,6 @@ FString PropertyToSchemaType(UProperty* Property)
 	}
 	else
 	{
-		// Here the enum is being translated to bytes
 		DataType = TEXT("bytes");
 	}
 
@@ -307,9 +306,8 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		Writer.Printf("id = %i;", IdGenerator.GetNextAvailableId());
 		for (auto& RPC : RPCsByType[Group])
 		{
-			Writer.Printf("command UnrealRPCCommandResponse %s%s(%s);",
-				*Class->GetName().ToLower(),
-				*SchemaCommandName(RPC->Function),
+			Writer.Printf("command UnrealRPCCommandResponse %s(%s);",
+				*SchemaCommandName(Class, RPC->Function),
 				*SchemaRPCRequestType(RPC->Function));
 		}
 		Writer.Outdent().Print("}");
