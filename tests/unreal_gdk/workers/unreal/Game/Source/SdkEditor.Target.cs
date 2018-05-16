@@ -9,5 +9,7 @@ public class SdkEditorTarget : TargetRules
     {
         Type = TargetType.Editor;
         ExtraModuleNames.Add("Sdk");
+
+        bForceCompileDevelopmentAutomationTests = true;
     }
 }

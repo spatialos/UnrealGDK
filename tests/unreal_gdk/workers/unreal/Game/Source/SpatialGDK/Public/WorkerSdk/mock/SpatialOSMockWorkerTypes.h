@@ -213,8 +213,8 @@ public:
   * mock section
   */
   worker::detail::internal::WorkerProtocol_RequestId next_request_id;
-  MockConnection::MockConnection() = default;
-  MockConnection::MockConnection(const worker::detail::ComponentInfo& component_info);
+  MockConnection() = default;
+  MockConnection(const worker::detail::ComponentInfo& component_info);
   MockOpList CurrentOpList;
   std::queue<MockCommandResponse> MockCommandResponses;
 
