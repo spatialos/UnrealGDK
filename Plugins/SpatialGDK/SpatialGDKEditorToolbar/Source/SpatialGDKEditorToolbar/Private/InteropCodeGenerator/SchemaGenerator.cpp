@@ -56,9 +56,10 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 FString SchemaCommandName(UClass* Class, UFunction* Function)
 {
 	// Prepending the name of the class to the command name enables sibling classes. 
-	FString ClassName = Class->GetName().ToLower();
+	FString CommandName = Class->GetName().ToLower();
 	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-	return ClassName += Function->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
+	CommandName += Function->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
+	return CommandName;
 }
 
 FString CPPCommandClassName(UClass* Class, UFunction* Function)
