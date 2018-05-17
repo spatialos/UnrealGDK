@@ -11,6 +11,9 @@ class FCodeWriter;
 // For example: USpatialTypeBinding_Character.
 FString TypeBindingName(UClass* Class);
 
+// Given an UObjectProperty, return the string of the first native class in the inheritance hierarchy.
+FString GetNativeClassName(const UObjectPropertyBase* Property);
+
 // Generates code to copy an Unreal 'PropertyValue' and write it to a SpatialOS component update object 'Update'.
 void GenerateUnrealToSchemaConversion(
 	FCodeWriter& Writer,
