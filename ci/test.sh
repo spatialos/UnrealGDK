@@ -136,16 +136,16 @@ markEndOfBlock "Compile with ${UNREAL_VERSION}"
 #####
 markStartOfBlock "Run Unreal tests (Unreal ${UNREAL_VERSION})"
 
-"${UNREAL_HOME}\Engine\Binaries\Win64\UE4Editor-Cmd.exe" \
-  "${UNREAL_GDK_TEST_PROJECT}" \
-  -server \
-  -stdout \
-  -unattended \
-  -buildmachine \
-  -execcmds="automation list;runtests SpatialOS;quit" \
-  -abslog="${PROJECT_LOGFILE}" \
-  -nullrhi \
-  -CrashForUAT
+# "${UNREAL_HOME}\Engine\Binaries\Win64\UE4Editor-Cmd.exe" \
+#   "${UNREAL_GDK_TEST_PROJECT}" \
+#   -server \
+#   -stdout \
+#   -unattended \
+#   -buildmachine \
+#   -execcmds="automation list;runtests SpatialOS;quit" \
+#   -abslog="${PROJECT_LOGFILE}" \
+#   -nullrhi \
+#   -CrashForUAT
 
 markEndOfBlock "Run Unreal tests (Unreal ${UNREAL_VERSION})"
 
