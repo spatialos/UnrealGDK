@@ -1303,6 +1303,7 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 			}
 			else if (Property->IsA<UClassProperty>())
 			{
+				// This is the same as the default case, but as UClassProperty extends from UObjectPropertyBase, we need to catch them here.
 				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
 			}
 			else if (Property->IsA<UObjectPropertyBase>())
@@ -1471,6 +1472,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 			}
 			else if (Property->IsA<UClassProperty>())
 			{
+				// This is the same as the default case, but as UClassProperty extends from UObjectPropertyBase, we need to catch them here.
 				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
 			}
 			else if (Property->IsA<UObjectPropertyBase>())
