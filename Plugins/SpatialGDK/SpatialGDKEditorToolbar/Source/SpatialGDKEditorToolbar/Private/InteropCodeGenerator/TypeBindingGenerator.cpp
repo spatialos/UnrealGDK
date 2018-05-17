@@ -17,7 +17,7 @@ FString TypeBindingName(UClass* Class)
 	return FString::Printf(TEXT("USpatialTypeBinding_%s"), *Class->GetName());
 }
 
-FString NativeClassName(const UObjectPropertyBase* Property)
+FString GetNativeClassName(const UObjectPropertyBase* Property)
 {
 	const UClass* Class = Property->PropertyClass;
 	while (!Class->HasAnyClassFlags(CLASS_Native))
@@ -376,7 +376,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 				checkf(Object_Raw, TEXT("An object ref %%s should map to a valid object."), *ObjectRefToString(ObjectRef));
 				%s = Cast<%s>(Object_Raw);
 				checkf(%s, TEXT("Object ref %%s maps to object %%s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
-			})""", *PropertyValue, *NativeClassName(Cast<UObjectPropertyBase>(Property)), *PropertyValue);
+			})""", *PropertyValue, *GetNativeClassName(Cast<UObjectPropertyBase>(Property)), *PropertyValue);
 		Writer.Print("else");
 		Writer.BeginScope();
 		ObjectResolveFailureGenerator(*PropertyValue);
@@ -1307,7 +1307,7 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 			}
 			else if (Property->IsA<UObjectPropertyBase>())
 			{
-				FString ClassName = NativeClassName(Cast<UObjectPropertyBase>(Property));
+				FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
 				SourceWriter.Printf("%s* %s = *(reinterpret_cast<%s* const*>(Data));", *ClassName, *PropertyValueName, *ClassName);
 			}
 			else
@@ -1475,7 +1475,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 			}
 			else if (Property->IsA<UObjectPropertyBase>())
 			{
-				FString ClassName = NativeClassName(Cast<UObjectPropertyBase>(Property));
+				FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
 				SourceWriter.Printf("%s* %s = *(reinterpret_cast<%s* const*>(PropertyData));", *ClassName, *PropertyValueName, *ClassName);
 			}
 			else

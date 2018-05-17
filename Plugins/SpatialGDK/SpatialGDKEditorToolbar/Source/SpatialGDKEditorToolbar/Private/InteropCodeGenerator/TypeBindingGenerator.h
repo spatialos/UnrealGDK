@@ -12,7 +12,7 @@ class FCodeWriter;
 FString TypeBindingName(UClass* Class);
 
 // Given an UObjectProperty, return the string of the first native class in the inheritance hierarchy.
-FString NativeClassName(const UObjectPropertyBase* Property);
+FString GetNativeClassName(const UObjectPropertyBase* Property);
 
 // Generates code to copy an Unreal 'PropertyValue' and write it to a SpatialOS component update object 'Update'.
 void GenerateUnrealToSchemaConversion(
