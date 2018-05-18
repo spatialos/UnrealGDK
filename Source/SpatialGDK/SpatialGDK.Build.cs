@@ -13,7 +13,6 @@ public class SpatialGDK : ModuleRules
     public SpatialGDK(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-        bFasterWithoutUnity = true;
 
         PublicIncludePaths.AddRange(
             new string[]
@@ -27,11 +26,7 @@ public class SpatialGDK : ModuleRules
                 "SpatialGDK/Legacy/Deprecated"
             });
 
-        PrivateIncludePaths.AddRange(
-            new string[]
-            {
-                "SpatialGDK/Private"
-            });
+        PrivateIncludePaths.Add("SpatialGDK/Private");
 
         PublicDependencyModuleNames.AddRange(
             new string[]
