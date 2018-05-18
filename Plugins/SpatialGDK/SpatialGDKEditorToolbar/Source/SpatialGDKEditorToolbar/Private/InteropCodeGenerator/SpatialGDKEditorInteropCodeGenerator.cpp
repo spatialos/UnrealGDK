@@ -159,13 +159,14 @@ const bool ClassesExist(const ClassHeaderMap& Classes)
 void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
 {
 	TMap<FString, TArray<TArray<FName>>> MigratableProperties;
-	MigratableProperties.Add("PlayerController", {
-		{ "AcknowledgedPawn" }
+	// IMPROBABLE: MCS - Switch to blueprint classes here until UNR-219 is fixed
+	MigratableProperties.Add("BP_PlayerController_C", {
+		{"AcknowledgedPawn"}
 	});
-	MigratableProperties.Add("Character", {
-		{ "CharacterMovement", "GroundMovementMode" },
-		{ "CharacterMovement", "MovementMode" },
-		{ "CharacterMovement", "CustomMovementMode" }
+	MigratableProperties.Add("BP_PlayerCharacter_C", {
+		{"CharacterMovement", "GroundMovementMode"},
+		{"CharacterMovement", "MovementMode"},
+		{"CharacterMovement", "CustomMovementMode"}
 	});
 
 	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
