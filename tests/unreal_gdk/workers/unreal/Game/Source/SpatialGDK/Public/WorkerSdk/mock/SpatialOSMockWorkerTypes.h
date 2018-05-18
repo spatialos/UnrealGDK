@@ -61,14 +61,14 @@ using ComponentUpdateType =
 struct MockAddComponentOp
 {
   worker::EntityId EntityId;
-  worker::detail::internal::WorkerProtocol_ComponentId ComponentId;
+  worker::ComponentId ComponentId;
   ComponentDataType Object;
 };
 
 struct MockUpdateComponentOp
 {
   worker::EntityId EntityId;
-  worker::detail::internal::WorkerProtocol_ComponentId ComponentId;
+  worker::ComponentId ComponentId;
   ComponentUpdateType Object;
 };
 
