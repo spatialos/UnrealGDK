@@ -116,7 +116,7 @@ bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
 void SpatialGDKGenerateInteropCode()
 {
 	FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../schema/improbable/unreal/generated/"));
-	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/SampleGame/Generated/"));
+	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/Scavenger/Generated/"));
 	FString AbsoluteCombinedSchemaPath = FPaths::ConvertRelativePathToFull(CombinedSchemaPath);
 	FString AbsoluteCombinedForwardingCodePath = FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
 
@@ -164,10 +164,11 @@ void SpatialGDKGenerateInteropCode()
 	}
 
 	TMap<FString, TArray<TArray<FName>>> MigratableProperties;
-	MigratableProperties.Add("PlayerController", {
+	// IMPROBABLE: MCS - Switch to blueprint classes here until UNR-219 is fixed
+	MigratableProperties.Add("BP_PlayerController_C", {
 		{"AcknowledgedPawn"}
 	});
-	MigratableProperties.Add("Character", {
+	MigratableProperties.Add("BP_PlayerCharacter_C", {
 		{"CharacterMovement", "GroundMovementMode"},
 		{"CharacterMovement", "MovementMode"},
 		{"CharacterMovement", "CustomMovementMode"}

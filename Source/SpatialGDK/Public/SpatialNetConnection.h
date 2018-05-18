@@ -19,10 +19,12 @@ public:
 	virtual void InitBase(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket = 0, int32 InPacketOverhead = 0) override;
 	virtual void InitRemoteConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, const class FInternetAddr& InRemoteAddr, EConnectionState InState, int32 InMaxPacket = 0, int32 InPacketOverhead = 0) override;
 	virtual void InitLocalConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket = 0, int32 InPacketOverhead = 0) override;
+	// IMPROBABLE: MCS - workaround for UNR-236 - override HandleClientPlayer()
+	virtual void HandleClientPlayer(class APlayerController* PC, class UNetConnection* NetConnection);
 	virtual void LowLevelSend(void* Data, int32 CountBytes, int32 CountBits) override;
 	virtual bool ClientHasInitializedLevelFor(const AActor* TestActor) const override;
 	virtual void Tick() override;
-
+	
 	// These functions don't make a lot of sense in a SpatialOS implementation.
 	virtual FString LowLevelGetRemoteAddress(bool bAppendPort = false) override { return TEXT(""); }
 	virtual FString LowLevelDescribe() override { return TEXT(""); }
