@@ -53,15 +53,18 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 	return TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
 }
 
-FString SchemaCommandName(UFunction* Function)
+FString SchemaCommandName(UClass* Class, UFunction* Function)
 {
+	// Prepending the name of the class to the command name enables sibling classes. 
+	FString CommandName = Class->GetName().ToLower();
 	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-	return Function->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
+	CommandName += Function->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
+	return CommandName;
 }
 
-FString CPPCommandClassName(UFunction* Function)
+FString CPPCommandClassName(UClass* Class, UFunction* Function)
 {
-	FString SchemaName = SchemaCommandName(Function);
+	FString SchemaName = SchemaCommandName(Class, Function);
 	SchemaName[0] = FChar::ToUpper(SchemaName[0]);
 	return SchemaName;
 }
@@ -305,7 +308,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		for (auto& RPC : RPCsByType[Group])
 		{
 			Writer.Printf("command UnrealRPCCommandResponse %s(%s);",
-				*SchemaCommandName(RPC->Function),
+				*SchemaCommandName(Class, RPC->Function),
 				*SchemaRPCRequestType(RPC->Function));
 		}
 		Writer.Outdent().Print("}");
