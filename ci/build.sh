@@ -81,11 +81,11 @@ unpackTo "${CORE_SDK_DIR}/cpp-static-x86_64-msvc_mtd-win32" "${CORE_SDK_DIR}/cpp
 rm -rf "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
 cp -r "${CORE_SDK_DIR}/cpp-src/include" "${UNREAL_GDK_DIR}/Source/SpatialGDK/Public/WorkerSdk"
 
-unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86-win32"      "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win32"
-unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-win32"   "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win64"
-unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-linux"   "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Linux"
-unpackTo          "${CORE_SDK_DIR}/tools/schema_compiler-x86_64-win32"     "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs"
-unpackTo          "${CORE_SDK_DIR}/schema/standard_library"                "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/schema"
+unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86-win32"       "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win32"
+unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-win32"    "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Win64"
+unpackToWithClean "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-linux"    "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Linux"
+unpackTo          "${CORE_SDK_DIR}/tools/schema_compiler-x86_64-win32"      "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs"
+unpackTo          "${CORE_SDK_DIR}/schema/standard_library"                 "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/schema"
 unpackTo          "${BUILD_DIR}/code_generation//Improbable.CodeGeneration" "${PACKAGE_TARGET_DIR}/Improbable.CodeGeneration"
 
 "${IMP_NUGET}" restore-package --cache-directory="${CACHE_PATH}" --target-directory="${PACKAGE_TARGET_DIR}" --package NUnit --version 3.9.0
