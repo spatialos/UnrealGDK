@@ -49,7 +49,6 @@ namespace Improbable.Unreal.CodeGeneration.Jobs
                 var updateImplementationGenerator = new UnrealComponentUpdateImplementationGenerator(unrealComponent);
                 var componentUpdateImplFileName = unrealComponent.CapitalisedName + componentUpdateImplSuffix;
                 Content.Add(componentUpdateImplFileName, updateImplementationGenerator.TransformText());
-
             }
 
             var opWrapperGenerator = new UnrealAddEntityOpWrapperHeaderGenerator(unrealComponent);
