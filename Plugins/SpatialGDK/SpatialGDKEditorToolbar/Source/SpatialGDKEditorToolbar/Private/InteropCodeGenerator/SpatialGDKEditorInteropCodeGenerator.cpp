@@ -163,11 +163,12 @@ void SpatialGDKGenerateInteropCode()
 
 		if (FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath) && FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
 		{
+			// IMPROBABLE: MCS - Switch to blueprint classes here until UNR-219 is fixed
 			TMap<FString, TArray<TArray<FName>>> MigratableProperties;
-			MigratableProperties.Add("PlayerController", {
+			MigratableProperties.Add("BP_PlayerController_C", {
 				{ "AcknowledgedPawn" }
 			});
-			MigratableProperties.Add("Character", {
+			MigratableProperties.Add("BP_PlayerCharacter_C", {
 				{ "CharacterMovement", "GroundMovementMode" },
 				{ "CharacterMovement", "MovementMode" },
 				{ "CharacterMovement", "CustomMovementMode" }

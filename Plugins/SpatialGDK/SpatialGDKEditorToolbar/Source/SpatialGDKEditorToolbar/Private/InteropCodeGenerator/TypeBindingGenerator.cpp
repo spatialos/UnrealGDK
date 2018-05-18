@@ -165,11 +165,12 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		}
 		else if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
+			// IMPROBABLE: MCS - switch to FSpatialMemoryWriter until UNR-180 is resolved
 			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
 			Writer.BeginScope();
 			Writer.Printf(R"""(
 				TArray<uint8> ValueData;
-				FMemoryWriter ValueDataWriter(ValueData);
+				FSpatialMemoryWriter ValueDataWriter(PackageMap, ValueData);
 				bool Success;
 				(const_cast<%s&>(%s)).NetSerialize(ValueDataWriter, PackageMap, Success);
 				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *Struct->GetStructCPPName(), *PropertyValue, *Update);
@@ -177,10 +178,11 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		}
 		else
 		{
+			// IMPROBABLE: MCS - switch to FSpatialMemoryWriter until UNR-180 is resolved
 			// We do a basic binary serialization for the generic struct.
 			Writer.Printf(R"""(
 				TArray<uint8> ValueData;
-				FMemoryWriter ValueDataWriter(ValueData);
+				FSpatialMemoryWriter ValueDataWriter(PackageMap, ValueData);
 				%s::StaticStruct()->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&%s)));
 				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *Property->GetCPPType(), *Property->GetCPPType(), *PropertyValue, *Update);
 		}
@@ -321,24 +323,26 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 		}
 		else if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
+			// IMPROBABLE: MCS - switch to FSpatialMemoryReader until UNR-180 is resolved
 			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
 			Writer.BeginScope();
 			Writer.Printf(R"""(
 				auto& ValueDataStr = %s;
 				TArray<uint8> ValueData;
 				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
-				FMemoryReader ValueDataReader(ValueData);
+				FSpatialMemoryReader ValueDataReader(PackageMap, ValueData);
 				bool bSuccess;
 				%s.NetSerialize(ValueDataReader, PackageMap, bSuccess);)""", *Update, *PropertyValue);
 			Writer.End();
 		}
 		else
 		{
+			// IMPROBABLE: MCS - switch to FSpatialMemoryReader until UNR-180 is resolved
 			Writer.Printf(R"""(
 				auto& ValueDataStr = %s;
 				TArray<uint8> ValueData;
 				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
-				FMemoryReader ValueDataReader(ValueData);
+				FSpatialMemoryReader ValueDataReader(PackageMap, ValueData);
 				%s::StaticStruct()->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&%s));)""", *Update, *PropertyType, *PropertyValue);
 		}
 	}
@@ -633,7 +637,8 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 		#include "SpatialActorChannel.h"
 		#include "SpatialPackageMapClient.h"
 		#include "SpatialNetDriver.h"
-		#include "SpatialInterop.h")""", *InteropFilename);
+		#include "SpatialInterop.h"
+		#include "SpatialMemoryArchive.h")""", *InteropFilename);	// IMPROBABLE: MCS - add SpatialMemoryArchive.h until UNR-180 is resolved
 
 	// Add the header files specified in DefaultEditorSpatialGDK.ini.
 	for (const FString& Header : TypeBindingHeaders)
