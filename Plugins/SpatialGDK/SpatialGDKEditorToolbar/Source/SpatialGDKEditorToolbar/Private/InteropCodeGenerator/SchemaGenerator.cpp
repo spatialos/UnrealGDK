@@ -247,7 +247,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		RPCTypeOwnerSchemaWriter->Print(R"""(
 			// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 			// Note that this file has been generated automatically
-			package improbable.unreal;
+			package improbable.unreal.generated;
 
 			import "improbable/vector3.schema";
 			import "improbable/unreal/gdk/core_types.schema";)""");
