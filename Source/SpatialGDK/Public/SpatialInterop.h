@@ -151,6 +151,10 @@ public:
 	void AddActorChannel(const FEntityId& EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(const FEntityId& EntityId);
 
+	// Modifies component interest according to the updates this actor needs from SpatialOS.
+	// Called by USpatialInteropPipelineBlock after an actor has had its components initialized with values from SpatialOS.
+	void SendComponentInterests(USpatialActorChannel* ActorChannel, const FEntityId& EntityId);
+
 	// Used by generated type bindings to map an entity ID to its actor channel.
 	USpatialActorChannel* GetActorChannelByEntityId(const FEntityId& EntityId) const;
 
@@ -216,8 +220,6 @@ private:
 private:
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
 	void UnregisterInteropType(UClass* Class);
-
-	void SendComponentInterests(USpatialActorChannel* ActorChannel, const FEntityId& EntityId);
 
 	void ResolvePendingOutgoingObjectUpdates(UObject* Object);
 	void ResolvePendingOutgoingRPCs(UObject* Object);
