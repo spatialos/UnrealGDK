@@ -100,19 +100,6 @@ unpackTo          "${BUILD_DIR}/code_generation//Improbable.CodeGeneration" "${P
 markEndOfBlock "Unpack dependencies"
 
 #####
-# Build go CLI tools.
-#####
-markStartOfBlock "Build go CLI tools"
-
-GOOS="windows" GOARCH="amd64" \
-  go build -ldflags="-s -w" -o "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/unreal_packager.exe" improbable.io/unreal_packager/...
-
-GOOS="windows" GOARCH="amd64" \
-  go build -ldflags="-s -w" -o "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/clean.exe" improbable.io/clean/...
-
-markEndOfBlock "Build go CLI tools"
-
-#####
 # Build CodeGeneration.
 #####
 markStartOfBlock "Build CodeGeneration"

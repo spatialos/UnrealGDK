@@ -40,7 +40,8 @@ public class SpatialGDK : ModuleRules
                 "Engine",
                 "OnlineSubsystemUtils",
                 "PhysXVehicles",
-                "InputCore"
+                "InputCore",
+                "Sockets",
             });
 
 		// Check if we're building in the editor.

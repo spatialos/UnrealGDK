@@ -24,11 +24,11 @@ BUILT_SCRIPTSPATH="Scripts"
 BUILT_BINARIESPATH="Binaries"
 BUILT_SCHEMAPATH="schema/improbable/unreal/gdk"
 
-TARGET_PLUGINSPATH="${INSTALL_PATH}/workers/unreal/Game/Plugins"
-TARGET_MODULEPATH="${INSTALL_PATH}/workers/unreal/Game/Source"
-TARGET_SCRIPTSPATH="${INSTALL_PATH}/workers/unreal/Game"
-TARGET_BINARIESPATH="${INSTALL_PATH}/workers/unreal/Game"
-TARGET_SCHEMAPATH="${INSTALL_PATH}/schema/improbable/unreal"
+TARGET_PLUGINSPATH="${INSTALL_PATH}/Game/Plugins"
+TARGET_MODULEPATH="${INSTALL_PATH}/Game/Source"
+TARGET_SCRIPTSPATH="${INSTALL_PATH}/Game"
+TARGET_BINARIESPATH="${INSTALL_PATH}/Game"
+TARGET_SCHEMAPATH="${INSTALL_PATH}/spatial/schema/improbable/unreal"
 
 markStartOfBlock "$0"
 

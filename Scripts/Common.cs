@@ -29,6 +29,9 @@ namespace Improbable
 
         public static void RunRedirected(string command, IEnumerable<string> arguments)
         {
+            command = Environment.ExpandEnvironmentVariables(command);
+            arguments = arguments.Select(arg => Environment.ExpandEnvironmentVariables(arg));
+
             var startInfo = new ProcessStartInfo(command, string.Join(" ", arguments.ToArray()))
             {
                 CreateNoWindow = true,
@@ -38,33 +41,51 @@ namespace Improbable
                 UseShellExecute = false
             };
 
-            using(var process = Process.Start(startInfo))
+            try
             {
-                process.EnableRaisingEvents = true;
-                process.OutputDataReceived += (sender, e) =>
+                using(var process = Process.Start(startInfo))
                 {
-                    if(!string.IsNullOrEmpty(e.Data))
+                    process.EnableRaisingEvents = true;
+                    process.OutputDataReceived += (sender, e) =>
                     {
-                        Console.WriteLine("{0}", e.Data);
-                    }
-                };
-                process.ErrorDataReceived += (sender, e) =>
-                {
-                    if(!string.IsNullOrEmpty(e.Data))
+                        if(!string.IsNullOrEmpty(e.Data))
+                        {
+                            Console.WriteLine("{0}", e.Data);
+                        }
+                    };
+                    process.ErrorDataReceived += (sender, e) =>
                     {
-                        Console.Error.WriteLine("{0}", e.Data);
+                        if(!string.IsNullOrEmpty(e.Data))
+                        {
+                            Console.Error.WriteLine("{0}", e.Data);
+                        }
+                    };
+
+                    // Async print lines of output as they come in.
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+
+                    process.WaitForExit();
+
+                    if(process.ExitCode != 0)
+                    {
+                        throw new Exception(string.Format("Exit code {0}", process.ExitCode));
                     }
-                };
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
-
-                process.WaitForExit();
-
-                if(process.ExitCode != 0)
-                {
-                    throw new Exception(string.Format("Exit code {0} while running:\n{1}\n\t{2}", process.ExitCode, command, string.Join("\n\t", arguments)));
                 }
             }
+            catch (System.Exception ex)
+            {
+
+                throw new Exception(string.Format("{0} while running:\n{1}\n\t{2}", ex.Message, command, string.Join("\n\t", arguments)));
+            }
+
+        }
+
+        public static void WriteHeading(string format, params object[] args)
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine(format, args);
+            Console.ForegroundColor = ConsoleColor.Gray;
         }
     }
 }

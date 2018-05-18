@@ -13,13 +13,13 @@ namespace Improbable
             Common.EnsureDirectoryEmpty(@"Game\Source\SpatialGDK\Generated\Cpp");
             Common.EnsureDirectoryEmpty(@"Game\Intermediate\Improbable\Json");
 
-            var files = Directory.GetFiles(@"schema", "*.schema", SearchOption.AllDirectories).
+            var files = Directory.GetFiles(@"spatial\schema", "*.schema", SearchOption.AllDirectories).
                         Union(Directory.GetFiles(@"Game\Binaries\ThirdParty\Improbable\Programs\schema", "*.schema", SearchOption.AllDirectories));
 
             var arguments = new [] {
                 @"--cpp_out=Game\Source\SpatialGDK\Generated\Cpp",
                 @"--ast_json_out=Game\Intermediate\Improbable\Json",
-                @"--schema_path=schema",
+                @"--schema_path=spatial\schema",
                 @"--schema_path=Game\Binaries\ThirdParty\Improbable\Programs\schema"
             }.Union(files);
 
