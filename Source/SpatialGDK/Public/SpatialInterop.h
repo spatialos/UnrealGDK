@@ -23,10 +23,12 @@ using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
 // to be resolved before we can send this RPC, or we successfully sent a command request.
 struct FRPCCommandRequestResult
 {
+	// IMPROBABLE: MCS - work around for UNR-192 (added const)
 	const UObject* UnresolvedObject;
 	FUntypedRequestId RequestId;
 
 	FRPCCommandRequestResult() = delete;
+	// IMPROBABLE: MCS - work around for UNR-192 (added const)
 	FRPCCommandRequestResult(const UObject* UnresolvedObject) : UnresolvedObject{UnresolvedObject}, RequestId{0} {}
 	FRPCCommandRequestResult(FUntypedRequestId RequestId) : UnresolvedObject{nullptr}, RequestId{RequestId} {}
 };
@@ -64,6 +66,7 @@ using FPendingIncomingProperties = TPair<TArray<const FRepHandleData*>, TArray<c
 // within those channels which depend on the unresolved object. For pending RPCs, they store a map from an unresolved object to a list of
 // RPC functor objects which need to be re-executed when the object is resolved.
 using FPendingOutgoingObjectUpdateMap = TMap<const UObject*, TMap<USpatialActorChannel*, FPendingOutgoingProperties>>;
+// IMPROBABLE: MCS - work around for UNR-192 (added const)
 using FPendingOutgoingRPCMap = TMap<const UObject*, TArray<TPair<FRPCCommandRequestFunc, bool>>>;
 using FPendingIncomingObjectUpdateMap = TMap<FHashableUnrealObjectRef, TMap<USpatialActorChannel*, FPendingIncomingProperties>>;
 using FPendingIncomingRPCMap = TMap<FHashableUnrealObjectRef, TArray<FRPCCommandResponseFunc>>;
@@ -166,6 +169,7 @@ public:
 	// Used to queue incoming/outgoing object updates/RPCs. Used by generated type bindings.
 	void QueueOutgoingObjectRepUpdate_Internal(const UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void QueueOutgoingObjectMigUpdate_Internal(const UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
+	// IMPROBABLE: MCS - work around for UNR-192 (added const)
 	void QueueOutgoingRPC_Internal(const UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable);
 	void QueueIncomingObjectRepUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData);
 	void QueueIncomingObjectMigUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FMigratableHandleData* MigHandleData);

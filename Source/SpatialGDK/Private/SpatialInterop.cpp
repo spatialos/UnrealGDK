@@ -345,6 +345,7 @@ void USpatialInterop::QueueOutgoingObjectMigUpdate_Internal(const UObject* Unres
 	PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel).Value.Add(Handle);
 }
 
+// IMPROBABLE: MCS - workaround for UNR-192
 void USpatialInterop::QueueOutgoingRPC_Internal(const UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable)
 {
 	check(UnresolvedObject);
