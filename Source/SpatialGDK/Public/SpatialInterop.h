@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "AddComponentOpWrapperBase.h"
 #include "ComponentIdentifier.h"
-#include "CoreMinimal.h"
 #include "SpatialTypeBinding.h"
 #include "SpatialUnrealObjectRef.h"
 #include "SpatialInterop.generated.h"
