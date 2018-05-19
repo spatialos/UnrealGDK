@@ -215,7 +215,12 @@ void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentId
 	TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
 
 	UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
-	check(ComponentClass);
+
+	if (!ComponentClass)
+	{
+		// The interop system does not register USpatialOSComponents. The code below is for the UnrealSDK flow.
+		return;
+	}
 
 	// An actor might not be created for a particular entity ID if that entity doesn't have all of the required components.
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
@@ -249,7 +254,12 @@ void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentId
 void USpatialInteropPipelineBlock::DisableComponentImpl(const FComponentIdentifier& ComponentIdentifier)
 {
 	UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
-	check(ComponentClass);
+
+	if (!ComponentClass)
+	{
+		// The interop system does not register USpatialOSComponents. The code below is for the UnrealSDK flow.
+		return;
+	}
 
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
 	if (Actor)
