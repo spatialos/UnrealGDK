@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma once
 
-#include "EngineMinimal.h"
+#include "CoreMinimal.h"
 #include "ScopedViewCallbacks.h"
 #include "SpatialGDKViewTypes.h"
 #include "SpatialGDKWorkerConfiguration.h"

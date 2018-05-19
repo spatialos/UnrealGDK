@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "EntityRegistry.h"
-#include "Engine.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogEntityRegistry, Log, All);
 DEFINE_LOG_CATEGORY(LogEntityRegistry);

@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include "CallbackDispatcher.h"
+#include "CoreMinimal.h"
 #include "ScopedViewCallbacks.h"
-#include "UObject/NoExportTypes.h"
 
 #include "EntityPipelineBlock.generated.h"
 
@@ -18,6 +17,7 @@ struct AuthorityChangeOp;
 
 class UAddComponentOpWrapperBase;
 class UEntityPipeline;
+class UCallbackDispatcher;
 
 UCLASS(Abstract)
 class SPATIALGDK_API UEntityPipelineBlock : public UObject

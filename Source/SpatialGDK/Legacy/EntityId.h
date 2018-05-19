@@ -1,8 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma once
 
-#include "ComponentIdentifier.h"
 #include "CoreMinimal.h"
+#include "ComponentIdentifier.h"
 #include "SpatialGDKWorkerTypes.h"
 
 #include "EntityId.generated.h"
