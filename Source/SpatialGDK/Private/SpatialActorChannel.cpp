@@ -3,6 +3,7 @@
 #include "SpatialActorChannel.h"
 #include "Engine/DemoNetDriver.h"
 #include "EntityRegistry.h"
+#include "GameFramework/PlayerState.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
 #include "SpatialInterop.h"
