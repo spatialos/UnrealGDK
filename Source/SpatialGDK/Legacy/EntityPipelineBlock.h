@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include "CallbackDispatcher.h"
-#include "ScopedViewCallbacks.h"
-#include "UObject/NoExportTypes.h"
-
+#include "CoreMinimal.h"
+#include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "EntityPipelineBlock.generated.h"
 
 namespace worker
@@ -18,6 +17,7 @@ struct AuthorityChangeOp;
 
 class UAddComponentOpWrapperBase;
 class UEntityPipeline;
+class UCallbackDispatcher;
 
 UCLASS(Abstract)
 class SPATIALGDK_API UEntityPipelineBlock : public UObject

@@ -9,6 +9,10 @@
 
 #include "<#= commandDetails.CapitalisedName #>CommandResponder.h"
 
+<# foreach (var requiredInclude in commandDetails.UnrealResponseTypeDetails.RequiredIncludes) { #>
+#include <#= requiredInclude #>
+<# } #>
+
 #include "SpatialGDKWorkerTypes.h"
 
 U<#= commandDetails.CapitalisedName #>CommandResponder::U<#= commandDetails.CapitalisedName #>CommandResponder()

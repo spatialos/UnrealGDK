@@ -16,7 +16,12 @@ namespace worker
 	struct RemoveComponentOp;
 }
 
-class UAddComponentOpWrapperBase;
+namespace improbable
+{
+	class MetadataData;
+	class PositionData;
+}
+
 class UMetadataAddComponentOp;
 class UPositionAddComponentOp;
 class UCallbackDispatcher;

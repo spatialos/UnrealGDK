@@ -10,6 +10,7 @@
 #include "SpatialConstants.h"
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
+#include "SpawnPlayerResponse.h"
 #include "SpawnPlayerRequest.h"
 
 ASpatialSpawner::ASpatialSpawner()

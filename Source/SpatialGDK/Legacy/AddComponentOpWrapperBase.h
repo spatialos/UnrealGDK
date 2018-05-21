@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "SpatialGDKWorkerTypes.h"
-#include "UObject/NoExportTypes.h"
 #include "AddComponentOpWrapperBase.generated.h"
 
 UCLASS(abstract)
