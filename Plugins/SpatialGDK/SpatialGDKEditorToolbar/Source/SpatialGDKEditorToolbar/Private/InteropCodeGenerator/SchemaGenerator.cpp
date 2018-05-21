@@ -56,9 +56,9 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 FString SchemaCommandName(UClass* Class, UFunction* Function)
 {
 	// Prepending the name of the class to the command name enables sibling classes. 
-	FString CommandName = Class->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
+	FString CommandName = Class->GetName() + Function->GetName();
 	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-	CommandName += Function->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
+	CommandName = UnrealNameToSchemaTypeName(CommandName.ToLower());
 	return CommandName;
 }
 
