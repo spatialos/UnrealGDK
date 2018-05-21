@@ -1115,7 +1115,11 @@ void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.Print(R"""(
 		TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();
 		auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
-		checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
+		if (SenderFuncIterator == nullptr)
+		{
+			UE_LOG(LogSpatialOSInterop, Error, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
+			return;
+		}
 		(this->*(*SenderFuncIterator))(Connection.Get(), Parameters, TargetObject);)""");
 	SourceWriter.End();
 }
