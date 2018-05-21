@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "IpNetDriver.h"
 #include "PlayerSpawnRequestSender.h"
+#include "SpatialGDKWorkerConfigurationData.h"
 #include "SpatialOutputDevice.h"
 #include "SpatialNetDriver.generated.h"
 

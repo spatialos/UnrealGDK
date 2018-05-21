@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ScopedViewCallbacks.h"
-
+#include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "EntityPipelineBlock.generated.h"
 
 namespace worker

@@ -6,7 +6,6 @@
 #include "EntityPipeline.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKViewTypes.h"
-#include "SpatialGDKWorkerConfigurationData.h"
 #include "SpatialGDKWorkerTypes.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOS);

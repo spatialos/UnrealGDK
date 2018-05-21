@@ -22,7 +22,6 @@ namespace improbable
 	class PositionData;
 }
 
-class UAddComponentOpWrapperBase;
 class UMetadataAddComponentOp;
 class UPositionAddComponentOp;
 class UCallbackDispatcher;
