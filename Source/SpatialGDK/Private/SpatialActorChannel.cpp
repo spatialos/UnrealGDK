@@ -61,9 +61,9 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	bCreatingNewEntity = false;
 }
 
-void USpatialActorChannel::Init(UNetConnection* Connection, int32 ChannelIndex, bool bOpenedLocally)
+void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex, bool bOpenedLocally)
 {
-	Super::Init(Connection, ChannelIndex, bOpenedLocally);
+	Super::Init(InConnection, ChannelIndex, bOpenedLocally);
 
 	SpatialNetDriver = Cast<USpatialNetDriver>(Connection->Driver);
 	check(SpatialNetDriver);
