@@ -41,49 +41,6 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	return NumComponents;
 }
 
-void GenerateTypeBindingList(const FString& ForwardingCodePath, const TArray<FString>& Classes)
-{
-	FCodeWriter OutputListHeader;
-	FCodeWriter OutputListSource;
-
-	// Header.
-	OutputListHeader.Print(R"""(
-		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-		// Note that this file has been generated automatically
-		#pragma once
-
-		TArray<UClass*> GetGeneratedTypeBindings();)""");
-
-	// Implementation.
-	OutputListSource.Print(R"""(
-		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-		// Note that this file has been generated automatically
-
-		#include "SpatialTypeBindingList.h")""");
-	OutputListSource.PrintNewLine();
-	for (auto& ClassName : Classes)
-	{
-		OutputListSource.Printf("#include \"SpatialTypeBinding_%s.h\"", *ClassName);
-	}
-	OutputListSource.PrintNewLine();
-
-	// GetGeneratedTypeBindings.
-	OutputListSource.BeginFunction({"TArray<UClass*>", "GetGeneratedTypeBindings()"});
-	OutputListSource.Print("return {");
-	OutputListSource.Indent();
-	for (int i = 0; i < Classes.Num(); ++i)
-	{
-		OutputListSource.Printf(TEXT("USpatialTypeBinding_%s::StaticClass()%s"), *Classes[i], i < (Classes.Num() - 1) ? TEXT(",") : TEXT(""));
-	}
-	OutputListSource.Outdent();
-	OutputListSource.Print("};");
-	OutputListSource.End();
-
-	// Write to files.
-	OutputListHeader.WriteToFile(FString::Printf(TEXT("%sSpatialTypeBindingList.h"), *ForwardingCodePath));
-	OutputListSource.WriteToFile(FString::Printf(TEXT("%sSpatialTypeBindingList.cpp"), *ForwardingCodePath));
-}
-
 bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
 {
 	// Pull out all the class names from the map. (These might contain underscores like "One_TwoThree" and "OneTwo_Three").
@@ -108,41 +65,40 @@ bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
 			}
 		}
 	}
-
 	return true;
 }
 }// ::
 
-void SpatialGDKGenerateInteropCode()
+const FConfigFile* GetConfigFile(const FString& ConfigFilePath)
 {
-	FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../schema/improbable/unreal/generated/"));
-	FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../workers/unreal/Game/Source/SampleGame/Generated/"));
-	FString AbsoluteCombinedSchemaPath = FPaths::ConvertRelativePathToFull(CombinedSchemaPath);
-	FString AbsoluteCombinedForwardingCodePath = FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
-
-	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *AbsoluteCombinedSchemaPath, *AbsoluteCombinedForwardingCodePath);
-
-	// SpatialGDK config file definitions.
-	const FString FileName = "DefaultEditorSpatialGDK.ini";
-	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
-	const FString UserClassesSectionName = "UserInteropCodeGenSettings";
-
-	// Load the SpatialGDK config file
-	GConfig->LoadFile(ConfigFilePath);
-	FConfigFile* SpatialGDKConfigFile = GConfig->Find(ConfigFilePath, false);
-	if (!SpatialGDKConfigFile)
+	const auto* ConfigFile = GConfig->Find(ConfigFilePath, false);
+	if (!ConfigFile)
 	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not open .ini file for class generation: \"%s\""), *ConfigFilePath);
-		return;
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not open .ini file: \"%s\""), *ConfigFilePath);
+		return nullptr;
 	}
+	return ConfigFile;
+}
 
-	// Get the key-value pairs in the InteropCodeGenSection.
-	FConfigSection* UserInteropCodeGenSection = SpatialGDKConfigFile->Find(UserClassesSectionName);
-	if (!UserInteropCodeGenSection)
+const FConfigSection* GetConfigSection(const FString& ConfigFilePath, const FString& SectionName)
+{
+	if (const auto* ConfigFile = GetConfigFile(ConfigFilePath))
 	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find section '%s' in '%s' for class generation, terminating."), *UserClassesSectionName, *ConfigFilePath);
-		return;
-	}
+		// Get the key-value pairs in the InteropCodeGenSection.
+		if (const auto* Section = ConfigFile->Find(SectionName))
+		{
+			return Section;
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find section '%s' in '%s'."), *SectionName, *ConfigFilePath);
+		}
+	}	
+	return nullptr;
+}
+
+const ClassHeaderMap GenerateClassHeaderMap(const FConfigSection* UserInteropCodeGenSection)
+{
 	TArray<FName> AllCodeGenKeys;
 	UserInteropCodeGenSection->GetKeys(AllCodeGenKeys);
 	ClassHeaderMap Classes;
@@ -162,44 +118,82 @@ void SpatialGDKGenerateInteropCode()
 		}
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("Found class to generate interop code for: '%s', with includes %s"), *ClassKey.GetPlainNameString(), *Headers);
 	}
+	return Classes;
+}
 
-	TMap<FString, TArray<TArray<FName>>> MigratableProperties;
-	MigratableProperties.Add("PlayerController", {
-		{"AcknowledgedPawn"}
-	});
-	MigratableProperties.Add("Character", {
-		{"CharacterMovement", "GroundMovementMode"},
-		{"CharacterMovement", "MovementMode"},
-		{"CharacterMovement", "CustomMovementMode"}
-	});
-
-	if (!CheckClassNameListValidity(Classes))
+const FString GetOutputModulePath(const FString& ConfigFilePath)
+{
+	FString OutputModule = FApp::GetProjectName();
+	const FString SettingsSectionName = "InteropCodeGen.Settings";
+	if (const auto* SettingsSection = GetConfigSection(ConfigFilePath, SettingsSectionName))
 	{
-		return;
-	}
-
-	if (FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath) && FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
-	{
-		// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
-		int ComponentId = 100010;
-		for (auto& ClassHeaderList : Classes)
+		if (const auto* OutputModuleSetting = SettingsSection->Find("OutputModule"))
 		{
-			UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
-
-			// If the class doesn't exist then print an error and carry on.
-			if (!Class)
-			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find unreal class for interop code generation: '%s', skipping."), *ClassHeaderList.Key);
-				continue;
-			}
-
-			TArray<TArray<FName>> ClassMigratableProperties = MigratableProperties.FindRef(ClassHeaderList.Key);
-			const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
-			ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, ClassMigratableProperties, TypeBindingHeaders);
+			OutputModule = OutputModuleSetting->GetValue();
 		}
 	}
-	else
+
+	return FString::Printf(TEXT("%s/Generated/"), *OutputModule);
+}
+
+void SpatialGDKGenerateInteropCode()
+{
+	// SpatialGDK config file definitions.
+	const FString FileName = "DefaultEditorSpatialGDK.ini";
+	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
+	// Load the SpatialGDK config file
+	GConfig->LoadFile(ConfigFilePath);
+
+	const FString UserClassesSectionName = "InteropCodeGen.ClassesToGenerate";
+	if (const auto* UserInteropCodeGenSection = GetConfigSection(ConfigFilePath, UserClassesSectionName))
 	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Path was invalid - schema not generated"));
+		const auto Classes = GenerateClassHeaderMap(UserInteropCodeGenSection);
+		if (!CheckClassNameListValidity(Classes))
+		{
+			return;
+		}
+
+		FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../schema/improbable/unreal/generated/"));
+		FString AbsoluteCombinedSchemaPath = FPaths::ConvertRelativePathToFull(CombinedSchemaPath);
+
+		FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GameSourceDir()), *GetOutputModulePath(ConfigFilePath));
+		FString AbsoluteCombinedForwardingCodePath = FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
+
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *AbsoluteCombinedSchemaPath, *AbsoluteCombinedForwardingCodePath);
+
+		if (FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath) && FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
+		{
+			TMap<FString, TArray<TArray<FName>>> MigratableProperties;
+			MigratableProperties.Add("PlayerController", {
+				{ "AcknowledgedPawn" }
+			});
+			MigratableProperties.Add("Character", {
+				{ "CharacterMovement", "GroundMovementMode" },
+				{ "CharacterMovement", "MovementMode" },
+				{ "CharacterMovement", "CustomMovementMode" }
+			});
+
+			// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
+			int ComponentId = 100010;
+			for (auto& ClassHeaderList : Classes)
+			{
+				UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
+
+				// If the class doesn't exist then print an error and carry on.
+				if (!Class)
+				{
+					UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find unreal class for interop code generation: '%s', skipping."), *ClassHeaderList.Key);
+					continue;
+				}
+
+				TArray<TArray<FName>> ClassMigratableProperties = MigratableProperties.FindRef(ClassHeaderList.Key);
+				const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
+				ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, ClassMigratableProperties, TypeBindingHeaders);
+			}
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Path was invalid - schema not generated"));
+		}
 	}
 }
