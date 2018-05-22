@@ -33,29 +33,23 @@ TARGET_SCHEMAPATH="${INSTALL_PATH}/spatial/schema/improbable/unreal"
 markStartOfBlock "$0"
 
 markStartOfBlock "Build the SpatialOS Unreal GDK"
-
-ci/build.sh
-
+  ci/build.sh
 markEndOfBlock "Build the SpatialOS Unreal GDK"
 
 markStartOfBlock "Ensure directories exist"
-
-mkdir -p "${TARGET_PLUGINSPATH}"
-mkdir -p "${TARGET_MODULEPATH}"
-mkdir -p "${TARGET_SCRIPTSPATH}"
-mkdir -p "${TARGET_BINARIESPATH}"
-mkdir -p "${TARGET_SCHEMAPATH}"
-
+  mkdir -p "${TARGET_PLUGINSPATH}"
+  mkdir -p "${TARGET_MODULEPATH}"
+  mkdir -p "${TARGET_SCRIPTSPATH}"
+  mkdir -p "${TARGET_BINARIESPATH}"
+  mkdir -p "${TARGET_SCHEMAPATH}"
 markEndOfBlock "Ensure directories exist"
 
 markStartOfBlock "Copy build artifacts to the install path"
-
-cp -r "${BUILT_PLUGINSPATH}" "${TARGET_PLUGINSPATH}"
-cp -r "${BUILT_MODULEPATH}" "${TARGET_MODULEPATH}"
-cp -r "${BUILT_SCRIPTSPATH}" "${TARGET_SCRIPTSPATH}"
-cp -r "${BUILT_BINARIESPATH}" "${TARGET_BINARIESPATH}"
-cp -r "${BUILT_SCHEMAPATH}" "${TARGET_SCHEMAPATH}"
-
+  cp -r "${BUILT_PLUGINSPATH}" "${TARGET_PLUGINSPATH}"
+  cp -r "${BUILT_MODULEPATH}" "${TARGET_MODULEPATH}"
+  cp -r "${BUILT_SCRIPTSPATH}" "${TARGET_SCRIPTSPATH}"
+  cp -r "${BUILT_BINARIESPATH}" "${TARGET_BINARIESPATH}"
+  cp -r "${BUILT_SCHEMAPATH}" "${TARGET_SCHEMAPATH}"
 markEndOfBlock "Copy build artifacts to the install path"
 
 markEndOfBlock "$0"

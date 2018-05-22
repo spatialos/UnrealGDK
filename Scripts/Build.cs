@@ -7,7 +7,7 @@ namespace Improbable
 {
     public static class Build
     {
-        private const string ShellScript =
+        private const string UnrealWorkerShellScript =
 @"#!/bin/bash
 NEW_USER=unrealworker
 WORKER_ID=$1
@@ -33,7 +33,7 @@ exit /b !ERRORLEVEL!
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
 
             var exitCode = 0;
-            if(args.Length != 5)
+            if(args.Length != 4)
             {
                 help = true;
                 exitCode = 1;
@@ -49,13 +49,14 @@ exit /b !ERRORLEVEL!
                 Environment.Exit(exitCode);
             }
 
-            var gameName = args[1];
-            var platform = args[2];
-            var configuration = args[3];
-            var projectFile = Path.GetFullPath(args[4]);
+            var gameName = args[0];
+            var platform = args[1];
+            var configuration = args[2];
+            var projectFile = Path.GetFullPath(args[3]);
 
             if(runCodegen)
             {
+                Common.WriteHeading("Generating code...");
                 Codegen.Main(args);
             }
             else
@@ -65,120 +66,120 @@ exit /b !ERRORLEVEL!
 
             var stagingDir = Path.GetFullPath(Path.Combine("spatial", "build", "unreal"));
             var outputDir = Path.GetFullPath(Path.Combine("spatial", "build", "assembly", "worker"));
+            var baseGameName = Path.GetFileNameWithoutExtension(projectFile);
 
-            switch(gameName)
+            if(gameName == baseGameName + "Editor")
             {
-                case "SampleGameEditor":
-                    Common.WriteHeading(" > Building editor for use as a managed worker.");
-                    var windowsEditorPath = Path.Combine(stagingDir, "WindowsEditor");
+                Common.WriteHeading(" > Building editor for use as a managed worker.");
 
-                    if(!Directory.Exists(windowsEditorPath))
-                    {
-                        Directory.CreateDirectory(windowsEditorPath);
-                    }
+                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new [] {
+                    gameName,
+                    configuration,
+                    configuration,
+                    Quote(projectFile)
+                });
 
-                    Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new [] {
-                        "SampleGameEditor",
-                        "Win64",
-                        configuration,
-                        Quote(projectFile)
-                    });
+                var windowsEditorPath = Path.Combine(stagingDir, "WindowsEditor");
+                if(!Directory.Exists(windowsEditorPath))
+                {
+                    Directory.CreateDirectory(windowsEditorPath);
+                }
 
-                    // Write a simple batch file to launch the Editor.
-                    File.WriteAllText(Path.Combine(windowsEditorPath, "StartServer.bat"), string.Format(runEditorScript, projectFile), Encoding.UTF8);
+                // Write a simple batch file to launch the Editor.
+                File.WriteAllText(Path.Combine(windowsEditorPath, "StartEditor.bat"), string.Format(runEditorScript, projectFile), Encoding.UTF8);
 
-                    // The runtime currently requires all workers to be in zip files. Zip the batch file.
-                    Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
-                        "ZipUtils",
-                        "-add=" + Quote(windowsEditorPath),
-                        "-archive=" + Quote(Path.Combine(outputDir, "UnrealEditor@Windows.zip")),
-                    });
-                    break;
+                // The runtime currently requires all workers to be in zip files. Zip the batch file.
+                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
+                    "ZipUtils",
+                    "-add=" + Quote(windowsEditorPath),
+                    "-archive=" + Quote(Path.Combine(outputDir, "UnrealEditor@Windows.zip")),
+                });
+            }
+            else if(gameName == baseGameName)
+            {
+                Common.WriteHeading(" > Building client.");
+                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
+                    "BuildCookRun",
+                    "-build",
+                    "-project=" + Quote(projectFile),
+                    "-noP4",
+                    "-clientconfig=" + configuration,
+                    "-serverconfig=" + configuration,
+                    "-utf8output",
+                    "-compile",
+                    "-cook",
+                    "-stage",
+                    "-package",
+                    "-unversioned",
+                    "-compressed",
+                    "-stagingdirectory=" + Quote(stagingDir),
+                    "-stdout",
+                    "-FORCELOGFLUSH",
+                    "-CrashForUAT",
+                    "-unattended",
+                    "-fileopenlog",
+                    "-SkipCookingEditorContent",
+                    "-platform=" + configuration,
+                    "-targetplatform=" + configuration,
+                    "-allmaps",
+                });
 
-                case "SampleGame":
-                    Common.WriteHeading(" > Building client.");
-                    Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
-                        "BuildCookRun",
-                        "-build",
-                        "-project=" + Quote(projectFile),
-                        "-noP4",
-                        "-clientconfig=" + configuration,
-                        "-serverconfig=" + configuration,
-                        "-utf8output",
-                        "-compile",
-                        "-cook",
-                        "-stage",
-                        "-package",
-                        "-unversioned",
-                        "-compressed",
-                        "-stagingdirectory=" + Quote(stagingDir),
-                        "-stdout",
-                        "-FORCELOGFLUSH",
-                        "-CrashForUAT",
-                        "-unattended",
-                        "-fileopenlog",
-                        "-SkipCookingEditorContent",
-                        "-platform=" + "Win64",
-                        "-targetplatform=" + "Win64",
-                        "-allmaps",
-                    });
+                var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
+                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
+                    "ZipUtils",
+                    "-add=" + Quote(windowsNoEditorPath),
+                    "-archive=" + Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")),
+                });
+            }
+            else if(gameName == baseGameName + "Server")
+            {
+                Common.WriteHeading(" > Building worker.");
+                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
+                    "BuildCookRun",
+                    "-build",
+                    "-project=" + Quote(projectFile),
+                    "-noP4",
+                    "-clientconfig=" + configuration,
+                    "-serverconfig=" + configuration,
+                    "-utf8output",
+                    "-compile",
+                    "-cook",
+                    "-stage",
+                    "-package",
+                    "-unversioned",
+                    "-compressed",
+                    "-stagingdirectory=" + Quote(stagingDir),
+                    "-stdout",
+                    "-FORCELOGFLUSH",
+                    "-CrashForUAT",
+                    "-unattended",
+                    "-fileopenlog",
+                    "-SkipCookingEditorContent",
+                    "-allmaps",
+                    "-server",
+                    "-serverplatform=" + platform,
+                    "-noclient",
+                });
 
-                    var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
-                    Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
-                        "ZipUtils",
-                        "-add=" + Quote(windowsNoEditorPath),
-                        "-archive=" + Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")),
-                    });
-                    break;
+                var linuxServerPath = Path.Combine(stagingDir, "LinuxServer");
+                File.WriteAllText(Path.Combine(linuxServerPath, "StartWorker.sh"), UnrealWorkerShellScript, Encoding.UTF8);
 
-                case "SampleGameServer":
-                    Common.WriteHeading(" > Building Linux worker.");
-                    Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
-                        "BuildCookRun",
-                        "-build",
-                        "-project=" + Quote(projectFile),
-                        "-noP4",
-                        "-clientconfig=" + configuration,
-                        "-serverconfig=" + configuration,
-                        "-utf8output",
-                        "-compile",
-                        "-cook",
-                        "-stage",
-                        "-package",
-                        "-unversioned",
-                        "-compressed",
-                        "-stagingdirectory=" + Quote(stagingDir),
-                        "-stdout",
-                        "-FORCELOGFLUSH",
-                        "-CrashForUAT",
-                        "-unattended",
-                        "-fileopenlog",
-                        "-SkipCookingEditorContent",
-                        "-allmaps",
-                        "-server",
-                        "-serverplatform=" + "Linux",
-                        "-noclient",
-                    });
-
-                    var linuxServerPath = Path.Combine(stagingDir, "LinuxServer");
-                    File.WriteAllText(Path.Combine(linuxServerPath, "StartServer.sh"), ShellScript, Encoding.UTF8);
-
-                    Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
-                        "ZipUtils",
-                        "-add=" + Quote(linuxServerPath),
-                        "-archive=" + Quote(Path.Combine(outputDir, "UnityWorker@Linux.zip"))
-                    });
-                    break;
-                default:
-                    // Pass-through to Unreal's Build.bat.
-                    Common.WriteHeading($" > Building ${gameName}.");
-                    Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new [] {
-                        gameName,
-                        platform,
-                        configuration,
-                        Quote(projectFile)
-                    });
-                    break;
+                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
+                    "ZipUtils",
+                    "-add=" + Quote(linuxServerPath),
+                    "-archive=" + Quote(Path.Combine(outputDir, "UnityWorker@Linux.zip"))
+                });
+            }
+            else
+            {
+                // Pass-through to Unreal's Build.bat.
+                Common.WriteHeading($" > Building ${gameName}.");
+                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new [] {
+                    gameName,
+                    platform,
+                    configuration,
+                    Quote(projectFile)
+                });
             }
         }
 
