@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CoreOnline.h"
+#include "Engine.h"
 #include "IpNetDriver.h"
 #include "PlayerSpawnRequestSender.h"
 #include "SpatialGDKWorkerConfigurationData.h"
