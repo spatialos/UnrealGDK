@@ -135,6 +135,16 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 
 void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
+	// Get result type.
+	if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
+	{
+		Writer.Printf("// GenerateUnrealToSchemaConversion");
+		Writer.Printf("char EnumValue = (char)Value[i];");
+		Writer.Printf("List.emplace_back(std::string(EnumValue, sizeof(char)));");
+		//Writer.Print(FString::Printf(TEXT("auto Underlying = %s.GetValue()"), *PropertyValue));
+		//return GenerateUnrealToSchemaConversion(Writer, EnumProperty->GetUnderlyingProperty(), TEXT("Underlying"), ResultName, Handle);
+	}
+
 	// Try to special case to custom types we know about
 	if (Property->IsA(UStructProperty::StaticClass()))
 	{
@@ -271,6 +281,15 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Update, const UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
 	FString PropertyType = Property->GetCPPType();
+
+	// Get result type.
+	if (const UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
+	{
+		Writer.Printf("// GeneratePropertyToUnrealConversion");
+
+		Writer.Printf("char EnumValue = List[i].data()[0];");
+		Writer.Printf("%s = static_cast<%s>(EnumValue);", *PropertyValue, *PropertyType);
+	}
 
 	// Try to special case to custom types we know about
 	if (Property->IsA(UStructProperty::StaticClass()))
