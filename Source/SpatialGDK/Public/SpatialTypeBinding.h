@@ -5,8 +5,8 @@
 #include <improbable/view.h>
 #include <improbable/worker.h>
 
-#include "AddComponentOpWrapperBase.h"
 #include "CoreMinimal.h"
+#include "AddComponentOpWrapperBase.h"
 #include "EntityId.h"
 #include "Net/RepLayout.h"
 #include "SpatialTypeBinding.generated.h"

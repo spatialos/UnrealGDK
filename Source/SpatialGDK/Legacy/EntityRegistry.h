@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "SpatialGDKWorkerTypes.h"
+#include "CoreMinimal.h"
 
-#include "Engine.h"
+#include "SpatialGDKWorkerTypes.h"
 #include "EntityId.h"
 
 #include "EntityRegistry.generated.h"

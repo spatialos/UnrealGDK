@@ -71,7 +71,7 @@ public:
 	}
 
 	// UChannel interface
-	virtual void Init(UNetConnection * connection, int32 channelIndex, bool bOpenedLocally) override;
+	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, bool bOpenedLocally) override;
 	//Requires source changes to be virtual in base class.
 	virtual bool ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;

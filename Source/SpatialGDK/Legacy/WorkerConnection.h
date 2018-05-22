@@ -2,7 +2,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/EngineTypes.h"
 #include "HAL/ThreadSafeBool.h"
 #include "SpatialGDKLoader.h"
 #include "SpatialGDKViewTypes.h"

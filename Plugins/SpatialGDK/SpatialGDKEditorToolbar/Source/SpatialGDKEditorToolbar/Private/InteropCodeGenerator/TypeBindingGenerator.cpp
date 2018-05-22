@@ -583,7 +583,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 			HeaderWriter.Printf("void %s_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::generated::%s::Commands::%s>& Op);",
 				*RPC->Function->GetName(),
 				*SchemaRPCComponentName(Group, Class),
-				*CPPCommandClassName(RPC->Function));
+				*CPPCommandClassName(Class, RPC->Function));
 		}
 	}
 
@@ -597,7 +597,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 			HeaderWriter.Printf("void %s_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::generated::%s::Commands::%s>& Op);",
 				*RPC->Function->GetName(),
 				*SchemaRPCComponentName(Group, Class),
-				*CPPCommandClassName(RPC->Function));
+				*CPPCommandClassName(Class, RPC->Function));
 		}
 	}
 	HeaderWriter.Outdent();
@@ -919,7 +919,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 			{
 				SourceWriter.Printf("ViewCallbacks.Add(View->OnCommandRequest<%sRPCCommandTypes::%s>(std::bind(&%s::%s_OnCommandRequest, this, std::placeholders::_1)));",
 					*GetRPCTypeName(Group),
-					*CPPCommandClassName(RPC->Function),
+					*CPPCommandClassName(Class, RPC->Function),
 					*TypeBindingName(Class),
 					*RPC->Function->GetName());
 			}
@@ -927,7 +927,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 			{
 				SourceWriter.Printf("ViewCallbacks.Add(View->OnCommandResponse<%sRPCCommandTypes::%s>(std::bind(&%s::%s_OnCommandResponse, this, std::placeholders::_1)));",
 					*GetRPCTypeName(Group),
-					*CPPCommandClassName(RPC->Function),
+					*CPPCommandClassName(Class, RPC->Function),
 					*TypeBindingName(Class),
 					*RPC->Function->GetName());
 			}
@@ -1115,7 +1115,12 @@ void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.Print(R"""(
 		TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();
 		auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
-		checkf(*SenderFuncIterator, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
+		if (SenderFuncIterator == nullptr)
+		{
+			UE_LOG(LogSpatialOSInterop, Error, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
+			return;
+		}
+		checkf(*SenderFuncIterator, TEXT("Sender for %s has been registered as null."), *Function->GetFName().ToString());
 		(this->*(*SenderFuncIterator))(Connection.Get(), Parameters, TargetObject);)""");
 	SourceWriter.End();
 }
@@ -1721,7 +1726,7 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 		return {RequestId.Id};)""",
 		*RPC->Function->GetName(),
 		*SchemaRPCComponentName(RPC->Type, Class),
-		*CPPCommandClassName(RPC->Function));
+		*CPPCommandClassName(Class, RPC->Function));
 	SourceWriter.Outdent().Print("};");
 	SourceWriter.Printf("Interop->SendCommandRequest_Internal(Sender, %s);", RPC->bReliable ? TEXT("/*bReliable*/ true") : TEXT("/*bReliable*/ false"));
 
@@ -1733,7 +1738,7 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 	FString RequestFuncName = FString::Printf(TEXT("%s_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::generated::%s::Commands::%s>& Op)"),
 		*RPC->Function->GetName(),
 		*SchemaRPCComponentName(RPC->Type, Class),
-		*CPPCommandClassName(RPC->Function));
+		*CPPCommandClassName(Class, RPC->Function));
 	SourceWriter.BeginFunction({"void", RequestFuncName}, TypeBindingName(Class));
 
 	// Generate receiver function.
@@ -1835,7 +1840,7 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 	SourceWriter.Print("TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();");
 	SourceWriter.Printf("Connection->SendCommandResponse<improbable::unreal::generated::%s::Commands::%s>(Op.RequestId, {});",
 		*SchemaRPCComponentName(RPC->Type, Class),
-		*CPPCommandClassName(RPC->Function));
+		*CPPCommandClassName(Class, RPC->Function));
 	SourceWriter.Print("return {};");
 	SourceWriter.Outdent().Print("};");
 
@@ -1849,7 +1854,7 @@ void GenerateFunction_RPCOnCommandResponse(FCodeWriter& SourceWriter, UClass* Cl
 	FString ResponseFuncName = FString::Printf(TEXT("%s_OnCommandResponse(const worker::CommandResponseOp<improbable::unreal::generated::%s::Commands::%s>& Op)"),
 		*RPC->Function->GetName(),
 		*SchemaRPCComponentName(RPC->Type, Class),
-		*CPPCommandClassName(RPC->Function));
+		*CPPCommandClassName(Class, RPC->Function));
 
 	SourceWriter.BeginFunction({"void", ResponseFuncName}, TypeBindingName(Class));
 	SourceWriter.Printf("Interop->HandleCommandResponse_Internal(TEXT(\"%s\"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));",

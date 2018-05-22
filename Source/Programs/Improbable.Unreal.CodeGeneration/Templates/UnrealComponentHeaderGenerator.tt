@@ -13,7 +13,6 @@
 
 #include "SpatialOsComponent.h"
 #include "CoreMinimal.h"
-#include "UObject/ObjectMacros.h"
 #include "<#= unrealComponent.CapitalisedName #>ComponentUpdate.h"
 #include "<#= unrealComponent.CapitalisedName #>AddComponentOp.h"
 #include "ComponentId.h"

@@ -10,7 +10,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
 <# foreach (var unrealComponent in unrealComponents) { #>
 #include "<#= unrealComponent.CapitalisedDataName #>.h"
 <# } #>

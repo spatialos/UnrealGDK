@@ -5,9 +5,9 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "CommanderTypes.h"
 #include "RequestId.h"
-#include "UObject/NoExportTypes.h"
 #include "SpatialOSCommandResult.generated.h"
 
 USTRUCT(BlueprintType)

@@ -11,7 +11,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
 #include "AddComponentOpWrapperBase.h"
 #include "SpatialGDKWorkerTypes.h"
 #include "<#= unrealComponent.UnderlyingPackageDetails.Include #>"
