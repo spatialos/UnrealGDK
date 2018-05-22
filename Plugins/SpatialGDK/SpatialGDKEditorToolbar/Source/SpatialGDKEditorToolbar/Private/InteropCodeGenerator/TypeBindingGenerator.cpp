@@ -118,6 +118,10 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 		DataType = PropertyToWorkerSDKType(Cast<UArrayProperty>(Property)->Inner);
 		DataType = FString::Printf(TEXT("::worker::List<%s>"), *DataType);
 	}
+	else if (Property->IsA(UEnumProperty::StaticClass()))
+	{
+		DataType = FString::Printf(TEXT("std::string"));
+	}
 	else
 	{
 		DataType = TEXT("std::string");
@@ -131,7 +135,9 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	// Get result type.
 	if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
 	{
-		Writer.Printf("// UNSUPPORTED UEnumProperty %s(%s);", *Update, *PropertyValue);
+		Writer.Printf("// GenerateUnrealToSchemaConversion");
+		Writer.Printf("char EnumValue = (char)Value[i];");
+		Writer.Printf("List.emplace_back(std::string(EnumValue, sizeof(char)));");
 		//Writer.Print(FString::Printf(TEXT("auto Underlying = %s.GetValue()"), *PropertyValue));
 		//return GenerateUnrealToSchemaConversion(Writer, EnumProperty->GetUnderlyingProperty(), TEXT("Underlying"), ResultName, Handle);
 	}
@@ -270,7 +276,10 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	// Get result type.
 	if (const UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
 	{
-		Writer.Printf("// UNSUPPORTED UEnumProperty %s %s", *PropertyValue, *Update);
+		Writer.Printf("// GeneratePropertyToUnrealConversion");
+
+		Writer.Printf("char EnumValue = List[i].data()[0];");
+		Writer.Printf("%s = static_cast<%s>(EnumValue);", *PropertyValue, *PropertyType);
 	}
 
 	// Try to special case to custom types we know about
