@@ -70,11 +70,11 @@ exit /b !ERRORLEVEL!
 
             if(gameName == baseGameName + "Editor")
             {
-                Common.WriteHeading(" > Building editor for use as a managed worker.");
+                Common.WriteHeading(" > Building Editor for use as a managed worker.");
 
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new [] {
                     gameName,
-                    configuration,
+                    platform,
                     configuration,
                     Quote(projectFile)
                 });
