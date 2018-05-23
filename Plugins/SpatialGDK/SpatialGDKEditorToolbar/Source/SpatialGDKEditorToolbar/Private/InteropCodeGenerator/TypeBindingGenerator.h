@@ -58,10 +58,10 @@ void GenerateTypeBindingSource(
 	const TArray<FString>& TypeBindingHeaders);
 
 // Helper functions used when generating the source file.
-void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData);
-void GenerateFunction_GetMigratableHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData);
+void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class);
+void GenerateFunction_GetMigratableHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class);
-void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType);
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData);
 void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType);
 void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class);
