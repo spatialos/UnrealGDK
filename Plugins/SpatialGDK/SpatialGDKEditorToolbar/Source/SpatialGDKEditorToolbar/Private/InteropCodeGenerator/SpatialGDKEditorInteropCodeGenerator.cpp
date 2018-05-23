@@ -71,7 +71,7 @@ bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
 
 const FConfigFile* GetConfigFile(const FString& ConfigFilePath)
 {
-	const auto* ConfigFile = GConfig->Find(ConfigFilePath, false);
+	const FConfigFile* ConfigFile = GConfig->Find(ConfigFilePath, false);
 	if (!ConfigFile)
 	{
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not open .ini file: \"%s\""), *ConfigFilePath);
@@ -82,10 +82,10 @@ const FConfigFile* GetConfigFile(const FString& ConfigFilePath)
 
 const FConfigSection* GetConfigSection(const FString& ConfigFilePath, const FString& SectionName)
 {
-	if (const auto* ConfigFile = GetConfigFile(ConfigFilePath))
+	if (const FConfigFile* ConfigFile = GetConfigFile(ConfigFilePath))
 	{
 		// Get the key-value pairs in the InteropCodeGenSection.
-		if (const auto* Section = ConfigFile->Find(SectionName))
+		if (const FConfigSection* Section = ConfigFile->Find(SectionName))
 		{
 			return Section;
 		}
@@ -125,9 +125,9 @@ const FString GetOutputPath(const FString& ConfigFilePath)
 {
 	FString OutputPath = FString::Printf(TEXT("%s/Generated/"), FApp::GetProjectName());
 	const FString SettingsSectionName = "InteropCodeGen.Settings";
-	if (const auto* SettingsSection = GetConfigSection(ConfigFilePath, SettingsSectionName))
+	if (const FConfigSection* SettingsSection = GetConfigSection(ConfigFilePath, SettingsSectionName))
 	{
-		if (const auto* OutputModuleSetting = SettingsSection->Find("OutputPath"))
+		if (const FConfigValue* OutputModuleSetting = SettingsSection->Find("OutputPath"))
 		{
 			OutputPath = OutputModuleSetting->GetValue();
 		}
@@ -145,9 +145,9 @@ void SpatialGDKGenerateInteropCode()
 	GConfig->LoadFile(ConfigFilePath);
 
 	const FString UserClassesSectionName = "InteropCodeGen.ClassesToGenerate";
-	if (const auto* UserInteropCodeGenSection = GetConfigSection(ConfigFilePath, UserClassesSectionName))
+	if (const FConfigSection* UserInteropCodeGenSection = GetConfigSection(ConfigFilePath, UserClassesSectionName))
 	{
-		const auto Classes = GenerateClassHeaderMap(UserInteropCodeGenSection);
+		const ClassHeaderMap Classes = GenerateClassHeaderMap(UserInteropCodeGenSection);
 		if (!CheckClassNameListValidity(Classes))
 		{
 			return;
