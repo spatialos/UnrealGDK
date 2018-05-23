@@ -15,6 +15,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOS, Log, All);
 
 class UCallbackDispatcher;
 class UEntityPipeline;
+struct FWorldContext;
 
 // clang-format off
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedDelegate);
