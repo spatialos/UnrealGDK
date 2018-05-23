@@ -34,7 +34,7 @@ exit /b !ERRORLEVEL!
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
 
             var exitCode = 0;
-            if (args.Length < 4)
+            if (args.Length < 4 && !help)
             {
                 help = true;
                 exitCode = 1;
