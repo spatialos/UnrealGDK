@@ -6,6 +6,7 @@
 #include "SpatialGDKLoader.h"
 #include "SpatialGDKViewTypes.h"
 #include "SpatialGDKWorkerConfiguration.h"
+#include "Engine/EngineTypes.h"
 
 namespace improbable
 {
