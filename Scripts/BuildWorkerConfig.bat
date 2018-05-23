@@ -2,5 +2,6 @@
 
 cd "%~dp0..\..\"
 
-cd spatial
+pushd spatial
 spatial worker build build-config
+popd
