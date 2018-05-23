@@ -9,6 +9,9 @@
 // Needed for Algo::Transform
 #include "Algo/Transform.h"
 
+// Needed for TLess
+#include "Templates/Less.h"
+
 // Needed for std::bind.
 #include <functional>
 
@@ -525,13 +528,8 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		using FRPCSender = void (%s::*)(worker::Connection* const, void*, UObject*);
 		TMap<FName, FRPCSender> RPCToSenderMap;)""", *TypeBindingName(Class));
 	HeaderWriter.PrintNewLine();
-	HeaderWriter.Printf(R"""(
-		// Map from Handle to FRepHandleData.
-		FRepHandlePropertyMap RepHandleToPropertyMap;)""");
-	HeaderWriter.PrintNewLine();
-	HeaderWriter.Printf(R"""(
-		// Map from Handle to FMigratableHandleData.
-		FMigratableHandlePropertyMap MigratableHandleToPropertyMap;)""");
+	HeaderWriter.Print("FRepHandlePropertyMap RepHandleToPropertyMap;");
+	HeaderWriter.Print("FMigratableHandlePropertyMap MigratableHandleToPropertyMap;");
 	HeaderWriter.PrintNewLine();
 
 	HeaderWriter.Print("// Component update helper functions.");
@@ -651,7 +649,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 
 	// Get replicated data and RPCs.
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
-	TMap<uint16, TSharedPtr<FUnrealProperty>> MigratableData = GetFlatMigratableData(TypeInfo);
+	FCmdHandlePropertyMap MigratableData = GetFlatMigratableData(TypeInfo);
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
 
 	// Generate methods implementations
@@ -767,7 +765,7 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData)
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& MigratableData)
 {
 	SourceWriter.BeginFunction({"void", "Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)"}, TypeBindingName(Class));
 
@@ -797,10 +795,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 		{
 			ReplicatedProperties.Append(RepData[Group]);
 		}
-		ReplicatedProperties.KeySort([](uint16 A, uint16 B)
-		{
-			return A < B;
-		});
+		ReplicatedProperties.KeySort(TLess<uint16>());
 
 		SourceWriter.PrintNewLine();
 		SourceWriter.Print("// Populate RepHandleToPropertyMap.");
@@ -1346,7 +1341,7 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 	SourceWriter.End();
 }
 
-void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData)
+void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& MigratableData)
 {
 	FFunctionSignature ServerSendUpdateSignature{"void",
 		FString::Printf(TEXT("ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::generated::%s::Update& OutUpdate) const"),
@@ -1563,7 +1558,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 	SourceWriter.End();
 }
 
-void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData)
+void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& MigratableData)
 {
 	FFunctionSignature ReceiveUpdateSignature{"void",
 		FString::Printf(TEXT("ReceiveUpdate_Migratable(USpatialActorChannel* ActorChannel, const improbable::unreal::generated::%s::Update& Update) const"),
