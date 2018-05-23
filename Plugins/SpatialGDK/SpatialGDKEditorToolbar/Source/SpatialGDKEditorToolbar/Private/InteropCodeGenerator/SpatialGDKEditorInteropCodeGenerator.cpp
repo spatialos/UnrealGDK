@@ -121,19 +121,19 @@ const ClassHeaderMap GenerateClassHeaderMap(const FConfigSection* UserInteropCod
 	return Classes;
 }
 
-const FString GetOutputModulePath(const FString& ConfigFilePath)
+const FString GetOutputPath(const FString& ConfigFilePath)
 {
-	FString OutputModule = FApp::GetProjectName();
+	FString OutputPath = FString::Printf(TEXT("%s/Generated/"), FApp::GetProjectName());
 	const FString SettingsSectionName = "InteropCodeGen.Settings";
 	if (const auto* SettingsSection = GetConfigSection(ConfigFilePath, SettingsSectionName))
 	{
-		if (const auto* OutputModuleSetting = SettingsSection->Find("OutputModule"))
+		if (const auto* OutputModuleSetting = SettingsSection->Find("OutputPath"))
 		{
-			OutputModule = OutputModuleSetting->GetValue();
+			OutputPath = OutputModuleSetting->GetValue();
 		}
 	}
 
-	return FString::Printf(TEXT("%s/Generated/"), *OutputModule);
+	return OutputPath;
 }
 
 void SpatialGDKGenerateInteropCode()
@@ -156,7 +156,7 @@ void SpatialGDKGenerateInteropCode()
 		FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../../../schema/improbable/unreal/generated/"));
 		FString AbsoluteCombinedSchemaPath = FPaths::ConvertRelativePathToFull(CombinedSchemaPath);
 
-		FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GameSourceDir()), *GetOutputModulePath(ConfigFilePath));
+		FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GameSourceDir()), *GetOutputPath(ConfigFilePath));
 		FString AbsoluteCombinedForwardingCodePath = FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
 
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *AbsoluteCombinedSchemaPath, *AbsoluteCombinedForwardingCodePath);
