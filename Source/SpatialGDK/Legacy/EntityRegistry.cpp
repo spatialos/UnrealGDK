@@ -2,6 +2,7 @@
 
 #include "EntityRegistry.h"
 #include "EngineUtils.h"
+#include "Engine/BlueprintGeneratedClass.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogEntityRegistry, Log, All);
 DEFINE_LOG_CATEGORY(LogEntityRegistry);
