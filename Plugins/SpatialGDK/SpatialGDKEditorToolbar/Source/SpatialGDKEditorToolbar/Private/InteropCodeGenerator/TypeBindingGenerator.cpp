@@ -1495,7 +1495,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 
 			GeneratePropertyToUnrealConversion(
 				SourceWriter, SpatialValue, RepProp.Value->Property, PropertyValueName, true,
-				[&SourceWriter](const FString& PropertyValue)
+				[&SourceWriter, &Property](const FString& PropertyValue)
 			{
 				SourceWriter.Print(R"""(
 					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
@@ -1505,7 +1505,10 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 						ActorChannel->GetEntityId().ToSpatialEntityId(),
 						*RepData->Property->GetName(),
 						Handle);)""");
-				SourceWriter.Print("bWriteObjectProperty = false;");
+				if (Property->IsA<UObjectPropertyBase>())
+				{
+					SourceWriter.Print("bWriteObjectProperty = false;");
+				}
 				SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);");
 			});
 
@@ -1611,7 +1614,7 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 
 			GeneratePropertyToUnrealConversion(
 				SourceWriter, SpatialValue, MigProp.Value->Property, PropertyValueName, true,
-				[&SourceWriter](const FString& PropertyValue)
+				[&SourceWriter, &Property](const FString& PropertyValue)
 			{
 				SourceWriter.Print(R"""(
 					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
@@ -1621,7 +1624,10 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 						ActorChannel->GetEntityId().ToSpatialEntityId(),
 						*MigratableData->Property->GetName(),
 						Handle);)""");
-				SourceWriter.Print("bWriteObjectProperty = false;");
+				if (Property->IsA<UObjectPropertyBase>())
+				{
+					SourceWriter.Print("bWriteObjectProperty = false;");
+				}
 				SourceWriter.Print("Interop->QueueIncomingObjectMigUpdate_Internal(ObjectRef, ActorChannel, MigratableData);");
 			});
 
