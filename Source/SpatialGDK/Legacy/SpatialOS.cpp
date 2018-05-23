@@ -7,6 +7,7 @@
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKViewTypes.h"
 #include "SpatialGDKWorkerTypes.h"
+#include "Engine/Engine.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOS);
 
