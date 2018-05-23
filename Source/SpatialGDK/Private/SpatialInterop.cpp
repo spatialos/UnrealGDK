@@ -255,7 +255,7 @@ void USpatialInterop::SendCommandRequest_Internal(FRPCCommandRequestFunc Functio
 	if (Result.UnresolvedObject != nullptr)
 	{
 		// Add to pending RPCs if any actors were unresolved.
-		QueueOutgoingRPC_Internal(const_cast<UObject*>(Result.UnresolvedObject), Function, bReliable);
+		QueueOutgoingRPC_Internal(Result.UnresolvedObject, Function, bReliable);
 	}
 	else
 	{
@@ -317,7 +317,7 @@ void USpatialInterop::HandleCommandResponse_Internal(const FString& RPCName, FUn
 	}
 }
 
-void USpatialInterop::QueueOutgoingObjectRepUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
+void USpatialInterop::QueueOutgoingObjectRepUpdate_Internal(const UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
 {
 	check(UnresolvedObject);
 	check(DependentChannel);
@@ -327,7 +327,7 @@ void USpatialInterop::QueueOutgoingObjectRepUpdate_Internal(UObject* UnresolvedO
 	PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel).Key.Add(Handle);
 }
 
-void USpatialInterop::QueueOutgoingObjectMigUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
+void USpatialInterop::QueueOutgoingObjectMigUpdate_Internal(const UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
 {
 	check(UnresolvedObject);
 	check(DependentChannel);
@@ -338,7 +338,7 @@ void USpatialInterop::QueueOutgoingObjectMigUpdate_Internal(UObject* UnresolvedO
 	PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel).Value.Add(Handle);
 }
 
-void USpatialInterop::QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable)
+void USpatialInterop::QueueOutgoingRPC_Internal(const UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable)
 {
 	check(UnresolvedObject);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing RPC depending on object: %s."), *UnresolvedObject->GetName());
