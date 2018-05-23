@@ -1,14 +1,14 @@
 using System;
-using System.Text;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Improbable
 {
     public static class Build
     {
         private const string UnrealWorkerShellScript =
-@"#!/bin/bash
+            @"#!/bin/bash
 NEW_USER=unrealworker
 WORKER_ID=$1
 WORKER_NAME=$2
@@ -22,25 +22,26 @@ SCRIPT=""$(pwd)/${WORKER_NAME}Server.sh""
 chmod +x $SCRIPT
 gosu $NEW_USER ""${SCRIPT}"" ""$@"" 2> >(grep -v xdg-user-dir >&2)`";
 
-        private const string  runEditorScript =
-@"setlocal ENABLEDELAYEDEXPANSION
+        private const string RunEditorScript =
+            @"setlocal ENABLEDELAYEDEXPANSION
 %%UNREAL_HOME%%\Engine\Binaries\Win64\UE4Editor.exe ""{0}"" %%*
 exit /b !ERRORLEVEL!
 ";
+
         public static void Main(string[] args)
         {
             var runCodegen = args.Count(arg => arg.ToLowerInvariant() == "--skip-codegen") == 0;
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
 
             var exitCode = 0;
-            if(args.Length != 4)
+            if (args.Length < 4)
             {
                 help = true;
                 exitCode = 1;
                 Console.Error.WriteLine("Path to uproject file is required.");
             }
 
-            if(help)
+            if (help)
             {
                 Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [flags]");
                 Console.WriteLine("Flags:");
@@ -54,7 +55,7 @@ exit /b !ERRORLEVEL!
             var configuration = args[2];
             var projectFile = Path.GetFullPath(args[3]);
 
-            if(runCodegen)
+            if (runCodegen)
             {
                 Common.WriteHeading("Generating code...");
                 Codegen.Main(args);
@@ -68,11 +69,12 @@ exit /b !ERRORLEVEL!
             var outputDir = Path.GetFullPath(Path.Combine("spatial", "build", "assembly", "worker"));
             var baseGameName = Path.GetFileNameWithoutExtension(projectFile);
 
-            if(gameName == baseGameName + "Editor")
+            if (gameName == baseGameName + "Editor")
             {
                 Common.WriteHeading(" > Building Editor for use as a managed worker.");
 
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new [] {
+                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new[]
+                {
                     gameName,
                     platform,
                     configuration,
@@ -80,25 +82,28 @@ exit /b !ERRORLEVEL!
                 });
 
                 var windowsEditorPath = Path.Combine(stagingDir, "WindowsEditor");
-                if(!Directory.Exists(windowsEditorPath))
+                if (!Directory.Exists(windowsEditorPath))
                 {
                     Directory.CreateDirectory(windowsEditorPath);
                 }
 
-                // Write a simple batch file to launch the Editor.
-                File.WriteAllText(Path.Combine(windowsEditorPath, "StartEditor.bat"), string.Format(runEditorScript, projectFile), Encoding.UTF8);
+                // Write a simple batch file to launch the Editor as a managed worker.
+                File.WriteAllText(Path.Combine(windowsEditorPath, "StartEditor.bat"),
+                    string.Format(RunEditorScript, projectFile), Encoding.UTF8);
 
                 // The runtime currently requires all workers to be in zip files. Zip the batch file.
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
+                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
+                {
                     "ZipUtils",
                     "-add=" + Quote(windowsEditorPath),
                     "-archive=" + Quote(Path.Combine(outputDir, "UnrealEditor@Windows.zip")),
                 });
             }
-            else if(gameName == baseGameName)
+            else if (gameName == baseGameName)
             {
                 Common.WriteHeading(" > Building client.");
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
+                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
+                {
                     "BuildCookRun",
                     "-build",
                     "-project=" + Quote(projectFile),
@@ -119,22 +124,24 @@ exit /b !ERRORLEVEL!
                     "-unattended",
                     "-fileopenlog",
                     "-SkipCookingEditorContent",
-                    "-platform=" + configuration,
-                    "-targetplatform=" + configuration,
+                    "-platform=" + platform,
+                    "-targetplatform=" + platform,
                     "-allmaps",
                 });
 
                 var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
+                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
+                {
                     "ZipUtils",
                     "-add=" + Quote(windowsNoEditorPath),
                     "-archive=" + Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")),
                 });
             }
-            else if(gameName == baseGameName + "Server")
+            else if (gameName == baseGameName + "Server")
             {
                 Common.WriteHeading(" > Building worker.");
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
+                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
+                {
                     "BuildCookRun",
                     "-build",
                     "-project=" + Quote(projectFile),
@@ -161,20 +168,24 @@ exit /b !ERRORLEVEL!
                     "-noclient",
                 });
 
+                // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
                 var linuxServerPath = Path.Combine(stagingDir, "LinuxServer");
-                File.WriteAllText(Path.Combine(linuxServerPath, "StartWorker.sh"), UnrealWorkerShellScript, Encoding.UTF8);
+                File.WriteAllText(Path.Combine(linuxServerPath, "StartWorker.sh"), UnrealWorkerShellScript,
+                    Encoding.UTF8);
 
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new [] {
+                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
+                {
                     "ZipUtils",
                     "-add=" + Quote(linuxServerPath),
-                    "-archive=" + Quote(Path.Combine(outputDir, "UnityWorker@Linux.zip"))
+                    "-archive=" + Quote(Path.Combine(outputDir, "UnrealWorker@Linux.zip"))
                 });
             }
             else
             {
                 // Pass-through to Unreal's Build.bat.
                 Common.WriteHeading($" > Building ${gameName}.");
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new [] {
+                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new[]
+                {
                     gameName,
                     platform,
                     configuration,
@@ -185,7 +196,7 @@ exit /b !ERRORLEVEL!
 
         private static string Quote(string toQuote)
         {
-            return string.Format("\"{0}\"", toQuote);
+            return $"\"{toQuote}\"";
         }
     }
 }

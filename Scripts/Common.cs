@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.IO;
+using System.Linq;
 
 namespace Improbable
 {
@@ -12,14 +12,14 @@ namespace Improbable
         {
             AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) =>
             {
-                Console.WriteLine(((Exception)eventArgs.ExceptionObject).Message);
+                Console.WriteLine(((Exception) eventArgs.ExceptionObject).Message);
                 Environment.Exit(1);
             };
         }
 
         public static void EnsureDirectoryEmpty(string dir)
         {
-            if(Directory.Exists(dir))
+            if (Directory.Exists(dir))
             {
                 Directory.Delete(dir, true);
             }
@@ -30,7 +30,7 @@ namespace Improbable
         public static void RunRedirected(string command, IEnumerable<string> arguments)
         {
             command = Environment.ExpandEnvironmentVariables(command);
-            arguments = arguments.Select(arg => Environment.ExpandEnvironmentVariables(arg));
+            arguments = arguments.Select(Environment.ExpandEnvironmentVariables).ToArray();
 
             var startInfo = new ProcessStartInfo(command, string.Join(" ", arguments.ToArray()))
             {
@@ -43,42 +43,47 @@ namespace Improbable
 
             try
             {
-                using(var process = Process.Start(startInfo))
+                using (var process = Process.Start(startInfo))
                 {
-                    process.EnableRaisingEvents = true;
-                    process.OutputDataReceived += (sender, e) =>
+                    if (process != null)
                     {
-                        if(!string.IsNullOrEmpty(e.Data))
+                        process.EnableRaisingEvents = true;
+                        process.OutputDataReceived += (sender, e) =>
                         {
-                            Console.WriteLine("{0}", e.Data);
-                        }
-                    };
-                    process.ErrorDataReceived += (sender, e) =>
-                    {
-                        if(!string.IsNullOrEmpty(e.Data))
+                            if (!string.IsNullOrEmpty(e.Data))
+                            {
+                                Console.WriteLine("{0}", e.Data);
+                            }
+                        };
+                        process.ErrorDataReceived += (sender, e) =>
                         {
-                            Console.Error.WriteLine("{0}", e.Data);
+                            if (!string.IsNullOrEmpty(e.Data))
+                            {
+                                Console.Error.WriteLine("{0}", e.Data);
+                            }
+                        };
+
+                        // Async print lines of output as they come in.
+                        process.BeginOutputReadLine();
+                        process.BeginErrorReadLine();
+
+                        process.WaitForExit();
+
+                        if (process.ExitCode != 0)
+                        {
+                            throw new Exception($"Exit code {process.ExitCode}");
                         }
-                    };
-
-                    // Async print lines of output as they come in.
-                    process.BeginOutputReadLine();
-                    process.BeginErrorReadLine();
-
-                    process.WaitForExit();
-
-                    if(process.ExitCode != 0)
+                    }
+                    else
                     {
-                        throw new Exception(string.Format("Exit code {0}", process.ExitCode));
+                        throw new Exception("Process is null");
                     }
                 }
             }
             catch (System.Exception ex)
             {
-
-                throw new Exception(string.Format("{0} while running:\n{1}\n\t{2}", ex.Message, command, string.Join("\n\t", arguments)));
+                throw new Exception($"{ex.Message} while running:\n{command}\n\t{string.Join("\n\t", arguments)}");
             }
-
         }
 
         public static void WriteHeading(string format, params object[] args)
