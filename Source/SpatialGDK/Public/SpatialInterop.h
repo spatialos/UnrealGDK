@@ -23,11 +23,11 @@ using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
 // to be resolved before we can send this RPC, or we successfully sent a command request.
 struct FRPCCommandRequestResult
 {
-	UObject* UnresolvedObject;
+	const UObject* UnresolvedObject;
 	FUntypedRequestId RequestId;
 
 	FRPCCommandRequestResult() = delete;
-	FRPCCommandRequestResult(UObject* UnresolvedObject) : UnresolvedObject{UnresolvedObject}, RequestId{0} {}
+	FRPCCommandRequestResult(const UObject* UnresolvedObject) : UnresolvedObject{UnresolvedObject}, RequestId{0} {}
 	FRPCCommandRequestResult(FUntypedRequestId RequestId) : UnresolvedObject{nullptr}, RequestId{RequestId} {}
 };
 

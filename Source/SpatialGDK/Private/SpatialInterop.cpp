@@ -255,7 +255,7 @@ void USpatialInterop::SendCommandRequest_Internal(FRPCCommandRequestFunc Functio
 	if (Result.UnresolvedObject != nullptr)
 	{
 		// Add to pending RPCs if any actors were unresolved.
-		QueueOutgoingRPC_Internal(Result.UnresolvedObject, Function, bReliable);
+		QueueOutgoingRPC_Internal(const_cast<UObject*>(Result.UnresolvedObject), Function, bReliable);
 	}
 	else
 	{
