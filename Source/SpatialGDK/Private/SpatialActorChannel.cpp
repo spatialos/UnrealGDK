@@ -192,6 +192,12 @@ bool USpatialActorChannel::ReplicateActor()
 	{
 		PlayerController->SendClientAdjustment();
 	}
+
+	// Update SpatialOS position.
+	if (!PlayerController && !Cast<APlayerState>(Actor))
+	{
+		UpdateSpatialPosition();
+	}
 	
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
@@ -323,12 +329,6 @@ bool USpatialActorChannel::ReplicateActor()
 			ActorReplicator->RepState->HistoryEnd++;
 		}
 		UpdateChangelistHistory(ActorReplicator->RepState);
-	}
-
-	// Update SpatialOS position.
-	if (!PlayerController && !Cast<APlayerState>(Actor))
-	{
-		UpdateSpatialPosition();
 	}
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;

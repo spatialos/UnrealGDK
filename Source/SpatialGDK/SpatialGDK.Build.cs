@@ -19,8 +19,7 @@ public class SpatialGDK : ModuleRules
             {
                 "SpatialGDK/Public",
                 "SpatialGDK/Public/WorkerSdk",
-                "SpatialGDK/Generated/User",
-                "SpatialGDK/Generated/Std",
+                "SpatialGDK/Generated/Cpp",
                 "SpatialGDK/Generated/UClasses",
                 "SpatialGDK/Legacy",
                 "SpatialGDK/Legacy/Deprecated"
@@ -36,7 +35,8 @@ public class SpatialGDK : ModuleRules
                 "Engine",
                 "OnlineSubsystemUtils",
                 "PhysXVehicles",
-                "InputCore"
+                "InputCore",
+                "Sockets",
             });
 
 		// Check if we're building in the editor.
