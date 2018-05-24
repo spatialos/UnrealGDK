@@ -8,6 +8,7 @@
 class FToolBarBuilder;
 class FMenuBuilder;
 class FUICommandList;
+class USoundBase;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditor, Log, All);
 
@@ -46,5 +47,15 @@ private:
 	void GenerateInteropCodeButtonClicked();
 
 private:
+
+	void ShowSuccessNotification(const FString& NotificationText);
+
 	TSharedPtr<FUICommandList> PluginCommands;
+
+	TWeakPtr<SNotificationItem> TaskNotificationPtr;
+
+	// Sounds used for execution of tasks.
+	USoundBase* ExecutionStartSound;
+	USoundBase* ExecutionSuccessSound;
+	USoundBase* ExecutionFailSound;
 };

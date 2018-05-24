@@ -133,6 +133,8 @@ const FString GetOutputPath(const FString& ConfigFilePath)
 		}
 	}
 
+	OutputPath.AppendChar('/');
+
 	return OutputPath;
 }
 

@@ -42,7 +42,8 @@ public class SpatialGDKEditorToolbar : ModuleRules
 				"Projects",
 				"Slate",
 				"SlateCore",
-				"SpatialGDK",
+                "EditorStyle",
+                "SpatialGDK",
 				"UnrealEd"
 			});
 	}
