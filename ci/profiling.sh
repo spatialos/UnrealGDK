@@ -8,8 +8,6 @@ function markStartOfBlock {
 }
 
 function markEndOfBlock {
-  # Use escaped characters to avoid an echo of the following line (due to
-  # set -x) triggering TeamCity - we only want the output of the echo to do so.
   echo -e "\x23\x23teamcity[blockClosed name='$1']"
 }
 

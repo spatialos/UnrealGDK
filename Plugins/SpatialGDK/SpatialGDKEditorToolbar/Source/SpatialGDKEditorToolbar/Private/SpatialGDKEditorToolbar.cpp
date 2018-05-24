@@ -137,7 +137,7 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 {
 	FString ProjectFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::GetPath(FPaths::GetProjectFilePath()));
-	FString CombinedPath = FPaths::Combine(*ProjectFilePath, TEXT("../../../snapshots"));
+	FString CombinedPath = FPaths::Combine(*ProjectFilePath, TEXT("../spatial/snapshots"));
 	UE_LOG(LogTemp, Display, TEXT("Combined path %s"), *CombinedPath);
 	if (FPaths::CollapseRelativeDirectories(CombinedPath))
 	{
