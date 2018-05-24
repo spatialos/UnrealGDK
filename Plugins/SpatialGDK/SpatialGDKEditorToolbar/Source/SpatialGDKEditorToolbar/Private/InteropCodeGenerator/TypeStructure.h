@@ -146,6 +146,7 @@ struct FUnrealMigratableData
 
 using FUnrealFlatRepData = TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPtr<FUnrealProperty>>>;
 using FUnrealRPCsByType = TMap<ERPCType, TArray<TSharedPtr<FUnrealRPC>>>;
+using FCmdHandlePropertyMap = TMap<uint16, TSharedPtr<FUnrealProperty>>;
 
 // Given a UClass, returns either "AFoo" or "UFoo" depending on whether Foo is a subclass of actor.
 FString GetFullCPPName(UClass* Class);
@@ -205,7 +206,7 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo);
 // the MigratableData field set to a value FUnrealMigratableData node which contains data such as the handle or replication type.
 //
 // This function will traverse into subobject properties.
-TMap<uint16, TSharedPtr<FUnrealProperty>> GetFlatMigratableData(TSharedPtr<FUnrealType> TypeInfo);
+FCmdHandlePropertyMap GetFlatMigratableData(TSharedPtr<FUnrealType> TypeInfo);
 
 // Traverses an AST fully (including subobjects) and generates a list of all RPCs which would be routed through an actor channel
 // of the Unreal class represented by TypeInfo.
