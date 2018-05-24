@@ -82,3 +82,7 @@ logs/
 Scripts/spatialos.*.build.json
 
 !Source/Programs/Improbable.Unreal.CodeGeneration/UnrealCodeGeneration.sln
+
+Source/SpatialGDK/Public/WorkerSdk/include/google/LICENSE/
+Source/SpatialGDK/Public/WorkerSdk/include/improbable/pbio.h
+
