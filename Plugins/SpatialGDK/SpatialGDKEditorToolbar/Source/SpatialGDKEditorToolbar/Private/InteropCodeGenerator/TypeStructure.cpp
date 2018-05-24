@@ -243,10 +243,10 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 	{
 		UProperty* Property = *It;
 
-		// TODO(David): Should we still be skipping this?
+		// Josh - Multicast delegates are local and not replicated. NetMulticast is the RPC.
 		if (Property->IsA<UMulticastDelegateProperty>())
 		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - multicast delegate property, skipping"), *Property->GetName());
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Verbose, TEXT("%s - multicast delegate property, skipping"), *Property->GetName());
 			continue;
 		}
 		
