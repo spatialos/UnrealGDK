@@ -43,6 +43,7 @@ public class SpatialGDKEditorToolbar : ModuleRules
 				"Slate",
 				"SlateCore",
                 "EditorStyle",
+                "MessageLog",
                 "SpatialGDK",
 				"UnrealEd"
 			});

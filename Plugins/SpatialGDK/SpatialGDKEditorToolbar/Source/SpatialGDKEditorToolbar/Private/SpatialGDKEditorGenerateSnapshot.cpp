@@ -104,30 +104,41 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 }
 } // ::
 
-void SpatialGDKGenerateSnapshot(const FString& SavePath, UWorld* World)
+bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 {
-	const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
-
-	std::unordered_map<worker::EntityId, worker::Entity> SnapshotEntities;
-
-	// Create spawner.
-	SnapshotEntities.emplace(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
-
-	// Create level entities.
-	for (auto EntityPair : CreateLevelEntities(World))
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Save path %s"), *SavePath);
+	if (FPaths::CollapseRelativeDirectories(SavePath))
 	{
-		SnapshotEntities.emplace(std::move(EntityPair));
-	}
+		const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
 
-	// Save snapshot.
-	worker::Option<std::string> Result = worker::SaveSnapshot(improbable::unreal::Components{}, TCHAR_TO_UTF8(*FullPath), SnapshotEntities);
-	if (!Result.empty())
-	{
-		std::string ErrorString = Result.value_or("");
-		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(ErrorString.c_str()));
+		std::unordered_map<worker::EntityId, worker::Entity> SnapshotEntities;
+
+		// Create spawner.
+		SnapshotEntities.emplace(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
+
+		// Create level entities.
+		for (auto EntityPair : CreateLevelEntities(World))
+		{
+			SnapshotEntities.emplace(std::move(EntityPair));
+		}
+
+		// Save snapshot.
+		worker::Option<std::string> Result = worker::SaveSnapshot(improbable::unreal::Components{}, TCHAR_TO_UTF8(*FullPath), SnapshotEntities);
+		if (!Result.empty())
+		{
+			std::string ErrorString = Result.value_or("");
+			UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(ErrorString.c_str()));
+			return false;
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path %s"), *FullPath);
+			return true;
+		}
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path %s"), *FullPath);
+		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Path was invalid - snapshot not generated"));
+		return false;
 	}
 }

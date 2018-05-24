@@ -48,7 +48,11 @@ private:
 
 private:
 
+	void ShowTaskStartNotification(const FString& NotificationText);
 	void ShowSuccessNotification(const FString& NotificationText);
+	void ShowFailedNotification(const FString& NotificationText);
+
+	static void ShowCompileLog();
 
 	TSharedPtr<FUICommandList> PluginCommands;
 

@@ -16,6 +16,8 @@
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
+#include "Kismet2/CompilerResultsLog.h"
+#include "MessageLogModule.h"
 #include "Sound/SoundBase.h"
 
 #include "LevelEditor.h"
@@ -95,6 +97,7 @@ void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 
 void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 {
+
 }
 
 void FSpatialGDKEditorToolbarModule::RegisterSettings()
@@ -173,25 +176,39 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 
 void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 {
-	if (GEditor)
-	{
-		GEditor->PlayEditorSound(ExecutionStartSound);
-	}
+
+	ShowTaskStartNotification("Started snapshot generation");
 
 	FString ProjectFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::GetPath(FPaths::GetProjectFilePath()));
 	FString CombinedPath = FPaths::Combine(*ProjectFilePath, TEXT("../spatial/snapshots"));
-	UE_LOG(LogTemp, Display, TEXT("Combined path %s"), *CombinedPath);
-	if (FPaths::CollapseRelativeDirectories(CombinedPath))
+	const bool success = SpatialGDKGenerateSnapshot(CombinedPath, GEditor->GetEditorWorldContext().World());
+
+	if(success)
 	{
-		SpatialGDKGenerateSnapshot(CombinedPath, GEditor->GetEditorWorldContext().World());
+		ShowSuccessNotification("Snapshot successfully generated!");
 	}
 	else
-	{
-		UE_LOG(LogTemp, Display, TEXT("Path was invalid - snapshot not generated"));
+	{	
+		ShowFailedNotification("Snapshot generation failed!");
 	}
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
+{
+	ShowTaskStartNotification("Started interop codegen");
+
+	const bool success = SpatialGDKGenerateInteropCode();
+	if (success)
+	{
+		ShowSuccessNotification("Interop codegen completed!");
+	}
+	else
+	{
+		ShowFailedNotification("Interop codegen failed");
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& NotificationText)
 {
 	if (TaskNotificationPtr.IsValid())
 	{
@@ -203,7 +220,7 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 		GEditor->PlayEditorSound(ExecutionStartSound);
 	}
 
-	FNotificationInfo Info(FText::AsCultureInvariant("Started interop codegen"));
+	FNotificationInfo Info(FText::AsCultureInvariant(NotificationText));
 	Info.Image = FEditorStyle::GetBrush(TEXT("LevelEditor.RecompileGameCode"));
 	Info.ExpireDuration = 5.0f;
 	Info.bFireAndForget = false;
@@ -214,32 +231,48 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 	{
 		TaskNotificationPtr.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
 	}
-
-	SpatialGDKGenerateInteropCode();
-
-	ShowSuccessNotification("Interop Codegen Complete!");
 }
 
 void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& NotificationText)
 {
-	FNotificationInfo Info(FText::AsCultureInvariant(NotificationText));
-	Info.Image = FEditorStyle::GetBrush(TEXT("LevelEditor.RecompileGameCode"));
-	Info.FadeInDuration = 0.1f;
-	Info.FadeOutDuration = 0.5f;
-	Info.ExpireDuration = 1.5f;
-	Info.bUseThrobber = false;
-	Info.bUseSuccessFailIcons = true;
-	Info.bUseLargeFont = true;
-	Info.bFireAndForget = false;
-	Info.bAllowThrottleWhenFrameRateIsLow = false;
-	auto NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-	NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
-	NotificationItem->ExpireAndFadeout();
+	TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+
+	Notification->SetFadeInDuration(0.1f);
+	Notification->SetFadeOutDuration(0.5f);
+	Notification->SetExpireDuration(1.5f);
+	Notification->SetText(FText::AsCultureInvariant(NotificationText));
+	Notification->SetCompletionState(SNotificationItem::CS_Success);
+	Notification->ExpireAndFadeout();
+	TaskNotificationPtr.Reset();
 
 	if (GEditor)
 	{
 		GEditor->PlayEditorSound(ExecutionSuccessSound);
 	}
+}
+
+void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& NotificationText)
+{
+	TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+
+	Notification->SetText(FText::AsCultureInvariant(NotificationText));
+	Notification->SetCompletionState(SNotificationItem::CS_Fail);
+	Notification->SetHyperlink(FSimpleDelegate::CreateStatic(&FSpatialGDKEditorToolbarModule::ShowCompileLog));
+	Notification->SetExpireDuration(30.0f);
+	
+	Notification->ExpireAndFadeout();
+
+	if (GEditor)
+	{
+		GEditor->PlayEditorSound(ExecutionFailSound);
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::ShowCompileLog()
+{
+	FMessageLogModule& MessageLogModule = FModuleManager::GetModuleChecked<FMessageLogModule>("MessageLog");
+	MessageLogModule.OpenMessageLog(FCompilerResultsLog::GetLogName());
+
 }
 
 #undef LOCTEXT_NAMESPACE

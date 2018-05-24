@@ -133,12 +133,13 @@ const FString GetOutputPath(const FString& ConfigFilePath)
 		}
 	}
 
+	// Ensure that the specified path ends with a path separator.
 	OutputPath.AppendChar('/');
 
 	return OutputPath;
 }
 
-void SpatialGDKGenerateInteropCode()
+bool SpatialGDKGenerateInteropCode()
 {
 	// SpatialGDK config file definitions.
 	const FString FileName = "DefaultEditorSpatialGDK.ini";
@@ -152,7 +153,7 @@ void SpatialGDKGenerateInteropCode()
 		const ClassHeaderMap Classes = GenerateClassHeaderMap(UserInteropCodeGenSection);
 		if (!CheckClassNameListValidity(Classes))
 		{
-			return;
+			return false;
 		}
 
 		FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../schema/improbable/unreal/generated/"));
@@ -192,10 +193,15 @@ void SpatialGDKGenerateInteropCode()
 				const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
 				ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, ClassMigratableProperties, TypeBindingHeaders);
 			}
+
+			return true;
 		}
 		else
 		{
 			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Path was invalid - schema not generated"));
+			return false;
 		}
 	}
+
+	return false;
 }
