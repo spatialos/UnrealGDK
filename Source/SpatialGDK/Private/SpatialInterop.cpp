@@ -42,9 +42,15 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	// Register type binding classes.
 	for (UClass* TypeBindingClass : TypeBindingClasses)
 	{
-		UClass* BoundClass = TypeBindingClass->GetDefaultObject<USpatialTypeBinding>()->GetBoundClass();
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("Registered type binding class %s handling replicated properties of %s."), *TypeBindingClass->GetName(), *BoundClass->GetName());
-		RegisterInteropType(BoundClass, NewObject<USpatialTypeBinding>(this, TypeBindingClass));
+		if (UClass* BoundClass = TypeBindingClass->GetDefaultObject<USpatialTypeBinding>()->GetBoundClass())
+		{
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("Registered type binding class %s handling replicated properties of %s."), *TypeBindingClass->GetName(), *BoundClass->GetName());
+			RegisterInteropType(BoundClass, NewObject<USpatialTypeBinding>(this, TypeBindingClass));
+		}
+		else
+		{
+			UE_LOG(LogSpatialOSInterop, Warning, TEXT("Could not find and register 'bound class' for type binding class %s. If this is a blueprint class, make sure it is referenced by the world."), *TypeBindingClass->GetName());
+		}
 	}
 }
 
