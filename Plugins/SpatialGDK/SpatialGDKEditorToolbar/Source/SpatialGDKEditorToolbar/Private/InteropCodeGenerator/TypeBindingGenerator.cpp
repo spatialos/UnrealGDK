@@ -129,7 +129,7 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 	return DataType;
 }
 
-void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
+void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, bool bWithinFixedArray, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
 	// Get result type.
 	if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
@@ -139,8 +139,47 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		//return GenerateUnrealToSchemaConversion(Writer, EnumProperty->GetUnderlyingProperty(), TEXT("Underlying"), ResultName, Handle);
 	}
 
+	// Start with Array types
+	if (!bWithinFixedArray && Property->ArrayDim > 1)
+	{
+		// C-style arrays fall here. Currently we treat them the same as TArrays on SpatialOS.
+		//TODO: optimize C array replication
+		Writer.BeginScope();
+
+		Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(Property));
+
+		Writer.Printf("for(int i = 0; i < %d; i++)", Property->ArrayDim);
+		Writer.BeginScope();
+
+		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", Property, FString::Printf(TEXT("%s[i]"), *PropertyValue), true, ObjectResolveFailureGenerator);
+
+		Writer.End();
+
+		Writer.Printf("%s(List);", *Update);
+
+		Writer.End();
+	}
+	else if (!bWithinFixedArray && Property->IsA(UArrayProperty::StaticClass()))
+	{
+		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+
+		Writer.BeginScope();
+
+		Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(ArrayProperty->Inner));
+
+		Writer.Printf("for(int i = 0; i < %s.Num(); i++)", *PropertyValue);
+		Writer.BeginScope();
+
+		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), false, ObjectResolveFailureGenerator);
+
+		Writer.End();
+
+		Writer.Printf("%s(List);", *Update);
+
+		Writer.End();
+	}
 	// Try to special case to custom types we know about
-	if (Property->IsA(UStructProperty::StaticClass()))
+	else if (Property->IsA(UStructProperty::StaticClass()))
 	{
 		UStructProperty * StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct * Struct = StructProp->Struct;
@@ -241,32 +280,13 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	{
 		Writer.Printf("%s(TCHAR_TO_UTF8(*%s));", *Update, *PropertyValue);
 	}
-	else if (Property->IsA(UArrayProperty::StaticClass()))
-	{
-		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-
-		Writer.BeginScope();
-
-		Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(ArrayProperty->Inner));
-
-		Writer.Printf("for(int i = 0; i < %s.Num(); i++)", *PropertyValue);
-		Writer.BeginScope();
-
-		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator);
-
-		Writer.End();
-
-		Writer.Printf("%s(List);", *Update);
-
-		Writer.End();
-	}
 	else
 	{
 		Writer.Printf("// UNSUPPORTED U%s (unhandled) %s(%s)", *Property->GetClass()->GetName(), *Update, *PropertyValue);
 	}
 }
 
-void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Update, const UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
+void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Update, const UProperty* Property, const FString& PropertyValue, bool bWithinFixedArray, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
 	FString PropertyType = Property->GetCPPType();
 
@@ -276,8 +296,33 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 		Writer.Printf("// UNSUPPORTED UEnumProperty %s %s", *PropertyValue, *Update);
 	}
 
+	// Start with Array types
+	if (!bWithinFixedArray && Property->ArrayDim > 1)
+	{
+		Writer.BeginScope();
+		Writer.Printf("auto& List = %s;", *Update);
+		Writer.Printf("check(RepData->Property->ArrayDim == %d);", Property->ArrayDim);
+		Writer.Printf("for(int i = 0; i < %d; i++)", Property->ArrayDim);
+		Writer.BeginScope();
+		GeneratePropertyToUnrealConversion(Writer, "List[i]", Property, FString::Printf(TEXT("%s[i]"), *PropertyValue), true, ObjectResolveFailureGenerator);
+		Writer.End();
+		Writer.End();
+	}
+	else if (Property->IsA(UArrayProperty::StaticClass()))
+	{
+		const UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+
+		Writer.BeginScope();
+		Writer.Printf("auto& List = %s;", *Update);
+		Writer.Printf("%s.SetNum(List.size());", *PropertyValue);
+		Writer.Print("for(int i = 0; i < List.size(); i++)");
+		Writer.BeginScope();
+		GeneratePropertyToUnrealConversion(Writer, "List[i]", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), false, ObjectResolveFailureGenerator);
+		Writer.End();
+		Writer.End();
+	}
 	// Try to special case to custom types we know about
-	if (Property->IsA(UStructProperty::StaticClass()))
+	else if (Property->IsA(UStructProperty::StaticClass()))
 	{
 		const UStructProperty * StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct * Struct = StructProp->Struct;
@@ -402,18 +447,6 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	else if (Property->IsA(UStrProperty::StaticClass()))
 	{
 		Writer.Printf("%s = FString(UTF8_TO_TCHAR(%s.c_str()));", *PropertyValue, *Update);
-	}
-	else if (Property->IsA(UArrayProperty::StaticClass())) {
-		const UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-
-		Writer.BeginScope();
-		Writer.Printf("auto& List = %s;", *Update);
-		Writer.Printf("%s.SetNum(List.size());", *PropertyValue);
-		Writer.Print("for(int i = 0; i < List.size(); i++)");
-		Writer.BeginScope();
-		GeneratePropertyToUnrealConversion(Writer, "List[i]", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator);
-		Writer.End();
-		Writer.End();
 	}
 	else
 	{
@@ -1288,6 +1321,13 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 			FString PropertyValueName = TEXT("Value");
 			FString PropertyCppType = Property->GetClass()->GetFName().ToString();
 			FString PropertyValueCppType = Property->GetCPPType();
+
+			// If we are dealing with a fixed-size array, the property looks exactly the same except ArrayDim. In this case, we'll need to operate on target data via pointer math.
+			if (Property->ArrayDim > 1)
+			{
+				PropertyValueCppType.Append(TEXT("*"));
+			}
+
 			FString PropertyName = TEXT("Property");
 			//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
 			if (Property->IsA<UBoolProperty>())
@@ -1322,7 +1362,7 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 
 			SourceWriter.PrintNewLine();
 			GenerateUnrealToSchemaConversion(
-				SourceWriter, SpatialValueSetter, RepProp.Value->Property, PropertyValueName,
+				SourceWriter, SpatialValueSetter, RepProp.Value->Property, PropertyValueName, false,
 				[&SourceWriter, Handle](const FString& PropertyValue)
 			{
 				SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
@@ -1381,7 +1421,7 @@ void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter,
 			FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(MigProp.Value);
 
 			GenerateUnrealToSchemaConversion(
-				SourceWriter, SpatialValueSetter, MigProp.Value->Property, PropertyValueName,
+				SourceWriter, SpatialValueSetter, MigProp.Value->Property, PropertyValueName, false,
 				[&SourceWriter, Handle](const FString& PropertyValue)
 			{
 				SourceWriter.Printf("Interop->QueueOutgoingObjectMigUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
@@ -1460,6 +1500,13 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 			// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
 			FString PropertyValueName = TEXT("Value");
 			FString PropertyValueCppType = Property->GetCPPType();
+
+			// If we are dealing with a fixed-size array, the property looks exactly the same except ArrayDim. In this case, we'll need to operate on target data via pointer math.
+			if (Property->ArrayDim > 1)
+			{
+				PropertyValueCppType.Append(TEXT("*"));
+			}
+
 			FString PropertyName = TEXT("RepData->Property");
 			//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
 			SourceWriter.Printf("uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));");
@@ -1491,7 +1538,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 			FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(RepProp.Value));
 
 			GeneratePropertyToUnrealConversion(
-				SourceWriter, SpatialValue, RepProp.Value->Property, PropertyValueName,
+				SourceWriter, SpatialValue, RepProp.Value->Property, PropertyValueName, false,
 				[&SourceWriter](const FString& PropertyValue)
 			{
 				SourceWriter.Print(R"""(
@@ -1607,7 +1654,7 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 			FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(MigProp.Value));
 
 			GeneratePropertyToUnrealConversion(
-				SourceWriter, SpatialValue, MigProp.Value->Property, PropertyValueName,
+				SourceWriter, SpatialValue, MigProp.Value->Property, PropertyValueName, false,
 				[&SourceWriter](const FString& PropertyValue)
 			{
 				SourceWriter.Print(R"""(
@@ -1701,7 +1748,7 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 		FString SpatialValueSetter = TEXT("Request.set_") + SchemaFieldName(Param);
 
 		GenerateUnrealToSchemaConversion(
-			SourceWriter, SpatialValueSetter, Param->Property, FString::Printf(TEXT("StructuredParams.%s"), *CPPFieldName(Param)),
+			SourceWriter, SpatialValueSetter, Param->Property, FString::Printf(TEXT("StructuredParams.%s"), *CPPFieldName(Param)), false,
 			[&SourceWriter, &RPC](const FString& PropertyValue)
 		{
 			SourceWriter.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"%%s: RPC %s queued. %s is unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
@@ -1794,7 +1841,7 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 			FString SpatialValue = FString::Printf(TEXT("%s.%s()"), TEXT("Op.Request"), *SchemaFieldName(Param));
 
 			GeneratePropertyToUnrealConversion(
-				SourceWriter, SpatialValue, Param->Property, FString::Printf(TEXT("Parameters.%s"), *CPPFieldName(Param)),
+				SourceWriter, SpatialValue, Param->Property, FString::Printf(TEXT("Parameters.%s"), *CPPFieldName(Param)), false,
 				std::bind(ObjectResolveFailureGenerator, std::placeholders::_1, "ObjectRef"));
 		}
 

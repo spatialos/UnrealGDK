@@ -69,11 +69,21 @@ FString CPPCommandClassName(UClass* Class, UFunction* Function)
 	return SchemaName;
 }
 
-FString PropertyToSchemaType(UProperty* Property)
+FString PropertyToSchemaType(UProperty* Property, bool bWithinFixedArray)
 {
 	FString DataType;
 
-	if (Property->IsA(UStructProperty::StaticClass()))
+	if (!bWithinFixedArray && Property->ArrayDim > 1)
+	{
+		DataType = PropertyToSchemaType(Property, true);
+		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
+	}
+	else if (Property->IsA(UArrayProperty::StaticClass()))
+	{
+		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner, false);
+		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
+	}
+	else if (Property->IsA(UStructProperty::StaticClass()))
 	{
 		UStructProperty* StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct* Struct = StructProp->Struct;
@@ -133,11 +143,6 @@ FString PropertyToSchemaType(UProperty* Property)
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
 		DataType = TEXT("UnrealObjectRef");
-	}
-	else if (Property->IsA(UArrayProperty::StaticClass()))
-	{
-		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner);
-		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
 	}
 	else
 	{
@@ -204,7 +209,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			}
 
 			Writer.Printf("%s %s = %d; // %s // %s",
-				*PropertyToSchemaType(RepProp.Value->Property),
+				*PropertyToSchemaType(RepProp.Value->Property, false),
 				*SchemaFieldName(RepProp.Value),
 				FieldCounter,
 				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
@@ -223,7 +228,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	{
 		FieldCounter++;
 		Writer.Printf("%s %s = %d;",
-			*PropertyToSchemaType(Prop.Value->Property),
+			*PropertyToSchemaType(Prop.Value->Property, false),
 			*SchemaFieldName(Prop.Value),
 			FieldCounter
 		);
@@ -282,7 +287,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			{
 				FieldCounter++;
 				RPCTypeOwnerSchemaWriter->Printf("%s %s = %d;",
-					*PropertyToSchemaType(Param->Property),
+					*PropertyToSchemaType(Param->Property, false),
 					*SchemaFieldName(Param),
 					FieldCounter
 				);

@@ -20,6 +20,7 @@ void GenerateUnrealToSchemaConversion(
 	const FString& Update,
 	const UProperty* Property,
 	const FString& PropertyValue,
+	bool bWithinFixedArray,
 	TFunction<void(const FString&)> ObjectResolveFailureGenerator);
 
 // Generates code to extract property data from a SpatialOS component update object and write it to an Unreal 'PropertyValue'
@@ -28,6 +29,7 @@ void GeneratePropertyToUnrealConversion(
 	const FString& Update,
 	const UProperty* Property,
 	const FString& PropertyValue,
+	bool bWithinFixedArray,
 	TFunction<void(const FString&)> ObjectResolveFailureGenerator);
 
 // For blueprint RPCs, declares a struct with RPC arguments.
