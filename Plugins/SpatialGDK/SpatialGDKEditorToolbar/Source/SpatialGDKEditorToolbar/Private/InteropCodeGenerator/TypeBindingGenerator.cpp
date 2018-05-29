@@ -9,6 +9,9 @@
 // Needed for Algo::Transform
 #include "Algo/Transform.h"
 
+// Needed for TLess
+#include "Templates/Less.h"
+
 // Needed for std::bind.
 #include <functional>
 
@@ -126,7 +129,7 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 	return DataType;
 }
 
-void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, const bool bIsUpdate, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
+void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
 	// Get result type.
 	if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
@@ -249,7 +252,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		Writer.Printf("for(int i = 0; i < %s.Num(); i++)", *PropertyValue);
 		Writer.BeginScope();
 
-		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), bIsUpdate, ObjectResolveFailureGenerator);
+		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator);
 
 		Writer.End();
 
@@ -263,7 +266,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	}
 }
 
-void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Update, const UProperty* Property, const FString& PropertyValue, const bool bIsUpdate, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
+void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Update, const UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
 	FString PropertyType = Property->GetCPPType();
 
@@ -408,7 +411,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 		Writer.Printf("%s.SetNum(List.size());", *PropertyValue);
 		Writer.Print("for(int i = 0; i < List.size(); i++)");
 		Writer.BeginScope();
-		GeneratePropertyToUnrealConversion(Writer, "List[i]", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), true, ObjectResolveFailureGenerator);
+		GeneratePropertyToUnrealConversion(Writer, "List[i]", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator);
 		Writer.End();
 		Writer.End();
 	}
@@ -504,7 +507,6 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	HeaderWriter.Print(R"""(
 		const FRepHandlePropertyMap& GetRepHandlePropertyMap() const override;
 		const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() const override;
-
 		UClass* GetBoundClass() const override;
 
 		void Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap) override;
@@ -525,6 +527,9 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		// RPC to sender map.
 		using FRPCSender = void (%s::*)(worker::Connection* const, void*, UObject*);
 		TMap<FName, FRPCSender> RPCToSenderMap;)""", *TypeBindingName(Class));
+	HeaderWriter.PrintNewLine();
+	HeaderWriter.Print("FRepHandlePropertyMap RepHandleToPropertyMap;");
+	HeaderWriter.Print("FMigratableHandlePropertyMap MigratableHandleToPropertyMap;");
 	HeaderWriter.PrintNewLine();
 
 	HeaderWriter.Print("// Component update helper functions.");
@@ -644,22 +649,22 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 
 	// Get replicated data and RPCs.
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
-	TMap<uint16, TSharedPtr<FUnrealProperty>> MigratableData = GetFlatMigratableData(TypeInfo);
+	FCmdHandlePropertyMap MigratableData = GetFlatMigratableData(TypeInfo);
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
 
 	// Generate methods implementations
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_GetRepHandlePropertyMap(SourceWriter, Class, RepData);
+	GenerateFunction_GetRepHandlePropertyMap(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_GetMigratableHandlePropertyMap(SourceWriter, Class, MigratableData);
+	GenerateFunction_GetMigratableHandlePropertyMap(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_GetBoundClass(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_Init(SourceWriter, Class, RPCsByType);
+	GenerateFunction_Init(SourceWriter, Class, RPCsByType, RepData, MigratableData);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_BindToView(SourceWriter, Class, RPCsByType);
@@ -731,94 +736,17 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	}
 }
 
-void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData)
+void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class)
 {
 	SourceWriter.BeginFunction({"const FRepHandlePropertyMap&", "GetRepHandlePropertyMap() const"}, TypeBindingName(Class));
-
-	SourceWriter.Print("static FRepHandlePropertyMap HandleToPropertyMap;");
-	SourceWriter.Print("if (HandleToPropertyMap.Num() == 0)");
-	SourceWriter.BeginScope();
-
-	// Reduce into single list of properties.
-	TMap<uint16, TSharedPtr<FUnrealProperty>> ReplicatedProperties;
-	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
-	{
-		ReplicatedProperties.Append(RepData[Group]);
-	}
-	ReplicatedProperties.KeySort([](uint16 A, uint16 B)
-	{
-		return A < B;
-	});
-
-	// Get class.
-	SourceWriter.Printf("UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));", *Class->GetName());
-
-	// Populate HandleToPropertyMap.
-	for (auto& RepProp : ReplicatedProperties)
-	{
-		auto Handle = RepProp.Key;
-
-		// Create property chain initialiser list.
-		FString PropertyChainInitList;
-		TArray<FString> PropertyChainNames;
-		Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
-		{
-			return TEXT("\"") + Property->Property->GetFName().ToString() + TEXT("\"");
-		});
-		PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
-
-		// Populate HandleToPropertyMap.
-		SourceWriter.Printf("HandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, %s, %s));",
-			Handle,
-			*PropertyChainInitList,
-			*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
-			*GetRepNotifyLifetimeConditionAsString(RepProp.Value->ReplicationData->RepNotifyCondition));
-	}
-
-	SourceWriter.End();
-
-	SourceWriter.Print("return HandleToPropertyMap;");
+	SourceWriter.Print("return RepHandleToPropertyMap;");
 	SourceWriter.End();
 }
 
-void GenerateFunction_GetMigratableHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData)
+void GenerateFunction_GetMigratableHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class)
 {
 	SourceWriter.BeginFunction({"const FMigratableHandlePropertyMap&", "GetMigratableHandlePropertyMap() const"}, TypeBindingName(Class));
-
-	SourceWriter.Print("static FMigratableHandlePropertyMap HandleToPropertyMap;");
-
-	if (MigratableData.Num() > 0)
-	{
-		SourceWriter.Print("if (HandleToPropertyMap.Num() == 0)");
-		SourceWriter.BeginScope();
-
-		// Get class.
-		SourceWriter.Printf("UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));", *Class->GetName());
-
-		// Populate HandleToPropertyMap.
-		for (auto& MigratableProp : MigratableData)
-		{
-			auto Handle = MigratableProp.Key;
-
-			// Create property chain initialiser list.
-			FString PropertyChainInitList;
-			TArray<FString> PropertyChainNames;
-			Algo::Transform(GetPropertyChain(MigratableProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
-			{
-				return TEXT("\"") + Property->Property->GetFName().ToString() + TEXT("\"");
-			});
-			PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
-
-			// Populate HandleToPropertyMap.
-			SourceWriter.Printf("HandleToPropertyMap.Add(%d, FMigratableHandleData(Class, {%s}));",
-				Handle,
-				*PropertyChainInitList);
-		}
-
-		SourceWriter.End();
-	}
-
-	SourceWriter.Print("return HandleToPropertyMap;");
+	SourceWriter.Print("return MigratableHandleToPropertyMap;");
 	SourceWriter.End();
 }
 
@@ -837,7 +765,7 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType)
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& MigratableData)
 {
 	SourceWriter.BeginFunction({"void", "Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)"}, TypeBindingName(Class));
 
@@ -848,6 +776,75 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 		for (auto& RPC : RPCsByType[Group])
 		{
 			SourceWriter.Printf("RPCToSenderMap.Emplace(\"%s\", &%s::%s_SendCommand);", *RPC->Function->GetName(), *TypeBindingName(Class), *RPC->Function->GetName());
+		}
+	}
+
+	if (RepData.Num() > 0 || MigratableData.Num() > 0)
+	{
+		// Get class.
+		SourceWriter.PrintNewLine();
+		SourceWriter.Printf("UClass* Class = FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));", *Class->GetName());
+	}
+
+	// Populate RepHandleToPropertyMap.
+	if (RepData.Num() > 0)
+	{
+		// Reduce into single list of properties.
+		TMap<uint16, TSharedPtr<FUnrealProperty>> ReplicatedProperties;
+		for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+		{
+			ReplicatedProperties.Append(RepData[Group]);
+		}
+		ReplicatedProperties.KeySort(TLess<uint16>());
+
+		SourceWriter.PrintNewLine();
+		SourceWriter.Print("// Populate RepHandleToPropertyMap.");
+
+		for (auto& RepProp : ReplicatedProperties)
+		{
+			auto Handle = RepProp.Key;
+
+			// Create property chain initialiser list.
+			FString PropertyChainInitList;
+			TArray<FString> PropertyChainNames;
+			Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
+			{
+				return TEXT("\"") + Property->Property->GetFName().ToString() + TEXT("\"");
+			});
+			PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
+
+			// Add the handle data to the map.
+			SourceWriter.Printf("RepHandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, %s, %s));",
+				Handle,
+				*PropertyChainInitList,
+				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
+				*GetRepNotifyLifetimeConditionAsString(RepProp.Value->ReplicationData->RepNotifyCondition));
+		}
+	}
+
+	// Populate MigratableHandleToPropertyMap.
+	if (MigratableData.Num() > 0)
+	{
+		SourceWriter.PrintNewLine();
+		SourceWriter.Print("// Populate MigratableHandleToPropertyMap.");
+
+		for (auto& MigratableProp : MigratableData)
+		{
+			auto Handle = MigratableProp.Key;
+
+			// Create property chain initialiser list.
+			FString PropertyChainInitList;
+			TArray<FString> PropertyChainNames;
+			Algo::Transform(GetPropertyChain(MigratableProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
+			{
+				return TEXT("\"") + Property->Property->GetFName().ToString() + TEXT("\"");
+			});
+			PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
+
+			// Add the handle data to the map.
+			SourceWriter.Printf("MigratableHandleToPropertyMap.Add(%d, FMigratableHandleData(Class, {%s}));",
+				Handle,
+				*PropertyChainInitList);
 		}
 	}
 
@@ -1325,7 +1322,7 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 
 			SourceWriter.PrintNewLine();
 			GenerateUnrealToSchemaConversion(
-				SourceWriter, SpatialValueSetter, RepProp.Value->Property, PropertyValueName, true,
+				SourceWriter, SpatialValueSetter, RepProp.Value->Property, PropertyValueName,
 				[&SourceWriter, Handle](const FString& PropertyValue)
 			{
 				SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
@@ -1344,7 +1341,7 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 	SourceWriter.End();
 }
 
-void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData)
+void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& MigratableData)
 {
 	FFunctionSignature ServerSendUpdateSignature{"void",
 		FString::Printf(TEXT("ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::generated::%s::Update& OutUpdate) const"),
@@ -1384,7 +1381,7 @@ void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter,
 			FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(MigProp.Value);
 
 			GenerateUnrealToSchemaConversion(
-				SourceWriter, SpatialValueSetter, MigProp.Value->Property, PropertyValueName, true,
+				SourceWriter, SpatialValueSetter, MigProp.Value->Property, PropertyValueName,
 				[&SourceWriter, Handle](const FString& PropertyValue)
 			{
 				SourceWriter.Printf("Interop->QueueOutgoingObjectMigUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
@@ -1494,7 +1491,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 			FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(RepProp.Value));
 
 			GeneratePropertyToUnrealConversion(
-				SourceWriter, SpatialValue, RepProp.Value->Property, PropertyValueName, true,
+				SourceWriter, SpatialValue, RepProp.Value->Property, PropertyValueName,
 				[&SourceWriter](const FString& PropertyValue)
 			{
 				SourceWriter.Print(R"""(
@@ -1561,7 +1558,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 	SourceWriter.End();
 }
 
-void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const TMap<uint16, TSharedPtr<FUnrealProperty>>& MigratableData)
+void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& MigratableData)
 {
 	FFunctionSignature ReceiveUpdateSignature{"void",
 		FString::Printf(TEXT("ReceiveUpdate_Migratable(USpatialActorChannel* ActorChannel, const improbable::unreal::generated::%s::Update& Update) const"),
@@ -1610,7 +1607,7 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 			FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(MigProp.Value));
 
 			GeneratePropertyToUnrealConversion(
-				SourceWriter, SpatialValue, MigProp.Value->Property, PropertyValueName, true,
+				SourceWriter, SpatialValue, MigProp.Value->Property, PropertyValueName,
 				[&SourceWriter](const FString& PropertyValue)
 			{
 				SourceWriter.Print(R"""(
@@ -1704,7 +1701,7 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 		FString SpatialValueSetter = TEXT("Request.set_") + SchemaFieldName(Param);
 
 		GenerateUnrealToSchemaConversion(
-			SourceWriter, SpatialValueSetter, Param->Property, FString::Printf(TEXT("StructuredParams.%s"), *CPPFieldName(Param)), false,
+			SourceWriter, SpatialValueSetter, Param->Property, FString::Printf(TEXT("StructuredParams.%s"), *CPPFieldName(Param)),
 			[&SourceWriter, &RPC](const FString& PropertyValue)
 		{
 			SourceWriter.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"%%s: RPC %s queued. %s is unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
@@ -1797,7 +1794,7 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 			FString SpatialValue = FString::Printf(TEXT("%s.%s()"), TEXT("Op.Request"), *SchemaFieldName(Param));
 
 			GeneratePropertyToUnrealConversion(
-				SourceWriter, SpatialValue, Param->Property, FString::Printf(TEXT("Parameters.%s"), *CPPFieldName(Param)), false,
+				SourceWriter, SpatialValue, Param->Property, FString::Printf(TEXT("Parameters.%s"), *CPPFieldName(Param)),
 				std::bind(ObjectResolveFailureGenerator, std::placeholders::_1, "ObjectRef"));
 		}
 
