@@ -2,7 +2,7 @@
 #include <improbable/worker.h>
 
 #include "LogMacros.h"
-#include "TestSchema.h"
+#include "improbable/TestSchema.h"
 #include "improbable/unreal/gdk/level_data.h"
 #include "improbable/unreal/gdk/player.h"
 #include "improbable/unreal/gdk/spawner.h"
