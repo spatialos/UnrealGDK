@@ -76,7 +76,8 @@ Build/*/**
 **/obj/
 
 .spatialos/
-**/WorkerSDK/include/
+**/WorkerSdk/improbable/
+**/WorkerSdk/google/
 logs/
 
 Scripts/spatialos.*.build.json
