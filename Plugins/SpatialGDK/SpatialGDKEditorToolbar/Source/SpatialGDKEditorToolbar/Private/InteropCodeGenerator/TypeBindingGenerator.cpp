@@ -5,6 +5,7 @@
 #include "TypeStructure.h"
 
 #include "Utils/CodeWriter.h"
+#include "Utils/DataTypeUtilities.h"
 
 // Needed for Algo::Transform
 #include "Algo/Transform.h"
@@ -143,16 +144,7 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 	}
 	else if (Property->IsA(UEnumProperty::StaticClass()))
 	{
-		UEnumProperty* EnumProp = Cast<UEnumProperty>(Property);
-
-		if (EnumProp->ElementSize < 4)
-		{
-			DataType = TEXT("uint32");
-		}
-		else
-		{
-			DataType = EnumProp->GetUnderlyingProperty()->GetCPPType();
-		}
+		DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
 	}
 	else
 	{
@@ -307,18 +299,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	} 
 	else if (Property->IsA(UEnumProperty::StaticClass()))
 	{
-		UEnumProperty* EnumProp = Cast<UEnumProperty>(Property);
-
-		FString DataType;
-		if (EnumProp->ElementSize < 4)
-		{
-			DataType = TEXT("uint32");
-		}
-		else
-		{
-			DataType = EnumProp->GetUnderlyingProperty()->GetCPPType();
-		}
-
+		FString DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
 		Writer.Printf("%s(%s(%s));", *Update, *DataType, *PropertyValue);
 	}
 	else

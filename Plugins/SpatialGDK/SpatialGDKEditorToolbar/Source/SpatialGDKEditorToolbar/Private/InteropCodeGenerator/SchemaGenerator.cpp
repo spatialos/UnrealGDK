@@ -7,6 +7,7 @@
 
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
+#include "Utils/DataTypeUtilities.h"
 
 FString UnrealNameToSchemaTypeName(const FString& UnrealName)
 {
@@ -161,16 +162,7 @@ FString PropertyToSchemaType(UProperty* Property)
 	}
 	else if (Property->IsA(UEnumProperty::StaticClass()))
 	{
-		UEnumProperty* EnumProp = Cast<UEnumProperty>(Property);
-
-		if (EnumProp->ElementSize < 4)
-		{
-			DataType = TEXT("uint32");
-		}
-		else
-		{
-			DataType = EnumProp->GetUnderlyingProperty()->GetCPPType();
-		}
+		DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
 	}
 	else
 	{
