@@ -71,13 +71,13 @@ void FSpatialGDKEditorToolbarModule::ShutdownModule()
 		ExecutionSuccessSound = nullptr;
 	}
 
-	if (ExecutionFailSound != NULL)
+	if (ExecutionFailSound != nullptr)
 	{
 		if (!GExitPurge)
 		{
 			ExecutionFailSound->RemoveFromRoot();
 		}
-		ExecutionFailSound = NULL;
+		ExecutionFailSound = nullptr;
 	}
 
 	if (UObjectInitialized())
@@ -184,7 +184,7 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 		ShowSuccessNotification("Snapshot successfully generated!");
 	}
 	else
-	{	
+	{
 		ShowFailedNotification("Snapshot generation failed!");
 	}
 }
