@@ -1,8 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialNetDriver.h"
+
 #include "Engine/ActorChannel.h"
+#include "Engine/ChildConnection.h"
 #include "Engine/NetworkObjectList.h"
+#include "EngineGlobals.h"
 #include "EntityPipeline.h"
 #include "EntityRegistry.h"
 #include "GameFramework/GameNetworkManager.h"

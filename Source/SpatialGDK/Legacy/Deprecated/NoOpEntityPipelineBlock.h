@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "improbable/worker.h"
 #include "EntityPipelineBlock.h"
-
 #include "NoOpEntityPipelineBlock.generated.h"
 
 class UCallbackDispatcher;

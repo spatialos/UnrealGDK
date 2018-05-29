@@ -3,6 +3,7 @@
 #include "SpatialActorChannel.h"
 #include "Engine/DemoNetDriver.h"
 #include "EntityRegistry.h"
+#include "GameFramework/PlayerState.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
 #include "SpatialInterop.h"
@@ -60,9 +61,9 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	bCreatingNewEntity = false;
 }
 
-void USpatialActorChannel::Init(UNetConnection* Connection, int32 ChannelIndex, bool bOpenedLocally)
+void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex, bool bOpenedLocally)
 {
-	Super::Init(Connection, ChannelIndex, bOpenedLocally);
+	Super::Init(InConnection, ChannelIndex, bOpenedLocally);
 
 	SpatialNetDriver = Cast<USpatialNetDriver>(Connection->Driver);
 	check(SpatialNetDriver);
@@ -190,6 +191,12 @@ bool USpatialActorChannel::ReplicateActor()
 	if (PlayerController)
 	{
 		PlayerController->SendClientAdjustment();
+	}
+
+	// Update SpatialOS position.
+	if (!PlayerController && !Cast<APlayerState>(Actor))
+	{
+		UpdateSpatialPosition();
 	}
 	
 	// Update the replicated property change list.
@@ -322,12 +329,6 @@ bool USpatialActorChannel::ReplicateActor()
 			ActorReplicator->RepState->HistoryEnd++;
 		}
 		UpdateChangelistHistory(ActorReplicator->RepState);
-	}
-
-	// Update SpatialOS position.
-	if (!PlayerController && !Cast<APlayerState>(Actor))
-	{
-		UpdateSpatialPosition();
 	}
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;

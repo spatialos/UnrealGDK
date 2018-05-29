@@ -65,15 +65,6 @@ function unpackToWithClean() {
   unpackTo "${SOURCE}" "${TARGET}"
 }
 
-function runSpatial() {
-  local default_flags=(
-    "--log_level=debug"
-  )
-
-  forceSpatialCliStructureV2
-  spatial "$@" "${default_flags[@]}"
-}
-
 # Variable declarations
 
 PROGRAMFILES_X86=$(cmd.exe /c "echo %ProgramFiles(x86)%")
@@ -85,6 +76,9 @@ IMP_NUGET="${IMPROBABLE_TOOLS}/imp-nuget/${IMP_NUGET_VERSION}/${TOOLS_OS}/imp-nu
 
 IMP_LINT_VERSION="20171129.134829.183d8f6"
 IMP_LINT_BIN="${IMPROBABLE_TOOLS}/imp_lint/${IMP_LINT_VERSION}/${TOOLS_OS}/imp_lint"
+
+PACKAGE_CLIENT_VERSION="20171115.142004.8707ef0"
+PACKAGE_CLIENT="${IMPROBABLE_TOOLS}/package_client/${PACKAGE_CLIENT_VERSION}/${TOOLS_OS}/package_client"
 
 GOPATH="$(pwd)/go"
 export GOPATH

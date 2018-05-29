@@ -513,9 +513,9 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 	return RepData;
 }
 
-TMap<uint16, TSharedPtr<FUnrealProperty>> GetFlatMigratableData(TSharedPtr<FUnrealType> TypeInfo)
+FCmdHandlePropertyMap GetFlatMigratableData(TSharedPtr<FUnrealType> TypeInfo)
 {
-	TMap<uint16, TSharedPtr<FUnrealProperty>> MigratableData;
+	FCmdHandlePropertyMap MigratableData;
 	VisitAllProperties(TypeInfo, [&MigratableData](TSharedPtr<FUnrealProperty> Property)
 	{
 		if (Property->MigratableData.IsValid())

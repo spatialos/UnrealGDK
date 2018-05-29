@@ -11,14 +11,11 @@
 
 #include "<#= commandDetails.UnderlyingPackageDetails.Include #>"
 
-<# foreach (var requiredInclude in commandDetails.UnrealResponseTypeDetails.RequiredIncludes) { #>
-#include <#= requiredInclude #>
-<# } #>
-
 #include "CoreMinimal.h"
 #include "SpatialGDKWorkerTypes.h"
-#include "UObject/NoExportTypes.h"
 #include "<#= commandDetails.CapitalisedName #>CommandResponder.generated.h"
+
+class <#= commandDetails.UnrealResponseTypeDetails.UClassName #>;
 
 /**
  *

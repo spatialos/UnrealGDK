@@ -215,7 +215,12 @@ void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentId
 	TSharedPtr<SpatialOSView> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
 
 	UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
-	check(ComponentClass);
+
+	if (!ComponentClass)
+	{
+		// The interop system does not register USpatialOSComponents. The code below is for the UnrealSDK flow.
+		return;
+	}
 
 	// An actor might not be created for a particular entity ID if that entity doesn't have all of the required components.
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
@@ -249,7 +254,12 @@ void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentId
 void USpatialInteropPipelineBlock::DisableComponentImpl(const FComponentIdentifier& ComponentIdentifier)
 {
 	UClass* ComponentClass = KnownComponents.FindRef(FComponentId{ComponentIdentifier.ComponentId});
-	check(ComponentClass);
+
+	if (!ComponentClass)
+	{
+		// The interop system does not register USpatialOSComponents. The code below is for the UnrealSDK flow.
+		return;
+	}
 
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId);
 	if (Actor)
@@ -323,7 +333,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<SpatialOSConne
 		{
 			// Option 2
 			UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Spawning a registered %s"), *ActorClass->GetName());
-			EntityActor = SpawnNewEntity(PositionComponent, ActorClass);
+			EntityActor = SpawnNewEntity(PositionComponent, ActorClass, false);
 			EntityRegistry->AddToRegistry(EntityId, EntityActor);
 		}
 		else if ((ActorClass = GetNativeEntityClass(MetadataComponent)) != nullptr)
@@ -332,6 +342,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<SpatialOSConne
 			UNetConnection* Connection = nullptr;
 			improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
 			check(UnrealMetadataComponent);
+			bool bDoingDeferredSpawn = false;
 
 			// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
 			if (NetDriver->IsServer() && ActorClass == APlayerController::StaticClass())
@@ -350,7 +361,8 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<SpatialOSConne
 				if (UnrealMetadataComponent->static_path().empty())
 				{
 					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
-					EntityActor = SpawnNewEntity(PositionComponent, ActorClass);
+					EntityActor = SpawnNewEntity(PositionComponent, ActorClass, true);
+					bDoingDeferredSpawn = true;
 				}
 				else
 				{
@@ -395,6 +407,16 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<SpatialOSConne
 				NetDriver->GetSpatialInterop()->ReceiveAddComponent(Channel, PendingAddComponent.AddComponentOp);
 			}
 
+			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
+			NetDriver->GetSpatialInterop()->SendComponentInterests(Channel, EntityId.ToSpatialEntityId());
+
+			if (bDoingDeferredSpawn)
+			{
+				auto InitialLocation = SpatialConstants::SpatialOSCoordinatesToLocation(PositionComponent->coords());
+				FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
+				EntityActor->FinishSpawning(FTransform(FRotator::ZeroRotator, SpawnLocation));
+			}
+
 			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 			// a player index. For now we don't support split screen, so the number is always 0.
 			if (NetDriver->ServerConnection)
@@ -422,7 +444,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<SpatialOSConne
 
 // Note that in SpatialGDK, this function will not be called on the spawning worker.
 // It's only for client, and in the future, other workers.
-AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ActorClass)
+AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ActorClass, bool bDeferred)
 {
 	FVector InitialLocation = SpatialConstants::SpatialOSCoordinatesToLocation(PositionComponent->coords());
 	AActor* NewActor = nullptr;
@@ -433,9 +455,12 @@ AActor* USpatialInteropPipelineBlock::SpawnNewEntity(improbable::PositionData* P
 		SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		SpawnInfo.bRemoteOwned = !NetDriver->IsServer();
 		SpawnInfo.bNoFail = true;
+		// We defer the construction in the GDK pipeline to allow initialization of replicated properties first.
+		SpawnInfo.bDeferConstruction = bDeferred;
+
 		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 
-		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(FRotator::ZeroRotator, InitialLocation), SpawnInfo);
+		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(FRotator::ZeroRotator, SpawnLocation), SpawnInfo);
 		check(NewActor);
 	}
 

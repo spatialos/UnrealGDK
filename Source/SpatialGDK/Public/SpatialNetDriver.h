@@ -3,10 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CoreOnline.h"
+#include "Engine.h"
 #include "IpNetDriver.h"
 #include "PlayerSpawnRequestSender.h"
-#include "SpatialInterop.h"
-#include "SpatialInteropPipelineBlock.h"
+#include "SpatialGDKWorkerConfigurationData.h"
 #include "SpatialOutputDevice.h"
 #include "SpatialNetDriver.generated.h"
 
@@ -15,6 +16,9 @@ class UEntityRegistry;
 class UCallbackDispatcher;
 class USpatialOS;
 class USpatialNetConnection;
+class USpatialInterop;
+class USpatialInteropPipelineBlock;
+class USpatialPackageMapClient;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 

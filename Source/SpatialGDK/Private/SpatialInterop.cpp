@@ -42,9 +42,15 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	// Register type binding classes.
 	for (UClass* TypeBindingClass : TypeBindingClasses)
 	{
-		UClass* BoundClass = TypeBindingClass->GetDefaultObject<USpatialTypeBinding>()->GetBoundClass();
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("Registered type binding class %s handling replicated properties of %s."), *TypeBindingClass->GetName(), *BoundClass->GetName());
-		RegisterInteropType(BoundClass, NewObject<USpatialTypeBinding>(this, TypeBindingClass));
+		if (UClass* BoundClass = TypeBindingClass->GetDefaultObject<USpatialTypeBinding>()->GetBoundClass())
+		{
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("Registered type binding class %s handling replicated properties of %s."), *TypeBindingClass->GetName(), *BoundClass->GetName());
+			RegisterInteropType(BoundClass, NewObject<USpatialTypeBinding>(this, TypeBindingClass));
+		}
+		else
+		{
+			UE_LOG(LogSpatialOSInterop, Warning, TEXT("Could not find and register 'bound class' for type binding class %s. If this is a blueprint class, make sure it is referenced by the world."), *TypeBindingClass->GetName());
+		}
 	}
 }
 
@@ -210,14 +216,23 @@ void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable
 void USpatialInterop::AddActorChannel(const FEntityId& EntityId, USpatialActorChannel* Channel)
 {
 	EntityToActorChannel.Add(EntityId, Channel);
-
-	// Set up component interests to adjust which components are being received.
-	SendComponentInterests(Channel, EntityId);
 }
 
 void USpatialInterop::RemoveActorChannel(const FEntityId& EntityId)
 {
 	EntityToActorChannel.Remove(EntityId);
+}
+
+void USpatialInterop::SendComponentInterests(USpatialActorChannel* ActorChannel, const FEntityId& EntityId)
+{
+	UClass* ActorClass = ActorChannel->Actor->GetClass();
+
+	const USpatialTypeBinding* Binding = GetTypeBindingByClass(ActorClass);
+	if (Binding)
+	{
+		auto Interest = Binding->GetInterestOverrideMap(NetDriver->GetNetMode() == NM_Client, ActorChannel->Actor->Role == ROLE_AutonomousProxy);
+		SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId.ToSpatialEntityId(), Interest);
+	}
 }
 
 USpatialActorChannel* USpatialInterop::GetActorChannelByEntityId(const FEntityId& EntityId) const
@@ -308,7 +323,7 @@ void USpatialInterop::HandleCommandResponse_Internal(const FString& RPCName, FUn
 	}
 }
 
-void USpatialInterop::QueueOutgoingObjectRepUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
+void USpatialInterop::QueueOutgoingObjectRepUpdate_Internal(const UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
 {
 	check(UnresolvedObject);
 	check(DependentChannel);
@@ -318,7 +333,7 @@ void USpatialInterop::QueueOutgoingObjectRepUpdate_Internal(UObject* UnresolvedO
 	PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel).Key.Add(Handle);
 }
 
-void USpatialInterop::QueueOutgoingObjectMigUpdate_Internal(UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
+void USpatialInterop::QueueOutgoingObjectMigUpdate_Internal(const UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
 {
 	check(UnresolvedObject);
 	check(DependentChannel);
@@ -329,7 +344,7 @@ void USpatialInterop::QueueOutgoingObjectMigUpdate_Internal(UObject* UnresolvedO
 	PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel).Value.Add(Handle);
 }
 
-void USpatialInterop::QueueOutgoingRPC_Internal(UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable)
+void USpatialInterop::QueueOutgoingRPC_Internal(const UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable)
 {
 	check(UnresolvedObject);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing RPC depending on object: %s."), *UnresolvedObject->GetName());
@@ -375,18 +390,6 @@ void USpatialInterop::UnregisterInteropType(UClass* Class)
 		USpatialTypeBinding* Binding = *BindingIterator;
 		Binding->UnbindFromView();
 		TypeBindings.Remove(Class);
-	}
-}
-
-void USpatialInterop::SendComponentInterests(USpatialActorChannel* ActorChannel, const FEntityId& EntityId)
-{
-	UClass* ActorClass = ActorChannel->Actor->GetClass();
-
-	const USpatialTypeBinding* Binding = GetTypeBindingByClass(ActorClass);
-	if (Binding)
-	{
-		auto Interest = Binding->GetInterestOverrideMap(NetDriver->GetNetMode() == NM_Client, ActorChannel->Actor->Role == ROLE_AutonomousProxy);
-		SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId.ToSpatialEntityId(), Interest);
 	}
 }
 

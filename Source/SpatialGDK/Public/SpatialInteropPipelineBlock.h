@@ -18,7 +18,12 @@ namespace worker
 	struct RemoveComponentOp;
 }
 
-class UAddComponentOpWrapperBase;
+namespace improbable
+{
+	class MetadataData;
+	class PositionData;
+}
+
 class UMetadataAddComponentOp;
 class UPositionAddComponentOp;
 class UCallbackDispatcher;
@@ -104,7 +109,7 @@ private:
 
 private:
 	AActor* GetOrCreateActor(TSharedPtr<SpatialOSConnection> LockedConnection, TSharedPtr<SpatialOSView> LockedView, const FEntityId& EntityId);
-	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ClassToSpawn);
+	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ClassToSpawn, bool bDeferred);
 
 	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);
 	UClass* GetRegisteredEntityClass(improbable::MetadataData* MetadataComponent);

@@ -53,15 +53,18 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 	return TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
 }
 
-FString SchemaCommandName(UFunction* Function)
+FString SchemaCommandName(UClass* Class, UFunction* Function)
 {
+	// Prepending the name of the class to the command name enables sibling classes. 
+	FString CommandName = Class->GetName() + Function->GetName();
 	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-	return Function->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
+	CommandName = UnrealNameToSchemaTypeName(CommandName.ToLower());
+	return CommandName;
 }
 
-FString CPPCommandClassName(UFunction* Function)
+FString CPPCommandClassName(UClass* Class, UFunction* Function)
 {
-	FString SchemaName = SchemaCommandName(Function);
+	FString SchemaName = SchemaCommandName(Class, Function);
 	SchemaName[0] = FChar::ToUpper(SchemaName[0]);
 	return SchemaName;
 }
@@ -151,7 +154,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	Writer.Print(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
-		package improbable.unreal;
+		package improbable.unreal.generated;
 
 		import "improbable/vector3.schema";
 		import "improbable/unreal/gdk/core_types.schema";)""");
@@ -247,7 +250,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		RPCTypeOwnerSchemaWriter->Print(R"""(
 			// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 			// Note that this file has been generated automatically
-			package improbable.unreal;
+			package improbable.unreal.generated;
 
 			import "improbable/vector3.schema";
 			import "improbable/unreal/gdk/core_types.schema";)""");
@@ -305,7 +308,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		for (auto& RPC : RPCsByType[Group])
 		{
 			Writer.Printf("command UnrealRPCCommandResponse %s(%s);",
-				*SchemaCommandName(RPC->Function),
+				*SchemaCommandName(Class, RPC->Function),
 				*SchemaRPCRequestType(RPC->Function));
 		}
 		Writer.Outdent().Print("}");

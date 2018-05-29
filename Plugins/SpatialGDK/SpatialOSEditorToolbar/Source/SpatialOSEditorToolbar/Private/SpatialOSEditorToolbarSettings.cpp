@@ -3,7 +3,7 @@
 
 USpatialOSEditorToolbarSettings::USpatialOSEditorToolbarSettings(const FObjectInitializer& ObjectInitializer) : SpatialOSLaunchArgument(TEXT("default_launch.json")), bStopSpatialOnExit(false), Super(ObjectInitializer)
 {
-	ProjectRootFolder.Path = FPaths::ConvertRelativePathToFull(FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../../../")));
+	ProjectRootFolder.Path = FPaths::ConvertRelativePathToFull(FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../spatial/")));
 }
 
 FString USpatialOSEditorToolbarSettings::ToString()
