@@ -1,6 +1,6 @@
 {
-  "name": "unreal_sdk_test",
-  "project_version": "1.0.0",
+  "name": "demo",
+  "project_version": "0.0.1",
   "sdk_version": "13.0.0",
   "dependencies": [
     {
