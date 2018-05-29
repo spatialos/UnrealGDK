@@ -106,17 +106,33 @@ FString PropertyToSchemaType(UProperty* Property)
 	{
 		DataType = TEXT("float");
 	}
+	else if (Property->IsA(UDoubleProperty::StaticClass()))
+	{
+		DataType = TEXT("double");
+	}
+	else if (Property->IsA(UInt8Property::StaticClass()))
+	{
+		DataType = TEXT("int32");
+	}
+	else if (Property->IsA(UInt16Property::StaticClass()))
+	{
+		DataType = TEXT("int32");
+	}
 	else if (Property->IsA(UIntProperty::StaticClass()))
 	{
 		DataType = TEXT("int32");
+	}
+	else if (Property->IsA(UInt64Property::StaticClass()))
+	{
+		DataType = TEXT("int64");
 	}
 	else if (Property->IsA(UByteProperty::StaticClass()))
 	{
 		DataType = TEXT("uint32"); // uint8 not supported in schema.
 	}
-	else if (Property->IsA(UNameProperty::StaticClass()) || Property->IsA(UStrProperty::StaticClass()))
+	else if (Property->IsA(UUInt16Property::StaticClass()))
 	{
-		DataType = TEXT("string");
+		DataType = TEXT("uint32");
 	}
 	else if (Property->IsA(UUInt32Property::StaticClass()))
 	{
@@ -124,7 +140,11 @@ FString PropertyToSchemaType(UProperty* Property)
 	}
 	else if (Property->IsA(UUInt64Property::StaticClass()))
 	{
-		DataType = TEXT("bytes");
+		DataType = TEXT("uint64");
+	}
+	else if (Property->IsA(UNameProperty::StaticClass()) || Property->IsA(UStrProperty::StaticClass()))
+	{
+		DataType = TEXT("string");
 	}
 	else if (Property->IsA(UClassProperty::StaticClass()))
 	{
@@ -138,6 +158,19 @@ FString PropertyToSchemaType(UProperty* Property)
 	{
 		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner);
 		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
+	}
+	else if (Property->IsA(UEnumProperty::StaticClass()))
+	{
+		UEnumProperty* EnumProp = Cast<UEnumProperty>(Property);
+
+		if (EnumProp->ElementSize < 4)
+		{
+			DataType = TEXT("uint32");
+		}
+		else
+		{
+			DataType = EnumProp->GetUnderlyingProperty()->GetCPPType();
+		}
 	}
 	else
 	{

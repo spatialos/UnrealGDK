@@ -47,6 +47,8 @@ namespace Improbable.Unreal.CodeGeneration.Model
         {
             { cppFloat, "float" },
             { cppInt32, "int" },
+            { cppInt64, "int64" },
+            { cppUint64, "int64" },
             { cppBool, "bool" },
             { cppString, "FString" },
             { cppEntityId, "FEntityId" },
@@ -139,8 +141,6 @@ namespace Improbable.Unreal.CodeGeneration.Model
 
         public static readonly HashSet<string> UnsupportedSchemaTypes = new HashSet<string>()
         {
-            { BuiltInTypeConstants.builtInUint64 },
-            { BuiltInTypeConstants.builtInInt64 },
             { BuiltInTypeConstants.builtInSint32 },
             { BuiltInTypeConstants.builtInSint64 },
             { BuiltInTypeConstants.builtInFixed32 },
