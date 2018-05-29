@@ -4,36 +4,40 @@ using UnrealBuildTool;
 
 public class SpatialGDKEditorToolbar : ModuleRules
 {
-	public SpatialGDKEditorToolbar(ReadOnlyTargetRules Target) : base(Target)
-	{
-		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-		bFasterWithoutUnity = true;
+    public SpatialGDKEditorToolbar(ReadOnlyTargetRules Target) : base(Target)
+    {
+        PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+        bFasterWithoutUnity = true;
 
-		PublicIncludePaths.AddRange(
-			new string[] {
-				"SpatialGDKEditorToolbar/Public",
-				"SpatialGDK/Public"
-			});
+        PublicIncludePaths.AddRange(
+            new string[] {
+                "SpatialGDKEditorToolbar/Public",
+                "SpatialGDK/Public"
+            }
+        );
 				
 		
-		PrivateIncludePaths.AddRange(
-			new string[] {
-				"SpatialGDKEditorToolbar/Private",
-			});
+        PrivateIncludePaths.AddRange(
+            new string[] 
+            {
+                "SpatialGDKEditorToolbar/Private",
+            }
+        );
 			
 		
-		PublicDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"Core",
-				"Json",
-				"JsonUtilities"
-			});
+        PublicDependencyModuleNames.AddRange(
+            new string[] 
+            {
+                "Core",
+                "Json",
+                "JsonUtilities"
+            }
+        );
 			
 		
-		PrivateDependencyModuleNames.AddRange(
-			new string[]
-			{
+        PrivateDependencyModuleNames.AddRange(
+            new string[]
+            {
                 "Core",
                 "CoreUObject",
                 "Engine",
@@ -46,6 +50,7 @@ public class SpatialGDKEditorToolbar : ModuleRules
                 "MessageLog",
                 "SpatialGDK",
                 "UnrealEd"
-			});
-	}
+            }
+        );
+    }
 }
