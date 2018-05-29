@@ -109,8 +109,6 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Save path %s"), *SavePath);
 	if (FPaths::CollapseRelativeDirectories(SavePath))
 	{
-		const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
-
 		std::unordered_map<worker::EntityId, worker::Entity> SnapshotEntities;
 
 		// Create spawner.
@@ -121,6 +119,8 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 		{
 			SnapshotEntities.emplace(std::move(EntityPair));
 		}
+
+		const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
 
 		// Save snapshot.
 		worker::Option<std::string> Result = worker::SaveSnapshot(improbable::unreal::Components{}, TCHAR_TO_UTF8(*FullPath), SnapshotEntities);

@@ -193,8 +193,8 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 {
 	ShowTaskStartNotification("Started interop codegen");
 
-	const bool success = SpatialGDKGenerateInteropCode();
-	if (success)
+	const bool bSuccess = SpatialGDKGenerateInteropCode();
+	if (bSuccess)
 	{
 		ShowSuccessNotification("Interop codegen completed!");
 	}
@@ -211,7 +211,7 @@ void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& No
 		TaskNotificationPtr.Pin()->ExpireAndFadeout();
 	}
 
-	if (GEditor)
+	if (GEditor && ExecutionStartSound)
 	{
 		GEditor->PlayEditorSound(ExecutionStartSound);
 	}
@@ -241,7 +241,7 @@ void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& Noti
 	Notification->ExpireAndFadeout();
 	TaskNotificationPtr.Reset();
 
-	if (GEditor)
+	if (GEditor && ExecutionSuccessSound)
 	{
 		GEditor->PlayEditorSound(ExecutionSuccessSound);
 	}
@@ -253,11 +253,11 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 
 	Notification->SetText(FText::AsCultureInvariant(NotificationText));
 	Notification->SetCompletionState(SNotificationItem::CS_Fail);
-	Notification->SetExpireDuration(30.0f);
+	Notification->SetExpireDuration(5.0f);
 	
 	Notification->ExpireAndFadeout();
 
-	if (GEditor)
+	if (GEditor && ExecutionFailSound)
 	{
 		GEditor->PlayEditorSound(ExecutionFailSound);
 	}

@@ -139,6 +139,47 @@ const FString GetOutputPath(const FString& ConfigFilePath)
 	return OutputPath;
 }
 
+const bool ClassesExist(const ClassHeaderMap& Classes)
+{
+	for (const auto& ClassHeaderList : Classes)
+	{
+		const UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
+
+		// If the class doesn't exist then print an error and carry on.
+		if (!Class)
+		{
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find unreal class for interop code generation: '%s', terminating."), *ClassHeaderList.Key);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
+{
+	TMap<FString, TArray<TArray<FName>>> MigratableProperties;
+	MigratableProperties.Add("PlayerController", {
+		{ "AcknowledgedPawn" }
+	});
+	MigratableProperties.Add("Character", {
+		{ "CharacterMovement", "GroundMovementMode" },
+		{ "CharacterMovement", "MovementMode" },
+		{ "CharacterMovement", "CustomMovementMode" }
+	});
+
+	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
+	int ComponentId = 100010;
+	for (auto& ClassHeaderList : Classes)
+	{
+		UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
+
+		TArray<TArray<FName>> ClassMigratableProperties = MigratableProperties.FindRef(ClassHeaderList.Key);
+		const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
+		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, ClassMigratableProperties, TypeBindingHeaders);
+	}
+}
+
 bool SpatialGDKGenerateInteropCode()
 {
 	// SpatialGDK config file definitions.
@@ -156,44 +197,22 @@ bool SpatialGDKGenerateInteropCode()
 			return false;
 		}
 
-		FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../schema/improbable/unreal/generated/"));
+		if (!ClassesExist(Classes))
+		{
+			return false;
+		}
+
+		const FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../schema/improbable/unreal/generated/"));
 		FString AbsoluteCombinedSchemaPath = FPaths::ConvertRelativePathToFull(CombinedSchemaPath);
 
-		FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GameSourceDir()), *GetOutputPath(ConfigFilePath));
+		const FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GameSourceDir()), *GetOutputPath(ConfigFilePath));
 		FString AbsoluteCombinedForwardingCodePath = FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
 
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *AbsoluteCombinedSchemaPath, *AbsoluteCombinedForwardingCodePath);
 
 		if (FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath) && FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
 		{
-			TMap<FString, TArray<TArray<FName>>> MigratableProperties;
-			MigratableProperties.Add("PlayerController", {
-				{ "AcknowledgedPawn" }
-			});
-			MigratableProperties.Add("Character", {
-				{ "CharacterMovement", "GroundMovementMode" },
-				{ "CharacterMovement", "MovementMode" },
-				{ "CharacterMovement", "CustomMovementMode" }
-			});
-
-			// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
-			int ComponentId = 100010;
-			for (auto& ClassHeaderList : Classes)
-			{
-				UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
-
-				// If the class doesn't exist then print an error and carry on.
-				if (!Class)
-				{
-					UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find unreal class for interop code generation: '%s', skipping."), *ClassHeaderList.Key);
-					continue;
-				}
-
-				TArray<TArray<FName>> ClassMigratableProperties = MigratableProperties.FindRef(ClassHeaderList.Key);
-				const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
-				ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, ClassMigratableProperties, TypeBindingHeaders);
-			}
-
+			GenerateInteropFromClasses(Classes, CombinedSchemaPath, CombinedForwardingCodePath);
 			return true;
 		}
 		else
