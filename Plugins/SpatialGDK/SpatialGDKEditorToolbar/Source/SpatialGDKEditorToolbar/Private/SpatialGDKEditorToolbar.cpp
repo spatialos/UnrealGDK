@@ -16,8 +16,6 @@
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
-#include "Kismet2/CompilerResultsLog.h"
-#include "MessageLogModule.h"
 #include "Sound/SoundBase.h"
 
 #include "LevelEditor.h"
@@ -44,11 +42,11 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	RegisterSettings();
 
 	// load sounds
-	ExecutionStartSound = LoadObject<USoundBase>(NULL, TEXT("/Engine/EditorSounds/Notifications/CompileStart_Cue.CompileStart_Cue"));
+	ExecutionStartSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileStart_Cue.CompileStart_Cue"));
 	ExecutionStartSound->AddToRoot();
-	ExecutionSuccessSound = LoadObject<USoundBase>(NULL, TEXT("/Engine/EditorSounds/Notifications/CompileSuccess_Cue.CompileSuccess_Cue"));
+	ExecutionSuccessSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileSuccess_Cue.CompileSuccess_Cue"));
 	ExecutionSuccessSound->AddToRoot();
-	ExecutionFailSound = LoadObject<USoundBase>(NULL, TEXT("/Engine/EditorSounds/Notifications/CompileFailed_Cue.CompileFailed_Cue"));
+	ExecutionFailSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileFailed_Cue.CompileFailed_Cue"));
 	ExecutionFailSound->AddToRoot();
 }
 
@@ -97,7 +95,6 @@ void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 
 void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 {
-
 }
 
 void FSpatialGDKEditorToolbarModule::RegisterSettings()
@@ -176,14 +173,13 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 
 void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 {
-
 	ShowTaskStartNotification("Started snapshot generation");
 
 	FString ProjectFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::GetPath(FPaths::GetProjectFilePath()));
 	FString CombinedPath = FPaths::Combine(*ProjectFilePath, TEXT("../spatial/snapshots"));
-	const bool success = SpatialGDKGenerateSnapshot(CombinedPath, GEditor->GetEditorWorldContext().World());
+	const bool bSuccess = SpatialGDKGenerateSnapshot(CombinedPath, GEditor->GetEditorWorldContext().World());
 
-	if(success)
+	if(bSuccess)
 	{
 		ShowSuccessNotification("Snapshot successfully generated!");
 	}
@@ -257,7 +253,6 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 
 	Notification->SetText(FText::AsCultureInvariant(NotificationText));
 	Notification->SetCompletionState(SNotificationItem::CS_Fail);
-	Notification->SetHyperlink(FSimpleDelegate::CreateStatic(&FSpatialGDKEditorToolbarModule::ShowCompileLog));
 	Notification->SetExpireDuration(30.0f);
 	
 	Notification->ExpireAndFadeout();
@@ -266,13 +261,6 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 	{
 		GEditor->PlayEditorSound(ExecutionFailSound);
 	}
-}
-
-void FSpatialGDKEditorToolbarModule::ShowCompileLog()
-{
-	FMessageLogModule& MessageLogModule = FModuleManager::GetModuleChecked<FMessageLogModule>("MessageLog");
-	MessageLogModule.OpenMessageLog(FCompilerResultsLog::GetLogName());
-
 }
 
 #undef LOCTEXT_NAMESPACE
