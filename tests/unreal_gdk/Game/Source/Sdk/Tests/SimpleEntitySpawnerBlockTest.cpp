@@ -2,6 +2,7 @@
 
 #include "SimpleEntitySpawnerBlockTest.h"
 
+#include "CallbackDispatcher.h"
 #include "EntityPipeline.h"
 #include "EntityRegistry.h"
 
