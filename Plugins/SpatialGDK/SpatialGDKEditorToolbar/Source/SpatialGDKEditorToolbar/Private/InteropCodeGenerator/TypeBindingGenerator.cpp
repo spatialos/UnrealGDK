@@ -139,27 +139,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		//return GenerateUnrealToSchemaConversion(Writer, EnumProperty->GetUnderlyingProperty(), TEXT("Underlying"), ResultName, Handle);
 	}
 
-	// Start with Array types
-	if (!bWithinFixedArray && Property->ArrayDim > 1)
-	{
-		// C-style arrays fall here. Currently we treat them the same as TArrays on SpatialOS.
-		//TODO: optimize C array replication
-		Writer.BeginScope();
-
-		Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(Property));
-
-		Writer.Printf("for(int i = 0; i < %d; i++)", Property->ArrayDim);
-		Writer.BeginScope();
-
-		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", Property, FString::Printf(TEXT("%s[i]"), *PropertyValue), true, ObjectResolveFailureGenerator);
-
-		Writer.End();
-
-		Writer.Printf("%s(List);", *Update);
-
-		Writer.End();
-	}
-	else if (!bWithinFixedArray && Property->IsA(UArrayProperty::StaticClass()))
+	if (Property->IsA(UArrayProperty::StaticClass()))
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 
@@ -296,19 +276,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 		Writer.Printf("// UNSUPPORTED UEnumProperty %s %s", *PropertyValue, *Update);
 	}
 
-	// Start with Array types
-	if (!bWithinFixedArray && Property->ArrayDim > 1)
-	{
-		Writer.BeginScope();
-		Writer.Printf("auto& List = %s;", *Update);
-		Writer.Printf("check(RepData->Property->ArrayDim == %d);", Property->ArrayDim);
-		Writer.Printf("for(int i = 0; i < %d; i++)", Property->ArrayDim);
-		Writer.BeginScope();
-		GeneratePropertyToUnrealConversion(Writer, "List[i]", Property, FString::Printf(TEXT("%s[i]"), *PropertyValue), true, ObjectResolveFailureGenerator);
-		Writer.End();
-		Writer.End();
-	}
-	else if (Property->IsA(UArrayProperty::StaticClass()))
+	if (Property->IsA(UArrayProperty::StaticClass()))
 	{
 		const UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 
@@ -840,18 +808,22 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
 			TArray<FString> PropertyChainNames;
-			Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
+			Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
 			{
-				return TEXT("\"") + Property->Property->GetFName().ToString() + TEXT("\"");
+				return TEXT("\"") + PropertyInfo->Property->GetFName().ToString() + TEXT("\"");
 			});
 			PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
 
 			// Add the handle data to the map.
-			SourceWriter.Printf("RepHandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, %s, %s));",
-				Handle,
-				*PropertyChainInitList,
-				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
-				*GetRepNotifyLifetimeConditionAsString(RepProp.Value->ReplicationData->RepNotifyCondition));
+			for (int i = 0; i < RepProp.Value->ReplicationData->Handles.Num(); ++i)
+			{
+				SourceWriter.Printf("RepHandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, %s, %s, %d));",
+					RepProp.Value->ReplicationData->Handles[i],
+					*PropertyChainInitList,
+					*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
+					*GetRepNotifyLifetimeConditionAsString(RepProp.Value->ReplicationData->RepNotifyCondition),
+					i * RepProp.Value->Property->ElementSize);
+			}
 		}
 	}
 
@@ -1312,63 +1284,20 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 		for (auto& RepProp : RepData[Group])
 		{
 			auto Handle = RepProp.Key;
-			UProperty* Property = RepProp.Value->Property;
 
-			SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(RepProp.Value));
-			SourceWriter.BeginScope();
+			check(RepProp.Value->ReplicationData->Handles.Num() >= 1);
 
-			// Get unreal data by deserialising from the reader, convert and set the corresponding field in the update object.
-			FString PropertyValueName = TEXT("Value");
-			FString PropertyCppType = Property->GetClass()->GetFName().ToString();
-			FString PropertyValueCppType = Property->GetCPPType();
-
-			// If we are dealing with a fixed-size array, the property looks exactly the same except ArrayDim. In this case, we'll need to operate on target data via pointer math.
-			if (Property->ArrayDim > 1)
+			if (RepProp.Value->ReplicationData->Handles.Num() == 1)
 			{
-				PropertyValueCppType.Append(TEXT("*"));
-			}
-
-			FString PropertyName = TEXT("Property");
-			//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
-			if (Property->IsA<UBoolProperty>())
-			{
-				SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);", *PropertyValueName);
-			}
-			else if (Property->IsA<UArrayProperty>())
-			{
-				UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-				SourceWriter.Printf("const TArray<%s>& %s = *(reinterpret_cast<TArray<%s> const*>(Data));", *ArrayProperty->Inner->GetCPPType(), *PropertyValueName, *ArrayProperty->Inner->GetCPPType());
-			}
-			else if (Property->IsA<UStructProperty>())
-			{
-				SourceWriter.Printf("const %s& %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
-			}
-			else if (Property->IsA<UClassProperty>())
-			{
-				// This is the same as the default case, but as UClassProperty extends from UObjectPropertyBase, we need to catch them here.
-				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
-			}
-			else if (Property->IsA<UObjectPropertyBase>())
-			{
-				FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
-				SourceWriter.Printf("%s* %s = *(reinterpret_cast<%s* const*>(Data));", *ClassName, *PropertyValueName, *ClassName);
+				GenerateBody_SendUpdate_RepDataProperty(SourceWriter, RepProp.Value->ReplicationData->Handles[0], RepProp.Value, -1);
 			}
 			else
 			{
-				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+				for (int i = 0; i < RepProp.Value->ReplicationData->Handles.Num(); ++i)
+				{
+					GenerateBody_SendUpdate_RepDataProperty(SourceWriter, RepProp.Value->ReplicationData->Handles[i], RepProp.Value, i);
+				}
 			}
-
-			FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(RepProp.Value);
-
-			SourceWriter.PrintNewLine();
-			GenerateUnrealToSchemaConversion(
-				SourceWriter, SpatialValueSetter, RepProp.Value->Property, PropertyValueName, false,
-				[&SourceWriter, Handle](const FString& PropertyValue)
-			{
-				SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
-			});
-			SourceWriter.Print("break;");
-			SourceWriter.End();
 		}
 		SourceWriter.Outdent().Print("default:");
 		SourceWriter.Indent();
@@ -1381,8 +1310,63 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 	SourceWriter.End();
 }
 
+void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo, const int ArrayIdx)
+{
+	UProperty* Property = PropertyInfo->Property;
+	SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(PropertyInfo, ArrayIdx));
+	SourceWriter.BeginScope();
+
+	// Get unreal data by deserialising from the reader, convert and set the corresponding field in the update object.
+	FString PropertyValueName = TEXT("Value");
+	FString PropertyCppType = Property->GetClass()->GetFName().ToString();
+	FString PropertyValueCppType = Property->GetCPPType();
+
+	FString PropertyName = TEXT("Property");
+	//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
+	if (Property->IsA<UBoolProperty>())
+	{
+		SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);", *PropertyValueName);
+	}
+	else if (Property->IsA<UArrayProperty>())
+	{
+		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+		SourceWriter.Printf("const TArray<%s>& %s = *(reinterpret_cast<TArray<%s> const*>(Data));", *ArrayProperty->Inner->GetCPPType(), *PropertyValueName, *ArrayProperty->Inner->GetCPPType());
+	}
+	else if (Property->IsA<UStructProperty>())
+	{
+		SourceWriter.Printf("const %s& %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+	}
+	else if (Property->IsA<UClassProperty>())
+	{
+		// This is the same as the default case, but as UClassProperty extends from UObjectPropertyBase, we need to catch them here.
+		SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+	}
+	else if (Property->IsA<UObjectPropertyBase>())
+	{
+		FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
+		SourceWriter.Printf("%s* %s = *(reinterpret_cast<%s* const*>(Data));", *ClassName, *PropertyValueName, *ClassName);
+	}
+	else
+	{
+		SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+	}
+
+	FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(PropertyInfo, ArrayIdx);
+
+	SourceWriter.PrintNewLine();
+	GenerateUnrealToSchemaConversion(
+		SourceWriter, SpatialValueSetter, PropertyInfo->Property, PropertyValueName, false,
+		[&SourceWriter, Handle](const FString& PropertyValue)
+	{
+		SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
+	});
+	SourceWriter.Print("break;");
+	SourceWriter.End();
+}
+
 void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& MigratableData)
 {
+	// TODO: Support fixed size arrays for migratable data. UNR-282.
 	FFunctionSignature ServerSendUpdateSignature{"void",
 		FString::Printf(TEXT("ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::generated::%s::Update& OutUpdate) const"),
 			*SchemaMigratableDataName(Class))
@@ -1465,133 +1449,19 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 		for (auto& RepProp : RepData[Group])
 		{
 			auto Handle = RepProp.Key;
-			UProperty* Property = RepProp.Value->Property;
+			check(RepProp.Value->ReplicationData->Handles.Num() >= 1);
 
-			// Check if this property is in the update.
-			SourceWriter.Printf("if (!Update.%s().empty())", *SchemaFieldName(RepProp.Value));
-			SourceWriter.BeginScope();
-
-			// Check if the property is relevant on the client.
-			SourceWriter.Printf("// %s", *SchemaFieldName(RepProp.Value));
-			SourceWriter.Printf("uint16 Handle = %d;", Handle);
-			SourceWriter.Print("const FRepHandleData* RepData = &HandleToPropertyMap[Handle];");
-			SourceWriter.Print("if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))");
-
-			SourceWriter.BeginScope();
-
-			if (Property->IsA<UObjectPropertyBase>())
+			if (RepProp.Value->ReplicationData->Handles.Num() == 1)
 			{
-				SourceWriter.Print("bool bWriteObjectProperty = true;");
-			}
-
-			// If the property is Role or RemoteRole, ensure to swap on the client.
-			if (RepProp.Value->ReplicationData->RoleSwapHandle != -1)
-			{
-				SourceWriter.Printf(R"""(
-					// On the client, we need to swap Role/RemoteRole.
-					if (!bIsServer)
-					{
-						Handle = %d;
-						RepData = &HandleToPropertyMap[Handle];
-					})""", RepProp.Value->ReplicationData->RoleSwapHandle);
-				SourceWriter.PrintNewLine();
-			}
-
-			// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
-			FString PropertyValueName = TEXT("Value");
-			FString PropertyValueCppType = Property->GetCPPType();
-
-			// If we are dealing with a fixed-size array, the property looks exactly the same except ArrayDim. In this case, we'll need to operate on target data via pointer math.
-			if (Property->ArrayDim > 1)
-			{
-				PropertyValueCppType.Append(TEXT("*"));
-			}
-
-			FString PropertyName = TEXT("RepData->Property");
-			//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
-			SourceWriter.Printf("uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));");
-			if (Property->IsA<UBoolProperty>())
-			{
-				SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(%s)->GetPropertyValue(PropertyData);", *PropertyValueName, *PropertyName);
-			}
-			else if (Property->IsA<UArrayProperty>()) 
-			{
-				UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-				SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));", *(ArrayProperty->Inner->GetCPPType()), *PropertyValueName, *(ArrayProperty->Inner->GetCPPType()));
-			}
-			else if (Property->IsA<UClassProperty>())
-			{
-				// This is the same as the default case, but as UClassProperty extends from UObjectPropertyBase, we need to catch them here.
-				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
-			}
-			else if (Property->IsA<UObjectPropertyBase>())
-			{
-				FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
-				SourceWriter.Printf("%s* %s = *(reinterpret_cast<%s* const*>(PropertyData));", *ClassName, *PropertyValueName, *ClassName);
+				GenerateBody_ReceiveUpdate_RepDataProperty(SourceWriter, RepProp.Value->ReplicationData->Handles[0], RepProp.Value, -1);
 			}
 			else
 			{
-				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
-			}
-			SourceWriter.PrintNewLine();
-
-			FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(RepProp.Value));
-
-			GeneratePropertyToUnrealConversion(
-				SourceWriter, SpatialValue, RepProp.Value->Property, PropertyValueName, false,
-				[&SourceWriter](const FString& PropertyValue)
-			{
-				SourceWriter.Print(R"""(
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
-						*Interop->GetSpatialOS()->GetWorkerId(),
-						*ObjectRefToString(ObjectRef),
-						*ActorChannel->Actor->GetName(),
-						ActorChannel->GetEntityId().ToSpatialEntityId(),
-						*RepData->Property->GetName(),
-						Handle);)""");
-				SourceWriter.Print("bWriteObjectProperty = false;");
-				SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);");
-			});
-
-			// If this is RemoteRole, make sure to downgrade if bAutonomousProxy is false.
-			if (Property->GetFName() == NAME_RemoteRole)
-			{
-				SourceWriter.PrintNewLine();
-				SourceWriter.Print(R"""(
-					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
-					// the server RPCs component.
-					if (!bIsServer && Value == ROLE_AutonomousProxy && !bAutonomousProxy)
-					{
-						Value = ROLE_SimulatedProxy;
-					})""");
-			}
-
-			SourceWriter.PrintNewLine();
-
-			if (Property->IsA<UObjectPropertyBase>())
-			{
-				SourceWriter.Print("if (bWriteObjectProperty)");
-				SourceWriter.BeginScope();
-			}
-
-			SourceWriter.Print("ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);");
-			SourceWriter.PrintNewLine();
-
-			SourceWriter.Print(R"""(
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
-					*Interop->GetSpatialOS()->GetWorkerId(),
-					*ActorChannel->Actor->GetName(),
-					ActorChannel->GetEntityId().ToSpatialEntityId(),
-					*RepData->Property->GetName(),
-					Handle);)""");
-
-			if (Property->IsA<UObjectPropertyBase>())
-			{
-				SourceWriter.End();
-			}
-
-			SourceWriter.End();
-			SourceWriter.End();
+				for (int i = 0; i < RepProp.Value->ReplicationData->Handles.Num(); ++i)
+				{
+					GenerateBody_ReceiveUpdate_RepDataProperty(SourceWriter, RepProp.Value->ReplicationData->Handles[i], RepProp.Value, i);
+				}
+			}			
 		}
 		SourceWriter.Print("Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies.Array());");
 	}
@@ -1605,8 +1475,133 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 	SourceWriter.End();
 }
 
+void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo, const int ArrayIdx)
+{
+	UProperty* Property = PropertyInfo->Property;
+	// Check if this property is in the update.
+	SourceWriter.Printf("if (!Update.%s().empty())", *SchemaFieldName(PropertyInfo, ArrayIdx));
+	SourceWriter.BeginScope();
+
+	// Check if the property is relevant on the client.
+	SourceWriter.Printf("// %s", *SchemaFieldName(PropertyInfo, ArrayIdx));
+	SourceWriter.Printf("uint16 Handle = %d;", Handle);
+	SourceWriter.Print("const FRepHandleData* RepData = &HandleToPropertyMap[Handle];");
+	SourceWriter.Print("if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))");
+
+	SourceWriter.BeginScope();
+
+	if (Property->IsA<UObjectPropertyBase>())
+	{
+		SourceWriter.Print("bool bWriteObjectProperty = true;");
+	}
+
+	// If the property is Role or RemoteRole, ensure to swap on the client.
+	if (PropertyInfo->ReplicationData->RoleSwapHandle != -1)
+	{
+		SourceWriter.Printf(R"""(
+					// On the client, we need to swap Role/RemoteRole.
+					if (!bIsServer)
+					{
+						Handle = %d;
+						RepData = &HandleToPropertyMap[Handle];
+					})""", PropertyInfo->ReplicationData->RoleSwapHandle);
+		SourceWriter.PrintNewLine();
+	}
+
+	// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
+	FString PropertyValueName = TEXT("Value");
+	FString PropertyValueCppType = Property->GetCPPType();
+
+	FString PropertyName = TEXT("RepData->Property");
+	//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
+	SourceWriter.Printf("uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));");
+	if (Property->IsA<UBoolProperty>())
+	{
+		SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(%s)->GetPropertyValue(PropertyData);", *PropertyValueName, *PropertyName);
+	}
+	else if (Property->IsA<UArrayProperty>())
+	{
+		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+		SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));", *(ArrayProperty->Inner->GetCPPType()), *PropertyValueName, *(ArrayProperty->Inner->GetCPPType()));
+	}
+	else if (Property->IsA<UClassProperty>())
+	{
+		// This is the same as the default case, but as UClassProperty extends from UObjectPropertyBase, we need to catch them here.
+		SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+	}
+	else if (Property->IsA<UObjectPropertyBase>())
+	{
+		FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
+		SourceWriter.Printf("%s* %s = *(reinterpret_cast<%s* const*>(PropertyData));", *ClassName, *PropertyValueName, *ClassName);
+	}
+	else
+	{
+		SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+	}
+	SourceWriter.PrintNewLine();
+
+	FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(PropertyInfo, ArrayIdx));
+
+	GeneratePropertyToUnrealConversion(
+		SourceWriter, SpatialValue, PropertyInfo->Property, PropertyValueName, false,
+		[&SourceWriter](const FString& PropertyValue)
+	{
+		SourceWriter.Print(R"""(
+					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
+						*Interop->GetSpatialOS()->GetWorkerId(),
+						*ObjectRefToString(ObjectRef),
+						*ActorChannel->Actor->GetName(),
+						ActorChannel->GetEntityId().ToSpatialEntityId(),
+						*RepData->Property->GetName(),
+						Handle);)""");
+		SourceWriter.Print("bWriteObjectProperty = false;");
+		SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);");
+	});
+
+	// If this is RemoteRole, make sure to downgrade if bAutonomousProxy is false.
+	if (Property->GetFName() == NAME_RemoteRole)
+	{
+		SourceWriter.PrintNewLine();
+		SourceWriter.Print(R"""(
+					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
+					// the server RPCs component.
+					if (!bIsServer && Value == ROLE_AutonomousProxy && !bAutonomousProxy)
+					{
+						Value = ROLE_SimulatedProxy;
+					})""");
+	}
+
+	SourceWriter.PrintNewLine();
+
+	if (Property->IsA<UObjectPropertyBase>())
+	{
+		SourceWriter.Print("if (bWriteObjectProperty)");
+		SourceWriter.BeginScope();
+	}
+
+	SourceWriter.Print("ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);");
+	SourceWriter.PrintNewLine();
+
+	SourceWriter.Print(R"""(
+				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					*ActorChannel->Actor->GetName(),
+					ActorChannel->GetEntityId().ToSpatialEntityId(),
+					*RepData->Property->GetName(),
+					Handle);)""");
+
+	if (Property->IsA<UObjectPropertyBase>())
+	{
+		SourceWriter.End();
+	}
+
+	SourceWriter.End();
+	SourceWriter.End();
+}
+
 void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& MigratableData)
 {
+	// TODO: Support fixed size arrays for migratable data. UNR-282.
 	FFunctionSignature ReceiveUpdateSignature{"void",
 		FString::Printf(TEXT("ReceiveUpdate_Migratable(USpatialActorChannel* ActorChannel, const improbable::unreal::generated::%s::Update& Update) const"),
 			*SchemaMigratableDataName(Class))

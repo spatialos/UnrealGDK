@@ -38,19 +38,24 @@ FString SchemaRPCResponseType(UFunction* Function)
 	return FString::Printf(TEXT("Unreal%sResponse"), *UnrealNameToSchemaTypeName(Function->GetName()));
 }
 
-FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
+FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property, const int FixedArrayIndex /*=-1*/)
 {
 	// Transform the property chain into a chain of names.
 	TArray<FString> ChainNames;
 	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
 	{
-		// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
+		// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.		
 		return Property->Property->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
 	});
 
 	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
 	// which the generated code extends :troll:.
-	return TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
+	FString FieldName = TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
+	if (FixedArrayIndex >= 0)
+	{
+		FieldName += FString::FromInt(FixedArrayIndex);
+	}
+	return FieldName;
 }
 
 FString SchemaCommandName(UClass* Class, UFunction* Function)
@@ -69,18 +74,14 @@ FString CPPCommandClassName(UClass* Class, UFunction* Function)
 	return SchemaName;
 }
 
-FString PropertyToSchemaType(UProperty* Property, bool bWithinFixedArray)
+FString PropertyToSchemaType(UProperty* Property)
 {
 	FString DataType;
 
-	if (!bWithinFixedArray && Property->ArrayDim > 1)
+	
+	if (Property->IsA(UArrayProperty::StaticClass()))
 	{
-		DataType = PropertyToSchemaType(Property, true);
-		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
-	}
-	else if (Property->IsA(UArrayProperty::StaticClass()))
-	{
-		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner, false);
+		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner);
 		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
 	}
 	else if (Property->IsA(UStructProperty::StaticClass()))
@@ -176,8 +177,6 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		int FieldCounter = 0;
 		for (auto& RepProp : RepData[Group])
 		{
-			FieldCounter++;
-
 			FString ParentClassName = TEXT("");
 
 			// This loop will add the owner class of each field in the component. Meant for short-term debugging only.
@@ -208,13 +207,34 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 				PropertyPath += FString::Printf(TEXT("::%s"), *ObjOuter->GetName());
 			}
 
-			Writer.Printf("%s %s = %d; // %s // %s",
-				*PropertyToSchemaType(RepProp.Value->Property, false),
-				*SchemaFieldName(RepProp.Value),
-				FieldCounter,
-				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
-				*PropertyPath
-			);
+
+			if (RepProp.Value->ReplicationData->Handles.Num() == 1)
+			{
+				FieldCounter++;
+				// This is the default path, except for fixed size arrays.
+				Writer.Printf("%s %s = %d; // %s // %s",
+					*PropertyToSchemaType(RepProp.Value->Property),
+					*SchemaFieldName(RepProp.Value),
+					FieldCounter,
+					*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
+					*PropertyPath
+				);
+			}
+			else
+			{
+				for (int ArrayIdx = 0; ArrayIdx < RepProp.Value->ReplicationData->Handles.Num(); ++ArrayIdx)
+				{
+					FieldCounter++;
+					Writer.Printf("%s %s = %d; // %s // %s",
+						*PropertyToSchemaType(RepProp.Value->Property),
+						*SchemaFieldName(RepProp.Value, ArrayIdx),
+						FieldCounter,
+						*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
+						*PropertyPath
+					);
+				}
+			}
+			
 		}
 		Writer.Outdent().Print("}");
 	}
@@ -225,13 +245,31 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
 	int FieldCounter = 0;
 	for (auto& Prop : GetFlatMigratableData(TypeInfo))
-	{
-		FieldCounter++;
-		Writer.Printf("%s %s = %d;",
-			*PropertyToSchemaType(Prop.Value->Property, false),
-			*SchemaFieldName(Prop.Value),
-			FieldCounter
-		);
+	{		
+		if (Prop.Value->Property->ArrayDim == 1)
+		{
+			FieldCounter++;
+			// This is the default path, except for fixed size arrays.
+			Writer.Printf("%s %s = %d;",
+				*PropertyToSchemaType(Prop.Value->Property),
+				*SchemaFieldName(Prop.Value),
+				FieldCounter
+			);
+		}
+		else
+		{
+			for (int ArrayIdx = 0; ArrayIdx < Prop.Value->Property->ArrayDim; ++ArrayIdx)
+			{
+				FieldCounter++;
+				Writer.Printf("%s %s = %d;",
+					*PropertyToSchemaType(Prop.Value->Property),
+					*SchemaFieldName(Prop.Value, ArrayIdx),
+					FieldCounter
+				);
+			}
+		}
+
+
 	}
 	Writer.Outdent().Print("}");
 
@@ -283,14 +321,33 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			// RPC target sub-object offset.
 			RPCTypeOwnerSchemaWriter->Printf("uint32 target_subobject_offset = 1;");
 			FieldCounter = 1;
+			// TODO: Support fixed size arrays in RPCs. The implementation below is incomplete. UNR-283.
 			for (auto& Param : ParamList)
 			{
-				FieldCounter++;
-				RPCTypeOwnerSchemaWriter->Printf("%s %s = %d;",
-					*PropertyToSchemaType(Param->Property, false),
-					*SchemaFieldName(Param),
-					FieldCounter
-				);
+				if (Param->Property->ArrayDim == 1)
+				{
+					// This is the default path, except for fixed size arrays.
+					FieldCounter++;
+					RPCTypeOwnerSchemaWriter->Printf("%s %s = %d;",
+						*PropertyToSchemaType(Param->Property),
+						*SchemaFieldName(Param),
+						FieldCounter
+					);
+				}
+				else
+				{
+					for (int ArrayIdx = 0; ArrayIdx < Param->Property->ArrayDim; ++ArrayIdx)
+					{
+						FieldCounter++;
+						RPCTypeOwnerSchemaWriter->Printf("%s %s = %d;",
+							*PropertyToSchemaType(Param->Property),
+							*SchemaFieldName(Param, ArrayIdx),
+							FieldCounter
+						);
+					}
+				}
+
+
 			}
 			RPCTypeOwnerSchemaWriter->Outdent().Print("}");
 		}

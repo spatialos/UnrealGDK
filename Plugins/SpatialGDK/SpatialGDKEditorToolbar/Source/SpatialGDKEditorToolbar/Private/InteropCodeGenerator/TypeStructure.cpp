@@ -429,22 +429,26 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		}
 		
 		// We now have the right property node. Fill in the rep data.
-		TSharedPtr<FUnrealRepData> RepDataNode = MakeShared<FUnrealRepData>();
-		RepDataNode->RepLayoutType = (ERepLayoutCmdType)Cmd.Type;
-		RepDataNode->Condition = Parent.Condition;
-		RepDataNode->RepNotifyCondition = Parent.RepNotifyCondition;
-		RepDataNode->CmdIndex = CmdIndex;
-		RepDataNode->Handle = Cmd.RelativeHandle;
-		if (Parent.RoleSwapIndex != -1)
+		// In most cases, we will go into the if condition below as there is a 1:1 mapping between replication data and property node.
+		// The exception is fixed size arrays where one property expands to multiple handles.
+		if (!PropertyNode->ReplicationData.IsValid())
 		{
-			int32 SwappedCmdIndex = RepLayout.Parents[Parent.RoleSwapIndex].CmdStart;
-			RepDataNode->RoleSwapHandle = (int32)RepLayout.Cmds[SwappedCmdIndex].RelativeHandle;
+			TSharedPtr<FUnrealRepData> RepDataNode = MakeShared<FUnrealRepData>();
+			RepDataNode->RepLayoutType = (ERepLayoutCmdType)Cmd.Type;
+			RepDataNode->Condition = Parent.Condition;
+			RepDataNode->RepNotifyCondition = Parent.RepNotifyCondition;
+			if (Parent.RoleSwapIndex != -1)
+			{
+				int32 SwappedCmdIndex = RepLayout.Parents[Parent.RoleSwapIndex].CmdStart;
+				RepDataNode->RoleSwapHandle = (int32)RepLayout.Cmds[SwappedCmdIndex].RelativeHandle;
+			}
+			else
+			{
+				RepDataNode->RoleSwapHandle = -1;
+			}
+			PropertyNode->ReplicationData = RepDataNode;
 		}
-		else
-		{
-			RepDataNode->RoleSwapHandle = -1;
-		}
-		PropertyNode->ReplicationData = RepDataNode;
+		PropertyNode->ReplicationData->Handles.Add(Cmd.RelativeHandle);
 
 		if (Cmd.Type == REPCMD_DynamicArray)
 		{
@@ -484,19 +488,20 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 	RepData.Add(REP_MultiClient);
 	RepData.Add(REP_SingleClient);
 
-	VisitAllProperties(TypeInfo, [&RepData](TSharedPtr<FUnrealProperty> Property)
+	VisitAllProperties(TypeInfo, [&RepData](TSharedPtr<FUnrealProperty> PropertyInfo)
 	{
-		if (Property->ReplicationData.IsValid())
+		if (PropertyInfo->ReplicationData.IsValid())
 		{
 			EReplicatedPropertyGroup Group = REP_MultiClient;
-			switch (Property->ReplicationData->Condition)
+			switch (PropertyInfo->ReplicationData->Condition)
 			{
 			case COND_AutonomousOnly:
 			case COND_OwnerOnly:
 				Group = REP_SingleClient;
 				break;
 			}
-			RepData[Group].Add(Property->ReplicationData->Handle, Property);
+
+			RepData[Group].Add(PropertyInfo->ReplicationData->Handles[0], PropertyInfo);
 		}
 		return true;
 	}, false);
@@ -516,11 +521,11 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 FCmdHandlePropertyMap GetFlatMigratableData(TSharedPtr<FUnrealType> TypeInfo)
 {
 	FCmdHandlePropertyMap MigratableData;
-	VisitAllProperties(TypeInfo, [&MigratableData](TSharedPtr<FUnrealProperty> Property)
+	VisitAllProperties(TypeInfo, [&MigratableData](TSharedPtr<FUnrealProperty> PropertyInfo)
 	{
-		if (Property->MigratableData.IsValid())
+		if (PropertyInfo->MigratableData.IsValid())
 		{
-			MigratableData.Add(Property->MigratableData->Handle, Property);
+			MigratableData.Add(PropertyInfo->MigratableData->Handle, PropertyInfo);
 		}
 		return true;
 	}, true);
