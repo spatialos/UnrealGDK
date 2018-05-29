@@ -2,7 +2,8 @@
 /Game/**/Intermediate/
 /Game/DerivedDataCache/
 /Game/Plugins/
-/Game/Scripts/
+/Game/Scripts/*
+!Game/Scripts/Test.bat
 Game/Source/SpatialGDK/*
 !Game/Source/SpatialGDK/Public
 Game/Source/SpatialGDK/Public/*
