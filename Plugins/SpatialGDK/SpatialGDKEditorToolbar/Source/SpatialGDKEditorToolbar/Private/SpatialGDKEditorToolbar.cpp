@@ -16,6 +16,7 @@
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
+#include "Sound/SoundBase.h"
 
 #include "LevelEditor.h"
 
@@ -39,10 +40,46 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	SetupToolbar(PluginCommands);
 
 	RegisterSettings();
+
+	// load sounds
+	ExecutionStartSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileStart_Cue.CompileStart_Cue"));
+	ExecutionStartSound->AddToRoot();
+	ExecutionSuccessSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileSuccess_Cue.CompileSuccess_Cue"));
+	ExecutionSuccessSound->AddToRoot();
+	ExecutionFailSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileFailed_Cue.CompileFailed_Cue"));
+	ExecutionFailSound->AddToRoot();
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
 {
+
+	if (ExecutionStartSound != nullptr)
+	{
+		if (!GExitPurge)
+		{
+			ExecutionStartSound->RemoveFromRoot();
+		}
+		ExecutionStartSound = nullptr;
+	}
+
+	if (ExecutionSuccessSound != nullptr)
+	{
+		if (!GExitPurge)
+		{
+			ExecutionSuccessSound->RemoveFromRoot();
+		}
+		ExecutionSuccessSound = nullptr;
+	}
+
+	if (ExecutionFailSound != nullptr)
+	{
+		if (!GExitPurge)
+		{
+			ExecutionFailSound->RemoveFromRoot();
+		}
+		ExecutionFailSound = nullptr;
+	}
+
 	if (UObjectInitialized())
 	{
 		UnregisterSettings();
@@ -136,22 +173,94 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 
 void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 {
+	ShowTaskStartNotification("Started snapshot generation");
+
 	FString ProjectFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::GetPath(FPaths::GetProjectFilePath()));
 	FString CombinedPath = FPaths::Combine(*ProjectFilePath, TEXT("../spatial/snapshots"));
-	UE_LOG(LogTemp, Display, TEXT("Combined path %s"), *CombinedPath);
-	if (FPaths::CollapseRelativeDirectories(CombinedPath))
+	const bool bSuccess = SpatialGDKGenerateSnapshot(CombinedPath, GEditor->GetEditorWorldContext().World());
+
+	if(bSuccess)
 	{
-		SpatialGDKGenerateSnapshot(CombinedPath, GEditor->GetEditorWorldContext().World());
+		ShowSuccessNotification("Snapshot successfully generated!");
 	}
 	else
 	{
-		UE_LOG(LogTemp, Display, TEXT("Path was invalid - snapshot not generated"));
+		ShowFailedNotification("Snapshot generation failed!");
 	}
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 {
-	SpatialGDKGenerateInteropCode();
+	ShowTaskStartNotification("Started interop codegen");
+
+	const bool bSuccess = SpatialGDKGenerateInteropCode();
+	if (bSuccess)
+	{
+		ShowSuccessNotification("Interop codegen completed!");
+	}
+	else
+	{
+		ShowFailedNotification("Interop codegen failed");
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& NotificationText)
+{
+	if (TaskNotificationPtr.IsValid())
+	{
+		TaskNotificationPtr.Pin()->ExpireAndFadeout();
+	}
+
+	if (GEditor && ExecutionStartSound)
+	{
+		GEditor->PlayEditorSound(ExecutionStartSound);
+	}
+
+	FNotificationInfo Info(FText::AsCultureInvariant(NotificationText));
+	Info.Image = FEditorStyle::GetBrush(TEXT("LevelEditor.RecompileGameCode"));
+	Info.ExpireDuration = 5.0f;
+	Info.bFireAndForget = false;
+
+	TaskNotificationPtr = FSlateNotificationManager::Get().AddNotification(Info);
+
+	if (TaskNotificationPtr.IsValid())
+	{
+		TaskNotificationPtr.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& NotificationText)
+{
+	TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+
+	Notification->SetFadeInDuration(0.1f);
+	Notification->SetFadeOutDuration(0.5f);
+	Notification->SetExpireDuration(1.5f);
+	Notification->SetText(FText::AsCultureInvariant(NotificationText));
+	Notification->SetCompletionState(SNotificationItem::CS_Success);
+	Notification->ExpireAndFadeout();
+	TaskNotificationPtr.Reset();
+
+	if (GEditor && ExecutionSuccessSound)
+	{
+		GEditor->PlayEditorSound(ExecutionSuccessSound);
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& NotificationText)
+{
+	TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+
+	Notification->SetText(FText::AsCultureInvariant(NotificationText));
+	Notification->SetCompletionState(SNotificationItem::CS_Fail);
+	Notification->SetExpireDuration(5.0f);
+	
+	Notification->ExpireAndFadeout();
+
+	if (GEditor && ExecutionFailSound)
+	{
+		GEditor->PlayEditorSound(ExecutionFailSound);
+	}
 }
 
 #undef LOCTEXT_NAMESPACE
