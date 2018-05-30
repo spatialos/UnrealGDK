@@ -100,7 +100,7 @@ FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& Rep
 	}
 	else
 	{
-		RepHandleData.Property->CopyCompleteValue(Dest, Value);
+		RepHandleData.Property->CopySingleValue(Dest, Value);
 	}
 }
 
@@ -119,7 +119,7 @@ FORCEINLINE void ApplyIncomingMigratablePropertyUpdate(const FMigratableHandleDa
 	}
 	else
 	{
-		MigratableHandleData.Property->CopyCompleteValue(Dest, Value);
+		MigratableHandleData.Property->CopySingleValue(Dest, Value);
 	}
 }
 
