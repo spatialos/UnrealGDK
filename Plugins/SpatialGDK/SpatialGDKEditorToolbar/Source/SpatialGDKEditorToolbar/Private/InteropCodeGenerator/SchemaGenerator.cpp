@@ -239,7 +239,11 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			for (int ArrayIdx = 0; ArrayIdx < NumHandles; ++ArrayIdx)
 			{
 				FieldCounter++;
-				WriteSchemaRepField(Writer, RepProp.Value, PropertyPath, FieldCounter, NumHandles == 1 ? -1 : ArrayIdx);
+				WriteSchemaRepField(Writer,
+					RepProp.Value,
+					PropertyPath,
+					FieldCounter,
+					NumHandles == 1 ? -1 : ArrayIdx);
 			}
 			
 		}
@@ -256,7 +260,10 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		for (int ArrayIdx = 0; ArrayIdx < Prop.Value->Property->ArrayDim; ++ArrayIdx)
 		{
 			FieldCounter++;
-			WriteSchemaMigratableField(Writer, Prop.Value, FieldCounter, Prop.Value->Property->ArrayDim == 1 ? -1 : ArrayIdx);
+			WriteSchemaMigratableField(Writer,
+				Prop.Value,
+				FieldCounter,
+				Prop.Value->Property->ArrayDim == 1 ? -1 : ArrayIdx);
 		}
 	}
 	Writer.Outdent().Print("}");
@@ -315,7 +322,10 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 				for (int ArrayIdx = 0; ArrayIdx < Param->Property->ArrayDim; ++ArrayIdx)
 				{
 					FieldCounter++;
-					WriteSchemaRPCField(RPCTypeOwnerSchemaWriter, Param, FieldCounter, Param->Property->ArrayDim == 1 ? -1 : ArrayIdx);
+					WriteSchemaRPCField(RPCTypeOwnerSchemaWriter,
+						Param,
+						FieldCounter,
+						Param->Property->ArrayDim == 1 ? -1 : ArrayIdx);
 				}
 			}
 			RPCTypeOwnerSchemaWriter->Outdent().Print("}");
