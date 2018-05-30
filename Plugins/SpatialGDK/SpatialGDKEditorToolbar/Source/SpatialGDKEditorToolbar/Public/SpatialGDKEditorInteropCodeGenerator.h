@@ -4,4 +4,4 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInteropCodeGenerator, Log, All);
 
-void SpatialGDKGenerateInteropCode();
+bool SpatialGDKGenerateInteropCode();
