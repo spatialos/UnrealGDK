@@ -1705,7 +1705,7 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 			FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(MigProp.Value));
 
 			GeneratePropertyToUnrealConversion(
-				SourceWriter, SpatialValue, MigProp.Value->Property, PropertyValueName, true,
+				SourceWriter, SpatialValue, MigProp.Value->Property, PropertyValueName,
 				[&SourceWriter, &Property](const FString& PropertyValue)
 			{
 				SourceWriter.Print(R"""(
