@@ -439,7 +439,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			RepDataNode->RepNotifyCondition = Parent.RepNotifyCondition;
 			if (Parent.RoleSwapIndex != -1)
 			{
-				int32 SwappedCmdIndex = RepLayout.Parents[Parent.RoleSwapIndex].CmdStart;
+				const int32 SwappedCmdIndex = RepLayout.Parents[Parent.RoleSwapIndex].CmdStart;
 				RepDataNode->RoleSwapHandle = (int32)RepLayout.Cmds[SwappedCmdIndex].RelativeHandle;
 			}
 			else

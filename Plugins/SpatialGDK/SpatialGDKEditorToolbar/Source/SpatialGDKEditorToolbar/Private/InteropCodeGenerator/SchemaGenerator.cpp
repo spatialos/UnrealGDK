@@ -44,7 +44,7 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property, const int Fi
 	TArray<FString> ChainNames;
 	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
 	{
-		// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.		
+		// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
 		return Property->Property->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
 	});
 
@@ -78,13 +78,7 @@ FString PropertyToSchemaType(UProperty* Property)
 {
 	FString DataType;
 
-	
-	if (Property->IsA(UArrayProperty::StaticClass()))
-	{
-		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner);
-		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
-	}
-	else if (Property->IsA(UStructProperty::StaticClass()))
+	if (Property->IsA(UStructProperty::StaticClass()))
 	{
 		UStructProperty* StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct* Struct = StructProp->Struct;
@@ -145,12 +139,46 @@ FString PropertyToSchemaType(UProperty* Property)
 	{
 		DataType = TEXT("UnrealObjectRef");
 	}
+	else if (Property->IsA(UArrayProperty::StaticClass()))
+	{
+		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner);
+		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
+	}
 	else
 	{
 		DataType = TEXT("bytes");
 	}
 
 	return DataType;
+}
+
+void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> RepProp, const FString& PropertyPath, const int FieldCounter, const int ArrayIdx)
+{
+	Writer.Printf("%s %s = %d; // %s // %s",
+		*PropertyToSchemaType(RepProp->Property),
+		*SchemaFieldName(RepProp, ArrayIdx),
+		FieldCounter,
+		*GetLifetimeConditionAsString(RepProp->ReplicationData->Condition),
+		*PropertyPath
+	);
+}
+
+void WriteSchemaMigratableField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> MigratableProp, const int FieldCounter, const int ArrayIdx)
+{
+	Writer.Printf("%s %s = %d;",
+		*PropertyToSchemaType(MigratableProp->Property),
+		*SchemaFieldName(MigratableProp, ArrayIdx),
+		FieldCounter
+	);
+}
+
+void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrealProperty> RPCProp, const int FieldCounter, const int ArrayIdx)
+{
+	Writer->Printf("%s %s = %d;",
+		*PropertyToSchemaType(RPCProp->Property),
+		*SchemaFieldName(RPCProp, ArrayIdx),
+		FieldCounter
+	);
 }
 
 int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
@@ -207,32 +235,11 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 				PropertyPath += FString::Printf(TEXT("::%s"), *ObjOuter->GetName());
 			}
 
-
-			if (RepProp.Value->ReplicationData->Handles.Num() == 1)
+			const int NumHandles = RepProp.Value->ReplicationData->Handles.Num();
+			for (int ArrayIdx = 0; ArrayIdx < NumHandles; ++ArrayIdx)
 			{
 				FieldCounter++;
-				// This is the default path, except for fixed size arrays.
-				Writer.Printf("%s %s = %d; // %s // %s",
-					*PropertyToSchemaType(RepProp.Value->Property),
-					*SchemaFieldName(RepProp.Value),
-					FieldCounter,
-					*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
-					*PropertyPath
-				);
-			}
-			else
-			{
-				for (int ArrayIdx = 0; ArrayIdx < RepProp.Value->ReplicationData->Handles.Num(); ++ArrayIdx)
-				{
-					FieldCounter++;
-					Writer.Printf("%s %s = %d; // %s // %s",
-						*PropertyToSchemaType(RepProp.Value->Property),
-						*SchemaFieldName(RepProp.Value, ArrayIdx),
-						FieldCounter,
-						*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
-						*PropertyPath
-					);
-				}
+				WriteSchemaRepField(Writer, RepProp.Value, PropertyPath, FieldCounter, NumHandles == 1 ? -1 : ArrayIdx);
 			}
 			
 		}
@@ -246,30 +253,11 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	int FieldCounter = 0;
 	for (auto& Prop : GetFlatMigratableData(TypeInfo))
 	{		
-		if (Prop.Value->Property->ArrayDim == 1)
+		for (int ArrayIdx = 0; ArrayIdx < Prop.Value->Property->ArrayDim; ++ArrayIdx)
 		{
 			FieldCounter++;
-			// This is the default path, except for fixed size arrays.
-			Writer.Printf("%s %s = %d;",
-				*PropertyToSchemaType(Prop.Value->Property),
-				*SchemaFieldName(Prop.Value),
-				FieldCounter
-			);
+			WriteSchemaMigratableField(Writer, Prop.Value, FieldCounter, Prop.Value->Property->ArrayDim == 1 ? -1 : ArrayIdx);
 		}
-		else
-		{
-			for (int ArrayIdx = 0; ArrayIdx < Prop.Value->Property->ArrayDim; ++ArrayIdx)
-			{
-				FieldCounter++;
-				Writer.Printf("%s %s = %d;",
-					*PropertyToSchemaType(Prop.Value->Property),
-					*SchemaFieldName(Prop.Value, ArrayIdx),
-					FieldCounter
-				);
-			}
-		}
-
-
 	}
 	Writer.Outdent().Print("}");
 
@@ -324,30 +312,11 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			// TODO: Support fixed size arrays in RPCs. The implementation below is incomplete. UNR-283.
 			for (auto& Param : ParamList)
 			{
-				if (Param->Property->ArrayDim == 1)
+				for (int ArrayIdx = 0; ArrayIdx < Param->Property->ArrayDim; ++ArrayIdx)
 				{
-					// This is the default path, except for fixed size arrays.
 					FieldCounter++;
-					RPCTypeOwnerSchemaWriter->Printf("%s %s = %d;",
-						*PropertyToSchemaType(Param->Property),
-						*SchemaFieldName(Param),
-						FieldCounter
-					);
+					WriteSchemaRPCField(RPCTypeOwnerSchemaWriter, Param, FieldCounter, Param->Property->ArrayDim == 1 ? -1 : ArrayIdx);
 				}
-				else
-				{
-					for (int ArrayIdx = 0; ArrayIdx < Param->Property->ArrayDim; ++ArrayIdx)
-					{
-						FieldCounter++;
-						RPCTypeOwnerSchemaWriter->Printf("%s %s = %d;",
-							*PropertyToSchemaType(Param->Property),
-							*SchemaFieldName(Param, ArrayIdx),
-							FieldCounter
-						);
-					}
-				}
-
-
 			}
 			RPCTypeOwnerSchemaWriter->Outdent().Print("}");
 		}

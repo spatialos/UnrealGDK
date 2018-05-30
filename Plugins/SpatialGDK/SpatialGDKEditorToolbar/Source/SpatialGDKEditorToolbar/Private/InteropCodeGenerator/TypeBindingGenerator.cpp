@@ -1287,16 +1287,12 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 
 			check(RepProp.Value->ReplicationData->Handles.Num() >= 1);
 
-			if (RepProp.Value->ReplicationData->Handles.Num() == 1)
+			for (int i = 0; i < RepProp.Value->ReplicationData->Handles.Num(); ++i)
 			{
-				GenerateBody_SendUpdate_RepDataProperty(SourceWriter, RepProp.Value->ReplicationData->Handles[0], RepProp.Value, -1);
-			}
-			else
-			{
-				for (int i = 0; i < RepProp.Value->ReplicationData->Handles.Num(); ++i)
-				{
-					GenerateBody_SendUpdate_RepDataProperty(SourceWriter, RepProp.Value->ReplicationData->Handles[i], RepProp.Value, i);
-				}
+				GenerateBody_SendUpdate_RepDataProperty(SourceWriter,
+					RepProp.Value->ReplicationData->Handles[i],
+					RepProp.Value,
+					RepProp.Value->ReplicationData->Handles.Num() == 1 ? -1 : i);
 			}
 		}
 		SourceWriter.Outdent().Print("default:");
@@ -1451,16 +1447,12 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 			auto Handle = RepProp.Key;
 			check(RepProp.Value->ReplicationData->Handles.Num() >= 1);
 
-			if (RepProp.Value->ReplicationData->Handles.Num() == 1)
+			for (int i = 0; i < RepProp.Value->ReplicationData->Handles.Num(); ++i)
 			{
-				GenerateBody_ReceiveUpdate_RepDataProperty(SourceWriter, RepProp.Value->ReplicationData->Handles[0], RepProp.Value, -1);
-			}
-			else
-			{
-				for (int i = 0; i < RepProp.Value->ReplicationData->Handles.Num(); ++i)
-				{
-					GenerateBody_ReceiveUpdate_RepDataProperty(SourceWriter, RepProp.Value->ReplicationData->Handles[i], RepProp.Value, i);
-				}
+				GenerateBody_ReceiveUpdate_RepDataProperty(SourceWriter,
+					RepProp.Value->ReplicationData->Handles[i],
+					RepProp.Value,
+					RepProp.Value->ReplicationData->Handles.Num() == 1 ? -1 : i);
 			}			
 		}
 		SourceWriter.Print("Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies.Array());");
@@ -1499,12 +1491,12 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	if (PropertyInfo->ReplicationData->RoleSwapHandle != -1)
 	{
 		SourceWriter.Printf(R"""(
-					// On the client, we need to swap Role/RemoteRole.
-					if (!bIsServer)
-					{
-						Handle = %d;
-						RepData = &HandleToPropertyMap[Handle];
-					})""", PropertyInfo->ReplicationData->RoleSwapHandle);
+			// On the client, we need to swap Role/RemoteRole.
+			if (!bIsServer)
+			{
+				Handle = %d;
+				RepData = &HandleToPropertyMap[Handle];
+			})""", PropertyInfo->ReplicationData->RoleSwapHandle);
 		SourceWriter.PrintNewLine();
 	}
 
@@ -1563,12 +1555,12 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	{
 		SourceWriter.PrintNewLine();
 		SourceWriter.Print(R"""(
-					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
-					// the server RPCs component.
-					if (!bIsServer && Value == ROLE_AutonomousProxy && !bAutonomousProxy)
-					{
-						Value = ROLE_SimulatedProxy;
-					})""");
+			// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
+			// the server RPCs component.
+			if (!bIsServer && Value == ROLE_AutonomousProxy && !bAutonomousProxy)
+			{
+				Value = ROLE_SimulatedProxy;
+			})""");
 	}
 
 	SourceWriter.PrintNewLine();
@@ -1583,12 +1575,12 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	SourceWriter.PrintNewLine();
 
 	SourceWriter.Print(R"""(
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
-					*Interop->GetSpatialOS()->GetWorkerId(),
-					*ActorChannel->Actor->GetName(),
-					ActorChannel->GetEntityId().ToSpatialEntityId(),
-					*RepData->Property->GetName(),
-					Handle);)""");
+		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
+			*Interop->GetSpatialOS()->GetWorkerId(),
+			*ActorChannel->Actor->GetName(),
+			ActorChannel->GetEntityId().ToSpatialEntityId(),
+			*RepData->Property->GetName(),
+			Handle);)""");
 
 	if (Property->IsA<UObjectPropertyBase>())
 	{
