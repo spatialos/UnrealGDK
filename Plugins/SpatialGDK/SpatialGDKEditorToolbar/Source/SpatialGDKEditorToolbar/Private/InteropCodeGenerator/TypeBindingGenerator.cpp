@@ -5,6 +5,7 @@
 #include "TypeStructure.h"
 
 #include "Utils/CodeWriter.h"
+#include "Utils/DataTypeUtilities.h"
 
 // Needed for Algo::Transform
 #include "Algo/Transform.h"
@@ -92,23 +93,43 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 	{
 		DataType = TEXT("float");
 	}
+	else if (Property->IsA(UDoubleProperty::StaticClass()))
+	{
+		DataType = TEXT("double");
+	}
+	else if (Property->IsA(UInt8Property::StaticClass()))
+	{
+		DataType = TEXT("std::int32_t");
+	}
+	else if (Property->IsA(UInt16Property::StaticClass()))
+	{
+		DataType = TEXT("std::int32_t");
+	}
 	else if (Property->IsA(UIntProperty::StaticClass()))
 	{
 		DataType = TEXT("std::int32_t");
+	}
+	else if (Property->IsA(UInt64Property::StaticClass()))
+	{
+		DataType = TEXT("std::int64_t");
 	}
 	else if (Property->IsA(UByteProperty::StaticClass()))
 	{
 		DataType = TEXT("std::uint32_t"); // uint8 not supported in schema.
 	}
-	else if (Property->IsA(UNameProperty::StaticClass()) || Property->IsA(UStrProperty::StaticClass()))
+	else if (Property->IsA(UUInt16Property::StaticClass()))
 	{
-		DataType = TEXT("std::string");
+		DataType = TEXT("std::uint32_t");
 	}
 	else if (Property->IsA(UUInt32Property::StaticClass()))
 	{
-		DataType = TEXT("uint32");
+		DataType = TEXT("std::uint32_t");
 	}
 	else if (Property->IsA(UUInt64Property::StaticClass()))
+	{
+		DataType = TEXT("std::uint64_t");
+	}
+	else if (Property->IsA(UNameProperty::StaticClass()) || Property->IsA(UStrProperty::StaticClass()))
 	{
 		DataType = TEXT("std::string");
 	}
@@ -121,6 +142,10 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 		DataType = PropertyToWorkerSDKType(Cast<UArrayProperty>(Property)->Inner);
 		DataType = FString::Printf(TEXT("::worker::List<%s>"), *DataType);
 	}
+	else if (Property->IsA(UEnumProperty::StaticClass()))
+	{
+		DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
+	}
 	else
 	{
 		DataType = TEXT("std::string");
@@ -131,35 +156,8 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 
 void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
-	// Get result type.
-	if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
-	{
-		Writer.Printf("// UNSUPPORTED UEnumProperty %s(%s);", *Update, *PropertyValue);
-		//Writer.Print(FString::Printf(TEXT("auto Underlying = %s.GetValue()"), *PropertyValue));
-		//return GenerateUnrealToSchemaConversion(Writer, EnumProperty->GetUnderlyingProperty(), TEXT("Underlying"), ResultName, Handle);
-	}
-
-	if (Property->IsA(UArrayProperty::StaticClass()))
-	{
-		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-
-		Writer.BeginScope();
-
-		Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(ArrayProperty->Inner));
-
-		Writer.Printf("for(int i = 0; i < %s.Num(); i++)", *PropertyValue);
-		Writer.BeginScope();
-
-		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator);
-
-		Writer.End();
-
-		Writer.Printf("%s(List);", *Update);
-
-		Writer.End();
-	}
 	// Try to special case to custom types we know about
-	else if (Property->IsA(UStructProperty::StaticClass()))
+	if (Property->IsA(UStructProperty::StaticClass()))
 	{
 		UStructProperty * StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct * Struct = StructProp->Struct;
@@ -209,13 +207,41 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	{
 		Writer.Printf("%s(%s);", *Update, *PropertyValue);
 	}
-	else if (Property->IsA(UIntProperty::StaticClass()))
+	else if (Property->IsA(UDoubleProperty::StaticClass()))
 	{
 		Writer.Printf("%s(%s);", *Update, *PropertyValue);
+	}
+	else if (Property->IsA(UInt8Property::StaticClass()))
+	{
+		Writer.Printf("%s(int32_t(%s));", *Update, *PropertyValue);
+	}
+	else if (Property->IsA(UInt16Property::StaticClass()))
+	{
+		Writer.Printf("%s(int32_t(%s));", *Update, *PropertyValue);
+	}
+	else if (Property->IsA(UIntProperty::StaticClass()))
+	{
+		Writer.Printf("%s(int32_t(%s));", *Update, *PropertyValue);
+	}
+	else if (Property->IsA(UInt64Property::StaticClass()))
+	{
+		Writer.Printf("%s(int64_t(%s));", *Update, *PropertyValue);
 	}
 	else if (Property->IsA(UByteProperty::StaticClass()))
 	{
 		Writer.Printf("%s(uint32_t(%s));", *Update, *PropertyValue);
+	}
+	else if (Property->IsA(UUInt16Property::StaticClass()))
+	{
+		Writer.Printf("%s(uint32_t(%s));", *Update, *PropertyValue);
+	}
+	else if (Property->IsA(UUInt32Property::StaticClass()))
+	{
+		Writer.Printf("%s(uint32_t(%s));", *Update, *PropertyValue);
+	}
+	else if (Property->IsA(UUInt64Property::StaticClass()))
+	{
+		Writer.Printf("%s(uint64_t(%s));", *Update, *PropertyValue);
 	}
 	else if (Property->IsA(UClassProperty::StaticClass()))
 	{
@@ -248,17 +274,33 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	{
 		Writer.Printf("%s(TCHAR_TO_UTF8(*%s.ToString()));", *Update, *PropertyValue);
 	}
-	else if (Property->IsA(UUInt32Property::StaticClass()))
-	{
-		Writer.Printf("%s(uint32_t(%s));", *Update, *PropertyValue);
-	}
-	else if (Property->IsA(UUInt64Property::StaticClass()))
-	{
-		Writer.Printf("%s(uint64_t(%s));", *Update, *PropertyValue);
-	}
 	else if (Property->IsA(UStrProperty::StaticClass()))
 	{
 		Writer.Printf("%s(TCHAR_TO_UTF8(*%s));", *Update, *PropertyValue);
+	}
+	else if (Property->IsA(UArrayProperty::StaticClass()))
+	{
+		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+
+		Writer.BeginScope();
+
+		Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(ArrayProperty->Inner));
+
+		Writer.Printf("for(int i = 0; i < %s.Num(); i++)", *PropertyValue);
+		Writer.BeginScope();
+
+		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator);
+
+		Writer.End();
+
+		Writer.Printf("%s(List);", *Update);
+
+		Writer.End();
+	} 
+	else if (Property->IsA(UEnumProperty::StaticClass()))
+	{
+		FString DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
+		Writer.Printf("%s(%s(%s));", *Update, *DataType, *PropertyValue);
 	}
 	else
 	{
@@ -270,27 +312,8 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 {
 	FString PropertyType = Property->GetCPPType();
 
-	// Get result type.
-	if (const UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
-	{
-		Writer.Printf("// UNSUPPORTED UEnumProperty %s %s", *PropertyValue, *Update);
-	}
-
-	if (Property->IsA(UArrayProperty::StaticClass()))
-	{
-		const UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-
-		Writer.BeginScope();
-		Writer.Printf("auto& List = %s;", *Update);
-		Writer.Printf("%s.SetNum(List.size());", *PropertyValue);
-		Writer.Print("for(int i = 0; i < List.size(); i++)");
-		Writer.BeginScope();
-		GeneratePropertyToUnrealConversion(Writer, "List[i]", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator);
-		Writer.End();
-		Writer.End();
-	}
 	// Try to special case to custom types we know about
-	else if (Property->IsA(UStructProperty::StaticClass()))
+	if (Property->IsA(UStructProperty::StaticClass()))
 	{
 		const UStructProperty * StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct * Struct = StructProp->Struct;
@@ -357,7 +380,23 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	{
 		Writer.Printf("%s = %s;", *PropertyValue, *Update);
 	}
+	else if (Property->IsA(UDoubleProperty::StaticClass()))
+	{
+		Writer.Printf("%s = %s;", *PropertyValue, *Update);
+	}
+	else if (Property->IsA(UInt8Property::StaticClass()))
+	{
+		Writer.Printf("%s = int8(%s);", *PropertyValue, *Update);
+	}
+	else if (Property->IsA(UInt16Property::StaticClass()))
+	{
+		Writer.Printf("%s = int16(%s);", *PropertyValue, *Update);
+	}
 	else if (Property->IsA(UIntProperty::StaticClass()))
+	{
+		Writer.Printf("%s = %s;", *PropertyValue, *Update);
+	}
+	else if (Property->IsA(UInt64Property::StaticClass()))
 	{
 		Writer.Printf("%s = %s;", *PropertyValue, *Update);
 	}
@@ -367,6 +406,18 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 		// TEnumAsByte<...> or uint8. However, as TEnumAsByte<...> only has a uint8 constructor, we need to cast the SpatialOS value into uint8 first
 		// which causes "uint8(uint8(...))" to be generated for non enum bytes.
 		Writer.Printf("%s = %s(uint8(%s));", *PropertyValue, *PropertyType, *Update);
+	}
+	else if (Property->IsA(UUInt16Property::StaticClass()))
+	{
+		Writer.Printf("%s = uint16(%s);", *PropertyValue, *Update);
+	}
+	else if (Property->IsA(UUInt32Property::StaticClass()))
+	{
+		Writer.Printf("%s = %s;", *PropertyValue, *Update);
+	}
+	else if (Property->IsA(UUInt64Property::StaticClass()))
+	{
+		Writer.Printf("%s = %s;", *PropertyValue, *Update);
 	}
 	else if (Property->IsA(UClassProperty::StaticClass()))
 	{
@@ -404,17 +455,25 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	{
 		Writer.Printf("%s = FName((%s).data());", *PropertyValue, *Update);
 	}
-	else if (Property->IsA(UUInt32Property::StaticClass()))
-	{
-		Writer.Printf("%s = uint32(%s);", *PropertyValue, *Update);
-	}
-	else if (Property->IsA(UUInt64Property::StaticClass()))
-	{
-		Writer.Printf("%s = uint64(%s);", *PropertyValue, *Update);
-	}
 	else if (Property->IsA(UStrProperty::StaticClass()))
 	{
 		Writer.Printf("%s = FString(UTF8_TO_TCHAR(%s.c_str()));", *PropertyValue, *Update);
+	}
+	else if (Property->IsA(UArrayProperty::StaticClass())) {
+		const UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+
+		Writer.BeginScope();
+		Writer.Printf("auto& List = %s;", *Update);
+		Writer.Printf("%s.SetNum(List.size());", *PropertyValue);
+		Writer.Print("for(int i = 0; i < List.size(); i++)");
+		Writer.BeginScope();
+		GeneratePropertyToUnrealConversion(Writer, "List[i]", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator);
+		Writer.End();
+		Writer.End();
+	}
+	else if (Property->IsA(UEnumProperty::StaticClass()))
+	{
+		Writer.Printf("%s = %s(%s);", *PropertyValue, *Property->GetCPPType(), *Update);
 	}
 	else
 	{
