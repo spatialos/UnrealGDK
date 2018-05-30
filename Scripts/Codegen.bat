@@ -9,12 +9,13 @@ set SPATIAL_DEPENDENCY_DIR="spatial\build\dependencies\schema\standard_library"
 if exist "%SPATIAL_DEPENDENCY_DIR%" rd /S /Q "%SPATIAL_DEPENDENCY_DIR%"
 if not exist "%SPATIAL_DEPENDENCY_DIR%" mkdir "%SPATIAL_DEPENDENCY_DIR%"
 echo Installing standard library schema.
-xcopy /S /Y /Q "Game\Binaries\ThirdParty\Improbable\Programs\schema" "%SPATIAL_DEPENDENCY_DIR%"
+:: IMPROBABLE: giray changing hardcoded Game folder to Scavengers
+xcopy /S /Y /Q "Scavengers\Binaries\ThirdParty\Improbable\Programs\schema" "%SPATIAL_DEPENDENCY_DIR%"
 
-if not exist "Game\Intermediate\Improbable" mkdir "Game\Intermediate\Improbable"
+if not exist "Scavengers\Intermediate\Improbable" mkdir "Scavengers\Intermediate\Improbable"
 
-csc "Game/Scripts/Codegen.cs" "Game/Scripts/Common.cs" /nologo /out:"Game\Intermediate\Improbable\Codegen.exe" || exit /b 1
+csc "Scavengers/Scripts/Codegen.cs" "Scavengers/Scripts/Common.cs" /nologo /out:"Scavengers\Intermediate\Improbable\Codegen.exe" || exit /b 1
 
-Game\Intermediate\Improbable\Codegen.exe %*
+Scavengers\Intermediate\Improbable\Codegen.exe %*
 
 exit /b %ERRORLEVEL%
