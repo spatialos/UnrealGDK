@@ -245,7 +245,6 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 					FieldCounter,
 					NumHandles == 1 ? -1 : ArrayIdx);
 			}
-			
 		}
 		Writer.Outdent().Print("}");
 	}

@@ -440,7 +440,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			if (Parent.RoleSwapIndex != -1)
 			{
 				const int32 SwappedCmdIndex = RepLayout.Parents[Parent.RoleSwapIndex].CmdStart;
-				RepDataNode->RoleSwapHandle = (int32)RepLayout.Cmds[SwappedCmdIndex].RelativeHandle;
+				RepDataNode->RoleSwapHandle = static_cast<int32>(RepLayout.Cmds[SwappedCmdIndex].RelativeHandle);
 			}
 			else
 			{
@@ -500,7 +500,6 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 				Group = REP_SingleClient;
 				break;
 			}
-
 			RepData[Group].Add(PropertyInfo->ReplicationData->Handles[0], PropertyInfo);
 		}
 		return true;
