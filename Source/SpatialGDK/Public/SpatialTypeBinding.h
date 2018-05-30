@@ -66,10 +66,11 @@ struct FPropertyChangeState
 class FRepHandleData
 {
 public:
-	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, ELifetimeCondition Condition, ELifetimeRepNotifyCondition RepNotifyCondition) :
-		Condition(Condition),
-		RepNotifyCondition(RepNotifyCondition),
-		Offset(0)
+	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, ELifetimeCondition InCondition, ELifetimeRepNotifyCondition InRepNotifyCondition, int32 InArrayOffset) :
+		Condition(InCondition),
+		RepNotifyCondition(InRepNotifyCondition),
+		Offset(0),
+		ArrayOffset(InArrayOffset)
 	{
 		// Build property chain.
 		check(PropertyNames.Num() > 0);
@@ -100,13 +101,15 @@ public:
 
 	FORCEINLINE uint8* GetPropertyData(uint8* Container) const
 	{
-		return Container + Offset;
+		check(ArrayOffset <= Property->ArrayDim * Property->ElementSize);
+		return Container + Offset + ArrayOffset;
 	}
 
   
 	FORCEINLINE const uint8* GetPropertyData(const uint8* Container) const
 	{
-		return Container + Offset;
+		check(ArrayOffset <= Property->ArrayDim * Property->ElementSize);
+		return Container + Offset + ArrayOffset;
 	}
 
 	TArray<UProperty*> PropertyChain;
@@ -116,6 +119,7 @@ public:
 
 private:
 	int32 Offset;
+	int32 ArrayOffset;
 };
 
 // A structure containing information about a migratable property.

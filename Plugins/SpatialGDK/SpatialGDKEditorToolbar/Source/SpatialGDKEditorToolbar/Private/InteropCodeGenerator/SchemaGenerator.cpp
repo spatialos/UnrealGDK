@@ -39,7 +39,7 @@ FString SchemaRPCResponseType(UFunction* Function)
 	return FString::Printf(TEXT("Unreal%sResponse"), *UnrealNameToSchemaTypeName(Function->GetName()));
 }
 
-FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
+FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property, const int FixedArrayIndex /*=-1*/)
 {
 	// Transform the property chain into a chain of names.
 	TArray<FString> ChainNames;
@@ -51,7 +51,12 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 
 	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
 	// which the generated code extends :troll:.
-	return TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
+	FString FieldName = TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
+	if (FixedArrayIndex >= 0)
+	{
+		FieldName += FString::FromInt(FixedArrayIndex);
+	}
+	return FieldName;
 }
 
 FString SchemaCommandName(UClass* Class, UFunction* Function)
@@ -172,6 +177,35 @@ FString PropertyToSchemaType(UProperty* Property)
 	return DataType;
 }
 
+void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> RepProp, const FString& PropertyPath, const int FieldCounter, const int ArrayIdx)
+{
+	Writer.Printf("%s %s = %d; // %s // %s",
+		*PropertyToSchemaType(RepProp->Property),
+		*SchemaFieldName(RepProp, ArrayIdx),
+		FieldCounter,
+		*GetLifetimeConditionAsString(RepProp->ReplicationData->Condition),
+		*PropertyPath
+	);
+}
+
+void WriteSchemaMigratableField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> MigratableProp, const int FieldCounter, const int ArrayIdx)
+{
+	Writer.Printf("%s %s = %d;",
+		*PropertyToSchemaType(MigratableProp->Property),
+		*SchemaFieldName(MigratableProp, ArrayIdx),
+		FieldCounter
+	);
+}
+
+void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrealProperty> RPCProp, const int FieldCounter, const int ArrayIdx)
+{
+	Writer->Printf("%s %s = %d;",
+		*PropertyToSchemaType(RPCProp->Property),
+		*SchemaFieldName(RPCProp, ArrayIdx),
+		FieldCounter
+	);
+}
+
 int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
 {
 	FComponentIdGenerator IdGenerator(ComponentId);
@@ -196,8 +230,6 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		int FieldCounter = 0;
 		for (auto& RepProp : RepData[Group])
 		{
-			FieldCounter++;
-
 			FString ParentClassName = TEXT("");
 
 			// This loop will add the owner class of each field in the component. Meant for short-term debugging only.
@@ -228,13 +260,16 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 				PropertyPath += FString::Printf(TEXT("::%s"), *ObjOuter->GetName());
 			}
 
-			Writer.Printf("%s %s = %d; // %s // %s",
-				*PropertyToSchemaType(RepProp.Value->Property),
-				*SchemaFieldName(RepProp.Value),
-				FieldCounter,
-				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
-				*PropertyPath
-			);
+			const int NumHandles = RepProp.Value->ReplicationData->Handles.Num();
+			for (int ArrayIdx = 0; ArrayIdx < NumHandles; ++ArrayIdx)
+			{
+				FieldCounter++;
+				WriteSchemaRepField(Writer,
+					RepProp.Value,
+					PropertyPath,
+					FieldCounter,
+					NumHandles == 1 ? -1 : ArrayIdx);
+			}
 		}
 		Writer.Outdent().Print("}");
 	}
@@ -245,13 +280,15 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
 	int FieldCounter = 0;
 	for (auto& Prop : GetFlatMigratableData(TypeInfo))
-	{
-		FieldCounter++;
-		Writer.Printf("%s %s = %d;",
-			*PropertyToSchemaType(Prop.Value->Property),
-			*SchemaFieldName(Prop.Value),
-			FieldCounter
-		);
+	{		
+		for (int ArrayIdx = 0; ArrayIdx < Prop.Value->Property->ArrayDim; ++ArrayIdx)
+		{
+			FieldCounter++;
+			WriteSchemaMigratableField(Writer,
+				Prop.Value,
+				FieldCounter,
+				Prop.Value->Property->ArrayDim == 1 ? -1 : ArrayIdx);
+		}
 	}
 	Writer.Outdent().Print("}");
 
@@ -303,14 +340,17 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			// RPC target sub-object offset.
 			RPCTypeOwnerSchemaWriter->Printf("uint32 target_subobject_offset = 1;");
 			FieldCounter = 1;
+			// TODO: Support fixed size arrays in RPCs. The implementation below is incomplete. UNR-283.
 			for (auto& Param : ParamList)
 			{
-				FieldCounter++;
-				RPCTypeOwnerSchemaWriter->Printf("%s %s = %d;",
-					*PropertyToSchemaType(Param->Property),
-					*SchemaFieldName(Param),
-					FieldCounter
-				);
+				for (int ArrayIdx = 0; ArrayIdx < Param->Property->ArrayDim; ++ArrayIdx)
+				{
+					FieldCounter++;
+					WriteSchemaRPCField(RPCTypeOwnerSchemaWriter,
+						Param,
+						FieldCounter,
+						Param->Property->ArrayDim == 1 ? -1 : ArrayIdx);
+				}
 			}
 			RPCTypeOwnerSchemaWriter->Outdent().Print("}");
 		}

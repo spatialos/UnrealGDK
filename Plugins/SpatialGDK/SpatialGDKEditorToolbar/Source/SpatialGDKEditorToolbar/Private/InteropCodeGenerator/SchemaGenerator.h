@@ -33,7 +33,7 @@ FString SchemaRPCRequestType(UFunction* Function);
 FString SchemaRPCResponseType(UFunction* Function);
 
 // Given a property node, generates the schema field name.
-FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property);
+FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property, const int FixedArrayIndex = -1);
 
 // Given a UFunction, generates the schema command name. Currently just returns the function name in lowercase.
 FString SchemaCommandName(UClass* Class, UFunction* Function);
