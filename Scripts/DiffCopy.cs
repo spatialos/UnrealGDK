@@ -18,7 +18,7 @@ namespace Improbable
             {
                 help = true;
                 exitCode = 1;
-                Console.Error.WriteLine("Input and outpu path must be specified.");
+                Console.Error.WriteLine("Input and output path must be specified.");
             }
 
             if (help)
@@ -31,56 +31,66 @@ namespace Improbable
                 Environment.Exit(exitCode);
             }
 
-            var inputPath = Path.GetFullPath(args[0]);
-            var outputPath = Path.GetFullPath(args[1]);
-
-            //turn these into relative paths.
-            var inputFiles = Directory.GetFiles(inputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, inputPath));
-            var outputFiles = Directory.GetFiles(outputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, outputPath));
-
-            //Ensure output files are up-to-date.
-            foreach(var outputFile in outputFiles)
+            try
             {
-                var inputFilePath = Path.Combine(inputPath, outputFile);
-                var outputFilePath = Path.Combine(outputPath, outputFile);
+                var inputPath = Path.GetFullPath(args[0]);
+                var outputPath = Path.GetFullPath(args[1]);
 
-                if(inputFiles.Contains(outputFile))
+                //turn these into relative paths.
+                var inputFiles = Directory.GetFiles(inputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, inputPath));
+                var outputFiles = Directory.GetFiles(outputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, outputPath));
+
+                //Ensure output files are up-to-date.
+                foreach(var outputFile in outputFiles)
                 {
-                    var inputFileHash = CalculateMD5(inputFilePath);
-                    var outputFileHash = CalculateMD5(outputFilePath);
+                    var inputFilePath = Path.Combine(inputPath, outputFile);
+                    var outputFilePath = Path.Combine(outputPath, outputFile);
 
-                    if(inputFileHash != outputFileHash)
+                    if(inputFiles.Contains(outputFile))
                     {
-                        Log(verbose, diffOnly, string.Format("{0} is out of date, replacing with {1}", outputFilePath, inputFilePath));
-                        if(!diffOnly)
+                        var inputFileHash = CalculateMD5(inputFilePath);
+                        var outputFileHash = CalculateMD5(outputFilePath);
+
+                        if(inputFileHash != outputFileHash)
                         {
-                            File.Copy(inputFilePath, outputFilePath, true);
+                            Log(verbose, diffOnly, string.Format("{0} is out of date, replacing with {1}", outputFilePath, inputFilePath));
+                            if(!diffOnly)
+                            {
+                                File.Copy(inputFilePath, outputFilePath, true);
+                            }
+                        }
+                        else
+                        {
+                            Log(verbose, diffOnly, string.Format("{0} is up-to-date", outputFilePath));
                         }
                     }
                     else
                     {
-                        Log(verbose, diffOnly, string.Format("{0} is up-to-date", outputFilePath));
+                        if(!diffOnly)
+                        {
+                            Log(verbose, diffOnly, string.Format("{0} is stale, deleting", outputFilePath));
+                            File.Delete(outputFilePath);
+                        }
                     }
                 }
-                else
+
+                //Copy over any files that are new.
+                var newFiles = inputFiles.Except(outputFiles);
+                foreach(var file in newFiles)
                 {
-                    if(!diffOnly)
-                    {
-                        Log(verbose, diffOnly, string.Format("{0} is stale, deleting", outputFilePath));
-                        File.Delete(outputFilePath);
-                    }
+                    var inputFilePath = Path.Combine(inputPath, file);
+                    var outputFilePath = Path.Combine(outputPath, file);
+                    Log(verbose, diffOnly, string.Format("Copying new file {0} to {1}", inputFilePath, outputFilePath));
+                    File.Copy(inputFilePath, outputFilePath);
                 }
+            }
+            catch (System.Exception e)
+            {
+                Log(verbose, diffOnly, string.Format("{0} Exception caught.", e));
+                exitCode = 1;
             }
 
-            //Copy over any files that are new.
-            var newFiles = inputFiles.Except(outputFiles);
-            foreach(var file in newFiles)
-            {
-                var inputFilePath = Path.Combine(inputPath, file);
-                var outputFilePath = Path.Combine(outputPath, file);
-                Log(verbose, diffOnly, string.Format("Copying new file {0} to {1}", inputFilePath, outputFilePath));
-                File.Copy(inputFilePath, outputFilePath);
-            }
+            Environment.Exit(exitCode);
         }
 
         private static string GetRelativePath(string filePath, string folderPath)
