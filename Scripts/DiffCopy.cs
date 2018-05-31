@@ -10,7 +10,7 @@ namespace Improbable
         public static void Main(string[] args)
         {
             var diffOnly = args.Count(arg => arg.ToLowerInvariant() == "--diff-only") == 1;
-            var verbose = args.Count(arg => arg.ToLowerInvariant() == "--verbose") == 1;
+            var verbose = args.Count(arg => arg.ToLowerInvariant() == "--verbose") == 1 || diffOnly == true;
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
 
             var exitCode = 0;
@@ -34,14 +34,8 @@ namespace Improbable
             var inputPath = Path.GetFullPath(args[0]);
             var outputPath = Path.GetFullPath(args[1]);
 
-            Log(verbose, "============== read files =========");
             //turn these into relative paths.
             var inputFiles = Directory.GetFiles(inputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, inputPath));
-
-            // foreach(var bla in inputFiles)
-            // {
-            //     Log(verbose, string.Format("inputfile in: {0}", bla));
-            // }
             var outputFiles = Directory.GetFiles(outputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, outputPath));
 
             //Ensure output files are up-to-date.
@@ -57,7 +51,7 @@ namespace Improbable
 
                     if(inputFileHash != outputFileHash)
                     {
-                        Log(verbose, string.Format("{0} is out of date, replacing with {1}", outputFilePath, inputFilePath));
+                        Log(verbose, diffOnly, string.Format("{0} is out of date, replacing with {1}", outputFilePath, inputFilePath));
                         if(!diffOnly)
                         {
                             File.Copy(inputFilePath, outputFilePath, true);
@@ -65,14 +59,14 @@ namespace Improbable
                     }
                     else
                     {
-                        Log(verbose, string.Format("{0} is up-to-date", outputFilePath));
+                        Log(verbose, diffOnly, string.Format("{0} is up-to-date", outputFilePath));
                     }
                 }
                 else
                 {
                     if(!diffOnly)
                     {
-                        Log(verbose, string.Format("{0} is stale, deleting", outputFilePath));
+                        Log(verbose, diffOnly, string.Format("{0} is stale, deleting", outputFilePath));
                         File.Delete(outputFilePath);
                     }
                 }
@@ -84,7 +78,7 @@ namespace Improbable
             {
                 var inputFilePath = Path.Combine(inputPath, file);
                 var outputFilePath = Path.Combine(outputPath, file);
-                Log(verbose, string.Format("Copying new file {0} to {1}", inputFilePath, outputFilePath));
+                Log(verbose, diffOnly, string.Format("Copying new file {0} to {1}", inputFilePath, outputFilePath));
                 File.Copy(inputFilePath, outputFilePath);
             }
         }
@@ -113,11 +107,16 @@ namespace Improbable
             }
         }
 
-        private static void Log(bool verbosityEnabled, string message)
+        private static void Log(bool verbosityEnabled, bool diffOnly, string message)
         {
+            var logMessage = message;
+            if(diffOnly)
+            {
+                logMessage = string.Format("Diff-only mode enabled: {0}", message);
+            }
             if(verbosityEnabled)
             {
-                Console.WriteLine(message);
+                Console.WriteLine(logMessage);
             }
         }
     }
