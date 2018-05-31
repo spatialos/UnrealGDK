@@ -2,6 +2,8 @@
 
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 
+#include "GenericPlatform/GenericPlatformFile.h"
+#include "GenericPlatform/GenericPlatformProcess.h"
 #include "SchemaGenerator.h"
 #include "TypeBindingGenerator.h"
 #include "TypeStructure.h"
@@ -203,8 +205,11 @@ bool SpatialGDKGenerateInteropCode()
 		}
 
 		const FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../spatial/schema/improbable/unreal/generated/"));
-
 		FString AbsoluteCombinedSchemaPath = FPaths::ConvertRelativePathToFull(CombinedSchemaPath);
+
+		const FString CombinedIntermediatePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Intermediate/Improbable/"), *FGuid::NewGuid().ToString(), TEXT("/"));
+		FString AbsoluteCombinedIntermediatePath = FPaths::ConvertRelativePathToFull(CombinedIntermediatePath);
+		FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*AbsoluteCombinedIntermediatePath);
 
 		const FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GameSourceDir()), *GetOutputPath(ConfigFilePath));
 		FString AbsoluteCombinedForwardingCodePath = FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
@@ -213,7 +218,36 @@ bool SpatialGDKGenerateInteropCode()
 
 		if (FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath) && FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
 		{
-			GenerateInteropFromClasses(Classes, CombinedSchemaPath, CombinedForwardingCodePath);
+			GenerateInteropFromClasses(Classes, AbsoluteCombinedSchemaPath, AbsoluteCombinedIntermediatePath);
+
+			const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
+			const FString DiffCopyArguments = FString::Printf(TEXT("%s %s --verbose"), *AbsoluteCombinedIntermediatePath, *AbsoluteCombinedForwardingCodePath);
+
+			int32 ReturnCode = 0;
+			FString StandardOutput;
+
+			void* ReadPipe = nullptr;
+			void* WritePipe = nullptr;
+			FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
+			FProcHandle ProcHandle = FPlatformProcess::CreateProc(*DiffCopyPath, *DiffCopyArguments, false, true, true, nullptr, 2, nullptr, WritePipe, ReadPipe);
+
+			if (ProcHandle.IsValid())
+			{
+				FPlatformProcess::WaitForProc(ProcHandle);
+				StandardOutput = FPlatformProcess::ReadPipe(ReadPipe);
+				ReturnCode = FPlatformProcess::GetProcReturnCode(ProcHandle, &ReturnCode);
+			}
+
+			FPlatformProcess::ClosePipe(ReadPipe, WritePipe);
+			FPlatformProcess::CloseProc(ProcHandle);
+
+			if (ReturnCode != 0)
+			{
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("%s"), *StandardOutput);
+				return false;
+			}
+
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("%s"), *StandardOutput);
 			return true;
 		}
 		else

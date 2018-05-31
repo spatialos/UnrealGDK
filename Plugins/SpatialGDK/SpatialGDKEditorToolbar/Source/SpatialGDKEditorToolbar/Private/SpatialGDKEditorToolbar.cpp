@@ -235,7 +235,7 @@ void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& Noti
 
 	Notification->SetFadeInDuration(0.1f);
 	Notification->SetFadeOutDuration(0.5f);
-	Notification->SetExpireDuration(1.5f);
+	Notification->SetExpireDuration(3.5f);
 	Notification->SetText(FText::AsCultureInvariant(NotificationText));
 	Notification->SetCompletionState(SNotificationItem::CS_Success);
 	Notification->ExpireAndFadeout();
