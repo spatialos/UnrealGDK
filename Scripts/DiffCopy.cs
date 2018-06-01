@@ -53,17 +53,17 @@ namespace Improbable
 
                         if(inputFileHash != outputFileHash)
                         {
-                            Log(verbose, diffOnly, string.Format("{0} is out of date, replacing with {1}", outputFilePath, inputFilePath));
+                            Log(verbose, diffOnly, @"{0} is out of date, replacing with {1}", outputFilePath, inputFilePath);
                             CopyFile(inputFilePath, outputFilePath, diffOnly);
                         }
                         else
                         {
-                            Log(verbose, diffOnly, string.Format("{0} is up-to-date", outputFilePath));
+                            Log(verbose, diffOnly, @"{0} is up-to-date", outputFilePath);
                         }
                     }
                     else
                     {
-                        Log(verbose, diffOnly, string.Format("{0} is stale, deleting", outputFilePath));
+                        Log(verbose, diffOnly, @"{0} is stale, deleting", outputFilePath);
                         DeleteFile(outputFilePath, diffOnly);
                     }
                 }
@@ -74,13 +74,13 @@ namespace Improbable
                 {
                     var inputFilePath = Path.Combine(inputPath, file);
                     var outputFilePath = Path.Combine(outputPath, file);
-                    Log(verbose, diffOnly, string.Format("Copying new file {0} to {1}", inputFilePath, outputFilePath));
+                    Log(verbose, diffOnly, @"Copying new file {0} to {1}", inputFilePath, outputFilePath);
                     CopyFile(inputFilePath, outputFilePath, diffOnly);
                 }
             }
             catch (System.Exception e)
             {
-                Log(verbose, diffOnly, string.Format("{0} Exception caught.", e));
+                Log(verbose, diffOnly, @"{0} Exception caught.", e);
                 exitCode = 1;
             }
 
@@ -111,14 +111,14 @@ namespace Improbable
             }
         }
 
-        private static void Log(bool verbosityEnabled, bool diffOnly, string format)
+        private static void Log(bool verbosityEnabled, bool diffOnly, string format, params object[] args)
         {
             if(verbosityEnabled)
             {
-                var logMessage = format;
+                var logMessage = string.Format(format, args);
                 if(diffOnly)
                 {
-                    logMessage = string.Format("Diff-only mode enabled: {0}", format);
+                    logMessage = string.Format("Diff-only mode enabled: {0}", logMessage);
                 }
                 Console.WriteLine(logMessage);
             }
@@ -141,7 +141,7 @@ namespace Improbable
         {
              if(!diffOnly)
             {
-                File.Delete(outputFilePath);
+                File.Delete(file);
             }
         }
     }

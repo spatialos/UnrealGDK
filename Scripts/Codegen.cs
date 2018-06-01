@@ -28,8 +28,7 @@ namespace Improbable
             Common.RunRedirected(@"Scripts\DiffCopy.bat", new[]
             {
                 $"{intermediateSchemaCompilerDirectory}",
-                @"Source\SpatialGDK\Generated\Cpp",
-                @"--verbose"
+                @"Source\SpatialGDK\Generated\Cpp"
             });
 
             string intermediateUnrealCodegenDirectory = Path.Combine("Intermediate/Improbable/", Path.GetRandomFileName());
