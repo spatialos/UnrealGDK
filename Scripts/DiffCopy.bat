@@ -2,10 +2,10 @@
 
 cd "%~dp0..\"
 
-if not exist "Game\Intermediate\Improbable" mkdir "Game\Intermediate\Improbable"
+if not exist "Intermediate\Improbable" mkdir "Intermediate\Improbable"
 
-csc "Scripts/DiffCopy.cs" /nologo /out:"Game\Intermediate\Improbable\DiffCopy.exe" || exit /b 1
+csc "Scripts/DiffCopy.cs" /nologo /out:"Intermediate\Improbable\DiffCopy.exe" || exit /b 1
 
-Game\Intermediate\Improbable\DiffCopy.exe %*
+Intermediate\Improbable\DiffCopy.exe %*
 
 exit /b %ERRORLEVEL%

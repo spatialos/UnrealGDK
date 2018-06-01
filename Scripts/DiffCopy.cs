@@ -56,7 +56,7 @@ namespace Improbable
                             Log(verbose, diffOnly, string.Format("{0} is out of date, replacing with {1}", outputFilePath, inputFilePath));
                             if(!diffOnly)
                             {
-                                File.Copy(inputFilePath, outputFilePath, true);
+                                CopyFile(inputFilePath, outputFilePath);
                             }
                         }
                         else
@@ -81,7 +81,10 @@ namespace Improbable
                     var inputFilePath = Path.Combine(inputPath, file);
                     var outputFilePath = Path.Combine(outputPath, file);
                     Log(verbose, diffOnly, string.Format("Copying new file {0} to {1}", inputFilePath, outputFilePath));
-                    File.Copy(inputFilePath, outputFilePath);
+                    if(!diffOnly)
+                    {
+                        CopyFile(inputFilePath, outputFilePath);
+                    }
                 }
             }
             catch (System.Exception e)
@@ -128,6 +131,16 @@ namespace Improbable
             {
                 Console.WriteLine(logMessage);
             }
+        }
+
+        private static void CopyFile(string inputFilePath, string outputFilePath)
+        {
+            string directoryPath = Path.GetDirectoryName(outputFilePath);
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+            File.Copy(inputFilePath, outputFilePath, true);
         }
     }
 }

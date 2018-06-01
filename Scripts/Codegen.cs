@@ -7,26 +7,42 @@ namespace Improbable
     {
         public static void Main(string[] args)
         {
-            Common.EnsureDirectoryEmpty(@"Game\Source\SpatialGDK\Generated\Cpp");
-            Common.EnsureDirectoryEmpty(@"Game\Intermediate\Improbable\Json");
+            Common.EnsureDirectoryEmpty(@"Intermediate\Improbable\Json");
 
-            var files = Directory.GetFiles(@"spatial\schema", "*.schema", SearchOption.AllDirectories).Union(
-                Directory.GetFiles(@"Game\Binaries\ThirdParty\Improbable\Programs\schema", "*.schema",
+            var files = Directory.GetFiles(@"..\spatial\schema", "*.schema", SearchOption.AllDirectories).Union(
+                Directory.GetFiles(@"Binaries\ThirdParty\Improbable\Programs\schema", "*.schema",
                     SearchOption.AllDirectories));
 
+            string intermediateSchemaCompilerDirectory = Path.GetFullPath(Path.Combine("Intermediate/Improbable/", Path.GetRandomFileName()));
+            Directory.CreateDirectory(intermediateSchemaCompilerDirectory);
             var arguments = new[]
             {
-                @"--cpp_out=Game\Source\SpatialGDK\Generated\Cpp",
-                @"--ast_json_out=Game\Intermediate\Improbable\Json",
-                @"--schema_path=spatial\schema",
-                @"--schema_path=Game\Binaries\ThirdParty\Improbable\Programs\schema"
+                $"--cpp_out={intermediateSchemaCompilerDirectory}",
+                @"--ast_json_out=Intermediate\Improbable\Json",
+                @"--schema_path=..\spatial\schema",
+                @"--schema_path=Binaries\ThirdParty\Improbable\Programs\schema"
             }.Union(files);
 
-            Common.RunRedirected(@"Game\Binaries\ThirdParty\Improbable\Programs\schema_compiler.exe", arguments);
-            Common.RunRedirected(@"Game\Binaries\ThirdParty\Improbable\Programs\UnrealCodeGenerator.exe", new[]
+            Common.RunRedirected(@"Binaries\ThirdParty\Improbable\Programs\schema_compiler.exe", arguments);
+
+            Common.RunRedirected(@"Scripts\DiffCopy.bat", new[]
             {
-                @"--json-dir=Game/Intermediate/Improbable/Json",
-                @"--output-dir=Game/Source/SpatialGDK/Generated/UClasses"
+                $"{intermediateSchemaCompilerDirectory}",
+                @"Source\SpatialGDK\Generated\Cpp",
+                @"--verbose"
+            });
+
+            string intermediateUnrealCodegenDirectory = Path.Combine("Intermediate/Improbable/", Path.GetRandomFileName());
+            Directory.CreateDirectory(intermediateUnrealCodegenDirectory);
+            Common.RunRedirected(@"Binaries\ThirdParty\Improbable\Programs\UnrealCodeGenerator.exe", new[]
+            {
+                @"--json-dir=Intermediate/Improbable/Json",
+                $"--output-dir={intermediateUnrealCodegenDirectory}"
+            });
+            Common.RunRedirected(@"Scripts\DiffCopy.bat", new[]
+            {
+                $"{intermediateUnrealCodegenDirectory}",
+                @"Source/SpatialGDK/Generated/UClasses"
             });
         }
     }
