@@ -118,7 +118,7 @@ namespace Improbable
                 var logMessage = string.Format(format, args);
                 if(diffOnly)
                 {
-                    logMessage = string.Format("Diff-only mode enabled: {0}", logMessage);
+                    logMessage = $"Diff-only mode enabled: {logMessage}";
                 }
                 Console.WriteLine(logMessage);
             }
