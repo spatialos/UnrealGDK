@@ -68,6 +68,49 @@ using FPendingOutgoingRPCMap = TMap<const UObject*, TArray<TPair<FRPCCommandRequ
 using FPendingIncomingObjectUpdateMap = TMap<FHashableUnrealObjectRef, TMap<USpatialActorChannel*, FPendingIncomingProperties>>;
 using FPendingIncomingRPCMap = TMap<FHashableUnrealObjectRef, TArray<FRPCCommandResponseFunc>>;
 
+// When sending arrays that contain UObject* (e.g. TArray<UObject*> or TArray<FMyStruct> where FMyStruct contains a UObject*),
+// if there are unresolved objects, we delay sending the array until all the objects are resolved.
+// FOutgoingPendingArrayRegister will keep track of unresolved objects, which are referenced by the actor channel and property handle,
+// as well as individually by each unresolved UObject*.
+// If new data is replicated for the same channel and property before this queued array is sent, the queued array is discarded and all the references removed.
+// When an object is resolved, it will remove its reference as well as remove itself from the set. If the set is empty as a result, that means
+// all the objects are resolved, so we retry to send the update.
+struct FOutgoingPendingArrayRegister
+{
+	TSet<const UObject*> UnresolvedObjects;
+};
+
+// OPAR stands for Outgoing Pending Array Register (FOutgoingPendingArrayRegister)
+// Map of maps instead of combining USpatialActorChannel* and uint16 into a joint key type because
+// it makes it easier to iterate them when resolving an object ref
+using FHandleToOPARMap = TMap<uint16, TSharedPtr<FOutgoingPendingArrayRegister>>;
+using FChannelToHandleToOPARMap = TMap<USpatialActorChannel*, FHandleToOPARMap>;
+
+using FOutgoingPendingArrayUpdateMap = TMap<const UObject*, FChannelToHandleToOPARMap>;
+
+// Receiving arrays is very similar to sending them, but we also need to keep around the data we will copy to the property.
+// Because we don't know whether the property contained type (e.g. it's TArray<X> where X is UObject* or a struct that contains UObject*),
+// we store the data as void*. When an object reference is resolved, we need to update one or multiple UObject* in that data that correspond
+// to the reference resolved. DataDestructor is used to delete Data (it's a lambda that captures the pointer of the actual type).
+struct FIncomingPendingArrayRegister
+{
+	// Pointer to the array containing the replicated data for the property.
+	// This could be an array of UObject* or structs that contain UObject*.
+	void* Data;
+	// We have to pass the destructor if we want to be able to store arbitrary arrays.
+	TFunction<void()> DataDestructor;
+	const FRepHandleData* HandleData;
+	// Map from unreal object refs to places in memory inside Data that will need
+	// to be replaced with the UObject* once it is resolved
+	TMultiMap<FHashableUnrealObjectRef, UObject**> ObjectRefs;
+};
+
+// IPAR stands for Incoming Pending Array Register (FIncomingPendingArrayRegister)
+using FHandleToIPARMap = TMap<uint16, TSharedPtr<FIncomingPendingArrayRegister>>;
+using FChannelToHandleToIPARMap = TMap<USpatialActorChannel*, FHandleToIPARMap>;
+
+using FIncomingPendingArrayUpdateMap = TMap<FHashableUnrealObjectRef, FChannelToHandleToIPARMap>;
+
 // Helper function to write incoming replicated property data to an object.
 FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& RepHandleData, UObject* Object, const void* Value, TSet<UProperty*>& RepNotifies)
 {
@@ -171,6 +214,12 @@ public:
 	void QueueIncomingObjectMigUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FMigratableHandleData* MigHandleData);
 	void QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder);
 
+	void ResetOutgoingArrayRepUpdate_Internal(USpatialActorChannel* DependentChannel, uint16 Handle);
+	void QueueOutgoingArrayRepUpdate_Internal(const TSet<const UObject*>& UnresolvedObjects, USpatialActorChannel* DependentChannel, uint16 Handle);
+
+	void ResetIncomingArrayRepUpdate_Internal(USpatialActorChannel* DependentChannel, uint16 Handle);
+	void QueueIncomingArrayRepUpdate_Internal(const TMultiMap<FHashableUnrealObjectRef, UObject**>& UnresolvedObjectRefs, USpatialActorChannel* DependentChannel, uint16 Handle, const FRepHandleData* RepHandleData, void* Data, TFunction<void()> DataDestructor);
+
 	// Accessors.
 	USpatialOS* GetSpatialOS() const
 	{
@@ -217,6 +266,14 @@ private:
 	// Pending incoming RPCs.
 	FPendingIncomingRPCMap PendingIncomingRPCs;
 
+	FChannelToHandleToOPARMap PropertyToOPAR;
+	FOutgoingPendingArrayUpdateMap ObjectToOPAR;
+
+	bool bDebugOutgoingArraySafety;
+
+	FChannelToHandleToIPARMap PropertyToIPAR;
+	FIncomingPendingArrayUpdateMap ObjectRefToIPAR;
+
 private:
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
 	void UnregisterInteropType(UClass* Class);
@@ -225,4 +282,7 @@ private:
 	void ResolvePendingOutgoingRPCs(UObject* Object);
 	void ResolvePendingIncomingObjectUpdates(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 	void ResolvePendingIncomingRPCs(const improbable::unreal::UnrealObjectRef& ObjectRef);
+
+	void ResolvePendingOutgoingArrayUpdates(UObject* Object);
+	void ResolvePendingIncomingArrayUpdates(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 };

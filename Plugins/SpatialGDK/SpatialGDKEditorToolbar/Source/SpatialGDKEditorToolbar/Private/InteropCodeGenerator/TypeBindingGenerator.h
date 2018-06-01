@@ -20,7 +20,10 @@ void GenerateUnrealToSchemaConversion(
 	const FString& Update,
 	const UProperty* Property,
 	const FString& PropertyValue,
-	TFunction<void(const FString&)> ObjectResolveFailureGenerator);
+	TFunction<void(const FString&)> ObjectResolveFailureGenerator,
+	const FString& PrepareArrayOfObjects,
+	TFunction<void(const FString&)> ArrayOfObjectsResolveFailureGenerator,
+	TFunction<void(const FString&)> FinishArrayOfObjectsGenerator);
 
 // Generates code to extract property data from a SpatialOS component update object and write it to an Unreal 'PropertyValue'
 void GeneratePropertyToUnrealConversion(
