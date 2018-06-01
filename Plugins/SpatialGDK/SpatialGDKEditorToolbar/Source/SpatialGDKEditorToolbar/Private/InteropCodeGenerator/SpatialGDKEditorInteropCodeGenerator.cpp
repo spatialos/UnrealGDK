@@ -182,6 +182,40 @@ void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& Co
 	}
 }
 
+bool RunProcess(const FString& Command, const FString& Arguments)
+{
+	int32 ReturnCode = 0;
+	int32* address = &ReturnCode;
+	FString StandardOutput;
+
+	void* ReadPipe = nullptr;
+	void* WritePipe = nullptr;
+	FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
+	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*Command, *Arguments, false, true, true, nullptr, 2, nullptr, WritePipe, ReadPipe);
+
+	if (ProcHandle.IsValid())
+	{
+		FPlatformProcess::WaitForProc(ProcHandle);
+		StandardOutput = FPlatformProcess::ReadPipe(ReadPipe);
+		FPlatformProcess::GetProcReturnCode(ProcHandle, &ReturnCode);
+	}
+
+	FPlatformProcess::ClosePipe(ReadPipe, WritePipe);
+	FPlatformProcess::CloseProc(ProcHandle);
+
+	if (ReturnCode != 0)
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("%s"), *StandardOutput);
+		return false;
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("%s"), *StandardOutput);
+		return true;
+	}
+
+}
+
 bool SpatialGDKGenerateInteropCode()
 {
 	// SpatialGDK config file definitions.
@@ -204,6 +238,10 @@ bool SpatialGDKGenerateInteropCode()
 			return false;
 		}
 
+		const FString CombinedSchemaIntermediatePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Intermediate/Improbable/"), *FGuid::NewGuid().ToString(), TEXT("/"));
+		FString AbsoluteCombinedSchemaIntermediatePath = FPaths::ConvertRelativePathToFull(CombinedSchemaIntermediatePath);
+		FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*AbsoluteCombinedSchemaIntermediatePath);
+
 		const FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../spatial/schema/improbable/unreal/generated/"));
 		FString AbsoluteCombinedSchemaPath = FPaths::ConvertRelativePathToFull(CombinedSchemaPath);
 
@@ -218,36 +256,28 @@ bool SpatialGDKGenerateInteropCode()
 
 		if (FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath) && FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
 		{
-			GenerateInteropFromClasses(Classes, AbsoluteCombinedSchemaPath, AbsoluteCombinedIntermediatePath);
+			GenerateInteropFromClasses(Classes, AbsoluteCombinedSchemaIntermediatePath, AbsoluteCombinedIntermediatePath);
 
 			const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
-			const FString DiffCopyArguments = FString::Printf(TEXT("%s %s --verbose"), *AbsoluteCombinedIntermediatePath, *AbsoluteCombinedForwardingCodePath);
 
-			int32 ReturnCode = 0;
-			FString StandardOutput;
-
-			void* ReadPipe = nullptr;
-			void* WritePipe = nullptr;
-			FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
-			FProcHandle ProcHandle = FPlatformProcess::CreateProc(*DiffCopyPath, *DiffCopyArguments, false, true, true, nullptr, 2, nullptr, WritePipe, ReadPipe);
-
-			if (ProcHandle.IsValid())
+			// Copy Interop files.
+			FString DiffCopyArguments = FString::Printf(TEXT("%s %s --verbose"), *AbsoluteCombinedIntermediatePath, *AbsoluteCombinedForwardingCodePath);
+			bool bSuccess = RunProcess(DiffCopyPath, DiffCopyArguments);			
+			
+			if (!bSuccess)
 			{
-				FPlatformProcess::WaitForProc(ProcHandle);
-				StandardOutput = FPlatformProcess::ReadPipe(ReadPipe);
-				ReturnCode = FPlatformProcess::GetProcReturnCode(ProcHandle, &ReturnCode);
-			}
-
-			FPlatformProcess::ClosePipe(ReadPipe, WritePipe);
-			FPlatformProcess::CloseProc(ProcHandle);
-
-			if (ReturnCode != 0)
-			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("%s"), *StandardOutput);
 				return false;
 			}
 
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("%s"), *StandardOutput);
+			// Copy schema files
+			DiffCopyArguments = FString::Printf(TEXT("%s %s --verbose"), *AbsoluteCombinedSchemaIntermediatePath, *AbsoluteCombinedSchemaPath);
+			bSuccess = RunProcess(DiffCopyPath, DiffCopyArguments);
+
+			if (!bSuccess)
+			{
+				return false;
+			}
+
 			return true;
 		}
 		else
