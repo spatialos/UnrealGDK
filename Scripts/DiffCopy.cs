@@ -37,8 +37,8 @@ namespace Improbable
                 var outputPath = Path.GetFullPath(args[1]);
 
                 // Turn these into relative paths.
-                var inputFiles = Directory.GetFiles(inputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, inputPath));
-                var outputFiles = Directory.GetFiles(outputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, outputPath));
+                HashSet<string> inputFiles(Directory.GetFiles(inputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, inputPath)));
+                HashSet<string>  outputFiles(Directory.GetFiles(outputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, outputPath)));
 
                 // Ensure output files are up-to-date.
                 foreach(var outputFile in outputFiles)
