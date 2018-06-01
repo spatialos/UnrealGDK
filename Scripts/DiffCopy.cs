@@ -36,11 +36,11 @@ namespace Improbable
                 var inputPath = Path.GetFullPath(args[0]);
                 var outputPath = Path.GetFullPath(args[1]);
 
-                //turn these into relative paths.
+                // Turn these into relative paths.
                 var inputFiles = Directory.GetFiles(inputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, inputPath));
                 var outputFiles = Directory.GetFiles(outputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, outputPath));
 
-                //Ensure output files are up-to-date.
+                // Ensure output files are up-to-date.
                 foreach(var outputFile in outputFiles)
                 {
                     var inputFilePath = Path.Combine(inputPath, outputFile);
@@ -54,10 +54,7 @@ namespace Improbable
                         if(inputFileHash != outputFileHash)
                         {
                             Log(verbose, diffOnly, string.Format("{0} is out of date, replacing with {1}", outputFilePath, inputFilePath));
-                            if(!diffOnly)
-                            {
-                                CopyFile(inputFilePath, outputFilePath);
-                            }
+                            CopyFile(inputFilePath, outputFilePath, diffOnly);
                         }
                         else
                         {
@@ -66,11 +63,8 @@ namespace Improbable
                     }
                     else
                     {
-                        if(!diffOnly)
-                        {
-                            Log(verbose, diffOnly, string.Format("{0} is stale, deleting", outputFilePath));
-                            File.Delete(outputFilePath);
-                        }
+                        Log(verbose, diffOnly, string.Format("{0} is stale, deleting", outputFilePath));
+                        DeleteFile(outputFilePath, diffOnly);
                     }
                 }
 
@@ -81,10 +75,7 @@ namespace Improbable
                     var inputFilePath = Path.Combine(inputPath, file);
                     var outputFilePath = Path.Combine(outputPath, file);
                     Log(verbose, diffOnly, string.Format("Copying new file {0} to {1}", inputFilePath, outputFilePath));
-                    if(!diffOnly)
-                    {
-                        CopyFile(inputFilePath, outputFilePath);
-                    }
+                    CopyFile(inputFilePath, outputFilePath, diffOnly);
                 }
             }
             catch (System.Exception e)
@@ -120,27 +111,38 @@ namespace Improbable
             }
         }
 
-        private static void Log(bool verbosityEnabled, bool diffOnly, string message)
+        private static void Log(bool verbosityEnabled, bool diffOnly, string format)
         {
-            var logMessage = message;
-            if(diffOnly)
-            {
-                logMessage = string.Format("Diff-only mode enabled: {0}", message);
-            }
             if(verbosityEnabled)
             {
+                var logMessage = format;
+                if(diffOnly)
+                {
+                    logMessage = string.Format("Diff-only mode enabled: {0}", format);
+                }
                 Console.WriteLine(logMessage);
             }
         }
 
-        private static void CopyFile(string inputFilePath, string outputFilePath)
+        private static void CopyFile(string inputFilePath, string outputFilePath, bool diffOnly)
         {
-            string directoryPath = Path.GetDirectoryName(outputFilePath);
-            if (!Directory.Exists(directoryPath))
+            if(!diffOnly)
             {
-                Directory.CreateDirectory(directoryPath);
+                string directoryPath = Path.GetDirectoryName(outputFilePath);
+                if (!Directory.Exists(directoryPath))
+                {
+                    Directory.CreateDirectory(directoryPath);
+                }
+                File.Copy(inputFilePath, outputFilePath, true);
             }
-            File.Copy(inputFilePath, outputFilePath, true);
+        }
+
+        private static void DeleteFile(string file, bool diffOnly)
+        {
+             if(!diffOnly)
+            {
+                File.Delete(outputFilePath);
+            }
         }
     }
 }
