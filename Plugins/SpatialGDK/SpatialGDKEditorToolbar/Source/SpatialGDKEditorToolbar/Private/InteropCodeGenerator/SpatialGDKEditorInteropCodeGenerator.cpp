@@ -185,13 +185,12 @@ void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& Co
 bool RunProcess(const FString& Command, const FString& Arguments)
 {
 	int32 ReturnCode = 0;
-	int32* address = &ReturnCode;
 	FString StandardOutput;
 
 	void* ReadPipe = nullptr;
 	void* WritePipe = nullptr;
 	FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
-	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*Command, *Arguments, false, true, true, nullptr, 2, nullptr, WritePipe, ReadPipe);
+	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*Command, *Arguments, false, true, true, nullptr, 0, nullptr, WritePipe, ReadPipe);
 
 	if (ProcHandle.IsValid())
 	{
