@@ -207,12 +207,9 @@ bool RunProcess(const FString& Command, const FString& Arguments)
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("%s"), *StandardOutput);
 		return false;
 	}
-	else
-	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("%s"), *StandardOutput);
-		return true;
-	}
 
+	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("%s"), *StandardOutput);
+	return true;
 }
 
 bool SpatialGDKGenerateInteropCode()
