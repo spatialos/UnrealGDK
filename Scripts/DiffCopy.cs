@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -9,8 +10,8 @@ namespace Improbable
     {
         public static void Main(string[] args)
         {
-            var diffOnly = args.Count(arg => arg.ToLowerInvariant() == "--diff-only") == 1;
-            var verbose = args.Count(arg => arg.ToLowerInvariant() == "--verbose") == 1 || diffOnly == true;
+            diffOnly = args.Count(arg => arg.ToLowerInvariant() == "--diff-only") == 1;
+            verbose = args.Count(arg => arg.ToLowerInvariant() == "--verbose") == 1 || diffOnly == true;
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
 
             var exitCode = 0;
@@ -37,8 +38,8 @@ namespace Improbable
                 var outputPath = Path.GetFullPath(args[1]);
 
                 // Turn these into relative paths.
-                HashSet<string> inputFiles(Directory.GetFiles(inputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, inputPath)));
-                HashSet<string>  outputFiles(Directory.GetFiles(outputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, outputPath)));
+                var inputFiles = new HashSet<string>(Directory.GetFiles(inputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, inputPath)));
+                var outputFiles = new HashSet<string>(Directory.GetFiles(outputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, outputPath)));
 
                 // Ensure output files are up-to-date.
                 foreach(var outputFile in outputFiles)
@@ -53,18 +54,18 @@ namespace Improbable
 
                         if(inputFileHash != outputFileHash)
                         {
-                            Log(verbose, diffOnly, @"{0} is out of date, replacing with {1}", outputFilePath, inputFilePath);
-                            CopyFile(inputFilePath, outputFilePath, diffOnly);
+                            Log(@"{0} is out of date, replacing with {1}", outputFilePath, inputFilePath);
+                            CopyFile(inputFilePath, outputFilePath);
                         }
                         else
                         {
-                            Log(verbose, diffOnly, @"{0} is up-to-date", outputFilePath);
+                            Log(@"{0} is up-to-date", outputFilePath);
                         }
                     }
                     else
                     {
-                        Log(verbose, diffOnly, @"{0} is stale, deleting", outputFilePath);
-                        DeleteFile(outputFilePath, diffOnly);
+                        Log(@"{0} is stale, deleting", outputFilePath);
+                        DeleteFile(outputFilePath);
                     }
                 }
 
@@ -74,13 +75,13 @@ namespace Improbable
                 {
                     var inputFilePath = Path.Combine(inputPath, file);
                     var outputFilePath = Path.Combine(outputPath, file);
-                    Log(verbose, diffOnly, @"Copying new file {0} to {1}", inputFilePath, outputFilePath);
-                    CopyFile(inputFilePath, outputFilePath, diffOnly);
+                    Log(@"Copying new file {0} to {1}", inputFilePath, outputFilePath);
+                    CopyFile(inputFilePath, outputFilePath);
                 }
             }
             catch (System.Exception e)
             {
-                Log(verbose, diffOnly, @"{0} Exception caught.", e);
+                Log(@"{0} Exception caught.", e);
                 exitCode = 1;
             }
 
@@ -111,9 +112,9 @@ namespace Improbable
             }
         }
 
-        private static void Log(bool verbosityEnabled, bool diffOnly, string format, params object[] args)
+        private static void Log(string format, params object[] args)
         {
-            if(verbosityEnabled)
+            if(verbose)
             {
                 var logMessage = string.Format(format, args);
                 if(diffOnly)
@@ -124,7 +125,7 @@ namespace Improbable
             }
         }
 
-        private static void CopyFile(string inputFilePath, string outputFilePath, bool diffOnly)
+        private static void CopyFile(string inputFilePath, string outputFilePath)
         {
             if(!diffOnly)
             {
@@ -137,12 +138,15 @@ namespace Improbable
             }
         }
 
-        private static void DeleteFile(string file, bool diffOnly)
+        private static void DeleteFile(string file)
         {
             if(!diffOnly)
             {
                 File.Delete(file);
             }
         }
+
+        private static bool diffOnly;
+        private static bool verbose;
     }
 }
