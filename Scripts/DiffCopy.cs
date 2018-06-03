@@ -139,7 +139,7 @@ namespace Improbable
 
         private static void DeleteFile(string file, bool diffOnly)
         {
-             if(!diffOnly)
+            if(!diffOnly)
             {
                 File.Delete(file);
             }
