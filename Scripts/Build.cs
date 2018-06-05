@@ -16,8 +16,8 @@ shift 2
 
 # 2>/dev/null silences errors by redirecting stderr to the null device. This is done to prevent errors when a machine attempts to add the same user more than once.
 useradd $NEW_USER -m -d /improbable/logs/UnrealWorker/Logs 2>/dev/null
-chown -R $NEW_USER:$NEW_USER $(pwd)
-chmod -R o+rw /improbable/logs
+chown -R $NEW_USER:$NEW_USER $(pwd) 2>/dev/null
+chmod -R o+rw /improbable/logs 2>/dev/null
 SCRIPT=""$(pwd)/${WORKER_NAME}Server.sh""
 chmod +x $SCRIPT
 gosu $NEW_USER ""${SCRIPT}"" ""$@"" 2> >(grep -v xdg-user-dir >&2)`";
