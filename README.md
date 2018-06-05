@@ -1,5 +1,63 @@
 # Spatial GDK: Unreal Module for Spatial OS development
 
+## TOC
+
+* [Getting started](#getting-started)
+    * [Pre-requisites](#pre-requisites)
+    * [Building the GDK and installing it to the SampleGame](#building-the-gdk-and-installing-it-to-the-samplegame)
+        * [For End-Users](#for-end-users)
+        * [For Local development](#for-local-development)
+* [How does the Spatial GDK work?](#how-does-the-spatial-gdk-work?)
+    * [GenerateInteropCodeCommandlet](#generateinteropcodecommandlet)
+    * [USpatialNetDriver](#uspatialnetdriver)
+    * [USpatialNetConnection](#uspatialnetconnection)
+    * [USpatialInterop](#uspatialinterop)
+    * [USpatialInteropPipelineBlock](#uspatialinteroppipelineblock)
+    * [USpatialPackageMapClient](#uspatialpackagemapclient)
+    * [USpatialActorChannel](#uspatialactorchannel)
+* [Folder layout](#folder-layout)
+* [Engine changes](#engine-changes)
+* [Known issues](#known-issues)
+
+
+------
+## Getting started
+
+### Pre-requisites
+
+To build the Unreal GDK you will need to have the following items installed on your machine:
+
+* Bash
+* Improbable toolshare
+* A built out fork of our Unreal GDK. (4.19) (See [Engine changes](#engine-changes))
+
+**Note** It is currently only possible to build a the GDK if you are an Improbable engineer due to the dependency on codegen. This will be removed, either when we completely remove the dependency on the SDK or if we fork [imp_lint](https://github.com/improbable/platform/tree/master/go/src/improbable.io/cmd/imp_lint) and [imp_nugget](https://github.com/improbable/platform/tree/master/go/src/improbable.io/cmd/imp-nuget) from the platform repo.
+
+### Building the GDK and installing it to the SampleGame
+
+The following steps are required to get the GDK built and installed to the SampleGame:
+
+#### For End-Users
+
+1. Clone the [SampleGame repo](https://github.com/improbable/unreal-gdk-sample-game/)
+2. Run the script `setup.sh <path to your SampleGame root foder>`. This will build the GDK and copy the `Binaries`, `Script`, `SpatialGDK` and `Plugins/SpatialGDK` folders from the GDK repo to the right location in your SampleGame repo.
+3. Locate the Unreal project file for the SampleGame. You’ll find this under the SampleGame's root directory in `/workers/unreal/Game`.
+4. Right-click on `SampleGame.uproject` and select **Switch Unreal Engine version...**
+5. Select the path of the engine version you just downloaded.
+6. Build the SampleGame using `spatial build --target=local`
+
+### For Local development
+
+1. Clone the [GDK repo](https://github.com/improbable/unreal-gdk).
+2. Run the script `ci/build.sh`
+3. Run the script `create_spatialGDK_symlink.bat` within the SampleGame repo.
+4. Locate the Unreal project file for the SampleGame. You’ll find this under the SampleGame's root directory in `/workers/unreal/Game`.
+5. Right-click on `SampleGame.uproject` and select **Switch Unreal Engine version...**
+6. Select the path of the engine version you just downloaded.
+7. Build the SampleGame using `spatial build --target=local`
+
+------
+
 ## How does the Spatial GDK work?
 At a very high level, Spatial GDK does 3 things:
 1) Simulate the handshake process of an Unreal client and server, using SpatialOS commands
@@ -48,7 +106,33 @@ This class is in charge of triggering initial serialization and SpatialOS entity
 
 Note that Spatial GDK does not use any other channel type currently. Data that is regularly routed through control channels (e.g. login request) is meant to be implemented directly using SpatialOS commands. See `ASpatialSpawner` for an example.
 
-## Current limitations:
+## Folder layout
+
+| Directory | Purpose
+|-----------|---------
+| `Binaries/ThirdParty/Improbable/` | (Not tracked in git) This folder contains all binaries required for building a gdk project. These are built usin `ci/build.sh`
+| `build/` | (Not tracked in git) Intermediate folder used for temporary steps in the build process of the GDK.
+| `build_scripts/` | Contains the templates for the default worker builds scripts required to build a GDK worker.
+| `ci/` | Contains the CI build scripts required to build the GDK
+| `ci/linting/` | Contains the linting scripts required to build the GDK
+| `go/unreal_packager` | A stand-alone application that is used to trigger the build and packaging of GDK workers
+| `go/cleanup/` | A stand-alone application used to clean GDK workers.
+| `packages/` | (Not tracked in git) Contains the dependencies for building the old SDK codegen.
+| `Plugins/SpatialGDK/SpatialGDKEditorToolbar/` | The GDK editor toolbar containing the interop codegen
+| `Plugins/SpatialGDK/SpatialOSEditorToolbar/` | Contains the source of the forked [unified Unreal SDK SpatialOS editor toolbar](https://github.com/improbable/unified-unreal-sdk/tree/master/Plugins/SpatialOS/SpatialOSEditorToolbar/Source/SpatialOSEditorToolbar).
+| `Scripts/` | Contains the  the processed worker build scripts used to build a GDK worker.
+| `Source/Programs/` | Contains the forked version of the [unified Unreal SDK code generator](https://github.com/improbable/unified-unreal-sdk/tree/master/Source/Programs/Improbable.Unreal.CodeGeneration).
+| `Source/SpatialGDK/Legacy/` | Contains the forked source code from the [unified Unreal SDK](https://github.com/improbable/unified-unreal-sdk/tree/master/Source/SpatialOS).
+| `Source/SpatialGDK/Legacy/Deprecated/` | Contains the forked source code from the [unified Unreal SDK](https://github.com/improbable/unified-unreal-sdk/tree/master/Source/SpatialOS) that are not dependencies for the GDK and purely present for backwards compatibility.
+| `Source/SpatialGDK/Public/WorkerSdk/` | (Not tracked in git) The worker sdk headers. These are installed when running `ci/build.sh`
+| `Source/SpatialGDK/Public` | Public source code of the Unreal GDK module
+| `Source/SpatialGDK/Private` | Private source code of the Unreal GDK module
+
+## Engine changes
+
+There is a small number of changes to UE4 source code we have to make. These changes are mostly limited in scope and they only consist of class access, polymorphism, and dll export related changes. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. Our changes can be seen in our [UnrealEngine repo, `UnrealEngine419_SpatialGDK` branch](https://github.com/improbable/UnrealEngine/tree/UnrealEngine419_SpatialGDK).
+
+## Known issues
 The focus of this project is de-risking SpatialOS interoperability with native code. Some code organization, feature coverage and efficiency trade-offs have been made temporarily to expedite implementation.
 
 Note that a majority of the items below are on our short term roadmap.
@@ -56,18 +140,3 @@ Note that a majority of the items below are on our short term roadmap.
 - `FName`s are not supported.
 - Listen servers haven't been tested extensively. Please use dedicated servers for now.
 - For more miscellaneous caveats, see [this](https://docs.google.com/document/d/1dOpA0I2jBNgnxUuFFXtmtu_J1vIPBrlC8r1hAFWHF5I/edit) doc.
-
-## Engine changes:
-
-There is a small number of changes to UE4 source code we have to make. These changes are mostly limited in scope and they only consist of class access, polymorphism, and dll export related changes. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. Our changes can be seen in our `UnrealEngine` repo, `UnrealEngine419_SpatialGDK` branch. 
-
-## How to use:
-
-### SpatialGDK module
-To register the module with your Unreal project, copy the `SpatialGDK` folder into your project's `Source` folder.
-
-### SpatialGDK editor plugin
-To register the editor plugin with your Unreal project, copy the `Plugins\SpatialGDK` into your project's `Plugins` folder.
-
-### InteropCodeGenerator
-TODO: revisit when we have a user-definied workflow
