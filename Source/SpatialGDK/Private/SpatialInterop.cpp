@@ -678,6 +678,9 @@ void USpatialInterop::ResolvePendingOutgoingArrayUpdates(UObject* Object)
 			if (OPAR->UnresolvedObjects.Num() == 0)
 			{
 				Properties.Add(Handle);
+				// We don't need to add handles for the array elements, but we need to put 0 for the number of array element handles, as well as null terminator for the array.
+				Properties.Add(0);
+				Properties.Add(0);
 
 				// Remove the reference from the property's channel and handle to this OPAR.
 				FHandleToOPARMap& AnotherHandleToOPARMap = PropertyToOPAR.FindChecked(DependentChannel);
@@ -691,6 +694,9 @@ void USpatialInterop::ResolvePendingOutgoingArrayUpdates(UObject* Object)
 
 		if (Properties.Num() > 0)
 		{
+			// End with zero to indicate the end of the list of handles.
+			Properties.Add(0);
+
 			bDebugOutgoingArraySafety = true;
 
 			SendSpatialUpdate(DependentChannel, Properties, TArray<uint16>());

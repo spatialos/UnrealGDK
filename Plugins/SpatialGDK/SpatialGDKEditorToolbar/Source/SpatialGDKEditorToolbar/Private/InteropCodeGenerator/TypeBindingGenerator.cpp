@@ -154,8 +154,7 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 	return DataType;
 }
 
-void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator,
-	const FString& PrepareArrayOfObjects, TFunction<void(const FString&)> ArrayOfObjectsResolveFailureGenerator, TFunction<void(const FString&)> FinishArrayOfObjectsGenerator)
+void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
 	// Try to special case to custom types we know about
 	if (Property->IsA(UStructProperty::StaticClass()))
@@ -283,33 +282,20 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 
-		Writer.BeginScope();
-
-		if (ArrayProperty->Inner->IsA(UObjectPropertyBase::StaticClass()))
-		{
-			Writer.Print(PrepareArrayOfObjects);
-		}
-
 		Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(ArrayProperty->Inner));
 
 		Writer.Printf("for(int i = 0; i < %s.Num(); i++)", *PropertyValue);
 		Writer.BeginScope();
 
-		TFunction<void(const FString&)>& FailureGenerator = (ArrayProperty->Inner->IsA(UObjectPropertyBase::StaticClass()) && ArrayOfObjectsResolveFailureGenerator) ? ArrayOfObjectsResolveFailureGenerator : ObjectResolveFailureGenerator;
-		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), FailureGenerator, FString(), TFunction<void(const FString&)>(), TFunction<void(const FString&)>());
+		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator);
 
 		Writer.End();
 
-		if (ArrayProperty->Inner->IsA(UObjectPropertyBase::StaticClass()) && FinishArrayOfObjectsGenerator)
-		{
-			FinishArrayOfObjectsGenerator(FString::Printf(TEXT("%s(List);"), *Update));
-		}
-		else
+		// Update could be empty in the case when we want to handle the list outside (e.g. for arrays of UObjects).
+		if (!Update.IsEmpty())
 		{
 			Writer.Printf("%s(List);", *Update);
 		}
-
-		Writer.End();
 	} 
 	else if (Property->IsA(UEnumProperty::StaticClass()))
 	{
@@ -320,6 +306,31 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	{
 		Writer.Printf("// UNSUPPORTED U%s (unhandled) %s(%s)", *Property->GetClass()->GetName(), *Update, *PropertyValue);
 	}
+}
+
+void GenerateUObjectArrayToSchemaConversion(FCodeWriter& Writer, const FString& Update, UArrayProperty* Property, const FString& PropertyValue, uint16 Handle)
+{
+	// We are sending an array of UObjects. Some of them could be unresolved, so if that is the case,
+	// we should delay sending the array until they are resolved.
+	Writer.Printf(R"""(
+		Interop->ResetOutgoingArrayRepUpdate_Internal(Channel, %d);
+
+		TSet<const UObject*> UnresolvedObjects;)""", Handle);
+
+	GenerateUnrealToSchemaConversion(Writer, FString(), Property, PropertyValue, [&Writer](const FString& PropertyValue)
+	{
+		Writer.Printf("UnresolvedObjects.Add(%s);", *PropertyValue);
+	});
+
+	Writer.Printf(R"""(
+		if (UnresolvedObjects.Num() == 0)
+		{
+			%s(List);
+		}
+		else
+		{
+			Interop->QueueOutgoingArrayRepUpdate_Internal(UnresolvedObjects, Channel, %d);
+		})""", *Update, Handle);
 }
 
 void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Update, const UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
@@ -1390,6 +1401,8 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	FString PropertyCppType = Property->GetClass()->GetFName().ToString();
 	FString PropertyValueCppType = Property->GetCPPType();
 
+	bool bIsArrayOfObjects = false;
+
 	FString PropertyName = TEXT("Property");
 	//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
 	if (Property->IsA<UBoolProperty>())
@@ -1400,6 +1413,12 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 		SourceWriter.Printf("const TArray<%s>& %s = *(reinterpret_cast<TArray<%s> const*>(Data));", *ArrayProperty->Inner->GetCPPType(), *PropertyValueName, *ArrayProperty->Inner->GetCPPType());
+
+		if (ArrayProperty->Inner->IsA<UObjectPropertyBase>())
+		{
+			// Special case because we need to handle unresolved objects
+			bIsArrayOfObjects = true;
+		}
 	}
 	else if (Property->IsA<UStructProperty>())
 	{
@@ -1424,32 +1443,17 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 
 	SourceWriter.PrintNewLine();
 
-	auto ObjectResolveFailureGenerator = [&SourceWriter, Handle](const FString& PropertyValue)
+	if (bIsArrayOfObjects)
 	{
-		SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
-	};
-	FString PrepareArrayOfObjects = FString::Printf(TEXT(R"""(
-		Interop->ResetOutgoingArrayRepUpdate_Internal(Channel, %d);
-
-		TSet<const UObject*> UnresolvedObjects;)"""), Handle);
-	auto ArrayOfObjectsResolveFailureGenerator = [&SourceWriter](const FString& PropertyValue)
+		GenerateUObjectArrayToSchemaConversion(SourceWriter, SpatialValueSetter, Cast<UArrayProperty>(Property), PropertyValueName, Handle);
+	}
+	else
 	{
-		SourceWriter.Printf("UnresolvedObjects.Add(%s);", *PropertyValue);
-	};
-	auto FinishArrayOfObjectsGenerator = [&SourceWriter, Handle](const FString& OnNoUnresolvedObjects)
-	{
-		SourceWriter.Printf(R"""(
-			if (UnresolvedObjects.Num() == 0)
-			{
-				%s
-			}
-			else
-			{
-				Interop->QueueOutgoingArrayRepUpdate_Internal(UnresolvedObjects, Channel, %d);
-			})""", *OnNoUnresolvedObjects, Handle);
-	};
-
-	GenerateUnrealToSchemaConversion(SourceWriter, SpatialValueSetter, PropertyInfo->Property, PropertyValueName, ObjectResolveFailureGenerator, PrepareArrayOfObjects, ArrayOfObjectsResolveFailureGenerator, FinishArrayOfObjectsGenerator);
+		GenerateUnrealToSchemaConversion(SourceWriter, SpatialValueSetter, PropertyInfo->Property, PropertyValueName, [&SourceWriter, Handle](const FString& PropertyValue)
+		{
+			SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
+		});
+	}
 	SourceWriter.Print("break;");
 	SourceWriter.End();
 }
@@ -1499,7 +1503,7 @@ void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter,
 				[&SourceWriter, Handle](const FString& PropertyValue)
 			{
 				SourceWriter.Printf("Interop->QueueOutgoingObjectMigUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
-			}, FString(), TFunction<void(const FString&)>(), TFunction<void(const FString&)>());
+			});
 			SourceWriter.Print("break;");
 			SourceWriter.End();
 		}
@@ -1594,7 +1598,8 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 		SourceWriter.PrintNewLine();
 	}
 
-	bool bArrayOfObjects = false;
+	// Special case for arrays of UObjects because we have to handle unresolved object refs
+	bool bIsArrayOfObjects = false;
 	FString OriginalValueName;
 
 	// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
@@ -1613,7 +1618,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 		if (ArrayProperty->Inner->IsA<UObjectPropertyBase>())
 		{
-			bArrayOfObjects = true;
+			bIsArrayOfObjects = true;
 			SourceWriter.Printf(R"""(
 				Interop->ResetIncomingArrayRepUpdate_Internal(ActorChannel, Handle);
 				TArray<%s>* %s = new TArray<%s>();
@@ -1655,7 +1660,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 
 	GeneratePropertyToUnrealConversion(
 		SourceWriter, SpatialValue, PropertyInfo->Property, PropertyValueName,
-		[&SourceWriter, bArrayOfObjects](const FString& PropertyValue)
+		[&SourceWriter, bIsArrayOfObjects](const FString& PropertyValue)
 	{
 		SourceWriter.Print(R"""(
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
@@ -1665,7 +1670,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 				ActorChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName(),
 				Handle);)""");
-		if (bArrayOfObjects)
+		if (bIsArrayOfObjects)
 		{
 			SourceWriter.Printf("ObjectRefs.Add(ObjectRef, reinterpret_cast<UObject**>(&(%s)));", *PropertyValue);
 		}
@@ -1691,7 +1696,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 
 	SourceWriter.PrintNewLine();
 
-	if (bArrayOfObjects)
+	if (bIsArrayOfObjects)
 	{
 		SourceWriter.Print("if (ObjectRefs.Num() == 0)");
 		SourceWriter.BeginScope();
@@ -1702,8 +1707,8 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 		SourceWriter.BeginScope();
 	}
 
-	SourceWriter.Print("ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);");
-	if (bArrayOfObjects)
+	SourceWriter.Printf("ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&%s), RepNotifies);", *PropertyValueName);
+	if (bIsArrayOfObjects)
 	{
 		SourceWriter.Print("Destructor();");
 	}
@@ -1717,7 +1722,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 			*RepData->Property->GetName(),
 			Handle);)""");
 
-	if (bArrayOfObjects)
+	if (bIsArrayOfObjects)
 	{
 		SourceWriter.End();
 		SourceWriter.Printf(R"""(
@@ -1886,7 +1891,7 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 				*RPC->Function->GetName(),
 				*PropertyValue);
 			SourceWriter.Printf("return {%s};", *PropertyValue);
-		}, FString(), TFunction<void(const FString&)>(), TFunction<void(const FString&)>());
+		});
 	}
 
 	SourceWriter.PrintNewLine();
