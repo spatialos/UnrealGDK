@@ -273,8 +273,12 @@ bool SpatialGDKGenerateInteropCode()
 			{
 				return false;
 			}
+			
+			// Run Codegen
+			const FString CodegenPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/Codegen.bat")));
+			bSuccess = RunProcess(CodegenPath, TEXT(""));
 
-			return true;
+			return bSuccess;
 		}
 		else
 		{
