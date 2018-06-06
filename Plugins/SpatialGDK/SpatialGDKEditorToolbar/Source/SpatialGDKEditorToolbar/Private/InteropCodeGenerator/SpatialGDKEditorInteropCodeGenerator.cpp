@@ -2,6 +2,8 @@
 
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 
+#include "GenericPlatform/GenericPlatformFile.h"
+#include "GenericPlatform/GenericPlatformProcess.h"
 #include "SchemaGenerator.h"
 #include "TypeBindingGenerator.h"
 #include "TypeStructure.h"
@@ -180,6 +182,36 @@ void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& Co
 	}
 }
 
+bool RunProcess(const FString& Command, const FString& Arguments)
+{
+	int32 ReturnCode = 0;
+	FString StandardOutput;
+
+	void* ReadPipe = nullptr;
+	void* WritePipe = nullptr;
+	FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
+	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*Command, *Arguments, false, true, true, nullptr, 0, nullptr, WritePipe, ReadPipe);
+
+	if (ProcHandle.IsValid())
+	{
+		FPlatformProcess::WaitForProc(ProcHandle);
+		StandardOutput = FPlatformProcess::ReadPipe(ReadPipe);
+		FPlatformProcess::GetProcReturnCode(ProcHandle, &ReturnCode);
+	}
+
+	FPlatformProcess::ClosePipe(ReadPipe, WritePipe);
+	FPlatformProcess::CloseProc(ProcHandle);
+
+	if (ReturnCode != 0)
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("%s"), *StandardOutput);
+		return false;
+	}
+
+	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("%s"), *StandardOutput);
+	return true;
+}
+
 bool SpatialGDKGenerateInteropCode()
 {
 	// SpatialGDK config file definitions.
@@ -202,9 +234,16 @@ bool SpatialGDKGenerateInteropCode()
 			return false;
 		}
 
-		const FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../spatial/schema/improbable/unreal/generated/"));
+		const FString CombinedSchemaIntermediatePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Intermediate/Improbable/"), *FGuid::NewGuid().ToString(), TEXT("/"));
+		FString AbsoluteCombinedSchemaIntermediatePath = FPaths::ConvertRelativePathToFull(CombinedSchemaIntermediatePath);
+		FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*AbsoluteCombinedSchemaIntermediatePath);
 
+		const FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../spatial/schema/improbable/unreal/generated/"));
 		FString AbsoluteCombinedSchemaPath = FPaths::ConvertRelativePathToFull(CombinedSchemaPath);
+
+		const FString CombinedIntermediatePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Intermediate/Improbable/"), *FGuid::NewGuid().ToString(), TEXT("/"));
+		FString AbsoluteCombinedIntermediatePath = FPaths::ConvertRelativePathToFull(CombinedIntermediatePath);
+		FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*AbsoluteCombinedIntermediatePath);
 
 		const FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GameSourceDir()), *GetOutputPath(ConfigFilePath));
 		FString AbsoluteCombinedForwardingCodePath = FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
@@ -213,8 +252,33 @@ bool SpatialGDKGenerateInteropCode()
 
 		if (FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath) && FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
 		{
-			GenerateInteropFromClasses(Classes, CombinedSchemaPath, CombinedForwardingCodePath);
-			return true;
+			GenerateInteropFromClasses(Classes, AbsoluteCombinedSchemaIntermediatePath, AbsoluteCombinedIntermediatePath);
+
+			const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
+
+			// Copy Interop files.
+			FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose"), *AbsoluteCombinedIntermediatePath, *AbsoluteCombinedForwardingCodePath);
+			bool bSuccess = RunProcess(DiffCopyPath, DiffCopyArguments);			
+			
+			if (!bSuccess)
+			{
+				return false;
+			}
+
+			// Copy schema files
+			DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose"), *AbsoluteCombinedSchemaIntermediatePath, *AbsoluteCombinedSchemaPath);
+			bSuccess = RunProcess(DiffCopyPath, DiffCopyArguments);
+
+			if (!bSuccess)
+			{
+				return false;
+			}
+			
+			// Run Codegen
+			const FString CodegenPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/Codegen.bat")));
+			bSuccess = RunProcess(CodegenPath, TEXT(""));
+
+			return bSuccess;
 		}
 		else
 		{
