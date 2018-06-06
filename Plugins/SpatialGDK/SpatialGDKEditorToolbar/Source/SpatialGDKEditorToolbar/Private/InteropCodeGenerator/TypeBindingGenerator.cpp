@@ -441,9 +441,9 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 			{
 				UObject* Object_Raw = PackageMap->GetObjectFromNetGUID(NetGUID, true);
 				checkf(Object_Raw, TEXT("An object ref %%s should map to a valid object."), *ObjectRefToString(ObjectRef));
+				checkf(Cast<%s>(Object_Raw), TEXT("Object ref %%s maps to object %%s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
 				%s = Cast<%s>(Object_Raw);
-				checkf(%s, TEXT("Object ref %%s maps to object %%s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
-			})""", *PropertyValue, *GetNativeClassName(Cast<UObjectPropertyBase>(Property)), *PropertyValue);
+			})""", *GetNativeClassName(Cast<UObjectPropertyBase>(Property)), *PropertyValue, *GetNativeClassName(Cast<UObjectPropertyBase>(Property)));
 		Writer.Print("else");
 		Writer.BeginScope();
 		ObjectResolveFailureGenerator(*PropertyValue);
@@ -1396,6 +1396,11 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 		// This is the same as the default case, but as UClassProperty extends from UObjectPropertyBase, we need to catch them here.
 		SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
 	}
+	else if (Property->IsA<UWeakObjectProperty>())
+	{
+		FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
+		SourceWriter.Printf("%s* %s = (reinterpret_cast<%s const*>(Data))->Get();", *ClassName, *PropertyValueName, *Property->GetCPPType());
+	}
 	else if (Property->IsA<UObjectPropertyBase>())
 	{
 		FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
@@ -1579,6 +1584,12 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	{
 		// This is the same as the default case, but as UClassProperty extends from UObjectPropertyBase, we need to catch them here.
 		SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+	}
+	else if (Property->IsA<UWeakObjectProperty>())
+	{
+		FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
+		SourceWriter.Printf("auto WeakPtrData = *(reinterpret_cast<%s const*>(PropertyData));", *Property->GetCPPType());
+		SourceWriter.Printf("%s* %s = WeakPtrData.Get();", *ClassName, *PropertyValueName);
 	}
 	else if (Property->IsA<UObjectPropertyBase>())
 	{
@@ -1793,8 +1804,15 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 	{
 		FString SpatialValueSetter = TEXT("Request.set_") + SchemaFieldName(Param);
 
+		FString PropertyValue = FString::Printf(TEXT("StructuredParams.%s"), *CPPFieldName(Param));
+		if (Param->Property->IsA(UWeakObjectProperty::StaticClass()))
+		{
+			// In the case of a weak ptr, we want to use the underlying UObject, not the TWeakObjPtr.
+			PropertyValue += TEXT(".Get()");
+		}
+
 		GenerateUnrealToSchemaConversion(
-			SourceWriter, SpatialValueSetter, Param->Property, FString::Printf(TEXT("StructuredParams.%s"), *CPPFieldName(Param)),
+			SourceWriter, SpatialValueSetter, Param->Property, PropertyValue,
 			[&SourceWriter, &RPC](const FString& PropertyValue)
 		{
 			SourceWriter.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"%%s: RPC %s queued. %s is unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
