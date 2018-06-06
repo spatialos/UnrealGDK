@@ -39,8 +39,9 @@ namespace Improbable
 
                 if(outputPath.Parent == null)
                 {
-                    exitCode = 1;
                     Log(@"Output path is ROOT.");
+                    exitCode = 1;
+                    Environment.Exit(exitCode);
                 }
 
                 // Turn these into relative paths.
