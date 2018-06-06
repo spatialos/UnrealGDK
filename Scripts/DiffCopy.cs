@@ -34,18 +34,24 @@ namespace Improbable
 
             try
             {
-                var inputPath = Path.GetFullPath(args[0]);
-                var outputPath = Path.GetFullPath(args[1]);
+                var inputPath = new DirectoryInfo(args[0] + "/");
+                var outputPath = new DirectoryInfo(args[1] + "/");
+
+                if(outputPath.Parent == null)
+                {
+                    exitCode = 1;
+                    Log(@"Output path is ROOT.");
+                }
 
                 // Turn these into relative paths.
-                var inputFiles = new HashSet<string>(Directory.GetFiles(inputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, inputPath)));
-                var outputFiles = new HashSet<string>(Directory.GetFiles(outputPath, "*.*", SearchOption.AllDirectories).Select(filePath => GetRelativePath(filePath, outputPath)));
+                var inputFiles = new HashSet<string>(inputPath.GetFiles("*.*", SearchOption.AllDirectories).Select(fileInfo => GetRelativePath(fileInfo.FullName, inputPath.FullName)));
+                var outputFiles = new HashSet<string>(outputPath.GetFiles("*.*", SearchOption.AllDirectories).Select(fileInfo => GetRelativePath(fileInfo.FullName, outputPath.FullName)));
 
                 // Ensure output files are up-to-date.
                 foreach(var outputFile in outputFiles)
                 {
-                    var inputFilePath = Path.Combine(inputPath, outputFile);
-                    var outputFilePath = Path.Combine(outputPath, outputFile);
+                    var inputFilePath = Path.Combine(inputPath.FullName, outputFile);
+                    var outputFilePath = Path.Combine(outputPath.FullName, outputFile);
 
                     if(inputFiles.Contains(outputFile))
                     {
@@ -73,8 +79,8 @@ namespace Improbable
                 var newFiles = inputFiles.Except(outputFiles);
                 foreach(var file in newFiles)
                 {
-                    var inputFilePath = Path.Combine(inputPath, file);
-                    var outputFilePath = Path.Combine(outputPath, file);
+                    var inputFilePath = Path.Combine(inputPath.FullName, file);
+                    var outputFilePath = Path.Combine(outputPath.FullName, file);
                     Log(@"Copying new file {0} to {1}", inputFilePath, outputFilePath);
                     CopyFile(inputFilePath, outputFilePath);
                 }
