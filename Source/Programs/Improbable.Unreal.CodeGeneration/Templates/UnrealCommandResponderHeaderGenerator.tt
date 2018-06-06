@@ -9,9 +9,9 @@
 
 #pragma once
 
-#include "<#= commandDetails.UnderlyingPackageDetails.Include #>"
 
 #include "CoreMinimal.h"
+#include "<#= commandDetails.UnderlyingPackageDetails.Include #>"
 #include "SpatialGDKWorkerTypes.h"
 #include "<#= commandDetails.CapitalisedName #>CommandResponder.generated.h"
 
