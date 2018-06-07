@@ -99,9 +99,15 @@ FString PropertyToSchemaType(UProperty* Property)
 		{
 			DataType = TEXT("UnrealFPlane");
 		}
+		else if (Struct->StructFlags & STRUCT_NetSerializeNative)
+		{
+			// Specifically when NetSerialize is implemented for a struct we want to use 'bytes'.
+			// This includes RepMovement and UniqueNetId.
+			DataType = TEXT("bytes");
+		}
 		else
 		{
-			DataType = TEXT("bytes"); //this includes RepMovement and UniqueNetId
+			DataType = TEXT("bytes");
 		}
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
