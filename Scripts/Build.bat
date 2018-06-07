@@ -1,13 +1,15 @@
 @echo off
 
-cd "%~dp0..\..\"
+pushd "%~dp0..\"
 
-call "Game\Scripts\BuildWorkerConfig.bat"
+call "Scripts\BuildWorkerConfig.bat"
 
-if not exist "Game\Intermediate\Improbable" mkdir "Game\Intermediate\Improbable"
+if not exist "Intermediate\Improbable" mkdir "Intermediate\Improbable"
 
-csc "Game/Scripts/Build.cs" "Game/Scripts/Codegen.cs" "Game/Scripts/Common.cs" /main:"Improbable.Build" /nologo /out:"Game\Intermediate\Improbable\Build.exe" || exit /b 1
+csc "Scripts/Build.cs" "Scripts/Codegen.cs" "Scripts/Common.cs" /main:"Improbable.Build" /nologo /out:"Intermediate\Improbable\Build.exe" || exit /b 1
 
-Game\Intermediate\Improbable\Build.exe %*
+Intermediate\Improbable\Build.exe %*
+
+popd
 
 exit /b %ERRORLEVEL%

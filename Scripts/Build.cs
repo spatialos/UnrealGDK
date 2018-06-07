@@ -65,8 +65,8 @@ exit /b !ERRORLEVEL!
                 Common.WriteHeading("Skipping code generation.");
             }
 
-            var stagingDir = Path.GetFullPath(Path.Combine("spatial", "build", "unreal"));
-            var outputDir = Path.GetFullPath(Path.Combine("spatial", "build", "assembly", "worker"));
+            var stagingDir = Path.GetFullPath(Path.Combine("../spatial", "build", "unreal"));
+            var outputDir = Path.GetFullPath(Path.Combine("../spatial", "build", "assembly", "worker"));
             var baseGameName = Path.GetFileNameWithoutExtension(projectFile);
 
             if (gameName == baseGameName + "Editor")
