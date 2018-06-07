@@ -14,12 +14,15 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDK, Log, All);
 UCLASS()
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
 {
-GENERATED_BODY()
+	GENERATED_BODY()
 
-	bool StartGameInstance_SpatialGDKClient(FString& Error);
-
+public:
 #if WITH_EDITOR
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
 #endif
 	virtual void StartGameInstance() override;
+
+protected:
+	bool HasSpatialNetDriver() const;
+	bool StartGameInstance_SpatialGDKClient(FString& Error);
 };
