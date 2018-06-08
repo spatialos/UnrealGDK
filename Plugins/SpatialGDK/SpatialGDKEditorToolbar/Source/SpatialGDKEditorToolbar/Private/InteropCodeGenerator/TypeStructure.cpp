@@ -575,10 +575,19 @@ TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> 
 	TArray<TSharedPtr<FUnrealProperty>> ParamList;
 	VisitAllProperties(RPCNode, [&ParamList](TSharedPtr<FUnrealProperty> Property)
 	{
-		// If the RepType is a generic struct, recurse further.
+		// If the RepType is a generic struct without NetSerialize, recurse further.
 		ERepLayoutCmdType RepType = PropertyToRepLayoutType(Property->Property);
 		if (RepType == REPCMD_Property && Property->Property->IsA<UStructProperty>())
 		{
+			const UStructProperty* StructProperty = Cast<UStructProperty>(Property->Property);
+			if (StructProperty->Struct->StructFlags & STRUCT_NetSerializeNative)
+			{
+				// We want to skip recursing into structs which have NetSerialize implemented.
+				// This is to prevent flattening their internal structure, they will be represented as 'bytes'.
+				ParamList.Add(Property);
+				return false;
+			}
+
 			// Generic struct. Recurse further.
 			return true;
 		}
