@@ -9,6 +9,21 @@ namespace Improbable
         {
             Common.EnsureDirectoryEmpty(@"Intermediate\Improbable\Json");
 
+            // Copy the Schema dependencies from the worker sdk to the spatial folder.
+            var spatialDependencyDir = new DirectoryInfo(@"..\spatial\build\dependencies\schema\standard_library");
+
+            if(!spatialDependencyDir.Exists)
+            {
+                spatialDependencyDir.Delete(true);
+                spatialDependencyDir.Create();
+            }
+
+            Common.RunRedirected(@"Scripts\DiffCopy.bat", new[]
+            {
+                @"Binaries\ThirdParty\Improbable\Programs\schema",
+                $"{spatialDependencyDir.FullName}"
+            });
+
             var files = Directory.GetFiles(@"..\spatial\schema", "*.schema", SearchOption.AllDirectories).Union(
                 Directory.GetFiles(@"Binaries\ThirdParty\Improbable\Programs\schema", "*.schema",
                     SearchOption.AllDirectories));
