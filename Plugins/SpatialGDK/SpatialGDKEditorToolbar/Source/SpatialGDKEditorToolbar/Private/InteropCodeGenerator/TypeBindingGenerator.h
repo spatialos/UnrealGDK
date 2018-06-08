@@ -18,9 +18,18 @@ FString GetNativeClassName(const UObjectPropertyBase* Property);
 void GenerateUnrealToSchemaConversion(
 	FCodeWriter& Writer,
 	const FString& Update,
-	const UProperty* Property,
+	UProperty* Property,
 	const FString& PropertyValue,
 	TFunction<void(const FString&)> ObjectResolveFailureGenerator);
+
+// Generates code to handle the queueing of an array of UObject* if it contains unresolved objects.
+// Currently only supports replicated properties (i.e. does not support migratable properties or RPC arguments).
+void GenerateUObjectArrayToSchemaConversion(
+	FCodeWriter& Writer,
+	const FString& Update,
+	UArrayProperty* Property,
+	const FString& PropertyValue,
+	uint16 Handle);
 
 // Generates code to extract property data from a SpatialOS component update object and write it to an Unreal 'PropertyValue'
 void GeneratePropertyToUnrealConversion(
