@@ -184,9 +184,10 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 			Writer.Printf(R"""(
 				TArray<uint8> ValueData;
 				FMemoryWriter ValueDataWriter(ValueData);
-				bool Success;
-				(const_cast<%s&>(%s)).NetSerialize(ValueDataWriter, PackageMap, Success);
-				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *Struct->GetStructCPPName(), *PropertyValue, *Update);
+				bool bSuccess;
+				(const_cast<%s&>(%s)).NetSerialize(ValueDataWriter, PackageMap, bSuccess);
+				checkf(bSuccess, TEXT("NetSerialize on %s failed."));
+				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *Struct->GetStructCPPName(), *PropertyValue, *Struct->GetStructCPPName(), *Update);
 			Writer.End();
 		}
 		else
@@ -359,7 +360,8 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
 				bool bSuccess;
-				%s.NetSerialize(ValueDataReader, PackageMap, bSuccess);)""", *Update, *PropertyValue);
+				%s.NetSerialize(ValueDataReader, PackageMap, bSuccess);
+				checkf(bSuccess, TEXT("NetSerialize on %s failed."));)""", *Update, *PropertyValue, *PropertyType);
 			Writer.End();
 		}
 		else
