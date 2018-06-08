@@ -9,19 +9,12 @@ namespace Improbable
         {
             Common.EnsureDirectoryEmpty(@"Intermediate\Improbable\Json");
 
-            // Copy the Schema dependencies from the worker sdk to the spatial folder.
-            var spatialDependencyDir = new DirectoryInfo(@"..\spatial\build\dependencies\schema\standard_library");
-
-            if(!spatialDependencyDir.Exists)
-            {
-                spatialDependencyDir.Delete(true);
-                spatialDependencyDir.Create();
-            }
-
+            // Back compat: ensure that the standard schema is available for the `spatial upload` command.
+            // It's distributed with the CodeGenerator, so it's copied from there into the expected location.
             Common.RunRedirected(@"Scripts\DiffCopy.bat", new[]
             {
                 @"Binaries\ThirdParty\Improbable\Programs\schema",
-                $"{spatialDependencyDir.FullName}"
+                @"..\spatial\build\dependencies\schema\standard_library"
             });
 
             var files = Directory.GetFiles(@"..\spatial\schema", "*.schema", SearchOption.AllDirectories).Union(
