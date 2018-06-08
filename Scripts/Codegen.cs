@@ -9,6 +9,14 @@ namespace Improbable
         {
             Common.EnsureDirectoryEmpty(@"Intermediate\Improbable\Json");
 
+            // Back compat: ensure that the standard schema is available for the `spatial upload` command.
+            // It's distributed with the CodeGenerator, so it's copied from there into the expected location.
+            Common.RunRedirected(@"Scripts\DiffCopy.bat", new[]
+            {
+                @"Binaries\ThirdParty\Improbable\Programs\schema",
+                @"..\spatial\build\dependencies\schema\standard_library"
+            });
+
             var files = Directory.GetFiles(@"..\spatial\schema", "*.schema", SearchOption.AllDirectories).Union(
                 Directory.GetFiles(@"Binaries\ThirdParty\Improbable\Programs\schema", "*.schema",
                     SearchOption.AllDirectories));
