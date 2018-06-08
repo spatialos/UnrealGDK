@@ -96,48 +96,7 @@ ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property)
 	// Try to special case to custom types we know about
 	if (UnderlyingProperty->IsA(UStructProperty::StaticClass()))
 	{
-		UStructProperty * StructProp = Cast< UStructProperty >(UnderlyingProperty);
-		UScriptStruct * Struct = StructProp->Struct;
-		if (Struct->GetFName() == NAME_Vector)
-		{
-			return REPCMD_PropertyVector;
-		}
-		else if (Struct->GetFName() == NAME_Rotator)
-		{
-			return REPCMD_PropertyRotator;
-		}
-		else if (Struct->GetFName() == NAME_Plane)
-		{
-			return  REPCMD_PropertyPlane;
-		}
-		else if (Struct->GetName() == TEXT("Vector_NetQuantize100"))
-		{
-			return REPCMD_PropertyVector100;
-		}
-		else if (Struct->GetName() == TEXT("Vector_NetQuantize10"))
-		{
-			return REPCMD_PropertyVector10;
-		}
-		else if (Struct->GetName() == TEXT("Vector_NetQuantizeNormal"))
-		{
-			return REPCMD_PropertyVectorNormal;
-		}
-		else if (Struct->GetName() == TEXT("Vector_NetQuantize"))
-		{
-			return REPCMD_PropertyVectorQ;
-		}
-		else if (Struct->GetName() == TEXT("UniqueNetIdRepl"))
-		{
-			return REPCMD_PropertyNetId;
-		}
-		else if (Struct->GetName() == TEXT("RepMovement"))
-		{
-			return REPCMD_RepMovement;
-		}
-		else
-		{
-			return REPCMD_Property;
-		}
+		return REPCMD_Property;
 	}
 	else if (UnderlyingProperty->IsA(UBoolProperty::StaticClass()))
 	{
