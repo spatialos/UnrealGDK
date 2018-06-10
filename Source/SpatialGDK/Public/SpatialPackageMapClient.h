@@ -56,9 +56,7 @@ public:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef);
 	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(worker::EntityId EntityId) const;
-
-	void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);	
-
+		
 	uint32 GetHashFromStaticClass(const UClass* StaticClass) const;
 	UClass* GetStaticClassFromHash(uint32 Hash) const;
 
