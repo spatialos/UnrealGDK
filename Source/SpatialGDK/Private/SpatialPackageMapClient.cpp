@@ -78,12 +78,6 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const worker::Enti
 	return GetNetGUIDFromUnrealObjectRef(ObjectRef);
 }
 
-void USpatialPackageMapClient::RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData)
-{
-	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	SpatialGuidCache->RegisterStaticObjects(LevelData);
-}
-
 uint32 USpatialPackageMapClient::GetHashFromStaticClass(const UClass* StaticClass) const
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
@@ -200,69 +194,6 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(worker::EntityId Entit
 	improbable::unreal::UnrealObjectRef ObjRef{EntityId, 0, worker::Option<std::string>{}, worker::Option<improbable::unreal::UnrealObjectRef>{}};
 	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRef);
 	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
-}
-
-void FSpatialNetGUIDCache::RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData)
-{
-	// Get interop.
-	USpatialInterop* Interop = Cast<USpatialNetDriver>(Driver)->GetSpatialInterop();
-	check(Interop);
-
-	// Build list of static objects in the world.
-	UWorld* World = Driver->GetWorld();
-	TMap<FString, AActor*> PersistentActorsInWorld;
-	for (TActorIterator<AActor> Itr(World); Itr; ++Itr)
-	{
-		AActor* Actor = *Itr;
-		FString PathName = Actor->GetPathName(World);
-		PersistentActorsInWorld.Add(PathName, Actor);
-		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: Static object in world. Name: %s. Path: %s. Replicated: %d"), *Interop->GetSpatialOS()->GetWorkerId(), *Actor->GetName(), *PathName, (int)Actor->GetIsReplicated());
-	}
-
-	// Match the above list with the static actor data.
-	auto& LevelDataActors = LevelData.static_actor_map();
-	for (auto& Pair : LevelDataActors)
-	{
-		uint32_t StaticObjectId = Pair.first << 7; // Reserve 127 slots for static objects.
-		const char* LevelDataActorPath = Pair.second.c_str();
-		AActor* Actor = PersistentActorsInWorld.FindRef(UTF8_TO_TCHAR(LevelDataActorPath));
-
-		// Skip objects which don't exist.
-		if (!Actor)
-		{
-			UE_LOG(LogSpatialOSPackageMap, Warning, TEXT("Expected object not found in level: %s"), UTF8_TO_TCHAR(LevelDataActorPath));
-			continue;
-		}
-
-		// Skip objects which we've already registered.
-		if (NetGUIDLookup.FindRef(Actor).IsValid())
-		{
-			continue;
-		}
-
-		// Set up the NetGUID and ObjectRef for this actor.
-		FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
-		improbable::unreal::UnrealObjectRef ObjectRef{0, StaticObjectId, worker::Option<std::string>{}, worker::Option<improbable::unreal::UnrealObjectRef>{} };
-		RegisterObjectRef(NetGUID, ObjectRef);
-		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new static object ref for actor: %s. NetGUID: %s, object ref: %s"),
-			*Actor->GetName(), *NetGUID.ToString(), *ObjectRefToString(ObjectRef));
-		Interop->ResolvePendingOperations(Actor, GetUnrealObjectRefFromNetGUID(NetGUID));
-
-		// Deal with sub-objects of static objects.
-		TArray<UObject*> StaticSubobjects;
-		GetSubobjects(Actor, StaticSubobjects);
-		uint32 SubobjectOffset = 1;
-		for (UObject* Subobject : StaticSubobjects)
-		{
-			checkf((SubobjectOffset >> 7) == 0, TEXT("Static object has exceeded 127 subobjects."));
-			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
-			improbable::unreal::UnrealObjectRef SubobjectRef{0, StaticObjectId + SubobjectOffset++, worker::Option<std::string>{}, worker::Option<improbable::unreal::UnrealObjectRef>{} };
-			RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
-			UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new static object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
-				*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *ObjectRefToString(SubobjectRef));
-			Interop->ResolvePendingOperations(Subobject, GetUnrealObjectRefFromNetGUID(SubobjectNetGUID));
-		}
-	}
 }
 
 FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPath(const FString& PathName, const FNetworkGUID& OuterGUID)
