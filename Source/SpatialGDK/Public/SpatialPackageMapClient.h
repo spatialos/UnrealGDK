@@ -28,8 +28,9 @@ class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 public:
 	FNetworkGUID ResolveEntityActor(AActor* Actor, FEntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityActor(const FEntityId& EntityId);
-	virtual bool SerializeNewActor(FArchive& Ar, class UActorChannel *Channel, class AActor*& Actor) override;
 
+	FNetworkGUID ResolveStablyNamedObject(const UObject* Object);
+	
 	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
@@ -50,12 +51,15 @@ public:
 		
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityNetGUID(worker::EntityId EntityId);
+
+	FNetworkGUID AssignNewStablyNamedObjectNetGUID(const UObject* Object);
+	void RemoveStablyNamedObjectNetGUID(const improbable::unreal::UnrealObjectRef& ObjectRef);
 	
-	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
+	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef);
 	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(worker::EntityId EntityId) const;
 
-	void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);
+	void RegisterStaticObjects(const improbable::unreal::UnrealLevelData& LevelData);	
 
 	uint32 GetHashFromStaticClass(const UClass* StaticClass) const;
 	UClass* GetStaticClassFromHash(uint32 Hash) const;
@@ -64,6 +68,9 @@ private:
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(const UObject* Object);
 	void RegisterObjectRef(FNetworkGUID NetGUID, const improbable::unreal::UnrealObjectRef& ObjectRef);
 	FNetworkGUID AssignStaticActorNetGUID(const UObject* Object, const FNetworkGUID& StaticNetGUID);
+
+	FNetworkGUID RegisterNetGUIDFromPath(const FString& PathName, const FNetworkGUID& OuterGUID);
+	FNetworkGUID GenerateNewNetGUID(const int32 IsStatic);
 
 	void CreateStaticClassMapping();
 

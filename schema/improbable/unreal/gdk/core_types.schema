@@ -17,6 +17,8 @@ type UnrealFPlane {
 type UnrealObjectRef {
     EntityId entity = 1;
     uint32 offset = 2;
+	option<string> path = 3;
+	option<UnrealObjectRef> outer = 4;
 }
 
 type UnrealRPCCommandResponse {

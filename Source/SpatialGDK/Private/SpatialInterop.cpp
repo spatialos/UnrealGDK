@@ -101,6 +101,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 			improbable::unreal::UnrealMetadata::Data UnrealMetadata;
 			if (Channel->Actor->IsFullNameStableForNetworking())
 			{
+				// TODO
 				UnrealMetadata.set_static_path({std::string{TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()))}});
 			}
 			if (!ClientWorkerIdString.empty())
