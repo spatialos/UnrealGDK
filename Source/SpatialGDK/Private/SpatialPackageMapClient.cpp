@@ -184,6 +184,7 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbabl
 		}
 		// TODO-giray: We may need to load a package here when we reach outermost.
 		NetGUID = RegisterNetGUIDFromPath(FString(ObjectRef.path().data()->c_str()), OuterGUID);
+		RegisterObjectRef(NetGUID, ObjectRef);
 	}
 	return NetGUID;
 }
