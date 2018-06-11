@@ -126,11 +126,10 @@ Follow these instructions if you want to modify the Unreal GDK while developing 
 
 ### Run the Sample Game
 
-1.  Initialise the project from the root directory of your project, run `Game/Scripts/Codegen.bat`.
-2. Start SpatialOS local deployment by opening a terminal window and running the following  command in any directory: Run `spatial local launch`.
-2.  Open the Sample Game in the UE4 editor and choose the multiplayer options. 
+1. Initialise the project from the root directory of your project, run `Game/Scripts/Codegen.bat`.
+1. Start SpatialOS local deployment by running `spatial local launch <launch configuration>`.
 1. Locate the `SampleGame.uproject` project file. It’s under your project’s root directory in the `Game/` directory.
-1.   Double-click on `SampleGame.uproject` to open the Unreal Editor.
+1. Double-click on `SampleGame.uproject` to open the Unreal Editor.
 1. In the editor, select the **Play** drop-down menu to see **Modes** and **Multiplayer Options**.
-3. From the drop-down menu, select **New Editor Window (PIE)**. Enter **Number of Players** as `2` and check the box for **Run Dedicated Server**.
-3. Run the game by clicking **Play** on the editor toolbar.
+1. From the drop-down menu, select **New Editor Window (PIE)**. Enter **Number of Players** as `2` and check the box for **Run Dedicated Server**.
+1. Run the game by clicking **Play** on the editor toolbar.
