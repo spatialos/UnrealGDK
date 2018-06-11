@@ -1,6 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "SpatialActorChannel.h"
 #include "Engine/DemoNetDriver.h"
 #include "EntityRegistry.h"
