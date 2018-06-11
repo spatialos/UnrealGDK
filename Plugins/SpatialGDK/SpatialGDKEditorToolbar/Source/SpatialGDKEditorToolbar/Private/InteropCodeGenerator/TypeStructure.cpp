@@ -85,102 +85,6 @@ FString GetRPCTypeName(ERPCType RPCType)
 	}
 }
 
-ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property)
-{
-	UProperty * UnderlyingProperty = Property;
-	if (UEnumProperty * EnumProperty = Cast< UEnumProperty >(Property))
-	{
-		UnderlyingProperty = EnumProperty->GetUnderlyingProperty();
-	}
-
-	// Try to special case to custom types we know about
-	if (UnderlyingProperty->IsA(UStructProperty::StaticClass()))
-	{
-		UStructProperty * StructProp = Cast< UStructProperty >(UnderlyingProperty);
-		UScriptStruct * Struct = StructProp->Struct;
-		if (Struct->GetFName() == NAME_Vector)
-		{
-			return REPCMD_PropertyVector;
-		}
-		else if (Struct->GetFName() == NAME_Rotator)
-		{
-			return REPCMD_PropertyRotator;
-		}
-		else if (Struct->GetFName() == NAME_Plane)
-		{
-			return  REPCMD_PropertyPlane;
-		}
-		else if (Struct->GetName() == TEXT("Vector_NetQuantize100"))
-		{
-			return REPCMD_PropertyVector100;
-		}
-		else if (Struct->GetName() == TEXT("Vector_NetQuantize10"))
-		{
-			return REPCMD_PropertyVector10;
-		}
-		else if (Struct->GetName() == TEXT("Vector_NetQuantizeNormal"))
-		{
-			return REPCMD_PropertyVectorNormal;
-		}
-		else if (Struct->GetName() == TEXT("Vector_NetQuantize"))
-		{
-			return REPCMD_PropertyVectorQ;
-		}
-		else if (Struct->GetName() == TEXT("UniqueNetIdRepl"))
-		{
-			return REPCMD_PropertyNetId;
-		}
-		else if (Struct->GetName() == TEXT("RepMovement"))
-		{
-			return REPCMD_RepMovement;
-		}
-		else
-		{
-			return REPCMD_Property;
-		}
-	}
-	else if (UnderlyingProperty->IsA(UBoolProperty::StaticClass()))
-	{
-		return REPCMD_PropertyBool;
-	}
-	else if (UnderlyingProperty->IsA(UFloatProperty::StaticClass()))
-	{
-		return REPCMD_PropertyFloat;
-	}
-	else if (UnderlyingProperty->IsA(UIntProperty::StaticClass()))
-	{
-		return REPCMD_PropertyInt;
-	}
-	else if (UnderlyingProperty->IsA(UByteProperty::StaticClass()))
-	{
-		return REPCMD_PropertyByte;
-	}
-	else if (UnderlyingProperty->IsA(UObjectPropertyBase::StaticClass()))
-	{
-		return REPCMD_PropertyObject;
-	}
-	else if (UnderlyingProperty->IsA(UNameProperty::StaticClass()))
-	{
-		return REPCMD_PropertyName;
-	}
-	else if (UnderlyingProperty->IsA(UUInt32Property::StaticClass()))
-	{
-		return REPCMD_PropertyUInt32;
-	}
-	else if (UnderlyingProperty->IsA(UUInt64Property::StaticClass()))
-	{
-		return REPCMD_PropertyUInt64;
-	}
-	else if (UnderlyingProperty->IsA(UStrProperty::StaticClass()))
-	{
-		return REPCMD_PropertyString;
-	}
-	else
-	{
-		return REPCMD_Property;
-	}
-}
-
 void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor, bool bRecurseIntoSubobjects)
 {
 	bool bShouldRecurseFurther = Visitor(TypeNode);
@@ -476,7 +380,6 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		// Create migratable data.
 		MigratableProperty->MigratableData = MakeShared<FUnrealMigratableData>();
 		MigratableProperty->MigratableData->Handle = MigratableDataHandle++;
-		MigratableProperty->MigratableData->RepLayoutType = PropertyToRepLayoutType(MigratableProperty->Property);
 	}
 
 	return TypeNode;
@@ -575,9 +478,8 @@ TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> 
 	TArray<TSharedPtr<FUnrealProperty>> ParamList;
 	VisitAllProperties(RPCNode, [&ParamList](TSharedPtr<FUnrealProperty> Property)
 	{
-		// If the RepType is a generic struct without NetSerialize, recurse further.
-		ERepLayoutCmdType RepType = PropertyToRepLayoutType(Property->Property);
-		if (RepType == REPCMD_Property && Property->Property->IsA<UStructProperty>())
+		// If the property is a generic struct without NetSerialize, recurse further.
+		if (Property->Property->IsA<UStructProperty>())
 		{
 			const UStructProperty* StructProperty = Cast<UStructProperty>(Property->Property);
 			if (StructProperty->Struct->StructFlags & STRUCT_NetSerializeNative)
