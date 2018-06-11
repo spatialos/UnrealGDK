@@ -1,6 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#pragma optimize("", off)
 
 #include "SpatialActorChannel.h"
 #include "Engine/DemoNetDriver.h"
@@ -572,5 +571,3 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* Actor)
 		return FVector::ZeroVector;
 	}
 }
-
-#pragma optimize("", on)
