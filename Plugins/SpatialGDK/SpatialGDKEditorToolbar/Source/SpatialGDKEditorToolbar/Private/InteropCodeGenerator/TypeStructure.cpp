@@ -481,8 +481,7 @@ TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> 
 		// If the property is a generic struct without NetSerialize, recurse further.
 		if (Property->Property->IsA<UStructProperty>())
 		{
-			const UStructProperty* StructProperty = Cast<UStructProperty>(Property->Property);
-			if (StructProperty->Struct->StructFlags & STRUCT_NetSerializeNative)
+			if (Cast<UStructProperty>(Property->Property)->Struct->StructFlags & STRUCT_NetSerializeNative)
 			{
 				// We want to skip recursing into structs which have NetSerialize implemented.
 				// This is to prevent flattening their internal structure, they will be represented as 'bytes'.
