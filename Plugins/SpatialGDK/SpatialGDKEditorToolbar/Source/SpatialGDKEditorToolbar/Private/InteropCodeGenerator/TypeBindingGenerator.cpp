@@ -62,8 +62,6 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 
 	if (Property->IsA(UStructProperty::StaticClass()))
 	{
-		UStructProperty * StructProp = Cast<UStructProperty>(Property);
-		UScriptStruct * Struct = StructProp->Struct;
 		DataType = TEXT("std::string"); // All structs serialize to 'bytes' and so we use std::string for now.
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
