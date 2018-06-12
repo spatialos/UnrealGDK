@@ -26,7 +26,7 @@ struct FRPCCommandRequestResult
 	const UObject* UnresolvedObject;
 	FUntypedRequestId RequestId;
 
-	FRPCCommandRequestResult() = delete;
+	FRPCCommandRequestResult() : UnresolvedObject{nullptr}, RequestId{0} {}
 	FRPCCommandRequestResult(const UObject* UnresolvedObject) : UnresolvedObject{UnresolvedObject}, RequestId{0} {}
 	FRPCCommandRequestResult(FUntypedRequestId RequestId) : UnresolvedObject{nullptr}, RequestId{RequestId} {}
 };

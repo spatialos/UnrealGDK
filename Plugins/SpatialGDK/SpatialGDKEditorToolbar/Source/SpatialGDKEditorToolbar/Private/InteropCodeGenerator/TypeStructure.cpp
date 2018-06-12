@@ -50,7 +50,7 @@ FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 
 TArray<ERPCType> GetRPCTypes()
 {
-	static TArray<ERPCType> Groups = {RPC_Client, RPC_Server};
+	static TArray<ERPCType> Groups = {RPC_Client, RPC_Server, RPC_NetMulticast};
 	return Groups;
 }
 
@@ -63,6 +63,10 @@ ERPCType GetRPCTypeFromFunction(UFunction* Function)
 	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetServer)
 	{
 		return ERPCType::RPC_Server;
+	}
+	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetMulticast)
+	{
+		return ERPCType::RPC_NetMulticast;
 	}
 	else
 	{
@@ -79,6 +83,8 @@ FString GetRPCTypeName(ERPCType RPCType)
 		return "Client";
 	case ERPCType::RPC_Server:
 		return "Server";
+	case ERPCType::RPC_NetMulticast:
+		return "NetMulticast";
 	default:
 		checkf(false, TEXT("RPCType is invalid!"));
 		return "";
@@ -337,7 +343,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 	for (TFieldIterator<UFunction> RemoteFunction(Class); RemoteFunction; ++RemoteFunction)
 	{
 		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
-			RemoteFunction->FunctionFlags & FUNC_NetServer)
+			RemoteFunction->FunctionFlags & FUNC_NetServer ||
+			RemoteFunction->FunctionFlags & FUNC_NetMulticast)
 		{
 			TSharedPtr<FUnrealRPC> RPCNode = MakeShared<FUnrealRPC>();
 			RPCNode->CallerType = Class;
@@ -559,6 +566,7 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 	FUnrealRPCsByType RPCsByType;
 	RPCsByType.Add(RPC_Client);
 	RPCsByType.Add(RPC_Server);
+	RPCsByType.Add(RPC_NetMulticast);
 	VisitAllObjects(TypeInfo, [&RPCsByType](TSharedPtr<FUnrealType> Type)
 	{
 		for (auto& RPC : Type->RPCs)
