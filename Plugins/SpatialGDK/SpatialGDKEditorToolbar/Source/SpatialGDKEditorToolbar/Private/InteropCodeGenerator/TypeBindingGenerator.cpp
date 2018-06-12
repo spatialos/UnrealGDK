@@ -60,149 +60,107 @@ FString CPPFieldName(TSharedPtr<FUnrealProperty> Property)
 
 FString PropertyToWorkerSDKType(UProperty* Property)
 {
-    FString DataType;
+	FString DataType;
 
-    if (Property->IsA(UStructProperty::StaticClass()))
-    {
-        UStructProperty* StructProp = Cast<UStructProperty>(Property);
-        UScriptStruct* Struct = StructProp->Struct;
-        if (Struct->GetFName() == NAME_Vector ||
-            Struct->GetName() == TEXT("Vector_NetQuantize100") ||
-            Struct->GetName() == TEXT("Vector_NetQuantize10") ||
-            Struct->GetName() == TEXT("Vector_NetQuantizeNormal") ||
-            Struct->GetName() == TEXT("Vector_NetQuantize"))
-        {
-            DataType = TEXT("improbable::Vector3f");
-        }
-        else if (Struct->GetFName() == NAME_Rotator)
-        {
-            DataType = TEXT("improbable::unreal::UnrealFRotator");
-        }
-        else if (Struct->GetFName() == NAME_Plane)
-        {
-            DataType = TEXT("improbable::unreal::UnrealFPlane");
-        }
-        else
-        {
-            DataType = TEXT("std::string");  // this includes RepMovement and UniqueNetId
-        }
-    }
-    else if (Property->IsA(UBoolProperty::StaticClass()))
-    {
-        DataType = TEXT("bool");
-    }
-    else if (Property->IsA(UFloatProperty::StaticClass()))
-    {
-        DataType = TEXT("float");
-    }
-    else if (Property->IsA(UDoubleProperty::StaticClass()))
-    {
-        DataType = TEXT("double");
-    }
-    else if (Property->IsA(UInt8Property::StaticClass()))
-    {
-        DataType = TEXT("std::int32_t");
-    }
-    else if (Property->IsA(UInt16Property::StaticClass()))
-    {
-        DataType = TEXT("std::int32_t");
-    }
-    else if (Property->IsA(UIntProperty::StaticClass()))
-    {
-        DataType = TEXT("std::int32_t");
-    }
-    else if (Property->IsA(UInt64Property::StaticClass()))
-    {
-        DataType = TEXT("std::int64_t");
-    }
-    else if (Property->IsA(UByteProperty::StaticClass()))
-    {
-        DataType = TEXT("std::uint32_t");  // uint8 not supported in schema.
-    }
-    else if (Property->IsA(UUInt16Property::StaticClass()))
-    {
-        DataType = TEXT("std::uint32_t");
-    }
-    else if (Property->IsA(UUInt32Property::StaticClass()))
-    {
-        DataType = TEXT("std::uint32_t");
-    }
-    else if (Property->IsA(UUInt64Property::StaticClass()))
-    {
-        DataType = TEXT("std::uint64_t");
-    }
-    else if (Property->IsA(UNameProperty::StaticClass()) ||
-             Property->IsA(UStrProperty::StaticClass()))
-    {
-        DataType = TEXT("std::string");
-    }
-    else if (Property->IsA(UObjectPropertyBase::StaticClass()))
-    {
-        DataType = TEXT("improbable::unreal::UnrealObjectRef");
-    }
-    else if (Property->IsA(UArrayProperty::StaticClass()))
-    {
-        DataType = PropertyToWorkerSDKType(Cast<UArrayProperty>(Property)->Inner);
-        DataType = FString::Printf(TEXT("::worker::List<%s>"), *DataType);
-    }
-    else if (Property->IsA(UEnumProperty::StaticClass()))
-    {
-        DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
-    }
-    else
-    {
-        DataType = TEXT("std::string");
-    }
+	if (Property->IsA(UStructProperty::StaticClass()))
+	{
+		DataType = TEXT("std::string"); // All structs serialize to 'bytes' and so we use std::string for now.
+	}
+	else if (Property->IsA(UBoolProperty::StaticClass()))
+	{
+		DataType = TEXT("bool");
+	}
+	else if (Property->IsA(UFloatProperty::StaticClass()))
+	{
+		DataType = TEXT("float");
+	}
+	else if (Property->IsA(UDoubleProperty::StaticClass()))
+	{
+		DataType = TEXT("double");
+	}
+	else if (Property->IsA(UInt8Property::StaticClass()))
+	{
+		DataType = TEXT("std::int32_t");
+	}
+	else if (Property->IsA(UInt16Property::StaticClass()))
+	{
+		DataType = TEXT("std::int32_t");
+	}
+	else if (Property->IsA(UIntProperty::StaticClass()))
+	{
+		DataType = TEXT("std::int32_t");
+	}
+	else if (Property->IsA(UInt64Property::StaticClass()))
+	{
+		DataType = TEXT("std::int64_t");
+	}
+	else if (Property->IsA(UByteProperty::StaticClass()))
+	{
+		DataType = TEXT("std::uint32_t"); // uint8 not supported in schema.
+	}
+	else if (Property->IsA(UUInt16Property::StaticClass()))
+	{
+		DataType = TEXT("std::uint32_t");
+	}
+	else if (Property->IsA(UUInt32Property::StaticClass()))
+	{
+		DataType = TEXT("std::uint32_t");
+	}
+	else if (Property->IsA(UUInt64Property::StaticClass()))
+	{
+		DataType = TEXT("std::uint64_t");
+	}
+	else if (Property->IsA(UNameProperty::StaticClass()) || Property->IsA(UStrProperty::StaticClass()))
+	{
+		DataType = TEXT("std::string");
+	}
+	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
+	{
+		DataType = TEXT("improbable::unreal::UnrealObjectRef");
+	}
+	else if (Property->IsA(UArrayProperty::StaticClass()))
+	{
+		DataType = PropertyToWorkerSDKType(Cast<UArrayProperty>(Property)->Inner);
+		DataType = FString::Printf(TEXT("::worker::List<%s>"), *DataType);
+	}
+	else if (Property->IsA(UEnumProperty::StaticClass()))
+	{
+		DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
+	}
+	else
+	{
+		DataType = TEXT("std::string");
+	}
 
-    return DataType;
+	return DataType;
 }
 
 void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update,
                                       UProperty* Property, const FString& PropertyValue,
                                       TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
-    // Try to special case to custom types we know about
-    if (Property->IsA(UStructProperty::StaticClass()))
-    {
-        UStructProperty* StructProp = Cast<UStructProperty>(Property);
-        UScriptStruct* Struct = StructProp->Struct;
-        if (Struct->GetFName() == NAME_Vector ||
-            Struct->GetName() == TEXT("Vector_NetQuantize100") ||
-            Struct->GetName() == TEXT("Vector_NetQuantize10") ||
-            Struct->GetName() == TEXT("Vector_NetQuantizeNormal") ||
-            Struct->GetName() == TEXT("Vector_NetQuantize"))
-        {
-            Writer.Printf("%s(improbable::Vector3f(%s.X, %s.Y, %s.Z));", *Update, *PropertyValue,
-                          *PropertyValue, *PropertyValue);
-        }
-        else if (Struct->GetFName() == NAME_Rotator)
-        {
-            Writer.Printf("%s(improbable::unreal::UnrealFRotator(%s.Yaw, %s.Pitch, %s.Roll));",
-                          *Update, *PropertyValue, *PropertyValue, *PropertyValue);
-        }
-        else if (Struct->GetFName() == NAME_Plane)
-        {
-            Writer.Printf("%s(improbable::unreal::UnrealFPlane(%s.X, %s.Y, %s.Z, %s.W));", *Update,
-                          *PropertyValue, *PropertyValue, *PropertyValue, *PropertyValue);
-        }
-        else if (Struct->StructFlags & STRUCT_NetSerializeNative)
-        {
-            // If user has implemented NetSerialize for custom serialization, we use that. Core
-            // structs like RepMovement or UniqueNetIdRepl also go through this path.
-            Writer.BeginScope();
-            Writer.Printf(R"""(
+	// Try to special case to custom types we know about
+	if (Property->IsA(UStructProperty::StaticClass()))
+	{
+		UStructProperty * StructProp = Cast<UStructProperty>(Property);
+		UScriptStruct * Struct = StructProp->Struct;
+		if (Struct->StructFlags & STRUCT_NetSerializeNative)
+		{
+			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
+			Writer.BeginScope();
+			Writer.Printf(R"""(
 				TArray<uint8> ValueData;
 				FMemoryWriter ValueDataWriter(ValueData);
-				bool Success;
-				(const_cast<%s&>(%s)).NetSerialize(ValueDataWriter, PackageMap, Success);
-				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""",
-                          *Struct->GetStructCPPName(), *PropertyValue, *Update);
-            Writer.End();
-        }
-        else
-        {
-            // We do a basic binary serialization for the generic struct.
-            Writer.Printf(R"""(
+				bool bSuccess = true;
+				(const_cast<%s&>(%s)).NetSerialize(ValueDataWriter, PackageMap, bSuccess);
+				checkf(bSuccess, TEXT("NetSerialize on %s failed."));
+				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *Struct->GetStructCPPName(), *PropertyValue, *Struct->GetStructCPPName(), *Update);
+			Writer.End();
+		}
+		else
+		{
+			// We do a basic binary serialization for the generic struct.
+			Writer.Printf(R"""(
 				TArray<uint8> ValueData;
 				FMemoryWriter ValueDataWriter(ValueData);
 				%s::StaticStruct()->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&%s)));
@@ -330,63 +288,31 @@ void GeneratePropertyToUnrealConversion(
     FCodeWriter& Writer, const FString& Update, const UProperty* Property,
     const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
-    FString PropertyType = Property->GetCPPType();
+	FString PropertyType = Property->GetCPPType();
 
-    // Try to special case to custom types we know about
-    if (Property->IsA(UStructProperty::StaticClass()))
-    {
-        const UStructProperty* StructProp = Cast<UStructProperty>(Property);
-        UScriptStruct* Struct = StructProp->Struct;
-        if (Struct->GetFName() == NAME_Vector ||
-            Struct->GetName() == TEXT("Vector_NetQuantize100") ||
-            Struct->GetName() == TEXT("Vector_NetQuantize10") ||
-            Struct->GetName() == TEXT("Vector_NetQuantizeNormal") ||
-            Struct->GetName() == TEXT("Vector_NetQuantize"))
-        {
-            Writer.Print("{").Indent();
-            Writer.Printf("auto& Vector = %s;", *Update);
-            Writer.Printf("%s.X = Vector.x();", *PropertyValue);
-            Writer.Printf("%s.Y = Vector.y();", *PropertyValue);
-            Writer.Printf("%s.Z = Vector.z();", *PropertyValue);
-            Writer.Outdent().Print("}");
-        }
-        else if (Struct->GetFName() == NAME_Rotator)
-        {
-            Writer.Print("{").Indent();
-            Writer.Printf("auto& Rotator = %s;", *Update);
-            Writer.Printf("%s.Yaw = Rotator.yaw();", *PropertyValue);
-            Writer.Printf("%s.Pitch = Rotator.pitch();", *PropertyValue);
-            Writer.Printf("%s.Roll = Rotator.roll();", *PropertyValue);
-            Writer.Outdent().Print("}");
-        }
-        else if (Struct->GetFName() == NAME_Plane)
-        {
-            Writer.Print("{").Indent();
-            Writer.Printf("auto& Plane = %s;", *Update);
-            Writer.Printf("%s.X = Plane.x();", *PropertyValue);
-            Writer.Printf("%s.Y = Plane.y();", *PropertyValue);
-            Writer.Printf("%s.Z = Plane.z();", *PropertyValue);
-            Writer.Printf("%s.W = Plane.w();", *PropertyValue);
-            Writer.Outdent().Print("}");
-        }
-        else if (Struct->StructFlags & STRUCT_NetSerializeNative)
-        {
-            // If user has implemented NetSerialize for custom serialization, we use that. Core
-            // structs like RepMovement or UniqueNetIdRepl also go through this path.
-            Writer.BeginScope();
-            Writer.Printf(R"""(
+	// Try to special case to custom types we know about
+	if (Property->IsA(UStructProperty::StaticClass()))
+	{
+		const UStructProperty * StructProp = Cast<UStructProperty>(Property);
+		UScriptStruct * Struct = StructProp->Struct;
+
+		if (Struct->StructFlags & STRUCT_NetSerializeNative)
+		{
+			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
+			Writer.BeginScope();
+			Writer.Printf(R"""(
 				auto& ValueDataStr = %s;
 				TArray<uint8> ValueData;
 				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
-				bool bSuccess;
-				%s.NetSerialize(ValueDataReader, PackageMap, bSuccess);)""",
-                          *Update, *PropertyValue);
-            Writer.End();
-        }
-        else
-        {
-            Writer.Printf(R"""(
+				bool bSuccess = true;
+				%s.NetSerialize(ValueDataReader, PackageMap, bSuccess);
+				checkf(bSuccess, TEXT("NetSerialize on %s failed."));)""", *Update, *PropertyValue, *PropertyType);
+			Writer.End();
+		}
+		else
+		{
+			Writer.Printf(R"""(
 				auto& ValueDataStr = %s;
 				TArray<uint8> ValueData;
 				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
@@ -466,50 +392,44 @@ void GeneratePropertyToUnrealConversion(
 			{
 				UObject* Object_Raw = PackageMap->GetObjectFromNetGUID(NetGUID, true);
 				checkf(Object_Raw, TEXT("An object ref %%s should map to a valid object."), *ObjectRefToString(ObjectRef));
+				checkf(Cast<%s>(Object_Raw), TEXT("Object ref %%s maps to object %%s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
 				%s = Cast<%s>(Object_Raw);
-				checkf(%s, TEXT("Object ref %%s maps to object %%s with the wrong class."), *ObjectRefToString(ObjectRef), *Object_Raw->GetFullName());
-			})""",
-                      *PropertyValue, *GetNativeClassName(Cast<UObjectPropertyBase>(Property)),
-                      *PropertyValue);
-        Writer.Print("else");
-        Writer.BeginScope();
-        ObjectResolveFailureGenerator(*PropertyValue);
-        Writer.End();
-        Writer.End();
-        Writer.End();
-    }
-    else if (Property->IsA(UNameProperty::StaticClass()))
-    {
-        Writer.Printf("%s = FName((%s).data());", *PropertyValue, *Update);
-    }
-    else if (Property->IsA(UStrProperty::StaticClass()))
-    {
-        Writer.Printf("%s = FString(UTF8_TO_TCHAR(%s.c_str()));", *PropertyValue, *Update);
-    }
-    else if (Property->IsA(UArrayProperty::StaticClass()))
-    {
-        const UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+			})""", *GetNativeClassName(Cast<UObjectPropertyBase>(Property)), *PropertyValue, *GetNativeClassName(Cast<UObjectPropertyBase>(Property)));
+		Writer.Print("else");
+		Writer.BeginScope();
+		ObjectResolveFailureGenerator(*PropertyValue);
+		Writer.End();
+		Writer.End();
+		Writer.End();
+	}
+	else if (Property->IsA(UNameProperty::StaticClass()))
+	{
+		Writer.Printf("%s = FName((%s).data());", *PropertyValue, *Update);
+	}
+	else if (Property->IsA(UStrProperty::StaticClass()))
+	{
+		Writer.Printf("%s = FString(UTF8_TO_TCHAR(%s.c_str()));", *PropertyValue, *Update);
+	}
+	else if (Property->IsA(UArrayProperty::StaticClass())) {
+		const UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 
-        Writer.BeginScope();
-        Writer.Printf("auto& List = %s;", *Update);
-        Writer.Printf("%s.SetNum(List.size());", *PropertyValue);
-        Writer.Print("for(int i = 0; i < List.size(); i++)");
-        Writer.BeginScope();
-        GeneratePropertyToUnrealConversion(Writer, "List[i]", ArrayProperty->Inner,
-                                           FString::Printf(TEXT("%s[i]"), *PropertyValue),
-                                           ObjectResolveFailureGenerator);
-        Writer.End();
-        Writer.End();
-    }
-    else if (Property->IsA(UEnumProperty::StaticClass()))
-    {
-        Writer.Printf("%s = %s(%s);", *PropertyValue, *Property->GetCPPType(), *Update);
-    }
-    else
-    {
-        Writer.Printf("// UNSUPPORTED U%s (unhandled) %s %s", *Property->GetClass()->GetName(),
-                      *PropertyValue, *Update);
-    }
+		Writer.BeginScope();
+		Writer.Printf("auto& List = %s;", *Update);
+		Writer.Printf("%s.SetNum(List.size());", *PropertyValue);
+		Writer.Print("for(int i = 0; i < List.size(); i++)");
+		Writer.BeginScope();
+		GeneratePropertyToUnrealConversion(Writer, "List[i]", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator);
+		Writer.End();
+		Writer.End();
+	}
+	else if (Property->IsA(UEnumProperty::StaticClass()))
+	{
+		Writer.Printf("%s = %s(%s);", *PropertyValue, *Property->GetCPPType(), *Update);
+	}
+	else
+	{
+		Writer.Printf("// UNSUPPORTED U%s (unhandled) %s %s", *Property->GetClass()->GetName(), *PropertyValue, *Update);
+	}
 }
 
 void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC>& RPC,
@@ -1574,67 +1494,61 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
                                              TSharedPtr<FUnrealProperty> PropertyInfo,
                                              const int ArrayIdx)
 {
-    UProperty* Property = PropertyInfo->Property;
-    SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(PropertyInfo, ArrayIdx));
-    SourceWriter.BeginScope();
+	UProperty* Property = PropertyInfo->Property;
+	SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(PropertyInfo, ArrayIdx));
+	SourceWriter.BeginScope();
 
-    // Get unreal data by deserialising from the reader, convert and set the corresponding field in
-    // the update object.
-    FString PropertyValueName = TEXT("Value");
-    FString PropertyCppType = Property->GetClass()->GetFName().ToString();
-    FString PropertyValueCppType = Property->GetCPPType();
+	// Get unreal data by deserialising from the reader, convert and set the corresponding field in the update object.
+	FString PropertyValueName = TEXT("Value");
+	FString PropertyCppType = Property->GetClass()->GetFName().ToString();
+	FString PropertyValueCppType = Property->GetCPPType();
 
-    FString PropertyName = TEXT("Property");
-    // todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully
-    // using Property helper functions.
-    if (Property->IsA<UBoolProperty>())
-    {
-        SourceWriter.Printf(
-            "bool %s = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);",
-            *PropertyValueName);
-    }
-    else if (Property->IsA<UArrayProperty>())
-    {
-        UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-        SourceWriter.Printf("const TArray<%s>& %s = *(reinterpret_cast<TArray<%s> const*>(Data));",
-                            *ArrayProperty->Inner->GetCPPType(), *PropertyValueName,
-                            *ArrayProperty->Inner->GetCPPType());
-    }
-    else if (Property->IsA<UStructProperty>())
-    {
-        SourceWriter.Printf("const %s& %s = *(reinterpret_cast<%s const*>(Data));",
-                            *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
-    }
-    else if (Property->IsA<UClassProperty>())
-    {
-        // This is the same as the default case, but as UClassProperty extends from
-        // UObjectPropertyBase, we need to catch them here.
-        SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType,
-                            *PropertyValueName, *PropertyValueCppType);
-    }
-    else if (Property->IsA<UObjectPropertyBase>())
-    {
-        FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
-        SourceWriter.Printf("%s* %s = *(reinterpret_cast<%s* const*>(Data));", *ClassName,
-                            *PropertyValueName, *ClassName);
-    }
-    else
-    {
-        SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType,
-                            *PropertyValueName, *PropertyValueCppType);
-    }
+	FString PropertyName = TEXT("Property");
+	//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
+	if (Property->IsA<UBoolProperty>())
+	{
+		SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(Property)->GetPropertyValue(Data);", *PropertyValueName);
+	}
+	else if (Property->IsA<UArrayProperty>())
+	{
+		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+		SourceWriter.Printf("const TArray<%s>& %s = *(reinterpret_cast<TArray<%s> const*>(Data));", *ArrayProperty->Inner->GetCPPType(), *PropertyValueName, *ArrayProperty->Inner->GetCPPType());
+	}
+	else if (Property->IsA<UStructProperty>())
+	{
+		SourceWriter.Printf("const %s& %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+	}
+	else if (Property->IsA<UClassProperty>())
+	{
+		// This is the same as the default case, but as UClassProperty extends from UObjectPropertyBase, we need to catch them here.
+		SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+	}
+	else if (Property->IsA<UWeakObjectProperty>())
+	{
+		FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
+		SourceWriter.Printf("%s* %s = (reinterpret_cast<%s const*>(Data))->Get();", *ClassName, *PropertyValueName, *Property->GetCPPType());
+	}
+	else if (Property->IsA<UObjectPropertyBase>())
+	{
+		FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
+		SourceWriter.Printf("%s* %s = *(reinterpret_cast<%s* const*>(Data));", *ClassName, *PropertyValueName, *ClassName);
+	}
+	else
+	{
+		SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+	}
 
-    FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(PropertyInfo, ArrayIdx);
+	FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(PropertyInfo, ArrayIdx);
 
-    SourceWriter.PrintNewLine();
-    GenerateUnrealToSchemaConversion(
-        SourceWriter, SpatialValueSetter, PropertyInfo->Property, PropertyValueName,
-        [&SourceWriter, Handle](const FString& PropertyValue) {
-            SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);",
-                                *PropertyValue, Handle);
-        });
-    SourceWriter.Print("break;");
-    SourceWriter.End();
+	SourceWriter.PrintNewLine();
+	GenerateUnrealToSchemaConversion(
+		SourceWriter, SpatialValueSetter, PropertyInfo->Property, PropertyValueName,
+		[&SourceWriter, Handle](const FString& PropertyValue)
+	{
+		SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
+	});
+	SourceWriter.Print("break;");
+	SourceWriter.End();
 }
 
 void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class,
@@ -1789,61 +1703,55 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 			{
 				Handle = %d;
 				RepData = &HandleToPropertyMap[Handle];
-			})""",
-                            PropertyInfo->ReplicationData->RoleSwapHandle);
-        SourceWriter.PrintNewLine();
-    }
+			})""", PropertyInfo->ReplicationData->RoleSwapHandle);
+		SourceWriter.PrintNewLine();
+	}
 
-    // Convert update data to the corresponding Unreal type and serialize to OutputWriter.
-    FString PropertyValueName = TEXT("Value");
-    FString PropertyValueCppType = Property->GetCPPType();
+	// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
+	FString PropertyValueName = TEXT("Value");
+	FString PropertyValueCppType = Property->GetCPPType();
 
-    FString PropertyName = TEXT("RepData->Property");
-    // todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully
-    // using Property helper functions.
-    SourceWriter.Printf(
-        "uint8* PropertyData = "
-        "RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));");
-    if (Property->IsA<UBoolProperty>())
-    {
-        SourceWriter.Printf(
-            "bool %s = static_cast<UBoolProperty*>(%s)->GetPropertyValue(PropertyData);",
-            *PropertyValueName, *PropertyName);
-    }
-    else if (Property->IsA<UArrayProperty>())
-    {
-        UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-        SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));",
-                            *(ArrayProperty->Inner->GetCPPType()), *PropertyValueName,
-                            *(ArrayProperty->Inner->GetCPPType()));
-    }
-    else if (Property->IsA<UClassProperty>())
-    {
-        // This is the same as the default case, but as UClassProperty extends from
-        // UObjectPropertyBase, we need to catch them here.
-        SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));",
-                            *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
-    }
-    else if (Property->IsA<UObjectPropertyBase>())
-    {
-        FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
-        SourceWriter.Printf("%s* %s = *(reinterpret_cast<%s* const*>(PropertyData));", *ClassName,
-                            *PropertyValueName, *ClassName);
-    }
-    else
-    {
-        SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));",
-                            *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
-    }
-    SourceWriter.PrintNewLine();
+	FString PropertyName = TEXT("RepData->Property");
+	//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
+	SourceWriter.Printf("uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));");
+	if (Property->IsA<UBoolProperty>())
+	{
+		SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(%s)->GetPropertyValue(PropertyData);", *PropertyValueName, *PropertyName);
+	}
+	else if (Property->IsA<UArrayProperty>())
+	{
+		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+		SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));", *(ArrayProperty->Inner->GetCPPType()), *PropertyValueName, *(ArrayProperty->Inner->GetCPPType()));
+	}
+	else if (Property->IsA<UClassProperty>())
+	{
+		// This is the same as the default case, but as UClassProperty extends from UObjectPropertyBase, we need to catch them here.
+		SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+	}
+	else if (Property->IsA<UWeakObjectProperty>())
+	{
+		FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
+		SourceWriter.Printf("auto WeakPtrData = *(reinterpret_cast<%s const*>(PropertyData));", *Property->GetCPPType());
+		SourceWriter.Printf("%s* %s = WeakPtrData.Get();", *ClassName, *PropertyValueName);
+	}
+	else if (Property->IsA<UObjectPropertyBase>())
+	{
+		FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
+		SourceWriter.Printf("%s* %s = *(reinterpret_cast<%s* const*>(PropertyData));", *ClassName, *PropertyValueName, *ClassName);
+	}
+	else
+	{
+		SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
+	}
+	SourceWriter.PrintNewLine();
 
-    FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"),
-                                           *SchemaFieldName(PropertyInfo, ArrayIdx));
+	FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(PropertyInfo, ArrayIdx));
 
-    GeneratePropertyToUnrealConversion(SourceWriter, SpatialValue, PropertyInfo->Property,
-                                       PropertyValueName,
-                                       [&SourceWriter](const FString& PropertyValue) {
-                                           SourceWriter.Print(R"""(
+	GeneratePropertyToUnrealConversion(
+		SourceWriter, SpatialValue, PropertyInfo->Property, PropertyValueName,
+		[&SourceWriter](const FString& PropertyValue)
+	{
+		SourceWriter.Print(R"""(
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ObjectRefToString(ObjectRef),
@@ -2078,32 +1986,36 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class,
 		{
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: RPC %s queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return {TargetObject};
-		})""",
-                        *RPC->Function->GetName());
-    SourceWriter.PrintNewLine();
-    SourceWriter.Print("// Build request.");
-    SourceWriter.Printf("improbable::unreal::generated::%s Request;",
-                        *SchemaRPCRequestType(RPC->Function));
+		})""", *RPC->Function->GetName());
+	SourceWriter.PrintNewLine();
+	SourceWriter.Print("// Build request.");
+	SourceWriter.Printf("improbable::unreal::generated::%s Request;", *SchemaRPCRequestType(RPC->Function));
 
-    TArray<TSharedPtr<FUnrealProperty>> RPCParameters = GetFlatRPCParameters(RPC);
-    for (auto Param : RPCParameters)
-    {
-        FString SpatialValueSetter = TEXT("Request.set_") + SchemaFieldName(Param);
+	TArray<TSharedPtr<FUnrealProperty>> RPCParameters = GetFlatRPCParameters(RPC);
+	for (auto Param : RPCParameters)
+	{
+		FString SpatialValueSetter = TEXT("Request.set_") + SchemaFieldName(Param);
 
-        GenerateUnrealToSchemaConversion(
-            SourceWriter, SpatialValueSetter, Param->Property,
-            FString::Printf(TEXT("StructuredParams.%s"), *CPPFieldName(Param)),
-            [&SourceWriter, &RPC](const FString& PropertyValue) {
-                SourceWriter.Printf(
-                    "UE_LOG(LogSpatialOSInterop, Log, TEXT(\"%%s: RPC %s queued. %s is "
-                    "unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
-                    *RPC->Function->GetName(), *PropertyValue);
-                SourceWriter.Printf("return {%s};", *PropertyValue);
-            });
-    }
+		FString PropertyValue = FString::Printf(TEXT("StructuredParams.%s"), *CPPFieldName(Param));
+		if (Param->Property->IsA(UWeakObjectProperty::StaticClass()))
+		{
+			// In the case of a weak ptr, we want to use the underlying UObject, not the TWeakObjPtr.
+			PropertyValue += TEXT(".Get()");
+		}
 
-    SourceWriter.PrintNewLine();
-    SourceWriter.Printf(R"""(
+		GenerateUnrealToSchemaConversion(
+			SourceWriter, SpatialValueSetter, Param->Property, PropertyValue,
+			[&SourceWriter, &RPC](const FString& PropertyValue)
+		{
+			SourceWriter.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"%%s: RPC %s queued. %s is unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
+				*RPC->Function->GetName(),
+				*PropertyValue);
+			SourceWriter.Printf("return {%s};", *PropertyValue);
+		});
+	}
+
+	SourceWriter.PrintNewLine();
+	SourceWriter.Printf(R"""(
 		// Send command request.
 		Request.set_target_subobject_offset(TargetObjectRef.offset());
 		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%%s: Sending RPC: %s, target: %%s %%s"),

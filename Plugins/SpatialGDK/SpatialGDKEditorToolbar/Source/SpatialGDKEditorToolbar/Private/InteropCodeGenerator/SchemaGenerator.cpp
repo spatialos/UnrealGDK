@@ -85,105 +85,94 @@ FString CPPCommandClassName(UClass* Class, UFunction* Function)
 
 FString PropertyToSchemaType(UProperty* Property)
 {
-    FString DataType;
+	FString DataType;
 
-    if (Property->IsA(UStructProperty::StaticClass()))
-    {
-        UStructProperty* StructProp = Cast<UStructProperty>(Property);
-        UScriptStruct* Struct = StructProp->Struct;
-        if (Struct->GetFName() == NAME_Vector ||
-            Struct->GetName() == TEXT("Vector_NetQuantize100") ||
-            Struct->GetName() == TEXT("Vector_NetQuantize10") ||
-            Struct->GetName() == TEXT("Vector_NetQuantizeNormal") ||
-            Struct->GetName() == TEXT("Vector_NetQuantize"))
-        {
-            DataType = TEXT("improbable.Vector3f");  // not well supported
-        }
-        else if (Struct->GetFName() == NAME_Rotator)
-        {
-            DataType = TEXT("UnrealFRotator");
-        }
-        else if (Struct->GetFName() == NAME_Plane)
-        {
-            DataType = TEXT("UnrealFPlane");
-        }
-        else
-        {
-            DataType = TEXT("bytes");  // this includes RepMovement and UniqueNetId
-        }
-    }
-    else if (Property->IsA(UBoolProperty::StaticClass()))
-    {
-        DataType = TEXT("bool");
-    }
-    else if (Property->IsA(UFloatProperty::StaticClass()))
-    {
-        DataType = TEXT("float");
-    }
-    else if (Property->IsA(UDoubleProperty::StaticClass()))
-    {
-        DataType = TEXT("double");
-    }
-    else if (Property->IsA(UInt8Property::StaticClass()))
-    {
-        DataType = TEXT("int32");
-    }
-    else if (Property->IsA(UInt16Property::StaticClass()))
-    {
-        DataType = TEXT("int32");
-    }
-    else if (Property->IsA(UIntProperty::StaticClass()))
-    {
-        DataType = TEXT("int32");
-    }
-    else if (Property->IsA(UInt64Property::StaticClass()))
-    {
-        DataType = TEXT("int64");
-    }
-    else if (Property->IsA(UByteProperty::StaticClass()))
-    {
-        DataType = TEXT("uint32");  // uint8 not supported in schema.
-    }
-    else if (Property->IsA(UUInt16Property::StaticClass()))
-    {
-        DataType = TEXT("uint32");
-    }
-    else if (Property->IsA(UUInt32Property::StaticClass()))
-    {
-        DataType = TEXT("uint32");
-    }
-    else if (Property->IsA(UUInt64Property::StaticClass()))
-    {
-        DataType = TEXT("uint64");
-    }
-    else if (Property->IsA(UNameProperty::StaticClass()) ||
-             Property->IsA(UStrProperty::StaticClass()))
-    {
-        DataType = TEXT("string");
-    }
-    else if (Property->IsA(UClassProperty::StaticClass()))
-    {
-        DataType = TEXT("uint32");  // Note: We hash the static class path names to UClass objects.
-    }
-    else if (Property->IsA(UObjectPropertyBase::StaticClass()))
-    {
-        DataType = TEXT("UnrealObjectRef");
-    }
-    else if (Property->IsA(UArrayProperty::StaticClass()))
-    {
-        DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner);
-        DataType = FString::Printf(TEXT("list<%s>"), *DataType);
-    }
-    else if (Property->IsA(UEnumProperty::StaticClass()))
-    {
-        DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
-    }
-    else
-    {
-        DataType = TEXT("bytes");
-    }
+	if (Property->IsA(UStructProperty::StaticClass()))
+	{
+		UStructProperty* StructProp = Cast<UStructProperty>(Property);
+		UScriptStruct* Struct = StructProp->Struct;
+		if (Struct->StructFlags & STRUCT_NetSerializeNative)
+		{
+			// Specifically when NetSerialize is implemented for a struct we want to use 'bytes'.
+			// This includes RepMovement and UniqueNetId.
+			DataType = TEXT("bytes");
+		}
+		else
+		{
+			DataType = TEXT("bytes");
+		}
+	}
+	else if (Property->IsA(UBoolProperty::StaticClass()))
+	{
+		DataType = TEXT("bool");
+	}
+	else if (Property->IsA(UFloatProperty::StaticClass()))
+	{
+		DataType = TEXT("float");
+	}
+	else if (Property->IsA(UDoubleProperty::StaticClass()))
+	{
+		DataType = TEXT("double");
+	}
+	else if (Property->IsA(UInt8Property::StaticClass()))
+	{
+		DataType = TEXT("int32");
+	}
+	else if (Property->IsA(UInt16Property::StaticClass()))
+	{
+		DataType = TEXT("int32");
+	}
+	else if (Property->IsA(UIntProperty::StaticClass()))
+	{
+		DataType = TEXT("int32");
+	}
+	else if (Property->IsA(UInt64Property::StaticClass()))
+	{
+		DataType = TEXT("int64");
+	}
+	else if (Property->IsA(UByteProperty::StaticClass()))
+	{
+		DataType = TEXT("uint32"); // uint8 not supported in schema.
+	}
+	else if (Property->IsA(UUInt16Property::StaticClass()))
+	{
+		DataType = TEXT("uint32");
+	}
+	else if (Property->IsA(UUInt32Property::StaticClass()))
+	{
+		DataType = TEXT("uint32");
+	}
+	else if (Property->IsA(UUInt64Property::StaticClass()))
+	{
+		DataType = TEXT("uint64");
+	}
+	else if (Property->IsA(UNameProperty::StaticClass()) || Property->IsA(UStrProperty::StaticClass()))
+	{
+		DataType = TEXT("string");
+	}
+	else if (Property->IsA(UClassProperty::StaticClass()))
+	{
+		DataType = TEXT("uint32");	// Note: We hash the static class path names to UClass objects.
+	}
+	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
+	{
+		DataType = TEXT("UnrealObjectRef");
+	}
+	else if (Property->IsA(UArrayProperty::StaticClass()))
+	{
+		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner);
+		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
+	}
+	else if (Property->IsA(UEnumProperty::StaticClass()))
+	{
+		DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
+	}
+	else
+	{
+		DataType = TEXT("bytes");
+	}
 
-    return DataType;
+	return DataType;
 }
 
 void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> RepProp,
@@ -220,7 +209,6 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		// Note that this file has been generated automatically
 		package improbable.unreal.generated;
 
-		import "improbable/vector3.schema";
 		import "improbable/unreal/gdk/core_types.schema";)""");
     Writer.PrintNewLine();
 
@@ -319,7 +307,6 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			// Note that this file has been generated automatically
 			package improbable.unreal.generated;
 
-			import "improbable/vector3.schema";
 			import "improbable/unreal/gdk/core_types.schema";)""");
         RPCTypeOwnerSchemaWriter->PrintNewLine();
     }
