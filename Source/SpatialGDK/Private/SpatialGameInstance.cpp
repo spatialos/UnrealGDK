@@ -11,6 +11,37 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDK);
 
+bool USpatialGameInstance::HasSpatialNetDriver() const
+{
+	bool bHasSpatialNetDriver = false;
+
+	if (WorldContext != nullptr)
+	{
+		UWorld* World = GetWorld();
+		UNetDriver * NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
+		bool bShouldDestroyNetDriver = false;
+
+		if (NetDriver == nullptr)
+		{
+			bShouldDestroyNetDriver = GEngine->CreateNamedNetDriver(World, NAME_PendingNetDriver, NAME_GameNetDriver);
+			NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
+		}
+
+		if (NetDriver != nullptr)
+		{
+			bHasSpatialNetDriver = NetDriver->IsA<USpatialNetDriver>();
+
+			if (bShouldDestroyNetDriver)
+			{
+				GEngine->DestroyNamedNetDriver(World, NAME_PendingNetDriver);
+			}
+		}
+	}
+
+	return bHasSpatialNetDriver;
+}
+
+
 bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 {
 	if (WorldContext->PendingNetGame)
@@ -55,6 +86,14 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 #if WITH_EDITOR
 FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
+	if (!HasSpatialNetDriver())
+	{
+		// If we are not using USpatialNetDriver, revert to the regular Unreal codepath.
+		// Allows you to switch between SpatialOS and Unreal networking at game launch.
+		// e.g. to enable Unreal networking, add to your cmdline: -NetDriverOverrides=/Script/OnlineSubsystemUtils.IpNetDriver
+		return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
+	}
+
 	// This is sadly hacky to avoid a larger engine change. It borrows code from UGameInstance::StartPlayInEditorGameInstance() and 
 	//  UEngine::Browse().
 	check(WorldContext);
@@ -71,6 +110,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 	}
 
 	FString Error;
+
 	if (StartGameInstance_SpatialGDKClient(Error))
 	{
 		GetEngine()->TransitionType = TT_WaitingToConnect;
@@ -85,17 +125,18 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 
 void USpatialGameInstance::StartGameInstance()
 {
-	if (!GIsClient)
+	if (!GIsClient || !HasSpatialNetDriver())
 	{
 		Super::StartGameInstance();
-		return;
 	}
-
-	FString Error;
-
-	if (!StartGameInstance_SpatialGDKClient(Error))
+	else
 	{
-		UE_LOG(LogSpatialGDK, Fatal, TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
-		FPlatformMisc::RequestExit(false);
+		FString Error;
+
+		if (!StartGameInstance_SpatialGDKClient(Error))
+		{
+			UE_LOG(LogSpatialGDK, Fatal, TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
+			FPlatformMisc::RequestExit(false);
+		}
 	}
 }

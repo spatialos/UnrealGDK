@@ -62,28 +62,7 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 
 	if (Property->IsA(UStructProperty::StaticClass()))
 	{
-		UStructProperty * StructProp = Cast<UStructProperty>(Property);
-		UScriptStruct * Struct = StructProp->Struct;
-		if (Struct->GetFName() == NAME_Vector ||
-			Struct->GetName() == TEXT("Vector_NetQuantize100") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize10") ||
-			Struct->GetName() == TEXT("Vector_NetQuantizeNormal") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize"))
-		{
-			DataType = TEXT("improbable::Vector3f");
-		}
-		else if (Struct->GetFName() == NAME_Rotator)
-		{
-			DataType = TEXT("improbable::unreal::UnrealFRotator");
-		}
-		else if (Struct->GetFName() == NAME_Plane)
-		{
-			DataType = TEXT("improbable::unreal::UnrealFPlane");
-		}
-		else
-		{
-			DataType = TEXT("std::string"); //this includes RepMovement and UniqueNetId
-		}
+		DataType = TEXT("std::string"); // All structs serialize to 'bytes' and so we use std::string for now.
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
 	{
@@ -161,32 +140,17 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	{
 		UStructProperty * StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct * Struct = StructProp->Struct;
-		if (Struct->GetFName() == NAME_Vector ||
-			Struct->GetName() == TEXT("Vector_NetQuantize100") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize10") ||
-			Struct->GetName() == TEXT("Vector_NetQuantizeNormal") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize"))
-		{
-			Writer.Printf("%s(improbable::Vector3f(%s.X, %s.Y, %s.Z));", *Update, *PropertyValue, *PropertyValue, *PropertyValue);
-		}
-		else if (Struct->GetFName() == NAME_Rotator)
-		{
-			Writer.Printf("%s(improbable::unreal::UnrealFRotator(%s.Yaw, %s.Pitch, %s.Roll));", *Update, *PropertyValue, *PropertyValue, *PropertyValue);
-		}
-		else if (Struct->GetFName() == NAME_Plane)
-		{
-			Writer.Printf("%s(improbable::unreal::UnrealFPlane(%s.X, %s.Y, %s.Z, %s.W));", *Update, *PropertyValue, *PropertyValue, *PropertyValue, *PropertyValue);
-		}
-		else if (Struct->StructFlags & STRUCT_NetSerializeNative)
+		if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
 			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
 			Writer.BeginScope();
 			Writer.Printf(R"""(
 				TArray<uint8> ValueData;
 				FMemoryWriter ValueDataWriter(ValueData);
-				bool Success;
-				(const_cast<%s&>(%s)).NetSerialize(ValueDataWriter, PackageMap, Success);
-				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *Struct->GetStructCPPName(), *PropertyValue, *Update);
+				bool bSuccess = true;
+				(const_cast<%s&>(%s)).NetSerialize(ValueDataWriter, PackageMap, bSuccess);
+				checkf(bSuccess, TEXT("NetSerialize on %s failed."));
+				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *Struct->GetStructCPPName(), *PropertyValue, *Struct->GetStructCPPName(), *Update);
 			Writer.End();
 		}
 		else
@@ -342,39 +306,8 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	{
 		const UStructProperty * StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct * Struct = StructProp->Struct;
-		if (Struct->GetFName() == NAME_Vector ||
-			Struct->GetName() == TEXT("Vector_NetQuantize100") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize10") ||
-			Struct->GetName() == TEXT("Vector_NetQuantizeNormal") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize"))
-		{
-			Writer.Print("{").Indent();
-			Writer.Printf("auto& Vector = %s;", *Update);
-			Writer.Printf("%s.X = Vector.x();", *PropertyValue);
-			Writer.Printf("%s.Y = Vector.y();", *PropertyValue);
-			Writer.Printf("%s.Z = Vector.z();", *PropertyValue);
-			Writer.Outdent().Print("}");
-		}
-		else if (Struct->GetFName() == NAME_Rotator)
-		{
-			Writer.Print("{").Indent();
-			Writer.Printf("auto& Rotator = %s;", *Update);
-			Writer.Printf("%s.Yaw = Rotator.yaw();", *PropertyValue);
-			Writer.Printf("%s.Pitch = Rotator.pitch();", *PropertyValue);
-			Writer.Printf("%s.Roll = Rotator.roll();", *PropertyValue);
-			Writer.Outdent().Print("}");
-		}
-		else if (Struct->GetFName() == NAME_Plane)
-		{
-			Writer.Print("{").Indent();
-			Writer.Printf("auto& Plane = %s;", *Update);
-			Writer.Printf("%s.X = Plane.x();", *PropertyValue);
-			Writer.Printf("%s.Y = Plane.y();", *PropertyValue);
-			Writer.Printf("%s.Z = Plane.z();", *PropertyValue);
-			Writer.Printf("%s.W = Plane.w();", *PropertyValue);
-			Writer.Outdent().Print("}");
-		}
-		else if (Struct->StructFlags & STRUCT_NetSerializeNative)
+
+		if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
 			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
 			Writer.BeginScope();
@@ -383,8 +316,9 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 				TArray<uint8> ValueData;
 				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 				FMemoryReader ValueDataReader(ValueData);
-				bool bSuccess;
-				%s.NetSerialize(ValueDataReader, PackageMap, bSuccess);)""", *Update, *PropertyValue);
+				bool bSuccess = true;
+				%s.NetSerialize(ValueDataReader, PackageMap, bSuccess);
+				checkf(bSuccess, TEXT("NetSerialize on %s failed."));)""", *Update, *PropertyValue, *PropertyType);
 			Writer.End();
 		}
 		else
