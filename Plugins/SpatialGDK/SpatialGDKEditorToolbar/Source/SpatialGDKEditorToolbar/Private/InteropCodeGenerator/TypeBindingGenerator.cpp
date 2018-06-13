@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma optimize("", off)
 
 #include "TypeBindingGenerator.h"
 #include "SchemaGenerator.h"
@@ -313,7 +312,7 @@ void GenerateUObjectArrayToSchemaConversion(FCodeWriter& Writer, const FString& 
 	GenerateUnrealToSchemaConversion(Writer, FString(), Property, PropertyValue, [&Writer](const FString& PropertyValue)
 	{
 		Writer.Printf("UnresolvedObjects.Add(%s);", *PropertyValue);
-	});
+	}, false);
 
 	Writer.Printf(R"""(
 		if (UnresolvedObjects.Num() == 0)
@@ -1849,12 +1848,6 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 	TArray<TSharedPtr<FUnrealProperty>> RPCParameters = GetFlatRPCParameters(RPC);
 	for (auto Param : RPCParameters)
 	{
-		auto IsMyParam = Param->Property->GetName().Contains(TEXT("TestIntArray"));
-		if(IsMyParam)
-		{
-			auto a = 1;
-		}
-
 		FString SpatialValueSetter = TEXT("Request.set_") + SchemaFieldName(Param);
 
 		FString PropertyValue = FString::Printf(TEXT("StructuredParams.%s"), *CPPFieldName(Param));
