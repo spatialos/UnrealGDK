@@ -61,10 +61,10 @@ FString PropertyToWorkerSDKType(UProperty* Property, bool bIsRPCProperty)
 {
 	FString DataType;
 
-	// For static arrays in RPC arguments we have different functionality compared to replicated properties.
+	// For RPC arguments we may wish to handle them differently.
 	if (bIsRPCProperty)
 	{
-		if (Property->ArrayDim > 1) // UNR 283 Static arrays in RPC arguments are replicated as lists.
+		if (Property->ArrayDim > 1) // Static arrays in RPC arguments are replicated as lists.
 		{
 			DataType = PropertyToWorkerSDKType(Property, false);
 			DataType = FString::Printf(TEXT("::worker::List<%s>"), *DataType);
@@ -147,13 +147,11 @@ FString PropertyToWorkerSDKType(UProperty* Property, bool bIsRPCProperty)
 
 void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator, bool bIsRPCProperty)
 {
-	// For static arrays in RPC arguments we have different functionality compared to replicated properties.
+	// For RPC arguments we may wish to handle them differently.
 	if (bIsRPCProperty)
 	{
-		if (Property->ArrayDim > 1) // UNR 283 Static arrays in RPC arguments are replicated as lists.
+		if (Property->ArrayDim > 1) // Static arrays in RPC arguments are replicated as lists.
 		{
-			//UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-
 			Writer.BeginScope();
 			Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(Property, false));
 			Writer.Printf("for(int i = 0; i < sizeof(%s) / sizeof(%s[0]); i++)", *PropertyValue, *PropertyValue);
@@ -216,7 +214,6 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	}
 	else if (Property->IsA(UIntProperty::StaticClass()))
 	{
-		// UNR 283 - TestIntArray is hitting here. We will have to check for static arrays before this point.
 		Writer.Printf("%s(int32_t(%s));", *Update, *PropertyValue);
 	}
 	else if (Property->IsA(UInt64Property::StaticClass()))
@@ -333,16 +330,13 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 {
 	FString PropertyType = Property->GetCPPType();
 
-	// For static arrays in RPC arguments we have different functionality compared to replicated properties.
+	// For RPC arguments we may wish to handle them differently.
 	if (bIsRPCProperty)
 	{
-		if (Property->ArrayDim > 1) // UNR 283 Static arrays in RPC arguments are replicated as lists.
+		if (Property->ArrayDim > 1) // Static arrays in RPC arguments are replicated as lists.
 		{
-			//const UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-			// UNR-238 Add check here for the list size.
 			Writer.BeginScope();
 			Writer.Printf("auto& List = %s;", *Update);
-			//Writer.Printf("%s.SetNum(List.size());", *PropertyValue);
 			Writer.Print("for(int i = 0; i < List.size(); i++)");
 			Writer.BeginScope();
 			GeneratePropertyToUnrealConversion(Writer, "List[i]", Property, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator, false);

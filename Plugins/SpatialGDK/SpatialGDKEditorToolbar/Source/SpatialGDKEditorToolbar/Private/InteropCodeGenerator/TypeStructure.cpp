@@ -488,7 +488,8 @@ TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> 
 				return false;
 			}
 
-			// UNR-238 Stopping recursion here.
+			// For static arrays we want to stop recursion and serialize the property.
+			// Note: This will use NetSerialize or SerializeBin which is currently known to not recursively call NetSerialize on inner structs. UNR-333
 			if (Property->Property->ArrayDim > 1)
 			{
 				ParamList.Add(Property);

@@ -80,10 +80,10 @@ FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 {
 	FString DataType;
 
-	// For static arrays in RPC arguments we have different functionality compared to replicated properties.
+	// For RPC arguments we may wish to handle them differently.
 	if (bIsRPCProperty)
 	{
-		if (Property->ArrayDim > 1) // UNR 283 Static arrays in RPC arguments are replicated as lists.
+		if (Property->ArrayDim > 1) // Static arrays in RPC arguments are replicated as lists.
 		{
 			DataType = PropertyToSchemaType(Property, false); // Have to get the type of the property inside the static array.
 			DataType = FString::Printf(TEXT("list<%s>"), *DataType);
@@ -341,25 +341,14 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			RPCTypeOwnerSchemaWriter->Printf("uint32 target_subobject_offset = 1;");
 			FieldCounter = 1;
 
-			auto IsDoTheThingCStyle = RPC->Function->GetName().Contains(TEXT("DoTheThingCStyleArray"));
-			if(IsDoTheThingCStyle)
-			{
-				auto a = 1;
-			}
-
-			// TODO: Support fixed size arrays in RPCs. The implementation below is incomplete. UNR-283.
 			for (auto& Param : ParamList)
 			{
-				// UNR-283 For c-style arrays we use bytes.
 				auto Prop = Param->Property;
-				//for (int ArrayIdx = 0; ArrayIdx < Prop->ArrayDim; ++ArrayIdx)
-				//{
-					FieldCounter++;
-					WriteSchemaRPCField(RPCTypeOwnerSchemaWriter,
-						Param,
-						FieldCounter,
-						Param->Property->ArrayDim == 1 ? -1 : -1);
-				//}
+				FieldCounter++;
+				WriteSchemaRPCField(RPCTypeOwnerSchemaWriter,
+					Param,
+					FieldCounter,
+					-1); // -1 As we do not wish to have array index counters for static arrays in RPCs.
 			}
 			RPCTypeOwnerSchemaWriter->Outdent().Print("}");
 		}
