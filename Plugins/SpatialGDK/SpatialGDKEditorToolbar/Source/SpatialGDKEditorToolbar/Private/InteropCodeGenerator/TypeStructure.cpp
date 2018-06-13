@@ -147,10 +147,9 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 	{
 		UProperty* Property = *It;
 
-		// TODO(David): Should we still be skipping this?
 		if (Property->IsA<UMulticastDelegateProperty>())
 		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - multicast delegate property, skipping"), *Property->GetName());
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Verbose, TEXT("%s - multicast delegate property, skipping"), *Property->GetName());
 			continue;
 		}
 		
@@ -489,7 +488,14 @@ TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> 
 				return false;
 			}
 
-			// Generic struct. Recurse further.visual
+			// UNR-238 Stopping recursion here.
+			if (Property->Property->ArrayDim > 1)
+			{
+				ParamList.Add(Property);
+				return false;
+			}
+
+			// Generic struct. Recurse further.
 			return true;
 		}
 

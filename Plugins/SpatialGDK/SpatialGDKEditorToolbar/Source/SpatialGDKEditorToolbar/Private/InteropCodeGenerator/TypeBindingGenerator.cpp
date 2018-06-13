@@ -57,17 +57,24 @@ FString CPPFieldName(TSharedPtr<FUnrealProperty> Property)
 	return CPPFieldName;
 }
 
-FString PropertyToWorkerSDKType(UProperty* Property)
+FString PropertyToWorkerSDKType(UProperty* Property, bool bIsRPCProperty)
 {
 	FString DataType;
+
+	// For static arrays in RPC arguments we have different functionality compared to replicated properties.
+	if (bIsRPCProperty)
+	{
+		if (Property->ArrayDim > 1) // UNR 283 Static arrays in RPC arguments are replicated as lists.
+		{
+			DataType = PropertyToWorkerSDKType(Property, false);
+			DataType = FString::Printf(TEXT("::worker::List<%s>"), *DataType);
+			return DataType;
+		}
+	}
 
 	if (Property->IsA(UStructProperty::StaticClass()))
 	{
 		DataType = TEXT("std::string"); // All structs serialize to 'bytes' and so we use std::string for now.
-	}
-	else if (Property->ArrayDim > 1) // UNR 283 
-	{
-		DataType = TEXT("std::string");
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
 	{
@@ -123,7 +130,7 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 	}
 	else if (Property->IsA(UArrayProperty::StaticClass()))
 	{
-		DataType = PropertyToWorkerSDKType(Cast<UArrayProperty>(Property)->Inner);
+		DataType = PropertyToWorkerSDKType(Cast<UArrayProperty>(Property)->Inner, bIsRPCProperty);
 		DataType = FString::Printf(TEXT("::worker::List<%s>"), *DataType);
 	}
 	else if (Property->IsA(UEnumProperty::StaticClass()))
@@ -138,8 +145,27 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 	return DataType;
 }
 
-void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
+void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator, bool bIsRPCProperty)
 {
+	// For static arrays in RPC arguments we have different functionality compared to replicated properties.
+	if (bIsRPCProperty)
+	{
+		if (Property->ArrayDim > 1) // UNR 283 Static arrays in RPC arguments are replicated as lists.
+		{
+			//UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+
+			Writer.BeginScope();
+			Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(Property, false));
+			Writer.Printf("for(int i = 0; i < sizeof(%s) / sizeof(%s[0]); i++)", *PropertyValue, *PropertyValue);
+			Writer.BeginScope();
+			GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", Property, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator, false);
+			Writer.End();
+			Writer.Printf("%s(List);", *Update);
+			Writer.End();
+			return;
+		}
+	}
+
 	// Try to special case to custom types we know about
 	if (Property->IsA(UStructProperty::StaticClass()))
 	{
@@ -167,10 +193,6 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 				%s::StaticStruct()->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&%s)));
 				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *Property->GetCPPType(), *Property->GetCPPType(), *PropertyValue, *Update);
 		}
-	}
-	else if (Property->ArrayDim > 1) // UNR-283
-	{
-		Writer.Printf("%s(std::string(reinterpret_cast<char*>(%s), sizeof(%s)));", *Update, *PropertyValue, *PropertyValue);
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
 	{
@@ -256,12 +278,12 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 
-		Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(ArrayProperty->Inner));
+		Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(ArrayProperty->Inner, bIsRPCProperty));
 
 		Writer.Printf("for(int i = 0; i < %s.Num(); i++)", *PropertyValue);
 		Writer.BeginScope();
 
-		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator);
+		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator, bIsRPCProperty);
 
 		Writer.End();
 
@@ -307,9 +329,28 @@ void GenerateUObjectArrayToSchemaConversion(FCodeWriter& Writer, const FString& 
 		})""", *Update, Handle);
 }
 
-void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Update, const UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
+void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Update, const UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator, bool bIsRPCProperty)
 {
 	FString PropertyType = Property->GetCPPType();
+
+	// For static arrays in RPC arguments we have different functionality compared to replicated properties.
+	if (bIsRPCProperty)
+	{
+		if (Property->ArrayDim > 1) // UNR 283 Static arrays in RPC arguments are replicated as lists.
+		{
+			//const UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+			// UNR-238 Add check here for the list size.
+			Writer.BeginScope();
+			Writer.Printf("auto& List = %s;", *Update);
+			//Writer.Printf("%s.SetNum(List.size());", *PropertyValue);
+			Writer.Print("for(int i = 0; i < List.size(); i++)");
+			Writer.BeginScope();
+			GeneratePropertyToUnrealConversion(Writer, "List[i]", Property, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator, false);
+			Writer.End();
+			Writer.End();
+			return;
+		}
+	}
 
 	// Try to special case to custom types we know about
 	if (Property->IsA(UStructProperty::StaticClass()))
@@ -340,14 +381,6 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 				FMemoryReader ValueDataReader(ValueData);
 				%s::StaticStruct()->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&%s));)""", *Update, *PropertyType, *PropertyValue);
 		}
-	}
-	else if (Property->ArrayDim > 1) // If this is a c-style array we use bytes
-	{
-		Writer.BeginScope();
-		Writer.Printf(R"""(
-				auto& ValueDataStr = %s;
-				memcpy(%s, ValueDataStr.data(), ValueDataStr.size());)""", *Update, *PropertyValue);
-		Writer.End();
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
 	{
@@ -444,7 +477,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 		Writer.Printf("%s.SetNum(List.size());", *PropertyValue);
 		Writer.Print("for(int i = 0; i < List.size(); i++)");
 		Writer.BeginScope();
-		GeneratePropertyToUnrealConversion(Writer, "List[i]", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator);
+		GeneratePropertyToUnrealConversion(Writer, "List[i]", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator, bIsRPCProperty);
 		Writer.End();
 		Writer.End();
 	}
@@ -1411,7 +1444,7 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 		GenerateUnrealToSchemaConversion(SourceWriter, SpatialValueSetter, PropertyInfo->Property, PropertyValueName, [&SourceWriter, Handle](const FString& PropertyValue)
 		{
 			SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
-		});
+		}, false);
 	}
 	SourceWriter.Print("break;");
 	SourceWriter.End();
@@ -1462,7 +1495,7 @@ void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter,
 				[&SourceWriter, Handle](const FString& PropertyValue)
 			{
 				SourceWriter.Printf("Interop->QueueOutgoingObjectMigUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
-			});
+			}, false);
 			SourceWriter.Print("break;");
 			SourceWriter.End();
 		}
@@ -1638,7 +1671,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 			SourceWriter.Print("bWriteObjectProperty = false;");
 			SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);");
 		}
-	});
+	}, false);
 
 	// If this is RemoteRole, make sure to downgrade if bAutonomousProxy is false.
 	if (Property->GetFName() == NAME_RemoteRole)
@@ -1744,7 +1777,7 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 						Handle);)""");
 				SourceWriter.Print("bWriteObjectProperty = false;");
 				SourceWriter.Print("Interop->QueueIncomingObjectMigUpdate_Internal(ObjectRef, ActorChannel, MigratableData);");
-			});
+			}, false);
 
 			SourceWriter.PrintNewLine();
 
@@ -1845,7 +1878,7 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 				*RPC->Function->GetName(),
 				*PropertyValue);
 			SourceWriter.Printf("return {%s};", *PropertyValue);
-		});
+		}, true);
 	}
 
 	SourceWriter.PrintNewLine();
@@ -1932,7 +1965,7 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 
 			GeneratePropertyToUnrealConversion(
 				SourceWriter, SpatialValue, Param->Property, FString::Printf(TEXT("Parameters.%s"), *CPPFieldName(Param)),
-				std::bind(ObjectResolveFailureGenerator, std::placeholders::_1, "ObjectRef"));
+				std::bind(ObjectResolveFailureGenerator, std::placeholders::_1, "ObjectRef"), true);
 		}
 
 		RPCParametersStruct = FString(TEXT("&Parameters"));

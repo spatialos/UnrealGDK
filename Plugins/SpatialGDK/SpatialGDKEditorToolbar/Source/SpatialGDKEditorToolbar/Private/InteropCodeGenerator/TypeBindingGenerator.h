@@ -20,7 +20,8 @@ void GenerateUnrealToSchemaConversion(
 	const FString& Update,
 	UProperty* Property,
 	const FString& PropertyValue,
-	TFunction<void(const FString&)> ObjectResolveFailureGenerator);
+	TFunction<void(const FString&)> ObjectResolveFailureGenerator,
+	bool bIsRPCProperty);
 
 // Generates code to handle the queueing of an array of UObject* if it contains unresolved objects.
 // Currently only supports replicated properties (i.e. does not support migratable properties or RPC arguments).
@@ -37,7 +38,8 @@ void GeneratePropertyToUnrealConversion(
 	const FString& Update,
 	const UProperty* Property,
 	const FString& PropertyValue,
-	TFunction<void(const FString&)> ObjectResolveFailureGenerator);
+	TFunction<void(const FString&)> ObjectResolveFailureGenerator,
+	bool bIsRPCProperty);
 
 // For blueprint RPCs, declares a struct with RPC arguments.
 // For C++ RPCs, writes a comment about where the Unreal-generated struct is taken from.
