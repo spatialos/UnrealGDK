@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+#pragma optimize("", off)
 
 #include "SchemaGenerator.h"
 
@@ -93,6 +94,10 @@ FString PropertyToSchemaType(UProperty* Property)
 		{
 			DataType = TEXT("bytes");
 		}
+	}
+	else if (Property->ArrayDim > 1) // UNR 283 
+	{
+		DataType = TEXT("bytes");
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
 	{
@@ -328,17 +333,26 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			// RPC target sub-object offset.
 			RPCTypeOwnerSchemaWriter->Printf("uint32 target_subobject_offset = 1;");
 			FieldCounter = 1;
+
+			auto IsDoTheThingCStyle = RPC->Function->GetName().Contains(TEXT("DoTheThingCStyleArray"));
+			if(IsDoTheThingCStyle)
+			{
+				auto a = 1;
+			}
+
 			// TODO: Support fixed size arrays in RPCs. The implementation below is incomplete. UNR-283.
 			for (auto& Param : ParamList)
 			{
-				for (int ArrayIdx = 0; ArrayIdx < Param->Property->ArrayDim; ++ArrayIdx)
-				{
+				// UNR-283 For c-style arrays we use bytes.
+				auto Prop = Param->Property;
+				//for (int ArrayIdx = 0; ArrayIdx < Prop->ArrayDim; ++ArrayIdx)
+				//{
 					FieldCounter++;
 					WriteSchemaRPCField(RPCTypeOwnerSchemaWriter,
 						Param,
 						FieldCounter,
-						Param->Property->ArrayDim == 1 ? -1 : ArrayIdx);
-				}
+						Param->Property->ArrayDim == 1 ? -1 : -1);
+				//}
 			}
 			RPCTypeOwnerSchemaWriter->Outdent().Print("}");
 		}

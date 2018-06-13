@@ -489,9 +489,10 @@ TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> 
 				return false;
 			}
 
-			// Generic struct. Recurse further.
+			// Generic struct. Recurse further.visual
 			return true;
 		}
+
 		// If the RepType is not a generic struct, such as Vector3f or Plane, add to ParamList and stop recursion.
 		ParamList.Add(Property);
 		return false;

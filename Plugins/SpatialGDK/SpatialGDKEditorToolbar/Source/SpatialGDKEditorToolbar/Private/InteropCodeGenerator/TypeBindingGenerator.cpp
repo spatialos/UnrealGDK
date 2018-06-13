@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+#pragma optimize("", off)
 
 #include "TypeBindingGenerator.h"
 #include "SchemaGenerator.h"
@@ -63,6 +64,10 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 	if (Property->IsA(UStructProperty::StaticClass()))
 	{
 		DataType = TEXT("std::string"); // All structs serialize to 'bytes' and so we use std::string for now.
+	}
+	else if (Property->ArrayDim > 1) // UNR 283 
+	{
+		DataType = TEXT("std::string");
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
 	{
@@ -163,6 +168,10 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *Property->GetCPPType(), *Property->GetCPPType(), *PropertyValue, *Update);
 		}
 	}
+	else if (Property->ArrayDim > 1) // UNR-283
+	{
+		Writer.Printf("%s(std::string(reinterpret_cast<char*>(%s), sizeof(%s)));", *Update, *PropertyValue, *PropertyValue);
+	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
 	{
 		Writer.Printf("%s(%s);", *Update, *PropertyValue);
@@ -185,6 +194,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	}
 	else if (Property->IsA(UIntProperty::StaticClass()))
 	{
+		// UNR 283 - TestIntArray is hitting here. We will have to check for static arrays before this point.
 		Writer.Printf("%s(int32_t(%s));", *Update, *PropertyValue);
 	}
 	else if (Property->IsA(UInt64Property::StaticClass()))
@@ -330,6 +340,14 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 				FMemoryReader ValueDataReader(ValueData);
 				%s::StaticStruct()->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&%s));)""", *Update, *PropertyType, *PropertyValue);
 		}
+	}
+	else if (Property->ArrayDim > 1) // If this is a c-style array we use bytes
+	{
+		Writer.BeginScope();
+		Writer.Printf(R"""(
+				auto& ValueDataStr = %s;
+				memcpy(%s, ValueDataStr.data(), ValueDataStr.size());)""", *Update, *PropertyValue);
+		Writer.End();
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
 	{
@@ -1804,6 +1822,12 @@ void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, c
 	TArray<TSharedPtr<FUnrealProperty>> RPCParameters = GetFlatRPCParameters(RPC);
 	for (auto Param : RPCParameters)
 	{
+		auto IsMyParam = Param->Property->GetName().Contains(TEXT("TestIntArray"));
+		if(IsMyParam)
+		{
+			auto a = 1;
+		}
+
 		FString SpatialValueSetter = TEXT("Request.set_") + SchemaFieldName(Param);
 
 		FString PropertyValue = FString::Printf(TEXT("StructuredParams.%s"), *CPPFieldName(Param));
