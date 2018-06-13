@@ -36,7 +36,7 @@ FString SchemaRPCResponseType(UFunction* Function);
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property, const int FixedArrayIndex = -1);
 
 // Given a UFunction, generates the schema command name. Currently just returns the function name in lowercase.
-FString SchemaCommandName(UClass* Class, UFunction* Function);
+FString SchemaRPCName(UClass* Class, UFunction* Function);
 
 // Given a UFunction, generates the c++ command name. Identical to the schema name with the first letter being uppercase.
 FString CPPCommandClassName(UClass* Class, UFunction* Function);
