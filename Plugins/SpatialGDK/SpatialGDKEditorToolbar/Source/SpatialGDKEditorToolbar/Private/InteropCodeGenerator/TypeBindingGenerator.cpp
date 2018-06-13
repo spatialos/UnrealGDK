@@ -1952,10 +1952,12 @@ void GenerateFunction_RPCSendEvent(FCodeWriter& SourceWriter, UClass* Class,
 			*ObjectRefToString(TargetObjectRef));
 		improbable::unreal::generated::%s::Update Update;
 		Update.add_%s(EventData);
+		checkf(Update.%s().size() == 1, TEXT("%s_SendCommand: More than one event being sent"));
 		Connection->SendComponentUpdate<improbable::unreal::generated::%s>(TargetObjectRef.entity(), Update);
 		return {};)""",
         *RPC->Function->GetName(), *SchemaRPCComponentName(RPC->Type, Class),
-        *SchemaCommandName(Class, RPC->Function), *SchemaRPCComponentName(RPC->Type, Class));
+        *SchemaCommandName(Class, RPC->Function), *SchemaCommandName(Class, RPC->Function),
+		*RPC->Function->GetName(), *SchemaRPCComponentName(RPC->Type, Class));
     SourceWriter.Outdent().Print("};");
     SourceWriter.Printf("Interop->SendCommandRequest_Internal(Sender, %s);",
                         TEXT("/*bReliable*/ false"));
@@ -2097,7 +2099,7 @@ void GenerateFunction_RPCOnEvent(FCodeWriter& SourceWriter, UClass* Class,
     auto ObjectResolveFailureGenerator = [&SourceWriter, &RPC, Class](const FString& PropertyName,
                                                                       const FString& ObjectRef) {
         SourceWriter.Printf(R"""(
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: %s_OnCommandRequest: %s %%s is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: %s_OnEvent: %s %%s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ObjectRefToString(%s));
 			return {%s};)""",
@@ -2115,7 +2117,7 @@ void GenerateFunction_RPCOnEvent(FCodeWriter& SourceWriter, UClass* Class,
     SourceWriter.Outdent().Print("}");
     SourceWriter.Printf(R"""(
 		UObject* TargetObject = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
-		checkf(TargetObject, TEXT("%%s: %s_OnCommandRequest: Object Ref %%s (NetGUID %%s) does not correspond to a UObject."),
+		checkf(TargetObject, TEXT("%%s: %s_OnEvent: Object Ref %%s (NetGUID %%s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());)""",
@@ -2174,7 +2176,7 @@ void GenerateFunction_RPCOnEvent(FCodeWriter& SourceWriter, UClass* Class,
 		}
 		else
 		{
-			UE_LOG(LogSpatialOSInterop, Error, TEXT("%%s: %s_OnCommandRequest: Function not found. Object: %%s, Function: %s."),
+			UE_LOG(LogSpatialOSInterop, Error, TEXT("%%s: %s_OnEvent: Function not found. Object: %%s, Function: %s."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*TargetObject->GetFullName());
 		})""",
