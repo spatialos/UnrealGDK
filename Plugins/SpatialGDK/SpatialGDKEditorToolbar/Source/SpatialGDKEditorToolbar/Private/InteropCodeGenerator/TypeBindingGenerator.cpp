@@ -1554,8 +1554,9 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	else if (Property->IsA<UArrayProperty>())
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-		SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));", *(ArrayProperty->Inner->GetCPPType()), *PropertyValueName, *(ArrayProperty->Inner->GetCPPType()));
-		if (ArrayProperty->Inner->IsA<UObjectPropertyBase>())
+		UProperty* InnerProperty = ArrayProperty->Inner;
+		SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));", *(InnerProperty->GetCPPType()), *PropertyValueName, *(InnerProperty->GetCPPType()));
+		if (InnerProperty->IsA<UObjectPropertyBase>())
 		{
 			bIsArrayOfObjects = true;
 		}
@@ -1593,6 +1594,8 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 			// This callback is called on the inner property of an array of objects. In the future, we need a way to track this property
 			// as an unmapped object reference and update its value once the object is resolved. Until then, ignore this object ref.
 			SourceWriter.Print(R"""(
+				// Pre-alpha limitation: if a UObject* in an array property is unresolved, we currently don't have a way to update it once
+				// it is resolved. It will remain null and will only be updated when the server replicates this array again (when it changes).
 				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Ignoring unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ObjectRefToString(ObjectRef),

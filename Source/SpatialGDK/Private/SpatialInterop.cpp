@@ -378,6 +378,10 @@ void USpatialInterop::QueueIncomingRPC_Internal(const improbable::unreal::Unreal
 
 void USpatialInterop::ResetOutgoingArrayRepUpdate_Internal(USpatialActorChannel* DependentChannel, uint16 Handle)
 {
+	// This is called when trying to send an update on a given property on a given USpatialActorChannel. In case there
+	// was a pending outgoing update queued up before, it will now be obsolete, e.g. it's possible that unresolved
+	// objects that were queued up are no longer in the array, or there may be new unresolved objects present.
+
 	check(DependentChannel);
 
 	FHandleToOPARMap* HandleToOPARMap = PropertyToOPAR.Find(DependentChannel);
@@ -430,7 +434,7 @@ void USpatialInterop::QueueOutgoingArrayRepUpdate_Internal(const TSet<const UObj
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing array: channel: %s, handle: %d. Depending on objects:"),
 		*DependentChannel->GetName(), Handle);
 
-	TSharedPtr<FOutgoingPendingArrayRegister> OPAR(new FOutgoingPendingArrayRegister());
+	TSharedPtr<FOutgoingPendingArrayRegister> OPAR = MakeShared<FOutgoingPendingArrayRegister>();
 	OPAR->UnresolvedObjects = UnresolvedObjects;
 
 	// Add reference from the property's actor channel and handle to the new OPAR.
@@ -446,6 +450,7 @@ void USpatialInterop::QueueOutgoingArrayRepUpdate_Internal(const TSet<const UObj
 		check(AnotherHandleToOPARMap.Find(Handle) == nullptr);
 		AnotherHandleToOPARMap.Add(Handle, OPAR);
 
+		// Following up on the previous log: listing the unresolved objects
 		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s"), *UnresolvedObject->GetName());
 	}
 }
