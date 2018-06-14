@@ -112,6 +112,10 @@ markStartOfBlock "Build CodeGeneration"
 cp -a "Source/Programs/Improbable.Unreal.CodeGeneration/bin/Release/"*.dll "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs"
 cp -a "Source/Programs/Improbable.Unreal.CodeGeneration/bin/Release/"*.exe "${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs"
 
+csc "Scripts/Build.cs" "Scripts/Codegen.cs" "Scripts/Common.cs" -main:"Improbable.Build" -nologo -out:"${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/Build.exe"
+csc "Scripts/Codegen.cs" "Scripts/Common.cs"                                             -nologo -out:"${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/Codegen.exe"
+csc "Scripts/DiffCopy.cs"                                                                -nologo -out:"${UNREAL_GDK_DIR}/Binaries/ThirdParty/Improbable/Programs/DiffCopy.exe"
+
 markEndOfBlock "Build CodeGeneration"
 
 markEndOfBlock "$0"
