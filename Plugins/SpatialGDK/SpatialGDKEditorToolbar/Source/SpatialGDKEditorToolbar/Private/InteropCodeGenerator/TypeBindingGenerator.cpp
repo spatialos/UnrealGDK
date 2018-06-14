@@ -246,8 +246,6 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 
-		Writer.BeginScope();
-
 		Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(ArrayProperty->Inner));
 
 		Writer.Printf("for(int i = 0; i < %s.Num(); i++)", *PropertyValue);
@@ -257,10 +255,12 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 
 		Writer.End();
 
-		Writer.Printf("%s(List);", *Update);
-
-		Writer.End();
-	}
+		// Update could be empty in the case when we want to handle the list outside (e.g. for arrays of UObjects).
+		if (!Update.IsEmpty())
+		{
+			Writer.Printf("%s(List);", *Update);
+		}
+	} 
 	else if (Property->IsA(UEnumProperty::StaticClass()))
 	{
 		FString DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
@@ -270,6 +270,31 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	{
 		Writer.Printf("// UNSUPPORTED U%s (unhandled) %s(%s)", *Property->GetClass()->GetName(), *Update, *PropertyValue);
 	}
+}
+
+void GenerateUObjectArrayToSchemaConversion(FCodeWriter& Writer, const FString& Update, UArrayProperty* Property, const FString& PropertyValue, uint16 Handle)
+{
+	// We are sending an array of UObjects. Some of them could be unresolved, so if that is the case,
+	// we should delay sending the array until they are resolved.
+	Writer.Printf(R"""(
+		Interop->ResetOutgoingArrayRepUpdate_Internal(Channel, %d);
+
+		TSet<const UObject*> UnresolvedObjects;)""", Handle);
+
+	GenerateUnrealToSchemaConversion(Writer, FString(), Property, PropertyValue, [&Writer](const FString& PropertyValue)
+	{
+		Writer.Printf("UnresolvedObjects.Add(%s);", *PropertyValue);
+	});
+
+	Writer.Printf(R"""(
+		if (UnresolvedObjects.Num() == 0)
+		{
+			%s(List);
+		}
+		else
+		{
+			Interop->QueueOutgoingArrayRepUpdate_Internal(UnresolvedObjects, Channel, %d);
+		})""", *Update, Handle);
 }
 
 void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Update, const UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
@@ -1084,13 +1109,15 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);)""");
 	SourceWriter.Print("return improbable::unreal::FEntityBuilder::Begin()");
 	SourceWriter.Indent();
+	// If this is a APlayerController entity, ensure that only the owning client and workers have read ACL permissions. 
+	// This ensures that only one APlayerController object is created per client.
 	SourceWriter.Printf(R"""(
 		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, WorkersOnly)
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
 		.SetReadAcl(%s)
 		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly))""",
-		Class->GetName() == TEXT("PlayerController") ? TEXT("AnyUnrealWorkerOrOwningClient") : TEXT("AnyUnrealWorkerOrClient"));
+		Class->IsChildOf(APlayerController::StaticClass()) ? TEXT("AnyUnrealWorkerOrOwningClient") : TEXT("AnyUnrealWorkerOrClient"));
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
 		SourceWriter.Printf(".AddComponent<improbable::unreal::generated::%s>(%sData, WorkersOnly)",
@@ -1366,6 +1393,8 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	FString PropertyCppType = Property->GetClass()->GetFName().ToString();
 	FString PropertyValueCppType = Property->GetCPPType();
 
+	bool bIsArrayOfObjects = false;
+
 	FString PropertyName = TEXT("Property");
 	//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
 	if (Property->IsA<UBoolProperty>())
@@ -1376,6 +1405,12 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 		SourceWriter.Printf("const TArray<%s>& %s = *(reinterpret_cast<TArray<%s> const*>(Data));", *ArrayProperty->Inner->GetCPPType(), *PropertyValueName, *ArrayProperty->Inner->GetCPPType());
+
+		if (ArrayProperty->Inner->IsA<UObjectPropertyBase>())
+		{
+			// Special case because we need to handle unresolved objects
+			bIsArrayOfObjects = true;
+		}
 	}
 	else if (Property->IsA<UStructProperty>())
 	{
@@ -1404,12 +1439,18 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(PropertyInfo, ArrayIdx);
 
 	SourceWriter.PrintNewLine();
-	GenerateUnrealToSchemaConversion(
-		SourceWriter, SpatialValueSetter, PropertyInfo->Property, PropertyValueName,
-		[&SourceWriter, Handle](const FString& PropertyValue)
+
+	if (bIsArrayOfObjects)
 	{
-		SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
-	});
+		GenerateUObjectArrayToSchemaConversion(SourceWriter, SpatialValueSetter, Cast<UArrayProperty>(Property), PropertyValueName, Handle);
+	}
+	else
+	{
+		GenerateUnrealToSchemaConversion(SourceWriter, SpatialValueSetter, PropertyInfo->Property, PropertyValueName, [&SourceWriter, Handle](const FString& PropertyValue)
+		{
+			SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
+		});
+	}
 	SourceWriter.Print("break;");
 	SourceWriter.End();
 }
@@ -1558,6 +1599,9 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	FString PropertyValueName = TEXT("Value");
 	FString PropertyValueCppType = Property->GetCPPType();
 
+	// Special case for unresolved object refs inside an array.
+	bool bIsArrayOfObjects = false;
+
 	FString PropertyName = TEXT("RepData->Property");
 	//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
 	SourceWriter.Printf("uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));");
@@ -1568,7 +1612,12 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	else if (Property->IsA<UArrayProperty>())
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-		SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));", *(ArrayProperty->Inner->GetCPPType()), *PropertyValueName, *(ArrayProperty->Inner->GetCPPType()));
+		UProperty* InnerProperty = ArrayProperty->Inner;
+		SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));", *(InnerProperty->GetCPPType()), *PropertyValueName, *(InnerProperty->GetCPPType()));
+		if (InnerProperty->IsA<UObjectPropertyBase>())
+		{
+			bIsArrayOfObjects = true;
+		}
 	}
 	else if (Property->IsA<UClassProperty>())
 	{
@@ -1596,18 +1645,37 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 
 	GeneratePropertyToUnrealConversion(
 		SourceWriter, SpatialValue, PropertyInfo->Property, PropertyValueName,
-		[&SourceWriter](const FString& PropertyValue)
+		[&SourceWriter, bIsArrayOfObjects](const FString& PropertyValue)
 	{
-		SourceWriter.Print(R"""(
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ObjectRefToString(ObjectRef),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId().ToSpatialEntityId(),
-				*RepData->Property->GetName(),
-				Handle);)""");
-		SourceWriter.Print("bWriteObjectProperty = false;");
-		SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);");
+		if (bIsArrayOfObjects)
+		{
+			// This callback is called on the inner property of an array of objects. In the future, we need a way to track this property
+			// as an unmapped object reference and update its value once the object is resolved. Until then, ignore this object ref.
+			SourceWriter.Print(R"""(
+				// Pre-alpha limitation: if a UObject* in an array property is unresolved, we currently don't have a way to update it once
+				// it is resolved. It will remain null and will only be updated when the server replicates this array again (when it changes).
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Ignoring unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					*ObjectRefToString(ObjectRef),
+					*ActorChannel->Actor->GetName(),
+					ActorChannel->GetEntityId().ToSpatialEntityId(),
+					*RepData->Property->GetName(),
+					Handle);)""");
+			SourceWriter.Printf("%s = nullptr;", *PropertyValue);
+		}
+		else
+		{
+			SourceWriter.Print(R"""(
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					*ObjectRefToString(ObjectRef),
+					*ActorChannel->Actor->GetName(),
+					ActorChannel->GetEntityId().ToSpatialEntityId(),
+					*RepData->Property->GetName(),
+					Handle);)""");
+			SourceWriter.Print("bWriteObjectProperty = false;");
+			SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);");
+		}
 	});
 
 	// If this is RemoteRole, make sure to downgrade if bAutonomousProxy is false.
