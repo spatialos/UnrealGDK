@@ -149,7 +149,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 
 		if (Property->IsA<UMulticastDelegateProperty>())
 		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Verbose, TEXT("%s - multicast delegate property, skipping"), *Property->GetName());
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Verbose, TEXT("%s - multicast delegate property, these are not network replicated in native Unreal and can be safely ignored"), *Property->GetName());
 			continue;
 		}
 		

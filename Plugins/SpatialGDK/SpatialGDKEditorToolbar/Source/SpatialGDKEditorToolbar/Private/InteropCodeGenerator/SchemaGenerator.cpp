@@ -342,7 +342,6 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 			for (auto& Param : ParamList)
 			{
-				auto Prop = Param->Property;
 				FieldCounter++;
 				WriteSchemaRPCField(RPCTypeOwnerSchemaWriter,
 					Param,
