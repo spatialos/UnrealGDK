@@ -146,12 +146,6 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 	for (TFieldIterator<UProperty> It(Type); It; ++It)
 	{
 		UProperty* Property = *It;
-
-		if (Property->IsA<UMulticastDelegateProperty>())
-		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Verbose, TEXT("%s - multicast delegate property, these are not network replicated in native Unreal and can be safely ignored"), *Property->GetName());
-			continue;
-		}
 		
 		// Create property node and add it to the AST.
 		TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
