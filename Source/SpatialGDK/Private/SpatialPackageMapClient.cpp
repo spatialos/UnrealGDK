@@ -135,6 +135,9 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 	return NetGUID;
 }
 
+// Recursively assign netguids to the outer chain of a UObject. Then associate them with their Spatial representation (UnrealObjectRef)
+// This is required in order to be able to refer to a non-replicated stably named UObject.
+// Dynamically spawned actors and references to their subobjects do not go through this codepath.
 FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(const UObject* Object)
 {
 	FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Object);
@@ -176,7 +179,6 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbabl
 		{
 			OuterGUID = GetNetGUIDFromUnrealObjectRef(*ObjectRef.outer().data());
 		}
-		// TODO-giray: We may need to load a package here when we reach outermost.
 		NetGUID = RegisterNetGUIDFromPath(FString(ObjectRef.path().data()->c_str()), OuterGUID);
 		RegisterObjectRef(NetGUID, ObjectRef);
 	}
@@ -272,28 +274,6 @@ void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const improba
 	checkSlow(!UnrealObjectRefToNetGUID.Contains(ObjectRef) || (UnrealObjectRefToNetGUID.Contains(ObjectRef) && UnrealObjectRefToNetGUID.FindChecked(ObjectRef) == NetGUID));
 	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjectRef);
 	UnrealObjectRefToNetGUID.Emplace(ObjectRef, NetGUID);
-}
-
-FNetworkGUID FSpatialNetGUIDCache::AssignStaticActorNetGUID(const UObject* Object, const FNetworkGUID& StaticNetGUID)
-{
-	check(!NetGUIDLookup.FindRef(Object).IsValid());
-
-	FNetGuidCacheObject CacheObject;
-	CacheObject.Object = MakeWeakObjectPtr(const_cast<UObject*>(Object));
-	CacheObject.PathName = Object->GetFName();
-	RegisterNetGUID_Internal(StaticNetGUID, CacheObject);
-
-	// Register object ref.
-	improbable::unreal::UnrealObjectRef ObjectRef{0, StaticNetGUID.Value, worker::Option<std::string>{}, worker::Option<improbable::unreal::UnrealObjectRef>{} };
-	RegisterObjectRef(StaticNetGUID, ObjectRef);
-
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: Registered static object %s. NetGUID: %s, Object Ref: %s."),
-		*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
-		*Object->GetName(),
-		*StaticNetGUID.ToString(),
-		*ObjectRefToString(ObjectRef));
-
-	return StaticNetGUID;
 }
 
 void FSpatialNetGUIDCache::CreateStaticClassMapping()
