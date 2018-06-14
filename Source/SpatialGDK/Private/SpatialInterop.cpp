@@ -5,6 +5,7 @@
 #include "EntityRegistry.h"
 #include "SpatialActorChannel.h"
 #include "SpatialConstants.h"
+#include "SpatialInteropPipelineBlock.h"
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
 #include "SpatialOS.h"
