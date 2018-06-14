@@ -1939,7 +1939,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 		*RPC->Function->GetName(),
 		*RPCSendingMethod);
 	SourceWriter.Outdent().Print("};");
-	SourceWriter.Printf("Interop->SendCommandRequest_Internal(Sender, %s);", RPC->bReliable ? TEXT("/*bReliable*/ true") : TEXT("/*bReliable*/ false"));
+	SourceWriter.Printf("Interop->InvokeRPCSendHandler_Internal(Sender, %s);", RPC->bReliable ? TEXT("/*bReliable*/ true") : TEXT("/*bReliable*/ false"));
 
 	SourceWriter.End();
 }
@@ -2085,7 +2085,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 	SourceWriter.Print("return {};");
 	SourceWriter.Outdent().Print("};");
 
-	SourceWriter.Print("Interop->SendCommandResponse_Internal(Receiver);");
+	SourceWriter.Print("Interop->InvokeRPCReceiveHandler_Internal(Receiver);");
 
 	SourceWriter.End();
 }
