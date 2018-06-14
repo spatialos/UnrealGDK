@@ -275,6 +275,13 @@ void USpatialInteropPipelineBlock::DisableComponentImpl(const FComponentIdentifi
 void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 {
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(EntityId);
+
+	// Deletion has already been handled on the Authoritative worker by this point
+	if (Actor->HasAuthority())
+	{
+		return;
+	}
+
 	if (Actor && !Actor->IsPendingKill())
 	{
 		EntityRegistry->RemoveFromRegistry(Actor);

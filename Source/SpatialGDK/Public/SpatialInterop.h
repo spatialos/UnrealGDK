@@ -136,6 +136,7 @@ public:
 
 	// Sending component updates and RPCs.
 	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged);
+	worker::RequestId<worker::DeleteEntityRequest> SendDeleteEntityRequest(const FEntityId& EntityId);
 	void SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, UObject* CallingObject, void* Parameters);

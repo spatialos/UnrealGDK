@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
+#include "SpatialConstants.h"
 #include "SpatialInterop.h"
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
@@ -115,6 +116,18 @@ void USpatialActorChannel::UnbindFromSpatialView() const
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 	UnbindFromSpatialView();
+
+	// If we have authority and aren't trying to delete the spawner, delete the entity
+	if (Actor->HasAuthority() && ActorEntityId.ToSpatialEntityId() != SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
+	{
+		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+		Interop->SendDeleteEntityRequest(ActorEntityId);
+
+		SpatialNetDriver->GetSpatialInterop()->RemoveActorChannel(ActorEntityId);
+		auto* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
+		PackageMap->RemoveEntityActor(ActorEntityId);
+	}
+
 	return UActorChannel::CleanUp(bForDestroy);
 }
 

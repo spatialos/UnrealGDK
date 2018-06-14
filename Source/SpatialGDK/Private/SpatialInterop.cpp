@@ -147,6 +147,18 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 	return CreateEntityRequestId;
 }
 
+worker::RequestId<worker::DeleteEntityRequest> USpatialInterop::SendDeleteEntityRequest(const FEntityId& EntityId)
+{
+	worker::RequestId<worker::DeleteEntityRequest> DeleteEntityRequestId;
+	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
+	if (PinnedConnection.IsValid())
+	{
+		return PinnedConnection->SendDeleteEntityRequest(EntityId.ToSpatialEntityId(), 0);
+	}
+
+	return DeleteEntityRequestId;
+}
+
 void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location)
 {
 	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
