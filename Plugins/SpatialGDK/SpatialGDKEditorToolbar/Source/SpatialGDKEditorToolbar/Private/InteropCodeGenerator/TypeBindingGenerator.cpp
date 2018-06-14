@@ -728,17 +728,6 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
     {
         for (auto& RPC : RPCsByType[Group])
         {
-            //if (Group == ERPCType::RPC_NetMulticast)
-            //{
-            //    SourceWriter.PrintNewLine();
-            //    GenerateFunction_RPCSendEvent(SourceWriter, Class, RPC);
-            //}
-            //else
-            //{
-            //    SourceWriter.PrintNewLine();
-            //    GenerateFunction_RPCSendCommand(SourceWriter, Class, RPC);
-            //}
-
 			GenerateFunction_SendRPC(SourceWriter, Class, RPC);
         }
     }
@@ -747,17 +736,6 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
     {
         for (auto& RPC : RPCsByType[Group])
         {
-    //        if (Group == ERPCType::RPC_NetMulticast)
-    //        {
-    //            SourceWriter.PrintNewLine();
-    //            GenerateFunction_RPCOnEvent(SourceWriter, Class, RPC);
-    //        }
-    //        else
-    //        {
-				//SourceWriter.PrintNewLine();
-				//GenerateFunction_RPCOnCommandRequest(SourceWriter, Class, RPC);
-    //        }
-
 			GenerateFunction_OnRPCPayload(SourceWriter, Class, RPC);
         }
     }
@@ -1821,7 +1799,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 		CapturedArguments.Add(TEXT("StructuredParams"));
 	}
 	SourceWriter.Printf("auto Sender = [this, Connection, %s]() mutable -> FRPCCommandRequestResult", *FString::Join(CapturedArguments, TEXT(", ")));
-	SourceWriter.Print("{").Indent();
+	SourceWriter.BeginScope();
 
 	SourceWriter.Printf(R"""(
 		// Resolve TargetObject.
@@ -1932,7 +1910,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 
 	// Generate receiver function.
 	SourceWriter.Printf("auto Receiver = [this, %s]() mutable -> FRPCCommandResponseResult", *LambdaParameters);
-	SourceWriter.Print("{").Indent();
+	SourceWriter.BeginScope();
 
 	auto ObjectResolveFailureGenerator = [&SourceWriter, &RPC, Class](const FString& PropertyName, const FString& ObjectRef)
 	{
@@ -1957,9 +1935,9 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid()))""",
 		*EntityId, *RPCPayload);
-	SourceWriter.Print("{").Indent();
+	SourceWriter.BeginScope();
 	ObjectResolveFailureGenerator("Target object", "TargetObjectRef");
-	SourceWriter.Outdent().Print("}");
+	SourceWriter.End();
 	SourceWriter.Printf(R"""(
 		UObject* TargetObject = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 		checkf(TargetObject, TEXT("%%s: %s_OnRPCPayload: Object Ref %%s (NetGUID %%s) does not correspond to a UObject."),
