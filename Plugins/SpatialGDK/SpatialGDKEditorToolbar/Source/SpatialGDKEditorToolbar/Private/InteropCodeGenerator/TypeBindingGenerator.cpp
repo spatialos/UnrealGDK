@@ -901,7 +901,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 
 void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType)
 {
-	SourceWriter.BeginFunction({ "void", "BindToView()" }, TypeBindingName(Class));
+	SourceWriter.BeginFunction({"void", "BindToView()"}, TypeBindingName(Class));
 
 	SourceWriter.Print("TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();");
 	SourceWriter.Print("ViewCallbacks.Init(View);");
@@ -1140,7 +1140,7 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Class)
 {
 	SourceWriter.BeginFunction(
-		{ "void", "SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const" },
+		{"void", "SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel, const FEntityId& EntityId) const"},
 		TypeBindingName(Class));
 
 	SourceWriter.Print("// Build SpatialOS updates.");
@@ -1188,7 +1188,7 @@ void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Cl
 void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class)
 {
 	SourceWriter.BeginFunction(
-		{ "void", "SendRPCCommand(UObject* TargetObject, const UFunction* const Function, void* Parameters)" },
+		{"void", "SendRPCCommand(UObject* TargetObject, const UFunction* const Function, void* Parameters)"},
 		TypeBindingName(Class));
 	SourceWriter.Print(R"""(
 		TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();
@@ -1206,7 +1206,7 @@ void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class)
 void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class)
 {
 	SourceWriter.BeginFunction(
-		{ "void", "ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const" },
+		{"void", "ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const"},
 		TypeBindingName(Class));
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
@@ -1239,7 +1239,7 @@ void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Cla
 void GenerateFunction_GetInterestOverrideMap(FCodeWriter& SourceWriter, UClass* Class)
 {
 	SourceWriter.BeginFunction(
-		{ "worker::Map<worker::ComponentId, worker::InterestOverride>", "GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const" },
+		{"worker::Map<worker::ComponentId, worker::InterestOverride>", "GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const"},
 		TypeBindingName(Class));
 	SourceWriter.Printf(R"""(
 		worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
@@ -1345,7 +1345,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 
 void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData, EReplicatedPropertyGroup Group)
 {
-	FFunctionSignature ServerSendUpdateSignature{ "void",
+	FFunctionSignature ServerSendUpdateSignature{"void",
 		FString::Printf(TEXT("ServerSendUpdate_%s(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::generated::%s::Update& OutUpdate) const"),
 			*GetReplicatedPropertyGroupName(Group),
 			*SchemaReplicatedDataName(Group, Class))
@@ -1458,7 +1458,7 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& MigratableData)
 {
 	// TODO: Support fixed size arrays for migratable data. UNR-282.
-	FFunctionSignature ServerSendUpdateSignature{ "void",
+	FFunctionSignature ServerSendUpdateSignature{"void",
 		FString::Printf(TEXT("ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, improbable::unreal::generated::%s::Update& OutUpdate) const"),
 			*SchemaMigratableDataName(Class))
 	};
@@ -1517,7 +1517,7 @@ void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter,
 
 void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData, EReplicatedPropertyGroup Group)
 {
-	FFunctionSignature ReceiveUpdateSignature{ "void",
+	FFunctionSignature ReceiveUpdateSignature{"void",
 		FString::Printf(TEXT("ReceiveUpdate_%s(USpatialActorChannel* ActorChannel, const improbable::unreal::generated::%s::Update& Update) const"),
 			*GetReplicatedPropertyGroupName(Group),
 			*SchemaReplicatedDataName(Group, Class))
@@ -1722,7 +1722,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& MigratableData)
 {
 	// TODO: Support fixed size arrays for migratable data. UNR-282.
-	FFunctionSignature ReceiveUpdateSignature{ "void",
+	FFunctionSignature ReceiveUpdateSignature{"void",
 		FString::Printf(TEXT("ReceiveUpdate_Migratable(USpatialActorChannel* ActorChannel, const improbable::unreal::generated::%s::Update& Update) const"),
 			*SchemaMigratableDataName(Class))
 	};
