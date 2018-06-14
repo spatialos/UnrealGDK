@@ -121,11 +121,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 	if (Actor->HasAuthority() && ActorEntityId.ToSpatialEntityId() != SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
 	{
 		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
-		Interop->SendDeleteEntityRequest(ActorEntityId);
-
-		SpatialNetDriver->GetSpatialInterop()->RemoveActorChannel(ActorEntityId);
-		auto* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
-		PackageMap->RemoveEntityActor(ActorEntityId);
+		Interop->DestroyEntity(ActorEntityId, Actor);
 	}
 
 	return UActorChannel::CleanUp(bForDestroy);
