@@ -191,17 +191,24 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 {
-	ShowTaskStartNotification("Started interop codegen");
+	ShowTaskStartNotification("Started Interop Codegen");
 
-	const bool bSuccess = SpatialGDKGenerateInteropCode();
-	if (bSuccess)
-	{
-		ShowSuccessNotification("Interop codegen completed!");
-	}
-	else
-	{
-		ShowFailedNotification("Interop codegen failed");
-	}
+	AsyncTask(ENamedThreads::AnyHiPriThreadHiPriTask, [this] {
+		bool bSuccess = SpatialGDKGenerateInteropCode();
+
+		if (bSuccess)
+		{
+			ShowSuccessNotification("Interop codegen completed!");
+		}
+		else
+		{
+			ShowFailedNotification("Interop codegen failed");
+		}
+	});
+}
+
+void FSpatialGDKEditorToolbarModule::OnGenerateInteropCodeComplete(bool bSuccess)
+{
 }
 
 void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& NotificationText)
@@ -231,36 +238,38 @@ void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& No
 
 void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& NotificationText)
 {
-	TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]{
+		TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+		Notification->SetFadeInDuration(0.1f);
+		Notification->SetFadeOutDuration(0.5f);
+		Notification->SetExpireDuration(7.5f);
+		Notification->SetText(FText::AsCultureInvariant(NotificationText));
+		Notification->SetCompletionState(SNotificationItem::CS_Success);
+		Notification->ExpireAndFadeout();
+		TaskNotificationPtr.Reset();
 
-	Notification->SetFadeInDuration(0.1f);
-	Notification->SetFadeOutDuration(0.5f);
-	Notification->SetExpireDuration(7.5f);
-	Notification->SetText(FText::AsCultureInvariant(NotificationText));
-	Notification->SetCompletionState(SNotificationItem::CS_Success);
-	Notification->ExpireAndFadeout();
-	TaskNotificationPtr.Reset();
-
-	if (GEditor && ExecutionSuccessSound)
-	{
-		GEditor->PlayEditorSound(ExecutionSuccessSound);
-	}
+		if (GEditor && ExecutionSuccessSound)
+		{
+			GEditor->PlayEditorSound(ExecutionSuccessSound);
+		}
+	});
 }
 
 void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& NotificationText)
 {
-	TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]{
+		TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+		Notification->SetText(FText::AsCultureInvariant(NotificationText));
+		Notification->SetCompletionState(SNotificationItem::CS_Fail);
+		Notification->SetExpireDuration(5.0f);
+		
+		Notification->ExpireAndFadeout();
 
-	Notification->SetText(FText::AsCultureInvariant(NotificationText));
-	Notification->SetCompletionState(SNotificationItem::CS_Fail);
-	Notification->SetExpireDuration(5.0f);
-	
-	Notification->ExpireAndFadeout();
-
-	if (GEditor && ExecutionFailSound)
-	{
-		GEditor->PlayEditorSound(ExecutionFailSound);
-	}
+		if (GEditor && ExecutionFailSound)
+		{
+			GEditor->PlayEditorSound(ExecutionFailSound);
+		}
+	});
 }
 
 #undef LOCTEXT_NAMESPACE

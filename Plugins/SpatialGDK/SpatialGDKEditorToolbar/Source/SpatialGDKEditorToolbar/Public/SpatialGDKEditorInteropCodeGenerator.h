@@ -2,6 +2,7 @@
 
 #pragma once
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInteropCodeGenerator, Log, All);
+#include "Runnable.h"
+#include "RunnableThread.h"
 
-bool SpatialGDKGenerateInteropCode();
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInteropCodeGenerator, Log, All);

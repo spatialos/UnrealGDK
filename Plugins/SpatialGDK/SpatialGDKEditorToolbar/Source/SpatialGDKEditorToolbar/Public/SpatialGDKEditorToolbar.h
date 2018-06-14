@@ -45,6 +45,7 @@ private:
 
 	void CreateSnapshotButtonClicked();
 	void GenerateInteropCodeButtonClicked();
+	void OnGenerateInteropCodeComplete(bool bSuccess);
 
 private:
 
