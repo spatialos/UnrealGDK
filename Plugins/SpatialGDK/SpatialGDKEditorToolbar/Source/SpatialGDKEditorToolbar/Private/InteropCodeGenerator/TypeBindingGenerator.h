@@ -75,9 +75,6 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo, const int ArrayIdx);
 void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& MigratableData);
 void GenerateFunction_ReceiveUpdate_MulticastRPCs(FCodeWriter& SourceWriter, UClass* Class, const TArray <TSharedPtr<FUnrealRPC>> RPCs);
-void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC);
-void GenerateFunction_RPCSendEvent(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC);
 void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC);
-void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC);
-void GenerateFunction_RPCOnEvent(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC);
+void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC);
 void GenerateFunction_RPCOnCommandResponse(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC);

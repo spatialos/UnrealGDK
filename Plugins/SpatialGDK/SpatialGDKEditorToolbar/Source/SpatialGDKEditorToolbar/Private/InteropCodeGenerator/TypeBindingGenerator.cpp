@@ -587,13 +587,13 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 			if (Group == RPC_NetMulticast)
 			{
 				HeaderWriter.Printf(
-					"void %s_OnEvent(const worker::EntityId EntityId, const improbable::unreal::generated::%s& EventData);",
+					"void %s_OnRPCPayload(const worker::EntityId EntityId, const improbable::unreal::generated::%s& EventData);",
 					*RPC->Function->GetName(), *SchemaRPCRequestType(RPC->Function));
 			}
 			else
 			{
 				HeaderWriter.Printf(
-					"void %s_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::generated::%s::Commands::%s>& Op);",
+					"void %s_OnRPCPayload(const worker::CommandRequestOp<improbable::unreal::generated::%s::Commands::%s>& Op);",
 					*RPC->Function->GetName(), *SchemaRPCComponentName(Group, Class),
 					*CPPCommandClassName(Class, RPC->Function));
 			}
@@ -747,16 +747,18 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
     {
         for (auto& RPC : RPCsByType[Group])
         {
-            if (Group == ERPCType::RPC_NetMulticast)
-            {
-                SourceWriter.PrintNewLine();
-                GenerateFunction_RPCOnEvent(SourceWriter, Class, RPC);
-            }
-            else
-            {
-				SourceWriter.PrintNewLine();
-				GenerateFunction_RPCOnCommandRequest(SourceWriter, Class, RPC);
-            }
+    //        if (Group == ERPCType::RPC_NetMulticast)
+    //        {
+    //            SourceWriter.PrintNewLine();
+    //            GenerateFunction_RPCOnEvent(SourceWriter, Class, RPC);
+    //        }
+    //        else
+    //        {
+				//SourceWriter.PrintNewLine();
+				//GenerateFunction_RPCOnCommandRequest(SourceWriter, Class, RPC);
+    //        }
+
+			GenerateFunction_OnRPCPayload(SourceWriter, Class, RPC);
         }
     }
 
@@ -988,7 +990,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
             {
                 SourceWriter.Printf(
                     "ViewCallbacks.Add(View->OnCommandRequest<%sRPCCommandTypes::%s>(std::bind(&%s:"
-                    ":%s_OnCommandRequest, this, std::placeholders::_1)));",
+                    ":%s_OnRPCPayload, this, std::placeholders::_1)));",
                     *GetRPCTypeName(Group), *CPPCommandClassName(Class, RPC->Function),
                     *TypeBindingName(Class), *RPC->Function->GetName());
             }
@@ -1780,10 +1782,11 @@ void GenerateFunction_ReceiveUpdate_MulticastRPCs(FCodeWriter& SourceWriter, UCl
         SourceWriter.Printf(R"""(
 			for (auto& event : Update.%s())
 			{
-				%s_OnEvent(EntityId, event);
+				%s_OnRPCPayload(EntityId, event);
 			}
 			)""",
-                            *SchemaRPCName(Class, RPC->Function), *RPC->Function->GetName());
+			*SchemaRPCName(Class, RPC->Function), *RPC->Function->GetName());
+
         SourceWriter.PrintNewLine();
     }
 
@@ -1861,14 +1864,19 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 	if (RPC->Type == RPC_NetMulticast)
 	{
 		RPCSendingMethod = FString::Printf(TEXT(R"""(
+		improbable::unreal::generated::%s::Update Update;
+		Update.add_%s(RPCPayload);
+		checkf(Update.%s().size() == 1, TEXT("%s_SendCommand: More than one event being sent"));
 		Connection->SendComponentUpdate<improbable::unreal::generated::%s>(TargetObjectRef.entity(), Update);
 		return {};)"""),
-			*SchemaRPCComponentName(RPC->Type, Class));
+			*SchemaRPCComponentName(RPC->Type, Class), *SchemaRPCName(Class, RPC->Function),
+			*SchemaRPCName(Class, RPC->Function), *RPC->Function->GetName(),
+			*SchemaRPCComponentName(RPC->Type, Class));;
 	}
 	else
 	{
 		RPCSendingMethod = FString::Printf(TEXT(R"""(
-		auto RequestId = Connection->SendCommandRequest<improbable::unreal::generated::%s::Commands::%s>(TargetObjectRef.entity(), Request, 0);";
+		auto RequestId = Connection->SendCommandRequest<improbable::unreal::generated::%s::Commands::%s>(TargetObjectRef.entity(), RPCPayload, 0);
 		return {RequestId.Id};)"""),
 			*SchemaRPCComponentName(RPC->Type, Class),
 			*CPPCommandClassName(Class, RPC->Function));
@@ -1892,195 +1900,44 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 	SourceWriter.End();
 }
 
-void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC)
+void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC)
 {
-	FFunctionSignature SendCommandSignature{
-		"void",
-		FString::Printf(TEXT("%s_SendCommand(worker::Connection* const Connection, void* Parameters, UObject* TargetObject)"),
-			*RPC->Function->GetName())
-	};
-	SourceWriter.BeginFunction(SendCommandSignature, TypeBindingName(Class));
-
-	// Extract RPC arguments from the stack.
-	if (RPC->Function->NumParms > 0)
+	FString FunctionParameters;
+	if (RPC->Type == RPC_NetMulticast)
 	{
-		// Name of the struct is set from GenerateRPCArgumentsStruct
-		FString ParametersStructName;
-		GenerateRPCArgumentsStruct(SourceWriter, RPC, ParametersStructName);
-
-		SourceWriter.Printf("%s StructuredParams = *static_cast<%s*>(Parameters);", *ParametersStructName, *ParametersStructName);
-		SourceWriter.PrintNewLine();
+		FunctionParameters = FString::Printf(TEXT("const worker::EntityId EntityId, const improbable::unreal::generated::%s& EventData"),
+			*SchemaRPCRequestType(RPC->Function));
+	}
+	else
+	{
+		FunctionParameters = FString::Printf(TEXT("const worker::CommandRequestOp<improbable::unreal::generated::%s::Commands::%s>& Op"),
+			*SchemaRPCComponentName(RPC->Type, Class),
+			*CPPCommandClassName(Class, RPC->Function));
 	}
 
-	// Build closure to send the command request.
-	TArray<FString> CapturedArguments;
-	CapturedArguments.Add(TEXT("TargetObject"));
-	if (RPC->Function->NumParms > 0)
-	{
-		CapturedArguments.Add(TEXT("StructuredParams"));
-	}
-	SourceWriter.Printf("auto Sender = [this, Connection, %s]() mutable -> FRPCCommandRequestResult", *FString::Join(CapturedArguments, TEXT(", ")));
-	SourceWriter.Print("{").Indent();
+	FString RequestFuncName = FString::Printf(TEXT("%s_OnRPCPayload(%s)"),
+		*RPC->Function->GetName(), *FunctionParameters);
 
-	SourceWriter.Printf(R"""(
-		// Resolve TargetObject.
-		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
-		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: RPC %s queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
-			return {TargetObject};
-		})""", *RPC->Function->GetName());
-	SourceWriter.PrintNewLine();
-	SourceWriter.Print("// Build request.");
-	SourceWriter.Printf("improbable::unreal::generated::%s Request;", *SchemaRPCRequestType(RPC->Function));
-
-	TArray<TSharedPtr<FUnrealProperty>> RPCParameters = GetFlatRPCParameters(RPC);
-	for (auto Param : RPCParameters)
-	{
-		FString SpatialValueSetter = TEXT("Request.set_") + SchemaFieldName(Param);
-
-		FString PropertyValue = FString::Printf(TEXT("StructuredParams.%s"), *CPPFieldName(Param));
-		if (Param->Property->IsA(UWeakObjectProperty::StaticClass()))
-		{
-			// In the case of a weak ptr, we want to use the underlying UObject, not the TWeakObjPtr.
-			PropertyValue += TEXT(".Get()");
-		}
-
-		GenerateUnrealToSchemaConversion(
-			SourceWriter, SpatialValueSetter, Param->Property, PropertyValue,
-			[&SourceWriter, &RPC](const FString& PropertyValue)
-		{
-			SourceWriter.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"%%s: RPC %s queued. %s is unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
-				*RPC->Function->GetName(),
-				*PropertyValue);
-			SourceWriter.Printf("return {%s};", *PropertyValue);
-		});
-	}
-
-	SourceWriter.PrintNewLine();
-	SourceWriter.Printf(R"""(
-		// Send command request.
-		Request.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%%s: Sending RPC: %s, target: %%s %%s"),
-			*Interop->GetSpatialOS()->GetWorkerId(),
-			*TargetObject->GetName(),
-			*ObjectRefToString(TargetObjectRef));
-		auto RequestId = Connection->SendCommandRequest<improbable::unreal::generated::%s::Commands::%s>(TargetObjectRef.entity(), Request, 0);
-		return {RequestId.Id};)""",
-		*RPC->Function->GetName(),
-		*SchemaRPCComponentName(RPC->Type, Class),
-		*CPPCommandClassName(Class, RPC->Function));
-	SourceWriter.Outdent().Print("};");
-	SourceWriter.Printf("Interop->SendCommandRequest_Internal(Sender, %s);", RPC->bReliable ? TEXT("/*bReliable*/ true") : TEXT("/*bReliable*/ false"));
-
-	SourceWriter.End();
-}
-
-void GenerateFunction_RPCSendEvent(FCodeWriter& SourceWriter, UClass* Class,
-                                   const TSharedPtr<FUnrealRPC> RPC)
-{
-    FFunctionSignature SendCommandSignature{
-        "void",
-        FString::Printf(TEXT("%s_SendCommand(worker::Connection* const Connection, void* "
-                             "Parameters, UObject* TargetObject)"),
-                        *RPC->Function->GetName())};
-    SourceWriter.BeginFunction(SendCommandSignature, TypeBindingName(Class));
-
-    // Extract RPC arguments from the stack.
-    if (RPC->Function->NumParms > 0)
-    {
-        // Name of the struct is set from GenerateRPCArgumentsStruct
-        FString ParametersStructName;
-        GenerateRPCArgumentsStruct(SourceWriter, RPC, ParametersStructName);
-
-        SourceWriter.Printf("%s StructuredParams = *static_cast<%s*>(Parameters);",
-                            *ParametersStructName, *ParametersStructName);
-        SourceWriter.PrintNewLine();
-    }
-
-    // Build closure to send the command request.
-    TArray<FString> CapturedArguments;
-    CapturedArguments.Add(TEXT("TargetObject"));
-    if (RPC->Function->NumParms > 0)
-    {
-        CapturedArguments.Add(TEXT("StructuredParams"));
-    }
-    SourceWriter.Printf(
-        "auto Sender = [this, Connection, %s]() mutable -> FRPCCommandRequestResult",
-        *FString::Join(CapturedArguments, TEXT(", ")));
-    SourceWriter.Print("{").Indent();
-
-    SourceWriter.Printf(R"""(
-		// Resolve TargetObject.
-		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
-		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
-		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: RPC %s queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
-			return {TargetObject};
-		})""",
-                        *RPC->Function->GetName());
-    SourceWriter.PrintNewLine();
-    SourceWriter.Print("// Build Event.");
-    SourceWriter.Printf("improbable::unreal::generated::%s EventData;",
-                        *SchemaRPCRequestType(RPC->Function));
-
-    TArray<TSharedPtr<FUnrealProperty>> RPCParameters = GetFlatRPCParameters(RPC);
-    for (auto Param : RPCParameters)
-    {
-        FString SpatialValueSetter = TEXT("EventData.set_") + SchemaFieldName(Param);
-
-        GenerateUnrealToSchemaConversion(
-            SourceWriter, SpatialValueSetter, Param->Property,
-            FString::Printf(TEXT("StructuredParams.%s"), *CPPFieldName(Param)),
-            [&SourceWriter, &RPC](const FString& PropertyValue) {
-                SourceWriter.Printf(
-                    "UE_LOG(LogSpatialOSInterop, Log, TEXT(\"%%s: RPC %s queued. %s is "
-                    "unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
-                    *RPC->Function->GetName(), *PropertyValue);
-                SourceWriter.Printf("return {%s};", *PropertyValue);
-            });
-    }
-
-    SourceWriter.PrintNewLine();
-    SourceWriter.Printf(
-        R"""(
-		// Send command request.
-		EventData.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%%s: Sending RPC: %s, target: %%s %%s"),
-			*Interop->GetSpatialOS()->GetWorkerId(),
-			*TargetObject->GetName(),
-			*ObjectRefToString(TargetObjectRef));
-		improbable::unreal::generated::%s::Update Update;
-		Update.add_%s(EventData);
-		checkf(Update.%s().size() == 1, TEXT("%s_SendCommand: More than one event being sent"));
-		Connection->SendComponentUpdate<improbable::unreal::generated::%s>(TargetObjectRef.entity(), Update);
-		return {};)""",
-        *RPC->Function->GetName(), *SchemaRPCComponentName(RPC->Type, Class),
-        *SchemaRPCName(Class, RPC->Function), *SchemaRPCName(Class, RPC->Function),
-		*RPC->Function->GetName(), *SchemaRPCComponentName(RPC->Type, Class));
-    SourceWriter.Outdent().Print("};");
-    SourceWriter.Printf("Interop->SendCommandRequest_Internal(Sender, %s);",
-                        TEXT("/*bReliable*/ false"));
-
-    SourceWriter.End();
-}
-
-void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC)
-{
-	FString RequestFuncName = FString::Printf(TEXT("%s_OnCommandRequest(const worker::CommandRequestOp<improbable::unreal::generated::%s::Commands::%s>& Op)"),
-		*RPC->Function->GetName(),
-		*SchemaRPCComponentName(RPC->Type, Class),
-		*CPPCommandClassName(Class, RPC->Function));
 	SourceWriter.BeginFunction({ "void", RequestFuncName }, TypeBindingName(Class));
 
+	FString LambdaParameters;
+	if (RPC->Type == RPC_NetMulticast)
+	{
+		LambdaParameters = TEXT("EntityId, EventData");
+	}
+	else
+	{
+		LambdaParameters = TEXT("Op");
+	}
+
 	// Generate receiver function.
-	SourceWriter.Print("auto Receiver = [this, Op]() mutable -> FRPCCommandResponseResult");
+	SourceWriter.Printf("auto Receiver = [this, %s]() mutable -> FRPCCommandResponseResult", *LambdaParameters);
 	SourceWriter.Print("{").Indent();
 
 	auto ObjectResolveFailureGenerator = [&SourceWriter, &RPC, Class](const FString& PropertyName, const FString& ObjectRef)
 	{
 		SourceWriter.Printf(R"""(
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: %s_OnCommandRequest: %s %%s is not resolved on this worker."),
+			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: %s_OnRPCPayload: %s %%s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ObjectRefToString(%s));
 			return {%s};)""",
@@ -2091,17 +1948,21 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 			*ObjectRef);
 	};
 
+	FString EntityId = (RPC->Type == RPC_NetMulticast) ? TEXT("EntityId") : TEXT("Op.EntityId");
+	FString RPCPayload = (RPC->Type == RPC_NetMulticast) ? TEXT("EventData") : TEXT("Op.Request");
+
 	// Get the target object.
 	SourceWriter.Printf(R"""(
-		improbable::unreal::UnrealObjectRef TargetObjectRef{Op.EntityId, Op.Request.target_subobject_offset()};
+		improbable::unreal::UnrealObjectRef TargetObjectRef{%s, %s.target_subobject_offset()};
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
-		if (!TargetNetGUID.IsValid()))""");
+		if (!TargetNetGUID.IsValid()))""",
+		*EntityId, *RPCPayload);
 	SourceWriter.Print("{").Indent();
 	ObjectResolveFailureGenerator("Target object", "TargetObjectRef");
 	SourceWriter.Outdent().Print("}");
 	SourceWriter.Printf(R"""(
 		UObject* TargetObject = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
-		checkf(TargetObject, TEXT("%%s: %s_OnCommandRequest: Object Ref %%s (NetGUID %%s) does not correspond to a UObject."),
+		checkf(TargetObject, TEXT("%%s: %s_OnRPCPayload: Object Ref %%s (NetGUID %%s) does not correspond to a UObject."),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*ObjectRefToString(TargetObjectRef),
 			*TargetNetGUID.ToString());)""",
@@ -2126,7 +1987,7 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 
 		for (auto Param : GetFlatRPCParameters(RPC))
 		{
-			FString SpatialValue = FString::Printf(TEXT("%s.%s()"), TEXT("Op.Request"), *SchemaFieldName(Param));
+			FString SpatialValue = FString::Printf(TEXT("%s.%s()"), *RPCPayload, *SchemaFieldName(Param));
 
 			GeneratePropertyToUnrealConversion(
 				SourceWriter, SpatialValue, Param->Property, FString::Printf(TEXT("Parameters.%s"), *CPPFieldName(Param)),
@@ -2158,7 +2019,7 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 		}
 		else
 		{
-			UE_LOG(LogSpatialOSInterop, Error, TEXT("%%s: %s_OnCommandRequest: Function not found. Object: %%s, Function: %s."),
+			UE_LOG(LogSpatialOSInterop, Error, TEXT("%%s: %s_OnRPCPayload: Function not found. Object: %%s, Function: %s."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*TargetObject->GetFullName());
 		})""",
@@ -2168,128 +2029,21 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 		*RPC->Function->GetName());
 	SourceWriter.PrintNewLine();
 
-	SourceWriter.Print("// Send command response.");
-	SourceWriter.Print("TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();");
-	SourceWriter.Printf("Connection->SendCommandResponse<improbable::unreal::generated::%s::Commands::%s>(Op.RequestId, {});",
-		*SchemaRPCComponentName(RPC->Type, Class),
-		*CPPCommandClassName(Class, RPC->Function));
+	if (RPC->Type != RPC_NetMulticast)
+	{
+		SourceWriter.Print("// Send command response.");
+		SourceWriter.Print("TSharedPtr<worker::Connection> Connection = Interop->GetSpatialOS()->GetConnection().Pin();");
+		SourceWriter.Printf("Connection->SendCommandResponse<improbable::unreal::generated::%s::Commands::%s>(Op.RequestId, {});",
+			*SchemaRPCComponentName(RPC->Type, Class),
+			*CPPCommandClassName(Class, RPC->Function));
+	}
+
 	SourceWriter.Print("return {};");
 	SourceWriter.Outdent().Print("};");
 
 	SourceWriter.Print("Interop->SendCommandResponse_Internal(Receiver);");
 
 	SourceWriter.End();
-}
-
-void GenerateFunction_RPCOnEvent(FCodeWriter& SourceWriter, UClass* Class,
-                                 const TSharedPtr<FUnrealRPC> RPC)
-{
-    FString RequestFuncName =
-        FString::Printf(TEXT("%s_OnEvent(const worker::EntityId EntityId, "
-                             "const improbable::unreal::generated::%s& EventData)"),
-                        *RPC->Function->GetName(), *SchemaRPCRequestType(RPC->Function));
-
-    SourceWriter.BeginFunction({"void", RequestFuncName}, TypeBindingName(Class));
-
-    // Generate receiver function.
-    SourceWriter.Print(
-        "auto Receiver = [this, EntityId, EventData]() mutable -> FRPCCommandResponseResult");
-    SourceWriter.Print("{").Indent();
-
-    auto ObjectResolveFailureGenerator = [&SourceWriter, &RPC, Class](const FString& PropertyName,
-                                                                      const FString& ObjectRef) {
-        SourceWriter.Printf(R"""(
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: %s_OnEvent: %s %%s is not resolved on this worker."),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ObjectRefToString(%s));
-			return {%s};)""",
-                            *RPC->Function->GetName(), *PropertyName, *ObjectRef, *ObjectRef,
-                            *ObjectRef);
-    };
-
-    // Get the target object.
-    SourceWriter.Printf(R"""(
-		improbable::unreal::UnrealObjectRef TargetObjectRef{EntityId, EventData.target_subobject_offset()};
-		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
-		if (!TargetNetGUID.IsValid()))""");
-    SourceWriter.Print("{").Indent();
-    ObjectResolveFailureGenerator("Target object", "TargetObjectRef");
-    SourceWriter.Outdent().Print("}");
-    SourceWriter.Printf(R"""(
-		UObject* TargetObject = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
-		checkf(TargetObject, TEXT("%%s: %s_OnEvent: Object Ref %%s (NetGUID %%s) does not correspond to a UObject."),
-			*Interop->GetSpatialOS()->GetWorkerId(),
-			*ObjectRefToString(TargetObjectRef),
-			*TargetNetGUID.ToString());)""",
-                        *RPC->Function->GetName());
-
-    // Create RPC argument variables.
-    FString RPCParametersStruct;
-    if (RPC->Parameters.Num() > 0)
-    {
-        SourceWriter.PrintNewLine();
-        SourceWriter.Print("// Declare parameters.");
-
-        // Name of the struct is set from GenerateRPCArgumentsStruct
-        FString ParametersStructName;
-        GenerateRPCArgumentsStruct(SourceWriter, RPC, ParametersStructName);
-
-        SourceWriter.Printf("%s Parameters;", *ParametersStructName);
-
-        // Extract RPC arguments from request data.
-        SourceWriter.PrintNewLine();
-        SourceWriter.Print("// Extract from request data.");
-
-        for (auto Param : GetFlatRPCParameters(RPC))
-        {
-            FString SpatialValue =
-                FString::Printf(TEXT("%s.%s()"), TEXT("EventData"), *SchemaFieldName(Param));
-
-            GeneratePropertyToUnrealConversion(
-                SourceWriter, SpatialValue, Param->Property,
-                FString::Printf(TEXT("Parameters.%s"), *CPPFieldName(Param)),
-                std::bind(ObjectResolveFailureGenerator, std::placeholders::_1, "ObjectRef"));
-        }
-
-        RPCParametersStruct = FString(TEXT("&Parameters"));
-    }
-    else
-    {
-        RPCParametersStruct = FString(TEXT("nullptr"));
-    }
-
-    // Call implementation and send response.
-    SourceWriter.PrintNewLine();
-    SourceWriter.Print("// Call implementation.");
-    SourceWriter.Printf(R"""(
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%%s: Received RPC: %s, target: %%s %%s"),
-					*Interop->GetSpatialOS()->GetWorkerId(),
-					*TargetObject->GetName(),
-					*ObjectRefToString(TargetObjectRef));)""",
-                        *RPC->Function->GetName());
-
-    SourceWriter.PrintNewLine();
-    SourceWriter.Printf(R"""(
-		if (UFunction* Function = TargetObject->FindFunction(FName(TEXT("%s"))))
-		{
-			TargetObject->ProcessEvent(Function, %s);
-		}
-		else
-		{
-			UE_LOG(LogSpatialOSInterop, Error, TEXT("%%s: %s_OnEvent: Function not found. Object: %%s, Function: %s."),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*TargetObject->GetFullName());
-		})""",
-                        *RPC->Function->GetName(), *RPCParametersStruct, *RPC->Function->GetName(),
-                        *RPC->Function->GetName());
-    SourceWriter.PrintNewLine();
-
-    SourceWriter.Print("return {};");
-    SourceWriter.Outdent().Print("};");
-
-    SourceWriter.Print("Interop->SendCommandResponse_Internal(Receiver);");
-
-    SourceWriter.End();
 }
 
 void GenerateFunction_RPCOnCommandResponse(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC)
