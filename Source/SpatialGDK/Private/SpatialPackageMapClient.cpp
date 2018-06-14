@@ -163,11 +163,6 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(worker::EntityId EntityId)
 	UnrealObjectRefToNetGUID.Remove(*ActorRef);
 }
 
-void RemoveStablyNamedObjectNetGUID(const improbable::unreal::UnrealObjectRef& ObjectRef)
-{
-	// TODO
-}
-
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
 	FNetworkGUID* CachedGUID = UnrealObjectRefToNetGUID.Find(ObjectRef);

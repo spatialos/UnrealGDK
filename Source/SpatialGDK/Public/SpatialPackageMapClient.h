@@ -51,7 +51,6 @@ public:
 	void RemoveEntityNetGUID(worker::EntityId EntityId);
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(const UObject* Object);
-	void RemoveStablyNamedObjectNetGUID(const improbable::unreal::UnrealObjectRef& ObjectRef);
 	
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef);
 	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
