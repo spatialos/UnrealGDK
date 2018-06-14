@@ -2,10 +2,15 @@
 
 pushd "%~dp0..\"
 
-if not exist "Intermediate\Improbable" mkdir "Intermediate\Improbable"
+set CODEGEN_PATH="Binaries\ThirdParty\Improbable\Programs\Codegen.exe"
 
-csc "Scripts/Codegen.cs" "Scripts/Common.cs" /nologo /out:"Intermediate\Improbable\Codegen.exe" || exit /b 1
+if not exist %CODEGEN_PATH% (
+	echo Error: Codegen executable not found! Please run ci/build.sh in your SpatialGDK directory to generate it.
+	exit /b 1
+)
 
-Intermediate\Improbable\Codegen.exe %*
+%CODEGEN_PATH% %*
+
+popd
 
 exit /b %ERRORLEVEL%
