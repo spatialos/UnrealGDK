@@ -142,9 +142,11 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(const UObje
 {
 	FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Object);
 	FNetworkGUID OuterGUID;
-	if (Object->GetOuter())
+	UObject* OuterObject = Object->GetOuter();
+
+	if (OuterObject)
 	{
-		OuterGUID = AssignNewStablyNamedObjectNetGUID(Object->GetOuter());
+		OuterGUID = AssignNewStablyNamedObjectNetGUID(OuterObject);
 	}
 	improbable::unreal::UnrealObjectRef StablyNamedObjRef{ FEntityId{}.ToSpatialEntityId(),
 		0,
@@ -195,6 +197,7 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(worker::EntityId Entit
 
 FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPath(const FString& PathName, const FNetworkGUID& OuterGUID)
 {
+	// This function should only be called for stably named object references, not dynamic ones.
 	FNetGuidCacheObject CacheObject;
 	CacheObject.PathName = FName(*PathName);
 	CacheObject.OuterGUID = OuterGUID;
@@ -273,6 +276,7 @@ void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const improba
 
 void FSpatialNetGUIDCache::CreateStaticClassMapping()
 {
+	// TODO-giray: Remove the class map and use stably named object references for uclasses. UNR-339.
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
 		if (!It->HasAnyClassFlags(CLASS_Abstract))
