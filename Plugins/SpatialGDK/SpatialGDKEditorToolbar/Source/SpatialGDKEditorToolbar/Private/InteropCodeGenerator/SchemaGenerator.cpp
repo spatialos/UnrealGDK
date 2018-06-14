@@ -83,23 +83,7 @@ FString PropertyToSchemaType(UProperty* Property)
 	{
 		UStructProperty* StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct* Struct = StructProp->Struct;
-		if (Struct->GetFName() == NAME_Vector ||
-			Struct->GetName() == TEXT("Vector_NetQuantize100") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize10") ||
-			Struct->GetName() == TEXT("Vector_NetQuantizeNormal") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize"))
-		{
-			DataType = TEXT("improbable.Vector3f"); // not well supported
-		}
-		else if (Struct->GetFName() == NAME_Rotator)
-		{
-			DataType = TEXT("UnrealFRotator");
-		}
-		else if (Struct->GetFName() == NAME_Plane)
-		{
-			DataType = TEXT("UnrealFPlane");
-		}
-		else if (Struct->StructFlags & STRUCT_NetSerializeNative)
+		if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
 			// Specifically when NetSerialize is implemented for a struct we want to use 'bytes'.
 			// This includes RepMovement and UniqueNetId.
@@ -221,7 +205,6 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		// Note that this file has been generated automatically
 		package improbable.unreal.generated;
 
-		import "improbable/vector3.schema";
 		import "improbable/unreal/gdk/core_types.schema";)""");
 	Writer.PrintNewLine();
 
@@ -320,7 +303,6 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			// Note that this file has been generated automatically
 			package improbable.unreal.generated;
 
-			import "improbable/vector3.schema";
 			import "improbable/unreal/gdk/core_types.schema";)""");
 		RPCTypeOwnerSchemaWriter->PrintNewLine();
 	}

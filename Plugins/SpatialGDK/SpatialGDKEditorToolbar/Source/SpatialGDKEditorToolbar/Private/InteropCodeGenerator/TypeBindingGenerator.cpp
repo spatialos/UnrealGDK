@@ -62,28 +62,7 @@ FString PropertyToWorkerSDKType(UProperty* Property)
 
 	if (Property->IsA(UStructProperty::StaticClass()))
 	{
-		UStructProperty * StructProp = Cast<UStructProperty>(Property);
-		UScriptStruct * Struct = StructProp->Struct;
-		if (Struct->GetFName() == NAME_Vector ||
-			Struct->GetName() == TEXT("Vector_NetQuantize100") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize10") ||
-			Struct->GetName() == TEXT("Vector_NetQuantizeNormal") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize"))
-		{
-			DataType = TEXT("improbable::Vector3f");
-		}
-		else if (Struct->GetFName() == NAME_Rotator)
-		{
-			DataType = TEXT("improbable::unreal::UnrealFRotator");
-		}
-		else if (Struct->GetFName() == NAME_Plane)
-		{
-			DataType = TEXT("improbable::unreal::UnrealFPlane");
-		}
-		else
-		{
-			DataType = TEXT("std::string"); //this includes RepMovement and UniqueNetId
-		}
+		DataType = TEXT("std::string"); // All structs serialize to 'bytes' and so we use std::string for now.
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
 	{
@@ -161,23 +140,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	{
 		UStructProperty * StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct * Struct = StructProp->Struct;
-		if (Struct->GetFName() == NAME_Vector ||
-			Struct->GetName() == TEXT("Vector_NetQuantize100") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize10") ||
-			Struct->GetName() == TEXT("Vector_NetQuantizeNormal") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize"))
-		{
-			Writer.Printf("%s(improbable::Vector3f(%s.X, %s.Y, %s.Z));", *Update, *PropertyValue, *PropertyValue, *PropertyValue);
-		}
-		else if (Struct->GetFName() == NAME_Rotator)
-		{
-			Writer.Printf("%s(improbable::unreal::UnrealFRotator(%s.Yaw, %s.Pitch, %s.Roll));", *Update, *PropertyValue, *PropertyValue, *PropertyValue);
-		}
-		else if (Struct->GetFName() == NAME_Plane)
-		{
-			Writer.Printf("%s(improbable::unreal::UnrealFPlane(%s.X, %s.Y, %s.Z, %s.W));", *Update, *PropertyValue, *PropertyValue, *PropertyValue, *PropertyValue);
-		}
-		else if (Struct->StructFlags & STRUCT_NetSerializeNative)
+		if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
 			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
 			Writer.BeginScope();
@@ -290,8 +253,6 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 
-		Writer.BeginScope();
-
 		Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(ArrayProperty->Inner));
 
 		Writer.Printf("for(int i = 0; i < %s.Num(); i++)", *PropertyValue);
@@ -301,9 +262,11 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 
 		Writer.End();
 
+		// Update could be empty in the case when we want to handle the list outside (e.g. for arrays of UObjects).
+		if (!Update.IsEmpty())
+		{
 		Writer.Printf("%s(List);", *Update);
-
-		Writer.End();
+		}
 	} 
 	else if (Property->IsA(UEnumProperty::StaticClass()))
 	{
@@ -316,6 +279,31 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	}
 }
 
+void GenerateUObjectArrayToSchemaConversion(FCodeWriter& Writer, const FString& Update, UArrayProperty* Property, const FString& PropertyValue, uint16 Handle)
+{
+	// We are sending an array of UObjects. Some of them could be unresolved, so if that is the case,
+	// we should delay sending the array until they are resolved.
+	Writer.Printf(R"""(
+		Interop->ResetOutgoingArrayRepUpdate_Internal(Channel, %d);
+
+		TSet<const UObject*> UnresolvedObjects;)""", Handle);
+
+	GenerateUnrealToSchemaConversion(Writer, FString(), Property, PropertyValue, [&Writer](const FString& PropertyValue)
+	{
+		Writer.Printf("UnresolvedObjects.Add(%s);", *PropertyValue);
+	});
+
+	Writer.Printf(R"""(
+		if (UnresolvedObjects.Num() == 0)
+		{
+			%s(List);
+		}
+		else
+		{
+			Interop->QueueOutgoingArrayRepUpdate_Internal(UnresolvedObjects, Channel, %d);
+		})""", *Update, Handle);
+}
+
 void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Update, const UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator)
 {
 	FString PropertyType = Property->GetCPPType();
@@ -325,39 +313,8 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	{
 		const UStructProperty * StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct * Struct = StructProp->Struct;
-		if (Struct->GetFName() == NAME_Vector ||
-			Struct->GetName() == TEXT("Vector_NetQuantize100") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize10") ||
-			Struct->GetName() == TEXT("Vector_NetQuantizeNormal") ||
-			Struct->GetName() == TEXT("Vector_NetQuantize"))
-		{
-			Writer.Print("{").Indent();
-			Writer.Printf("auto& Vector = %s;", *Update);
-			Writer.Printf("%s.X = Vector.x();", *PropertyValue);
-			Writer.Printf("%s.Y = Vector.y();", *PropertyValue);
-			Writer.Printf("%s.Z = Vector.z();", *PropertyValue);
-			Writer.Outdent().Print("}");
-		}
-		else if (Struct->GetFName() == NAME_Rotator)
-		{
-			Writer.Print("{").Indent();
-			Writer.Printf("auto& Rotator = %s;", *Update);
-			Writer.Printf("%s.Yaw = Rotator.yaw();", *PropertyValue);
-			Writer.Printf("%s.Pitch = Rotator.pitch();", *PropertyValue);
-			Writer.Printf("%s.Roll = Rotator.roll();", *PropertyValue);
-			Writer.Outdent().Print("}");
-		}
-		else if (Struct->GetFName() == NAME_Plane)
-		{
-			Writer.Print("{").Indent();
-			Writer.Printf("auto& Plane = %s;", *Update);
-			Writer.Printf("%s.X = Plane.x();", *PropertyValue);
-			Writer.Printf("%s.Y = Plane.y();", *PropertyValue);
-			Writer.Printf("%s.Z = Plane.z();", *PropertyValue);
-			Writer.Printf("%s.W = Plane.w();", *PropertyValue);
-			Writer.Outdent().Print("}");
-		}
-		else if (Struct->StructFlags & STRUCT_NetSerializeNative)
+
+		if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
 			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
 			Writer.BeginScope();
@@ -1105,13 +1062,15 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);)""");
 	SourceWriter.Print("return improbable::unreal::FEntityBuilder::Begin()");
 	SourceWriter.Indent();
+	// If this is a APlayerController entity, ensure that only the owning client and workers have read ACL permissions. 
+	// This ensures that only one APlayerController object is created per client.
 	SourceWriter.Printf(R"""(
 		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, WorkersOnly)
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
 		.SetReadAcl(%s)
 		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly))""",
-		Class->GetName() == TEXT("PlayerController") ? TEXT("AnyUnrealWorkerOrOwningClient") : TEXT("AnyUnrealWorkerOrClient"));
+		Class->IsChildOf(APlayerController::StaticClass()) ? TEXT("AnyUnrealWorkerOrOwningClient") : TEXT("AnyUnrealWorkerOrClient"));
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
 		SourceWriter.Printf(".AddComponent<improbable::unreal::generated::%s>(%sData, WorkersOnly)",
@@ -1385,6 +1344,8 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	FString PropertyCppType = Property->GetClass()->GetFName().ToString();
 	FString PropertyValueCppType = Property->GetCPPType();
 
+	bool bIsArrayOfObjects = false;
+
 	FString PropertyName = TEXT("Property");
 	//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
 	if (Property->IsA<UBoolProperty>())
@@ -1395,6 +1356,12 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 		SourceWriter.Printf("const TArray<%s>& %s = *(reinterpret_cast<TArray<%s> const*>(Data));", *ArrayProperty->Inner->GetCPPType(), *PropertyValueName, *ArrayProperty->Inner->GetCPPType());
+
+		if (ArrayProperty->Inner->IsA<UObjectPropertyBase>())
+		{
+			// Special case because we need to handle unresolved objects
+			bIsArrayOfObjects = true;
+		}
 	}
 	else if (Property->IsA<UStructProperty>())
 	{
@@ -1423,14 +1390,20 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(PropertyInfo, ArrayIdx);
 
 	SourceWriter.PrintNewLine();
-	GenerateUnrealToSchemaConversion(
-		SourceWriter, SpatialValueSetter, PropertyInfo->Property, PropertyValueName,
-		[&SourceWriter, Handle](const FString& PropertyValue)
+
+	if (bIsArrayOfObjects)
+	{
+		GenerateUObjectArrayToSchemaConversion(SourceWriter, SpatialValueSetter, Cast<UArrayProperty>(Property), PropertyValueName, Handle);
+	}
+	else
+	{
+		GenerateUnrealToSchemaConversion(SourceWriter, SpatialValueSetter, PropertyInfo->Property, PropertyValueName, [&SourceWriter, Handle](const FString& PropertyValue)
 	{
 		SourceWriter.Printf("// A legal static object reference should never be unresolved.");
 		SourceWriter.Printf("check(!%s->IsFullNameStableForNetworking())", *PropertyValue);
 		SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
 	});
+	}
 	SourceWriter.Print("break;");
 	SourceWriter.End();
 }
@@ -1579,6 +1552,9 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	FString PropertyValueName = TEXT("Value");
 	FString PropertyValueCppType = Property->GetCPPType();
 
+	// Special case for unresolved object refs inside an array.
+	bool bIsArrayOfObjects = false;
+
 	FString PropertyName = TEXT("RepData->Property");
 	//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
 	SourceWriter.Printf("uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));");
@@ -1589,7 +1565,12 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	else if (Property->IsA<UArrayProperty>())
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-		SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));", *(ArrayProperty->Inner->GetCPPType()), *PropertyValueName, *(ArrayProperty->Inner->GetCPPType()));
+		UProperty* InnerProperty = ArrayProperty->Inner;
+		SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));", *(InnerProperty->GetCPPType()), *PropertyValueName, *(InnerProperty->GetCPPType()));
+		if (InnerProperty->IsA<UObjectPropertyBase>())
+		{
+			bIsArrayOfObjects = true;
+		}
 	}
 	else if (Property->IsA<UClassProperty>())
 	{
@@ -1617,7 +1598,25 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 
 	GeneratePropertyToUnrealConversion(
 		SourceWriter, SpatialValue, PropertyInfo->Property, PropertyValueName,
-		[&SourceWriter](const FString& PropertyValue)
+		[&SourceWriter, bIsArrayOfObjects](const FString& PropertyValue)
+	{
+		if (bIsArrayOfObjects)
+		{
+			// This callback is called on the inner property of an array of objects. In the future, we need a way to track this property
+			// as an unmapped object reference and update its value once the object is resolved. Until then, ignore this object ref.
+			SourceWriter.Print(R"""(
+				// Pre-alpha limitation: if a UObject* in an array property is unresolved, we currently don't have a way to update it once
+				// it is resolved. It will remain null and will only be updated when the server replicates this array again (when it changes).
+				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Ignoring unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					*ObjectRefToString(ObjectRef),
+					*ActorChannel->Actor->GetName(),
+					ActorChannel->GetEntityId().ToSpatialEntityId(),
+					*RepData->Property->GetName(),
+					Handle);)""");
+			SourceWriter.Printf("%s = nullptr;", *PropertyValue);
+		}
+		else
 	{
 		SourceWriter.Print(R"""(
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
@@ -1631,6 +1630,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 		SourceWriter.Printf("check(ObjectRef.path().empty());");
 		SourceWriter.Print("bWriteObjectProperty = false;");
 		SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);");
+		}
 	});
 
 	// If this is RemoteRole, make sure to downgrade if bAutonomousProxy is false.
