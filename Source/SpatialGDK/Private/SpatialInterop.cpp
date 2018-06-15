@@ -240,7 +240,7 @@ void USpatialInterop::RemoveActorChannel(const FEntityId& EntityId)
 void USpatialInterop::DeleteEntity(const FEntityId& EntityId)
 {
 	SendDeleteEntityRequest(EntityId);
-	NetDriver->InteropPipelineBlock->CleanupEntity(EntityId);
+	NetDriver->InteropPipelineBlock->CleanupDeletedEntity(EntityId);
 }
 
 void USpatialInterop::SendComponentInterests(USpatialActorChannel* ActorChannel, const FEntityId& EntityId)

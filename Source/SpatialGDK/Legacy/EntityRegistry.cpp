@@ -62,24 +62,17 @@ void UEntityRegistry::AddToRegistry(const FEntityId& EntityId, AActor* Actor)
 void UEntityRegistry::RemoveFromRegistry(const AActor* Actor)
 {
   FEntityId EntityId = GetEntityIdFromActor(Actor);
-
-  ActorToEntityId.Remove(Actor);
-  EntityComponentCache.Remove(Actor);
-
-  if (EntityId != -1)
-  {
-    EntityIdToActor.Remove(EntityId);
-  }
-  else
-  {
-    UE_LOG(LogEntityRegistry, Warning, TEXT("Couldn't remove Actor from registry: EntityId == -1"));
-  }
+  RemoveFromRegistryImpl(Actor, EntityId);
 }
 
 void UEntityRegistry::RemoveFromRegistry(const FEntityId& EntityId)
 {
   AActor* Actor = GetActorFromEntityId(EntityId);
+  RemoveFromRegistryImpl(Actor, EntityId);
+}
 
+void UEntityRegistry::RemoveFromRegistryImpl(const AActor* Actor, const FEntityId& EntityId)
+{
   ActorToEntityId.Remove(Actor);
   EntityComponentCache.Remove(Actor);
 
