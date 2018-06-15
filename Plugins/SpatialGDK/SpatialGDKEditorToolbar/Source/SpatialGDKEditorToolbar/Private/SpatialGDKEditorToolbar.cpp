@@ -116,7 +116,7 @@ bool FSpatialGDKEditorToolbarModule::HandleSettingsSaved()
 	return true;
 }
 
-bool FSpatialGDKEditorToolbarModule::InteropCodeGenCanExecute()
+bool FSpatialGDKEditorToolbarModule::CanExecuteInteropCodeGen()
 {
 	return !InteropCodeGenRunning;
 }
@@ -133,7 +133,7 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode,
 		FExecuteAction::CreateRaw(
 			this, &FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::InteropCodeGenCanExecute));
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteInteropCodeGen));
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> PluginCommands)
