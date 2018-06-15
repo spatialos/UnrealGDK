@@ -69,21 +69,22 @@ FString CPPCommandClassName(UClass* Class, UFunction* Function)
 	return SchemaName;
 }
 
-FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property, const int FixedArrayIndex /*=-1*/)
+FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 {
 	// Transform the property chain into a chain of names.
 	TArray<FString> ChainNames;
 	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
 	{
-		return UnrealNameToSchemaTypeName(Property->Property->GetName().ToLower());
+		FString PropName = Property->Property->GetName().ToLower();
+		if (Property->StaticArrayIndex >= 0)
+		{
+			PropName.Append(FString::FromInt(Property->StaticArrayIndex));
+		}
+		return UnrealNameToSchemaTypeName(PropName);
 	});
 
 	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
 	// which the generated code extends :troll:.
 	FString FieldName = TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
-	if (FixedArrayIndex >= 0)
-	{
-		FieldName += FString::FromInt(FixedArrayIndex);
-	}
 	return FieldName;
 }

@@ -39,4 +39,4 @@ FString SchemaRPCName(UClass* Class, UFunction* Function);
 FString CPPCommandClassName(UClass* Class, UFunction* Function);
 
 // Given a property node, generates the schema field name.
-FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property, const int FixedArrayIndex = -1);
+FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property);
