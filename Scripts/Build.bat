@@ -4,11 +4,14 @@ pushd "%~dp0..\"
 
 call "Scripts\BuildWorkerConfig.bat"
 
-if not exist "Intermediate\Improbable" mkdir "Intermediate\Improbable"
+set BUILD_EXE_PATH="Binaries\ThirdParty\Improbable\Programs\Build.exe"
 
-csc "Scripts/Build.cs" "Scripts/Codegen.cs" "Scripts/Common.cs" /main:"Improbable.Build" /nologo /out:"Intermediate\Improbable\Build.exe" || exit /b 1
+if not exist %BUILD_EXE_PATH% (
+	echo Error: Build executable not found! Please run ci/build.sh in your SpatialGDK directory to generate it.
+	exit /b 1
+)
 
-Intermediate\Improbable\Build.exe %*
+%BUILD_EXE_PATH% %*
 
 popd
 
