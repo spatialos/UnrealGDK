@@ -277,7 +277,7 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(EntityId);
 
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
-	if (!Actor)
+	if (!Actor || Actor->IsPendingKill())
 	{
 		return;
 	}

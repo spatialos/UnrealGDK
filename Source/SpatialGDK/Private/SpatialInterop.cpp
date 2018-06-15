@@ -236,7 +236,7 @@ void USpatialInterop::RemoveActorChannel(const FEntityId& EntityId)
 	EntityToActorChannel.Remove(EntityId);
 }
 
-void USpatialInterop::DestroyEntity(const FEntityId& EntityId, const AActor* Actor)
+void USpatialInterop::DeleteEntity(const FEntityId& EntityId, const AActor* Actor)
 {
 	SendDeleteEntityRequest(EntityId);
 	NetDriver->InteropPipelineBlock->CleanupActor(EntityId, Actor);
