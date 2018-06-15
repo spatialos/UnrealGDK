@@ -26,7 +26,7 @@ struct FRPCCommandRequestResult
 	const UObject* UnresolvedObject;
 	FUntypedRequestId RequestId;
 
-	FRPCCommandRequestResult() = delete;
+	FRPCCommandRequestResult() : UnresolvedObject{nullptr}, RequestId{0} {}
 	FRPCCommandRequestResult(const UObject* UnresolvedObject) : UnresolvedObject{UnresolvedObject}, RequestId{0} {}
 	FRPCCommandRequestResult(FUntypedRequestId RequestId) : UnresolvedObject{nullptr}, RequestId{RequestId} {}
 };
@@ -179,8 +179,8 @@ public:
 	USpatialActorChannel* GetActorChannelByEntityId(const FEntityId& EntityId) const;
 
 	// RPC handlers. Used by generated type bindings.
-	void SendCommandRequest_Internal(FRPCCommandRequestFunc Function, bool bReliable);
-	void SendCommandResponse_Internal(FRPCCommandResponseFunc Function);
+	void InvokeRPCSendHandler_Internal(FRPCCommandRequestFunc Function, bool bReliable);
+	void InvokeRPCReceiveHandler_Internal(FRPCCommandResponseFunc Function);
 	void HandleCommandResponse_Internal(const FString& RPCName, FUntypedRequestId RequestId, const FEntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
 
 	// Used to queue incoming/outgoing object updates/RPCs. Used by generated type bindings.
