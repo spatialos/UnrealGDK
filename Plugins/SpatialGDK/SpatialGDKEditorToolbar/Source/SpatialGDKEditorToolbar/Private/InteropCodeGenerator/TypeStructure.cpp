@@ -340,6 +340,11 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 						// UNR-334 For now assume we've found a struct with multiple structs of the same type
 						// Make a new ProperyNode and add it in.
 						// Find the other property?
+						// For Josh on Monday
+						// Cmd now has the parent struct name in it
+						// We can get the parent struct name from the property with Prop Parent.
+						// Check to make sure they are the same.
+						// Push changes to Unreal Engine.
 						return true;
 					}
 					PropertyNode = Property; // UNR-334 This overrides the previously found property with the newest found one.
