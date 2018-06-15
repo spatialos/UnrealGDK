@@ -48,6 +48,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionSuccessSound->AddToRoot();
 	ExecutionFailSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileFailed_Cue.CompileFailed_Cue"));
 	ExecutionFailSound->AddToRoot();
+
+	InteropCodeGenRunning = false;
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -114,6 +116,11 @@ bool FSpatialGDKEditorToolbarModule::HandleSettingsSaved()
 	return true;
 }
 
+bool FSpatialGDKEditorToolbarModule::CanExecuteInteropCodeGen()
+{
+	return !InteropCodeGenRunning;
+}
+
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> PluginCommands)
 {
 	PluginCommands->MapAction(
@@ -126,7 +133,7 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode,
 		FExecuteAction::CreateRaw(
 			this, &FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked),
-		FCanExecuteAction());
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteInteropCodeGen));
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> PluginCommands)
@@ -191,17 +198,21 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 {
-	ShowTaskStartNotification("Started interop codegen");
+	ShowTaskStartNotification("Generating Interop Code");
+	InteropCodeGenRunning = true;
 
-	const bool bSuccess = SpatialGDKGenerateInteropCode();
-	if (bSuccess)
-	{
-		ShowSuccessNotification("Interop codegen completed!");
-	}
-	else
-	{
-		ShowFailedNotification("Interop codegen failed");
-	}
+	AsyncTask(ENamedThreads::AnyHiPriThreadHiPriTask, [this] {
+		bool bSuccess = SpatialGDKGenerateInteropCode();
+
+		if (bSuccess)
+		{
+			ShowSuccessNotification("Interop Codegen Completed!");
+		}
+		else
+		{
+			ShowFailedNotification("Interop Codegen Failed");
+		}
+	});
 }
 
 void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& NotificationText)
@@ -231,36 +242,40 @@ void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& No
 
 void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& NotificationText)
 {
-	TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]{
+		TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+		Notification->SetFadeInDuration(0.1f);
+		Notification->SetFadeOutDuration(0.5f);
+		Notification->SetExpireDuration(7.5f);
+		Notification->SetText(FText::AsCultureInvariant(NotificationText));
+		Notification->SetCompletionState(SNotificationItem::CS_Success);
+		Notification->ExpireAndFadeout();
+		TaskNotificationPtr.Reset();
 
-	Notification->SetFadeInDuration(0.1f);
-	Notification->SetFadeOutDuration(0.5f);
-	Notification->SetExpireDuration(7.5f);
-	Notification->SetText(FText::AsCultureInvariant(NotificationText));
-	Notification->SetCompletionState(SNotificationItem::CS_Success);
-	Notification->ExpireAndFadeout();
-	TaskNotificationPtr.Reset();
+		if (GEditor && ExecutionSuccessSound)
+		{
+			GEditor->PlayEditorSound(ExecutionSuccessSound);
+		}
 
-	if (GEditor && ExecutionSuccessSound)
-	{
-		GEditor->PlayEditorSound(ExecutionSuccessSound);
-	}
+		InteropCodeGenRunning = false;
+	});
 }
 
 void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& NotificationText)
 {
-	TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]{
+		TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+		Notification->SetText(FText::AsCultureInvariant(NotificationText));
+		Notification->SetCompletionState(SNotificationItem::CS_Fail);
+		Notification->SetExpireDuration(5.0f);
+		
+		Notification->ExpireAndFadeout();
 
-	Notification->SetText(FText::AsCultureInvariant(NotificationText));
-	Notification->SetCompletionState(SNotificationItem::CS_Fail);
-	Notification->SetExpireDuration(5.0f);
-	
-	Notification->ExpireAndFadeout();
-
-	if (GEditor && ExecutionFailSound)
-	{
-		GEditor->PlayEditorSound(ExecutionFailSound);
-	}
+		if (GEditor && ExecutionFailSound)
+		{
+			GEditor->PlayEditorSound(ExecutionFailSound);
+		}
+	});
 }
 
 #undef LOCTEXT_NAMESPACE
