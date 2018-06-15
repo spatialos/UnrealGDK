@@ -237,10 +237,10 @@ void USpatialInterop::RemoveActorChannel(const FEntityId& EntityId)
 	EntityToActorChannel.Remove(EntityId);
 }
 
-void USpatialInterop::DeleteEntity(const FEntityId& EntityId, const AActor* Actor)
+void USpatialInterop::DeleteEntity(const FEntityId& EntityId)
 {
 	SendDeleteEntityRequest(EntityId);
-	NetDriver->InteropPipelineBlock->CleanupActor(EntityId, Actor);
+	NetDriver->InteropPipelineBlock->CleanupEntity(EntityId);
 }
 
 void USpatialInterop::SendComponentInterests(USpatialActorChannel* ActorChannel, const FEntityId& EntityId)

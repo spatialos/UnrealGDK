@@ -65,7 +65,7 @@ public:
 	void EnterCriticalSection() override;
 	void LeaveCriticalSection() override;
 
-	void CleanupActor(const FEntityId& EntityId, const AActor* Actor);
+	void CleanupEntity(const FEntityId& EntityId);
 
 private:
 	bool bInCriticalSection;

@@ -62,6 +62,8 @@ public:
   UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
   void RemoveFromRegistry(const AActor* Actor);
 
+  void RemoveFromRegistry(const FEntityId& EntityId);
+
   /**
   * Get the FEntityId associated with an Unreal AActor.
   * Returns nullptr if no associated FEntityId found.

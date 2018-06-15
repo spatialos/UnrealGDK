@@ -284,12 +284,12 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 
 	Actor->GetWorld()->DestroyActor(Actor, true);
 
-	CleanupActor(EntityId, Actor);
+	CleanupEntity(EntityId);
 }
 
-void USpatialInteropPipelineBlock::CleanupActor(const FEntityId& EntityId, const AActor* Actor)
+void USpatialInteropPipelineBlock::CleanupEntity(const FEntityId& EntityId)
 {
-	EntityRegistry->RemoveFromRegistry(Actor);
+	EntityRegistry->RemoveFromRegistry(EntityId);
 	NetDriver->GetSpatialInterop()->RemoveActorChannel(EntityId.ToSpatialEntityId());
 	auto* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
 	PackageMap->RemoveEntityActor(EntityId);

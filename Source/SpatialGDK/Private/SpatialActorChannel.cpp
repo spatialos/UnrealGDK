@@ -121,7 +121,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 	if (Actor->HasAuthority() && ActorEntityId.ToSpatialEntityId() != SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
 	{
 		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
-		Interop->DestroyEntity(ActorEntityId, Actor);
+		Interop->DeleteEntity(ActorEntityId);
 	}
 
 	return UActorChannel::CleanUp(bForDestroy);

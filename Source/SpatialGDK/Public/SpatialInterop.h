@@ -171,7 +171,7 @@ public:
 	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
 	void AddActorChannel(const FEntityId& EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(const FEntityId& EntityId);
-	void DeleteEntity(const FEntityId& EntityId, const AActor* Actor);
+	void DeleteEntity(const FEntityId& EntityId);
 
 	// Modifies component interest according to the updates this actor needs from SpatialOS.
 	// Called by USpatialInteropPipelineBlock after an actor has had its components initialized with values from SpatialOS.
