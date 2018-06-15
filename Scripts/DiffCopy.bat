@@ -2,11 +2,14 @@
 
 pushd "%~dp0..\"
 
-if not exist "Intermediate\Improbable" mkdir "Intermediate\Improbable"
+set DIFFCOPY_PATH="Binaries\ThirdParty\Improbable\Programs\DiffCopy.exe"
 
-csc "Scripts/DiffCopy.cs" /nologo /out:"Intermediate\Improbable\DiffCopy.exe" || exit /b 1
+if not exist %DIFFCOPY_PATH% (
+	echo Error: DiffCopy executable not found! Please run ci/build.sh in your SpatialGDK directory to generate it.
+	exit /b 1
+)
 
-Intermediate\Improbable\DiffCopy.exe %*
+%DIFFCOPY_PATH% %*
 
 popd
 
