@@ -1420,13 +1420,11 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 
 			check(RepProp.Value->ReplicationData->Handles.Num() >= 1);
 
-			for (int i = 0; i < RepProp.Value->ReplicationData->Handles.Num(); ++i)
-			{
-				GenerateBody_SendUpdate_RepDataProperty(SourceWriter,
-					RepProp.Value->ReplicationData->Handles[i],
-					RepProp.Value,
-					RepProp.Value->ReplicationData->Handles.Num() == 1 ? -1 : i);
-			}
+			//UNR-334 Static arrays are now handled here.
+			GenerateBody_SendUpdate_RepDataProperty(SourceWriter,
+				RepProp.Value->ReplicationData->Handles[0], // TODO: UNR-334 Remove this 0. So changed Handles to Handle
+				RepProp.Value);
+			
 		}
 		SourceWriter.Outdent().Print("default:");
 		SourceWriter.Indent();
@@ -1439,10 +1437,10 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 	SourceWriter.End();
 }
 
-void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo, const int ArrayIdx)
+void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo)
 {
 	UProperty* Property = PropertyInfo->Property;
-	SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(PropertyInfo, ArrayIdx));
+	SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(PropertyInfo));
 	SourceWriter.BeginScope();
 
 	// Get unreal data by deserialising from the reader, convert and set the corresponding field in the update object.
@@ -1493,7 +1491,7 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 		SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
 	}
 
-	FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(PropertyInfo, ArrayIdx);
+	FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(PropertyInfo);
 
 	SourceWriter.PrintNewLine();
 
@@ -1601,13 +1599,11 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 			auto Handle = RepProp.Key;
 			check(RepProp.Value->ReplicationData->Handles.Num() >= 1);
 
-			for (int i = 0; i < RepProp.Value->ReplicationData->Handles.Num(); ++i)
-			{
-				GenerateBody_ReceiveUpdate_RepDataProperty(SourceWriter,
-					RepProp.Value->ReplicationData->Handles[i],
-					RepProp.Value,
-					RepProp.Value->ReplicationData->Handles.Num() == 1 ? -1 : i);
-			}
+			// UNR-334 - Static arrays are now handled here.
+			GenerateBody_ReceiveUpdate_RepDataProperty(SourceWriter,
+				RepProp.Value->ReplicationData->Handles[0],
+				RepProp.Value);
+			
 		}
 		SourceWriter.Print("Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies.Array());");
 	}
@@ -1621,15 +1617,15 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 	SourceWriter.End();
 }
 
-void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo, const int ArrayIdx)
+void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo)
 {
 	UProperty* Property = PropertyInfo->Property;
 	// Check if this property is in the update.
-	SourceWriter.Printf("if (!Update.%s().empty())", *SchemaFieldName(PropertyInfo, ArrayIdx));
+	SourceWriter.Printf("if (!Update.%s().empty())", *SchemaFieldName(PropertyInfo));
 	SourceWriter.BeginScope();
 
 	// Check if the property is relevant on the client.
-	SourceWriter.Printf("// %s", *SchemaFieldName(PropertyInfo, ArrayIdx));
+	SourceWriter.Printf("// %s", *SchemaFieldName(PropertyInfo));
 	SourceWriter.Printf("uint16 Handle = %d;", Handle);
 	SourceWriter.Print("const FRepHandleData* RepData = &HandleToPropertyMap[Handle];");
 	SourceWriter.Print("if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))");
@@ -1700,7 +1696,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	}
 	SourceWriter.PrintNewLine();
 
-	FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(PropertyInfo, ArrayIdx));
+	FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(PropertyInfo));
 
 	GeneratePropertyToUnrealConversion(
 		SourceWriter, SpatialValue, PropertyInfo->Property, PropertyValueName,
