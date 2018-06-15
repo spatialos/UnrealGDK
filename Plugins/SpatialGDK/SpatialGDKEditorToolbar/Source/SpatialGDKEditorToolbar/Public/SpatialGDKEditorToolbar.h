@@ -45,7 +45,7 @@ private:
 
 	void CreateSnapshotButtonClicked();
 	void GenerateInteropCodeButtonClicked();
-	void OnGenerateInteropCodeComplete(bool bSuccess);
+	bool InteropCodeGenCanExecute();
 
 private:
 
@@ -63,4 +63,6 @@ private:
 	USoundBase* ExecutionStartSound;
 	USoundBase* ExecutionSuccessSound;
 	USoundBase* ExecutionFailSound;
+
+	bool InteropCodeGenRunning;
 };

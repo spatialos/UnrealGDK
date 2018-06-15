@@ -48,6 +48,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionSuccessSound->AddToRoot();
 	ExecutionFailSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileFailed_Cue.CompileFailed_Cue"));
 	ExecutionFailSound->AddToRoot();
+
+	InteropCodeGenRunning = false;
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -114,6 +116,11 @@ bool FSpatialGDKEditorToolbarModule::HandleSettingsSaved()
 	return true;
 }
 
+bool FSpatialGDKEditorToolbarModule::InteropCodeGenCanExecute()
+{
+	return !InteropCodeGenRunning;
+}
+
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> PluginCommands)
 {
 	PluginCommands->MapAction(
@@ -126,7 +133,7 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode,
 		FExecuteAction::CreateRaw(
 			this, &FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked),
-		FCanExecuteAction());
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::InteropCodeGenCanExecute));
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> PluginCommands)
@@ -191,24 +198,21 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 {
-	ShowTaskStartNotification("Started Interop Codegen");
+	ShowTaskStartNotification("Generating Interop Code");
+	InteropCodeGenRunning = true;
 
 	AsyncTask(ENamedThreads::AnyHiPriThreadHiPriTask, [this] {
 		bool bSuccess = SpatialGDKGenerateInteropCode();
 
 		if (bSuccess)
 		{
-			ShowSuccessNotification("Interop codegen completed!");
+			ShowSuccessNotification("Interop Codegen Completed!");
 		}
 		else
 		{
-			ShowFailedNotification("Interop codegen failed");
+			ShowFailedNotification("Interop Codegen Failed");
 		}
 	});
-}
-
-void FSpatialGDKEditorToolbarModule::OnGenerateInteropCodeComplete(bool bSuccess)
-{
 }
 
 void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& NotificationText)
@@ -252,6 +256,8 @@ void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& Noti
 		{
 			GEditor->PlayEditorSound(ExecutionSuccessSound);
 		}
+
+		InteropCodeGenRunning = false;
 	});
 }
 
