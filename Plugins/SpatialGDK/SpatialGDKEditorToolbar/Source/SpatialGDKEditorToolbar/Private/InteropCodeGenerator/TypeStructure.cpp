@@ -152,13 +152,6 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 	for (TFieldIterator<UProperty> It(Type); It; ++It)
 	{
 		UProperty* Property = *It;
-
-		// TODO(David): Should we still be skipping this?
-		if (Property->IsA<UMulticastDelegateProperty>())
-		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - multicast delegate property, skipping"), *Property->GetName());
-			continue;
-		}
 		
 		// Create property node and add it to the AST.
 		TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
@@ -497,9 +490,18 @@ TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> 
 				return false;
 			}
 
+			// For static arrays we want to stop recursion and serialize the property.
+			// Note: This will use NetSerialize or SerializeBin which is currently known to not recursively call NetSerialize on inner structs. UNR-333
+			if (Property->Property->ArrayDim > 1)
+			{
+				ParamList.Add(Property);
+				return false;
+			}
+
 			// Generic struct. Recurse further.
 			return true;
 		}
+
 		// If the RepType is not a generic struct, such as Vector3f or Plane, add to ParamList and stop recursion.
 		ParamList.Add(Property);
 		return false;
