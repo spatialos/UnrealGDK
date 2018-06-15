@@ -59,18 +59,18 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property, const int Fi
 	return FieldName;
 }
 
-FString SchemaCommandName(UClass* Class, UFunction* Function)
+FString SchemaRPCName(UClass* Class, UFunction* Function)
 {
-	// Prepending the name of the class to the command name enables sibling classes. 
-	FString CommandName = Class->GetName() + Function->GetName();
+	// Prepending the name of the class to the RPC name enables sibling classes. 
+	FString RPCName = Class->GetName() + Function->GetName();
 	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-	CommandName = UnrealNameToSchemaTypeName(CommandName.ToLower());
-	return CommandName;
+	RPCName = UnrealNameToSchemaTypeName(RPCName.ToLower());
+	return RPCName;
 }
 
 FString CPPCommandClassName(UClass* Class, UFunction* Function)
 {
-	FString SchemaName = SchemaCommandName(Class, Function);
+	FString SchemaName = SchemaRPCName(Class, Function);
 	SchemaName[0] = FChar::ToUpper(SchemaName[0]);
 	return SchemaName;
 }
@@ -280,7 +280,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
 	int FieldCounter = 0;
 	for (auto& Prop : GetFlatMigratableData(TypeInfo))
-	{		
+	{
 		for (int ArrayIdx = 0; ArrayIdx < Prop.Value->Property->ArrayDim; ++ArrayIdx)
 		{
 			FieldCounter++;
@@ -297,7 +297,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	TArray<FString> RPCTypeOwners = GetRPCTypeOwners(TypeInfo);
 
 	// Remove underscores
-	for(auto& RPCTypeOwner : RPCTypeOwners)
+	for (auto& RPCTypeOwner : RPCTypeOwners)
 	{
 		RPCTypeOwner = UnrealNameToSchemaTypeName(RPCTypeOwner);
 	}
@@ -330,7 +330,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			FString RPCOwnerName = UnrealNameToSchemaTypeName(*RPC->Function->GetOuter()->GetName());
 			TSharedPtr<FCodeWriter> RPCTypeOwnerSchemaWriter = RPCTypeCodeWriterMap[*RPCOwnerName];
 
-			RPCTypeOwnerSchemaWriter->Printf("type %s {" , *TypeStr);
+			RPCTypeOwnerSchemaWriter->Printf("type %s {", *TypeStr);
 			RPCTypeOwnerSchemaWriter->Indent();
 
 			// Recurse into functions properties and build a complete transitive property list.
@@ -362,15 +362,24 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 	for (auto Group : GetRPCTypes())
 	{
-		// Generate ClientRPCs component
 		Writer.Printf("component %s {", *SchemaRPCComponentName(Group, Class));
 		Writer.Indent();
 		Writer.Printf("id = %i;", IdGenerator.GetNextAvailableId());
 		for (auto& RPC : RPCsByType[Group])
 		{
-			Writer.Printf("command UnrealRPCCommandResponse %s(%s);",
-				*SchemaCommandName(Class, RPC->Function),
-				*SchemaRPCRequestType(RPC->Function));
+			if (Group == ERPCType::RPC_NetMulticast)
+			{
+				checkf(RPC->bReliable == false, TEXT("%s: Unreal GDK currently does not support Reliable Multicast RPCs"), *RPC->Function->GetName());
+
+				Writer.Printf("event %s %s;", *SchemaRPCRequestType(RPC->Function),
+					*SchemaRPCName(Class, RPC->Function));
+			}
+			else
+			{
+				Writer.Printf("command UnrealRPCCommandResponse %s(%s);",
+					*SchemaRPCName(Class, RPC->Function),
+					*SchemaRPCRequestType(RPC->Function));
+			}
 		}
 		Writer.Outdent().Print("}");
 	}

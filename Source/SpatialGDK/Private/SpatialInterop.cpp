@@ -267,7 +267,7 @@ USpatialActorChannel* USpatialInterop::GetActorChannelByEntityId(const FEntityId
 	return *ActorChannelIt;
 }
 
-void USpatialInterop::SendCommandRequest_Internal(FRPCCommandRequestFunc Function, bool bReliable)
+void USpatialInterop::InvokeRPCSendHandler_Internal(FRPCCommandRequestFunc Function, bool bReliable)
 {
 	// Attempt to trigger command request by calling the passed RPC request function. This function is generated in the type binding
 	// classes which capture the target actor and arguments of the RPC (unpacked from the FFrame) by value, and attempts to serialize
@@ -293,7 +293,7 @@ void USpatialInterop::SendCommandRequest_Internal(FRPCCommandRequestFunc Functio
 	}
 }
 
-void USpatialInterop::SendCommandResponse_Internal(FRPCCommandResponseFunc Function)
+void USpatialInterop::InvokeRPCReceiveHandler_Internal(FRPCCommandResponseFunc Function)
 {
 	auto Result = Function();
 	if (Result.IsSet())
@@ -525,7 +525,7 @@ void USpatialInterop::ResolvePendingOutgoingRPCs(UObject* Object)
 		{
 			// We can guarantee that SendCommandRequest won't populate PendingOutgoingRPCs[Object] whilst we're iterating through it,
 			// because Object has been resolved when we call ResolvePendingOutgoingRPCs.
-			SendCommandRequest_Internal(RequestFuncPair.Key, RequestFuncPair.Value);
+			InvokeRPCSendHandler_Internal(RequestFuncPair.Key, RequestFuncPair.Value);
 		}
 		PendingOutgoingRPCs.Remove(Object);
 	}
@@ -580,7 +580,7 @@ void USpatialInterop::ResolvePendingIncomingRPCs(const improbable::unreal::Unrea
 		{
 			// We can guarantee that SendCommandResponse won't populate PendingIncomingRPCs[ObjectRef] whilst we're iterating through it,
 			// because ObjectRef has been resolved when we call ResolvePendingIncomingRPCs.
-			SendCommandResponse_Internal(Responder);
+			InvokeRPCReceiveHandler_Internal(Responder);
 		}
 		PendingIncomingRPCs.Remove(ObjectRef);
 	}
