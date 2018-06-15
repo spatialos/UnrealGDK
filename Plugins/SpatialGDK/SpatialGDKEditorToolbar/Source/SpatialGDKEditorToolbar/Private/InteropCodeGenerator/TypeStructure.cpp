@@ -160,6 +160,11 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		PropertyNode->ContainerType = TypeNode;
 		TypeNode->Properties.Add(Property, PropertyNode);
 
+		if (Property->GetName().Contains("RootProp"))
+		{
+			auto a = 1;
+		}
+
 		// If this property not a struct or object (which can contain more properties), stop here.
 		if (!Property->IsA<UStructProperty>() && !Property->IsA<UObjectProperty>())
 		{
@@ -310,6 +315,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		// What we do here is recurse into all of Bar's properties in the AST until we find Baz.
 
 		TSharedPtr<FUnrealProperty> PropertyNode = nullptr;
+		
 
 		// Simple case: Cmd is a root property in the object.
 		if (Parent.Property == Cmd.Property)
@@ -321,12 +327,22 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			// Here, the Cmd is some property inside the Parent property. We need to find it in the AST.
 			TSharedPtr<FUnrealProperty> RootProperty = TypeNode->Properties[Parent.Property];
 			checkf(RootProperty->Type.IsValid(), TEXT("Properties in the AST which are parent properties in the rep layout must have child properties"));
-			VisitAllProperties(RootProperty->Type, [&PropertyNode, &Cmd](TSharedPtr<FUnrealProperty> Property)
+
+			VisitAllProperties(RootProperty->Type, [&PropertyNode, &Cmd, &Parent, &Type, &TypeNode, &RootProperty, &RepLayout](TSharedPtr<FUnrealProperty> Property)
 			{
-				if (Property->Property == Cmd.Property)
+				if (Property->Property == Cmd.Property) // Should also check the parent property too!!!!!!!!!!!!!?!?!?!?!?!?!??!?!?!?? Is possibru
 				{
-					checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation."))
-					PropertyNode = Property;
+					//checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation."))
+					if (PropertyNode.IsValid()) // The property node SHOULD be invalid (not set at this point).
+					{
+						auto PropParent = Property->ContainerType.Pin().Get()->ParentProperty.Pin().Get()->Property->GetName();
+						auto CmdParent = (UStruct*)Cmd.Property->GetOwnerStruct();
+						// UNR-334 For now assume we've found a struct with multiple structs of the same type
+						// Make a new ProperyNode and add it in.
+						// Find the other property?
+						return true;
+					}
+					PropertyNode = Property; // UNR-334 This overrides the previously found property with the newest found one.
 				}
 				return true;
 			}, false);
