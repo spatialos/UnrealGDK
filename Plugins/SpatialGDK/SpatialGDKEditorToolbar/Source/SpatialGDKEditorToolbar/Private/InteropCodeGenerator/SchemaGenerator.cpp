@@ -361,7 +361,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		{
 			if (Group == ERPCType::RPC_NetMulticast)
 			{
-				checkf(RPC->bReliable == false, TEXT("%s: Unreal GDK doesn't not support Reliable Multicast RPCs"), *RPC->Function->GetName());
+				checkf(RPC->bReliable == false, TEXT("%s: Unreal GDK currently does not support Reliable Multicast RPCs"), *RPC->Function->GetName());
 
 				Writer.Printf("event %s %s;", *SchemaRPCRequestType(RPC->Function),
 					*SchemaRPCName(Class, RPC->Function));

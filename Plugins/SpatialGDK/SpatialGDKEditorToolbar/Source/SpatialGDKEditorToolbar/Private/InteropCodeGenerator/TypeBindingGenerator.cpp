@@ -627,6 +627,8 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	HeaderWriter.Print("// RPC command response handler functions.");
 	for (auto Group : GetRPCTypes())
 	{
+		// Multicast RPCs are skipped since they use events rather than commands, and events
+		// don't support responses
 		if (Group == RPC_NetMulticast)
 		{
 			continue;
@@ -765,6 +767,8 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 
 	for (auto Group : GetRPCTypes())
 	{
+		// Multicast RPCs are skipped since they use events rather than commands, and events
+		// don't support responses
 		if (Group == ERPCType::RPC_NetMulticast)
 		{
 			continue;
