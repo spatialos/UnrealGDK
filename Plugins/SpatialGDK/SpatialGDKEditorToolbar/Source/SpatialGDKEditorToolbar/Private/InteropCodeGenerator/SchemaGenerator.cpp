@@ -75,9 +75,20 @@ FString CPPCommandClassName(UClass* Class, UFunction* Function)
 	return SchemaName;
 }
 
-FString PropertyToSchemaType(UProperty* Property)
+FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 {
 	FString DataType;
+
+	// For RPC arguments we may wish to handle them differently.
+	if (bIsRPCProperty)
+	{
+		if (Property->ArrayDim > 1) // Static arrays in RPC arguments are replicated as lists.
+		{
+			DataType = PropertyToSchemaType(Property, false); // Have to get the type of the property inside the static array.
+			DataType = FString::Printf(TEXT("list<%s>"), *DataType);
+			return DataType;
+		}
+	}
 
 	if (Property->IsA(UStructProperty::StaticClass()))
 	{
@@ -152,7 +163,7 @@ FString PropertyToSchemaType(UProperty* Property)
 	}
 	else if (Property->IsA(UArrayProperty::StaticClass()))
 	{
-		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner);
+		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner, bIsRPCProperty);
 		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
 	}
 	else if (Property->IsA(UEnumProperty::StaticClass()))
@@ -170,7 +181,7 @@ FString PropertyToSchemaType(UProperty* Property)
 void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> RepProp, const FString& PropertyPath, const int FieldCounter, const int ArrayIdx)
 {
 	Writer.Printf("%s %s = %d; // %s // %s",
-		*PropertyToSchemaType(RepProp->Property),
+		*PropertyToSchemaType(RepProp->Property, false),
 		*SchemaFieldName(RepProp, ArrayIdx),
 		FieldCounter,
 		*GetLifetimeConditionAsString(RepProp->ReplicationData->Condition),
@@ -181,7 +192,7 @@ void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> 
 void WriteSchemaMigratableField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> MigratableProp, const int FieldCounter, const int ArrayIdx)
 {
 	Writer.Printf("%s %s = %d;",
-		*PropertyToSchemaType(MigratableProp->Property),
+		*PropertyToSchemaType(MigratableProp->Property, false),
 		*SchemaFieldName(MigratableProp, ArrayIdx),
 		FieldCounter
 	);
@@ -190,7 +201,7 @@ void WriteSchemaMigratableField(FCodeWriter& Writer, const TSharedPtr<FUnrealPro
 void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrealProperty> RPCProp, const int FieldCounter, const int ArrayIdx)
 {
 	Writer->Printf("%s %s = %d;",
-		*PropertyToSchemaType(RPCProp->Property),
+		*PropertyToSchemaType(RPCProp->Property, true),
 		*SchemaFieldName(RPCProp, ArrayIdx),
 		FieldCounter
 	);
@@ -328,17 +339,14 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			// RPC target sub-object offset.
 			RPCTypeOwnerSchemaWriter->Printf("uint32 target_subobject_offset = 1;");
 			FieldCounter = 1;
-			// TODO: Support fixed size arrays in RPCs. The implementation below is incomplete. UNR-283.
+
 			for (auto& Param : ParamList)
 			{
-				for (int ArrayIdx = 0; ArrayIdx < Param->Property->ArrayDim; ++ArrayIdx)
-				{
-					FieldCounter++;
-					WriteSchemaRPCField(RPCTypeOwnerSchemaWriter,
-						Param,
-						FieldCounter,
-						Param->Property->ArrayDim == 1 ? -1 : ArrayIdx);
-				}
+				FieldCounter++;
+				WriteSchemaRPCField(RPCTypeOwnerSchemaWriter,
+					Param,
+					FieldCounter,
+					-1); // -1 As we do not wish to have array index counters for static arrays in RPCs.
 			}
 			RPCTypeOwnerSchemaWriter->Outdent().Print("}");
 		}
