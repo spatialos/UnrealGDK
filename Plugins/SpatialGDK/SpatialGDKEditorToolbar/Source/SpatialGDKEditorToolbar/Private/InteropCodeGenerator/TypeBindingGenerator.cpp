@@ -1617,19 +1617,19 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 			SourceWriter.Printf("%s = nullptr;", *PropertyValue);
 		}
 		else
-	{
-		SourceWriter.Print(R"""(
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
-				*Interop->GetSpatialOS()->GetWorkerId(),
-				*ObjectRefToString(ObjectRef),
-				*ActorChannel->Actor->GetName(),
-				ActorChannel->GetEntityId().ToSpatialEntityId(),
-				*RepData->Property->GetName(),
-				Handle);)""");
-		SourceWriter.Printf("// A legal static object reference should never be unresolved.");
-		SourceWriter.Printf("check(ObjectRef.path().empty());");
-		SourceWriter.Print("bWriteObjectProperty = false;");
-		SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);");
+		{
+			SourceWriter.Print(R"""(
+				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
+					*Interop->GetSpatialOS()->GetWorkerId(),
+					*ObjectRefToString(ObjectRef),
+					*ActorChannel->Actor->GetName(),
+					ActorChannel->GetEntityId().ToSpatialEntityId(),
+					*RepData->Property->GetName(),
+					Handle);)""");
+			SourceWriter.Printf("// A legal static object reference should never be unresolved.");
+			SourceWriter.Printf("check(ObjectRef.path().empty());");
+			SourceWriter.Print("bWriteObjectProperty = false;");
+			SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);");
 		}
 	});
 
@@ -1869,7 +1869,7 @@ void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Cla
 	auto ObjectResolveFailureGenerator = [&SourceWriter, &RPC, Class](const FString& PropertyName, const FString& ObjectRef)
 	{
 		SourceWriter.Printf("// A legal static object reference should never be unresolved.");
-		SourceWriter.Printf("check(%s.path().empty());", *ObjectRef);
+		SourceWriter.Printf("checkf(%s.path().empty(), TEXT(\"A stably named object should not need resolution.\");", *ObjectRef);
 		SourceWriter.Printf(R"""(
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: %s_OnCommandRequest: %s %%s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
