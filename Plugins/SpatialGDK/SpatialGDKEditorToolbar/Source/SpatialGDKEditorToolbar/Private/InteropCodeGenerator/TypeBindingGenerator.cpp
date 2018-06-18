@@ -171,22 +171,20 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
 			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
-			Writer.BeginScope();
 			Writer.Printf(R"""(
 				TArray<uint8> ValueData;
-				FMemoryWriter ValueDataWriter(ValueData);
+				FSpatialMemoryWriter ValueDataWriter(ValueData, PackageMap);
 				bool bSuccess = true;
 				(const_cast<%s&>(%s)).NetSerialize(ValueDataWriter, PackageMap, bSuccess);
 				checkf(bSuccess, TEXT("NetSerialize on %s failed."));
 				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *Struct->GetStructCPPName(), *PropertyValue, *Struct->GetStructCPPName(), *Update);
-			Writer.End();
 		}
 		else
 		{
 			// We do a basic binary serialization for the generic struct.
 			Writer.Printf(R"""(
 				TArray<uint8> ValueData;
-				FMemoryWriter ValueDataWriter(ValueData);
+				FSpatialMemoryWriter ValueDataWriter(ValueData, PackageMap);
 				%s::StaticStruct()->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&%s)));
 				%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));)""", *Property->GetCPPType(), *Property->GetCPPType(), *PropertyValue, *Update);
 		}
@@ -280,10 +278,14 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		Writer.BeginScope();
 
 		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator, bIsRPCProperty);
+		if (!bIsRPCProperty && ArrayProperty->Inner->IsA<UStructProperty>())
+		{
+			Writer.Print("UnresolvedObjects.Append(ValueDataWriter.GetUnresolvedObjects());");
+		}
 
 		Writer.End();
 
-		// Update could be empty in the case when we want to handle the list outside (e.g. for arrays of UObjects).
+		// Update could be empty in the case when we want to handle the list outside (e.g. for arrays of UObjects or structs).
 		if (!Update.IsEmpty())
 		{
 			Writer.Printf("%s(List);", *Update);
@@ -300,10 +302,10 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	}
 }
 
-void GenerateUObjectArrayToSchemaConversion(FCodeWriter& Writer, const FString& Update, UArrayProperty* Property, const FString& PropertyValue, uint16 Handle)
+void GenerateUObjectOrStructArrayToSchemaConversion(FCodeWriter& Writer, const FString& Update, UArrayProperty* Property, const FString& PropertyValue, uint16 Handle)
 {
-	// We are sending an array of UObjects. Some of them could be unresolved, so if that is the case,
-	// we should delay sending the array until they are resolved.
+	// We are sending an array of UObjects or structs that may contain UObjects. Some of them could be
+	// unresolved, so if that is the case, we should delay sending the array until they are resolved.
 	Writer.Printf(R"""(
 		Interop->ResetOutgoingArrayRepUpdate_Internal(Channel, %d);
 
@@ -359,7 +361,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 				auto& ValueDataStr = %s;
 				TArray<uint8> ValueData;
 				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
-				FMemoryReader ValueDataReader(ValueData);
+				FSpatialMemoryReader ValueDataReader(ValueData, PackageMap);
 				bool bSuccess = true;
 				%s.NetSerialize(ValueDataReader, PackageMap, bSuccess);
 				checkf(bSuccess, TEXT("NetSerialize on %s failed."));)""", *Update, *PropertyValue, *PropertyType);
@@ -371,7 +373,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 				auto& ValueDataStr = %s;
 				TArray<uint8> ValueData;
 				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
-				FMemoryReader ValueDataReader(ValueData);
+				FSpatialMemoryReader ValueDataReader(ValueData, PackageMap);
 				%s::StaticStruct()->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&%s));)""", *Update, *PropertyType, *PropertyValue);
 		}
 	}
@@ -710,6 +712,8 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 		#include "SpatialUnrealObjectRef.h"
 		#include "SpatialActorChannel.h"
 		#include "SpatialPackageMapClient.h"
+		#include "SpatialMemoryReader.h"
+		#include "SpatialMemoryWriter.h"
 		#include "SpatialNetDriver.h"
 		#include "SpatialInterop.h")""", *InteropFilename);
 
@@ -1438,7 +1442,7 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	FString PropertyCppType = Property->GetClass()->GetFName().ToString();
 	FString PropertyValueCppType = Property->GetCPPType();
 
-	bool bIsArrayOfObjects = false;
+	bool bIsArrayOfObjectsOrStructs = false;
 
 	FString PropertyName = TEXT("Property");
 	//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
@@ -1451,10 +1455,10 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 		SourceWriter.Printf("const TArray<%s>& %s = *(reinterpret_cast<TArray<%s> const*>(Data));", *ArrayProperty->Inner->GetCPPType(), *PropertyValueName, *ArrayProperty->Inner->GetCPPType());
 
-		if (ArrayProperty->Inner->IsA<UObjectPropertyBase>())
+		if (ArrayProperty->Inner->IsA<UObjectPropertyBase>() || ArrayProperty->Inner->IsA<UStructProperty>())
 		{
 			// Special case because we need to handle unresolved objects
-			bIsArrayOfObjects = true;
+			bIsArrayOfObjectsOrStructs = true;
 		}
 	}
 	else if (Property->IsA<UStructProperty>())
@@ -1485,9 +1489,9 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 
 	SourceWriter.PrintNewLine();
 
-	if (bIsArrayOfObjects)
+	if (bIsArrayOfObjectsOrStructs)
 	{
-		GenerateUObjectArrayToSchemaConversion(SourceWriter, SpatialValueSetter, Cast<UArrayProperty>(Property), PropertyValueName, Handle);
+		GenerateUObjectOrStructArrayToSchemaConversion(SourceWriter, SpatialValueSetter, Cast<UArrayProperty>(Property), PropertyValueName, Handle);
 	}
 	else
 	{
@@ -1939,6 +1943,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 			PropertyValue += TEXT(".Get()");
 		}
 
+		SourceWriter.BeginScope();
 		GenerateUnrealToSchemaConversion(
 			SourceWriter, SpatialValueSetter, Param->Property, PropertyValue,
 			[&SourceWriter, &RPC](const FString& PropertyValue)
@@ -1948,6 +1953,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 				*PropertyValue);
 			SourceWriter.Printf("return {%s};", *PropertyValue);
 		}, true);
+		SourceWriter.End();
 	}
 
 
@@ -2081,9 +2087,11 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 		{
 			FString SpatialValue = FString::Printf(TEXT("%s.%s()"), *RPCPayload, *SchemaFieldName(Param));
 
+			SourceWriter.BeginScope();
 			GeneratePropertyToUnrealConversion(
 				SourceWriter, SpatialValue, Param->Property, FString::Printf(TEXT("Parameters.%s"), *CPPFieldName(Param)),
 				std::bind(ObjectResolveFailureGenerator, std::placeholders::_1, "ObjectRef"), true);
+			SourceWriter.End();
 		}
 
 		RPCParametersStruct = FString(TEXT("&Parameters"));
