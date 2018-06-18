@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma optimize("", off)
 
 #include "TypeStructure.h"
 #include "SpatialGDKEditorInteropCodeGenerator.h"
@@ -160,11 +159,6 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		PropertyNode->ContainerType = TypeNode;
 		TypeNode->Properties.Add(Property, PropertyNode);
 
-		if (Property->GetName().Contains("RootProp"))
-		{
-			auto a = 1;
-		}
-
 		// If this property not a struct or object (which can contain more properties), stop here.
 		if (!Property->IsA<UStructProperty>() && !Property->IsA<UObjectProperty>())
 		{
@@ -315,7 +309,6 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		// What we do here is recurse into all of Bar's properties in the AST until we find Baz.
 
 		TSharedPtr<FUnrealProperty> PropertyNode = nullptr;
-		
 
 		// Simple case: Cmd is a root property in the object.
 		if (Parent.Property == Cmd.Property)
@@ -328,44 +321,21 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			TSharedPtr<FUnrealProperty> RootProperty = TypeNode->Properties[Parent.Property];
 			checkf(RootProperty->Type.IsValid(), TEXT("Properties in the AST which are parent properties in the rep layout must have child properties"));
 
-			VisitAllProperties(RootProperty->Type, [&PropertyNode, &Cmd, &Parent, &Type, &TypeNode, &RootProperty, &RepLayout](TSharedPtr<FUnrealProperty> Property)
+			VisitAllProperties(RootProperty->Type, [&PropertyNode, &Cmd](TSharedPtr<FUnrealProperty> Property)
 			{
-
 				if (Cmd.ParentPropertyChain.Num() > 0) // If we have added a parent property chain then we want to verify against it.
 				{
-					// Recursively check that the parents are the same.
-
 					// Check that the parent property and the actual property are the same.
-					if (Property->Property == Cmd.Property && AreParentsTheSame(*Property.Get(), Cmd.ParentPropertyChain))
+					if (Property->Property == Cmd.Property && AreParentPropertiesTheSame(*Property.Get(), Cmd.ParentPropertyChain))
 					{
-						if (PropertyNode.IsValid()) // The property node SHOULD be invalid (not set at this point).
-						{
-							// Lets get the cmds parent and see what 
-
-							// We fucked up. Diamond of death.
-							auto a = 1;
-						}
+						checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation."))
 						PropertyNode = Property;
 					}
 				}
-				else if (Property->Property == Cmd.Property) // Should also check the parent property too!!!!!!!!!!!!!?!?!?!?!?!?!??!?!?!?? Is possibru
+				else if (Property->Property == Cmd.Property)
 				{
-					//checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation."))
-					if (PropertyNode.IsValid()) // The property node SHOULD be invalid (not set at this point).
-					{
-						auto PropParent = Property->ContainerType.Pin().Get()->ParentProperty.Pin().Get()->Property->GetName();
-						auto CmdParent = (UStruct*)Cmd.Property->GetOwnerStruct();
-						// UNR-334 For now assume we've found a struct with multiple structs of the same type
-						// Make a new ProperyNode and add it in.
-						// Find the other property?
-						// For Josh on Monday
-						// Cmd now has the parent struct name in it
-						// We can get the parent struct name from the property with Prop Parent.
-						// Check to make sure they are the same.
-						// Push changes to Unreal Engine.
-						return true;
-					}
-					PropertyNode = Property; // UNR-334 This overrides the previously found property with the newest found one.
+					checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation."))
+					PropertyNode = Property;
 				}
 				return true;
 			}, false);
@@ -425,22 +395,24 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 	return TypeNode;
 }
 
-bool AreParentsTheSame(FUnrealProperty& SpatialWrapperProperty, TArray<UProperty*> CmdPropertyChain)
+bool AreParentPropertiesTheSame(FUnrealProperty& SpatialWrapperProperty, TArray<UProperty*> CmdParentPropertyChain)
 {
-	for(int i = CmdPropertyChain.Num()-1; i >= 0; i--) // Reversed since the last property added is the first parent;
+	// Reversed since the last property added is the first parent;
+	for(int i = CmdParentPropertyChain.Num()-1; i >= 0; i--)
 	{
-		// i goes down, j goes up.
 		// Need to select the correct parent from the chain.
-		FUnrealProperty* OurUnrealProp = &SpatialWrapperProperty;
-		for(int j = 0; j < CmdPropertyChain.Num()-i; j++) // i = Num = First. j = 0 = first. // i = Num -1 = Second. j = 1 = second. 
+		FUnrealProperty* CurrentParentProperty = &SpatialWrapperProperty;
+		for(int j = 0; j < CmdParentPropertyChain.Num()-i; j++) // (i=Num = First Parent) (j=0 = First) (i=Num-1 = Second) (j=1 = Second)
 		{
-			OurUnrealProp = OurUnrealProp->ContainerType.Pin().Get()->ParentProperty.Pin().Get(); // This will go up the parent chain
+			// This will go up the parent chain
+			CurrentParentProperty = CurrentParentProperty->ContainerType.Pin().Get()->ParentProperty.Pin().Get();
 		}
 
-		UProperty* OurProp = OurUnrealProp->Property;
-		
-		UProperty* UnrealsProp = CmdPropertyChain[i];
-		if(OurProp != UnrealsProp)
+		// Explicitly declared for ease of readability / understanding.
+		UProperty* ParentProperty = CurrentParentProperty->Property;
+		UProperty* CmdParentProperty = CmdParentPropertyChain[i];
+
+		if(ParentProperty != CmdParentProperty)
 		{
 			return false;
 		}
