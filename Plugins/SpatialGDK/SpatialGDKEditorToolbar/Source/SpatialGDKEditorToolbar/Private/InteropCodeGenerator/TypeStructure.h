@@ -192,6 +192,9 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPt
 // In the future, we can get this information directly from the UStruct*.
 TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties);
 
+bool AreParentsTheSame(FUnrealProperty& SpatialWrapperProperty, TArray<UProperty*> CmdPropertyChain);
+
+
 // Traverses an AST, and generates a flattened list of replicated properties, which will match the Cmds array of FRepLayout.
 // The list of replicated properties will all have the ReplicatedData field set to a valid FUnrealRepData node which contains
 // data such as the handle or replication condition.

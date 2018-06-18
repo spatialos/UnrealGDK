@@ -330,7 +330,25 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 
 			VisitAllProperties(RootProperty->Type, [&PropertyNode, &Cmd, &Parent, &Type, &TypeNode, &RootProperty, &RepLayout](TSharedPtr<FUnrealProperty> Property)
 			{
-				if (Property->Property == Cmd.Property) // Should also check the parent property too!!!!!!!!!!!!!?!?!?!?!?!?!??!?!?!?? Is possibru
+
+				if (Cmd.ParentPropertyChain.Num() > 0) // If we have added a parent property chain then we want to verify against it.
+				{
+					// Recursively check that the parents are the same.
+
+					// Check that the parent property and the actual property are the same.
+					if (Property->Property == Cmd.Property && AreParentsTheSame(*Property.Get(), Cmd.ParentPropertyChain))
+					{
+						if (PropertyNode.IsValid()) // The property node SHOULD be invalid (not set at this point).
+						{
+							// Lets get the cmds parent and see what 
+
+							// We fucked up. Diamond of death.
+							auto a = 1;
+						}
+						PropertyNode = Property;
+					}
+				}
+				else if (Property->Property == Cmd.Property) // Should also check the parent property too!!!!!!!!!!!!!?!?!?!?!?!?!??!?!?!?? Is possibru
 				{
 					//checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation."))
 					if (PropertyNode.IsValid()) // The property node SHOULD be invalid (not set at this point).
@@ -405,6 +423,30 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 	}
 
 	return TypeNode;
+}
+
+bool AreParentsTheSame(FUnrealProperty& SpatialWrapperProperty, TArray<UProperty*> CmdPropertyChain)
+{
+	for(int i = CmdPropertyChain.Num()-1; i >= 0; i--) // Reversed since the last property added is the first parent;
+	{
+		// i goes down, j goes up.
+		// Need to select the correct parent from the chain.
+		FUnrealProperty* OurUnrealProp = &SpatialWrapperProperty;
+		for(int j = 0; j < CmdPropertyChain.Num()-i; j++) // i = Num = First. j = 0 = first. // i = Num -1 = Second. j = 1 = second. 
+		{
+			OurUnrealProp = OurUnrealProp->ContainerType.Pin().Get()->ParentProperty.Pin().Get(); // This will go up the parent chain
+		}
+
+		UProperty* OurProp = OurUnrealProp->Property;
+		
+		UProperty* UnrealsProp = CmdPropertyChain[i];
+		if(OurProp != UnrealsProp)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
