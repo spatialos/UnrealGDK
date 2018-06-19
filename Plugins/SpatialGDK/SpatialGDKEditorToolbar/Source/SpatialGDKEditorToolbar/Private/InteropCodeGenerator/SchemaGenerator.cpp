@@ -59,25 +59,36 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property, const int Fi
 	return FieldName;
 }
 
-FString SchemaCommandName(UClass* Class, UFunction* Function)
+FString SchemaRPCName(UClass* Class, UFunction* Function)
 {
-	// Prepending the name of the class to the command name enables sibling classes. 
-	FString CommandName = Class->GetName() + Function->GetName();
+	// Prepending the name of the class to the RPC name enables sibling classes. 
+	FString RPCName = Class->GetName() + Function->GetName();
 	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-	CommandName = UnrealNameToSchemaTypeName(CommandName.ToLower());
-	return CommandName;
+	RPCName = UnrealNameToSchemaTypeName(RPCName.ToLower());
+	return RPCName;
 }
 
 FString CPPCommandClassName(UClass* Class, UFunction* Function)
 {
-	FString SchemaName = SchemaCommandName(Class, Function);
+	FString SchemaName = SchemaRPCName(Class, Function);
 	SchemaName[0] = FChar::ToUpper(SchemaName[0]);
 	return SchemaName;
 }
 
-FString PropertyToSchemaType(UProperty* Property)
+FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 {
 	FString DataType;
+
+	// For RPC arguments we may wish to handle them differently.
+	if (bIsRPCProperty)
+	{
+		if (Property->ArrayDim > 1) // Static arrays in RPC arguments are replicated as lists.
+		{
+			DataType = PropertyToSchemaType(Property, false); // Have to get the type of the property inside the static array.
+			DataType = FString::Printf(TEXT("list<%s>"), *DataType);
+			return DataType;
+		}
+	}
 
 	if (Property->IsA(UStructProperty::StaticClass()))
 	{
@@ -152,7 +163,7 @@ FString PropertyToSchemaType(UProperty* Property)
 	}
 	else if (Property->IsA(UArrayProperty::StaticClass()))
 	{
-		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner);
+		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner, bIsRPCProperty);
 		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
 	}
 	else if (Property->IsA(UEnumProperty::StaticClass()))
@@ -170,7 +181,7 @@ FString PropertyToSchemaType(UProperty* Property)
 void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> RepProp, const FString& PropertyPath, const int FieldCounter, const int ArrayIdx)
 {
 	Writer.Printf("%s %s = %d; // %s // %s",
-		*PropertyToSchemaType(RepProp->Property),
+		*PropertyToSchemaType(RepProp->Property, false),
 		*SchemaFieldName(RepProp, ArrayIdx),
 		FieldCounter,
 		*GetLifetimeConditionAsString(RepProp->ReplicationData->Condition),
@@ -181,7 +192,7 @@ void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> 
 void WriteSchemaMigratableField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> MigratableProp, const int FieldCounter, const int ArrayIdx)
 {
 	Writer.Printf("%s %s = %d;",
-		*PropertyToSchemaType(MigratableProp->Property),
+		*PropertyToSchemaType(MigratableProp->Property, false),
 		*SchemaFieldName(MigratableProp, ArrayIdx),
 		FieldCounter
 	);
@@ -190,7 +201,7 @@ void WriteSchemaMigratableField(FCodeWriter& Writer, const TSharedPtr<FUnrealPro
 void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrealProperty> RPCProp, const int FieldCounter, const int ArrayIdx)
 {
 	Writer->Printf("%s %s = %d;",
-		*PropertyToSchemaType(RPCProp->Property),
+		*PropertyToSchemaType(RPCProp->Property, true),
 		*SchemaFieldName(RPCProp, ArrayIdx),
 		FieldCounter
 	);
@@ -269,7 +280,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
 	int FieldCounter = 0;
 	for (auto& Prop : GetFlatMigratableData(TypeInfo))
-	{		
+	{
 		for (int ArrayIdx = 0; ArrayIdx < Prop.Value->Property->ArrayDim; ++ArrayIdx)
 		{
 			FieldCounter++;
@@ -286,7 +297,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	TArray<FString> RPCTypeOwners = GetRPCTypeOwners(TypeInfo);
 
 	// Remove underscores
-	for(auto& RPCTypeOwner : RPCTypeOwners)
+	for (auto& RPCTypeOwner : RPCTypeOwners)
 	{
 		RPCTypeOwner = UnrealNameToSchemaTypeName(RPCTypeOwner);
 	}
@@ -319,7 +330,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			FString RPCOwnerName = UnrealNameToSchemaTypeName(*RPC->Function->GetOuter()->GetName());
 			TSharedPtr<FCodeWriter> RPCTypeOwnerSchemaWriter = RPCTypeCodeWriterMap[*RPCOwnerName];
 
-			RPCTypeOwnerSchemaWriter->Printf("type %s {" , *TypeStr);
+			RPCTypeOwnerSchemaWriter->Printf("type %s {", *TypeStr);
 			RPCTypeOwnerSchemaWriter->Indent();
 
 			// Recurse into functions properties and build a complete transitive property list.
@@ -328,17 +339,14 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			// RPC target sub-object offset.
 			RPCTypeOwnerSchemaWriter->Printf("uint32 target_subobject_offset = 1;");
 			FieldCounter = 1;
-			// TODO: Support fixed size arrays in RPCs. The implementation below is incomplete. UNR-283.
+
 			for (auto& Param : ParamList)
 			{
-				for (int ArrayIdx = 0; ArrayIdx < Param->Property->ArrayDim; ++ArrayIdx)
-				{
-					FieldCounter++;
-					WriteSchemaRPCField(RPCTypeOwnerSchemaWriter,
-						Param,
-						FieldCounter,
-						Param->Property->ArrayDim == 1 ? -1 : ArrayIdx);
-				}
+				FieldCounter++;
+				WriteSchemaRPCField(RPCTypeOwnerSchemaWriter,
+					Param,
+					FieldCounter,
+					-1); // -1 As we do not wish to have array index counters for static arrays in RPCs.
 			}
 			RPCTypeOwnerSchemaWriter->Outdent().Print("}");
 		}
@@ -354,15 +362,24 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 	for (auto Group : GetRPCTypes())
 	{
-		// Generate ClientRPCs component
 		Writer.Printf("component %s {", *SchemaRPCComponentName(Group, Class));
 		Writer.Indent();
 		Writer.Printf("id = %i;", IdGenerator.GetNextAvailableId());
 		for (auto& RPC : RPCsByType[Group])
 		{
-			Writer.Printf("command UnrealRPCCommandResponse %s(%s);",
-				*SchemaCommandName(Class, RPC->Function),
-				*SchemaRPCRequestType(RPC->Function));
+			if (Group == ERPCType::RPC_NetMulticast)
+			{
+				checkf(RPC->bReliable == false, TEXT("%s: Unreal GDK currently does not support Reliable Multicast RPCs"), *RPC->Function->GetName());
+
+				Writer.Printf("event %s %s;", *SchemaRPCRequestType(RPC->Function),
+					*SchemaRPCName(Class, RPC->Function));
+			}
+			else
+			{
+				Writer.Printf("command UnrealRPCCommandResponse %s(%s);",
+					*SchemaRPCName(Class, RPC->Function),
+					*SchemaRPCRequestType(RPC->Function));
+			}
 		}
 		Writer.Outdent().Print("}");
 	}

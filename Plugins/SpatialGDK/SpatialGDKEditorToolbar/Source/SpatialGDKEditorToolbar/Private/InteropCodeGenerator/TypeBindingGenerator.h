@@ -20,7 +20,8 @@ void GenerateUnrealToSchemaConversion(
 	const FString& Update,
 	UProperty* Property,
 	const FString& PropertyValue,
-	TFunction<void(const FString&)> ObjectResolveFailureGenerator);
+	TFunction<void(const FString&)> ObjectResolveFailureGenerator,
+	bool bIsRPCProperty);
 
 // Generates code to handle the queueing of an array of UObject* if it contains unresolved objects.
 // Currently only supports replicated properties (i.e. does not support migratable properties or RPC arguments).
@@ -37,7 +38,8 @@ void GeneratePropertyToUnrealConversion(
 	const FString& Update,
 	const UProperty* Property,
 	const FString& PropertyValue,
-	TFunction<void(const FString&)> ObjectResolveFailureGenerator);
+	TFunction<void(const FString&)> ObjectResolveFailureGenerator,
+	bool bIsRPCProperty);
 
 // For blueprint RPCs, declares a struct with RPC arguments.
 // For C++ RPCs, writes a comment about where the Unreal-generated struct is taken from.
@@ -83,6 +85,7 @@ void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter,
 void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData, EReplicatedPropertyGroup Group);
 void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo, const int ArrayIdx);
 void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& MigratableData);
-void GenerateFunction_RPCSendCommand(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC);
-void GenerateFunction_RPCOnCommandRequest(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC);
+void GenerateFunction_ReceiveUpdate_MulticastRPCs(FCodeWriter& SourceWriter, UClass* Class, const TArray <TSharedPtr<FUnrealRPC>> RPCs);
+void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC);
+void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC);
 void GenerateFunction_RPCOnCommandResponse(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC);
