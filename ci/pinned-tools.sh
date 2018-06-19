@@ -67,8 +67,13 @@ function unpackToWithClean() {
 
 # Variable declarations
 
-# Resolved MSBuild path is returned with double quotes, so remove them
-MSBUILD=$(cmd.exe /c ".\ci\GetMSBuildPath.bat" | tr -d "\"")
+if isTeamCity ; then
+  PROGRAMFILES_X86=$(cmd.exe /c "echo %ProgramFiles(x86)%")
+  MSBUILD="${PROGRAMFILES_X86}\MSBuild\14.0\Bin\MSBuild.exe"
+else
+  # Resolved MSBuild path is returned with double quotes, so remove them
+  MSBUILD=$(cmd.exe /c ".\ci\GetMSBuildPath.bat" | tr -d "\"")
+fi
 
 TOOLS_OS="$(getPlatformName)"
 IMP_NUGET_VERSION="20180320.121538.4d07aa9573"
