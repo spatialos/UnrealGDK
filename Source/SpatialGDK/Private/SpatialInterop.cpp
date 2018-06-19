@@ -477,7 +477,7 @@ void USpatialInterop::QueueOutgoingArrayRepUpdate_Internal(const TSet<const UObj
 void USpatialInterop::RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding)
 {
 	Binding->Init(this, PackageMap);
-	Binding->BindToView();
+	Binding->BindToView(NetDriver->GetNetMode() == NM_Client);
 	TypeBindings.Add(Class, Binding);
 }
 
