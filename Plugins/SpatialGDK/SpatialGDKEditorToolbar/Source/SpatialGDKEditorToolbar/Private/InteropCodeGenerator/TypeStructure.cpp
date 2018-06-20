@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+#pragma optimize("", off)
 
 #include "TypeStructure.h"
 #include "SpatialGDKEditorInteropCodeGenerator.h"
@@ -139,7 +140,46 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPt
 	}
 }
 
-TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties)
+uint32 GenerateChecksum(UProperty* Property, TSharedPtr<FUnrealProperty> PropertyNode, uint32 ParentChecksum, uint32 StaticArrayIndex)
+{
+	bool isMyProp = Property->GetName().Contains("RootProp");
+	if (isMyProp)
+	{
+		// Looks like for static arrays we only iterate once.
+		auto a = 1;
+	}
+
+	isMyProp = Property->GetName().Contains("Struct_Array");
+	if (isMyProp)
+	{
+		// Looks like for static arrays we only iterate once.
+		auto a = 1;
+	}
+
+	isMyProp = Property->GetName().Contains("RootStruct");
+	if (isMyProp)
+	{
+		// Looks like for static arrays we only iterate once.
+		auto a = 1;
+	}
+
+	PropertyNode->CompatibleChecksum = FCrc::StrCrc32(*Property->GetName().ToLower(), ParentChecksum);								// Evolve checksum on name
+	PropertyNode->CompatibleChecksum = FCrc::StrCrc32(*Property->GetCPPType(nullptr, 0).ToLower(), PropertyNode->CompatibleChecksum);		// Evolve by property type
+	PropertyNode->CompatibleChecksum = FCrc::StrCrc32(*FString::Printf(TEXT("%i"), StaticArrayIndex), PropertyNode->CompatibleChecksum);	// Evolve by StaticArrayIndex (to make all unrolled static array elements unique)
+
+	bool isMyRootProp = PropertyNode->CompatibleChecksum == 783849404;
+	if (isMyRootProp)
+	{
+		// Looks like for static arrays we only iterate once.
+		auto a = 1;
+	}
+
+	return PropertyNode->CompatibleChecksum;
+}
+
+
+// Root arguments (in the class) give their children a parent start of 0.
+TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties, uint32 ParentChecksum, uint32 StaticArrayIndex, bool bInStaticArray)
 {
 	// Struct types will set this to nullptr.
 	UClass* Class = Cast<UClass>(Type);
@@ -151,25 +191,140 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 	// Iterate through each property in the struct.
 	for (TFieldIterator<UProperty> It(Type); It; ++It)
 	{
+
+		// UNR-334 handle static array indexes first;
+		if(bInStaticArray)
+		{
+			StaticArrayIndex++;
+		}
+
 		UProperty* Property = *It;
 		
 		// Create property node and add it to the AST.
 		TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
 		PropertyNode->Property = Property;
 		PropertyNode->ContainerType = TypeNode;
+		PropertyNode->ParentChecksum = ParentChecksum;
 		TypeNode->Properties.Add(Property, PropertyNode);
 
+		bool isMyProp = Property->GetName().Contains("RootProp");
+		if (isMyProp)
+		{
+			// Looks like for static arrays we only iterate once.
+			auto a = 1;
+		}
+
+		isMyProp = Property->GetName().Contains("Struct_array");
+		if (isMyProp)
+		{
+			// Looks like for static arrays we only iterate once.
+			auto a = 1;
+		}
+
+		isMyProp = Property->GetName().Contains("RootStruct");
+		if (isMyProp)
+		{
+			// Looks like for static arrays we only iterate once.
+			auto a = 1;
+		}
+
+		// UNR-334 Array cmd
+		UArrayProperty * ArrayProp = Cast< UArrayProperty >(Property);
+		if (ArrayProp != NULL)
+		{
+			// What if this array is the child of a struct? The parent checksum MUST take that into account
+			// This probably means that we need to take the recursive approach.
+			uint32 ArrayChecksum = GenerateChecksum(Property, PropertyNode, ParentChecksum, StaticArrayIndex);
+			// Now generate a checksum for the array Inner
+			// The current array checksum will be the parent for the inner parent checksum
+			// UNR-334 We need to generate checksum for the inner, but this is done later on for us most likely...
+		}
+
+		// UNR-334 Here we need to check for static arrays.
+		if (Property->ArrayDim > 1)
+		{
+			// If we've found a static array we need to increment the static array counter.
+			int32 Dimensions = Property->ArrayDim;
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("UNR-334 Found a static array prop %s ArrayDim: %d"), *Property->GetName(), Dimensions);
+
+			for(int i = 0; i < Property->ArrayDim; i++)
+			{
+				// Prop node wont exactly work here....
+				// I think we need to recursively call CreateUnrealTypeInfo
+				// uint32 StaticArrayChecksum = GenerateChecksum(Property, PropertyNode, ParentChecksum, i);
+				// CreateUnrealTypeInfo(Property, {}, ParentChecksum, i, true);
+			}
+
+		}
+
+		// UNR-334 We can ignore this, just an optimisation.
 		// If this property not a struct or object (which can contain more properties), stop here.
 		if (!Property->IsA<UStructProperty>() && !Property->IsA<UObjectProperty>())
 		{
+			// UNR-334 This is possibly the root properties.
+			uint32 PropertyChecksum = GenerateChecksum(Property, PropertyNode, ParentChecksum, StaticArrayIndex);
 			continue;
 		}
+
+		// UNR-334- First thing to do is to find out if we are looking at an array property, tracking this might be difficult since we are calling recursively.
+
+		// UNR-334 - Check for array types here since they need a special checksum.
+		// Handling static arrays also needs to be done. They are a special case where an array index is increased which gets used to generate the checksum.
+
+		// UNR-334 Handle for structs with NetSerialize. They are handled differently when generating checksum.
 
 		// If this is a struct property, then get the struct type and recurse into it.
 		if (Property->IsA<UStructProperty>())
 		{
 			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
-			PropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, {});
+
+			// UNR-334 - Checksum for the property will be generated in the recursive call
+			// Custom delta serializers handles outside of this scope.
+			if (StructProperty->Struct->StructFlags & STRUCT_NetDeltaSerializeNative)
+			{
+				// UNR-334 - We need to stop here apparently.
+				//return RelativeHandle;
+			}
+
+			if (StructProperty->Struct->StructFlags & STRUCT_NetSerializeNative)
+			{
+				// UNR-334 We apparently need to stop here.
+				// uint32 StructChecksum = GenerateChecksum(Property, PropertyNode, ParentChecksum, StaticArrayIndex);
+			}
+
+			uint32 StructChecksum = GenerateChecksum(Property, PropertyNode, ParentChecksum, StaticArrayIndex);
+
+			// UNR-334 Need to do a static array check here.
+			if (Property->ArrayDim > 1)
+			{
+				// If we've found a static struct array we need to increment the static array counter.
+				int32 Dimensions = Property->ArrayDim;
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("UNR-334 Found a static array struct prop %s ArrayDim: %d"), *Property->GetName(), Dimensions);
+
+				// need to generate checksums for children
+				isMyProp = Property->GetName().Contains("Struct_Array");
+				if (isMyProp)
+				{
+					// Looks like for static arrays we only iterate once.
+					auto a = 1;
+				}
+
+				// UNR-334 Start at -1 as a workaround for now.
+				// Also need to check if int[3] hits this place too.
+				PropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, {}, StructChecksum, -1, true);
+				PropertyNode->Type->ParentProperty = PropertyNode;
+				continue;
+			}
+
+			isMyProp = Property->GetName().Contains("Struct_Red");
+			if (isMyProp)
+			{
+				// Looks like for static arrays we only iterate once.
+				auto a = 1;
+			}
+
+			// UNR-334 This is the part where we recurse into the properties of the struct, this includes the static struct arrays, fucking cunts.
+			PropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, {}, StructChecksum, StaticArrayIndex, false);
 			PropertyNode->Type->ParentProperty = PropertyNode;
 			continue;
 		}
@@ -186,6 +341,9 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		//		during runtime. This is determined by getting the CDO of this class to determine what is stored in that property.
 		UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property);
 		check(ObjectProperty);
+
+		// UNR-334 Generate checksums for weak references too.
+		uint32 PropertyChecksum = GenerateChecksum(Property, PropertyNode, ParentChecksum, StaticArrayIndex);
 
 		// If this is a property of a struct, assume it's a weak reference.
 		if (!Class)
@@ -213,8 +371,12 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			{
 				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
+				// UNR-334 No idea what this is. Probably for detecting what is an ACTUAL property since we move on after.
+				// This is actually for strong references and therefore we recurse into it.
+				// We might need to detect static arrays around here.
+				uint32 PropertyChecksum = GenerateChecksum(Property, PropertyNode, ParentChecksum, StaticArrayIndex);
 				// This property is definitely a strong reference, recurse into it.
-				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {});
+				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, ParentChecksum, StaticArrayIndex, false);
 				PropertyNode->Type->ParentProperty = PropertyNode;
 			}
 			else
@@ -228,7 +390,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			// If value is just nullptr, then we clearly don't own it.
 			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - %s weak reference (null init)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
 		}
-	}
+	} // END TFieldIterator<UProperty>
 
 	// If this is not a class, exit now, as structs cannot have RPCs or replicated properties.
 	if (!Class)
@@ -263,7 +425,9 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 				UStructProperty* StructParameter = Cast<UStructProperty>(Parameter);
 				if (StructParameter)
 				{
-					PropertyNode->Type = CreateUnrealTypeInfo(StructParameter->Struct, {});
+					// UNR-334 Let's just ignore RPCs for now...
+					uint32 StructChecksum = GenerateChecksum(Parameter, PropertyNode, ParentChecksum, StaticArrayIndex);
+					PropertyNode->Type = CreateUnrealTypeInfo(StructParameter->Struct, {}, StructChecksum, 0, false);
 					PropertyNode->Type->ParentProperty = PropertyNode;
 				}
 			}
@@ -321,15 +485,65 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			TSharedPtr<FUnrealProperty> RootProperty = TypeNode->Properties[Parent.Property];
 			checkf(RootProperty->Type.IsValid(), TEXT("Properties in the AST which are parent properties in the rep layout must have child properties"));
 
-			VisitAllProperties(RootProperty->Type, [&PropertyNode, &Cmd](TSharedPtr<FUnrealProperty> Property)
+			VisitAllProperties(RootProperty->Type, [&PropertyNode, &Cmd, &ParentChecksum, &StaticArrayIndex, &TypeNode](TSharedPtr<FUnrealProperty> Property)
 			{
 				if (Cmd.ParentPropertyChain.Num() > 0) // If we have added a parent property chain then we want to verify against it.
 				{
 					// Check that the parent property and the actual property are the same.
 					if (Property->Property == Cmd.Property && AreParentPropertiesTheSame(*Property.Get(), Cmd.ParentPropertyChain))
 					{
-						checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation."))
-						PropertyNode = Property;
+						bool bMatch = false;
+
+						FString PropName = Property->Property->GetName();
+
+						FString ParentPropName = Property->ContainerType.Pin().Get()->ParentProperty.Pin().Get()->Property->GetName();
+
+						bool bIsObjectProp = Property->Property->IsA<UObjectProperty>();
+
+						// If we don't have a checksum yet
+						if (Property->CompatibleChecksum == 0)
+						{
+							UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("UNR-334 %s - NoChecksum - My parent: %s IsObjectProp: %d"), *PropName, *ParentPropName, bIsObjectProp);
+							uint32 PropertyChecksum = GenerateChecksum(Property->Property, Property, ParentChecksum, StaticArrayIndex);
+						}
+
+						if (Property->CompatibleChecksum == Cmd.CompatibleChecksum)
+						{
+							bMatch = true;
+							UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("UNR-334 %s - BOOM - My parent: %s IsObjectProp: %d Checksum: %d ParentChecksum: %d"), *PropName, *ParentPropName, bIsObjectProp, Property->CompatibleChecksum, ParentChecksum);
+						}
+						if (!bMatch)
+						{
+							// In this case we most likely have a static array element. We only generate one so for index > 0 the checksum needs reverse engineering.
+							UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("UNR-334 %s - Fuck - My parent: %s IsObjectProp: %d Checksum: %d ParentChecksum: %d"), *PropName, *ParentPropName, bIsObjectProp, Property->CompatibleChecksum, ParentChecksum);
+
+							//uint32 NewChecksum = GenerateChecksum(Property->Property, Property, ParentChecksum, 0);
+							uint32 NewChecksum = 0;
+
+							NewChecksum = FCrc::StrCrc32(*Cmd.Property->GetName().ToLower(), Property->ParentChecksum);								// Evolve checksum on name
+							NewChecksum = FCrc::StrCrc32(*Cmd.Property->GetCPPType(nullptr, 0).ToLower(), NewChecksum);		// Evolve by property type
+							NewChecksum = FCrc::StrCrc32(*FString::Printf(TEXT("%i"), 0), NewChecksum);	// Evolve by StaticArrayIndex (to make all unrolled static array elements unique)
+
+							if (NewChecksum == Property->CompatibleChecksum)
+							{
+								UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("UNR-334 %s - Win! - My parent: %s IsObjectProp: %d Checksum: %d ParentChecksum: %d"), *PropName, *ParentPropName, bIsObjectProp, Property->CompatibleChecksum, ParentChecksum);
+								bMatch = true;
+							}
+
+						}
+						if (bMatch)
+						{
+							checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation."))
+							PropertyNode = Property;
+						}
+						//checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation."))
+						//PropertyNode = Property; // The reason this is null at this point even when in a static array is because FOR EACH cmd we set a new property.
+						// It's not that we've found the WRONG property, it's that we've found the ONLY property.
+						// There are 3 RootProps in the Cmds for the struct_array.
+						// But for US there is only a single RootProp, but since the prop parent chain and checksum for struct_array is the same, we've always ignored this.
+						// The Cmd checksum is different due to there being a different Prop for each static array element in the chain.
+						// I don't think we've ever actually accounted for static arrays in this case.
+						// We've just used the same Property for the PropertyNode which represents 
 					}
 				}
 				else if (Property->Property == Cmd.Property)
@@ -344,7 +558,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		
 		// We now have the right property node. Fill in the rep data.
 		// In most cases, we will go into the if condition below as there is a 1:1 mapping between replication data and property node.
-		// The exception is fixed size arrays where one property expands to multiple handles.
+		// The exception is fixed size arrays where one ;
 		if (!PropertyNode->ReplicationData.IsValid())
 		{
 			TSharedPtr<FUnrealRepData> RepDataNode = MakeShared<FUnrealRepData>();
