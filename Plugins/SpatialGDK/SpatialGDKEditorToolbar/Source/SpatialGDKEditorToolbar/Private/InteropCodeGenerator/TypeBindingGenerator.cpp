@@ -573,7 +573,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		UClass* GetBoundClass() const override;
 
 		void Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap) override;
-		void BindToView() override;
+		void BindToView(bool bIsClient) override;
 		void UnbindFromView() override;
 
 		worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
@@ -947,7 +947,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 
 void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType)
 {
-	SourceWriter.BeginFunction({"void", "BindToView()"}, TypeBindingName(Class));
+	SourceWriter.BeginFunction({"void", "BindToView(bool bIsClient)"}, TypeBindingName(Class));
 
 	SourceWriter.Print("TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();");
 	SourceWriter.Print("ViewCallbacks.Init(View);");
@@ -977,12 +977,13 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 		SourceWriter.Outdent();
 		SourceWriter.Print("}));");
 	}
+	SourceWriter.Printf("if (!bIsClient)");
+	SourceWriter.BeginScope();
 	SourceWriter.Printf("ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::generated::%s>([this](", *SchemaMigratableDataName(Class));
 	SourceWriter.Indent();
 	SourceWriter.Printf("const worker::ComponentUpdateOp<improbable::unreal::generated::%s>& Op)", *SchemaMigratableDataName(Class));
 	SourceWriter.Outdent();
-	SourceWriter.Print("{");
-	SourceWriter.Indent();
+	SourceWriter.BeginScope();
 	SourceWriter.Printf(R"""(
 		// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
 		if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::generated::%s::ComponentId))
@@ -995,6 +996,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 		ReceiveUpdate_Migratable(ActorChannel, Op.Update);)""");
 	SourceWriter.Outdent();
 	SourceWriter.Print("}));");
+	SourceWriter.End();
 	SourceWriter.End();
 
 	// Multicast RPCs

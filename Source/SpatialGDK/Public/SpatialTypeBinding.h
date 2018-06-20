@@ -228,7 +228,7 @@ public:
 		PURE_VIRTUAL(USpatialTypeBinding::GetMigratableHandlePropertyMap, static FMigratableHandlePropertyMap Map; return Map; );
 
 	virtual void Init(USpatialInterop* Interop, USpatialPackageMapClient* PackageMap);
-	virtual void BindToView() PURE_VIRTUAL(USpatialTypeBinding::BindToView, );
+	virtual void BindToView(bool bIsClient) PURE_VIRTUAL(USpatialTypeBinding::BindToView, );
 	virtual void UnbindFromView() PURE_VIRTUAL(USpatialTypeBinding::UnbindFromView, );
 	virtual UClass* GetBoundClass() const PURE_VIRTUAL(USpatialTypeBinding::GetBoundClass, return nullptr; );
 
