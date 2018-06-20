@@ -194,7 +194,7 @@ uint32 GenerateChecksum(UProperty* Property, TSharedPtr<FUnrealProperty> Propert
 //	   {"OtherProperty", "PropertyWithinOtherProperty"}
 //   }
 // In the future, we can get this information directly from the UStruct*.
-TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties, uint32 ParentChecksum, uint32 StaticArrayIndex, bool bIsStaticArray);
+TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties, uint32 ParentChecksum);
 
 // Takes an FUnrealProperty (which is a Spatial wrapper around UProperties for replicated properties) and compares its parents against
 // the parents found in a 'RepLayout.Cmd.ParentPropertyChain' (Improbable engine modification to track parent properties when generating a RepLayout).
