@@ -516,7 +516,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 								LastSentActors.Add(Actor);
 							}
 
-							// Calculate min delta (max rate actor will upate), and max delta (slowest rate actor will update)
+							// Calculate min delta (max rate actor will update), and max delta (slowest rate actor will update)
 							const float MinOptimalDelta = 1.0f / Actor->NetUpdateFrequency;
 							const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
 							const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);

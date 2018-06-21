@@ -1,0 +1,6 @@
+package improbable.unreal;
+
+component GlobalStateManager {
+    id = 100007;
+    map<string, EntityId> singleton_to_id = 1;
+}

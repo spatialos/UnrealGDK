@@ -19,6 +19,8 @@
 #include "PositionAddComponentOp.h"
 #include "PositionComponent.h"
 #include "SpatialConstants.h"
+#include "GlobalStateManagerAddComponentOp.h"
+#include "GlobalStateManagerComponent.h"
 #include "UnrealMetadataAddComponentOp.h"
 #include "UnrealMetadataComponent.h"
 
@@ -140,6 +142,11 @@ void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId Com
 	if (bInCriticalSection && PendingAddEntities.Contains(FEntityId(AuthChangeOp.EntityId)))
 	{
 		PendingAuthorityChanges.Emplace(FComponentIdentifier{AuthChangeOp.EntityId, ComponentId}, AuthChangeOp);
+	}
+
+	if (ComponentId == 100007 && AuthChangeOp.Authority == worker::Authority::kAuthoritative)
+	{
+		NetDriver->GetSpatialInterop()->HandleSingletonActorReplication();
 	}
 
 	if (NextBlock)

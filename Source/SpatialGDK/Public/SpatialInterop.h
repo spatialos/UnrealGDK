@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <improbable/unreal/gdk/global_state_manager.h>
+
 #include "AddComponentOpWrapperBase.h"
 #include "ComponentIdentifier.h"
 #include "CoreMinimal.h"
@@ -221,6 +223,7 @@ public:
 		return NetDriver;
 	}
 
+	void HandleSingletonActorReplication();
 	worker::Map<std::string, worker::EntityId> SingletonToId;
 
 private:

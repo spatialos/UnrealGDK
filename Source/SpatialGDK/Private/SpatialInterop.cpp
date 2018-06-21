@@ -54,6 +54,22 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 			UE_LOG(LogSpatialGDKInterop, Warning, TEXT("Could not find and register 'bound class' for type binding class %s. If this is a blueprint class, make sure it is referenced by the world."), *TypeBindingClass->GetName());
 		}
 	}
+
+	//TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
+
+	//// Global State Manager setup
+	//View->OnAddComponent<improbable::unreal::GlobalStateManager>([this](const worker::AddComponentOp <improbable::unreal::GlobalStateManager>& op)
+	//{
+	//	SingletonToId = op.Data.singleton_to_id();
+	//});
+
+	//View->OnAuthorityChange<improbable::unreal::GlobalStateManager>([this](const worker::AuthorityChangeOp& op)
+	//{
+	//	if (op.Authority == worker::Authority::kAuthoritative)
+	//	{
+	//		HandleSingletonActorReplication();
+	//	}
+	//});
 }
 
 USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
