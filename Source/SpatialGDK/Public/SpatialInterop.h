@@ -26,7 +26,7 @@ struct FRPCCommandRequestResult
 	const UObject* UnresolvedObject;
 	FUntypedRequestId RequestId;
 
-	FRPCCommandRequestResult() = delete;
+	FRPCCommandRequestResult() : UnresolvedObject{nullptr}, RequestId{0} {}
 	FRPCCommandRequestResult(const UObject* UnresolvedObject) : UnresolvedObject{UnresolvedObject}, RequestId{0} {}
 	FRPCCommandRequestResult(FUntypedRequestId RequestId) : UnresolvedObject{nullptr}, RequestId{RequestId} {}
 };
@@ -156,6 +156,7 @@ public:
 
 	// Sending component updates and RPCs.
 	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged);
+	worker::RequestId<worker::DeleteEntityRequest> SendDeleteEntityRequest(const FEntityId& EntityId);
 	void SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged);
 	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, UObject* CallingObject, void* Parameters);
@@ -170,6 +171,7 @@ public:
 	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
 	void AddActorChannel(const FEntityId& EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(const FEntityId& EntityId);
+	void DeleteEntity(const FEntityId& EntityId);
 
 	// Modifies component interest according to the updates this actor needs from SpatialOS.
 	// Called by USpatialInteropPipelineBlock after an actor has had its components initialized with values from SpatialOS.
@@ -179,8 +181,8 @@ public:
 	USpatialActorChannel* GetActorChannelByEntityId(const FEntityId& EntityId) const;
 
 	// RPC handlers. Used by generated type bindings.
-	void SendCommandRequest_Internal(FRPCCommandRequestFunc Function, bool bReliable);
-	void SendCommandResponse_Internal(FRPCCommandResponseFunc Function);
+	void InvokeRPCSendHandler_Internal(FRPCCommandRequestFunc Function, bool bReliable);
+	void InvokeRPCReceiveHandler_Internal(FRPCCommandResponseFunc Function);
 	void HandleCommandResponse_Internal(const FString& RPCName, FUntypedRequestId RequestId, const FEntityId& EntityId, const worker::StatusCode& StatusCode, const FString& Message);
 
 	// Used to queue incoming/outgoing object updates/RPCs. Used by generated type bindings.

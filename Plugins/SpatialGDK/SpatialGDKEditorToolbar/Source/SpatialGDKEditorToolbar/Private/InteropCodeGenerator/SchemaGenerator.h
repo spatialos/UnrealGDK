@@ -36,14 +36,14 @@ FString SchemaRPCResponseType(UFunction* Function);
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property, const int FixedArrayIndex = -1);
 
 // Given a UFunction, generates the schema command name. Currently just returns the function name in lowercase.
-FString SchemaCommandName(UClass* Class, UFunction* Function);
+FString SchemaRPCName(UClass* Class, UFunction* Function);
 
 // Given a UFunction, generates the c++ command name. Identical to the schema name with the first letter being uppercase.
 FString CPPCommandClassName(UClass* Class, UFunction* Function);
 
 // Given a RepLayout cmd type (a data type supported by the replication system). Generates the corresponding
 // type used in schema.
-FString PropertyToSchemaType(UProperty* Property);
+FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty);
 
 // Generates a schema file, given an output code writer, component ID, Unreal type and type info.
 int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath);

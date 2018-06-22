@@ -263,11 +263,21 @@ void USpatialInteropPipelineBlock::DisableComponentImpl(const FComponentIdentifi
 void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 {
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(EntityId);
-	if (Actor && !Actor->IsPendingKill())
+
+	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
+	if (!Actor || Actor->IsPendingKill())
 	{
-		EntityRegistry->RemoveFromRegistry(Actor);
-		Actor->GetWorld()->DestroyActor(Actor, true);
+		return;
 	}
+
+	Actor->GetWorld()->DestroyActor(Actor, true);
+
+	CleanupDeletedEntity(EntityId);
+}
+
+void USpatialInteropPipelineBlock::CleanupDeletedEntity(const FEntityId& EntityId)
+{
+	EntityRegistry->RemoveFromRegistry(EntityId);
 	NetDriver->GetSpatialInterop()->RemoveActorChannel(EntityId.ToSpatialEntityId());
 	auto* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
 	PackageMap->RemoveEntityActor(EntityId);

@@ -5,6 +5,7 @@
 #include "EntityRegistry.h"
 #include "SpatialActorChannel.h"
 #include "SpatialConstants.h"
+#include "SpatialInteropPipelineBlock.h"
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
 #include "SpatialOS.h"
@@ -147,6 +148,18 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 	return CreateEntityRequestId;
 }
 
+worker::RequestId<worker::DeleteEntityRequest> USpatialInterop::SendDeleteEntityRequest(const FEntityId& EntityId)
+{
+	worker::RequestId<worker::DeleteEntityRequest> DeleteEntityRequestId;
+	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
+	if (PinnedConnection.IsValid())
+	{
+		return PinnedConnection->SendDeleteEntityRequest(EntityId.ToSpatialEntityId(), 0);
+	}
+
+	return DeleteEntityRequestId;
+}
+
 void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location)
 {
 	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
@@ -224,6 +237,12 @@ void USpatialInterop::RemoveActorChannel(const FEntityId& EntityId)
 	EntityToActorChannel.Remove(EntityId);
 }
 
+void USpatialInterop::DeleteEntity(const FEntityId& EntityId)
+{
+	SendDeleteEntityRequest(EntityId);
+	NetDriver->InteropPipelineBlock->CleanupDeletedEntity(EntityId);
+}
+
 void USpatialInterop::SendComponentInterests(USpatialActorChannel* ActorChannel, const FEntityId& EntityId)
 {
 	UClass* ActorClass = ActorChannel->Actor->GetClass();
@@ -248,7 +267,7 @@ USpatialActorChannel* USpatialInterop::GetActorChannelByEntityId(const FEntityId
 	return *ActorChannelIt;
 }
 
-void USpatialInterop::SendCommandRequest_Internal(FRPCCommandRequestFunc Function, bool bReliable)
+void USpatialInterop::InvokeRPCSendHandler_Internal(FRPCCommandRequestFunc Function, bool bReliable)
 {
 	// Attempt to trigger command request by calling the passed RPC request function. This function is generated in the type binding
 	// classes which capture the target actor and arguments of the RPC (unpacked from the FFrame) by value, and attempts to serialize
@@ -274,7 +293,7 @@ void USpatialInterop::SendCommandRequest_Internal(FRPCCommandRequestFunc Functio
 	}
 }
 
-void USpatialInterop::SendCommandResponse_Internal(FRPCCommandResponseFunc Function)
+void USpatialInterop::InvokeRPCReceiveHandler_Internal(FRPCCommandResponseFunc Function)
 {
 	auto Result = Function();
 	if (Result.IsSet())
@@ -458,7 +477,7 @@ void USpatialInterop::QueueOutgoingArrayRepUpdate_Internal(const TSet<const UObj
 void USpatialInterop::RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding)
 {
 	Binding->Init(this, PackageMap);
-	Binding->BindToView();
+	Binding->BindToView(NetDriver->GetNetMode() == NM_Client);
 	TypeBindings.Add(Class, Binding);
 }
 
@@ -506,7 +525,7 @@ void USpatialInterop::ResolvePendingOutgoingRPCs(UObject* Object)
 		{
 			// We can guarantee that SendCommandRequest won't populate PendingOutgoingRPCs[Object] whilst we're iterating through it,
 			// because Object has been resolved when we call ResolvePendingOutgoingRPCs.
-			SendCommandRequest_Internal(RequestFuncPair.Key, RequestFuncPair.Value);
+			InvokeRPCSendHandler_Internal(RequestFuncPair.Key, RequestFuncPair.Value);
 		}
 		PendingOutgoingRPCs.Remove(Object);
 	}
@@ -561,7 +580,7 @@ void USpatialInterop::ResolvePendingIncomingRPCs(const improbable::unreal::Unrea
 		{
 			// We can guarantee that SendCommandResponse won't populate PendingIncomingRPCs[ObjectRef] whilst we're iterating through it,
 			// because ObjectRef has been resolved when we call ResolvePendingIncomingRPCs.
-			SendCommandResponse_Internal(Responder);
+			InvokeRPCReceiveHandler_Internal(Responder);
 		}
 		PendingIncomingRPCs.Remove(ObjectRef);
 	}
