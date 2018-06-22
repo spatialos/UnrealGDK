@@ -32,10 +32,6 @@ TARGET_SCHEMAPATH="${INSTALL_PATH}/spatial/schema/improbable/unreal"
 
 markStartOfBlock "$0"
 
-markStartOfBlock "Build the SpatialOS Unreal GDK"
-  ci/build.sh
-markEndOfBlock "Build the SpatialOS Unreal GDK"
-
 markStartOfBlock "Ensure directories exist"
   mkdir -p "${TARGET_PLUGINSPATH}"
   mkdir -p "${TARGET_MODULEPATH}"

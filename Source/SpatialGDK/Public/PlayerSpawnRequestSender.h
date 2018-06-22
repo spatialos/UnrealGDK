@@ -5,13 +5,8 @@
 #include "improbable/unreal/gdk/spawner.h"
 #include "LogMacros.h"
 #include <improbable/worker.h>
-#include <improbable/view.h>
-
-namespace worker
-{
-class Connection;
-class View;
-}  // ::worker
+#include "SpatialGDKWorkerTypes.h"
+#include "SpatialGDKViewTypes.h"
 
 class USpatialOS;
 struct FURL;
@@ -39,8 +34,8 @@ private:
 
 	FTimerManager* TimerManager;
 
-	worker::Connection* Connection;
-	worker::View* View;
+	SpatialOSConnection* Connection;
+	SpatialOSView* View;
 
 	TOptional<uint32> ResponseCallbackKey;
 	improbable::unreal::SpawnPlayerRequest Request;

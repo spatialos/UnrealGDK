@@ -118,4 +118,10 @@ csc "Scripts/DiffCopy.cs"                                                       
 
 markEndOfBlock "Build CodeGeneration"
 
+markStartOfBlock "Run Tests (Temporary hack)"
+
+./ci/test.sh
+
+markEndOfBlock "Run Tests (Temporary hack)"
+
 markEndOfBlock "$0"

@@ -9,7 +9,8 @@
 #include "SpatialNetDriver.h"
 #include "SpatialTypeBinding.h"
 #include "improbable/standard_library.h"
-#include "improbable/worker.h"
+#include "SpatialGDKWorkerTypes.h"
+#include "SpatialGDKViewTypes.h"
 #include "SpatialActorChannel.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKActorChannel, Log, All);
@@ -33,7 +34,7 @@ public:
 
 	FORCEINLINE bool IsReadyForReplication() const
 	{
-		// Wait until we've reserved an entity ID.		
+		// Wait until we've reserved an entity ID.
 		return ActorEntityId != FEntityId{};
 	}
 
@@ -45,7 +46,7 @@ public:
 			return false;
 		}
 
-		TSharedPtr<worker::View> View = WorkerView.Pin();
+		TSharedPtr<SpatialOSView> View = WorkerView.Pin();
 		if (View.Get())
 		{
 			// This will never fail because we can't have an actor channel without having checked out the entity.
@@ -95,13 +96,13 @@ private:
 	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
 	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
 
-	TWeakPtr<worker::Connection> WorkerConnection;
-	TWeakPtr<worker::View> WorkerView;
+	TWeakPtr<SpatialOSConnection> WorkerConnection;
+	TWeakPtr<SpatialOSView> WorkerView;
 	FEntityId ActorEntityId;
 
 	worker::Dispatcher::CallbackKey ReserveEntityCallback;
 	worker::Dispatcher::CallbackKey CreateEntityCallback;
-	
+
 	worker::RequestId<worker::ReserveEntityIdRequest> ReserveEntityIdRequestId;
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 

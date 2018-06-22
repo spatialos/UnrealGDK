@@ -23,7 +23,7 @@ void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Ve
 		return;
 	}
 
-	TSharedPtr<worker::Connection> Connection = SpatialOS->GetConnection().Pin();
+	TSharedPtr<SpatialOSConnection> Connection = SpatialOS->GetConnection().Pin();
 	if (Connection.IsValid())
 	{
 		Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), TCHAR_TO_UTF8(*Name), TCHAR_TO_UTF8(InData));

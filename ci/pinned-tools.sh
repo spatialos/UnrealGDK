@@ -81,5 +81,19 @@ PACKAGE_CLIENT_VERSION="20171115.142004.8707ef0"
 PACKAGE_CLIENT="${IMPROBABLE_TOOLS}/package_client/${PACKAGE_CLIENT_VERSION}/${TOOLS_OS}/package_client"
 
 GOPATH="$(pwd)/go"
-
 export GOPATH
+
+export UNREAL_VERSION="419-SpatialGDK"
+
+# The current version of Unreal.
+if [ -z "${UNREAL_HOME+x}" ]; then
+  export UNREAL_HOME="C:/Unreal/UnrealEngine-${UNREAL_VERSION}"
+fi
+
+# LINUX_MULTIARCH_ROOT is used by Unreal when cross compiling Linux workers
+# as Unreal only builds on windows otherwise. The Linux cross compiling tools
+# should be automatically installed by puppet as part of the Unreal Engine
+# installation.
+if [ -z "${LINUX_MULTIARCH_ROOT+x}" ]; then
+  export LINUX_MULTIARCH_ROOT="${UNREAL_HOME}/ClangToolchain"
+fi

@@ -67,5 +67,10 @@ public class SpatialGDK : ModuleRules
 
         // Point generated code to the correct API spec.
         PublicDefinitions.Add("IMPROBABLE_DLL_API=SPATIALGDK_API");
+
+        if (Target.bForceCompileDevelopmentAutomationTests)
+        {
+            PublicDefinitions.Add("SPATIALOS_WORKER_SDK_MOCK_ENABLED");
+        }
 	}
 }

@@ -70,13 +70,14 @@ Build/*/**
 **/Intermediate/
 **/Saved/
 
-Generated/
+**/Generated/
 
 **/bin/
 **/obj/
 
 .spatialos/
-Plugins/SpatialOS
+**/WorkerSdk/improbable/
+**/WorkerSdk/google/
 logs/
 
 Scripts/spatialos.*.build.json
