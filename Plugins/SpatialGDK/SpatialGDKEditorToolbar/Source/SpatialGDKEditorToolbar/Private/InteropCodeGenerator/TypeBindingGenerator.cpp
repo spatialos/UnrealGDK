@@ -2060,7 +2060,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 
 	// Get the target object.
 	SourceWriter.Printf(R"""(
-		improbable::unreal::UnrealObjectRef TargetObjectRef{%s, %s.target_subobject_offset(), worker::Option<std::string>{}, worker::Option<improbable::unreal::UnrealObjectRef>{}};
+		improbable::unreal::UnrealObjectRef TargetObjectRef{%s, %s.target_subobject_offset(), {}, {}};
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid()))""",
 		*EntityId, *RPCPayload);
