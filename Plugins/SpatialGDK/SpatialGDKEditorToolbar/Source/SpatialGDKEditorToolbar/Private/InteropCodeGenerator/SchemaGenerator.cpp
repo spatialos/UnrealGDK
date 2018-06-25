@@ -61,7 +61,7 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property, const int Fi
 
 FString SchemaRPCName(UClass* Class, UFunction* Function)
 {
-	// Prepending the name of the class to the RPC name enables sibling classes. 
+	// Prepending the name of the class to the RPC name enables sibling classes.
 	FString RPCName = Class->GetName() + Function->GetName();
 	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
 	RPCName = UnrealNameToSchemaTypeName(RPCName.ToLower());
@@ -211,12 +211,12 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 {
 	FComponentIdGenerator IdGenerator(ComponentId);
 
-	Writer.Print(R"""(
+	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
-		package improbable.unreal.generated;
+		package improbable.unreal.generated.%s;
 
-		import "improbable/unreal/gdk/core_types.schema";)""");
+		import "improbable/unreal/gdk/core_types.schema";)""", *Class->GetName().ToLower());
 	Writer.PrintNewLine();
 
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
@@ -309,12 +309,12 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		Writer.Printf("import \"improbable/unreal/generated/Unreal%sTypes.schema\";", *RPCTypeOwner);
 		TSharedPtr<FCodeWriter> RPCTypeOwnerSchemaWriter = MakeShared<FCodeWriter>();
 		RPCTypeCodeWriterMap.Add(*RPCTypeOwner, RPCTypeOwnerSchemaWriter);
-		RPCTypeOwnerSchemaWriter->Print(R"""(
+		RPCTypeOwnerSchemaWriter->Printf(R"""(
 			// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 			// Note that this file has been generated automatically
-			package improbable.unreal.generated;
+			package improbable.unreal.generated.%s;
 
-			import "improbable/unreal/gdk/core_types.schema";)""");
+			import "improbable/unreal/gdk/core_types.schema";)""", *RPCTypeOwner.ToLower());
 		RPCTypeOwnerSchemaWriter->PrintNewLine();
 	}
 	Writer.PrintNewLine();
@@ -371,13 +371,16 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			{
 				checkf(RPC->bReliable == false, TEXT("%s: Unreal GDK currently does not support Reliable Multicast RPCs"), *RPC->Function->GetName());
 
-				Writer.Printf("event %s %s;", *SchemaRPCRequestType(RPC->Function),
+				Writer.Printf("event %s.%s %s;",
+					*UnrealNameToSchemaTypeName(*RPC->Function->GetOuter()->GetName()).ToLower(),
+					*SchemaRPCRequestType(RPC->Function),
 					*SchemaRPCName(Class, RPC->Function));
 			}
 			else
 			{
-				Writer.Printf("command UnrealRPCCommandResponse %s(%s);",
+				Writer.Printf("command UnrealRPCCommandResponse %s(%s.%s);",
 					*SchemaRPCName(Class, RPC->Function),
+					*UnrealNameToSchemaTypeName(*RPC->Function->GetOuter()->GetName()).ToLower(),
 					*SchemaRPCRequestType(RPC->Function));
 			}
 		}
