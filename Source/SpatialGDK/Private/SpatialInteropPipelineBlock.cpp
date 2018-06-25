@@ -19,7 +19,6 @@
 #include "PositionAddComponentOp.h"
 #include "PositionComponent.h"
 #include "SpatialConstants.h"
-#include "UnrealLevelComponent.h"
 #include "UnrealMetadataAddComponentOp.h"
 #include "UnrealMetadataComponent.h"
 
@@ -236,17 +235,6 @@ void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentId
 			{
 				Component->ApplyInitialAuthority(*QueuedAuthChangeOp);
 			}
-		}
-
-		// Initialise the static objects when we check out the level data component.
-		auto LevelAddComponentOp = Cast<UUnrealLevelAddComponentOp>(AddComponentOp);
-		if (LevelAddComponentOp)
-		{
-			check(Actor);
-			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver());
-			UNetConnection* Connection = Driver->GetSpatialOSNetConnection();
-			USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-			PMC->RegisterStaticObjects(*LevelAddComponentOp->Data.data());
 		}
 	}
 }
