@@ -65,6 +65,8 @@ public:
 	void EnterCriticalSection() override;
 	void LeaveCriticalSection() override;
 
+	void CleanupDeletedEntity(const FEntityId& EntityId);
+
 private:
 	bool bInCriticalSection;
 

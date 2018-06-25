@@ -89,6 +89,7 @@ enum ERPCType
 {
 	RPC_Client,
 	RPC_Server,
+	RPC_NetMulticast,
 	RPC_Unknown
 };
 
@@ -140,7 +141,6 @@ struct FUnrealRepData
 // A node which represents migratable data.
 struct FUnrealMigratableData
 {
-	ERepLayoutCmdType RepLayoutType;
 	uint16 Handle;
 };
 
@@ -171,9 +171,6 @@ TArray<FString> GetRPCTypeOwners(TSharedPtr<FUnrealType> TypeInfo);
 
 // Converts an RPC type to string. Used to generate component names.
 FString GetRPCTypeName(ERPCType RPCType);
-
-// Given a UProperty, returns the corresponding ERepLayoutCmdType.
-ERepLayoutCmdType PropertyToRepLayoutType(UProperty* Property);
 
 // Given an AST, this applies the function 'Visitor' to all FUnrealType's contained transitively within the properties. bRecurseIntoObjects will control
 // whether this function will recurse into a UObject's properties, which may not always be desirable. However, it will always recurse into substructs.

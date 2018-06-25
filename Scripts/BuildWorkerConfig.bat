@@ -1,7 +1,5 @@
 @echo off
 
-cd "%~dp0..\..\"
-
-pushd spatial
+pushd "%~dp0..\..\spatial"
 spatial worker build build-config
 popd

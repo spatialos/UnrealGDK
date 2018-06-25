@@ -5,6 +5,7 @@
 #include "EntityRegistry.h"
 #include "SpatialActorChannel.h"
 #include "SpatialConstants.h"
+#include "SpatialInteropPipelineBlock.h"
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
 #include "SpatialOS.h"
@@ -147,6 +148,18 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 	return CreateEntityRequestId;
 }
 
+worker::RequestId<worker::DeleteEntityRequest> USpatialInterop::SendDeleteEntityRequest(const FEntityId& EntityId)
+{
+	worker::RequestId<worker::DeleteEntityRequest> DeleteEntityRequestId;
+	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
+	if (PinnedConnection.IsValid())
+	{
+		return PinnedConnection->SendDeleteEntityRequest(EntityId.ToSpatialEntityId(), 0);
+	}
+
+	return DeleteEntityRequestId;
+}
+
 void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location)
 {
 	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
@@ -210,6 +223,7 @@ void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable
 	UE_LOG(LogSpatialOSInterop, Log, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRefToString(ObjectRef));
 	ResolvePendingOutgoingObjectUpdates(Object);
 	ResolvePendingOutgoingRPCs(Object);
+	ResolvePendingOutgoingArrayUpdates(Object);
 	ResolvePendingIncomingObjectUpdates(Object, ObjectRef);
 	ResolvePendingIncomingRPCs(ObjectRef);
 }
@@ -222,6 +236,12 @@ void USpatialInterop::AddActorChannel(const FEntityId& EntityId, USpatialActorCh
 void USpatialInterop::RemoveActorChannel(const FEntityId& EntityId)
 {
 	EntityToActorChannel.Remove(EntityId);
+}
+
+void USpatialInterop::DeleteEntity(const FEntityId& EntityId)
+{
+	SendDeleteEntityRequest(EntityId);
+	NetDriver->InteropPipelineBlock->CleanupDeletedEntity(EntityId);
 }
 
 void USpatialInterop::SendComponentInterests(USpatialActorChannel* ActorChannel, const FEntityId& EntityId)
@@ -248,7 +268,7 @@ USpatialActorChannel* USpatialInterop::GetActorChannelByEntityId(const FEntityId
 	return *ActorChannelIt;
 }
 
-void USpatialInterop::SendCommandRequest_Internal(FRPCCommandRequestFunc Function, bool bReliable)
+void USpatialInterop::InvokeRPCSendHandler_Internal(FRPCCommandRequestFunc Function, bool bReliable)
 {
 	// Attempt to trigger command request by calling the passed RPC request function. This function is generated in the type binding
 	// classes which capture the target actor and arguments of the RPC (unpacked from the FFrame) by value, and attempts to serialize
@@ -274,7 +294,7 @@ void USpatialInterop::SendCommandRequest_Internal(FRPCCommandRequestFunc Functio
 	}
 }
 
-void USpatialInterop::SendCommandResponse_Internal(FRPCCommandResponseFunc Function)
+void USpatialInterop::InvokeRPCReceiveHandler_Internal(FRPCCommandResponseFunc Function)
 {
 	auto Result = Function();
 	if (Result.IsSet())
@@ -377,10 +397,89 @@ void USpatialInterop::QueueIncomingRPC_Internal(const improbable::unreal::Unreal
 	PendingIncomingRPCs.FindOrAdd(UnresolvedObjectRef).Add(Responder);
 }
 
+void USpatialInterop::ResetOutgoingArrayRepUpdate_Internal(USpatialActorChannel* DependentChannel, uint16 Handle)
+{
+	// This is called when trying to send an update on a given property on a given USpatialActorChannel. In case there
+	// was a pending outgoing update queued up before, it will now be obsolete, e.g. it's possible that unresolved
+	// objects that were queued up are no longer in the array, or there may be new unresolved objects present.
+
+	check(DependentChannel);
+
+	FHandleToOPARMap* HandleToOPARMap = PropertyToOPAR.Find(DependentChannel);
+	if (HandleToOPARMap == nullptr)
+	{
+		return;
+	}
+
+	TSharedPtr<FOutgoingPendingArrayRegister>* OPARPtr = HandleToOPARMap->Find(Handle);
+	if (OPARPtr == nullptr)
+	{
+		return;
+	}
+
+	TSharedPtr<FOutgoingPendingArrayRegister>& OPAR = *OPARPtr;
+
+	check(OPAR.IsValid());
+
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Resetting pending outgoing array depending on channel: %s, handle: %d."), *DependentChannel->GetName(), Handle);
+
+	// Remove the references from indiviual unresolved objects to this OPAR.
+	for (const UObject* UnresolvedObject : OPAR->UnresolvedObjects)
+	{
+		FChannelToHandleToOPARMap& ChannelToHandleToOPARMap = ObjectToOPAR.FindChecked(UnresolvedObject);
+		FHandleToOPARMap& RelevantHandles = ChannelToHandleToOPARMap.FindChecked(DependentChannel);
+
+		RelevantHandles.Remove(Handle);
+		if (RelevantHandles.Num() == 0)
+		{
+			ChannelToHandleToOPARMap.Remove(DependentChannel);
+			if (ChannelToHandleToOPARMap.Num() == 0)
+			{
+				ObjectToOPAR.Remove(UnresolvedObject);
+			}
+		}
+	}
+
+	// Remove the reference from the property's actor channel and handle to this OPAR.
+	HandleToOPARMap->Remove(Handle);
+	if (HandleToOPARMap->Num() == 0)
+	{
+		PropertyToOPAR.Remove(DependentChannel);
+	}
+}
+
+void USpatialInterop::QueueOutgoingArrayRepUpdate_Internal(const TSet<const UObject*>& UnresolvedObjects, USpatialActorChannel* DependentChannel, uint16 Handle)
+{
+	check(DependentChannel);
+
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending outgoing array: channel: %s, handle: %d. Depending on objects:"),
+		*DependentChannel->GetName(), Handle);
+
+	TSharedPtr<FOutgoingPendingArrayRegister> OPAR = MakeShared<FOutgoingPendingArrayRegister>();
+	OPAR->UnresolvedObjects = UnresolvedObjects;
+
+	// Add reference from the property's actor channel and handle to the new OPAR.
+	FHandleToOPARMap& HandleToOPARMap = PropertyToOPAR.FindOrAdd(DependentChannel);
+	// If there was an array queued for the same channel and handle before, it should have been removed in ResetOutgoingArrayRepUpdate_Internal.
+	check(HandleToOPARMap.Find(Handle) == nullptr);
+	HandleToOPARMap.Add(Handle, OPAR);
+
+	// Add references from individual unresolved objects to this OPAR.
+	for (const UObject* UnresolvedObject : UnresolvedObjects)
+	{
+		FHandleToOPARMap& AnotherHandleToOPARMap = ObjectToOPAR.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel);
+		check(AnotherHandleToOPARMap.Find(Handle) == nullptr);
+		AnotherHandleToOPARMap.Add(Handle, OPAR);
+
+		// Following up on the previous log: listing the unresolved objects
+		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s"), *UnresolvedObject->GetName());
+	}
+}
+
 void USpatialInterop::RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding)
 {
 	Binding->Init(this, PackageMap);
-	Binding->BindToView();
+	Binding->BindToView(NetDriver->GetNetMode() == NM_Client);
 	TypeBindings.Add(Class, Binding);
 }
 
@@ -428,7 +527,7 @@ void USpatialInterop::ResolvePendingOutgoingRPCs(UObject* Object)
 		{
 			// We can guarantee that SendCommandRequest won't populate PendingOutgoingRPCs[Object] whilst we're iterating through it,
 			// because Object has been resolved when we call ResolvePendingOutgoingRPCs.
-			SendCommandRequest_Internal(RequestFuncPair.Key, RequestFuncPair.Value);
+			InvokeRPCSendHandler_Internal(RequestFuncPair.Key, RequestFuncPair.Value);
 		}
 		PendingOutgoingRPCs.Remove(Object);
 	}
@@ -450,14 +549,14 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 		// Trigger pending updates.
 		PreReceiveSpatialUpdate(DependentChannel);
 		TSet<UProperty*> RepNotifies;
-		for (const FRepHandleData* MigData : Properties.Key)
+		for (const FRepHandleData* RepData : Properties.Key)
 		{
-			ApplyIncomingReplicatedPropertyUpdate(*MigData, DependentChannel->Actor, &Object, RepNotifies);
+			ApplyIncomingReplicatedPropertyUpdate(*RepData, DependentChannel->Actor, &Object, RepNotifies);
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object replicated property update. actor %s (%lld), property %s"),
 				*SpatialOSInstance->GetWorkerId(),
 				*DependentChannel->Actor->GetName(),
 				DependentChannel->GetEntityId().ToSpatialEntityId(),
-				*MigData->Property->GetName());
+				*RepData->Property->GetName());
 		}
 		for (const FMigratableHandleData* MigData : Properties.Value)
 		{
@@ -483,8 +582,61 @@ void USpatialInterop::ResolvePendingIncomingRPCs(const improbable::unreal::Unrea
 		{
 			// We can guarantee that SendCommandResponse won't populate PendingIncomingRPCs[ObjectRef] whilst we're iterating through it,
 			// because ObjectRef has been resolved when we call ResolvePendingIncomingRPCs.
-			SendCommandResponse_Internal(Responder);
+			InvokeRPCReceiveHandler_Internal(Responder);
 		}
 		PendingIncomingRPCs.Remove(ObjectRef);
 	}
+}
+
+void USpatialInterop::ResolvePendingOutgoingArrayUpdates(UObject* Object)
+{
+	FChannelToHandleToOPARMap* ChannelToHandleToOPARMap = ObjectToOPAR.Find(Object);
+	if (ChannelToHandleToOPARMap == nullptr)
+	{
+		return;
+	}
+
+	for (auto& ChannelProperties : *ChannelToHandleToOPARMap)
+	{
+		USpatialActorChannel* DependentChannel = ChannelProperties.Key;
+		FHandleToOPARMap& HandleToOPARMap = ChannelProperties.Value;
+
+		TArray<uint16> Properties;
+
+		for (auto& HandleOPARPair : HandleToOPARMap)
+		{
+			uint16 Handle = HandleOPARPair.Key;
+			TSharedPtr<FOutgoingPendingArrayRegister>& OPAR = HandleOPARPair.Value;
+
+			// This object is no longer unresolved. If this was the last one, we can now send this array and remove the OPAR.
+			OPAR->UnresolvedObjects.Remove(Object);
+			if (OPAR->UnresolvedObjects.Num() == 0)
+			{
+				Properties.Add(Handle);
+				// We don't need to add handles for the array elements, but we need to put 0 for the number of array element handles, as well as null terminator for the array.
+				Properties.Add(0);
+				Properties.Add(0);
+
+				// Remove the reference from the property's channel and handle to this OPAR.
+				FHandleToOPARMap& AnotherHandleToOPARMap = PropertyToOPAR.FindChecked(DependentChannel);
+				AnotherHandleToOPARMap.Remove(Handle);
+				if (AnotherHandleToOPARMap.Num() == 0)
+				{
+					PropertyToOPAR.Remove(DependentChannel);
+				}
+			}
+		}
+
+		if (Properties.Num() > 0)
+		{
+			// End with zero to indicate the end of the list of handles.
+			Properties.Add(0);
+
+			SendSpatialUpdate(DependentChannel, Properties, TArray<uint16>());
+		}
+	}
+
+	// For any array that was resolved in this function, this will remove the last instances of the shared ptrs of
+	// the OPARs, which will destroy them.
+	ObjectToOPAR.Remove(Object);
 }

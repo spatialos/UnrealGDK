@@ -24,7 +24,7 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" 2> >(grep -v xdg-user-dir >&2)`";
 
         private const string RunEditorScript =
             @"setlocal ENABLEDELAYEDEXPANSION
-%%UNREAL_HOME%%\Engine\Binaries\Win64\UE4Editor.exe ""{0}"" %%*
+%UNREAL_HOME%\Engine\Binaries\Win64\UE4Editor.exe ""{0}"" %*
 exit /b !ERRORLEVEL!
 ";
 
@@ -65,8 +65,8 @@ exit /b !ERRORLEVEL!
                 Common.WriteHeading("Skipping code generation.");
             }
 
-            var stagingDir = Path.GetFullPath(Path.Combine("spatial", "build", "unreal"));
-            var outputDir = Path.GetFullPath(Path.Combine("spatial", "build", "assembly", "worker"));
+            var stagingDir = Path.GetFullPath(Path.Combine("../spatial", "build", "unreal"));
+            var outputDir = Path.GetFullPath(Path.Combine("../spatial", "build", "assembly", "worker"));
             var baseGameName = Path.GetFileNameWithoutExtension(projectFile);
 
             if (gameName == baseGameName + "Editor")
@@ -89,7 +89,7 @@ exit /b !ERRORLEVEL!
 
                 // Write a simple batch file to launch the Editor as a managed worker.
                 File.WriteAllText(Path.Combine(windowsEditorPath, "StartEditor.bat"),
-                    string.Format(RunEditorScript, projectFile), Encoding.UTF8);
+                    string.Format(RunEditorScript, projectFile), new UTF8Encoding(false));
 
                 // The runtime currently requires all workers to be in zip files. Zip the batch file.
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
@@ -171,7 +171,7 @@ exit /b !ERRORLEVEL!
                 // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
                 var linuxServerPath = Path.Combine(stagingDir, "LinuxServer");
                 File.WriteAllText(Path.Combine(linuxServerPath, "StartWorker.sh"), UnrealWorkerShellScript,
-                    Encoding.UTF8);
+                    new UTF8Encoding(false));
 
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {

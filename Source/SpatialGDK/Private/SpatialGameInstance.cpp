@@ -88,6 +88,9 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 {
 	if (!HasSpatialNetDriver())
 	{
+		// If we are not using USpatialNetDriver, revert to the regular Unreal codepath.
+		// Allows you to switch between SpatialOS and Unreal networking at game launch.
+		// e.g. to enable Unreal networking, add to your cmdline: -NetDriverOverrides=/Script/OnlineSubsystemUtils.IpNetDriver
 		return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 	}
 

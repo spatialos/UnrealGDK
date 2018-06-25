@@ -1,13 +1,18 @@
 @echo off
 
-cd "%~dp0..\..\"
+pushd "%~dp0..\"
 
-call "Game\Scripts\BuildWorkerConfig.bat"
+call "Scripts\BuildWorkerConfig.bat"
 
-if not exist "Game\Intermediate\Improbable" mkdir "Game\Intermediate\Improbable"
+set BUILD_EXE_PATH="Binaries\ThirdParty\Improbable\Programs\Build.exe"
 
-csc "Game/Scripts/Build.cs" "Game/Scripts/Codegen.cs" "Game/Scripts/Common.cs" /main:"Improbable.Build" /nologo /out:"Game\Intermediate\Improbable\Build.exe" || exit /b 1
+if not exist %BUILD_EXE_PATH% (
+	echo Error: Build executable not found! Please run ci/build.sh in your SpatialGDK directory to generate it.
+	exit /b 1
+)
 
-Game\Intermediate\Improbable\Build.exe %*
+%BUILD_EXE_PATH% %*
+
+popd
 
 exit /b %ERRORLEVEL%

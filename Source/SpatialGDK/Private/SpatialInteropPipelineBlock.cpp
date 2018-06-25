@@ -19,7 +19,6 @@
 #include "PositionAddComponentOp.h"
 #include "PositionComponent.h"
 #include "SpatialConstants.h"
-#include "UnrealLevelComponent.h"
 #include "UnrealMetadataAddComponentOp.h"
 #include "UnrealMetadataComponent.h"
 
@@ -237,17 +236,6 @@ void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentId
 				Component->ApplyInitialAuthority(*QueuedAuthChangeOp);
 			}
 		}
-
-		// Initialise the static objects when we check out the level data component.
-		auto LevelAddComponentOp = Cast<UUnrealLevelAddComponentOp>(AddComponentOp);
-		if (LevelAddComponentOp)
-		{
-			check(Actor);
-			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver());
-			UNetConnection* Connection = Driver->GetSpatialOSNetConnection();
-			USpatialPackageMapClient* PMC = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-			PMC->RegisterStaticObjects(*LevelAddComponentOp->Data.data());
-		}
 	}
 }
 
@@ -275,11 +263,21 @@ void USpatialInteropPipelineBlock::DisableComponentImpl(const FComponentIdentifi
 void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 {
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(EntityId);
-	if (Actor && !Actor->IsPendingKill())
+
+	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
+	if (!Actor || Actor->IsPendingKill())
 	{
-		EntityRegistry->RemoveFromRegistry(Actor);
-		Actor->GetWorld()->DestroyActor(Actor, true);
+		return;
 	}
+
+	Actor->GetWorld()->DestroyActor(Actor, true);
+
+	CleanupDeletedEntity(EntityId);
+}
+
+void USpatialInteropPipelineBlock::CleanupDeletedEntity(const FEntityId& EntityId)
+{
+	EntityRegistry->RemoveFromRegistry(EntityId);
 	NetDriver->GetSpatialInterop()->RemoveActorChannel(EntityId.ToSpatialEntityId());
 	auto* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
 	PackageMap->RemoveEntityActor(EntityId);

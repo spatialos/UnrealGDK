@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
+#include "SpatialConstants.h"
 #include "SpatialInterop.h"
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
@@ -115,6 +116,14 @@ void USpatialActorChannel::UnbindFromSpatialView() const
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 	UnbindFromSpatialView();
+
+	// If we have authority and aren't trying to delete the spawner, delete the entity
+	if (Actor->HasAuthority() && ActorEntityId.ToSpatialEntityId() != SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
+	{
+		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+		Interop->DeleteEntity(ActorEntityId);
+	}
+
 	return UActorChannel::CleanUp(bForDestroy);
 }
 
@@ -291,8 +300,9 @@ bool USpatialActorChannel::ReplicateActor()
 			// Ensure that the initial changelist contains _every_ property. This ensures that the default properties are written to the entity template.
 			// Otherwise, there will be a mismatch between the rep state shadow data used by CompareProperties and the entity in SpatialOS.
 			TArray<uint16> InitialRepChanged;
-			bool bInDynamicArray = false;
-			for (uint16 CmdIdx = 0; CmdIdx < ActorReplicator->RepLayout->Cmds.Num(); ++CmdIdx)
+			int32 DynamicArrayDepth = 0;
+			const int32 CmdCount = ActorReplicator->RepLayout->Cmds.Num();
+			for (uint16 CmdIdx = 0; CmdIdx < CmdCount; ++CmdIdx)
 			{
 				const auto& Cmd = ActorReplicator->RepLayout->Cmds[CmdIdx];
 
@@ -300,16 +310,21 @@ bool USpatialActorChannel::ReplicateActor()
 
 				if (Cmd.Type == REPCMD_DynamicArray)
 				{
-					checkf(!bInDynamicArray, TEXT("Encountered nested array"));
-					bInDynamicArray = true;
-					// Add the number of array properties to comform to Unreal's RepLayout design and 
+					DynamicArrayDepth++;
+
+					// For the first layer of each dynamic array encountered at the root level
+					// add the number of array properties to conform to Unreal's RepLayout design and 
 					// allow FRepHandleIterator to jump over arrays. Cmd.EndCmd is an index into 
 					// RepLayout->Cmds[] that points to the value after the termination NULL of this array.
-					InitialRepChanged.Add((Cmd.EndCmd - CmdIdx) - 2);
+					if (DynamicArrayDepth == 1)
+					{
+						InitialRepChanged.Add((Cmd.EndCmd - CmdIdx) - 2);
+					}
 				}
 				else if (Cmd.Type == REPCMD_Return)
 				{
-					bInDynamicArray = false;
+					DynamicArrayDepth--;
+					checkf(DynamicArrayDepth >= 0 || CmdIdx == CmdCount - 1, TEXT("Encountered erroneous RepLayout"));
 				}
 			}
 
