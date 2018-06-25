@@ -117,17 +117,10 @@ void USpatialActorChannel::DeleteActorEntityIfAuthoritative()
 {
 	bool bHasAuthority = false;
 
-	if (Actor)
+	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
+	if (PinnedView.IsValid())
 	{
-		bHasAuthority = Actor->HasAuthority();
-	}
-	else
-	{
-		TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
-		if (PinnedView.IsValid())
-		{
-			bHasAuthority = PinnedView->GetAuthority<improbable::Position>(ActorEntityId.ToSpatialEntityId()) == worker::Authority::kAuthoritative;
-		}
+		bHasAuthority = PinnedView->GetAuthority<improbable::Position>(ActorEntityId.ToSpatialEntityId()) == worker::Authority::kAuthoritative;
 	}
 
 	// If we have authority and aren't trying to delete the spawner, delete the entity
