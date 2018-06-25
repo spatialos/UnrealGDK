@@ -190,7 +190,7 @@ improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFrom
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(worker::EntityId EntityId) const
 {
-	improbable::unreal::UnrealObjectRef ObjRef{EntityId, 0, worker::Option<std::string>{}, worker::Option<improbable::unreal::UnrealObjectRef>{}};
+	improbable::unreal::UnrealObjectRef ObjRef{EntityId, 0, {}, {}};
 	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRef);
 	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
 }
@@ -234,7 +234,7 @@ FNetworkGUID FSpatialNetGUIDCache::GenerateNewNetGUID(const int32 IsStatic)
 FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(const UObject* Object)
 {
 	FNetworkGUID NetGUID = GetOrAssignNetGUID(Object);
-	if (Object)
+	if (Object != nullptr)
 	{
 		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: GetOrAssignNetGUID for object %s returned %s. IsDynamicObject: %d"),
 			*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),

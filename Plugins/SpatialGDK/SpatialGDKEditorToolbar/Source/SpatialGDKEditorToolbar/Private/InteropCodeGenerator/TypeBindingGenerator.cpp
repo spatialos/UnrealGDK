@@ -293,7 +293,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		// Update could be empty in the case when we want to handle the list outside (e.g. for arrays of UObjects).
 		if (!Update.IsEmpty())
 		{
-		Writer.Printf("%s(List);", *Update);
+			Writer.Printf("%s(List);", *Update);
 		}
 	} 
 	else if (Property->IsA(UEnumProperty::StaticClass()))
@@ -2042,7 +2042,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 	auto ObjectResolveFailureGenerator = [&SourceWriter, &RPC, Class](const FString& PropertyName, const FString& ObjectRef)
 	{
 		SourceWriter.Printf("// A legal static object reference should never be unresolved.");
-		SourceWriter.Printf("checkf(%s.path().empty(), TEXT(\"A stably named object should not need resolution.\");", *ObjectRef);
+		SourceWriter.Printf("checkf(%s.path().empty(), TEXT(\"A stably named object should not need resolution.\"));", *ObjectRef);
 		SourceWriter.Printf(R"""(
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: %s_OnRPCPayload: %s %%s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
