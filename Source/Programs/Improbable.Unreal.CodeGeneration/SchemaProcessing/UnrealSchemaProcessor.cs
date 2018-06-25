@@ -99,8 +99,6 @@ namespace Improbable.Unreal.CodeGeneration.SchemaProcessing
 
         private void ResolveNames(ICollection<SchemaFileRaw> schemaFiles)
         {
-            var nonGeneratedSchemaFiles = schemaFiles.Select(schema => schema).Where(schema => !schema.package.Contains("improbable.unreal.generated"));
-
             var allComponentDefinitions = schemaFiles.SelectMany(entry => entry.componentDefinitions).ToList();
             var allCommandDefinitions = allComponentDefinitions.SelectMany(entry => entry.commandDefinitions).ToList();
             var allEnumDefinitions = schemaFiles.SelectMany(entry => entry.enumDefinitions).ToList();
