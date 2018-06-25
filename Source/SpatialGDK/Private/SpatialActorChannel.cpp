@@ -113,7 +113,7 @@ void USpatialActorChannel::UnbindFromSpatialView() const
 	PinnedView->Remove(CreateEntityCallback);*/
 }
 
-void USpatialActorChannel::DeleteActorEntityIfAuthoritative()
+void USpatialActorChannel::DeleteEntityIfAuthoritative()
 {
 	bool bHasAuthority = false;
 
@@ -139,7 +139,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 
 void USpatialActorChannel::Close()
 {
-	DeleteActorEntityIfAuthoritative();
+	DeleteEntityIfAuthoritative();
 }
 
 bool USpatialActorChannel::ReplicateActor()

@@ -95,7 +95,7 @@ private:
 	void UnbindFromSpatialView() const;
 
 	// Sends a DeleteEntity request to SpatialOS for the underlying entity, if we have authority to do so.
-	void DeleteActorEntityIfAuthoritative();
+	void DeleteEntityIfAuthoritative();
 
 	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
 	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
