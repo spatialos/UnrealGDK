@@ -14,7 +14,7 @@ namespace Improbable.Unreal.CodeGeneration.SchemaProcessing
         {
             unrealPackageDetails = new Dictionary<string, UnrealPackageDetails>();
             resolvedEnumToCapitalisedNames = new Dictionary<EnumDefinitionRaw, string>();
-            resolvedTypeToC apitalisedNames = new Dictionary<TypeDefinitionRaw, string>();
+            resolvedTypeToCapitalisedNames = new Dictionary<TypeDefinitionRaw, string>();
             resolvedCommandToCapitalisedNames = new Dictionary<ComponentDefinitionRaw.CommandDefinitionRaw, string>();
             resolvedComponentToCapitalisedNames = new Dictionary<ComponentDefinitionRaw, string>();
 
