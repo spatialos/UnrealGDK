@@ -31,7 +31,7 @@ FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type)
 
 FString SchemaRPCRequestType(UFunction* Function)
 {
-	return FString::Printf(TEXT("%Unreal%sRequest"), *UnrealNameToSchemaTypeName(Function->GetName()));
+	return FString::Printf(TEXT("Unreal%sRequest"), *UnrealNameToSchemaTypeName(Function->GetName()));
 }
 
 FString SchemaRPCResponseType(UFunction* Function)
