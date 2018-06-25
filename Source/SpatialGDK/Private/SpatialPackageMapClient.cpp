@@ -20,9 +20,18 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 		// Objects can only be allocated NetGUIDs if this is true.
 		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
 		{
+			UObject* Outer = Object->GetOuter();
+			while (Outer != nullptr)
+			{
+				if (Outer->IsPendingKill())
+				{
+					return;
+				}
+				Outer = Outer->GetOuter();
+			}
 			InSubobjects.Add(Object);
 		}
-	});
+	}, true, RF_NoFlags, EInternalObjectFlags::PendingKill);
 
 	InSubobjects.StableSort([](UObject& A, UObject& B)
 	{
