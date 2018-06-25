@@ -20,9 +20,23 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 		// Objects can only be allocated NetGUIDs if this is true.
 		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
 		{
+			// Walk up the outer chain and ensure that no object is PendingKill. This is required because although
+			// EInternalObjectFlags::PendingKill prevents objects that are PendingKill themselves from getting added
+			// to the list, it'll still add children of PendingKill objects. This then causes an assertion within 
+			// FNetGUIDCache::RegisterNetGUID_Server where it again iterates up the object's owner chain, assigning
+			// ids and ensuring that no object is set to PendingKill in the process.
+			UObject* Outer = Object->GetOuter();
+			while (Outer != nullptr)
+			{
+				if (Outer->IsPendingKill())
+				{
+					return;
+				}
+				Outer = Outer->GetOuter();
+			}
 			InSubobjects.Add(Object);
 		}
-	});
+	}, true, RF_NoFlags, EInternalObjectFlags::PendingKill);
 
 	InSubobjects.StableSort([](UObject& A, UObject& B)
 	{
