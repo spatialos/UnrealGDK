@@ -63,9 +63,9 @@ namespace Improbable.Unreal.CodeGeneration.SchemaProcessing
             var allTypeDefinitions = nonGeneratedSchemaFiles.SelectMany(entry => entry.typeDefinitions).ToList();
 
             var duplicateNames = allComponentDefinitions.GroupBy(entry => entry.name)
-                                                     .Where(g => g.Count() > 1)
-                                                     .Select(entry => entry.Key)
-                                                     .ToList();
+                                                        .Where(g => g.Count() > 1)
+                                                        .Select(entry => entry.Key)
+                                                        .ToList();
 
             duplicateNames.AddRange(allEnumDefinitions.GroupBy(entry => entry.name)
                                                       .Where(g => g.Count() > 1)
