@@ -554,10 +554,10 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		#include <improbable/view.h>
 		#include <improbable/unreal/gdk/core_types.h>
 		#include <improbable/unreal/gdk/unreal_metadata.h>
-		#include <improbable/unreal/generated/%s.h>
+		#include <improbable/unreal/generated/%s/%s.h>
 		#include "ScopedViewCallbacks.h"
 		#include "SpatialTypeBinding.h"
-		#include "SpatialTypeBinding_%s.generated.h")""", *SchemaFilename, *Class->GetName());
+		#include "SpatialTypeBinding_%s.generated.h")""", *Class->GetName(), *SchemaFilename, *Class->GetName());
 	HeaderWriter.PrintNewLine();
 
 	// Type binding class.

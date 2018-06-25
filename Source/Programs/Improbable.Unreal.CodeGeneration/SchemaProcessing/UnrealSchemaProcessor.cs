@@ -18,6 +18,7 @@ namespace Improbable.Unreal.CodeGeneration.SchemaProcessing
             resolvedCommandToCapitalisedNames = new Dictionary<ComponentDefinitionRaw.CommandDefinitionRaw, string>();
             resolvedComponentToCapitalisedNames = new Dictionary<ComponentDefinitionRaw, string>();
 
+            ValidateNameClashes(schemaFiles);
             ResolveNames(schemaFiles);
             GeneratePackageDetails(schemaFiles);
 
@@ -52,17 +53,19 @@ namespace Improbable.Unreal.CodeGeneration.SchemaProcessing
         public Dictionary<EnumDefinitionRaw, UnrealEnumDetails> enumDefinitionToUnrealEnum = new Dictionary<EnumDefinitionRaw, UnrealEnumDetails>();
         public readonly Dictionary<TypeDefinitionRaw, UnrealTypeDetails> typeDefinitionToUnrealType = new Dictionary<TypeDefinitionRaw, UnrealTypeDetails>();
 
-        private void ResolveNames(ICollection<SchemaFileRaw> schemaFiles)
+        private void ValidateNameClashes(ICollection<SchemaFileRaw> schemaFiles)
         {
-            var allComponentDefinitions = schemaFiles.SelectMany(entry => entry.componentDefinitions).ToList();
+            var nonGeneratedSchemaFiles = schemaFiles.Select(schema => schema).Where(schema => !schema.package.Contains("improbable.unreal.generated"));
+
+            var allComponentDefinitions = nonGeneratedSchemaFiles.SelectMany(entry => entry.componentDefinitions).ToList();
             var allCommandDefinitions = allComponentDefinitions.SelectMany(entry => entry.commandDefinitions).ToList();
-            var allEnumDefinitions = schemaFiles.SelectMany(entry => entry.enumDefinitions).ToList();
-            var allTypeDefinitions = schemaFiles.SelectMany(entry => entry.typeDefinitions).ToList();
+            var allEnumDefinitions = nonGeneratedSchemaFiles.SelectMany(entry => entry.enumDefinitions).ToList();
+            var allTypeDefinitions = nonGeneratedSchemaFiles.SelectMany(entry => entry.typeDefinitions).ToList();
 
             var duplicateNames = allComponentDefinitions.GroupBy(entry => entry.name)
-                                                        .Where(g => g.Count() > 1)
-                                                        .Select(entry => entry.Key)
-                                                        .ToList();
+                                                     .Where(g => g.Count() > 1)
+                                                     .Select(entry => entry.Key)
+                                                     .ToList();
 
             duplicateNames.AddRange(allEnumDefinitions.GroupBy(entry => entry.name)
                                                       .Where(g => g.Count() > 1)
@@ -92,6 +95,16 @@ namespace Improbable.Unreal.CodeGeneration.SchemaProcessing
             {
                 throw new Exception(string.Format("You can't use the same name for components and types:\n{0}", String.Join("\n", duplicateComponentTypes.ToArray())));
             }
+        }
+
+        private void ResolveNames(ICollection<SchemaFileRaw> schemaFiles)
+        {
+            var nonGeneratedSchemaFiles = schemaFiles.Select(schema => schema).Where(schema => !schema.package.Contains("improbable.unreal.generated"));
+
+            var allComponentDefinitions = schemaFiles.SelectMany(entry => entry.componentDefinitions).ToList();
+            var allCommandDefinitions = allComponentDefinitions.SelectMany(entry => entry.commandDefinitions).ToList();
+            var allEnumDefinitions = schemaFiles.SelectMany(entry => entry.enumDefinitions).ToList();
+            var allTypeDefinitions = schemaFiles.SelectMany(entry => entry.typeDefinitions).ToList();
 
             resolvedComponentToCapitalisedNames = allComponentDefinitions.ToDictionary(entry => entry, entry => entry.name);
             resolvedEnumToCapitalisedNames = allEnumDefinitions.ToDictionary(entry => entry, entry => entry.name);
