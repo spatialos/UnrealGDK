@@ -10,6 +10,20 @@
 
 #include "<#= unrealType.CapitalisedName #>.h"
 
+<#var requiredIncludes = unrealType.FieldDetailsList
+									.SelectMany(fieldDetails => {
+										if (fieldDetails.IsUObject())
+											return fieldDetails.TypeReference.RequiredIncludes;
+										else
+											return new List<string>(); })
+									.Where(include => include != null)
+									.Where(include => include != "\"" + unrealType.CapitalisedName + ".h\"")
+									.Distinct(); 
+
+ foreach (var requiredInclude in requiredIncludes) { #>
+#include <#= requiredInclude #>
+<# } #>
+
 U<#= unrealType.CapitalisedName #>::U<#= unrealType.CapitalisedName #>()
 {
 <# var parameterList = unrealType.FieldDetailsList.Select(field => field.TypeReference.DefaultInitialisationString).ToArray(); 

@@ -39,6 +39,9 @@ public class SpatialGDK : ModuleRules
                 "PhysXVehicles",
                 "InputCore",
                 "Sockets",
+                "GameplayAbilities",
+                "GameplayTags",
+                "GameplayTasks",
             });
 
 		// Check if we're building in the editor.

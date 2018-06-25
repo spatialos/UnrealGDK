@@ -60,14 +60,14 @@ markEndOfBlock "Create folders"
 # #####
 markStartOfBlock "Retrieve dependencies"
 
-"${PACKAGE_CLIENT}" retrieve "tools"            "schema_compiler-x86_64-win32"        "${PINNED_CORE_SDK_VERSION}"       "${CORE_SDK_DIR}/tools/schema_compiler-x86_64-win32"
-"${PACKAGE_CLIENT}" retrieve "schema"           "standard_library"                    "${PINNED_CORE_SDK_VERSION}"       "${CORE_SDK_DIR}/schema/standard_library"
-"${PACKAGE_CLIENT}" retrieve "worker_sdk"       "core-dynamic-x86-win32"              "${PINNED_CORE_SDK_VERSION}"       "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86-win32"
-"${PACKAGE_CLIENT}" retrieve "worker_sdk"       "core-dynamic-x86_64-win32"           "${PINNED_CORE_SDK_VERSION}"       "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-win32"
-"${PACKAGE_CLIENT}" retrieve "worker_sdk"       "core-dynamic-x86_64-linux"           "${PINNED_CORE_SDK_VERSION}"       "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-linux"
-"${PACKAGE_CLIENT}" retrieve "code_generation"  "Improbable.CodeGeneration"           "${PINNED_CODE_GENERATOR_VERSION}" "${BUILD_DIR}/code_generation/Improbable.CodeGeneration"
+spatial package retrieve "tools"            "schema_compiler-x86_64-win32"        "${PINNED_CORE_SDK_VERSION}"       "${CORE_SDK_DIR}/tools/schema_compiler-x86_64-win32"
+spatial package retrieve "schema"           "standard_library"                    "${PINNED_CORE_SDK_VERSION}"       "${CORE_SDK_DIR}/schema/standard_library"
+spatial package retrieve "worker_sdk"       "core-dynamic-x86-win32"              "${PINNED_CORE_SDK_VERSION}"       "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86-win32"
+spatial package retrieve "worker_sdk"       "core-dynamic-x86_64-win32"           "${PINNED_CORE_SDK_VERSION}"       "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-win32"
+spatial package retrieve "worker_sdk"       "core-dynamic-x86_64-linux"           "${PINNED_CORE_SDK_VERSION}"       "${CORE_SDK_DIR}/worker_sdk/core-dynamic-x86_64-linux"
+spatial package retrieve "code_generation"  "Improbable.CodeGeneration"           "${PINNED_CODE_GENERATOR_VERSION}" "${BUILD_DIR}/code_generation/Improbable.CodeGeneration"
 # Download the C++ SDK for its headers, only.
-"${PACKAGE_CLIENT}" retrieve "worker_sdk"      "cpp-static-x86_64-msvc_mtd-win32"     "${PINNED_CORE_SDK_VERSION}"       "${CORE_SDK_DIR}/cpp-static-x86_64-msvc_mtd-win32"
+spatial package retrieve "worker_sdk"      "cpp-static-x86_64-msvc_mtd-win32"     "${PINNED_CORE_SDK_VERSION}"       "${CORE_SDK_DIR}/cpp-static-x86_64-msvc_mtd-win32"
 
 markEndOfBlock "Retrieve dependencies"
 
