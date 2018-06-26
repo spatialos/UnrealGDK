@@ -283,9 +283,43 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			{
 				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
-				// This property is definitely a strong reference, recurse into it.
-				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, ParentChecksum, 0);
-				PropertyNode->Type->ParentProperty = PropertyNode;
+				// Special case for static arrays.
+				if (Property->ArrayDim > 1)
+				{
+					// This is the property for the 0th struct array member.
+					uint32 ParentPropertyNodeChecksum = PropertyNode->CompatibleChecksum;
+					PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, ParentPropertyNodeChecksum, 0);
+					PropertyNode->Type->ParentProperty = PropertyNode;
+					PropertyNode->StaticArrayIndex = 0;
+
+					// Now we need to make a new struct array member node.
+					for(int i = 1; i < Property->ArrayDim; i++)
+					{
+						// Create a new PropertyNode.
+						TSharedPtr<FUnrealProperty> StaticStructArrayPropertyNode = MakeShared<FUnrealProperty>();
+						StaticStructArrayPropertyNode->Property = Property;
+						StaticStructArrayPropertyNode->ContainerType = TypeNode;
+						StaticStructArrayPropertyNode->ParentChecksum = ParentPropertyNodeChecksum;
+
+						// Generate a new checksum based on the static array index.
+						uint32 StaticArrayChecksum = GenerateChecksum(Property, ParentChecksum, i); 
+						StaticStructArrayPropertyNode->CompatibleChecksum = StaticArrayChecksum;
+
+						// Generate Type information on the inner struct.
+						StaticStructArrayPropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, StaticArrayChecksum, 0);
+						StaticStructArrayPropertyNode->StaticArrayIndex = i;
+						StaticStructArrayPropertyNode->Type->ParentProperty = StaticStructArrayPropertyNode;
+
+						// Add the new StaticStructArrayPropertyNode to the current TypeNode.
+						TypeNode->Properties.Add(Property, StaticStructArrayPropertyNode);
+					}
+				}
+				else
+				{
+					// This property is definitely a strong reference, recurse into it.
+					PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, ParentChecksum, 0);
+					PropertyNode->Type->ParentProperty = PropertyNode;
+				}
 			}
 			else
 			{
