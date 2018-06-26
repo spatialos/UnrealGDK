@@ -3,78 +3,13 @@
 #include "SchemaGenerator.h"
 
 #include "Algo/Reverse.h"
-#include "Algo/Transform.h"
 
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
 
-FString UnrealNameToSchemaTypeName(const FString& UnrealName)
-{
-	return UnrealName.Replace(TEXT("_"), TEXT(""));
-}
-
-FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type)
-{
-	return FString::Printf(TEXT("Unreal%s%sRepData"), *UnrealNameToSchemaTypeName(Type->GetName()), *GetReplicatedPropertyGroupName(Group));
-}
-
-FString SchemaMigratableDataName(UStruct* Type)
-{
-	return FString::Printf(TEXT("Unreal%sMigratableData"), *UnrealNameToSchemaTypeName(Type->GetName()));
-}
-
-FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type)
-{
-	return FString::Printf(TEXT("Unreal%s%sRPCs"), *UnrealNameToSchemaTypeName(Type->GetName()), *GetRPCTypeName(RpcType));
-}
-
-FString SchemaRPCRequestType(UFunction* Function)
-{
-	return FString::Printf(TEXT("Unreal%sRequest"), *UnrealNameToSchemaTypeName(Function->GetName()));
-}
-
-FString SchemaRPCResponseType(UFunction* Function)
-{
-	return FString::Printf(TEXT("Unreal%sResponse"), *UnrealNameToSchemaTypeName(Function->GetName()));
-}
-
-FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property, const int FixedArrayIndex /*=-1*/)
-{
-	// Transform the property chain into a chain of names.
-	TArray<FString> ChainNames;
-	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
-	{
-		// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-		return Property->Property->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
-	});
-
-	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
-	// which the generated code extends :troll:.
-	FString FieldName = TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
-	if (FixedArrayIndex >= 0)
-	{
-		FieldName += FString::FromInt(FixedArrayIndex);
-	}
-	return FieldName;
-}
-
-FString SchemaRPCName(UClass* Class, UFunction* Function)
-{
-	// Prepending the name of the class to the RPC name enables sibling classes. 
-	FString RPCName = Class->GetName() + Function->GetName();
-	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-	RPCName = UnrealNameToSchemaTypeName(RPCName.ToLower());
-	return RPCName;
-}
-
-FString CPPCommandClassName(UClass* Class, UFunction* Function)
-{
-	FString SchemaName = SchemaRPCName(Class, Function);
-	SchemaName[0] = FChar::ToUpper(SchemaName[0]);
-	return SchemaName;
-}
-
+// Given a RepLayout cmd type (a data type supported by the replication system). Generates the corresponding
+// type used in schema.
 FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 {
 	FString DataType;
@@ -211,12 +146,12 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 {
 	FComponentIdGenerator IdGenerator(ComponentId);
 
-	Writer.Print(R"""(
+	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
-		package improbable.unreal.generated;
+		package improbable.unreal.generated.%s;
 
-		import "improbable/unreal/gdk/core_types.schema";)""");
+		import "improbable/unreal/gdk/core_types.schema";)""", *Class->GetName().ToLower());
 	Writer.PrintNewLine();
 
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
@@ -309,12 +244,12 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		Writer.Printf("import \"improbable/unreal/generated/Unreal%sTypes.schema\";", *RPCTypeOwner);
 		TSharedPtr<FCodeWriter> RPCTypeOwnerSchemaWriter = MakeShared<FCodeWriter>();
 		RPCTypeCodeWriterMap.Add(*RPCTypeOwner, RPCTypeOwnerSchemaWriter);
-		RPCTypeOwnerSchemaWriter->Print(R"""(
+		RPCTypeOwnerSchemaWriter->Printf(R"""(
 			// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 			// Note that this file has been generated automatically
-			package improbable.unreal.generated;
+			package improbable.unreal.generated.%s;
 
-			import "improbable/unreal/gdk/core_types.schema";)""");
+			import "improbable/unreal/gdk/core_types.schema";)""", *RPCTypeOwner.ToLower());
 		RPCTypeOwnerSchemaWriter->PrintNewLine();
 	}
 	Writer.PrintNewLine();
@@ -371,13 +306,16 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			{
 				//checkf(RPC->bReliable == false, TEXT("%s: Unreal GDK currently does not support Reliable Multicast RPCs"), *RPC->Function->GetName());
 
-				Writer.Printf("event %s %s;", *SchemaRPCRequestType(RPC->Function),
+				Writer.Printf("event %s.%s %s;",
+					*UnrealNameToSchemaTypeName(*RPC->Function->GetOuter()->GetName()).ToLower(),
+					*SchemaRPCRequestType(RPC->Function),
 					*SchemaRPCName(Class, RPC->Function));
 			}
 			else
 			{
-				Writer.Printf("command UnrealRPCCommandResponse %s(%s);",
+				Writer.Printf("command UnrealRPCCommandResponse %s(%s.%s);",
 					*SchemaRPCName(Class, RPC->Function),
+					*UnrealNameToSchemaTypeName(*RPC->Function->GetOuter()->GetName()).ToLower(),
 					*SchemaRPCRequestType(RPC->Function));
 			}
 		}
