@@ -113,18 +113,33 @@ void USpatialActorChannel::UnbindFromSpatialView() const
 	PinnedView->Remove(CreateEntityCallback);*/
 }
 
-bool USpatialActorChannel::CleanUp(const bool bForDestroy)
+void USpatialActorChannel::DeleteEntityIfAuthoritative()
 {
-	UnbindFromSpatialView();
+	bool bHasAuthority = false;
+
+	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
+	if (PinnedView.IsValid())
+	{
+		bHasAuthority = PinnedView->GetAuthority<improbable::Position>(ActorEntityId.ToSpatialEntityId()) == worker::Authority::kAuthoritative;
+	}
 
 	// If we have authority and aren't trying to delete the spawner, delete the entity
-	if (Actor->HasAuthority() && ActorEntityId.ToSpatialEntityId() != SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
+	if (bHasAuthority && ActorEntityId.ToSpatialEntityId() != SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
 	{
 		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 		Interop->DeleteEntity(ActorEntityId);
 	}
+}
 
+bool USpatialActorChannel::CleanUp(const bool bForDestroy)
+{
+	UnbindFromSpatialView();
 	return UActorChannel::CleanUp(bForDestroy);
+}
+
+void USpatialActorChannel::Close()
+{
+	DeleteEntityIfAuthoritative();
 }
 
 bool USpatialActorChannel::ReplicateActor()

@@ -72,6 +72,7 @@ public:
 
 	// UChannel interface
 	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, bool bOpenedLocally) override;
+	virtual void Close() override;
 	//Requires source changes to be virtual in base class.
 	virtual bool ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
@@ -88,9 +89,13 @@ public:
 protected:
 	// UChannel interface
 	virtual bool CleanUp(const bool bForDestroy) override;
+
 private:
 	void BindToSpatialView();
 	void UnbindFromSpatialView() const;
+
+	// Sends a DeleteEntity request to SpatialOS for the underlying entity, if we have authority to do so.
+	void DeleteEntityIfAuthoritative();
 
 	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
 	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);

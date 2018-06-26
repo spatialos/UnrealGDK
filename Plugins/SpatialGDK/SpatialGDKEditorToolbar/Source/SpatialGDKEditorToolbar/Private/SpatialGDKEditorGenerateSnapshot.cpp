@@ -47,35 +47,6 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 {
 	worker::Map<worker::EntityId, worker::Entity> LevelEntities;
 
-	// Build list of static objects in the world.
-	worker::Map<uint32_t, std::string> StaticActorMap;
-	worker::Map<uint32_t, std::string> PersistentDynamicActorMap;
-	uint32_t StaticObjectId = 2;
-	for (TActorIterator<AActor> Itr(World); Itr; ++Itr)
-	{
-		AActor* Actor = *Itr;
-		if (!Actor->IsSupportedForNetworking() || Actor->IsEditorOnly() || Actor->GetIsReplicated())
-		{
-			continue;
-		}
-
-		FString PathName = Actor->GetPathName(World);
-		StaticActorMap.emplace(StaticObjectId, std::string(TCHAR_TO_UTF8(*PathName)));
-		worker::EntityId EntityId = 0;
-		UE_LOG(LogSpatialGDKSnapshot, Log, TEXT("Found static object in persistent level, adding to level data entity. Path: %s, Object ref: (entity ID: %lld, offset: %u)."), *PathName, EntityId, StaticObjectId);
-		StaticObjectId++;
-	}
-
-	// Set up level data entity.
-	const Coordinates InitialPosition{0, 0, 0};
-	LevelEntities.emplace(SpatialConstants::LEVEL_DATA_ENTITY_ID, improbable::unreal::FEntityBuilder::Begin()
-		.AddPositionComponent(Position::Data{InitialPosition}, UnrealWorkerWritePermission)
-		.AddMetadataComponent(Metadata::Data("LevelData"))
-		.SetPersistence(true)
-		.SetReadAcl(AnyWorkerReadPermission)
-		.AddComponent<unreal::UnrealLevel>(unreal::UnrealLevel::Data{StaticActorMap}, UnrealWorkerWritePermission)
-		.Build());
-
 	// Set up grid of "placeholder" entities to allow workers to be authoritative over _something_.
 	int PlaceholderCount = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST - SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST + 1;
 	int PlaceholderCountAxis = sqrt(PlaceholderCount);
