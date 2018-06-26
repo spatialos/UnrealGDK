@@ -245,8 +245,15 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		Writer.BeginScope();
 		Writer.Printf(R"""(
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(%s);
+			if (!NetGUID.IsValid())
+			{
+				if (%s->IsFullNameStableForNetworking())
+				{
+					NetGUID = PackageMap->ResolveStablyNamedObject(%s);
+				}
+			}
 			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF))""", *PropertyValue);
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF))""", *PropertyValue, *PropertyValue, *PropertyValue);
 		Writer.BeginScope();
 		ObjectResolveFailureGenerator(*PropertyValue);
 		Writer.End();
@@ -573,7 +580,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		UClass* GetBoundClass() const override;
 
 		void Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap) override;
-		void BindToView() override;
+		void BindToView(bool bIsClient) override;
 		void UnbindFromView() override;
 
 		worker::Entity CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const override;
@@ -949,7 +956,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 
 void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType)
 {
-	SourceWriter.BeginFunction({"void", "BindToView()"}, TypeBindingName(Class));
+	SourceWriter.BeginFunction({"void", "BindToView(bool bIsClient)"}, TypeBindingName(Class));
 
 	SourceWriter.Print("TSharedPtr<worker::View> View = Interop->GetSpatialOS()->GetView().Pin();");
 	SourceWriter.Print("ViewCallbacks.Init(View);");
@@ -979,12 +986,13 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 		SourceWriter.Outdent();
 		SourceWriter.Print("}));");
 	}
+	SourceWriter.Printf("if (!bIsClient)");
+	SourceWriter.BeginScope();
 	SourceWriter.Printf("ViewCallbacks.Add(View->OnComponentUpdate<improbable::unreal::generated::%s>([this](", *SchemaMigratableDataName(Class));
 	SourceWriter.Indent();
 	SourceWriter.Printf("const worker::ComponentUpdateOp<improbable::unreal::generated::%s>& Op)", *SchemaMigratableDataName(Class));
 	SourceWriter.Outdent();
-	SourceWriter.Print("{");
-	SourceWriter.Indent();
+	SourceWriter.BeginScope();
 	SourceWriter.Printf(R"""(
 		// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
 		if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, improbable::unreal::generated::%s::ComponentId))
@@ -997,6 +1005,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 		ReceiveUpdate_Migratable(ActorChannel, Op.Update);)""");
 	SourceWriter.Outdent();
 	SourceWriter.Print("}));");
+	SourceWriter.End();
 	SourceWriter.End();
 
 	// Multicast RPCs
@@ -1495,6 +1504,8 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	{
 		GenerateUnrealToSchemaConversion(SourceWriter, SpatialValueSetter, PropertyInfo->Property, PropertyValueName, [&SourceWriter, Handle](const FString& PropertyValue)
 		{
+			SourceWriter.Printf("// A legal static object reference should never be unresolved.");
+			SourceWriter.Printf("check(!%s->IsFullNameStableForNetworking())", *PropertyValue);
 			SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
 		}, false);
 	}
@@ -1720,6 +1731,8 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 					ActorChannel->GetEntityId().ToSpatialEntityId(),
 					*RepData->Property->GetName(),
 					Handle);)""");
+			SourceWriter.Printf("// A legal static object reference should never be unresolved.");
+			SourceWriter.Printf("check(ObjectRef.path().empty());");
 			SourceWriter.Print("bWriteObjectProperty = false;");
 			SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);");
 		}
@@ -2030,6 +2043,8 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 
 	auto ObjectResolveFailureGenerator = [&SourceWriter, &RPC, Class](const FString& PropertyName, const FString& ObjectRef)
 	{
+		SourceWriter.Printf("// A legal static object reference should never be unresolved.");
+		SourceWriter.Printf("checkf(%s.path().empty(), TEXT(\"A stably named object should not need resolution.\"));", *ObjectRef);
 		SourceWriter.Printf(R"""(
 			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: %s_OnRPCPayload: %s %%s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
@@ -2047,7 +2062,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 
 	// Get the target object.
 	SourceWriter.Printf(R"""(
-		improbable::unreal::UnrealObjectRef TargetObjectRef{%s, %s.target_subobject_offset()};
+		improbable::unreal::UnrealObjectRef TargetObjectRef{%s, %s.target_subobject_offset(), {}, {}};
 		FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 		if (!TargetNetGUID.IsValid()))""",
 		*EntityId, *RPCPayload);

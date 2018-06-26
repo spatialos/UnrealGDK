@@ -61,6 +61,7 @@ public:
   **/
   UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
   void RemoveFromRegistry(const AActor* Actor);
+  void RemoveFromRegistry(const FEntityId& EntityId);
 
   /**
   * Get the FEntityId associated with an Unreal AActor.
@@ -100,6 +101,8 @@ public:
 private:
   UFUNCTION(BlueprintCallable, Category = "SpatialOS EntityRegistry")
   void RegisterEntityClass(const FString& ClassName, UClass* ClassToSpawn);
+
+  void RemoveFromRegistryImpl(const AActor* Actor, const FEntityId& EntityId);
 
   UPROPERTY()
   TMap<FString, UClass*> ClassMap;
