@@ -33,27 +33,27 @@ FString UnrealNameToSchemaTypeName(const FString& UnrealName)
 
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type, bool bPrependNamespace /*= false*/)
 {
-	return FString::Printf(TEXT("%sUnreal%s%sRepData"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()), *GetReplicatedPropertyGroupName(Group));
+	return FString::Printf(TEXT("%s%s%sRepData"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()), *GetReplicatedPropertyGroupName(Group));
 }
 
 FString SchemaMigratableDataName(UStruct* Type, bool bPrependNamespace /*= false*/)
 {
-	return FString::Printf(TEXT("%sUnreal%sMigratableData"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()));
+	return FString::Printf(TEXT("%s%sMigratableData"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()));
 }
 
 FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNamespace /*= false*/)
 {
-	return FString::Printf(TEXT("%sUnreal%s%sRPCs"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()), *GetRPCTypeName(RpcType));
+	return FString::Printf(TEXT("%s%s%sRPCs"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()), *GetRPCTypeName(RpcType));
 }
 
 FString SchemaRPCRequestType(UFunction* Function, bool bPrependNamespace /*= false*/)
 {
-	return FString::Printf(TEXT("%sUnreal%sRequest"), bPrependNamespace ? *GetNamespace(Function->GetOwnerClass()) : TEXT(""), *UnrealNameToSchemaTypeName(Function->GetName()));
+	return FString::Printf(TEXT("%s%sRequest"), bPrependNamespace ? *GetNamespace(Function->GetOwnerClass()) : TEXT(""), *UnrealNameToSchemaTypeName(Function->GetName()));
 }
 
 FString SchemaRPCResponseType(UFunction* Function)
 {
-	return FString::Printf(TEXT("Unreal%sResponse"), *UnrealNameToSchemaTypeName(Function->GetName()));
+	return FString::Printf(TEXT("%sResponse"), *UnrealNameToSchemaTypeName(Function->GetName()));
 }
 
 FString SchemaRPCName(UClass* Class, UFunction* Function)
