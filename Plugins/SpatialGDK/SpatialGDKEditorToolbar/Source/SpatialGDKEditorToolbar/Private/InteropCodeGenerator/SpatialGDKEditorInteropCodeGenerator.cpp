@@ -9,6 +9,7 @@
 #include "TypeStructure.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
+#include "Utils/DataTypeUtilities.h"
 
 #include "Misc/FileHelper.h"
 
