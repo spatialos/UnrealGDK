@@ -3,78 +3,13 @@
 #include "SchemaGenerator.h"
 
 #include "Algo/Reverse.h"
-#include "Algo/Transform.h"
 
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
 
-FString UnrealNameToSchemaTypeName(const FString& UnrealName)
-{
-	return UnrealName.Replace(TEXT("_"), TEXT(""));
-}
-
-FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type)
-{
-	return FString::Printf(TEXT("Unreal%s%sRepData"), *UnrealNameToSchemaTypeName(Type->GetName()), *GetReplicatedPropertyGroupName(Group));
-}
-
-FString SchemaMigratableDataName(UStruct* Type)
-{
-	return FString::Printf(TEXT("Unreal%sMigratableData"), *UnrealNameToSchemaTypeName(Type->GetName()));
-}
-
-FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type)
-{
-	return FString::Printf(TEXT("Unreal%s%sRPCs"), *UnrealNameToSchemaTypeName(Type->GetName()), *GetRPCTypeName(RpcType));
-}
-
-FString SchemaRPCRequestType(UFunction* Function)
-{
-	return FString::Printf(TEXT("Unreal%sRequest"), *UnrealNameToSchemaTypeName(Function->GetName()));
-}
-
-FString SchemaRPCResponseType(UFunction* Function)
-{
-	return FString::Printf(TEXT("Unreal%sResponse"), *UnrealNameToSchemaTypeName(Function->GetName()));
-}
-
-FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property, const int FixedArrayIndex /*=-1*/)
-{
-	// Transform the property chain into a chain of names.
-	TArray<FString> ChainNames;
-	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
-	{
-		// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-		return Property->Property->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
-	});
-
-	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
-	// which the generated code extends :troll:.
-	FString FieldName = TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
-	if (FixedArrayIndex >= 0)
-	{
-		FieldName += FString::FromInt(FixedArrayIndex);
-	}
-	return FieldName;
-}
-
-FString SchemaRPCName(UClass* Class, UFunction* Function)
-{
-	// Prepending the name of the class to the RPC name enables sibling classes.
-	FString RPCName = Class->GetName() + Function->GetName();
-	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-	RPCName = UnrealNameToSchemaTypeName(RPCName.ToLower());
-	return RPCName;
-}
-
-FString CPPCommandClassName(UClass* Class, UFunction* Function)
-{
-	FString SchemaName = SchemaRPCName(Class, Function);
-	SchemaName[0] = FChar::ToUpper(SchemaName[0]);
-	return SchemaName;
-}
-
+// Given a RepLayout cmd type (a data type supported by the replication system). Generates the corresponding
+// type used in schema.
 FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 {
 	FString DataType;
