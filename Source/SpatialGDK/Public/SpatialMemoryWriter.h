@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Serialization/MemoryWriter.h"
 
+#include <improbable/unreal/gdk/core_types.h>
+
 class USpatialPackageMapClient;
 
 class SPATIALGDK_API FSpatialMemoryWriter : public FMemoryWriter
@@ -22,5 +24,7 @@ public:
 	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
 
 protected:
+	void SerializeObjectRef(improbable::unreal::UnrealObjectRef& ObjectRef);
+
 	USpatialPackageMapClient* PackageMap;
 };

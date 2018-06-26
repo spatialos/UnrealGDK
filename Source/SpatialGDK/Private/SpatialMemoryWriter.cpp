@@ -4,7 +4,27 @@
 
 #include "SpatialPackageMapClient.h"
 #include "WeakObjectPtr.h"
-#include <improbable/unreal/gdk/core_types.h>
+
+void FSpatialMemoryWriter::SerializeObjectRef(improbable::unreal::UnrealObjectRef& ObjectRef)
+{
+	*this << ObjectRef.entity();
+	*this << ObjectRef.offset();
+
+	bool bHasPath = !ObjectRef.path().empty();
+	*this << bHasPath;
+	if (bHasPath)
+	{
+		FString Path = FString(UTF8_TO_TCHAR(ObjectRef.path()->c_str()));
+		*this << Path;
+	}
+
+	bool bHasOuter = !ObjectRef.outer().empty();
+	*this << bHasOuter;
+	if (bHasOuter)
+	{
+		SerializeObjectRef(*ObjectRef.outer());
+	}
+}
 
 FArchive& FSpatialMemoryWriter::operator<<(UObject*& Value)
 {
@@ -24,8 +44,7 @@ FArchive& FSpatialMemoryWriter::operator<<(UObject*& Value)
 		ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 	}
 
-	*this << ObjectRef.entity();
-	*this << ObjectRef.offset();
+	SerializeObjectRef(ObjectRef);
 
 	return *this;
 }
