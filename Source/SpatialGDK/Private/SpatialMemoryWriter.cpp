@@ -3,6 +3,7 @@
 #include "SpatialMemoryWriter.h"
 
 #include "SpatialPackageMapClient.h"
+#include "WeakObjectPtr.h"
 #include <improbable/unreal/gdk/core_types.h>
 
 FArchive& FSpatialMemoryWriter::operator<<(UObject*& Value)
@@ -14,8 +15,7 @@ FArchive& FSpatialMemoryWriter::operator<<(UObject*& Value)
 		ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 		if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UnresolvedObjects.Add(Value);
-			// Write a null object ref if we decide to send this bytestream anyway
+			// TODO: Collect unresolved objects in a set to queue up
 			ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 		}
 	}
@@ -26,6 +26,14 @@ FArchive& FSpatialMemoryWriter::operator<<(UObject*& Value)
 
 	*this << ObjectRef.entity();
 	*this << ObjectRef.offset();
+
+	return *this;
+}
+
+FArchive& FSpatialMemoryWriter::operator<<(FWeakObjectPtr& Value)
+{
+	UObject* Object = Value.Get(true);
+	*this << Object;
 
 	return *this;
 }

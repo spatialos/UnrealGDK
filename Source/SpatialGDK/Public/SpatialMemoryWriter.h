@@ -15,14 +15,12 @@ public:
 	, PackageMap(InPackageMap)
 	{}
 
-	//using FArchive::operator<<;
+	using FArchive::operator<<; // For visibility of the overloads we don't override
 
 	virtual FArchive& operator<<(UObject*& Value) override;
 
-	const TSet<const UObject*>& GetUnresolvedObjects() { return UnresolvedObjects; }
+	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
 
 protected:
 	USpatialPackageMapClient* PackageMap;
-
-	TSet<const UObject*> UnresolvedObjects;
 };

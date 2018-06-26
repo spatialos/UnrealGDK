@@ -23,9 +23,9 @@ void GenerateUnrealToSchemaConversion(
 	TFunction<void(const FString&)> ObjectResolveFailureGenerator,
 	bool bIsRPCProperty);
 
-// Generates code to handle the queueing of an array of UObject* or structs which may contain UObject* if it contains unresolved objects.
+// Generates code to handle the queueing of an array of UObject* if it contains unresolved objects.
 // Currently only supports replicated properties (i.e. does not support migratable properties or RPC arguments).
-void GenerateUObjectOrStructArrayToSchemaConversion(
+void GenerateUObjectArrayToSchemaConversion(
 	FCodeWriter& Writer,
 	const FString& Update,
 	UArrayProperty* Property,

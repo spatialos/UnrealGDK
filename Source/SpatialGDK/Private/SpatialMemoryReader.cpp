@@ -3,6 +3,8 @@
 #include "SpatialMemoryReader.h"
 
 #include "SpatialPackageMapClient.h"
+#include "WeakObjectPtr.h"
+#include <improbable/unreal/gdk/core_types.h>
 
 FArchive& FSpatialMemoryReader::operator<<(UObject*& Value)
 {
@@ -26,10 +28,20 @@ FArchive& FSpatialMemoryReader::operator<<(UObject*& Value)
 		}
 		else
 		{
-			UnresolvedObjectRefs.Add(ObjectRef);
+			// TODO: Handle unresolved object refs on the receiving end
 			Value = nullptr;
 		}
 	}
+
+	return *this;
+}
+
+FArchive& FSpatialMemoryReader::operator<<(FWeakObjectPtr& Value)
+{
+	UObject* Object;
+	*this << Object;
+
+	Value = Object;
 
 	return *this;
 }

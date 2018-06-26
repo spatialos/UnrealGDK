@@ -17,14 +17,12 @@ public:
 	, PackageMap(InPackageMap)
 	{}
 
-	//using FArchive::operator<<;
+	using FArchive::operator<<; // For visibility of the overloads we don't override
 
 	virtual FArchive& operator<<(UObject*& Value) override;
 
-	const TSet<FHashableUnrealObjectRef>& GetUnresolvedObjectRefs() { return UnresolvedObjectRefs; }
+	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
 
 protected:
 	USpatialPackageMapClient* PackageMap;
-
-	TSet<FHashableUnrealObjectRef> UnresolvedObjectRefs;
 };
