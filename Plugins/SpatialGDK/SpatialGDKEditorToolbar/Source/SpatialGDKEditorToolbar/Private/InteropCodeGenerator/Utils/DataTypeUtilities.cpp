@@ -6,7 +6,7 @@
 
 FString GetNamespace(UStruct* Struct)
 {
-	return FString::Printf(TEXT("improbable::unreal::generated::%s::"), *Struct->GetName().ToLower());
+	return FString::Printf(TEXT("improbable::unreal::generated::%s::"), *UnrealNameToSchemaTypeName(Struct->GetName()).ToLower());
 }
 
 FString GetEnumDataType(const UEnumProperty* EnumProperty)

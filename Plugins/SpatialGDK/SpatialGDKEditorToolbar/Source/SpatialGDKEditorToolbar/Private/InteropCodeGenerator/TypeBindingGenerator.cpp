@@ -698,7 +698,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	SourceWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
-
+		#include "Scavenger.h" // IMPROBABLE Sahil Added because of IWYU
 		#include "%s.h"
 
 		#include "GameFramework/PlayerState.h"
@@ -715,8 +715,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 		#include "SpatialMemoryReader.h"
 		#include "SpatialMemoryWriter.h"
 		#include "SpatialNetDriver.h"
-		#include "SpatialInterop.h"
-		#include "SpatialMemoryArchive.h")""", *InteropFilename);	// IMPROBABLE: MCS - add SpatialMemoryArchive.h until UNR-180 is resolved
+		#include "SpatialInterop.h")""", *InteropFilename);
 
 	// Add the header files specified in DefaultEditorSpatialGDK.ini.
 	for (const FString& Header : TypeBindingHeaders)
