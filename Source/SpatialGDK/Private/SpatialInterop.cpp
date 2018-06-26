@@ -684,3 +684,108 @@ void USpatialInterop::ResolvePendingOutgoingArrayUpdates(UObject* Object)
 	// the OPARs, which will destroy them.
 	ObjectToOPAR.Remove(Object);
 }
+
+void USpatialInterop::HandleSingletonActorLinking()
+{
+	if (!NetDriver->IsServer())
+	{
+		return;
+	}
+
+	for (auto it = SingletonToId.begin(); it != SingletonToId.end(); it++)
+	{
+		FEntityId SingletonEntityId{ it->second };
+		if (SingletonEntityId != FEntityId{})
+		{
+			FString ClassName = UTF8_TO_TCHAR(it->first.c_str());
+			UClass* SingletonActorClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);
+
+			// Get Singleton Actor in world
+			TArray<AActor*> SingletonActorList;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), SingletonActorClass, SingletonActorList);
+			check(SingletonActorList.Num() == 1);
+			AActor* SingletonActor = SingletonActorList[0];
+
+			// Get channel associated with singleton Actor
+			USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
+			USpatialActorChannel* Channel = NetDriver->SingletonActorChannels.FindRef(SingletonActor->GetClass()->GetName());
+
+			// If channel does not exist yet (since actor has not tried to replicate) create it.
+			if (Channel == nullptr)
+			{
+				Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
+				NetDriver->SingletonActorChannels.Add(SingletonActor->GetClass()->GetName(), Channel);
+				Channel->SetChannelActor(SingletonActor);
+			}
+
+			NetDriver->GetEntityRegistry()->AddToRegistry(SingletonEntityId, SingletonActor);
+
+			TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
+			auto EntityIterator = LockedView->Entities.find(SingletonEntityId.ToSpatialEntityId());
+			improbable::unreal::UnrealMetadataData* metadata = EntityIterator->second.Get<improbable::unreal::UnrealMetadata>().data();
+			check(metadata);
+			USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
+			check(PackageMap);
+
+			FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, metadata->subobject_name_to_offset());
+			UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Linked Singleton Actor %s with id %d"), *ClassName, SingletonEntityId.ToSpatialEntityId());
+		}
+	}
+}
+
+void USpatialInterop::HandleSingletonActorReplication()
+{
+	for (auto it = SingletonToId.begin(); it != SingletonToId.end(); it++)
+	{
+		FEntityId SingletonEntityId{ it->second };
+		if (SingletonEntityId == FEntityId{})
+		{
+
+			// Get Singleton Class from component map
+			FString ClassName = UTF8_TO_TCHAR(it->first.c_str());
+			UClass* SingletonActorClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);
+
+			// Get Singleton Actor in world
+			TArray<AActor*> SingletonActorList;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), SingletonActorClass, SingletonActorList);
+			check(SingletonActorList.Num() == 1);
+			AActor* SingletonActor = SingletonActorList[0];
+
+			// Get channel associated with singleton Actor
+			USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
+			USpatialActorChannel* Channel = NetDriver->SingletonActorChannels.FindRef(SingletonActor->GetClass()->GetName());
+
+			// If channel does not exist yet (since actor has not tried to replicate) create it.
+			if (Channel == nullptr)
+			{
+				Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
+				NetDriver->SingletonActorChannels.Add(SingletonActor->GetClass()->GetName(), Channel);
+			}
+
+			// Set entity id of channel from the GlobalStateManager.
+			// If the id was 0, SetChannelActor will create the entity.
+			// If the id is not 0, it will start replicating to that entity.
+			Channel->SetChannelActor(SingletonActor);
+
+			//if (SingletonEntityId != FEntityId{})
+			//{
+			//	USpatialInteropPipelineBlock* InteropPipelineBlock = NetDriver->InteropPipelineBlock;
+			//	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
+			//	EntityRegistry->AddToRegistry(SingletonEntityId, SingletonActor);
+			//	//USpatialPackageMapClient* PackageMap = InteropPipelineBlock->GetPackageMap();
+			//}
+		}
+	}
+}
+
+void USpatialInterop::UpdateGlobalStateManager(FString ClassName, FEntityId EntityId)
+{
+	std::string singletonName(TCHAR_TO_UTF8(*ClassName));
+	SingletonToId[singletonName] = EntityId.ToSpatialEntityId();
+
+	improbable::unreal::GlobalStateManager::Update update;
+	update.set_singleton_to_id(SingletonToId);
+
+	TSharedPtr<worker::Connection> Connection = SpatialOSInstance->GetConnection().Pin();
+	Connection->SendComponentUpdate<improbable::unreal::GlobalStateManager>(worker::EntityId((long)SpatialConstants::GLOBAL_STATE_MANAGER), update);
+}

@@ -202,7 +202,14 @@ public:
 
 	void ResetOutgoingArrayRepUpdate_Internal(USpatialActorChannel* DependentChannel, uint16 Handle);
 	void QueueOutgoingArrayRepUpdate_Internal(const TSet<const UObject*>& UnresolvedObjects, USpatialActorChannel* DependentChannel, uint16 Handle);
-	
+
+	// Update GlobalStateManager when EntityId is reserved
+	void UpdateGlobalStateManager(FString ClassName, FEntityId EntityId);
+	// Handle GSM checkout
+	void HandleSingletonActorLinking();
+	// Handle GSM Authority received
+	void HandleSingletonActorReplication();
+
 	// Accessors.
 	USpatialOS* GetSpatialOS() const
 	{
@@ -213,6 +220,8 @@ public:
 	{
 		return NetDriver;
 	}
+
+	worker::Map<std::string, worker::EntityId> SingletonToId;
 
 private:
 	UPROPERTY()

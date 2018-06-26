@@ -239,10 +239,15 @@ public:
 	virtual void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const PURE_VIRTUAL(USpatialTypeBinding::ReceiveAddComponent, );
 	virtual worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const PURE_VIRTUAL(USpatialTypeBinding::GetInterestOverrideMap, return {}; );
 
+	FORCEINLINE bool IsSingleton() const { return isSingleton; }
+
 protected:
 	UPROPERTY()
 	USpatialInterop* Interop;
 
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
+
+	UPROPERTY()
+	bool isSingleton;
 };

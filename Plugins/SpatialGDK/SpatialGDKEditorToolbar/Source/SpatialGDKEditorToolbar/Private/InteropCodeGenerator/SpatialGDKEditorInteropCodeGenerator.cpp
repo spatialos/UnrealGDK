@@ -36,7 +36,7 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 
 	// Generate forwarding code.
 	GenerateTypeBindingHeader(OutputHeader, SchemaFilename, TypeBindingFilename, Class, TypeInfo);
-	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, TypeBindingHeaders);
+	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, TypeBindingHeaders, isSingleton);
 	OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *TypeBindingFilename));
 	OutputSource.WriteToFile(FString::Printf(TEXT("%s%s.cpp"), *ForwardingCodePath, *TypeBindingFilename));
 
@@ -158,8 +158,45 @@ const bool ClassesExist(const ClassHeaderMap& Classes)
 	return true;
 }
 
+TArray<FString> CreateSingletonList()
+{
+	TArray<FString> SingletonList;
+
+	const FString FileName = "DefaultEditorSpatialGDK.ini";
+	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
+
+	// Load the SpatialGDK config file
+	GConfig->LoadFile(ConfigFilePath);
+	FConfigFile* ConfigFile = GConfig->Find(ConfigFilePath, false);
+	if (!ConfigFile)
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not open .ini file: \"%s\""), *ConfigFilePath);
+		return SingletonList;
+	}
+
+	const FString SectionName = "SnapshotGenerator.SingletonActorClasses";
+	FConfigSection* SingletonActorClassesSection = ConfigFile->Find(SectionName);
+	if (SingletonActorClassesSection == nullptr)
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find section '%s' in '%s'."), *SectionName, *ConfigFilePath);
+		return SingletonList;
+	}
+
+	TArray<FName> SingletonActorClasses;
+	SingletonActorClassesSection->GetKeys(SingletonActorClasses);
+
+	for (FName ClassName : SingletonActorClasses)
+	{
+		SingletonList.Add(ClassName.ToString());
+	}
+
+	return SingletonList;
+}
+
 void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
 {
+	auto SingletonList = CreateSingletonList();
+
 	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 	int ComponentId = 100010;
 	for (auto& ClassHeaderList : Classes)
@@ -168,6 +205,8 @@ void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& Co
 
 		const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
 		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, TypeBindingHeaders);
+
+		bool isSingleton = SingletonList.Find(ClassHeaderList.Key) != INDEX_NONE;
 	}
 }
 

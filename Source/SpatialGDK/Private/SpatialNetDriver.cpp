@@ -473,7 +473,15 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 							Channel->bCoreActor = false;
 						}
 
-						Channel->SetChannelActor(Actor);
+						// If Singleton, add to map and don't set up channel. Entity might already exist
+						if (TypeBinding && TypeBinding->IsSingleton())
+						{
+							SingletonActorChannels.Add(Actor->GetClass()->GetName(), Channel);
+						}
+						else
+						{
+							Channel->SetChannelActor(Actor);
+						}
 					}
 					// if we couldn't replicate it for a reason that should be temporary, and this Actor is updated very infrequently, make sure we update it again soon
 					else if (Actor->NetUpdateFrequency < 1.0f)

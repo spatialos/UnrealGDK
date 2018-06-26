@@ -15,6 +15,7 @@ class UEntityPipeline;
 class UEntityRegistry;
 class UCallbackDispatcher;
 class USpatialOS;
+class USpatialActorChannel;
 class USpatialNetConnection;
 class USpatialInterop;
 class USpatialInteropPipelineBlock;
@@ -80,6 +81,10 @@ public:
 		return Interop;
 	}
 
+	TMap<FString, USpatialActorChannel*> SingletonActorChannels;
+
+	//FORCED_INLINE USpatialPackageMapClient* GetPackageMap() { return PackageMap; }
+
 protected:
 	FSpatialGDKWorkerConfigurationData WorkerConfig;
 
@@ -124,6 +129,7 @@ protected:
 
 private:
 	FPlayerSpawnRequestSender PlayerSpawner;
+
 
 	friend class USpatialNetConnection;
 };

@@ -121,17 +121,44 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
 	{
-		bHasAuthority =		Interop->IsAuthoritativeDestructionAllowed()
-						&&	PinnedView->GetAuthority<improbable::Position>(ActorEntityId.ToSpatialEntityId()) == worker::Authority::kAuthoritative;
+		bHasAuthority = Interop->IsAuthoritativeDestructionAllowed()
+			&& PinnedView->GetAuthority<improbable::Position>(ActorEntityId.ToSpatialEntityId()) == worker::Authority::kAuthoritative;
 	}
 
 	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Delete Entity request on %d. Has authority: %d "), ActorEntityId.ToSpatialEntityId(), bHasAuthority);
 
 	// If we have authority and aren't trying to delete the spawner, delete the entity
 	if (bHasAuthority && ActorEntityId.ToSpatialEntityId() != SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
-	{		
+	{
 		Interop->DeleteEntity(ActorEntityId);
 	}
+}
+
+bool USpatialActorChannel::ShouldDeleteEntity()
+{
+	// Don't delete if we don't have authority
+	if (!Actor->HasAuthority())
+	{
+		return false;
+	}
+
+	// Don't delete if the actor is the spawner
+	if (ActorEntityId.ToSpatialEntityId() == SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
+	{
+		return false;
+	}
+
+	// Don't delete if a Singleton
+	auto& SingletonToId = SpatialNetDriver->GetSpatialInterop()->SingletonToId;
+	for (auto it = SingletonToId.begin(); it != SingletonToId.end(); it++)
+	{
+		if (it->second == ActorEntityId.ToSpatialEntityId())
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
@@ -579,6 +606,14 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 
 	// Inform USpatialInterop of this new actor channel/entity pairing
 	SpatialNetDriver->GetSpatialInterop()->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
+
+	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+	check(Interop);
+	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(Actor->GetClass());
+	if (Binding && Binding->IsSingleton())
+	{
+		Interop->UpdateGlobalStateManager(Actor->GetClass()->GetName(), ActorEntityId);
+	}
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)

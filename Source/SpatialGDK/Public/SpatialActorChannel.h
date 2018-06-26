@@ -31,6 +31,11 @@ public:
 		return ActorEntityId;
 	}
 
+	FORCEINLINE void SetEntityId(FEntityId ActorEntityId)
+	{
+		this->ActorEntityId = ActorEntityId;
+	}
+
 	FORCEINLINE bool IsReadyForReplication() const
 	{
 		// Wait until we've reserved an entity ID.		
@@ -114,6 +119,8 @@ private:
 
 	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
 	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
+
+	bool ShouldDeleteEntity();
 
 	TWeakPtr<worker::Connection> WorkerConnection;
 	TWeakPtr<worker::View> WorkerView;

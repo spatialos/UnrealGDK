@@ -95,6 +95,13 @@ void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddC
 		InitialiseNewComponentImpl(FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId}, AddComponentOp);
 	}
 
+	if (AddComponentOp->ComponentId == 100007)
+	{
+		UGlobalStateManagerAddComponentOp* GSM = Cast<UGlobalStateManagerAddComponentOp>(AddComponentOp);
+		NetDriver->GetSpatialInterop()->SingletonToId = GSM->Data->singleton_to_id();
+		NetDriver->GetSpatialInterop()->HandleSingletonActorLinking();
+	}
+
 	if (NextBlock)
 	{
 		NextBlock->AddComponent(AddComponentOp);
@@ -326,6 +333,8 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		return nullptr;
 	}
 
+	auto& SingletonToId = NetDriver->GetSpatialInterop()->SingletonToId;
+
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
 	UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Checked out entity with entity ID %lld"), EntityId.ToSpatialEntityId());
 
@@ -338,6 +347,16 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 
 	if (EntityActor)
 	{
+		UClass* ActorClass = GetNativeEntityClass(MetadataComponent);
+		USpatialInterop* Interop = NetDriver->GetSpatialInterop();
+		check(Interop);
+		USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(ActorClass);
+		// If singleton entity on server, return. This is handled with a different flow.
+		if (Binding && NetDriver->IsServer() && Binding->IsSingleton())
+		{
+			return EntityActor;
+		}
+
 		// Option 1
 		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 		SetupComponentInterests(EntityActor, EntityId, LockedConnection);
@@ -367,6 +386,15 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		else if ((ActorClass = GetNativeEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 3
+			USpatialInterop* Interop = NetDriver->GetSpatialInterop();
+			check(Interop);
+			USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(ActorClass);
+			// If singleton entity on server, return. This is handled with a different flow.
+			if (Binding && NetDriver->IsServer() && Binding->IsSingleton())
+			{
+				return EntityActor;
+			}
+
 			UNetConnection* Connection = nullptr;
 			improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
 			check(UnrealMetadataComponent);
