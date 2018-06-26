@@ -486,6 +486,9 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	else
 	{
 		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), ActorEntityId.ToSpatialEntityId());
+
+		// Inform USpatialInterop of this new actor channel/entity pairing
+		SpatialNetDriver->GetSpatialInterop()->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
 	}
 }
 
@@ -523,6 +526,9 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	ActorEntityId = *Op.EntityId;
 
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
+
+	// Inform USpatialInterop of this new actor channel/entity pairing
+	SpatialNetDriver->GetSpatialInterop()->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
