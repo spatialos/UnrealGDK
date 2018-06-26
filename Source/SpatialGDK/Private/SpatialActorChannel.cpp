@@ -140,6 +140,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 void USpatialActorChannel::Close()
 {
 	DeleteEntityIfAuthoritative();
+	Super::Close();
 }
 
 bool USpatialActorChannel::ReplicateActor()
