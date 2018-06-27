@@ -109,10 +109,10 @@ protected:
 	void OnSpatialOSConnected();
 
 	UFUNCTION()
-	void OnSpatialOSConnectFailed();
+	void OnSpatialOSConnectFailed(const FString& Reason);
 
 	UFUNCTION()
-	void OnSpatialOSDisconnected();
+	void OnSpatialOSDisconnected(const FString& Reason);
 		
 #if WITH_SERVER_CODE
 	//SpatialGDK: These functions all exist in UNetDriver, but we need to modify/simplify them in certain ways.
