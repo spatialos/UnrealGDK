@@ -521,8 +521,6 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 		PinnedView->Remove(ReserveEntityCallback);
 	}
 
-	USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-	check(PackageMap);
 	ActorEntityId = *Op.EntityId;
 
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
