@@ -136,8 +136,7 @@ struct FUnrealRepData
 	ERepLayoutCmdType RepLayoutType;
 	ELifetimeCondition Condition;
 	ELifetimeRepNotifyCondition RepNotifyCondition;
-	// We can have multiple handles that correspond to a single UProperty/FUnrealRepData in the case of fixed size arrays.
-	TArray<uint16> Handles;
+	uint16 Handle;
 	int32 RoleSwapHandle;
 	int32 ArrayIndex;
 };

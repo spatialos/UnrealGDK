@@ -439,7 +439,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			}
 			PropertyNode->ReplicationData = RepDataNode;
 		}
-		PropertyNode->ReplicationData->Handles.Add(Cmd.RelativeHandle);
+		PropertyNode->ReplicationData->Handle = Cmd.RelativeHandle;
 
 		if (Cmd.Type == REPCMD_DynamicArray)
 		{
@@ -490,7 +490,7 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 				Group = REP_SingleClient;
 				break;
 			}
-			RepData[Group].Add(PropertyInfo->ReplicationData->Handles[0], PropertyInfo);
+			RepData[Group].Add(PropertyInfo->ReplicationData->Handle, PropertyInfo);
 		}
 		return true;
 	}, false);

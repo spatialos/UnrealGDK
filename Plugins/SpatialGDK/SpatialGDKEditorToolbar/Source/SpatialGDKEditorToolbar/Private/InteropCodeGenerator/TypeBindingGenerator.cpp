@@ -913,16 +913,12 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 			});
 			PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
 
-			// Add the handle data to the map.
-			for (int i = 0; i < RepProp.Value->ReplicationData->Handles.Num(); ++i)
-			{
-				SourceWriter.Printf("RepHandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, %s, %s, %d));",
-					RepProp.Value->ReplicationData->Handles[i],
-					*PropertyChainInitList,
-					*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
-					*GetRepNotifyLifetimeConditionAsString(RepProp.Value->ReplicationData->RepNotifyCondition),
-					i * RepProp.Value->Property->ElementSize);
-			}
+			SourceWriter.Printf("RepHandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, %s, %s, %d));",
+				RepProp.Value->ReplicationData->Handle,
+				*PropertyChainInitList,
+				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
+				*GetRepNotifyLifetimeConditionAsString(RepProp.Value->ReplicationData->RepNotifyCondition),
+				0);
 		}
 	}
 
@@ -1418,13 +1414,11 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 		{
 			auto Handle = RepProp.Key;
 
-			check(RepProp.Value->ReplicationData->Handles.Num() >= 1);
+			check(RepProp.Value->ReplicationData->Handle > 0);
 
-			//UNR-334 Static arrays are now handled here.
 			GenerateBody_SendUpdate_RepDataProperty(SourceWriter,
-				RepProp.Value->ReplicationData->Handles[0], // TODO: UNR-334 Remove this 0. So changed Handles to Handle
+				RepProp.Value->ReplicationData->Handle,
 				RepProp.Value);
-			
 		}
 		SourceWriter.Outdent().Print("default:");
 		SourceWriter.Indent();
@@ -1597,13 +1591,11 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 		for (auto& RepProp : RepData[Group])
 		{
 			auto Handle = RepProp.Key;
-			check(RepProp.Value->ReplicationData->Handles.Num() >= 1);
+			check(RepProp.Value->ReplicationData->Handle > 0);
 
-			// UNR-334 - Static arrays are now handled here.
 			GenerateBody_ReceiveUpdate_RepDataProperty(SourceWriter,
-				RepProp.Value->ReplicationData->Handles[0],
+				RepProp.Value->ReplicationData->Handle,
 				RepProp.Value);
-			
 		}
 		SourceWriter.Print("Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies.Array());");
 	}
