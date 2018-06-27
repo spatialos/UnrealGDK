@@ -57,7 +57,6 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, ReserveEntityIdRequestId(-1)
 	, CreateEntityRequestId(-1)
 	, SpatialNetDriver(nullptr)
-	, bIsPie(false)
 {
 	bCoreActor = true;
 	bCreatingNewEntity = false;
@@ -138,7 +137,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 
 #ifdef WITH_EDITOR
 	if (SpatialNetDriver->IsServer() &&
-		bIsPie &&
+		SpatialNetDriver->GetWorld()->WorldType == EWorldType::PIE &&
 		SpatialNetDriver->GetEntityRegistry()->GetActorFromEntityId(ActorEntityId.ToSpatialEntityId()))
 	{
 		// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
@@ -487,11 +486,6 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	else
 	{
 		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), ActorEntityId.ToSpatialEntityId());
-	}
-
-	if (UWorld* ActorWorld = InActor->GetWorld())
-	{
-		bIsPie = ActorWorld->WorldType == EWorldType::PIE;
 	}
 }
 
