@@ -120,6 +120,11 @@ private:
 	UPROPERTY(Transient)
 	bool bCreatingNewEntity;
 
+	// Local variable, set as soon as the channel's actor is initialized, that tells whether we're in PIE mode or not.
+	// Used to determine whether we should delete the actor on channel shutdown when it's not explicitly destroyed
+	// (i.e. clean up entities when a PIE server shuts down).
+	bool bIsPie;
+
 private:
 	void UpdateSpatialPosition();
 
