@@ -124,12 +124,6 @@ void USpatialOS::Connect()
       CallbackDispatcher->Init(GetView());
       EntityPipeline->Init(GetView(), CallbackDispatcher);
     }
-    else
-    {
-      UE_LOG(LogSpatialOS, Error, TEXT("Failed to connect to SpatialOS"));
-      OnConnectionFailedDelegate.Broadcast();
-      OnDisconnectInternal();
-    }
   });
 
   improbable::unreal::core::FQueueStatusDelegate OnQueueStatus;
@@ -170,7 +164,7 @@ void USpatialOS::Disconnect()
     WorkerConnection.Disconnect();
 
     // Manually broadcast OnDisconnected callbacks as Dispatcher->OnDisconnected will not be called.
-    OnDisconnectedDelegate.Broadcast();
+    OnDisconnectedDelegate.Broadcast("SpatialOS was manually disconnected.");
   }
   OnDisconnectInternal();
 }
@@ -276,11 +270,11 @@ void USpatialOS::OnDisconnectDispatcherCallback(const worker::DisconnectOp& Op)
 {
   if (bConnectionWasSuccessful)
   {
-    OnDisconnectedDelegate.Broadcast();
+    OnDisconnectedDelegate.Broadcast(Op.Reason.c_str());
   }
   else
   {
-    OnConnectionFailedDelegate.Broadcast();
+    OnConnectionFailedDelegate.Broadcast(Op.Reason.c_str());
   }
   OnDisconnectInternal();
 }
