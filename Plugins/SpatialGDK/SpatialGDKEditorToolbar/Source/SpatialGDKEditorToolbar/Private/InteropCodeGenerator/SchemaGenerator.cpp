@@ -195,7 +195,6 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 				PropertyPath += FString::Printf(TEXT("::%s"), *ObjOuter->GetName());
 			}
 
-			// UNR-334 Static arrays are now handled here.
 			FieldCounter++;
 			WriteSchemaRepField(Writer,
 				RepProp.Value,
@@ -272,7 +271,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 				FieldCounter++;
 				WriteSchemaRPCField(RPCTypeOwnerSchemaWriter,
 					Param,
-					FieldCounter); // -1 As we do not wish to have array index counters for static arrays in RPCs.
+					FieldCounter);
 			}
 			RPCTypeOwnerSchemaWriter->Outdent().Print("}");
 		}

@@ -136,8 +136,7 @@ struct FUnrealRepData
 	ERepLayoutCmdType RepLayoutType;
 	ELifetimeCondition Condition;
 	ELifetimeRepNotifyCondition RepNotifyCondition;
-	// We can have multiple handles that correspond to a single UProperty/FUnrealRepData in the case of fixed size arrays.
-	TArray<uint16> Handles;
+	uint16 Handle;
 	int32 RoleSwapHandle;
 	int32 ArrayIndex;
 };
@@ -197,7 +196,7 @@ uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 Static
 //	   {"OtherProperty", "PropertyWithinOtherProperty"}
 //   }
 // In the future, we can get this information directly from the UStruct*.
-TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties, uint32 ParentChecksum, int32 StaticArrayIndex);
+TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties, uint32 ParentChecksum, int32 StaticArrayIndex, bool bIsRPC);
 
 // Takes an FUnrealProperty (which is a Spatial wrapper around UProperties for replicated properties) and compares its parents against
 // the parents found in a 'RepLayout.Cmd.ParentPropertyChain' (Improbable engine modification to track parent properties when generating a RepLayout).
