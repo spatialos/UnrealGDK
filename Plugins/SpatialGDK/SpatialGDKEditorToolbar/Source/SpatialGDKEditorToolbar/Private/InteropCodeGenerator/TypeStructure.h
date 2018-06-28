@@ -186,7 +186,7 @@ void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TShared
 // Similar to 'VisitAllObjects', but instead applies the Visitor function to all parameters in an RPC (and subproperties of structs/objects where appropriate).
 void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor, bool bRecurseIntoSubobjects);
 
-// Generates a unique checksum for the Property that allows matching between Unreal's RepLayou Cmds.
+// Generates a unique checksum for the Property that allows matching to Unreal's RepLayout Cmds.
 uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 StaticArrayIndex);
 
 // Generates an AST from an Unreal UStruct or UClass.
