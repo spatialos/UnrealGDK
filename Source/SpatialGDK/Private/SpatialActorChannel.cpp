@@ -135,7 +135,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 	UnbindFromSpatialView();
 
-#ifdef WITH_EDITOR
+#if WITH_EDITOR
 	if (SpatialNetDriver->IsServer() &&
 		SpatialNetDriver->GetWorld()->WorldType == EWorldType::PIE &&
 		SpatialNetDriver->GetEntityRegistry()->GetActorFromEntityId(ActorEntityId.ToSpatialEntityId()))
