@@ -168,7 +168,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		PropertyNode->Property = Property;
 		PropertyNode->ContainerType = TypeNode;
 		PropertyNode->ParentChecksum = ParentChecksum;
-		PropertyNode->StaticArrayIndex = StaticArrayIndex; // Non static array properties have an index of -1 (used in schema field name generation).
+		PropertyNode->StaticArrayIndex = StaticArrayIndex;
 		TypeNode->Properties.Add(Property, PropertyNode);
 
 		// Add checksums to match properties with the RepLayout Cmds later.
@@ -186,8 +186,6 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 
 				// Generate a new checksum for the static array member;
 				StaticArrayPropertyNode->ParentChecksum = ParentChecksum;
-
-				// Create a new checksum based on the new parent.
 				uint32 StaticArrayChecksum = GenerateChecksum(Property, ParentChecksum, i);
 				StaticArrayPropertyNode->CompatibleChecksum = StaticArrayChecksum;
 
@@ -393,11 +391,18 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		// Simple case: Cmd is a root property in the object.
 		if (Parent.Property == Cmd.Property)
 		{
-			PropertyNode = *TypeNode->Properties.Find(Cmd.Property);
+			// Make sure we have the correct property via the checksums.
+			for (auto& PropertyPair : TypeNode->Properties)
+			{
+				if(PropertyPair.Value->CompatibleChecksum == Cmd.CompatibleChecksum)
+				{
+					PropertyNode = PropertyPair.Value;
+				}
+			}
 		}
 		else
 		{
-			// It's possible to have duplicate parent properties (they don't have checksums), so we make sure to handle them all.
+			// It's possible to have duplicate parent properties (they are distinguished by ArrayIndex), so we make sure to look at them all.
 			TArray<TSharedPtr<FUnrealProperty>> RootProperties;
 			TypeNode->Properties.MultiFind(Parent.Property, RootProperties);
 
@@ -416,29 +421,25 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 					return true;
 				}, false);
 			}
-			checkf(PropertyNode.IsValid(), TEXT("Couldn't find the Cmd property inside the Parent's sub-properties. This shouldn't happen."));
 		}
+		checkf(PropertyNode.IsValid(), TEXT("Couldn't find the Cmd property inside the Parent's sub-properties. This shouldn't happen."));
 
 		// We now have the right property node. Fill in the rep data.
-		// In all cases, we will go into the if condition below as there is a 1:1 mapping between replication data and property node.
-		if (!PropertyNode->ReplicationData.IsValid())
+		TSharedPtr<FUnrealRepData> RepDataNode = MakeShared<FUnrealRepData>();
+		RepDataNode->RepLayoutType = (ERepLayoutCmdType)Cmd.Type;
+		RepDataNode->Condition = Parent.Condition;
+		RepDataNode->RepNotifyCondition = Parent.RepNotifyCondition;
+		RepDataNode->ArrayIndex = PropertyNode->StaticArrayIndex;
+		if (Parent.RoleSwapIndex != -1)
 		{
-			TSharedPtr<FUnrealRepData> RepDataNode = MakeShared<FUnrealRepData>();
-			RepDataNode->RepLayoutType = (ERepLayoutCmdType)Cmd.Type;
-			RepDataNode->Condition = Parent.Condition;
-			RepDataNode->RepNotifyCondition = Parent.RepNotifyCondition;
-			RepDataNode->ArrayIndex = PropertyNode->StaticArrayIndex;
-			if (Parent.RoleSwapIndex != -1)
-			{
-				const int32 SwappedCmdIndex = RepLayout.Parents[Parent.RoleSwapIndex].CmdStart;
-				RepDataNode->RoleSwapHandle = static_cast<int32>(RepLayout.Cmds[SwappedCmdIndex].RelativeHandle);
-			}
-			else
-			{
-				RepDataNode->RoleSwapHandle = -1;
-			}
-			PropertyNode->ReplicationData = RepDataNode;
+			const int32 SwappedCmdIndex = RepLayout.Parents[Parent.RoleSwapIndex].CmdStart;
+			RepDataNode->RoleSwapHandle = static_cast<int32>(RepLayout.Cmds[SwappedCmdIndex].RelativeHandle);
 		}
+		else
+		{
+			RepDataNode->RoleSwapHandle = -1;
+		}
+		PropertyNode->ReplicationData = RepDataNode;
 		PropertyNode->ReplicationData->Handle = Cmd.RelativeHandle;
 
 		if (Cmd.Type == REPCMD_DynamicArray)
