@@ -142,9 +142,9 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPt
 uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 StaticArrayIndex)
 {
 	uint32 Checksum = 0;
-	Checksum = FCrc::StrCrc32(*Property->GetName().ToLower(), ParentChecksum);				// Evolve checksum on name
-	Checksum = FCrc::StrCrc32(*Property->GetCPPType(nullptr, 0).ToLower(), Checksum);		// Evolve by property type
-	Checksum = FCrc::StrCrc32(*FString::Printf(TEXT("%i"), StaticArrayIndex), Checksum);	// Evolve by StaticArrayIndex (This is not changed in the Spatial system)
+	Checksum = FCrc::StrCrc32(*Property->GetName().ToLower(), ParentChecksum);            // Evolve checksum on name
+	Checksum = FCrc::StrCrc32(*Property->GetCPPType(nullptr, 0).ToLower(), Checksum);     // Evolve by property type
+	Checksum = FCrc::StrCrc32(*FString::Printf(TEXT("%i"), StaticArrayIndex), Checksum);  // Evolve by StaticArrayIndex
 	return Checksum;
 }
 

@@ -198,11 +198,6 @@ uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 Static
 // In the future, we can get this information directly from the UStruct*.
 TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties, uint32 ParentChecksum, int32 StaticArrayIndex, bool bIsRPC);
 
-// Takes an FUnrealProperty (which is a Spatial wrapper around UProperties for replicated properties) and compares its parents against
-// the parents found in a 'RepLayout.Cmd.ParentPropertyChain' (Improbable engine modification to track parent properties when generating a RepLayout).
-// If all properties in the FUnrealProperty and ParentPropertyChain are the same, this returns true.
-bool AreParentPropertiesTheSame(FUnrealProperty& SpatialWrapperProperty, TArray<UProperty*> CmdParentPropertyChain);
-
 // Traverses an AST, and generates a flattened list of replicated properties, which will match the Cmds array of FRepLayout.
 // The list of replicated properties will all have the ReplicatedData field set to a valid FUnrealRepData node which contains
 // data such as the handle or replication condition.
