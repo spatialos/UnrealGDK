@@ -91,6 +91,7 @@ public:
 	bool ReplicateSubobject_(UObject *Obj, const FReplicationFlags &RepFlags);
 	void PreReceiveSpatialUpdateSubobject(UActorComponent* Component);
 	void PostReceiveSpatialUpdateSubobject(UActorComponent* Component, const TArray<UProperty*>& RepNotifies);
+	FPropertyChangeState CreateSubobjectChangeState(UActorComponent* Component);
 
 	// Called by SpatialInterop when receiving an update.
 	void PreReceiveSpatialUpdate();
