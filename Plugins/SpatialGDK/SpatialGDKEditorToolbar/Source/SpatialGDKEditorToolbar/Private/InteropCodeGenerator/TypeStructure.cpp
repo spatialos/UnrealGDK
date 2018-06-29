@@ -581,6 +581,26 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 	return RPCsByType;
 }
 
+TArray<UClass*> GetAllComponents(TSharedPtr<FUnrealType> TypeInfo)
+{
+	TArray<UClass*> ClassComponents;
+	UObject* ContainerCDO = Cast<UClass>(TypeInfo->Type)->GetDefaultObject();
+	VisitAllProperties(TypeInfo, [&ClassComponents, &ContainerCDO](TSharedPtr<FUnrealProperty> Property)
+	{
+		UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property->Property);
+		if(ObjectProperty)
+		{
+			if(ObjectProperty->GetPropertyValue_InContainer(ContainerCDO))
+			{
+				ClassComponents.Add(ObjectProperty->PropertyClass);
+			}
+		}
+		return false;
+	}, false);
+
+	return ClassComponents;
+}
+
 TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode)
 {
 	TArray<TSharedPtr<FUnrealProperty>> ParamList;

@@ -70,12 +70,27 @@ public:
 		};
 	}
 
+	FORCEINLINE FPropertyChangeState GetChangeStateSubobject(UObject* obj, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged) const
+	{
+		return {
+			(uint8*)obj,
+			RepChanged,
+			replicator->RepLayout->Cmds,
+			replicator->RepLayout->BaseHandleToCmdIndex,
+			MigChanged
+		};
+	}
+
 	// UChannel interface
 	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, bool bOpenedLocally) override;
 	virtual void Close() override;
 	//Requires source changes to be virtual in base class.
 	virtual bool ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
+
+	bool ReplicateSubobject_(UObject *Obj, const FReplicationFlags &RepFlags);
+	void PreReceiveSpatialUpdateSubobject(UActorComponent* Component);
+	void PostReceiveSpatialUpdateSubobject(UActorComponent* Component, const TArray<UProperty*>& RepNotifies);
 
 	// Called by SpatialInterop when receiving an update.
 	void PreReceiveSpatialUpdate();
