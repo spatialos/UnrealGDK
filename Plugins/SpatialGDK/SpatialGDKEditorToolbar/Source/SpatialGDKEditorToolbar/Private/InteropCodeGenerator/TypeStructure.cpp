@@ -255,6 +255,9 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		UObject* ContainerCDO = Class->GetDefaultObject();
 		check(ContainerCDO);
 
+		// This is to ensure we handle static array properties only once.
+		bool bHandleStaticArrayProperties = true;
+
 		// Obtain the properties actual value from the CDO, so we can figure out its true type.
 		UObject* Value = ObjectProperty->GetPropertyValue_InContainer(ContainerCDO);
 		if (Value)
@@ -272,8 +275,9 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			{
 				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
-				// This is the property for the 0th struct array member.
-				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, ParentChecksum, 0, bIsRPC);
+				// This property is definitely a strong reference, recurse into it.
+				uint32 ParentPropertyNodeChecksum = PropertyNode->CompatibleChecksum;
+				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, ParentPropertyNodeChecksum, 0, bIsRPC);
 				PropertyNode->Type->ParentProperty = PropertyNode;
 
 				if (!bIsRPC) // RPCs handle static arrays differently
@@ -285,7 +289,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 						TSharedPtr<FUnrealProperty> StaticObjectArrayPropertyNode = MakeShared<FUnrealProperty>();
 						StaticObjectArrayPropertyNode->Property = Property;
 						StaticObjectArrayPropertyNode->ContainerType = TypeNode;
-						StaticObjectArrayPropertyNode->ParentChecksum = ParentChecksum;
+						StaticObjectArrayPropertyNode->ParentChecksum = ParentPropertyNodeChecksum;
 
 						// Generate a new checksum based on the static array index.
 						uint32 StaticArrayChecksum = GenerateChecksum(Property, ParentChecksum, i);
@@ -300,6 +304,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 						TypeNode->Properties.Add(Property, StaticObjectArrayPropertyNode);
 					}
 				}
+				bHandleStaticArrayProperties = false;
 			}
 			else
 			{
@@ -312,6 +317,26 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			// If value is just nullptr, then we clearly don't own it.
 			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - %s weak reference (null init)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
 		}
+
+		// Weak reference static arrays are handled as a single UObjectRef per static array member.
+		if (!bIsRPC && bHandleStaticArrayProperties)
+		{
+			for (int i = 1; i < Property->ArrayDim; i++)
+			{
+				TSharedPtr<FUnrealProperty> StaticArrayPropertyNode = MakeShared<FUnrealProperty>();
+				StaticArrayPropertyNode->Property = Property;
+				StaticArrayPropertyNode->ContainerType = TypeNode;
+				StaticArrayPropertyNode->StaticArrayIndex = i;
+
+				// Generate a new checksum for the static array member;
+				StaticArrayPropertyNode->ParentChecksum = ParentChecksum;
+				uint32 StaticArrayChecksum = GenerateChecksum(Property, ParentChecksum, i);
+				StaticArrayPropertyNode->CompatibleChecksum = StaticArrayChecksum;
+
+				TypeNode->Properties.Add(Property, StaticArrayPropertyNode);
+			}
+		}
+
 	} // END TFieldIterator<UProperty>
 
 	// If this is not a class, exit now, as structs cannot have RPCs or replicated properties.
