@@ -1168,9 +1168,10 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 
 			SourceWriter.PrintNewLine();
 
+			SourceWriter.Printf("FPropertyChangeState %sChangeState = Channel->CreateSubobjectChangeState(Channel->Actor->FindComponentByClass<%s>());", *ComponentClassName, *GetFullCPPName(ComponentClass));
 			SourceWriter.Printf("USpatialTypeBinding_%s* %sTypeBinding = Cast<USpatialTypeBinding_%s>(Interop->GetTypeBindingByClass(%s::StaticClass()));",
 				*ComponentClassName, *ComponentClassName, *ComponentClassName, *GetFullCPPName(ComponentClass));
-			SourceWriter.Printf("//%sTypeBinding->BuildSpatialComponentUpdate(InitialChanges, Channel, %s);", *ComponentClassName, *FString::Join(BuildUpdateArgs, TEXT(", ")));
+			SourceWriter.Printf("%sTypeBinding->BuildSpatialComponentUpdate(%sChangeState, Channel, %s);", *ComponentClassName, *ComponentClassName, *FString::Join(BuildUpdateArgs, TEXT(", ")));
 
 			for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 			{
