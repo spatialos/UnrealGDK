@@ -270,7 +270,7 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 		return;
 	}
 
-	Actor->GetWorld()->DestroyActor(Actor, true);
+	World->DestroyActor(Actor, true);
 
 	CleanupDeletedEntity(EntityId);
 }
@@ -323,6 +323,9 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 
 		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
 		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
+		
+		// actor channel/entity mapping should be registered by this point
+		check(NetDriver->GetSpatialInterop()->GetActorChannelByEntityId(EntityId.ToSpatialEntityId()));
 	}
 	else
 	{
@@ -395,9 +398,6 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 
 			PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
 			Channel->SetChannelActor(EntityActor);
-
-			// Inform USpatialInterop of this new actor channel.
-			NetDriver->GetSpatialInterop()->AddActorChannel(EntityId.ToSpatialEntityId(), Channel);
 
 			// Apply initial replicated properties.
 			for (FPendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)

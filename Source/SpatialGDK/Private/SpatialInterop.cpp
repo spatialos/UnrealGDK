@@ -234,7 +234,29 @@ void USpatialInterop::AddActorChannel(const FEntityId& EntityId, USpatialActorCh
 
 void USpatialInterop::RemoveActorChannel(const FEntityId& EntityId)
 {
-	EntityToActorChannel.Remove(EntityId);
+	if (EntityToActorChannel.Find(EntityId) == nullptr)
+	{
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("Failed to find entity/channel mapping for %s."), *ToString(EntityId.ToSpatialEntityId()));
+		return;
+	}
+
+	USpatialActorChannel* Channel = EntityToActorChannel.FindAndRemoveChecked(EntityId);
+
+	for (auto& Pair : PendingOutgoingObjectUpdates)
+	{
+		Pair.Value.Remove(Channel);
+	}
+
+	for (auto& Pair : PendingIncomingObjectUpdates)
+	{
+		Pair.Value.Remove(Channel);
+	}
+
+	PropertyToOPAR.Remove(Channel);
+	for (auto& Pair : ObjectToOPAR)
+	{
+		Pair.Value.Remove(Channel);
+	}
 }
 
 void USpatialInterop::DeleteEntity(const FEntityId& EntityId)

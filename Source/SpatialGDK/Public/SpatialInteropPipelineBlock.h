@@ -22,13 +22,9 @@ namespace improbable
 	class PositionData;
 }
 
-class UMetadataAddComponentOp;
-class UPositionAddComponentOp;
 class UCallbackDispatcher;
 class UEntityRegistry;
-class UEntityPipeline;
 class USpatialOsComponent;
-class USpatialActorChannel;
 class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInteropPipelineBlock, Log, All);
