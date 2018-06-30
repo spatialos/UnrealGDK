@@ -731,8 +731,9 @@ void USpatialInterop::HandleSingletonActorLinking()
 			{
 				Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
 				NetDriver->SingletonActorChannels.Add(SingletonActor->GetClass()->GetName(), Channel);
-				Channel->SetChannelActor(SingletonActor);
 			}
+			Channel->SetEntityId(SingletonEntityId);
+			Channel->SetChannelActor(SingletonActor);
 
 			NetDriver->GetEntityRegistry()->AddToRegistry(SingletonEntityId, SingletonActor);
 

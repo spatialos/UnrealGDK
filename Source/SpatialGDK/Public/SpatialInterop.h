@@ -223,7 +223,6 @@ public:
 		return NetDriver;
 	}
 
-	void HandleSingletonActorReplication();
 	worker::Map<std::string, worker::EntityId> SingletonToId;
 
 private:

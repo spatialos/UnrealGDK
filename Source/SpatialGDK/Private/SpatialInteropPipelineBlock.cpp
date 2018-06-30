@@ -101,7 +101,7 @@ void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddC
 	{
 		UGlobalStateManagerAddComponentOp* GSM = Cast<UGlobalStateManagerAddComponentOp>(AddComponentOp);
 		NetDriver->GetSpatialInterop()->SingletonToId = GSM->Data->singleton_to_id();
-		NetDriver->GetSpatialInterop()->HandleSingletonActorLinking();
+		//NetDriver->GetSpatialInterop()->HandleSingletonActorLinking();
 	}
 
 	if (NextBlock)
