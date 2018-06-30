@@ -10,9 +10,10 @@ class USpatialPackageMapClient;
 class SPATIALGDK_API FSpatialMemoryWriter : public FMemoryWriter
 {
 public:
-	FSpatialMemoryWriter(TArray<uint8>& InBytes, USpatialPackageMapClient* InPackageMap)
+	FSpatialMemoryWriter(TArray<uint8>& InBytes, USpatialPackageMapClient* InPackageMap, TSet<const UObject*>& InUnresolvedObjects)
 	: FMemoryWriter(InBytes)
 	, PackageMap(InPackageMap)
+	, UnresolvedObjects(InUnresolvedObjects)
 	{}
 
 	using FArchive::operator<<; // For visibility of the overloads we don't override
@@ -23,4 +24,6 @@ public:
 
 protected:
 	USpatialPackageMapClient* PackageMap;
+
+	TSet<const UObject*>& UnresolvedObjects;
 };

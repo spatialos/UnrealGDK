@@ -405,7 +405,8 @@ bool USpatialActorChannel::ReplicateActor()
 
 	for (UActorComponent* ActorComp : Actor->GetReplicatedComponents())
 	{
-		if (ActorComp && ActorComp->GetIsReplicated())
+		USpatialTypeBinding* ComponentTypeBinding = Interop->GetTypeBindingByClass(ActorComp->GetClass());
+		if (ActorComp && ActorComp->GetIsReplicated() && ComponentTypeBinding)
 		{
 			bWroteSomethingImportant |= ReplicateSubobject_(ActorComp, RepFlags);	// (this makes those subobjects 'supported', and from here on those objects may have reference replicated)		
 		}
@@ -607,10 +608,14 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(const TArray<UProperty*>& Re
 
 void USpatialActorChannel::PostReceiveSpatialUpdateSubobject(UActorComponent* Component, const TArray<UProperty*>& RepNotifies)
 {
-	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Component)).Get();
-	Component->PostNetReceive();
-	Replicator.RepNotifies = RepNotifies;
-	Replicator.CallRepNotifies(false);
+	TWeakObjectPtr<UObject> Obj(Component);
+	if(ReplicationMap.Find(Obj))
+	{
+		FObjectReplicator& Replicator = FindOrCreateReplicator(Obj).Get();
+		Component->PostNetReceive();
+		Replicator.RepNotifies = RepNotifies;
+		Replicator.CallRepNotifies(false);
+	}
 }
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op)

@@ -18,7 +18,8 @@ void GenerateUnrealToSchemaConversion(
 	UProperty* Property,
 	const FString& PropertyValue,
 	TFunction<void(const FString&)> ObjectResolveFailureGenerator,
-	bool bIsRPCProperty);
+	bool bIsRPCProperty,
+	bool hasUnresolvedObjects = false);
 
 // Generates code to handle the queueing of an array of UObject* if it contains unresolved objects.
 // Currently only supports replicated properties (i.e. does not support migratable properties or RPC arguments).
@@ -73,7 +74,7 @@ void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo);
 void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class);
-void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class);
+void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo);
 void GenerateFunction_GetInterestOverrideMap(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData, EReplicatedPropertyGroup Group);

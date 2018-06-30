@@ -16,6 +16,7 @@ FArchive& FSpatialMemoryWriter::operator<<(UObject*& Value)
 		if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			// TODO: Collect unresolved objects in a set to queue up
+			UnresolvedObjects.Add(Value);
 			ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 		}
 	}

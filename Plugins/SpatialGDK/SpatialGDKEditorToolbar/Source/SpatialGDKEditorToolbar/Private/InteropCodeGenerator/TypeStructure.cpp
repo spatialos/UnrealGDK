@@ -266,10 +266,10 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 
 		// Obtain the properties actual value from the CDO, so we can figure out its true type.
 		UObject* Value = ObjectProperty->GetPropertyValue_InContainer(ContainerCDO);
-		if (Value)
+		if (Value || ObjectProperty->GetName().Contains(TEXT("Scavenger")))
 		{
 			// If this is an editor-only property, skip it. As we've already added to the property list at this stage, just remove it.
-			if (Value->IsEditorOnly())
+			if (Value && Value->IsEditorOnly())
 			{
 				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - editor only, skipping"), *Property->GetName());
 				TypeNode->Properties.Remove(Property);
@@ -277,9 +277,14 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			}
 
 			// Check whether the owner of this value is the CDO itself.
-			if (Value->GetOuter() == ContainerCDO)
+			if (Value && Value->GetOuter() == ContainerCDO || ObjectProperty->GetName().Contains(TEXT("Scavenger")))
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
+				if (!Value && ObjectProperty->GetName().Contains(TEXT("Scavenger")))
+				{
+					UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("!!! Doing special magic: %s"), *ObjectProperty->GetName());
+				}
+
+				//UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
 				// This is the property for the 0th struct array member.
 				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, ParentChecksum, 0, bIsRPC);
@@ -590,7 +595,8 @@ TArray<UClass*> GetAllComponents(TSharedPtr<FUnrealType> TypeInfo)
 		UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property->Property);
 		if(ObjectProperty)
 		{
-			if(ObjectProperty->GetPropertyValue_InContainer(ContainerCDO))
+			//if(ObjectProperty->GetPropertyValue_InContainer(ContainerCDO))
+			if(ObjectProperty->PropertyClass->IsChildOf(UActorComponent::StaticClass()))
 			{
 				ClassComponents.Add(ObjectProperty->PropertyClass);
 			}
