@@ -250,12 +250,11 @@ void FWorkerConnection::WaitForConnectionFuture(
 {
   if (ConnectionFuture.Wait(TimeoutMillis))
   {
-    auto WorkerConnection =
+    Connection =
         TSharedPtr<SpatialOSConnection>(new SpatialOSConnection{ConnectionFuture.Get()});
-    if (WorkerConnection->IsConnected())
+    if (Connection->IsConnected())
     {
-      AsyncTask(ENamedThreads::GameThread, [OnConnectedCallback, WorkerConnection, this]() {
-        Connection = WorkerConnection;
+      AsyncTask(ENamedThreads::GameThread, [OnConnectedCallback, this]() {
         OnConnectedCallback.Execute(true);
       });
       UE_LOG(LogSpatialOS, Log, TEXT("Connected."));

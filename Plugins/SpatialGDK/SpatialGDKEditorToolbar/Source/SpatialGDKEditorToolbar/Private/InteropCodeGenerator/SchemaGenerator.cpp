@@ -151,7 +151,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		// Note that this file has been generated automatically
 		package improbable.unreal.generated.%s;
 
-		import "improbable/unreal/gdk/core_types.schema";)""", *UnrealNameToSchemaTypeName(Class->GetName()).ToLower());
+		import "improbable/unreal/gdk/core_types.schema";)""", *UnrealNameToSchemaTypeName(Class->GetName().ToLower()));
 	Writer.PrintNewLine();
 
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);

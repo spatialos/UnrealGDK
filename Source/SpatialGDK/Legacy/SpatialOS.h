@@ -19,8 +19,8 @@ struct FWorldContext;
 
 // clang-format off
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedDelegate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDisconnectedDelegate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectionFailedDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDisconnectedDelegate, const FString&, Reason);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnConnectionFailedDelegate, const FString&, Reason);
 // clang-format on
 
 /**
