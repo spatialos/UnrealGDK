@@ -66,7 +66,7 @@ struct FPropertyChangeState
 class FRepHandleData
 {
 public:
-	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, ELifetimeCondition InCondition, ELifetimeRepNotifyCondition InRepNotifyCondition, int32 InArrayOffset) :
+	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, TArray<int32> PropertyIndicies, ELifetimeCondition InCondition, ELifetimeRepNotifyCondition InRepNotifyCondition, int32 InArrayOffset) :
 		Condition(InCondition),
 		RepNotifyCondition(InRepNotifyCondition),
 		Offset(0),
@@ -75,11 +75,14 @@ public:
 		// Build property chain.
 		check(PropertyNames.Num() > 0);
 		UStruct* CurrentContainerType = Class;
-		for (FName PropertyName : PropertyNames)
+		for (int i = 0; i < PropertyNames.Num(); i++) // UNR-334 using the PropertyNames is no longer good enough to resolve offsets when handling static arrays of structs.
 		{
+			FName PropertyName = PropertyNames[i];
+			// UNR-334 Instead of finding the property by name, for static arrays we will need to find the FUnrealProperty and then add it's ArrayIndex offset.
 			checkf(CurrentContainerType, TEXT("A property in the chain (except the end) is not a container."));
 			UProperty* CurProperty = CurrentContainerType->FindPropertyByName(PropertyName);
 			PropertyChain.Add(CurProperty);
+
 			UStructProperty* StructProperty = Cast<UStructProperty>(CurProperty);
 			if (StructProperty)
 			{
@@ -90,12 +93,16 @@ public:
 				CurrentContainerType = nullptr;
 			}
 		}
-		Property = PropertyChain[PropertyChain.Num() - 1];
+		Property = PropertyChain[PropertyChain.Num() - 1]; // UNR-334 ArrIndex out of bounds. Attempting to take the last property
 
 		// Calculate offset by summing the offsets of each property in the chain.
-		for (UProperty* CurProperty : PropertyChain)
+		for (int j = 0; j < PropertyChain.Num(); j++)
 		{
+			UProperty* CurProperty = PropertyChain[j];
+			int32 CurPropertyIndex = PropertyIndicies[j];
+			int32 IndexOffset = CurPropertyIndex * CurProperty->ElementSize;
 			Offset += CurProperty->GetOffset_ForInternal();
+			Offset += IndexOffset;
 		}
 	}
 

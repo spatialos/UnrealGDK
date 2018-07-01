@@ -873,19 +873,29 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
+			FString PropertyChainIndiciesInitList;
 			TArray<FString> PropertyChainNames;
+			TArray<FString> PropertyChainIndicies;
 			Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
 			{
 				return TEXT("\"") + PropertyInfo->Property->GetFName().ToString() + TEXT("\"");
 			});
 			PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
 
-			SourceWriter.Printf("RepHandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, %s, %s, %d));",
+			Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainIndicies, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
+			{
+				return FString::FromInt(PropertyInfo->StaticArrayIndex);
+			});
+			PropertyChainIndiciesInitList = FString::Join(PropertyChainIndicies, TEXT(", "));
+
+
+			SourceWriter.Printf("RepHandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, {%s}, %s, %s, %d));",
 				RepProp.Value->ReplicationData->Handle,
 				*PropertyChainInitList,
+				*PropertyChainIndiciesInitList,
 				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
 				*GetRepNotifyLifetimeConditionAsString(RepProp.Value->ReplicationData->RepNotifyCondition),
-				RepProp.Value->StaticArrayIndex * RepProp.Value->Property->ElementSize);
+				0);
 		}
 	}
 
