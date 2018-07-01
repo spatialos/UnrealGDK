@@ -888,14 +888,12 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 			});
 			PropertyChainIndiciesInitList = FString::Join(PropertyChainIndicies, TEXT(", "));
 
-
-			SourceWriter.Printf("RepHandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, {%s}, %s, %s, %d));",
+			SourceWriter.Printf("RepHandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, {%s}, %s, %s));",
 				RepProp.Value->ReplicationData->Handle,
 				*PropertyChainInitList,
 				*PropertyChainIndiciesInitList,
 				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
-				*GetRepNotifyLifetimeConditionAsString(RepProp.Value->ReplicationData->RepNotifyCondition),
-				0);
+				*GetRepNotifyLifetimeConditionAsString(RepProp.Value->ReplicationData->RepNotifyCondition));
 		}
 	}
 

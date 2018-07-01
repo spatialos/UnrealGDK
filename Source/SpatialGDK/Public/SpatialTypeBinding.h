@@ -66,19 +66,16 @@ struct FPropertyChangeState
 class FRepHandleData
 {
 public:
-	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, TArray<int32> PropertyIndicies, ELifetimeCondition InCondition, ELifetimeRepNotifyCondition InRepNotifyCondition, int32 InArrayOffset) :
+	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, TArray<int32> PropertyIndicies, ELifetimeCondition InCondition, ELifetimeRepNotifyCondition InRepNotifyCondition) :
 		Condition(InCondition),
 		RepNotifyCondition(InRepNotifyCondition),
-		Offset(0),
-		ArrayOffset(InArrayOffset)
+		Offset(0)
 	{
 		// Build property chain.
 		check(PropertyNames.Num() > 0);
 		UStruct* CurrentContainerType = Class;
-		for (int i = 0; i < PropertyNames.Num(); i++) // UNR-334 using the PropertyNames is no longer good enough to resolve offsets when handling static arrays of structs.
+		for (FName PropertyName : PropertyNames)
 		{
-			FName PropertyName = PropertyNames[i];
-			// UNR-334 Instead of finding the property by name, for static arrays we will need to find the FUnrealProperty and then add it's ArrayIndex offset.
 			checkf(CurrentContainerType, TEXT("A property in the chain (except the end) is not a container."));
 			UProperty* CurProperty = CurrentContainerType->FindPropertyByName(PropertyName);
 			PropertyChain.Add(CurProperty);
@@ -93,14 +90,14 @@ public:
 				CurrentContainerType = nullptr;
 			}
 		}
-		Property = PropertyChain[PropertyChain.Num() - 1]; // UNR-334 ArrIndex out of bounds. Attempting to take the last property
+		Property = PropertyChain[PropertyChain.Num() - 1];
 
 		// Calculate offset by summing the offsets of each property in the chain.
 		for (int j = 0; j < PropertyChain.Num(); j++)
 		{
 			UProperty* CurProperty = PropertyChain[j];
-			int32 CurPropertyIndex = PropertyIndicies[j];
-			int32 IndexOffset = CurPropertyIndex * CurProperty->ElementSize;
+			// Calculate the static array offset of this specific property, using it's index and it's parents indicies.
+			int32 IndexOffset = PropertyIndicies[j] * CurProperty->ElementSize;
 			Offset += CurProperty->GetOffset_ForInternal();
 			Offset += IndexOffset;
 		}
@@ -108,15 +105,13 @@ public:
 
 	FORCEINLINE uint8* GetPropertyData(uint8* Container) const
 	{
-		check(ArrayOffset <= Property->ArrayDim * Property->ElementSize);
-		return Container + Offset + ArrayOffset;
+		return Container + Offset;
 	}
 
   
 	FORCEINLINE const uint8* GetPropertyData(const uint8* Container) const
 	{
-		check(ArrayOffset <= Property->ArrayDim * Property->ElementSize);
-		return Container + Offset + ArrayOffset;
+		return Container + Offset;
 	}
 
 	TArray<UProperty*> PropertyChain;
@@ -126,7 +121,6 @@ public:
 
 private:
 	int32 Offset;
-	int32 ArrayOffset;
 };
 
 // A structure containing information about a migratable property.
