@@ -312,6 +312,7 @@ bool USpatialActorChannel::ReplicateActor()
 		}
 	}
 
+	bool bReplicateActor = true;
 	// We can early out if we know for sure there are no new changelists to send, and we are not creating a new entity.
 	if (!bCreatingNewEntity && MigratableChanged.Num() == 0)
 	{
@@ -319,8 +320,7 @@ bool USpatialActorChannel::ReplicateActor()
 		{
 			UpdateChangelistHistory(ActorReplicator->RepState);
 			MemMark.Pop();
-			// Sahil - fix this
-			//return false;
+			bIsReplicatingActor = false;
 		}
 	}
 
@@ -328,7 +328,7 @@ bool USpatialActorChannel::ReplicateActor()
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
 	// If any properties have changed, send a component update.
-	if (RepFlags.bNetInitial || RepChanged.Num() > 0 || MigratableChanged.Num() > 0)
+	if (bReplicateActor && RepFlags.bNetInitial || RepChanged.Num() > 0 || MigratableChanged.Num() > 0)
 	{		
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
@@ -410,32 +410,19 @@ bool USpatialActorChannel::ReplicateActor()
 		UpdateChangelistHistory(ActorReplicator->RepState);
 	}
 
-	//WroteSomethingImportant |= Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
-
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
 
 	for (UActorComponent* ActorComp : Actor->GetReplicatedComponents())
 	{
 		USpatialTypeBinding* ComponentTypeBinding = Interop->GetTypeBindingByClass(ActorComp->GetClass());
-		if (ActorComp && ActorComp->GetIsReplicated() && ComponentTypeBinding)
+		if (ActorComp && ActorComp->GetIsReplicated() && ComponentTypeBinding) // Only replicated subobjects with type bindings
 		{
-			bWroteSomethingImportant |= ReplicateSubobject_(ActorComp, RepFlags);	// (this makes those subobjects 'supported', and from here on those objects may have reference replicated)		
+			bWroteSomethingImportant |= ReplicateSubobject(ActorComp, RepFlags);
 		}
 	}
 
-	//todo-giray: The rest of this function is taken from Unreal's own implementation. It is mostly redundant in our case,
-	// but keeping it here for now to give us a chance to investigate if we need to write our own implementation for any of
-	// any code block below.
-
 	/*
-	// The Actor
-	WroteSomethingImportant |= ActorReplicator->ReplicateProperties(Bunch, RepFlags);
-
-	//todo-giray: Implement subobject replication
-	// The SubObjects
-	WroteSomethingImportant |= Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
-
-	// Look for deleted subobjects
+	// Do we need to add support for deleted subobjects?
 	for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
 	{
 		if (!RepComp.Key().IsValid())
@@ -449,23 +436,7 @@ bool USpatialActorChannel::ReplicateActor()
 			RepComp.Value()->CleanUp();
 			RepComp.RemoveCurrent();
 		}
-	}
-
-	// -----------------------------
-	// Send if necessary
-	// -----------------------------
-	bool SentBunch = false;
-	if (bWroteSomethingImportant)
-	{
-		FPacketIdRange PacketRange = SendBunch(&Bunch, 1);
-
-		for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
-		{
-			RepComp.Value()->PostSendBunch(PacketRange, Bunch.bReliable);
-		}
-		SentBunch = true;
-	}
-	*/
+	}*/
 
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
 	LastUpdateTime = Connection->Driver->Time;
@@ -479,33 +450,10 @@ bool USpatialActorChannel::ReplicateActor()
 	return bWroteSomethingImportant;
 }
 
-bool USpatialActorChannel::ReplicateSubobject_(UObject *Obj, const FReplicationFlags &RepFlags)
+bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, const FReplicationFlags &RepFlags)
 {
-	// Hack for now: subobjects are SupportsObject==false until they are replicated via ::ReplicateSUbobject, and then we make them supported
-	// here, by forcing the packagemap to give them a NetGUID.
-	//
-	// Once we can lazily handle unmapped references on the client side, this can be simplified.
-	//if (!Connection->Driver->GuidCache->SupportsObject(Obj))
-	//{
-	//	FNetworkGUID NetGUID = Connection->Driver->GuidCache->AssignNewNetGUID_Server(Obj);	//Make sure he gets a NetGUID so that he is now 'supported'
-	//}
 
-	//bool NewSubobject = false;
-
-	TWeakObjectPtr<UObject> WeakObj(Obj);
-
-	//if (!ObjectHasReplicator(WeakObj))
-	//{
-	//	// This is the first time replicating this subobject
-	//	// This bunch should be reliable and we should always return true
-	//	// even if the object properties did not diff from the CDO
-	//	// (this will ensure the content header chunk is sent which is all we care about
-	//	// to spawn this on the client).
-	//	Bunch.bReliable = true;
-	//	NewSubobject = true;
-	//}
-
-	FObjectReplicator& replicator = FindOrCreateReplicator(WeakObj).Get();//.ReplicateProperties(Bunch, RepFlags);
+	FObjectReplicator& replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Obj)).Get();
 	FRepChangelistState* ChangelistState = replicator.ChangelistMgr->GetRepChangelistState();
 	replicator.ChangelistMgr->Update(Obj, replicator.Connection->Driver->ReplicationFrame, replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
 
@@ -518,8 +466,6 @@ bool USpatialActorChannel::ReplicateSubobject_(UObject *Obj, const FReplicationF
 	{
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
-		//if(HistoryItem.Changed.Num() == 0)
-		//	continue;
 		TArray<uint16> Temp = RepChanged;
 		replicator.RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
 	}
@@ -527,14 +473,14 @@ bool USpatialActorChannel::ReplicateSubobject_(UObject *Obj, const FReplicationF
 	const bool bCompareIndexSame = replicator.RepState->LastCompareIndex == ChangelistState->CompareIndex;
 	replicator.RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
-	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
-	check(Interop);
-	Interop->SendSpatialUpdateSubobject(this, Obj, &replicator, RepChanged, TArray<uint16>());
-
 	if (RepChanged.Num() > 0)
 	{
+		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+		check(Interop);
+		Interop->SendSpatialUpdateSubobject(this, Obj, &replicator, RepChanged, TArray<uint16>());
 		replicator.RepState->HistoryEnd++;
 	}
+
 	UpdateChangelistHistory(replicator.RepState);
 	replicator.RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
 
