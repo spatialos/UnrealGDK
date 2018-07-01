@@ -1,4 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+#pragma optimize("", off)
+
 
 #include "TypeStructure.h"
 #include "SpatialGDKEditorInteropCodeGenerator.h"
@@ -222,6 +224,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 					StaticStructArrayPropertyNode->CompatibleChecksum = StaticArrayChecksum;
 
 					// Generate Type information on the inner struct.
+					// Note: The parent checksum of the properties within a struct that is a member of a static struct array, is the checksum for the struct itself after index modification.
 					StaticStructArrayPropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, {}, StaticArrayChecksum, 0, bIsRPC);
 					StaticStructArrayPropertyNode->StaticArrayIndex = i;
 					StaticStructArrayPropertyNode->Type->ParentProperty = StaticStructArrayPropertyNode;
@@ -276,8 +279,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
 				// This property is definitely a strong reference, recurse into it.
-				uint32 ParentPropertyNodeChecksum = PropertyNode->CompatibleChecksum;
-				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, ParentPropertyNodeChecksum, 0, bIsRPC);
+				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, ParentChecksum, 0, bIsRPC);
 				PropertyNode->Type->ParentProperty = PropertyNode;
 
 				if (!bIsRPC) // RPCs handle static arrays differently
@@ -289,14 +291,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 						TSharedPtr<FUnrealProperty> StaticObjectArrayPropertyNode = MakeShared<FUnrealProperty>();
 						StaticObjectArrayPropertyNode->Property = Property;
 						StaticObjectArrayPropertyNode->ContainerType = TypeNode;
-						StaticObjectArrayPropertyNode->ParentChecksum = ParentPropertyNodeChecksum;
+						StaticObjectArrayPropertyNode->ParentChecksum = ParentChecksum;
 
 						// Generate a new checksum based on the static array index.
-						uint32 StaticArrayChecksum = GenerateChecksum(Property, ParentChecksum, i);
-						StaticObjectArrayPropertyNode->CompatibleChecksum = StaticArrayChecksum;
+						StaticObjectArrayPropertyNode->CompatibleChecksum = GenerateChecksum(Property, ParentChecksum, i);
 
 						// Generate Type information on the inner struct.
-						StaticObjectArrayPropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, StaticArrayChecksum, 0, bIsRPC);
+						StaticObjectArrayPropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, ParentChecksum, 0, bIsRPC);
 						StaticObjectArrayPropertyNode->StaticArrayIndex = i;
 						StaticObjectArrayPropertyNode->Type->ParentProperty = StaticObjectArrayPropertyNode;
 
