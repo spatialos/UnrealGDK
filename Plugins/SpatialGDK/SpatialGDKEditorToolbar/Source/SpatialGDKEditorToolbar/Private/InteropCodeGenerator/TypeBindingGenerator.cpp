@@ -885,7 +885,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 				*PropertyChainInitList,
 				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
 				*GetRepNotifyLifetimeConditionAsString(RepProp.Value->ReplicationData->RepNotifyCondition),
-				0);
+				RepProp.Value->StaticArrayIndex * RepProp.Value->Property->ElementSize);
 		}
 	}
 
