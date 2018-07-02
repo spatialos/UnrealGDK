@@ -18,8 +18,6 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 namespace
 {
 
-typedef TMap<FString, TArray<FString>> ClassHeaderMap;
-
 int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<TArray<FName>>& MigratableProperties, const TArray<FString>& TypeBindingHeaders)
 {
 	FCodeWriter OutputSchema;
@@ -226,7 +224,7 @@ bool SpatialGDKGenerateInteropCode()
 	const FString UserClassesSectionName = "InteropCodeGen.ClassesToGenerate";
 	if (const FConfigSection* UserInteropCodeGenSection = GetConfigSection(ConfigFilePath, UserClassesSectionName))
 	{
-		const ClassHeaderMap Classes = GenerateClassHeaderMap(UserInteropCodeGenSection);
+		Classes = GenerateClassHeaderMap(UserInteropCodeGenSection);
 		if (!CheckClassNameListValidity(Classes))
 		{
 			return false;

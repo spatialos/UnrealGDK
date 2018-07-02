@@ -399,12 +399,6 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			// Inform USpatialInterop of this new actor channel.
 			NetDriver->GetSpatialInterop()->AddActorChannel(EntityId.ToSpatialEntityId(), Channel);
 
-			// Apply initial replicated properties.
-			for (FPendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
-			{
-				NetDriver->GetSpatialInterop()->ReceiveAddComponent(Channel, PendingAddComponent.AddComponentOp);
-			}
-
 			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
 			NetDriver->GetSpatialInterop()->SendComponentInterests(Channel, EntityId.ToSpatialEntityId());
 
@@ -413,6 +407,12 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 				auto InitialLocation = SpatialConstants::SpatialOSCoordinatesToLocation(PositionComponent->coords());
 				FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 				EntityActor->FinishSpawning(FTransform(FRotator::ZeroRotator, SpawnLocation));
+			}
+
+			// Apply initial replicated properties.
+			for (FPendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+			{
+				NetDriver->GetSpatialInterop()->ReceiveAddComponent(Channel, PendingAddComponent.AddComponentOp);
 			}
 
 			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires

@@ -70,6 +70,17 @@ public:
 		};
 	}
 
+	FORCEINLINE FPropertyChangeState GetChangeStateSubobject(UObject* obj, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged) const
+	{
+		return {
+			(uint8*)obj,
+			RepChanged,
+			replicator->RepLayout->Cmds,
+			replicator->RepLayout->BaseHandleToCmdIndex,
+			MigChanged
+		};
+	}
+
 	// UChannel interface
 	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, bool bOpenedLocally) override;
 	virtual void Close() override;
@@ -77,9 +88,15 @@ public:
 	virtual bool ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
 
+	bool ReplicateSubobject(UObject *Obj, const FReplicationFlags &RepFlags);
+	FPropertyChangeState CreateSubobjectChangeState(UActorComponent* Component);
+
 	// Called by SpatialInterop when receiving an update.
 	void PreReceiveSpatialUpdate();
 	void PostReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies);
+
+	void PreReceiveSpatialUpdateSubobject(UActorComponent* Component);
+	void PostReceiveSpatialUpdateSubobject(UActorComponent* Component, const TArray<UProperty*>& RepNotifies);
 
 	// Distinguishes between channels created for actors that went through the "old" pipeline vs actors that are triggered through SpawnActor() calls.
 	//In the future we may not use an actor channel for non-core actors.

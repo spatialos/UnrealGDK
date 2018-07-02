@@ -153,14 +153,14 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	Interop->Init(SpatialOSInstance, this, TimerManager);
 }
 
-void USpatialNetDriver::OnSpatialOSDisconnected()
+void USpatialNetDriver::OnSpatialOSDisconnected(const FString& Reason)
 {
-	UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Disconnected from SpatialOS."));
+	UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Disconnected from SpatialOS. Reason: %s"), *Reason);
 }
 
-void USpatialNetDriver::OnSpatialOSConnectFailed()
+void USpatialNetDriver::OnSpatialOSConnectFailed(const FString& Reason)
 {
-	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS."));
+	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
 }
 
 bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const
@@ -757,11 +757,8 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		Interop->InvokeRPC(Actor, Function, CallingObject, Parameters);
+		Interop->InvokeRPC(CallingObject, Function, Parameters);
 	}
-
-	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver
-	//UIpNetDriver::ProcessRemoteFunction(Actor, Function, Parameters, OutParms, Stack, SubObject);
 }
 
 void USpatialNetDriver::TickFlush(float DeltaTime)

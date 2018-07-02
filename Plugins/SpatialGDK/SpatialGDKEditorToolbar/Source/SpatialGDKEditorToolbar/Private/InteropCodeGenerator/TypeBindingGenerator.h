@@ -5,6 +5,10 @@
 #include "EngineMinimal.h"
 #include "TypeStructure.h"
 
+typedef TMap<FString, TArray<FString>> ClassHeaderMap;
+
+extern ClassHeaderMap Classes;
+
 class FCodeWriter;
 
 // Generates code to copy an Unreal 'PropertyValue' and write it to a SpatialOS component update object 'Update'.
@@ -14,7 +18,8 @@ void GenerateUnrealToSchemaConversion(
 	UProperty* Property,
 	const FString& PropertyValue,
 	TFunction<void(const FString&)> ObjectResolveFailureGenerator,
-	bool bIsRPCProperty);
+	bool bIsRPCProperty,
+	bool hasUnresolvedObjects = false);
 
 // Generates code to handle the queueing of an array of UObject* if it contains unresolved objects.
 // Currently only supports replicated properties (i.e. does not support migratable properties or RPC arguments).
@@ -66,17 +71,17 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& MigratableData);
 void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType);
 void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class);
-void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class);
+void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo);
 void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class);
-void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class);
+void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo);
 void GenerateFunction_GetInterestOverrideMap(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData, EReplicatedPropertyGroup Group);
 void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo);
 void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& MigratableData);
 void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData, EReplicatedPropertyGroup Group);
-void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo);
+void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo, UClass* Class);
 void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& MigratableData);
 void GenerateFunction_ReceiveUpdate_MulticastRPCs(FCodeWriter& SourceWriter, UClass* Class, const TArray <TSharedPtr<FUnrealRPC>> RPCs);
 void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC);
