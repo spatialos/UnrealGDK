@@ -1,3 +1,10 @@
+
+# Use the [WIP GDOC](https://docs.google.com/document/d/1Vy37oFPmWx1EJz8tG_Dibv782D_f05GshSmQeRVdpmY/edit) - NOT THIS DOC
+
+<br/>
+
+
+
 # Getting started
 To get going using the Unreal GDK, you need to install and set up:
 * the SpatialOS fork of the Unreal Engine
