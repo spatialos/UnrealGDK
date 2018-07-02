@@ -214,7 +214,7 @@ bool SpatialGDKGenerateInteropCode()
 	const FString UserClassesSectionName = "InteropCodeGen.ClassesToGenerate";
 	if (const FConfigSection* UserInteropCodeGenSection = GetConfigSection(ConfigFilePath, UserClassesSectionName))
 	{
-		const ClassHeaderMap Classes = GenerateClassHeaderMap(UserInteropCodeGenSection);
+		Classes = GenerateClassHeaderMap(UserInteropCodeGenSection);
 		if (!CheckClassNameListValidity(Classes))
 		{
 			return false;

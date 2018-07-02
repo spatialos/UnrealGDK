@@ -551,8 +551,30 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 			RPCsByType.FindOrAdd(RPC.Value->Type).Add(RPC.Value);
 		}
 		return true;
-	}, true);
+	}, false);
 	return RPCsByType;
+}
+
+TArray<UClass*> GetAllComponents(TSharedPtr<FUnrealType> TypeInfo)
+{
+	TArray<UClass*> ClassComponents;
+	UObject* ContainerCDO = Cast<UClass>(TypeInfo->Type)->GetDefaultObject();
+	VisitAllProperties(TypeInfo, [&ClassComponents, &ContainerCDO](TSharedPtr<FUnrealProperty> Property)
+	{
+		UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property->Property);
+		if (ObjectProperty)
+		{
+			// The commented out line will not pick up components that are only defined in blueprints
+			//if(ObjectProperty->GetPropertyValue_InContainer(ContainerCDO))
+			if (ObjectProperty->PropertyClass->IsChildOf(UActorComponent::StaticClass()))
+			{
+				ClassComponents.Add(ObjectProperty->PropertyClass);
+			}
+		}
+		return false;
+	}, false);
+	
+		return ClassComponents;
 }
 
 TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode)

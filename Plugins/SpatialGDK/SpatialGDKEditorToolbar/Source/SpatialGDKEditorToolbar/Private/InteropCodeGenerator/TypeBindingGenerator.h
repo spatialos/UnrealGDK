@@ -5,6 +5,10 @@
 #include "EngineMinimal.h"
 #include "TypeStructure.h"
 
+typedef TMap<FString, TArray<FString>> ClassHeaderMap;
+
+extern ClassHeaderMap Classes;
+
 class FCodeWriter;
 
 // Generates code to copy an Unreal 'PropertyValue' and write it to a SpatialOS component update object 'Update'.
@@ -58,10 +62,10 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& MigratableData);
 void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType);
 void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class);
-void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class);
+void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo);
 void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class);
-void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class);
+void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo);
 void GenerateFunction_GetInterestOverrideMap(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData, EReplicatedPropertyGroup Group);

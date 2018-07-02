@@ -757,7 +757,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		Interop->InvokeRPC(Actor, Function, CallingObject, Parameters);
+		Interop->InvokeRPC(CallingObject, Function, Parameters);
 	}
 
 	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver
