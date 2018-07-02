@@ -1,6 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma optimize("", off)
-
 
 #include "TypeStructure.h"
 #include "SpatialGDKEditorInteropCodeGenerator.h"

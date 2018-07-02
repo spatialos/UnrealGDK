@@ -93,11 +93,11 @@ public:
 		Property = PropertyChain[PropertyChain.Num() - 1];
 
 		// Calculate offset by summing the offsets of each property in the chain.
-		for (int j = 0; j < PropertyChain.Num(); j++)
+		for (int i = 0; i < PropertyChain.Num(); i++)
 		{
-			UProperty* CurProperty = PropertyChain[j];
+			UProperty* CurProperty = PropertyChain[i];
 			// Calculate the static array offset of this specific property, using it's index and it's parents indicies.
-			int32 IndexOffset = PropertyIndicies[j] * CurProperty->ElementSize;
+			int32 IndexOffset = PropertyIndicies[i] * CurProperty->ElementSize;
 			Offset += CurProperty->GetOffset_ForInternal();
 			Offset += IndexOffset;
 		}

@@ -869,8 +869,6 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 
 		for (auto& RepProp : ReplicatedProperties)
 		{
-			auto Handle = RepProp.Key;
-
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
 			FString PropertyChainIndiciesInitList;
@@ -1387,8 +1385,6 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 
 		for (auto& RepProp : RepData[Group])
 		{
-			auto Handle = RepProp.Key;
-
 			check(RepProp.Value->ReplicationData->Handle > 0);
 
 			GenerateBody_SendUpdate_RepDataProperty(SourceWriter,
@@ -1586,7 +1582,6 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 		SourceWriter.PrintNewLine();
 		for (auto& RepProp : RepData[Group])
 		{
-			auto Handle = RepProp.Key;
 			check(RepProp.Value->ReplicationData->Handle > 0);
 
 			GenerateBody_ReceiveUpdate_RepDataProperty(SourceWriter,
