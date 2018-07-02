@@ -10,9 +10,9 @@ void FSpatialMemoryReader::DeserializeObjectRef(improbable::unreal::UnrealObject
 	*this << ObjectRef.entity();
 	*this << ObjectRef.offset();
 
-	bool bHasPath;
-	*this << bHasPath;
-	if (bHasPath)
+	uint8 HasPath;
+	SerializeBits(&HasPath, 1);
+	if (HasPath)
 	{
 		FString Path;
 		*this << Path;
@@ -20,9 +20,9 @@ void FSpatialMemoryReader::DeserializeObjectRef(improbable::unreal::UnrealObject
 		ObjectRef.path() = std::string(TCHAR_TO_UTF8(*Path));
 	}
 
-	bool bHasOuter;
-	*this << bHasOuter;
-	if (bHasOuter)
+	uint8 HasOuter;
+	SerializeBits(&HasOuter, 1);
+	if (HasOuter)
 	{
 		improbable::unreal::UnrealObjectRef Outer;
 		DeserializeObjectRef(Outer);

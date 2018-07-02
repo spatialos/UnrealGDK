@@ -14,16 +14,8 @@ void GenerateUnrealToSchemaConversion(
 	UProperty* Property,
 	const FString& PropertyValue,
 	TFunction<void(const FString&)> ObjectResolveFailureGenerator,
-	bool bIsRPCProperty);
-
-// Generates code to handle the queueing of an array of UObject* if it contains unresolved objects.
-// Currently only supports replicated properties (i.e. does not support migratable properties or RPC arguments).
-void GenerateUObjectArrayToSchemaConversion(
-	FCodeWriter& Writer,
-	const FString& Update,
-	UArrayProperty* Property,
-	const FString& PropertyValue,
-	uint16 Handle);
+	bool bIsRPCProperty,
+	bool bUnresolvedObjectsHandledOutside);
 
 // Generates code to extract property data from a SpatialOS component update object and write it to an Unreal 'PropertyValue'
 void GeneratePropertyToUnrealConversion(

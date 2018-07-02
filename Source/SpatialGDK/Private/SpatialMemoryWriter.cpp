@@ -10,17 +10,17 @@ void FSpatialMemoryWriter::SerializeObjectRef(improbable::unreal::UnrealObjectRe
 	*this << ObjectRef.entity();
 	*this << ObjectRef.offset();
 
-	bool bHasPath = !ObjectRef.path().empty();
-	*this << bHasPath;
-	if (bHasPath)
+	uint8 HasPath = !ObjectRef.path().empty();
+	SerializeBits(&HasPath, 1);
+	if (HasPath)
 	{
 		FString Path = FString(UTF8_TO_TCHAR(ObjectRef.path()->c_str()));
 		*this << Path;
 	}
 
-	bool bHasOuter = !ObjectRef.outer().empty();
-	*this << bHasOuter;
-	if (bHasOuter)
+	uint8 HasOuter = !ObjectRef.outer().empty();
+	SerializeBits(&HasOuter, 1);
+	if (HasOuter)
 	{
 		SerializeObjectRef(*ObjectRef.outer());
 	}
@@ -35,7 +35,7 @@ FArchive& FSpatialMemoryWriter::operator<<(UObject*& Value)
 		ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 		if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			// TODO: Collect unresolved objects in a set to queue up
+			UnresolvedObjects.Add(Value);
 			ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 		}
 	}
