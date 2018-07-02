@@ -154,6 +154,42 @@ void USpatialActorChannel::Close()
 	Super::Close();
 }
 
+FPropertyChangeState USpatialActorChannel::CreateSubobjectChangeState(UActorComponent* Component)
+{
+	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Component)).Get();
+
+	TArray<uint16> InitialRepChanged;
+	int32 DynamicArrayDepth = 0;
+	const int32 CmdCount = Replicator.RepLayout->Cmds.Num();
+	for (uint16 CmdIdx = 0; CmdIdx < CmdCount; ++CmdIdx)
+	{
+		const auto& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
+
+		InitialRepChanged.Add(Cmd.RelativeHandle);
+
+		if (Cmd.Type == REPCMD_DynamicArray)
+		{
+			DynamicArrayDepth++;
+
+			// For the first layer of each dynamic array encountered at the root level
+			// add the number of array properties to conform to Unreal's RepLayout design and 
+			// allow FRepHandleIterator to jump over arrays. Cmd.EndCmd is an index into 
+			// RepLayout->Cmds[] that points to the value after the termination NULL of this array.
+			if (DynamicArrayDepth == 1)
+			{
+				InitialRepChanged.Add((Cmd.EndCmd - CmdIdx) - 2);
+			}
+		}
+		else if (Cmd.Type == REPCMD_Return)
+		{
+			DynamicArrayDepth--;
+			checkf(DynamicArrayDepth >= 0 || CmdIdx == CmdCount - 1, TEXT("Encountered erroneous RepLayout"));
+		}
+	}
+
+	return GetChangeStateSubobject(Component, &Replicator, InitialRepChanged, TArray<uint16>());
+}
+
 bool USpatialActorChannel::ReplicateActor()
 {
 	if (!IsReadyForReplication())
@@ -277,13 +313,14 @@ bool USpatialActorChannel::ReplicateActor()
 	}
 
 	// We can early out if we know for sure there are no new changelists to send, and we are not creating a new entity.
+	bool bReplicateActor = true;
 	if (!bCreatingNewEntity && MigratableChanged.Num() == 0)
 	{
 		if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
 		{
 			UpdateChangelistHistory(ActorReplicator->RepState);
 			MemMark.Pop();
-			return false;
+			bReplicateActor = false;
 		}
 	}
 
@@ -291,7 +328,7 @@ bool USpatialActorChannel::ReplicateActor()
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
 	// If any properties have changed, send a component update.
-	if (RepFlags.bNetInitial || RepChanged.Num() > 0 || MigratableChanged.Num() > 0)
+	if (bReplicateActor && RepFlags.bNetInitial || RepChanged.Num() > 0 || MigratableChanged.Num() > 0)
 	{		
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
@@ -374,49 +411,30 @@ bool USpatialActorChannel::ReplicateActor()
 	}
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
-	//todo-giray: The rest of this function is taken from Unreal's own implementation. It is mostly redundant in our case,
-	// but keeping it here for now to give us a chance to investigate if we need to write our own implementation for any of
-	// any code block below.
+
+	for (UActorComponent* ActorComp : Actor->GetReplicatedComponents())
+	{
+		USpatialTypeBinding* ComponentTypeBinding = Interop->GetTypeBindingByClass(ActorComp->GetClass());
+		if (ActorComp && ActorComp->GetIsReplicated() && ComponentTypeBinding) // Only replicated subobjects with type bindings
+		{
+			bWroteSomethingImportant |= ReplicateSubobject(ActorComp, RepFlags);
+		}
+	}
 
 	/*
-	// The Actor
-	WroteSomethingImportant |= ActorReplicator->ReplicateProperties(Bunch, RepFlags);
-
-	//todo-giray: Implement subobject replication
-	// The SubObjects
-	WroteSomethingImportant |= Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
-
-	// Look for deleted subobjects
+	// Do we need to add support for deleted subobjects?
 	for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
 	{
-		if (!RepComp.Key().IsValid())
-		{
-			// Write a deletion content header:
-			WriteContentBlockForSubObjectDelete(Bunch, RepComp.Value()->ObjectNetGUID);
-
-			bWroteSomethingImportant = true;
-			Bunch.bReliable = true;
-
-			RepComp.Value()->CleanUp();
-			RepComp.RemoveCurrent();
-		}
-	}
-
-	// -----------------------------
-	// Send if necessary
-	// -----------------------------
-	bool SentBunch = false;
-	if (bWroteSomethingImportant)
+	if (!RepComp.Key().IsValid())
 	{
-		FPacketIdRange PacketRange = SendBunch(&Bunch, 1);
-
-		for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
-		{
-			RepComp.Value()->PostSendBunch(PacketRange, Bunch.bReliable);
-		}
-		SentBunch = true;
+	// Write a deletion content header:
+	WriteContentBlockForSubObjectDelete(Bunch, RepComp.Value()->ObjectNetGUID);
+	bWroteSomethingImportant = true;
+	Bunch.bReliable = true;
+	RepComp.Value()->CleanUp();
+	RepComp.RemoveCurrent();
 	}
-	*/
+	}*/
 
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
 	LastUpdateTime = Connection->Driver->Time;
@@ -428,6 +446,43 @@ bool USpatialActorChannel::ReplicateActor()
 	bForceCompareProperties = false;		// Only do this once per frame when set
 
 	return bWroteSomethingImportant;
+}
+
+bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, const FReplicationFlags &RepFlags)
+{
+
+	FObjectReplicator& replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Obj)).Get();
+	FRepChangelistState* ChangelistState = replicator.ChangelistMgr->GetRepChangelistState();
+	replicator.ChangelistMgr->Update(Obj, replicator.Connection->Driver->ReplicationFrame, replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
+
+	const int32 PossibleNewHistoryIndex = replicator.RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
+	FRepChangedHistory& PossibleNewHistoryItem = replicator.RepState->ChangeHistory[PossibleNewHistoryIndex];
+	TArray<uint16>& RepChanged = PossibleNewHistoryItem.Changed;
+
+	// Gather all change lists that are new since we last looked, and merge them all together into a single CL
+	for (int32 i = replicator.RepState->LastChangelistIndex; i < ChangelistState->HistoryEnd; i++)
+	{
+		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
+		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
+		TArray<uint16> Temp = RepChanged;
+		replicator.RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
+	}
+
+	const bool bCompareIndexSame = replicator.RepState->LastCompareIndex == ChangelistState->CompareIndex;
+	replicator.RepState->LastCompareIndex = ChangelistState->CompareIndex;
+
+	if (RepChanged.Num() > 0)
+	{
+		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+		check(Interop);
+		Interop->SendSpatialUpdateSubobject(this, Obj, &replicator, RepChanged, TArray<uint16>());
+		replicator.RepState->HistoryEnd++;
+	}
+
+	UpdateChangelistHistory(replicator.RepState);
+	replicator.RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+
+	return true;
 }
 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
@@ -497,11 +552,28 @@ void USpatialActorChannel::PreReceiveSpatialUpdate()
 	Actor->PreNetReceive();
 }
 
+void USpatialActorChannel::PreReceiveSpatialUpdateSubobject(UActorComponent* Component)
+{
+	Component->PreNetReceive();
+}
+
 void USpatialActorChannel::PostReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies)
 {
 	Actor->PostNetReceive();
 	ActorReplicator->RepNotifies = RepNotifies;
 	ActorReplicator->CallRepNotifies(false);
+}
+
+void USpatialActorChannel::PostReceiveSpatialUpdateSubobject(UActorComponent* Component, const TArray<UProperty*>& RepNotifies)
+{
+	TWeakObjectPtr<UObject> Obj(Component);
+	if (ReplicationMap.Find(Obj))
+	{
+		FObjectReplicator& Replicator = FindOrCreateReplicator(Obj).Get();
+		Component->PostNetReceive();
+		Replicator.RepNotifies = RepNotifies;
+		Replicator.CallRepNotifies(false);
+	}
 }
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op)

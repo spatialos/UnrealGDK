@@ -184,17 +184,30 @@ void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TAr
 	Binding->SendComponentUpdates(Channel->GetChangeState(RepChanged, MigChanged), Channel, Channel->GetEntityId());
 }
 
-void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, UObject* CallingObject, void* Parameters)
+void USpatialInterop::SendSpatialUpdateSubobject(USpatialActorChannel* Channel, UObject* Subobject, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
 {
-	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
+	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Subobject->GetClass());
+	if (!Binding)
+	{
+		// IMPROBABLE: MCS - Readded this log as I'm curious about which classes we might not be supporting
+		UE_LOG(LogSpatialOSInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
+			*Subobject->GetClass()->GetName());
+		return;
+	}
+	Binding->SendComponentUpdates(Channel->GetChangeStateSubobject(Subobject, replicator, RepChanged, MigChanged), Channel, Channel->GetEntityId());
+}
+
+void USpatialInterop::InvokeRPC(UObject* TargetObject, const UFunction* const Function, void* Parameters)
+{
+	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetObject->GetClass());
 	if (!Binding)
 	{
 		UE_LOG(LogSpatialOSInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send RPC on unsupported class %s."),
-			*TargetActor->GetClass()->GetName());
+			*TargetObject->GetClass()->GetName());
 		return;
 	}
 
-	Binding->SendRPCCommand(CallingObject, Function, Parameters);
+	Binding->SendRPCCommand(TargetObject, Function, Parameters);
 }
 
 void USpatialInterop::ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp)
