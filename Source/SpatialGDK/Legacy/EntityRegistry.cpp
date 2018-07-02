@@ -45,7 +45,7 @@ UClass** UEntityRegistry::GetRegisteredEntityClass(const FString& ClassName)
   auto ClassToSpawn = ClassMap.Find(ClassName);
   if (ClassToSpawn == nullptr)
   {
-    UE_LOG(LogEntityRegistry, Warning, TEXT("No UClass is associated with ClassName('%s')."),
+    UE_LOG(LogEntityRegistry, Log, TEXT("No UClass is associated with ClassName('%s')."),
            *ClassName);
     return nullptr;
   }

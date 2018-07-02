@@ -134,6 +134,17 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 	UnbindFromSpatialView();
+
+#if WITH_EDITOR
+	if (SpatialNetDriver->IsServer() &&
+		SpatialNetDriver->GetWorld()->WorldType == EWorldType::PIE &&
+		SpatialNetDriver->GetEntityRegistry()->GetActorFromEntityId(ActorEntityId.ToSpatialEntityId()))
+	{
+		// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
+		DeleteEntityIfAuthoritative();
+	}
+#endif
+
 	return UActorChannel::CleanUp(bForDestroy);
 }
 
@@ -475,6 +486,9 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	else
 	{
 		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), ActorEntityId.ToSpatialEntityId());
+
+		// Inform USpatialInterop of this new actor channel/entity pairing
+		SpatialNetDriver->GetSpatialInterop()->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
 	}
 }
 
@@ -507,11 +521,12 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 		PinnedView->Remove(ReserveEntityCallback);
 	}
 
-	USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-	check(PackageMap);
 	ActorEntityId = *Op.EntityId;
 
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
+
+	// Inform USpatialInterop of this new actor channel/entity pairing
+	SpatialNetDriver->GetSpatialInterop()->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)

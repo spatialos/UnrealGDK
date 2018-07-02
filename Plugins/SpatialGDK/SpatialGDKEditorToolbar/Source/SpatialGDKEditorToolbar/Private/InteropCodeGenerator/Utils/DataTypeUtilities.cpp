@@ -6,7 +6,7 @@
 
 FString GetNamespace(UStruct* Struct)
 {
-	return FString::Printf(TEXT("improbable::unreal::generated::%s::"), *Struct->GetName().ToLower());
+	return FString::Printf(TEXT("improbable::unreal::generated::%s::"), *UnrealNameToSchemaTypeName(Struct->GetName().ToLower()));
 }
 
 FString GetEnumDataType(const UEnumProperty* EnumProperty)
@@ -28,6 +28,7 @@ FString GetEnumDataType(const UEnumProperty* EnumProperty)
 
 FString UnrealNameToSchemaTypeName(const FString& UnrealName)
 {
+	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
 	return UnrealName.Replace(TEXT("_"), TEXT(""));
 }
 
@@ -58,9 +59,7 @@ FString SchemaRPCResponseType(UFunction* Function)
 
 FString SchemaRPCName(UClass* Class, UFunction* Function)
 {
-	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-	FString RPCName = UnrealNameToSchemaTypeName(Function->GetName().ToLower());
-	return RPCName;
+	return UnrealNameToSchemaTypeName(Function->GetName().ToLower());
 }
 
 FString CPPCommandClassName(UClass* Class, UFunction* Function)
@@ -76,8 +75,7 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property, const int Fi
 	TArray<FString> ChainNames;
 	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
 	{
-		// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-		return Property->Property->GetName().ToLower().Replace(TEXT("_"), TEXT(""));
+		return UnrealNameToSchemaTypeName(Property->Property->GetName().ToLower());
 	});
 
 	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
