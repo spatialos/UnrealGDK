@@ -84,7 +84,7 @@ FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 	{
 		DataType = TEXT("uint64");
 	}
-	else if (Property->IsA(UNameProperty::StaticClass()) || Property->IsA(UStrProperty::StaticClass()))
+	else if (Property->IsA(UNameProperty::StaticClass()) || Property->IsA(UStrProperty::StaticClass()) || Property->IsA(UTextProperty::StaticClass()))
 	{
 		DataType = TEXT("string");
 	}
