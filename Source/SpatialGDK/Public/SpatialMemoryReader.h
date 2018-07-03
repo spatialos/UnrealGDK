@@ -1,0 +1,30 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Serialization/MemoryReader.h"
+
+#include <improbable/unreal/gdk/core_types.h>
+
+class USpatialPackageMapClient;
+
+class SPATIALGDK_API FSpatialMemoryReader : public FMemoryReader
+{
+public:
+	FSpatialMemoryReader(TArray<uint8>& InBytes, USpatialPackageMapClient* InPackageMap)
+	: FMemoryReader(InBytes)
+	, PackageMap(InPackageMap)
+	{}
+
+	using FArchive::operator<<; // For visibility of the overloads we don't override
+
+	virtual FArchive& operator<<(UObject*& Value) override;
+
+	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
+
+protected:
+	void DeserializeObjectRef(improbable::unreal::UnrealObjectRef& ObjectRef);
+
+	USpatialPackageMapClient* PackageMap;
+};
