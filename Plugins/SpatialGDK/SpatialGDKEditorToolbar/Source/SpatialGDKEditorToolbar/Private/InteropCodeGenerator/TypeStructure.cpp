@@ -3,6 +3,8 @@
 #include "TypeStructure.h"
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 
+#include "Engine/SCS_Node.h"
+
 FString GetFullCPPName(UClass* Class)
 {
 	if (Class->IsChildOf(AActor::StaticClass()))
@@ -476,24 +478,40 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 
 TArray<UClass*> GetAllComponents(TSharedPtr<FUnrealType> TypeInfo)
 {
-	TArray<UClass*> ClassComponents;
-	UObject* ContainerCDO = Cast<UClass>(TypeInfo->Type)->GetDefaultObject();
-	VisitAllProperties(TypeInfo, [&ClassComponents, &ContainerCDO](TSharedPtr<FUnrealProperty> Property)
+	UClass* Class = Cast<UClass>(TypeInfo->Type);
+
+	TArray<UClass*> ComponentClasses;
+	if (AActor* ContainerCDO = Cast<AActor>(Class->GetDefaultObject()))
 	{
-		UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property->Property);
-		if (ObjectProperty)
+		TInlineComponentArray<UActorComponent*> NativeComponents;
+		ContainerCDO->GetComponents(NativeComponents);
+
+		for (UActorComponent* Component : NativeComponents)
 		{
-			// The commented out line will not pick up components that are only defined in blueprints
-			//if(ObjectProperty->GetPropertyValue_InContainer(ContainerCDO))
-			if (ObjectProperty->PropertyClass->IsChildOf(UActorComponent::StaticClass()))
+			ComponentClasses.Add(Component->GetClass());
+		}
+
+		if (UBlueprintGeneratedClass* BGC = Cast<UBlueprintGeneratedClass>(Class))
+		{
+			for (UActorComponent* Component : BGC->ComponentTemplates)
 			{
-				ClassComponents.Add(ObjectProperty->PropertyClass);
+				ComponentClasses.Add(Component->GetClass());
+			}
+
+			if (USimpleConstructionScript* SCS = BGC->SimpleConstructionScript)
+			{
+				for (USCS_Node* Node : SCS->GetAllNodes())
+				{
+					if (Node->ComponentTemplate)
+					{
+						ComponentClasses.Add(Node->ComponentTemplate->GetClass());
+					}
+				}
 			}
 		}
-		return false;
-	}, false);
-	
-		return ClassComponents;
+	}
+
+	return ComponentClasses;
 }
 
 TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode)
