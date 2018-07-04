@@ -202,7 +202,7 @@ TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNod
 //	   {"OtherProperty", "PropertyWithinOtherProperty"}
 //   }
 // In the future, we can get this information directly from the UStruct*.
-TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties, uint32 ParentChecksum, int32 StaticArrayIndex, bool bIsRPC);
+TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksum, int32 StaticArrayIndex, bool bIsRPC);
 
 // Traverses an AST, and generates a flattened list of replicated properties, which will match the Cmds array of FRepLayout.
 // The list of replicated properties will all have the ReplicatedData field set to a valid FUnrealRepData node which contains
