@@ -453,12 +453,12 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 
 	// Find the handover properties.
 	uint16 MigratableDataHandle = 1;
-	VisitAllProperties(TypeNode, [&MigratableDataHandle](TSharedPtr<FUnrealProperty> PropertyInfo)
+	VisitAllProperties(TypeNode, [&MigratableDataHandle](TSharedPtr<FUnrealProperty> Property)
 	{
-		if (PropertyInfo->Property->PropertyFlags & CPF_Handover)
+		if (Property->Property->PropertyFlags & CPF_Handover)
 		{
-			PropertyInfo->MigratableData = MakeShared<FUnrealMigratableData>();
-			PropertyInfo->MigratableData->Handle = MigratableDataHandle++;
+			Property->MigratableData = MakeShared<FUnrealMigratableData>();
+			Property->MigratableData->Handle = MigratableDataHandle++;
 		}
 		return true;
 	}, true);
