@@ -491,12 +491,15 @@ TArray<UClass*> GetAllComponents(TSharedPtr<FUnrealType> TypeInfo)
 			ComponentClasses.Add(Component->GetClass());
 		}
 
+		// Components that are added in a blueprint won't appear in the CDO.
 		if (UBlueprintGeneratedClass* BGC = Cast<UBlueprintGeneratedClass>(Class))
 		{
-			for (UActorComponent* Component : BGC->ComponentTemplates)
-			{
-				ComponentClasses.Add(Component->GetClass());
-			}
+			// The 'ComponentTemplates' array seems to be always empty when the Interop codegen is
+			// ran, and the actual components are found in the SimpleConstructionScript nodes below.
+			//for (UActorComponent* Component : BGC->ComponentTemplates)
+			//{
+			//	ComponentClasses.Add(Component->GetClass());
+			//}
 
 			if (USimpleConstructionScript* SCS = BGC->SimpleConstructionScript)
 			{
