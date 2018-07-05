@@ -446,36 +446,36 @@ bool USpatialActorChannel::ReplicateActor()
 bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, const FReplicationFlags &RepFlags)
 {
 
-	FObjectReplicator& replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Obj)).Get();
-	FRepChangelistState* ChangelistState = replicator.ChangelistMgr->GetRepChangelistState();
-	replicator.ChangelistMgr->Update(Obj, replicator.Connection->Driver->ReplicationFrame, replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
+	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Obj)).Get();
+	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
+	Replicator.ChangelistMgr->Update(Obj, Replicator.Connection->Driver->ReplicationFrame, Replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
 
-	const int32 PossibleNewHistoryIndex = replicator.RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
-	FRepChangedHistory& PossibleNewHistoryItem = replicator.RepState->ChangeHistory[PossibleNewHistoryIndex];
+	const int32 PossibleNewHistoryIndex = Replicator.RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
+	FRepChangedHistory& PossibleNewHistoryItem = Replicator.RepState->ChangeHistory[PossibleNewHistoryIndex];
 	TArray<uint16>& RepChanged = PossibleNewHistoryItem.Changed;
 
 	// Gather all change lists that are new since we last looked, and merge them all together into a single CL
-	for (int32 i = replicator.RepState->LastChangelistIndex; i < ChangelistState->HistoryEnd; i++)
+	for (int32 i = Replicator.RepState->LastChangelistIndex; i < ChangelistState->HistoryEnd; i++)
 	{
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
 		TArray<uint16> Temp = RepChanged;
-		replicator.RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
+		Replicator.RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
 	}
 
-	const bool bCompareIndexSame = replicator.RepState->LastCompareIndex == ChangelistState->CompareIndex;
-	replicator.RepState->LastCompareIndex = ChangelistState->CompareIndex;
+	const bool bCompareIndexSame = Replicator.RepState->LastCompareIndex == ChangelistState->CompareIndex;
+	Replicator.RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
 	if (RepChanged.Num() > 0)
 	{
 		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 		check(Interop);
-		Interop->SendSpatialUpdateSubobject(this, Obj, &replicator, RepChanged, TArray<uint16>());
-		replicator.RepState->HistoryEnd++;
+		Interop->SendSpatialUpdateSubobject(this, Obj, &Replicator, RepChanged, TArray<uint16>());
+		Replicator.RepState->HistoryEnd++;
 	}
 
-	UpdateChangelistHistory(replicator.RepState);
-	replicator.RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+	UpdateChangelistHistory(Replicator.RepState);
+	Replicator.RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
 
 	return true;
 }
