@@ -104,6 +104,13 @@ UClass* USpatialPackageMapClient::GetStaticClassFromHash(uint32 Hash) const
 	return SpatialGuidCache->GetStaticClassFromHash(Hash);
 }
 
+bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
+{
+	Ar << Obj;
+
+	return true;
+}
+
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 	: FNetGUIDCache(InDriver)
 {
