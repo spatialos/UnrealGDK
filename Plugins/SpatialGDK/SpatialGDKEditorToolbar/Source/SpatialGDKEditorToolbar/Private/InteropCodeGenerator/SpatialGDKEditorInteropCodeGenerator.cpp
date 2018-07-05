@@ -29,7 +29,8 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	FString SchemaFilename = FString::Printf(TEXT("Unreal%s"), *UnrealNameToSchemaTypeName(Class->GetName()));
 	FString TypeBindingFilename = FString::Printf(TEXT("SpatialTypeBinding_%s"), *Class->GetName());
 
-	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, MigratableProperties);
+	// Parent and static array index start at 0 for checksum calculations.
+	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, MigratableProperties, 0, 0, false);
 
 	// Generate schema.
 	int NumComponents = GenerateTypeBindingSchema(OutputSchema, ComponentId, Class, TypeInfo, SchemaPath);

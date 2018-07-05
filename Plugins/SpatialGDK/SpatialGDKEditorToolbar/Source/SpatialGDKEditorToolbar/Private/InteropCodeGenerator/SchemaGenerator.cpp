@@ -113,31 +113,31 @@ FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 	return DataType;
 }
 
-void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> RepProp, const FString& PropertyPath, const int FieldCounter, const int ArrayIdx)
+void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> RepProp, const FString& PropertyPath, const int FieldCounter)
 {
 	Writer.Printf("%s %s = %d; // %s // %s",
 		*PropertyToSchemaType(RepProp->Property, false),
-		*SchemaFieldName(RepProp, ArrayIdx),
+		*SchemaFieldName(RepProp),
 		FieldCounter,
 		*GetLifetimeConditionAsString(RepProp->ReplicationData->Condition),
 		*PropertyPath
 	);
 }
 
-void WriteSchemaMigratableField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> MigratableProp, const int FieldCounter, const int ArrayIdx)
+void WriteSchemaMigratableField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> MigratableProp, const int FieldCounter)
 {
 	Writer.Printf("%s %s = %d;",
 		*PropertyToSchemaType(MigratableProp->Property, false),
-		*SchemaFieldName(MigratableProp, ArrayIdx),
+		*SchemaFieldName(MigratableProp),
 		FieldCounter
 	);
 }
 
-void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrealProperty> RPCProp, const int FieldCounter, const int ArrayIdx)
+void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrealProperty> RPCProp, const int FieldCounter)
 {
 	Writer->Printf("%s %s = %d;",
 		*PropertyToSchemaType(RPCProp->Property, true),
-		*SchemaFieldName(RPCProp, ArrayIdx),
+		*SchemaFieldName(RPCProp),
 		FieldCounter
 	);
 }
@@ -195,16 +195,11 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 				PropertyPath += FString::Printf(TEXT("::%s"), *ObjOuter->GetName());
 			}
 
-			const int NumHandles = RepProp.Value->ReplicationData->Handles.Num();
-			for (int ArrayIdx = 0; ArrayIdx < NumHandles; ++ArrayIdx)
-			{
-				FieldCounter++;
-				WriteSchemaRepField(Writer,
-					RepProp.Value,
-					PropertyPath,
-					FieldCounter,
-					NumHandles == 1 ? -1 : ArrayIdx);
-			}
+			FieldCounter++;
+			WriteSchemaRepField(Writer,
+				RepProp.Value,
+				PropertyPath,
+				FieldCounter);
 		}
 		Writer.Outdent().Print("}");
 	}
@@ -216,14 +211,10 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	int FieldCounter = 0;
 	for (auto& Prop : GetFlatMigratableData(TypeInfo))
 	{
-		for (int ArrayIdx = 0; ArrayIdx < Prop.Value->Property->ArrayDim; ++ArrayIdx)
-		{
-			FieldCounter++;
-			WriteSchemaMigratableField(Writer,
-				Prop.Value,
-				FieldCounter,
-				Prop.Value->Property->ArrayDim == 1 ? -1 : ArrayIdx);
-		}
+		FieldCounter++;
+		WriteSchemaMigratableField(Writer,
+			Prop.Value,
+			FieldCounter);
 	}
 	Writer.Outdent().Print("}");
 
@@ -280,8 +271,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 				FieldCounter++;
 				WriteSchemaRPCField(RPCTypeOwnerSchemaWriter,
 					Param,
-					FieldCounter,
-					-1); // -1 As we do not wish to have array index counters for static arrays in RPCs.
+					FieldCounter);
 			}
 			RPCTypeOwnerSchemaWriter->Outdent().Print("}");
 		}
