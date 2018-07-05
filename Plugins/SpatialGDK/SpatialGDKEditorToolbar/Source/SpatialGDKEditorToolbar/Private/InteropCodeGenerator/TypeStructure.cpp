@@ -139,6 +139,8 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPt
 	}
 }
 
+// GenerateChecksum is a method which replicates how Unreal generates it's own CompatibleChecksum for RepLayout Cmds.
+// The original code can be found in the Unreal Engine's RepLayout. We use this to ensure we have the correct property at run-time.
 uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 StaticArrayIndex)
 {
 	uint32 Checksum = 0;
@@ -146,6 +148,20 @@ uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 Static
 	Checksum = FCrc::StrCrc32(*Property->GetCPPType(nullptr, 0).ToLower(), Checksum);     // Evolve by property type
 	Checksum = FCrc::StrCrc32(*FString::Printf(TEXT("%i"), StaticArrayIndex), Checksum);  // Evolve by StaticArrayIndex
 	return Checksum;
+}
+
+TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, UProperty* Property, uint32 ParentChecksum, uint32 StaticArrayIndex)
+{
+	TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
+	PropertyNode->Property = Property;
+	PropertyNode->ContainerType = TypeNode;
+	PropertyNode->ParentChecksum = ParentChecksum;
+	PropertyNode->StaticArrayIndex = StaticArrayIndex;
+
+	// Generate a checksum for this PropertyNode to be used to match properties with the RepLayout Cmds later.
+	PropertyNode->CompatibleChecksum = GenerateChecksum(Property, ParentChecksum, StaticArrayIndex);
+	TypeNode->Properties.Add(Property, PropertyNode);
+	return PropertyNode;
 }
 
 TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties, uint32 ParentChecksum, int32 StaticArrayIndex, bool bIsRPC)
@@ -163,34 +179,19 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		UProperty* Property = *It;
 		
 		// Create property node and add it to the AST.
-		TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
-		PropertyNode->Property = Property;
-		PropertyNode->ContainerType = TypeNode;
-		PropertyNode->ParentChecksum = ParentChecksum;
-		PropertyNode->StaticArrayIndex = StaticArrayIndex;
-		TypeNode->Properties.Add(Property, PropertyNode);
-
-		// Add checksums to match properties with the RepLayout Cmds later.
-		PropertyNode->CompatibleChecksum = GenerateChecksum(Property, ParentChecksum, StaticArrayIndex);
+		TSharedPtr<FUnrealProperty> PropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, StaticArrayIndex);
 
 		// If this property not a struct or object (which can contain more properties), stop here.
-		if (!Property->IsA<UStructProperty>() && !Property->IsA<UObjectProperty>()) // RPCs handle static arrays differently.
+		if (!Property->IsA<UStructProperty>() && !Property->IsA<UObjectProperty>())
 		{
-			if (!bIsRPC) // RPCs handle static arrays differently
+			// We check for bIsRPC at this step as we do not want to generate new PropertyNodes for c-style array members in RPCs.
+			// RPCs use a different system where the members of the c-style array are added to a dynamic list.
+			// This check is made before all handling of c-style arrays in this method.
+			if (!bIsRPC)
 			{
 				for (int i = 1; i < Property->ArrayDim; i++)
 				{
-					TSharedPtr<FUnrealProperty> StaticArrayPropertyNode = MakeShared<FUnrealProperty>();
-					StaticArrayPropertyNode->Property = Property;
-					StaticArrayPropertyNode->ContainerType = TypeNode;
-					StaticArrayPropertyNode->StaticArrayIndex = i;
-
-					// Generate a new checksum for the static array member;
-					StaticArrayPropertyNode->ParentChecksum = ParentChecksum;
-					uint32 StaticArrayChecksum = GenerateChecksum(Property, ParentChecksum, i);
-					StaticArrayPropertyNode->CompatibleChecksum = StaticArrayChecksum;
-
-					TypeNode->Properties.Add(Property, StaticArrayPropertyNode);
+					CreateUnrealProperty(TypeNode, Property, ParentChecksum, i);
 				}
 			}
 			continue;
@@ -206,29 +207,18 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 			PropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, {}, ParentPropertyNodeChecksum, 0, bIsRPC);
 			PropertyNode->Type->ParentProperty = PropertyNode;
 
-			if (!bIsRPC) // RPCs handle static arrays differently
+			if (!bIsRPC)
 			{
 				// For static arrays we need to make a new struct array member node.
 				for (int i = 1; i < Property->ArrayDim; i++)
 				{
 					// Create a new PropertyNode.
-					TSharedPtr<FUnrealProperty> StaticStructArrayPropertyNode = MakeShared<FUnrealProperty>();
-					StaticStructArrayPropertyNode->Property = Property;
-					StaticStructArrayPropertyNode->ContainerType = TypeNode;
-					StaticStructArrayPropertyNode->ParentChecksum = ParentPropertyNodeChecksum;
-
-					// Generate a new checksum based on the static array index.
-					uint32 StaticArrayChecksum = GenerateChecksum(Property, ParentChecksum, i);
-					StaticStructArrayPropertyNode->CompatibleChecksum = StaticArrayChecksum;
+					TSharedPtr<FUnrealProperty> StaticStructArrayPropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, i);
 
 					// Generate Type information on the inner struct.
 					// Note: The parent checksum of the properties within a struct that is a member of a static struct array, is the checksum for the struct itself after index modification.
-					StaticStructArrayPropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, {}, StaticArrayChecksum, 0, bIsRPC);
-					StaticStructArrayPropertyNode->StaticArrayIndex = i;
+					StaticStructArrayPropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, {}, StaticStructArrayPropertyNode->CompatibleChecksum, 0, bIsRPC);
 					StaticStructArrayPropertyNode->Type->ParentProperty = StaticStructArrayPropertyNode;
-
-					// Add the new StaticStructArrayPropertyNode to the current TypeNode.
-					TypeNode->Properties.Add(Property, StaticStructArrayPropertyNode);
 				}
 			}
 			continue;
@@ -280,27 +270,16 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, ParentChecksum, 0, bIsRPC);
 				PropertyNode->Type->ParentProperty = PropertyNode;
 
-				if (!bIsRPC) // RPCs handle static arrays differently
+				if (!bIsRPC)
 				{
 					// For static arrays we need to make a new object array member node.
 					for (int i = 1; i < Property->ArrayDim; i++)
 					{
-						// Create a new PropertyNode.
-						TSharedPtr<FUnrealProperty> StaticObjectArrayPropertyNode = MakeShared<FUnrealProperty>();
-						StaticObjectArrayPropertyNode->Property = Property;
-						StaticObjectArrayPropertyNode->ContainerType = TypeNode;
-						StaticObjectArrayPropertyNode->ParentChecksum = ParentChecksum;
+						TSharedPtr<FUnrealProperty> StaticObjectArrayPropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, i);
 
-						// Generate a new checksum based on the static array index.
-						StaticObjectArrayPropertyNode->CompatibleChecksum = GenerateChecksum(Property, ParentChecksum, i);
-
-						// Generate Type information on the inner struct.
+						// Note: The parent checksum of static arrays of strong object references will be the parent checksum of this class.
 						StaticObjectArrayPropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, ParentChecksum, 0, bIsRPC);
-						StaticObjectArrayPropertyNode->StaticArrayIndex = i;
 						StaticObjectArrayPropertyNode->Type->ParentProperty = StaticObjectArrayPropertyNode;
-
-						// Add the new StaticObjectArrayPropertyNode to the current TypeNode.
-						TypeNode->Properties.Add(Property, StaticObjectArrayPropertyNode);
 					}
 				}
 				bHandleStaticArrayProperties = false;
@@ -322,20 +301,9 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		{
 			for (int i = 1; i < Property->ArrayDim; i++)
 			{
-				TSharedPtr<FUnrealProperty> StaticArrayPropertyNode = MakeShared<FUnrealProperty>();
-				StaticArrayPropertyNode->Property = Property;
-				StaticArrayPropertyNode->ContainerType = TypeNode;
-				StaticArrayPropertyNode->StaticArrayIndex = i;
-
-				// Generate a new checksum for the static array member;
-				StaticArrayPropertyNode->ParentChecksum = ParentChecksum;
-				uint32 StaticArrayChecksum = GenerateChecksum(Property, ParentChecksum, i);
-				StaticArrayPropertyNode->CompatibleChecksum = StaticArrayChecksum;
-
-				TypeNode->Properties.Add(Property, StaticArrayPropertyNode);
+				CreateUnrealProperty(TypeNode, Property, ParentChecksum, i);
 			}
 		}
-
 	} // END TFieldIterator<UProperty>
 
 	// If this is not a class, exit now, as structs cannot have RPCs or replicated properties.

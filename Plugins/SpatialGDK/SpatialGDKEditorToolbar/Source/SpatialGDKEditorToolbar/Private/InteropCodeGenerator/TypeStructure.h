@@ -115,6 +115,9 @@ struct FUnrealProperty
 	TSharedPtr<FUnrealRepData> ReplicationData; // Only set if property is replicated.
 	TSharedPtr<FUnrealMigratableData> MigratableData; // Only set if property is migratable (and not replicated).
 	TWeakPtr<FUnrealType> ContainerType; // Not set if this property is an RPC parameter.
+
+	// These variables are used for unique variable checksum generation. We do this to accurately match properties at run-time.
+	// They are used in the function GenerateChecksum which will use all three variables and the UProperty itself to create a checksum for each FUnrealProperty.
 	int32 StaticArrayIndex;
 	uint32 CompatibleChecksum;
 	uint32 ParentChecksum;
@@ -188,6 +191,9 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPt
 
 // Generates a unique checksum for the Property that allows matching to Unreal's RepLayout Cmds.
 uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 StaticArrayIndex);
+
+// Creates a new FUnrealProperty for the included UProperty, generates a checksum for it and then adds it to the TypeNode included.
+TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, UProperty* Property, uint32 ParentChecksum, uint32 StaticArrayIndex);
 
 // Generates an AST from an Unreal UStruct or UClass.
 // At the moment, this function receives a manual list of migratable property chains in this form:

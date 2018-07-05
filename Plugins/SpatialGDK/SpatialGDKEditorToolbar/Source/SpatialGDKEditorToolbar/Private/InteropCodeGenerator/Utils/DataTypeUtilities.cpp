@@ -76,10 +76,7 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
 	{
 		FString PropName = Property->Property->GetName().ToLower();
-		if (Property->StaticArrayIndex >= 0)
-		{
-			PropName.Append(FString::FromInt(Property->StaticArrayIndex));
-		}
+		PropName.Append(FString::FromInt(Property->StaticArrayIndex));
 		return UnrealNameToSchemaTypeName(PropName);
 	});
 

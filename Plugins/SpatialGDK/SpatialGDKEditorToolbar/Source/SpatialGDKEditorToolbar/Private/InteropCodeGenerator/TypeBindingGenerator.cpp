@@ -871,25 +871,25 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 		{
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
-			FString PropertyChainIndiciesInitList;
+			FString PropertyChainIndicesInitList;
 			TArray<FString> PropertyChainNames;
-			TArray<FString> PropertyChainIndicies;
+			TArray<FString> PropertyChainIndices;
 			Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
 			{
 				return TEXT("\"") + PropertyInfo->Property->GetFName().ToString() + TEXT("\"");
 			});
 			PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
 
-			Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainIndicies, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
+			Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainIndices, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
 			{
 				return FString::FromInt(PropertyInfo->StaticArrayIndex);
 			});
-			PropertyChainIndiciesInitList = FString::Join(PropertyChainIndicies, TEXT(", "));
+			PropertyChainIndicesInitList = FString::Join(PropertyChainIndices, TEXT(", "));
 
 			SourceWriter.Printf("RepHandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, {%s}, %s, %s));",
 				RepProp.Value->ReplicationData->Handle,
 				*PropertyChainInitList,
-				*PropertyChainIndiciesInitList,
+				*PropertyChainIndicesInitList,
 				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
 				*GetRepNotifyLifetimeConditionAsString(RepProp.Value->ReplicationData->RepNotifyCondition));
 		}

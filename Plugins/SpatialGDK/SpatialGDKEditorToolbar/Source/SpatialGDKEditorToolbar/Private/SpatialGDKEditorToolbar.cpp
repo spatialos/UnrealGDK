@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #include "SpatialGDKEditorToolbar.h"
 #include "Async.h"
-#include "Editor.h"
 #include "EditorStyleSet.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "ISettingsContainer.h"
@@ -20,6 +19,8 @@
 #include "Sound/SoundBase.h"
 
 #include "LevelEditor.h"
+
+DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorToolbarModule"
 
@@ -198,17 +199,20 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 {
 	ShowTaskStartNotification("Generating Interop Code");
+	InteropCodeGenRunning = true;
 
-	bool bSuccess = SpatialGDKGenerateInteropCode();
+	AsyncTask(ENamedThreads::AnyHiPriThreadHiPriTask, [this] {
+		bool bSuccess = SpatialGDKGenerateInteropCode();
 
-	if (bSuccess)
-	{
-		ShowSuccessNotification("Interop Codegen Completed!");
-	}
-	else
-	{
-		ShowFailedNotification("Interop Codegen Failed");
-	}
+		if (bSuccess)
+		{
+			ShowSuccessNotification("Interop Codegen Completed!");
+		}
+		else
+		{
+			ShowFailedNotification("Interop Codegen Failed");
+		}
+	});
 }
 
 void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& NotificationText)

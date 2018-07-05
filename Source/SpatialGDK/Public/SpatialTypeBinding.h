@@ -66,7 +66,7 @@ struct FPropertyChangeState
 class FRepHandleData
 {
 public:
-	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, TArray<int32> PropertyIndicies, ELifetimeCondition InCondition, ELifetimeRepNotifyCondition InRepNotifyCondition) :
+	FRepHandleData(UClass* Class, TArray<FName> PropertyNames, TArray<int32> PropertyIndices, ELifetimeCondition InCondition, ELifetimeRepNotifyCondition InRepNotifyCondition) :
 		Condition(InCondition),
 		RepNotifyCondition(InRepNotifyCondition),
 		Offset(0)
@@ -79,7 +79,6 @@ public:
 			checkf(CurrentContainerType, TEXT("A property in the chain (except the end) is not a container."));
 			UProperty* CurProperty = CurrentContainerType->FindPropertyByName(PropertyName);
 			PropertyChain.Add(CurProperty);
-
 			UStructProperty* StructProperty = Cast<UStructProperty>(CurProperty);
 			if (StructProperty)
 			{
@@ -95,9 +94,9 @@ public:
 		// Calculate offset by summing the offsets of each property in the chain.
 		for (int i = 0; i < PropertyChain.Num(); i++)
 		{
-			UProperty* CurProperty = PropertyChain[i];
-			// Calculate the static array offset of this specific property, using it's index and it's parents indicies.
-			int32 IndexOffset = PropertyIndicies[i] * CurProperty->ElementSize;
+			const UProperty* CurProperty = PropertyChain[i];
+			// Calculate the static array offset of this specific property, using its index and its parents indices.
+			int32 IndexOffset = PropertyIndices[i] * CurProperty->ElementSize;
 			Offset += CurProperty->GetOffset_ForInternal();
 			Offset += IndexOffset;
 		}
