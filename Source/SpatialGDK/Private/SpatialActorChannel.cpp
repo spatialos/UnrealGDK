@@ -550,11 +550,20 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 void USpatialActorChannel::PreReceiveSpatialUpdate()
 {
 	Actor->PreNetReceive();
+	ActorReplicator->RepLayout->InitShadowData(ActorReplicator->RepState->StaticBuffer, Actor->GetClass(), (uint8*)Actor);
 }
 
 void USpatialActorChannel::PreReceiveSpatialUpdateSubobject(UActorComponent* Component)
 {
 	Component->PreNetReceive();
+
+	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(Component);
+	if (!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
+	{
+		TWeakObjectPtr<UObject> Obj(Component);
+		FObjectReplicator& Replicator = FindOrCreateReplicator(Obj).Get();
+		Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, Component->GetClass(), (uint8*)Component);
+	}
 }
 
 void USpatialActorChannel::PostReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies)
@@ -566,9 +575,10 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(const TArray<UProperty*>& Re
 
 void USpatialActorChannel::PostReceiveSpatialUpdateSubobject(UActorComponent* Component, const TArray<UProperty*>& RepNotifies)
 {
-	TWeakObjectPtr<UObject> Obj(Component);
-	if (ReplicationMap.Find(Obj))
+	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(Component);
+	if (!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
 	{
+		TWeakObjectPtr<UObject> Obj(Component);
 		FObjectReplicator& Replicator = FindOrCreateReplicator(Obj).Get();
 		Component->PostNetReceive();
 		Replicator.RepNotifies = RepNotifies;
