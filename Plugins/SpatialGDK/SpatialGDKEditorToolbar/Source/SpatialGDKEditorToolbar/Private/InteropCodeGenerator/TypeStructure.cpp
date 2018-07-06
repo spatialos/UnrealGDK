@@ -164,7 +164,7 @@ TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNod
 	return PropertyNode;
 }
 
-TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<FName>>& MigratableProperties, uint32 ParentChecksum, int32 StaticArrayIndex, bool bIsRPC)
+TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksum, int32 StaticArrayIndex, bool bIsRPC)
 {
 	// Struct types will set this to nullptr.
 	UClass* Class = Cast<UClass>(Type);
@@ -204,7 +204,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 
 			// This is the property for the 0th struct array member.
 			uint32 ParentPropertyNodeChecksum = PropertyNode->CompatibleChecksum;
-			PropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, {}, ParentPropertyNodeChecksum, 0, bIsRPC);
+			PropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, ParentPropertyNodeChecksum, 0, bIsRPC);
 			PropertyNode->Type->ParentProperty = PropertyNode;
 
 			if (!bIsRPC)
@@ -217,7 +217,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 
 					// Generate Type information on the inner struct.
 					// Note: The parent checksum of the properties within a struct that is a member of a static struct array, is the checksum for the struct itself after index modification.
-					StaticStructArrayPropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, {}, StaticStructArrayPropertyNode->CompatibleChecksum, 0, bIsRPC);
+					StaticStructArrayPropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, StaticStructArrayPropertyNode->CompatibleChecksum, 0, bIsRPC);
 					StaticStructArrayPropertyNode->Type->ParentProperty = StaticStructArrayPropertyNode;
 				}
 			}
@@ -267,7 +267,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
 				// This property is definitely a strong reference, recurse into it.
-				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, ParentChecksum, 0, bIsRPC);
+				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, ParentChecksum, 0, bIsRPC);
 				PropertyNode->Type->ParentProperty = PropertyNode;
 
 				if (!bIsRPC)
@@ -278,7 +278,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 						TSharedPtr<FUnrealProperty> StaticObjectArrayPropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, i);
 
 						// Note: The parent checksum of static arrays of strong object references will be the parent checksum of this class.
-						StaticObjectArrayPropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, {}, ParentChecksum, 0, bIsRPC);
+						StaticObjectArrayPropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, ParentChecksum, 0, bIsRPC);
 						StaticObjectArrayPropertyNode->Type->ParentProperty = StaticObjectArrayPropertyNode;
 					}
 				}
@@ -343,7 +343,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 				{
 					uint32 StructChecksum = GenerateChecksum(Parameter, ParentChecksum, 0);
 					PropertyNode->CompatibleChecksum = StructChecksum;
-					PropertyNode->Type = CreateUnrealTypeInfo(StructParameter->Struct, {}, StructChecksum, 0 , true);
+					PropertyNode->Type = CreateUnrealTypeInfo(StructParameter->Struct, StructChecksum, 0 , true);
 					PropertyNode->Type->ParentProperty = PropertyNode;
 				}
 			}
@@ -451,26 +451,17 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, const TArray<TArray<
 		}
 	} // END CMD FOR LOOP
 
-	// Process the migratable properties list.
+	// Find the handover properties.
 	uint16 MigratableDataHandle = 1;
-	for (const TArray<FName>& PropertyNames : MigratableProperties)
+	VisitAllProperties(TypeNode, [&MigratableDataHandle](TSharedPtr<FUnrealProperty> PropertyInfo)
 	{
-		// Find the property represented by this chain.
-		TSharedPtr<FUnrealProperty> MigratableProperty = nullptr;
-		TSharedPtr<FUnrealType> CurrentTypeNode = TypeNode;
-		for (FName PropertyName : PropertyNames)
+		if (PropertyInfo->Property->PropertyFlags & CPF_Handover)
 		{
-			checkf(CurrentTypeNode.IsValid(), TEXT("A property in the chain (except the leaf) is not a struct property."));
-			UProperty* NextProperty = CurrentTypeNode->Type->FindPropertyByName(PropertyName);
-			checkf(NextProperty, TEXT("Cannot find property %s in container %s"), *PropertyName.ToString(), *CurrentTypeNode->Type->GetName());
-			MigratableProperty = CurrentTypeNode->Properties.FindChecked(NextProperty);
-			CurrentTypeNode = MigratableProperty->Type;
+			PropertyInfo->MigratableData = MakeShared<FUnrealMigratableData>();
+			PropertyInfo->MigratableData->Handle = MigratableDataHandle++;
 		}
-
-		// Create migratable data.
-		MigratableProperty->MigratableData = MakeShared<FUnrealMigratableData>();
-		MigratableProperty->MigratableData->Handle = MigratableDataHandle++;
-	}
+		return true;
+	}, true);
 
 	return TypeNode;
 }

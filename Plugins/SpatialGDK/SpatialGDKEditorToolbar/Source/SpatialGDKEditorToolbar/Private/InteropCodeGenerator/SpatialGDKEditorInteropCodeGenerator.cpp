@@ -20,7 +20,7 @@ namespace
 
 typedef TMap<FString, TArray<FString>> ClassHeaderMap;
 
-int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<TArray<FName>>& MigratableProperties, const TArray<FString>& TypeBindingHeaders)
+int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<FString>& TypeBindingHeaders)
 {
 	FCodeWriter OutputSchema;
 	FCodeWriter OutputHeader;
@@ -30,7 +30,7 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	FString TypeBindingFilename = FString::Printf(TEXT("SpatialTypeBinding_%s"), *Class->GetName());
 
 	// Parent and static array index start at 0 for checksum calculations.
-	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, MigratableProperties, 0, 0, false);
+	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, 0, 0, false);
 
 	// Generate schema.
 	int NumComponents = GenerateTypeBindingSchema(OutputSchema, ComponentId, Class, TypeInfo, SchemaPath);
@@ -162,25 +162,14 @@ const bool ClassesExist(const ClassHeaderMap& Classes)
 
 void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
 {
-	TMap<FString, TArray<TArray<FName>>> MigratableProperties;
-	MigratableProperties.Add("PlayerController", {
-		{ "AcknowledgedPawn" }
-	});
-	MigratableProperties.Add("Character", {
-		{ "CharacterMovement", "GroundMovementMode" },
-		{ "CharacterMovement", "MovementMode" },
-		{ "CharacterMovement", "CustomMovementMode" }
-	});
-
 	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 	int ComponentId = 100010;
 	for (auto& ClassHeaderList : Classes)
 	{
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
 
-		TArray<TArray<FName>> ClassMigratableProperties = MigratableProperties.FindRef(ClassHeaderList.Key);
 		const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
-		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, ClassMigratableProperties, TypeBindingHeaders);
+		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, TypeBindingHeaders);
 	}
 }
 
