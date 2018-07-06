@@ -390,7 +390,6 @@ bool USpatialActorChannel::ReplicateActor()
 			// Calculate initial spatial position (but don't send component update) and create the entity.
 			LastSpatialPosition = GetActorSpatialPosition(Actor);
 			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialRepChanged, MigratableChanged);
-			bCreatingNewEntity = false;
 		}
 		else
 		{
@@ -407,12 +406,19 @@ bool USpatialActorChannel::ReplicateActor()
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
 
-	for (UActorComponent* ActorComp : Actor->GetReplicatedComponents())
+	if (bCreatingNewEntity)
 	{
-		USpatialTypeBinding* ComponentTypeBinding = Interop->GetTypeBindingByClass(ActorComp->GetClass());
-		if (ActorComp && ActorComp->GetIsReplicated() && ComponentTypeBinding) // Only replicated subobjects with type bindings
+		bCreatingNewEntity = false;
+	}
+	else
+	{
+		for (UActorComponent* ActorComp : Actor->GetReplicatedComponents())
 		{
-			bWroteSomethingImportant |= ReplicateSubobject(ActorComp, RepFlags);
+			USpatialTypeBinding* ComponentTypeBinding = Interop->GetTypeBindingByClass(ActorComp->GetClass());
+			if (ActorComp && ActorComp->GetIsReplicated() && ComponentTypeBinding) // Only replicated subobjects with type bindings
+			{
+				bWroteSomethingImportant |= ReplicateSubobject(ActorComp, RepFlags);
+			}
 		}
 	}
 
