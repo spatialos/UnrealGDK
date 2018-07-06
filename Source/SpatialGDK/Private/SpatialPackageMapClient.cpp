@@ -106,6 +106,11 @@ UClass* USpatialPackageMapClient::GetStaticClassFromHash(uint32 Hash) const
 
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
 {
+	// Super::SerializeObject is not called here on purpose
+
+	// Make sure this is a FSpatialMemoryWriter
+	check(Cast<FSpatialMemoryWriter>(&Ar) || Cast<FSpatialMemoryReader>(&Ar));
+
 	Ar << Obj;
 
 	return true;
