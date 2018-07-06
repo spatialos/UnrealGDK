@@ -200,11 +200,6 @@ bool USpatialActorChannel::ReplicateActor()
 	// If initial, send init data.
 	if (RepFlags.bNetInitial && OpenedLocally)
 	{
-		// TODO(David): Note that initial actor data is stored in the header to encode the NetGUID/Class/etc.
-		// We don't care about this as we can distinguish this already based on the components in the entity,
-		// so SerializeNewActor will probably do nothing.
-		Connection->PackageMap->SerializeNewActor(Bunch, this, Actor);
-	
 		Actor->OnSerializeNewActor(Bunch);
 	}
 
