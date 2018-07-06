@@ -460,7 +460,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, const FReplicationFl
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
 		TArray<uint16> Temp = RepChanged;
-		Replicator.RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
+		Replicator.RepLayout->MergeChangeList((uint8*)Obj, HistoryItem.Changed, Temp, RepChanged);
 	}
 
 	const bool bCompareIndexSame = Replicator.RepState->LastCompareIndex == ChangelistState->CompareIndex;
