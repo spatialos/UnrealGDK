@@ -195,7 +195,7 @@ public:
 
 	void ResetOutgoingArrayRepUpdate_Internal(USpatialActorChannel* DependentChannel, uint16 Handle);
 	void QueueOutgoingArrayRepUpdate_Internal(const TSet<const UObject*>& UnresolvedObjects, USpatialActorChannel* DependentChannel, uint16 Handle);
-
+	
 	// Accessors.
 	USpatialOS* GetSpatialOS() const
 	{
