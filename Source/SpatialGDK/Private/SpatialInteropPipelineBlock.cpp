@@ -264,13 +264,26 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 {
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(EntityId);
 
+	UE_LOG(LogTemp, Warning, TEXT("USpatialInteropPipelineBlock::RemoveEntityImpl %s %d"), Actor ? *Actor->GetName() : TEXT("Actor invalid"), EntityId.ToSpatialEntityId());
+
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
 	if (!Actor || Actor->IsPendingKill())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("CleanupDeletedEntity called on actor %s %d"), Actor ? *Actor->GetName() : TEXT("Actor invalid"), EntityId.ToSpatialEntityId());
+		CleanupDeletedEntity(EntityId);
 		return;
 	}
 
-	World->DestroyActor(Actor, true);
+	if (APlayerController* PC = Cast<APlayerController>(Actor))
+	{
+		// Force APlayerController::DestroyNetworkActorHandled to return false
+		PC->Player = nullptr;
+	}
+
+	if (World->DestroyActor(Actor, true) == false)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("USpatialInteropPipelineBlock::DestoryActor failed %s %d"), *Actor->GetName(), EntityId.ToSpatialEntityId());
+	}
 
 	CleanupDeletedEntity(EntityId);
 }
