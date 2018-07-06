@@ -88,10 +88,6 @@ FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 	{
 		DataType = TEXT("string");
 	}
-	else if (Property->IsA(UClassProperty::StaticClass()))
-	{
-		DataType = TEXT("uint32");	// Note: We hash the static class path names to UClass objects.
-	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
 		DataType = TEXT("UnrealObjectRef");
