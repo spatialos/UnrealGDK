@@ -5,6 +5,7 @@
 #include "SpatialConstants.h"
 #include "SpatialOSCommon.h"
 
+#include "CoreMinimal.h"
 #include "EngineUtils.h"
 #include "GameFramework/Actor.h"
 

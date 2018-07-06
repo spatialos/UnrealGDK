@@ -38,6 +38,8 @@ public:
 	uint32 GetHashFromStaticClass(const UClass* StaticClass) const;
 	UClass* GetStaticClassFromHash(uint32 Hash) const;
 
+	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
+
 private:
 
 };
@@ -55,9 +57,6 @@ public:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef);
 	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(worker::EntityId EntityId) const;
-		
-	uint32 GetHashFromStaticClass(const UClass* StaticClass) const;
-	UClass* GetStaticClassFromHash(uint32 Hash) const;
 
 private:
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(const UObject* Object);
@@ -66,10 +65,7 @@ private:
 	FNetworkGUID RegisterNetGUIDFromPath(const FString& PathName, const FNetworkGUID& OuterGUID);
 	FNetworkGUID GenerateNewNetGUID(const int32 IsStatic);
 
-	void CreateStaticClassMapping();
-
 	TMap<FNetworkGUID, FHashableUnrealObjectRef> NetGUIDToUnrealObjectRef;
 	TMap<FHashableUnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
-	TMap<uint32, UClass*> StaticClassHashMap;
 };
 

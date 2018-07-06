@@ -104,10 +104,21 @@ UClass* USpatialPackageMapClient::GetStaticClassFromHash(uint32 Hash) const
 	return SpatialGuidCache->GetStaticClassFromHash(Hash);
 }
 
+bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
+{
+	// Super::SerializeObject is not called here on purpose
+
+	// Make sure this is a FSpatialMemoryWriter
+	check(Cast<FSpatialMemoryWriter>(&Ar) || Cast<FSpatialMemoryReader>(&Ar));
+
+	Ar << Obj;
+
+	return true;
+}
+
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 	: FNetGUIDCache(InDriver)
 {
-	CreateStaticClassMapping();
 }
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, const ::worker::Map< std::string, std::uint32_t >& SubobjectToOffset)
@@ -220,20 +231,6 @@ FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPath(const FString& PathNa
 	return NetGUID;
 }
 
-uint32 FSpatialNetGUIDCache::GetHashFromStaticClass(const UClass* StaticClass) const
-{
-	return GetTypeHash(*StaticClass->GetPathName());
-}
-
-UClass* FSpatialNetGUIDCache::GetStaticClassFromHash(uint32 Hash) const
-{
-	// This should never fail in production code, but might in development if the client and server are running versions
-	// with inconsistent static class lists.
-	bool bContainsHash = StaticClassHashMap.Contains(Hash);
-	checkf(bContainsHash, TEXT("Failed to find static class for hash: %d"), Hash);
-	return bContainsHash ? StaticClassHashMap[Hash] : nullptr;
-}
-
 FNetworkGUID FSpatialNetGUIDCache::GenerateNewNetGUID(const int32 IsStatic)
 {
 	// Here we have to borrow from FNetGuidCache::AssignNewNetGUID_Server to avoid a source change.
@@ -286,20 +283,4 @@ void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const improba
 	checkSlow(!UnrealObjectRefToNetGUID.Contains(ObjectRef) || (UnrealObjectRefToNetGUID.Contains(ObjectRef) && UnrealObjectRefToNetGUID.FindChecked(ObjectRef) == NetGUID));
 	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjectRef);
 	UnrealObjectRefToNetGUID.Emplace(ObjectRef, NetGUID);
-}
-
-void FSpatialNetGUIDCache::CreateStaticClassMapping()
-{
-	// TODO-giray: Remove the class map and use stably named object references for uclasses. UNR-339.
-	for (TObjectIterator<UClass> It; It; ++It)
-	{
-		if (!It->HasAnyClassFlags(CLASS_Abstract))
-		{
-			uint32 PathHash = GetHashFromStaticClass(*It);
-			checkf(StaticClassHashMap.Contains(PathHash) == false, TEXT("Hash clash between %s and %s"), *It->GetPathName(), *StaticClassHashMap[PathHash]->GetPathName());
-			StaticClassHashMap.Add(PathHash, *It);
-		}
-	}
-
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered %d static classes to the class hashmap"), StaticClassHashMap.Num());
 }

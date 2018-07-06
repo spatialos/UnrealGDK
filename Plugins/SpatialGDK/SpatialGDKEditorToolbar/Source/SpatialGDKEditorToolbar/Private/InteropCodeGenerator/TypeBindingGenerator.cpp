@@ -240,10 +240,6 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 	{
 		Writer.Printf("%s(uint64_t(%s));", *Update, *PropertyValue);
 	}
-	else if (Property->IsA(UClassProperty::StaticClass()))
-	{
-		Writer.Printf("%s(PackageMap->GetHashFromStaticClass(%s));", *Update, *PropertyValue);
-	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
 		Writer.Printf("if (%s != nullptr)", *PropertyValue);
@@ -404,10 +400,6 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	else if (Property->IsA(UUInt64Property::StaticClass()))
 	{
 		Writer.Printf("%s = %s;", *PropertyValue, *Update);
-	}
-	else if (Property->IsA(UClassProperty::StaticClass()))
-	{
-		Writer.Printf("%s = PackageMap->GetStaticClassFromHash(%s);", *PropertyValue, *Update);
 	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
@@ -877,27 +869,29 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 
 		for (auto& RepProp : ReplicatedProperties)
 		{
-			auto Handle = RepProp.Key;
-
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
+			FString PropertyChainIndicesInitList;
 			TArray<FString> PropertyChainNames;
+			TArray<FString> PropertyChainIndices;
 			Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
 			{
 				return TEXT("\"") + PropertyInfo->Property->GetFName().ToString() + TEXT("\"");
 			});
 			PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
 
-			// Add the handle data to the map.
-			for (int i = 0; i < RepProp.Value->ReplicationData->Handles.Num(); ++i)
+			Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainIndices, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
 			{
-				SourceWriter.Printf("RepHandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, %s, %s, %d));",
-					RepProp.Value->ReplicationData->Handles[i],
-					*PropertyChainInitList,
-					*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
-					*GetRepNotifyLifetimeConditionAsString(RepProp.Value->ReplicationData->RepNotifyCondition),
-					i * RepProp.Value->Property->ElementSize);
-			}
+				return FString::FromInt(PropertyInfo->StaticArrayIndex);
+			});
+			PropertyChainIndicesInitList = FString::Join(PropertyChainIndices, TEXT(", "));
+
+			SourceWriter.Printf("RepHandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, {%s}, %s, %s));",
+				RepProp.Value->ReplicationData->Handle,
+				*PropertyChainInitList,
+				*PropertyChainIndicesInitList,
+				*GetLifetimeConditionAsString(RepProp.Value->ReplicationData->Condition),
+				*GetRepNotifyLifetimeConditionAsString(RepProp.Value->ReplicationData->RepNotifyCondition));
 		}
 	}
 
@@ -1391,17 +1385,11 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 
 		for (auto& RepProp : RepData[Group])
 		{
-			auto Handle = RepProp.Key;
+			check(RepProp.Value->ReplicationData->Handle > 0);
 
-			check(RepProp.Value->ReplicationData->Handles.Num() >= 1);
-
-			for (int i = 0; i < RepProp.Value->ReplicationData->Handles.Num(); ++i)
-			{
-				GenerateBody_SendUpdate_RepDataProperty(SourceWriter,
-					RepProp.Value->ReplicationData->Handles[i],
-					RepProp.Value,
-					RepProp.Value->ReplicationData->Handles.Num() == 1 ? -1 : i);
-			}
+			GenerateBody_SendUpdate_RepDataProperty(SourceWriter,
+				RepProp.Value->ReplicationData->Handle,
+				RepProp.Value);
 		}
 		SourceWriter.Outdent().Print("default:");
 		SourceWriter.Indent();
@@ -1414,10 +1402,10 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 	SourceWriter.End();
 }
 
-void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo, const int ArrayIdx)
+void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo)
 {
 	UProperty* Property = PropertyInfo->Property;
-	SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(PropertyInfo, ArrayIdx));
+	SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(PropertyInfo));
 	SourceWriter.BeginScope();
 
 	// Get unreal data by deserialising from the reader, convert and set the corresponding field in the update object.
@@ -1451,11 +1439,6 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 		// Structs may have UObject* inside which could be unresolved
 		bHandleUnresolvedObjects = true;
 	}
-	else if (Property->IsA<UClassProperty>())
-	{
-		// This is the same as the default case, but as UClassProperty extends from UObjectPropertyBase, we need to catch them here.
-		SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
-	}
 	else if (Property->IsA<UWeakObjectProperty>())
 	{
 		FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
@@ -1471,7 +1454,7 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 		SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
 	}
 
-	FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(PropertyInfo, ArrayIdx);
+	FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(PropertyInfo);
 
 	SourceWriter.PrintNewLine();
 
@@ -1594,16 +1577,11 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 		SourceWriter.PrintNewLine();
 		for (auto& RepProp : RepData[Group])
 		{
-			auto Handle = RepProp.Key;
-			check(RepProp.Value->ReplicationData->Handles.Num() >= 1);
+			check(RepProp.Value->ReplicationData->Handle > 0);
 
-			for (int i = 0; i < RepProp.Value->ReplicationData->Handles.Num(); ++i)
-			{
-				GenerateBody_ReceiveUpdate_RepDataProperty(SourceWriter,
-					RepProp.Value->ReplicationData->Handles[i],
-					RepProp.Value,
-					RepProp.Value->ReplicationData->Handles.Num() == 1 ? -1 : i);
-			}
+			GenerateBody_ReceiveUpdate_RepDataProperty(SourceWriter,
+				RepProp.Value->ReplicationData->Handle,
+				RepProp.Value);
 		}
 		SourceWriter.Print("Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies.Array());");
 	}
@@ -1617,15 +1595,15 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 	SourceWriter.End();
 }
 
-void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo, const int ArrayIdx)
+void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo)
 {
 	UProperty* Property = PropertyInfo->Property;
 	// Check if this property is in the update.
-	SourceWriter.Printf("if (!Update.%s().empty())", *SchemaFieldName(PropertyInfo, ArrayIdx));
+	SourceWriter.Printf("if (!Update.%s().empty())", *SchemaFieldName(PropertyInfo));
 	SourceWriter.BeginScope();
 
 	// Check if the property is relevant on the client.
-	SourceWriter.Printf("// %s", *SchemaFieldName(PropertyInfo, ArrayIdx));
+	SourceWriter.Printf("// %s", *SchemaFieldName(PropertyInfo));
 	SourceWriter.Printf("uint16 Handle = %d;", Handle);
 	SourceWriter.Print("const FRepHandleData* RepData = &HandleToPropertyMap[Handle];");
 	SourceWriter.Print("if (bIsServer || ConditionMap.IsRelevant(RepData->Condition))");
@@ -1674,11 +1652,6 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 			bIsArrayOfObjects = true;
 		}
 	}
-	else if (Property->IsA<UClassProperty>())
-	{
-		// This is the same as the default case, but as UClassProperty extends from UObjectPropertyBase, we need to catch them here.
-		SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(PropertyData));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
-	}
 	else if (Property->IsA<UWeakObjectProperty>())
 	{
 		FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
@@ -1696,7 +1669,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	}
 	SourceWriter.PrintNewLine();
 
-	FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(PropertyInfo, ArrayIdx));
+	FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(PropertyInfo));
 
 	GeneratePropertyToUnrealConversion(
 		SourceWriter, SpatialValue, PropertyInfo->Property, PropertyValueName,
@@ -1959,7 +1932,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 			SourceWriter.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"%%s: RPC %s queued. %s is unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
 				*RPC->Function->GetName(),
 				*PropertyValue);
-			SourceWriter.Printf("return {%s};", *PropertyValue);
+			SourceWriter.Printf("return {Cast<UObject>(%s)};", *PropertyValue);
 		}, true, false);
 		SourceWriter.End();
 	}
