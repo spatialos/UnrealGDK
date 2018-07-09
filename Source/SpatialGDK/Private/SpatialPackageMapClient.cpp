@@ -92,18 +92,6 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const worker::Enti
 	return GetNetGUIDFromUnrealObjectRef(ObjectRef);
 }
 
-uint32 USpatialPackageMapClient::GetHashFromStaticClass(const UClass* StaticClass) const
-{
-	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	return SpatialGuidCache->GetHashFromStaticClass(StaticClass);
-}
-
-UClass* USpatialPackageMapClient::GetStaticClassFromHash(uint32 Hash) const
-{
-	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	return SpatialGuidCache->GetStaticClassFromHash(Hash);
-}
-
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
 {
 	// Super::SerializeObject is not called here on purpose
