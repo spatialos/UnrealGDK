@@ -46,6 +46,8 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 public:
 	virtual void PostInitProperties() override;
 
+	virtual bool Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar = *GLog) override;
+
 	// Begin UNetDriver interface.
 	virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error) override;
 	virtual int32 ServerReplicateActors(float DeltaSeconds) override;
@@ -54,6 +56,10 @@ public:
 	virtual void TickFlush(float DeltaTime) override;
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	// End UNetDriver interface.
+
+#if !UE_BUILD_SHIPPING
+	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
+#endif
 
 	USpatialOS* GetSpatialOS() const
 	{

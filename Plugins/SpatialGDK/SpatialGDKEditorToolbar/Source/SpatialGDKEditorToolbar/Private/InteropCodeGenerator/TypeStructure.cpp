@@ -64,6 +64,10 @@ ERPCType GetRPCTypeFromFunction(UFunction* Function)
 	{
 		return ERPCType::RPC_Server;
 	}
+	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetCrossServer)
+	{
+		return ERPCType::RPC_CrossServer;
+	}
 	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetMulticast)
 	{
 		return ERPCType::RPC_NetMulticast;
@@ -317,6 +321,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	{
 		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
 			RemoteFunction->FunctionFlags & FUNC_NetServer ||
+			RemoteFunction->FunctionFlags & FUNC_NetCrossServer ||
 			RemoteFunction->FunctionFlags & FUNC_NetMulticast)
 		{
 			TSharedPtr<FUnrealRPC> RPCNode = MakeShared<FUnrealRPC>();
