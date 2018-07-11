@@ -29,6 +29,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	NetDriver = Driver;
 	TimerManager = InTimerManager;
 	PackageMap = Cast<USpatialPackageMapClient>(Driver->GetSpatialOSNetConnection()->PackageMap);
+	bAuthoritiveDestruction = true;
 
 	// Collect all type binding classes.
 	TArray<UClass*> TypeBindingClasses;
@@ -218,6 +219,27 @@ void USpatialInterop::PostReceiveSpatialUpdate(USpatialActorChannel* Channel, co
 }
 
 void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
+{
+	if (NetDriver->InteropPipelineBlock->IsInCriticalSection())
+	{
+		PendingOperationsQueue.Add(TPair<UObject*, const improbable::unreal::UnrealObjectRef>{ Object, ObjectRef });
+		return;
+	}
+
+	ResolvePendingOperations_Internal(Object, ObjectRef);
+}
+
+void USpatialInterop::ResolveQueuedPendingOperations()
+{
+	for (auto it : PendingOperationsQueue)
+	{
+		ResolvePendingOperations_Internal(it.Key, it.Value);
+	}
+
+	PendingOperationsQueue.Empty();
+}
+
+void USpatialInterop::ResolvePendingOperations_Internal(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
 	UE_LOG(LogSpatialOSInterop, Log, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRefToString(ObjectRef));
 	ResolvePendingOutgoingObjectUpdates(Object);

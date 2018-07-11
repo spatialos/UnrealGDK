@@ -88,6 +88,8 @@ using FChannelToHandleToOPARMap = TMap<USpatialActorChannel*, FHandleToOPARMap>;
 
 using FOutgoingPendingArrayUpdateMap = TMap<const UObject*, FChannelToHandleToOPARMap>;
 
+using FPendingOperationsQueue = TArray<TPair<UObject*, const improbable::unreal::UnrealObjectRef>>;
+
 // Helper function to write incoming replicated property data to an object.
 FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& RepHandleData, UObject* Object, const void* Value, TSet<UProperty*>& RepNotifies)
 {
@@ -167,6 +169,11 @@ public:
 	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.
 	// This will dequeue pending object ref updates and RPCs which depend on this UObject existing in the package map.
 	void ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
+	void ResolveQueuedPendingOperations();
+	void ResolvePendingOperations_Internal(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
+
+	void SetAuthoritiveDestruction(bool bValue) { bAuthoritiveDestruction = bValue; }
+	bool IsAuthoritiveDestruction() const { return bAuthoritiveDestruction; }
 
 	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
 	void AddActorChannel(const FEntityId& EntityId, USpatialActorChannel* Channel);
@@ -244,6 +251,11 @@ private:
 
 	FChannelToHandleToOPARMap PropertyToOPAR;
 	FOutgoingPendingArrayUpdateMap ObjectToOPAR;
+
+	// Used to queue up pending operations when resolved in critical section
+	FPendingOperationsQueue PendingOperationsQueue;
+
+	bool bAuthoritiveDestruction;
 
 
 private:

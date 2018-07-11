@@ -116,17 +116,20 @@ void USpatialActorChannel::UnbindFromSpatialView() const
 void USpatialActorChannel::DeleteEntityIfAuthoritative()
 {
 	bool bHasAuthority = false;
+	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 
 	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
 	{
-		bHasAuthority = PinnedView->GetAuthority<improbable::Position>(ActorEntityId.ToSpatialEntityId()) == worker::Authority::kAuthoritative;
+		bHasAuthority =		Interop->IsAuthoritiveDestruction()
+						&&	PinnedView->GetAuthority<improbable::Position>(ActorEntityId.ToSpatialEntityId()) == worker::Authority::kAuthoritative;
 	}
+
+	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Delete Entity request on %d. Has authority: %d "), ActorEntityId.ToSpatialEntityId(), bHasAuthority);
 
 	// If we have authority and aren't trying to delete the spawner, delete the entity
 	if (bHasAuthority && ActorEntityId.ToSpatialEntityId() != SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
-	{
-		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+	{		
 		Interop->DeleteEntity(ActorEntityId);
 	}
 }
