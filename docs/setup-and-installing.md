@@ -2,7 +2,7 @@
 
 # Set up and get started with the SpatialOS Unreal GDK
 
-##Contents
+## Contents
 
 * [Prerequisites](#prerequisites)
     * [Hardware](#hardware)
@@ -44,8 +44,8 @@ To use the Unreal GDK, you need to build Unreal Engine 4 from source.
 1. In a Git Bash terminal window, clone the repository and check out the SpatialOS Unreal Engine from our [Unreal Engine fork](https://github.com/improbable/UnrealEngine/tree/UnrealEngine419_SpatialGDK) by running either:
     * (HTTPS) `git clone https://github.com/improbable/UnrealEngine.git -b UnrealEngine419_SpatialGDK`
     * (SSH) `git clone git@github.com:improbable/UnrealEngine.git -b UnrealEngine419_SpatialGDK`
-1. Add a system environment variable (**Control Panel > System and Security > System > Advanced system settings > Advanced > Environment variables**) named UNREAL_HOME. The value should be the path to the directory you cloned into in step 1.1.
- 1. Make sure that the new environment variable is registered by restarting your terminal and running `echo $UNREAL_HOME`. This should output the path to the directory you cloned into in step 1.1.
+1. Add a system environment variable (**Control Panel > System and Security > System > Advanced system settings > Advanced > Environment variables**) named UNREAL_HOME. The value should be the path to the directory you cloned into in step 1.
+ 1. Make sure that the new environment variable is registered by restarting your terminal and running `echo $UNREAL_HOME`. This should output the path to the directory you cloned into in step 1.
 
 ### Building Unreal Engine
     
@@ -55,9 +55,9 @@ To build Unreal server workers for SpatialOS deployments, you need to build targ
 
 1. From the Compiling for Linux setup guide, download and unzip `v11 clang 5.0.0-based - for UE4 4.19`.
 1. Add a system environment variable (**Control Panel > System and Security > System > Advanced system settings > Advanced > Environment variables**) named LINUX_MULTIARCH_ROOT. 
-<br>The value should be the path to the directory you unzipped into in step 2.1.
+<br>The value should be the path to the directory you unzipped into in step 2.
 1. Make sure that the new environment variable is registered by restarting your terminal and running `echo $LINUX_MULTIARCH_ROOT`. 
-<br>This should output the path to the directory you unzipped into in step 2.1.
+<br>This should output the path to the directory you unzipped into in step 2.
 1. Open **File Explorer** and navigate to the directory you cloned the SpatialOS fork of Unreal Engine into.
 1. Double-click **Setup.bat**. 
 <br>This installs prerequisites for building Unreal Engine 4.
@@ -81,7 +81,7 @@ Follow the steps below to:
 
 > You need to clone and set up the Sample Game even if you don’t plan to use it. Otherwise, you won’t be able to use the Unreal GDK.
 
-When you reach the **Build** section, there are two options:
+When you reach the **Building** section, there are two options:
 * **Build for standard development**
 <br> Follow these steps if you want to develop games with the Unreal GDK but do not want to modify the GDK.
 * **Build for Unreal GDK modification development**
