@@ -2,6 +2,22 @@
 
 # Set up and get started with the SpatialOS Unreal GDK
 
+##Contents
+
+* [Prerequisites](#prerequisites)
+    * [Hardware](#hardware)
+    * [Network settings](#network-settings)
+    * [Software](#software)
+* [Setting up the SpatialOS fork of Unreal Engine](#setting-up-the-spatialos-fork-of-unreal-engine)
+    * [Getting the Unreal Engine fork source code](#getting-the-unreal-engine-fork-source-code)
+    * [Building Unreal Engine](#building-unreal-engine)
+* [Setting up the Unreal GDK module and Sample Game](#setting-up-the-unreal-gdk-module-and-sample-game)
+    * [Cloning](#cloning)
+    * [Building](#building)
+        * [Building for standard development](#building-for-standard-development)
+        * [Building for Unreal GDK modification development](#building-for-unreal-gdk-modification-development)
+* [Running the Sample Game](#running-the-sample-game)
+
 ## Prerequisites
 
 ### Hardware
@@ -24,37 +40,36 @@ To build the SpatialOS Unreal GDK module you need the following installed:
 
 To use the Unreal GDK, you need to build Unreal Engine 4 from source.
 
-1. Get the Unreal Engine fork source code
-    1. In a Git Bash terminal window, clone the repository and check out the SpatialOS Unreal Engine from our [Unreal Engine fork](https://github.com/improbable/UnrealEngine/tree/UnrealEngine419_SpatialGDK) by running either:
-        * (HTTPS) `git clone https://github.com/improbable/UnrealEngine.git -b UnrealEngine419_SpatialGDK`
-        * (SSH) `git clone git@github.com:improbable/UnrealEngine.git -b UnrealEngine419_SpatialGDK`
-    1. Add a system environment variable (**Control Panel > System and Security > System > Advanced system settings > Advanced > Environment variables**) named UNREAL_HOME. The value should be the path to the directory you cloned into in step 1.1.
-    1. Make sure that the new environment variable is registered by restarting your terminal and running `echo $UNREAL_HOME`. This should output the path to the directory you cloned into in step 1.1.
+### Getting the Unreal Engine fork source code
+1. In a Git Bash terminal window, clone the repository and check out the SpatialOS Unreal Engine from our [Unreal Engine fork](https://github.com/improbable/UnrealEngine/tree/UnrealEngine419_SpatialGDK) by running either:
+    * (HTTPS) `git clone https://github.com/improbable/UnrealEngine.git -b UnrealEngine419_SpatialGDK`
+    * (SSH) `git clone git@github.com:improbable/UnrealEngine.git -b UnrealEngine419_SpatialGDK`
+1. Add a system environment variable (**Control Panel > System and Security > System > Advanced system settings > Advanced > Environment variables**) named UNREAL_HOME. The value should be the path to the directory you cloned into in step 1.1.
+ 1. Make sure that the new environment variable is registered by restarting your terminal and running `echo $UNREAL_HOME`. This should output the path to the directory you cloned into in step 1.1.
 
-1. Build Unreal Engine
+### Building Unreal Engine
     
-    To build Unreal server workers for SpatialOS deployments, you need to build targeting Linux, which requires cross-compilation of your SpatialOS project and Unreal Engine fork.
+To build Unreal server workers for SpatialOS deployments, you need to build targeting Linux, which requires cross-compilation of your SpatialOS project and Unreal Engine fork.
 
-    > Building the Unreal Engine fork from source could take up to a few hours.
+> Building the Unreal Engine fork from source could take up to a few hours.
 
-    1. From the Compiling for Linux setup guide, download and unzip `v11 clang 5.0.0-based - for UE4 4.19`.
-    1. Add a system environment variable (**Control Panel > System and Security > System > Advanced system settings > Advanced > Environment variables**) named LINUX_MULTIARCH_ROOT. 
-    <br>The value should be the path to the directory you unzipped into in step 2.1.
-    1. Make sure that the new environment variable is registered by restarting your terminal and running `echo $LINUX_MULTIARCH_ROOT`. 
-    <br>This should output the path to the directory you unzipped into in step 2.1.
-    1. Open **File Explorer** and navigate to the directory you cloned the SpatialOS fork of Unreal Engine into.
-    1. Double-click **Setup.bat**. 
-    <br>This installs prerequisites for building Unreal Engine 4.
-        >  While running the batch file, you should see `Checking dependencies (excluding Mac, Android)...`. If it also says `excluding Linux`, make sure that you set the environment variable `LINUX_MULTIARCH_ROOT` correctly, and run the batch file again.
-    1. In the same directory, double-click **GenerateProjectFiles.bat**. 
-    <br>This sets up the project files required to build Unreal Engine 4. 
+1. From the Compiling for Linux setup guide, download and unzip `v11 clang 5.0.0-based - for UE4 4.19`.
+1. Add a system environment variable (**Control Panel > System and Security > System > Advanced system settings > Advanced > Environment variables**) named LINUX_MULTIARCH_ROOT. 
+<br>The value should be the path to the directory you unzipped into in step 2.1.
+1. Make sure that the new environment variable is registered by restarting your terminal and running `echo $LINUX_MULTIARCH_ROOT`. 
+<br>This should output the path to the directory you unzipped into in step 2.1.
+1. Open **File Explorer** and navigate to the directory you cloned the SpatialOS fork of Unreal Engine into.
+1. Double-click **Setup.bat**. 
+<br>This installs prerequisites for building Unreal Engine 4.
+    >  While running the batch file, you should see `Checking dependencies (excluding Mac, Android)...`. If it also says `excluding Linux`, make sure that you set the environment variable `LINUX_MULTIARCH_ROOT` correctly, and run the batch file again.
+1. In the same directory, double-click **GenerateProjectFiles.bat**. 
+<br>This sets up the project files required to build Unreal Engine 4. 
         > Note: If you encounter an `error MSB4036: The "GetReferenceNearestTargetFrameworkTask" task was not found` when building with Visual Studio 2017, check that you have NuGet Package Manager installed via the Visual Studio installer.
-    1. Open **UE4.sln** in Visual Studio.
-    1. Go to **Build > Configuration Manager** and set your active solution configuration to **Development Editor** and your active solution platform to **Win64**.
-    1. In the Solution Explorer window, right-click on the **UE4** project and select **Build** (you may be prompted to install some dependencies first).
-         > **SCREENSHOT**
-    1. Once the build succeeds, in the Solution Explorer, find **Programs > AutomationTool**. Right-click this project and select Build. 
-    <br>You have now built Unreal Engine 4 for cross-compilation for Linux.
+1. Open **UE4.sln** in Visual Studio.
+1. On the toolbar, go to **Build > Configuration Manager** and set your active solution configuration to **Development Editor** and your active solution platform to **Win64**.
+1. In the Solution Explorer window, right-click on the **UE4** project and select **Build** (you may be prompted to install some dependencies first).
+1. Once the build succeeds, in the Solution Explorer, find **Programs > AutomationTool**. Right-click this project and select Build. 
+<br>You have now built Unreal Engine 4 for cross-compilation for Linux.
     > Once you've built Unreal Engine, *don't move it into another directory*: that will break the integration.
 
 ## Setting up the Unreal GDK module and Sample Game
@@ -72,7 +87,7 @@ When you reach the **Build** section, there are two options:
 * **Build for Unreal GDK modification development**
 <br>Follow these steps if you want to modify the Unreal GDK while developing games with it.
 
-### Clone repositories
+### Cloning
 
 1. In a Git Bash terminal window, clone the [Unreal GDK](https://github.com/improbable/unreal-gdk) repository by running either:
     * (HTTPS) `git clone https://github.com/improbable/unreal-gdk.git`
@@ -82,13 +97,13 @@ When you reach the **Build** section, there are two options:
     * (HTTPS) `git clone https://github.com/improbable/unreal-gdk-sample-game.git`
     * (SSH) `git clone git@github.com:improbable/unreal-gdk-sample-game.git`
 
-### Build (what?)
+### Building
 
 Build the Unreal GDK module dependencies which the Sample Game needs to work with the GDK and add the Unreal GDK to the Sample Game. 
 
 Choose one of the two build options:
 
-#### Build for standard development
+#### Building for standard development
 
 1. In a Git Bash terminal window, navigate to the root directory of the Unreal GDK repository you cloned and run `ci/build.sh`.
 1. Within the same repository, run `./setup.sh “<path to the directory of the Sample Game you cloned>”`, remembering to enclose the path in quotation marks.
@@ -102,7 +117,7 @@ Choose one of the two build options:
     1. Select the path to the SpatialOS Unreal Engine repository you cloned earlier.
     1. Build the SpatialOS Unreal Engine: in a Git Bash terminal window, navigate to the root directory of the Unreal GDK Sample Game repository you cloned, and run `Game/Scripts/Build.bat SampleGameEditor Win64 Development SampleGame.uproject`.
 
-#### Build for Unreal GDK modification development
+#### Building for Unreal GDK modification development
 
 1. In a Git Bash terminal window, navigate to the root of the Unreal GDK repository you cloned and run `ci/build.sh`. This requires you to authenticate using your SpatialOS account.
 1. Navigate to the root directory of the Unreal GDK Sample Game repository you cloned.
