@@ -266,12 +266,11 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 {
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(EntityId);
 
-	UE_LOG(LogTemp, Warning, TEXT("USpatialInteropPipelineBlock::RemoveEntityImpl %s %d"), Actor ? *Actor->GetName() : TEXT("Actor invalid"), EntityId.ToSpatialEntityId());
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: Remove Entity Impl: %s %d"), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId.ToSpatialEntityId());
 
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
 	if (!Actor || Actor->IsPendingKill())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("CleanupDeletedEntity called on actor %s %d"), Actor ? *Actor->GetName() : TEXT("Actor invalid"), EntityId.ToSpatialEntityId());
 		CleanupDeletedEntity(EntityId);
 		return;
 	}
