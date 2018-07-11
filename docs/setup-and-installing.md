@@ -1,4 +1,4 @@
-# <b> NOTE: Please add any comments to [this Google doc](https://docs.google.com/document/d/1dPLJOTLD2sN57zCfLVDfoJ5mHB8KoiHlSsWoBnSGJa8/edit#heading=h.kcr0j92iy3dl). Thank you!</b>
+# <b> NOTE: Please add any comments to [this Google doc](https://docs.google.com/document/d/1dPLJOTLD2sN57zCfLVDfoJ5mHB8KoiHlSsWoBnSGJa8/edit#heading=h.kcr0j92iy3dl).</b>
 
 # Set up and get started with the SpatialOS Unreal GDK
 
