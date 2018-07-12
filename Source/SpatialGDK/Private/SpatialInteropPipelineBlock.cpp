@@ -281,23 +281,23 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 		PC->Player = nullptr;
 	}
 
-	// Destruction of actors can cause the destruction of associative actors (eg. Character > Controller). Actor destroy
+	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
 	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
-	// is currently owned by this worker before issuing a entity delete request. If the associative entity hasn't migrated off 
+	// is currently owned by this worker before issuing a entity delete request. If the associated entity hasn't migrated off 
 	// this server just yet, we need to make sure this client doesn't issue a entity delete request, as this entity is really 
-	// migrating, it's just a few frames behind it's associative entity. 
+	// migrating, it's just a few frames behind it's associated entity. 
 	// We make the assumption that if we're destroying actors here (due to a remove entity op), then this is only due to two
 	// situations;
 	// 1. Actor's entity has migrated off this server
 	// 2. The Actor was deleted on another server
-	// In neither situation do we want to delete associative entities, so prevent them from being issued.
-	// TODO: fix this with working sets
-	NetDriver->GetSpatialInterop()->SetAuthoritiveDestruction(false);
+	// In neither situation do we want to delete associated entities, so prevent them from being issued.
+	// TODO: fix this with working sets (UNR-411)
+	NetDriver->GetSpatialInterop()->BeginIgnoringAuthoritativeDestruction();
 	if (World->DestroyActor(Actor, true) == false)
 	{
 		UE_LOG(LogSpatialGDKInteropPipelineBlock, Error, TEXT("World->DestroyActor failed on RemoveEntity %s %d"), *Actor->GetName(), EntityId.ToSpatialEntityId());
 	}
-	NetDriver->GetSpatialInterop()->SetAuthoritiveDestruction(true);
+	NetDriver->GetSpatialInterop()->StopIgnoringAuthoritativeDestruction();
 
 	CleanupDeletedEntity(EntityId);
 }

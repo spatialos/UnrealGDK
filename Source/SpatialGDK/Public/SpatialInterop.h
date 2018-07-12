@@ -172,8 +172,9 @@ public:
 	void ResolveQueuedPendingOperations();
 	void ResolvePendingOperations_Internal(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 
-	void SetAuthoritiveDestruction(bool bValue) { bAuthoritiveDestruction = bValue; }
-	bool IsAuthoritiveDestruction() const { return bAuthoritiveDestruction; }
+	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
+	void BeginIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; };
+	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
 
 	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
 	void AddActorChannel(const FEntityId& EntityId, USpatialActorChannel* Channel);
@@ -255,7 +256,7 @@ private:
 	// Used to queue up pending operations when resolved in critical section
 	FPendingOperationsQueue PendingOperationsQueue;
 
-	bool bAuthoritiveDestruction;
+	bool bAuthoritativeDestruction;
 
 
 private:

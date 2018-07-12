@@ -121,7 +121,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
 	{
-		bHasAuthority =		Interop->IsAuthoritiveDestruction()
+		bHasAuthority =		Interop->IsAuthoritativeDestructionAllowed()
 						&&	PinnedView->GetAuthority<improbable::Position>(ActorEntityId.ToSpatialEntityId()) == worker::Authority::kAuthoritative;
 	}
 

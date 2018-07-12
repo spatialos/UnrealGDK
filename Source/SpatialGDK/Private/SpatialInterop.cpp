@@ -29,7 +29,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	NetDriver = Driver;
 	TimerManager = InTimerManager;
 	PackageMap = Cast<USpatialPackageMapClient>(Driver->GetSpatialOSNetConnection()->PackageMap);
-	bAuthoritiveDestruction = true;
+	bAuthoritativeDestruction = false;
 
 	// Collect all type binding classes.
 	TArray<UClass*> TypeBindingClasses;
@@ -231,7 +231,7 @@ void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable
 
 void USpatialInterop::ResolveQueuedPendingOperations()
 {
-	for (auto it : PendingOperationsQueue)
+	for (auto& it : PendingOperationsQueue)
 	{
 		ResolvePendingOperations_Internal(it.Key, it.Value);
 	}
