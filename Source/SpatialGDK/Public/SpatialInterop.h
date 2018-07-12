@@ -173,7 +173,7 @@ public:
 	void ResolvePendingOperations_Internal(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
-	void BeginIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; };
+	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; };
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
 
 	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
