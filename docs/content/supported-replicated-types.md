@@ -1,0 +1,1 @@
+Placeholder - see [the WIP supported replicated types doc](https://docs.google.com/document/d/1YoohgU5ipnVlURp7wCrbizDYg6zw40T1cO8fPcZib0s/edit).
