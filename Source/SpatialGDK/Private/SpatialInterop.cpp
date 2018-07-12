@@ -222,21 +222,21 @@ void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable
 {
 	if (NetDriver->InteropPipelineBlock->IsInCriticalSection())
 	{
-		PendingOperationsQueue.Add(TPair<UObject*, const improbable::unreal::UnrealObjectRef>{ Object, ObjectRef });
+		ResolvedObjectQueue.Add(TPair<UObject*, const improbable::unreal::UnrealObjectRef>{ Object, ObjectRef });
 		return;
 	}
 
 	ResolvePendingOperations_Internal(Object, ObjectRef);
 }
 
-void USpatialInterop::ResolveQueuedPendingOperations()
+void USpatialInterop::OnLeaveCriticalSection()
 {
-	for (auto& it : PendingOperationsQueue)
+	for (auto& It : ResolvedObjectQueue)
 	{
-		ResolvePendingOperations_Internal(it.Key, it.Value);
+		ResolvePendingOperations_Internal(It.Key, It.Value);
 	}
 
-	PendingOperationsQueue.Empty();
+	ResolvedObjectQueue.Empty();
 }
 
 void USpatialInterop::ResolvePendingOperations_Internal(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)

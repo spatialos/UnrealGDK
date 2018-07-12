@@ -185,7 +185,7 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 		RemoveEntityImpl(PendingRemoveEntity);
 	}
 
-	NetDriver->GetSpatialInterop()->ResolveQueuedPendingOperations();
+	NetDriver->GetSpatialInterop()->OnLeaveCriticalSection();
 
 	// Mark that we've left the critical section.
 	bInCriticalSection = false;
