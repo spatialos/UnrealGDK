@@ -33,10 +33,14 @@ namespace Improbable
 
             Common.RunRedirected(@"Binaries\ThirdParty\Improbable\Programs\schema_compiler.exe", arguments);
 
+            // TODO: remove this when WRK-416 is implemented (specify .cpp extension to schema_compiler)
+            Common.RunRedirected(@"Scripts\RenameCCtoCPP.bat", new[]{$"{intermediateSchemaCompilerDirectory}"});
+
             Common.RunRedirected(@"Scripts\DiffCopy.bat", new[]
             {
                 $"{intermediateSchemaCompilerDirectory}",
-                @"Source\SpatialGDK\Generated\Cpp"
+                @"Source\SpatialGDK\Generated\Cpp",
+                @"--remove-input"
             });
 
             string intermediateUnrealCodegenDirectory = Path.Combine("Intermediate/Improbable/", Path.GetRandomFileName());
@@ -49,7 +53,8 @@ namespace Improbable
             Common.RunRedirected(@"Scripts\DiffCopy.bat", new[]
             {
                 $"{intermediateUnrealCodegenDirectory}",
-                @"Source/SpatialGDK/Generated/UClasses"
+                @"Source/SpatialGDK/Generated/UClasses",
+                @"--remove-input"
             });
         }
     }

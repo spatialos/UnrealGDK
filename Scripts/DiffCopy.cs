@@ -13,6 +13,7 @@ namespace Improbable
             diffOnly = args.Count(arg => arg.ToLowerInvariant() == "--diff-only") == 1;
             verbose = args.Count(arg => arg.ToLowerInvariant() == "--verbose") == 1 || diffOnly == true;
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
+            var removeInput = args.Count(arg => arg.ToLowerInvariant() == "--remove-input") == 1;
 
             var exitCode = 0;
             if (args.Length < 2 && !help)
@@ -28,6 +29,7 @@ namespace Improbable
                 Console.WriteLine("Flags:");
                 Console.WriteLine("\t--diff-only : only perform the diffing.");
                 Console.WriteLine("\t--verbose : print the log to stdout.");
+                Console.WriteLine("\t--remove-input : remove the input directory after copying the files over.");
 
                 Environment.Exit(exitCode);
             }
@@ -90,6 +92,11 @@ namespace Improbable
                     var outputFilePath = Path.Combine(outputPath.FullName, file);
                     Log(@"Copying new file {0} to {1}", inputFilePath, outputFilePath);
                     CopyFile(inputFilePath, outputFilePath);
+                }
+
+                if (removeInput)
+                {
+                    Directory.Delete(inputPath.FullName, true);
                 }
             }
             catch (System.Exception e)
