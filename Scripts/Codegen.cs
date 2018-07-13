@@ -33,8 +33,14 @@ namespace Improbable
 
             Common.RunRedirected(@"Binaries\ThirdParty\Improbable\Programs\schema_compiler.exe", arguments);
 
-            // TODO: remove this when WRK-416 is implemented (specify .cpp extension to schema_compiler)
-            Common.RunRedirected(@"Scripts\RenameCCtoCPP.bat", new[]{$"{intermediateSchemaCompilerDirectory}"});
+            {
+                // TODO: remove this when WRK-416 is implemented (specify .cpp extension to schema_compiler)
+                var generatedFiles = new DirectoryInfo(intermediateSchemaCompilerDirectory);
+                foreach (var file in generatedFiles.GetFiles("*.cc", SearchOption.AllDirectories))
+                {
+                    File.Move(file.FullName, Path.ChangeExtension(file.FullName, ".cpp"));
+                }
+            }
 
             Common.RunRedirected(@"Scripts\DiffCopy.bat", new[]
             {
