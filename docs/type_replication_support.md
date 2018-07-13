@@ -35,18 +35,19 @@
 | ![#008000](https://placehold.it/15/008000/000000?text=+) TArray\[T\] where T is UStruct | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) TArray\[T\] where T is UStruct with NetSerialize | Yes | Yes | --- | --- |
 | ![#800000](https://placehold.it/15/800000/000000?text=+) TArray\[T\] where T is UStruct and the UStruct contains an TArray. | No | No | --- | Currently not tested |
+| ![#800000](https://placehold.it/15/800000/000000?text=+) TArray\[T\] where T is UStruct and the UStruct contains an C-style Array. | No | No | --- | Currently not tested |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) TArray\[T\] where T is Unreal style enum | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) TArray\[T\] where T is C++ 11 style enum | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) Unreal style enum | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) C++ 11 style enum | Yes | Yes | --- | --- |
 | ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where both T1 and T2 are POD | No | No | --- | Currently not tested |
-| ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where either T1 and T2 are UStruct | No | No | --- | Currently not tested |
-| ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where either T1 and T2 are UObject* | No | No | --- | Currently not tested |
+| ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where either T1 or T2 are UStruct | No | No | --- | Currently not tested |
+| ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where either T1 or T2 are UObject* | No | No | --- | Currently not tested |
 | ![#800000](https://placehold.it/15/800000/000000?text=+) TWeakObjPtr<T> where T is UObject* | Yes | No | --- | Currently not tested |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with POD members only | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with a nested UStruct | Yes | Yes | --- | ---|
-| ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with a nested UStruct | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with a dynamically created AActor | Yes | Yes | --- | --- |
+| ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct pointing to stably named UObject  | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with NetSerialize | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with C-style array | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct With TArray | Yes | Yes | --- | --- |
@@ -54,6 +55,7 @@
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with C++ 11 style enum | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UObject pointing to dynamically created AActor | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UObject pointing to stably named UObject  | Yes | Yes | --- | --- |
+| ![#008000](https://placehold.it/15/008000/000000?text=+) const UObject pointing to stably named UObject  | Yes | Yes | --- | --- |
 
 ## Supported RPC arguments
 
@@ -90,18 +92,19 @@
 | ![#008000](https://placehold.it/15/008000/000000?text=+) TArray\[T\] where T is UStruct | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) TArray\[T\] where T is UStruct with net serialise | Yes | Yes | --- | --- |
 | ![#800000](https://placehold.it/15/800000/000000?text=+) TArray\[T\] where T is UStruct and the UStruct contains an TArray. | No | No | --- | Currently not tested |
+| ![#800000](https://placehold.it/15/800000/000000?text=+) TArray\[T\] where T is UStruct and the UStruct contains an C-style Array. | No | No | --- | Currently not tested |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) TArray\[T\] where T is Unreal style enum | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) TArray\[T\] where T is C++ 11 style enum | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) Unreal style enum | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) C++ 11 style enum | Yes | Yes | --- | --- |
 | ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where both T1 and T2 are POD | No | No | --- | Currently not tested |
-| ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where either T1 and T2 are UStruct | No | No | --- | Currently not tested |
-| ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where either T1 and T2 are UObject* | No | No | --- | Currently not tested |
+| ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where either T1 or T2 are UStruct | No | No | --- | Currently not tested |
+| ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where either T1 or T2 are UObject* | No | No | --- | Currently not tested |
 | ![#800000](https://placehold.it/15/800000/000000?text=+) TWeakObjPtr<T> where T is UObject* | Yes | No | --- | Currently not tested |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with POD members only | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with a nested UStruct | Yes | Yes | --- | ---|
-| ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with a nested UStruct | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with a dynamically created AActor | Yes | Yes | --- | --- |
+| ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct pointing to stably named UObject  | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with NetSerialize | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with C-style array | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct With TArray | Yes | Yes | --- | --- |
@@ -109,3 +112,4 @@
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with C++ 11 style enum | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UObject pointing to dynamically created AActor | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UObject pointing to stably named UObject  | Yes | Yes | --- | --- |
+| ![#008000](https://placehold.it/15/008000/000000?text=+) const UObject pointing to stably named UObject  | Yes | Yes | --- | --- |
