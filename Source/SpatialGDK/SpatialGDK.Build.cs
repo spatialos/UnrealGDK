@@ -66,7 +66,6 @@ public class SpatialGDK : ModuleRules
                 ImportLibSuffix = SharedLibSuffix = ".dylib";
                 break;
             case UnrealTargetPlatform.Linux:
-                CoreSdkLibraryDir = "";
                 LibPrefix = "lib";
                 ImportLibSuffix = SharedLibSuffix = ".so";
                 break;
