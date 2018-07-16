@@ -189,9 +189,6 @@ void USpatialInterop::SendSpatialUpdateSubobject(USpatialActorChannel* Channel, 
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Subobject->GetClass());
 	if (!Binding)
 	{
-		// IMPROBABLE: MCS - Readded this log as I'm curious about which classes we might not be supporting
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
-			*Subobject->GetClass()->GetName());
 		return;
 	}
 	Binding->SendComponentUpdates(Channel->GetChangeStateSubobject(Subobject, replicator, RepChanged, MigChanged), Channel, Channel->GetEntityId());
@@ -218,16 +215,6 @@ void USpatialInterop::ReceiveAddComponent(USpatialActorChannel* Channel, UAddCom
 		return;
 	}
 	Binding->ReceiveAddComponent(Channel, AddComponentOp);
-}
-
-void USpatialInterop::PreReceiveSpatialUpdate(USpatialActorChannel* Channel)
-{
-	Channel->PreReceiveSpatialUpdate();
-}
-
-void USpatialInterop::PostReceiveSpatialUpdate(USpatialActorChannel* Channel, const TArray<UProperty*>& RepNotifies)
-{
-	Channel->PostReceiveSpatialUpdate(RepNotifies);
 }
 
 void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
@@ -580,7 +567,8 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 		FPendingIncomingProperties& Properties = ChannelProperties.Value;
 
 		// Trigger pending updates.
-		PreReceiveSpatialUpdate(DependentChannel);
+		DependentChannel->PreReceiveSpatialUpdate(Object);
+
 		TSet<UProperty*> RepNotifies;
 		for (const FRepHandleData* RepData : Properties.Key)
 		{
@@ -600,7 +588,8 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 				DependentChannel->GetEntityId().ToSpatialEntityId(),
 				*MigData->Property->GetName());
 		}
-		PostReceiveSpatialUpdate(DependentChannel, RepNotifies.Array());
+
+		DependentChannel->PostReceiveSpatialUpdate(Object, RepNotifies.Array());
 	}
 
 	PendingIncomingObjectUpdates.Remove(ObjectRef);

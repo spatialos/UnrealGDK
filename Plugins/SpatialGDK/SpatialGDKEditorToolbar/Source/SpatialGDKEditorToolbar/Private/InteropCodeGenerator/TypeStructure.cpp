@@ -5,6 +5,8 @@
 
 #include "Engine/SCS_Node.h"
 
+ClassHeaderMap Classes;
+
 FString GetFullCPPName(UClass* Class)
 {
 	if (Class->IsChildOf(AActor::StaticClass()))
@@ -569,7 +571,10 @@ TArray<UClass*> GetAllSupportedComponents(TSharedPtr<FUnrealType> TypeInfo)
 
 		for (UActorComponent* Component : NativeComponents)
 		{
-			ComponentClasses.Add(Component->GetClass());
+			if (Classes.Find(Component->GetClass()->GetName()))
+			{
+				ComponentClasses.Add(Component->GetClass());
+			}
 		}
 
 		// Components that are added in a blueprint won't appear in the CDO.
@@ -581,7 +586,10 @@ TArray<UClass*> GetAllSupportedComponents(TSharedPtr<FUnrealType> TypeInfo)
 				{
 					if (Node->ComponentTemplate)
 					{
-						ComponentClasses.Add(Node->ComponentTemplate->GetClass());
+						if (Classes.Find(Node->ComponentTemplate->GetClass()->GetName()))
+						{
+							ComponentClasses.Add(Node->ComponentTemplate->GetClass());
+						}
 					}
 				}
 			}

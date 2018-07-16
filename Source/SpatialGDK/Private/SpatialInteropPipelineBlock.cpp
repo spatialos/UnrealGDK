@@ -396,18 +396,15 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			auto Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
 			check(Channel);
 
-			PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
-			Channel->SetChannelActor(EntityActor);
-
-			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
-			NetDriver->GetSpatialInterop()->SendComponentInterests(Channel, EntityId.ToSpatialEntityId());
-
 			if (bDoingDeferredSpawn)
 			{
 				auto InitialLocation = SpatialConstants::SpatialOSCoordinatesToLocation(PositionComponent->coords());
 				FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 				EntityActor->FinishSpawning(FTransform(FRotator::ZeroRotator, SpawnLocation));
 			}
+
+			PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
+			Channel->SetChannelActor(EntityActor);
 
 			// Apply initial replicated properties.
 			// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
@@ -416,6 +413,9 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			{
 				NetDriver->GetSpatialInterop()->ReceiveAddComponent(Channel, PendingAddComponent.AddComponentOp);
 			}
+
+			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
+			NetDriver->GetSpatialInterop()->SendComponentInterests(Channel, EntityId.ToSpatialEntityId());
 
 			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 			// a player index. For now we don't support split screen, so the number is always 0.

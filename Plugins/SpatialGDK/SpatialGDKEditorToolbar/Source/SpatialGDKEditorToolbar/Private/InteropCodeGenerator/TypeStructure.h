@@ -154,6 +154,10 @@ using FUnrealFlatRepData = TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPt
 using FUnrealRPCsByType = TMap<ERPCType, TArray<TSharedPtr<FUnrealRPC>>>;
 using FCmdHandlePropertyMap = TMap<uint16, TSharedPtr<FUnrealProperty>>;
 
+typedef TMap<FString, TArray<FString>> ClassHeaderMap;
+
+extern ClassHeaderMap Classes;
+
 // Given a UClass, returns either "AFoo" or "UFoo" depending on whether Foo is a subclass of actor.
 FString GetFullCPPName(UClass* Class);
 
