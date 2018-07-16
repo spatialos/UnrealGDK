@@ -248,7 +248,7 @@ bool SpatialGDKGenerateInteropCode()
 			const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
 
 			// Copy Interop files.
-			FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose"), *AbsoluteCombinedIntermediatePath, *AbsoluteCombinedForwardingCodePath);
+			FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *AbsoluteCombinedIntermediatePath, *AbsoluteCombinedForwardingCodePath);
 			bool bSuccess = RunProcess(DiffCopyPath, DiffCopyArguments);			
 			
 			if (!bSuccess)
@@ -257,7 +257,7 @@ bool SpatialGDKGenerateInteropCode()
 			}
 
 			// Copy schema files
-			DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose"), *AbsoluteCombinedSchemaIntermediatePath, *AbsoluteCombinedSchemaPath);
+			DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *AbsoluteCombinedSchemaIntermediatePath, *AbsoluteCombinedSchemaPath);
 			bSuccess = RunProcess(DiffCopyPath, DiffCopyArguments);
 
 			if (!bSuccess)

@@ -6,7 +6,7 @@ FSpatialOutputDevice::FSpatialOutputDevice(USpatialOS* SpatialOSInstance, FStrin
 {
 	SpatialOS = SpatialOSInstance;
 	Name = LoggerName;
-	FilterLevel = ELogVerbosity::All;
+	FilterLevel = ELogVerbosity::Warning;
 
 	FOutputDeviceRedirector::Get()->AddOutputDevice(this);
 }
