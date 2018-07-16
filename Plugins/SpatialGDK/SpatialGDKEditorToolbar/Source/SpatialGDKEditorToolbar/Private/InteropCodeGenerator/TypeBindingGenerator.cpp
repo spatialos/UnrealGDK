@@ -712,7 +712,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	}
 	SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaMigratableDataName(Class));
 
-	TArray<UClass*> Components = GetAllComponents(TypeInfo);
+	TArray<UClass*> Components = GetAllSupportedComponents(TypeInfo);
 
 	for (UClass* ComponentClass : Components)
 	{
@@ -1113,7 +1113,7 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 	}
 	SourceWriter.Print("MigratableDataUpdate.ApplyTo(MigratableData);");
 
-	TArray<UClass*> Components = GetAllComponents(TypeInfo);
+	TArray<UClass*> Components = GetAllSupportedComponents(TypeInfo);
 
 	TArray<FString> EntityComponents;
 
@@ -1351,7 +1351,7 @@ void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Cla
 		*SchemaMigratableDataName(Class),
 		*SchemaMigratableDataName(Class, true));
 
-	TArray<UClass*> Components = GetAllComponents(TypeInfo);
+	TArray<UClass*> Components = GetAllSupportedComponents(TypeInfo);
 
 	for (UClass* ComponentClass : Components)
 	{
