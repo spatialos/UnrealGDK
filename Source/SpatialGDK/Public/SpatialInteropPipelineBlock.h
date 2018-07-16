@@ -63,6 +63,8 @@ public:
 
 	void CleanupDeletedEntity(const FEntityId& EntityId);
 
+	bool IsInCriticalSection() const { return bInCriticalSection; }
+
 private:
 	bool bInCriticalSection;
 
