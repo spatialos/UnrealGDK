@@ -154,11 +154,10 @@ void USpatialActorChannel::Close()
 	Super::Close();
 }
 
-FPropertyChangeState USpatialActorChannel::CreateSubobjectChangeState(UActorComponent* Component)
+TArray<uint16> USpatialActorChannel::SkipOverChangelistArrays(FObjectReplicator& Replicator)
 {
-	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Component)).Get();
-
 	TArray<uint16> InitialRepChanged;
+
 	int32 DynamicArrayDepth = 0;
 	const int32 CmdCount = Replicator.RepLayout->Cmds.Num();
 	for (uint16 CmdIdx = 0; CmdIdx < CmdCount; ++CmdIdx)
@@ -186,6 +185,42 @@ FPropertyChangeState USpatialActorChannel::CreateSubobjectChangeState(UActorComp
 			checkf(DynamicArrayDepth >= 0 || CmdIdx == CmdCount - 1, TEXT("Encountered erroneous RepLayout"));
 		}
 	}
+
+	return InitialRepChanged;
+}
+
+FPropertyChangeState USpatialActorChannel::CreateSubobjectChangeState(UActorComponent* Component)
+{
+	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Component)).Get();
+
+	TArray<uint16> InitialRepChanged = SkipOverChangelistArrays(Replicator);
+	//int32 DynamicArrayDepth = 0;
+	//const int32 CmdCount = Replicator.RepLayout->Cmds.Num();
+	//for (uint16 CmdIdx = 0; CmdIdx < CmdCount; ++CmdIdx)
+	//{
+	//	const auto& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
+
+	//	InitialRepChanged.Add(Cmd.RelativeHandle);
+
+	//	if (Cmd.Type == REPCMD_DynamicArray)
+	//	{
+	//		DynamicArrayDepth++;
+
+	//		// For the first layer of each dynamic array encountered at the root level
+	//		// add the number of array properties to conform to Unreal's RepLayout design and 
+	//		// allow FRepHandleIterator to jump over arrays. Cmd.EndCmd is an index into 
+	//		// RepLayout->Cmds[] that points to the value after the termination NULL of this array.
+	//		if (DynamicArrayDepth == 1)
+	//		{
+	//			InitialRepChanged.Add((Cmd.EndCmd - CmdIdx) - 2);
+	//		}
+	//	}
+	//	else if (Cmd.Type == REPCMD_Return)
+	//	{
+	//		DynamicArrayDepth--;
+	//		checkf(DynamicArrayDepth >= 0 || CmdIdx == CmdCount - 1, TEXT("Encountered erroneous RepLayout"));
+	//	}
+	//}
 
 	return GetChangeStateSubobject(Component, &Replicator, InitialRepChanged, TArray<uint16>());
 }
@@ -357,34 +392,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 			// Ensure that the initial changelist contains _every_ property. This ensures that the default properties are written to the entity template.
 			// Otherwise, there will be a mismatch between the rep state shadow data used by CompareProperties and the entity in SpatialOS.
-			TArray<uint16> InitialRepChanged;
-			int32 DynamicArrayDepth = 0;
-			const int32 CmdCount = ActorReplicator->RepLayout->Cmds.Num();
-			for (uint16 CmdIdx = 0; CmdIdx < CmdCount; ++CmdIdx)
-			{
-				const auto& Cmd = ActorReplicator->RepLayout->Cmds[CmdIdx];
-
-				InitialRepChanged.Add(Cmd.RelativeHandle);
-
-				if (Cmd.Type == REPCMD_DynamicArray)
-				{
-					DynamicArrayDepth++;
-
-					// For the first layer of each dynamic array encountered at the root level
-					// add the number of array properties to conform to Unreal's RepLayout design and 
-					// allow FRepHandleIterator to jump over arrays. Cmd.EndCmd is an index into 
-					// RepLayout->Cmds[] that points to the value after the termination NULL of this array.
-					if (DynamicArrayDepth == 1)
-					{
-						InitialRepChanged.Add((Cmd.EndCmd - CmdIdx) - 2);
-					}
-				}
-				else if (Cmd.Type == REPCMD_Return)
-				{
-					DynamicArrayDepth--;
-					checkf(DynamicArrayDepth >= 0 || CmdIdx == CmdCount - 1, TEXT("Encountered erroneous RepLayout"));
-				}
-			}
+			TArray<uint16> InitialRepChanged = SkipOverChangelistArrays(*ActorReplicator);
 
 			// Calculate initial spatial position (but don't send component update) and create the entity.
 			LastSpatialPosition = GetActorSpatialPosition(Actor);
