@@ -316,13 +316,13 @@ bool USpatialActorChannel::ReplicateActor()
 	}
 
 	// We can early out if we know for sure there are no new changelists to send, and we are not creating a new entity.
-	bool bReplicateActor = true;
+	bool bReplicateCoreActor = true;
 	if (!bCreatingNewEntity && MigratableChanged.Num() == 0)
 	{
 		if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
 		{
 			UpdateChangelistHistory(ActorReplicator->RepState);
-			bReplicateActor = false;
+			bReplicateCoreActor = false;
 		}
 	}
 
@@ -330,7 +330,7 @@ bool USpatialActorChannel::ReplicateActor()
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
 	// If any properties have changed, send a component update.
-	if (bReplicateActor && RepFlags.bNetInitial || RepChanged.Num() > 0 || MigratableChanged.Num() > 0)
+	if (bReplicateCoreActor && RepFlags.bNetInitial || RepChanged.Num() > 0 || MigratableChanged.Num() > 0)
 	{		
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
@@ -528,15 +528,8 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 }
 
-//void USpatialActorChannel::PreReceiveSpatialUpdate()
-//{
-//	Actor->PreNetReceive();
-//	ActorReplicator->RepLayout->InitShadowData(ActorReplicator->RepState->StaticBuffer, Actor->GetClass(), (uint8*)Actor);
-//}
-
 void USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
 {
-
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
 	if (!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
 	{
@@ -545,13 +538,6 @@ void USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
 		Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
 	}
 }
-
-//void USpatialActorChannel::PostReceiveSpatialUpdate(const TArray<UProperty*>& RepNotifies)
-//{
-//	Actor->PostNetReceive();
-//	ActorReplicator->RepNotifies = RepNotifies;
-//	ActorReplicator->CallRepNotifies(false);
-//}
 
 void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies)
 {
