@@ -281,18 +281,17 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 		PC->Player = nullptr;
 	}
 
-	// Slight hack: prevent UnPossess() on migration (non-authoritative destruction of pawn, while being authoritative over the controller)
+	// Workaround for camera loss on migration: prevent UnPossess() (non-authoritative destruction of pawn, while being authoritative over the controller)
 	// TODO: Check how AI controllers are affected by this
-	if (Actor->IsA(APawn::StaticClass()))
+	// TODO: This should be solved properly by working sets (UNR-411)
+	if (APawn* Pawn = Cast<APawn>(Actor))
 	{
 		TSharedPtr<worker::View> PinnedView = NetDriver->GetSpatialOS()->GetView().Pin();
-		APawn* Pawn = Cast<APawn>(Actor);
 		AController* Controller = Pawn->Controller;
 
-		if (PinnedView.IsValid() && Pawn != nullptr && Controller != nullptr)
+		if (PinnedView.IsValid() && Controller != nullptr)
 		{
-			if (PinnedView->GetAuthority<improbable::Position>(NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Pawn).ToSpatialEntityId()) != worker::Authority::kAuthoritative &&
-				PinnedView->GetAuthority<improbable::Position>(NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Controller).ToSpatialEntityId()) == worker::Authority::kAuthoritative)
+			if (PinnedView->GetAuthority<improbable::Position>(NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Controller).ToSpatialEntityId()) == worker::Authority::kAuthoritative)
 			{
 				Pawn->Controller = nullptr;
 			}
