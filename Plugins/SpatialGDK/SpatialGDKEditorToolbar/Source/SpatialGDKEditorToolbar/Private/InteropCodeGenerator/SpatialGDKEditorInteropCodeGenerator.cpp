@@ -99,7 +99,40 @@ const FConfigSection* GetConfigSection(const FString& ConfigFilePath, const FStr
 	return nullptr;
 }
 
-const ClassHeaderMap GenerateClassHeaderMap(const FConfigSection* UserInteropCodeGenSection)
+// correct for common user mistakes
+// e.g. forgetting _C in blueprints
+// return "" if no class can be found with the name
+const FString GetCorrectClassName(FName ClassKey) {
+    FString classname = ClassKey.ToString();
+    UClass* Class = FindObject<UClass>(ANY_PACKAGE, *classname);
+
+    if (!Class)
+    {
+        UE_LOG(LogSpatialGDKInteropCodeGenerator, Display,
+               TEXT("Could not find unreal class for interop code generation: '%s', "
+                    "trying to find %s_C..."),
+               *classname, *classname);
+
+        // add _C if class doesn't exist in case the user forgot to do so for blueprints
+        classname += "_C";
+        Class = FindObject<UClass>(ANY_PACKAGE, *classname);
+
+        if (!Class)
+        {
+            return "";
+        }
+
+        UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning,
+               TEXT("Changing class name %s to %s... Please also make this change in "
+                    "DefaultEditorSpatialGDK.ini to remove this warning."),
+               *ClassKey.ToString(), *classname);
+    }
+
+	return classname;
+}
+
+
+const ClassHeaderMap GenerateClassHeaderMap(const FConfigSection* UserInteropCodeGenSection, bool *bSuccess)
 {
 	TArray<FName> AllCodeGenKeys;
 	UserInteropCodeGenSection->GetKeys(AllCodeGenKeys);
@@ -110,7 +143,23 @@ const ClassHeaderMap GenerateClassHeaderMap(const FConfigSection* UserInteropCod
 	{
 		TArray<FString> HeaderValueArray;
 		UserInteropCodeGenSection->MultiFind(ClassKey, HeaderValueArray);
-		Classes.Add(ClassKey.ToString(), HeaderValueArray);
+
+		// check for class name mistypes
+        FString classname = GetCorrectClassName(ClassKey);
+
+		if (classname == "")
+        {
+			// class could not be found
+            UE_LOG(LogSpatialGDKInteropCodeGenerator, Error,
+                   TEXT("Could not find unreal class for interop code generation: '%s', skipping."),
+                   *ClassKey.ToString());
+            *bSuccess = false;
+            continue;  // continue instead of break in case we want to generate interop code for found classes
+		}
+
+		// now, classname is a class that must exist
+		// note this doesn't modify UserInteropCodeGenSection, which still contains old class names without _C
+		Classes.Add(classname, HeaderValueArray);
 
 		// Just for some user facing logging.
 		FString Headers;
@@ -118,7 +167,7 @@ const ClassHeaderMap GenerateClassHeaderMap(const FConfigSection* UserInteropCod
 		{
 			Headers.Append(FString::Printf(TEXT("\"%s\" "), *Header));
 		}
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("Found class to generate interop code for: '%s', with includes %s"), *ClassKey.GetPlainNameString(), *Headers);
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("Found class to generate interop code for: '%s', with includes %s"), *classname, *Headers);
 	}
 	return Classes;
 }
@@ -141,22 +190,6 @@ const FString GetOutputPath(const FString& ConfigFilePath)
 	return OutputPath;
 }
 
-const bool ClassesExist(const ClassHeaderMap& Classes)
-{
-	for (const auto& ClassHeaderList : Classes)
-	{
-		const UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
-
-		// If the class doesn't exist then print an error and carry on.
-		if (!Class)
-		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find unreal class for interop code generation: '%s', terminating."), *ClassHeaderList.Key);
-			return false;
-		}
-	}
-
-	return true;
-}
 
 void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
 {
@@ -212,13 +245,14 @@ bool SpatialGDKGenerateInteropCode()
 	const FString UserClassesSectionName = "InteropCodeGen.ClassesToGenerate";
 	if (const FConfigSection* UserInteropCodeGenSection = GetConfigSection(ConfigFilePath, UserClassesSectionName))
 	{
-		InteropGeneratedClasses = GenerateClassHeaderMap(UserInteropCodeGenSection);
-		if (!CheckClassNameListValidity(InteropGeneratedClasses))
-		{
-			return false;
+        bool bSuccess = true;
+		ClassHeaderMap Classes = GenerateClassHeaderMap(UserInteropCodeGenSection, &bSuccess);  // this also checks for class existence
+        if (!bSuccess)  // if not all classes are found; skip this for silent handling
+        {
+            UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Not all classes found; check your DefaultEditorSpatialGDK.ini file."));
+            return false;
 		}
-
-		if (!ClassesExist(InteropGeneratedClasses))
+		if (!CheckClassNameListValidity(Classes))
 		{
 			return false;
 		}
@@ -247,7 +281,7 @@ bool SpatialGDKGenerateInteropCode()
 
 			// Copy Interop files.
 			FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *AbsoluteCombinedIntermediatePath, *AbsoluteCombinedForwardingCodePath);
-			bool bSuccess = RunProcess(DiffCopyPath, DiffCopyArguments);			
+			bSuccess = RunProcess(DiffCopyPath, DiffCopyArguments);			
 			
 			if (!bSuccess)
 			{
