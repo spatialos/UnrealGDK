@@ -96,9 +96,6 @@ bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UO
 {
 	// Super::SerializeObject is not called here on purpose
 
-	// Make sure this is a FSpatialMemoryWriter
-	//check(Cast<FSpatialMemoryWriter>(&Ar) || Cast<FSpatialMemoryReader>(&Ar));
-
 	Ar << Obj;
 
 	return true;

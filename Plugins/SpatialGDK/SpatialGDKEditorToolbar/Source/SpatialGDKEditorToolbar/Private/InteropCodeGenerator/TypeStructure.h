@@ -228,7 +228,7 @@ FCmdHandlePropertyMap GetFlatMigratableData(TSharedPtr<FUnrealType> TypeInfo);
 FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo);
 
 // Get all supported components (not all subobjects) of an Actor class
-TArray<UClass*> GetAllSupportedComponents(TSharedPtr<FUnrealType> TypeInfo);
+TArray<UClass*> GetAllSupportedComponents(UClass* Class);
 
 // Given an AST, traverses all its parameters (and properties within structs) and generates a complete flattened list of properties.
 TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode);

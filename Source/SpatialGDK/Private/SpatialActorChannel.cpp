@@ -315,7 +315,7 @@ bool USpatialActorChannel::ReplicateActor()
 		}
 	}
 
-	// We can early out if we know for sure there are no new changelists to send, and we are not creating a new entity.
+	// We can skip the core actor if there are no new changelists to send, and we are not creating a new entity.
 	bool bReplicateCoreActor = true;
 	if (!bCreatingNewEntity && MigratableChanged.Num() == 0)
 	{
@@ -330,7 +330,7 @@ bool USpatialActorChannel::ReplicateActor()
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
 	// If any properties have changed, send a component update.
-	if (bReplicateCoreActor && RepFlags.bNetInitial || RepChanged.Num() > 0 || MigratableChanged.Num() > 0)
+	if (bReplicateCoreActor && (RepFlags.bNetInitial || RepChanged.Num() > 0 || MigratableChanged.Num() > 0))
 	{		
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{

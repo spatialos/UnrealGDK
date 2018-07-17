@@ -16,7 +16,6 @@
 // Needed for std::bind.
 #include <functional>
 
-
 // Given an Unreal class, generates the name of the type binding class.
 // For example: USpatialTypeBinding_Character.
 FString TypeBindingName(UClass* Class)
@@ -711,7 +710,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	}
 	SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaMigratableDataName(Class));
 
-	TArray<UClass*> Components = GetAllSupportedComponents(TypeInfo);
+	TArray<UClass*> Components = GetAllSupportedComponents(Class);
 
 	for (UClass* ComponentClass : Components)
 	{
@@ -750,7 +749,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	GenerateFunction_UnbindFromView(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_CreateActorEntity(SourceWriter, Class, TypeInfo);
+	GenerateFunction_CreateActorEntity(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_SendComponentUpdates(SourceWriter, Class);
@@ -759,7 +758,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	GenerateFunction_SendRPCCommand(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_ReceiveAddComponent(SourceWriter, Class, TypeInfo);
+	GenerateFunction_ReceiveAddComponent(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_GetInterestOverrideMap(SourceWriter, Class);
@@ -1062,7 +1061,7 @@ void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo)
+void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class)
 {
 	SourceWriter.BeginFunction(
 		{"worker::Entity", "CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const"},
@@ -1084,7 +1083,7 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 
 	GenerateBody_SpatialComponents(SourceWriter, Class, SpatialComponents);
 
-	TArray<UClass*> Components = GetAllSupportedComponents(TypeInfo);
+	TArray<UClass*> Components = GetAllSupportedComponents(Class);
 
 	for (UClass* ComponentClass : Components)
 	{
@@ -1144,18 +1143,6 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		.SetReadAcl(%s)
 		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly))""",
 		Class->IsChildOf(APlayerController::StaticClass()) ? TEXT("AnyUnrealWorkerOrOwningClient") : TEXT("AnyUnrealWorkerOrClient"));
-	/*for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
-	{
-		SourceWriter.Printf(".AddComponent<%s>(%sData, WorkersOnly)",
-			*SchemaReplicatedDataName(Group, Class, true), *GetReplicatedPropertyGroupName(Group));
-	}
-	SourceWriter.Printf(".AddComponent<%s>(MigratableData, WorkersOnly)", *SchemaMigratableDataName(Class, true));
-	SourceWriter.Printf(".AddComponent<%s>(%s::Data{}, OwningClientOnly)",
-		*SchemaRPCComponentName(ERPCType::RPC_Client, Class, true), *SchemaRPCComponentName(ERPCType::RPC_Client, Class, true));
-	SourceWriter.Printf(".AddComponent<%s>(%s::Data{}, WorkersOnly)",
-		*SchemaRPCComponentName(ERPCType::RPC_Server, Class, true), *SchemaRPCComponentName(ERPCType::RPC_Server, Class, true));
-	SourceWriter.Printf(".AddComponent<%s>(%s::Data{}, WorkersOnly)",
-		*SchemaRPCComponentName(ERPCType::RPC_NetMulticast, Class, true), *SchemaRPCComponentName(ERPCType::RPC_NetMulticast, Class, true));*/
 	SourceWriter.Printf("%s", *FString::Join(SpatialComponents, TEXT("\n")));
 
 	SourceWriter.Print(".Build();");
@@ -1297,7 +1284,7 @@ void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo)
+void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class)
 {
 	SourceWriter.BeginFunction(
 		{"void", "ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const"},
@@ -1330,7 +1317,7 @@ void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Cla
 		*SchemaMigratableDataName(Class),
 		*SchemaMigratableDataName(Class, true));
 
-	TArray<UClass*> Components = GetAllSupportedComponents(TypeInfo);
+	TArray<UClass*> Components = GetAllSupportedComponents(Class);
 
 	for (UClass* ComponentClass : Components)
 	{

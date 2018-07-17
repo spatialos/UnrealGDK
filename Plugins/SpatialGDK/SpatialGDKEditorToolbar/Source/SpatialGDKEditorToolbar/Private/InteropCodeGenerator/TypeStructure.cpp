@@ -559,10 +559,8 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 	return RPCsByType;
 }
 
-TArray<UClass*> GetAllSupportedComponents(TSharedPtr<FUnrealType> TypeInfo)
+TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 {
-	UClass* Class = Cast<UClass>(TypeInfo->Type);
-
 	TArray<UClass*> ComponentClasses;
 	if (AActor* ContainerCDO = Cast<AActor>(Class->GetDefaultObject()))
 	{
