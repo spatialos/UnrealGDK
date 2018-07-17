@@ -286,15 +286,11 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 	// TODO: This should be solved properly by working sets (UNR-411)
 	if (APawn* Pawn = Cast<APawn>(Actor))
 	{
-		TSharedPtr<worker::View> PinnedView = NetDriver->GetSpatialOS()->GetView().Pin();
 		AController* Controller = Pawn->Controller;
 
-		if (PinnedView.IsValid() && Controller != nullptr)
+		if (Controller != nullptr && Controller->HasAuthority())
 		{
-			if (PinnedView->GetAuthority<improbable::Position>(NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Controller).ToSpatialEntityId()) == worker::Authority::kAuthoritative)
-			{
-				Pawn->Controller = nullptr;
-			}
+			Pawn->Controller = nullptr;
 		}
 	}
 
