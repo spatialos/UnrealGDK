@@ -194,33 +194,6 @@ FPropertyChangeState USpatialActorChannel::CreateSubobjectChangeState(UActorComp
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Component)).Get();
 
 	TArray<uint16> InitialRepChanged = SkipOverChangelistArrays(Replicator);
-	//int32 DynamicArrayDepth = 0;
-	//const int32 CmdCount = Replicator.RepLayout->Cmds.Num();
-	//for (uint16 CmdIdx = 0; CmdIdx < CmdCount; ++CmdIdx)
-	//{
-	//	const auto& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
-
-	//	InitialRepChanged.Add(Cmd.RelativeHandle);
-
-	//	if (Cmd.Type == REPCMD_DynamicArray)
-	//	{
-	//		DynamicArrayDepth++;
-
-	//		// For the first layer of each dynamic array encountered at the root level
-	//		// add the number of array properties to conform to Unreal's RepLayout design and 
-	//		// allow FRepHandleIterator to jump over arrays. Cmd.EndCmd is an index into 
-	//		// RepLayout->Cmds[] that points to the value after the termination NULL of this array.
-	//		if (DynamicArrayDepth == 1)
-	//		{
-	//			InitialRepChanged.Add((Cmd.EndCmd - CmdIdx) - 2);
-	//		}
-	//	}
-	//	else if (Cmd.Type == REPCMD_Return)
-	//	{
-	//		DynamicArrayDepth--;
-	//		checkf(DynamicArrayDepth >= 0 || CmdIdx == CmdCount - 1, TEXT("Encountered erroneous RepLayout"));
-	//	}
-	//}
 
 	return GetChangeStateSubobject(Component, &Replicator, InitialRepChanged, TArray<uint16>());
 }
