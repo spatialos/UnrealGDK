@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -e -u -o pipefail
+
+PREV_HEAD=$1
+NEW_HEAD=$2
+CHECKOUT_FLAG=$3
+
+if [ "${PREV_HEAD}" != "${NEW_HEAD}" ] && [ "${CHECKOUT_FLAG}" == "1" ]; then
+  ci/build.sh
+fi
