@@ -29,7 +29,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	NetDriver = Driver;
 	TimerManager = InTimerManager;
 	PackageMap = Cast<USpatialPackageMapClient>(Driver->GetSpatialOSNetConnection()->PackageMap);
-	bAuthoritativeDestruction = false;
+	bAuthoritativeDestruction = true;
 
 	// Collect all type binding classes.
 	TArray<UClass*> TypeBindingClasses;
