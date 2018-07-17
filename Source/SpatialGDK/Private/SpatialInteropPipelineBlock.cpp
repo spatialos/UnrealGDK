@@ -281,6 +281,24 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 		PC->Player = nullptr;
 	}
 
+	// Slight hack: prevent UnPossess() on migration (non-authoritative destruction of pawn, while being authoritative over the controller)
+	// TODO: Check how AI controllers are affected by this
+	if (Actor->IsA(APawn::StaticClass()))
+	{
+		TSharedPtr<worker::View> PinnedView = NetDriver->GetSpatialOS()->GetView().Pin();
+		APawn* Pawn = Cast<APawn>(Actor);
+		AController* Controller = Pawn->Controller;
+
+		if (PinnedView.IsValid() && Pawn != nullptr && Controller != nullptr)
+		{
+			if (PinnedView->GetAuthority<improbable::Position>(NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Pawn).ToSpatialEntityId()) != worker::Authority::kAuthoritative &&
+				PinnedView->GetAuthority<improbable::Position>(NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Controller).ToSpatialEntityId()) == worker::Authority::kAuthoritative)
+			{
+				Pawn->Controller = nullptr;
+			}
+		}
+	}
+
 	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
 	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
 	// is currently owned by this worker before issuing a entity delete request. If the associated entity hasn't migrated off 
