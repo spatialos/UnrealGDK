@@ -1088,7 +1088,7 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 
 	for (UClass* ComponentClass : Components)
 	{
-		GenerateBody_SpatialComponents(SourceWriter, Class, SpatialComponents);
+		GenerateBody_SpatialComponents(SourceWriter, ComponentClass, SpatialComponents);
 	}
 
 	// Create Entity.
