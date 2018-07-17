@@ -1276,7 +1276,7 @@ void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class)
 		auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
 		if (SenderFuncIterator == nullptr)
 		{
-			UE_LOG(LogSpatialOSInterop, Error, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
+			UE_LOG(LogSpatialGDKInterop, Error, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
 			return;
 		}
 		checkf(*SenderFuncIterator, TEXT("Sender for %s has been registered as null."), *Function->GetFName().ToString());
@@ -1385,7 +1385,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 		const FRepLayoutCmd& Cmd = Changes.RepCmds[HandleIterator.CmdIndex];
 		const FRepHandleData& PropertyMapData = RepPropertyMap[HandleIterator.Handle];
 		const uint8* Data = PropertyMapData.GetPropertyData(Changes.SourceData) + HandleIterator.ArrayOffset;
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
+		UE_LOG(LogSpatialGDKInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*Channel->Actor->GetName(),
 			Channel->GetEntityId().ToSpatialEntityId(),
@@ -1425,7 +1425,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 		{
 			const FMigratableHandleData& PropertyMapData = MigPropertyMap[ChangedHandle];
 			const uint8* Data = PropertyMapData.GetPropertyData(Changes.SourceData);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending migratable property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialGDKInterop, Verbose, TEXT("%s: Sending migratable property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*Channel->Actor->GetName(),
 				Channel->GetEntityId().ToSpatialEntityId(),
@@ -1765,7 +1765,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 			SourceWriter.Print(R"""(
 				// Pre-alpha limitation: if a UObject* in an array property is unresolved, we currently don't have a way to update it once
 				// it is resolved. It will remain null and will only be updated when the server replicates this array again (when it changes).
-				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Ignoring unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialGDKInterop, Warning, TEXT("%s: Ignoring unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ObjectRefToString(ObjectRef),
 					*ActorChannel->Actor->GetName(),
@@ -1777,7 +1777,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 		else
 		{
 			SourceWriter.Print(R"""(
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ObjectRefToString(ObjectRef),
 					*ActorChannel->Actor->GetName(),
@@ -1816,7 +1816,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	SourceWriter.PrintNewLine();
 
 	SourceWriter.Print(R"""(
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
+		UE_LOG(LogSpatialGDKInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*ActorChannel->Actor->GetName(),
 			ActorChannel->GetEntityId().ToSpatialEntityId(),
@@ -1886,7 +1886,7 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 				[&SourceWriter](const FString& PropertyValue)
 			{
 				SourceWriter.Print(R"""(
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
+					UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
 						*Interop->GetSpatialOS()->GetWorkerId(),
 						*ObjectRefToString(ObjectRef),
 						*ActorChannel->Actor->GetName(),
@@ -1909,7 +1909,7 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 			SourceWriter.PrintNewLine();
 
 			SourceWriter.Print(R"""(
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received migratable property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialGDKInterop, Verbose, TEXT("%s: Received migratable property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId().ToSpatialEntityId(),
@@ -1987,7 +1987,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: RPC %s queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
+			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%%s: RPC %s queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return {TargetObject};
 		})""", *RPC->Function->GetName());
 	SourceWriter.PrintNewLine();
@@ -2012,7 +2012,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 			SourceWriter, SpatialValueSetter, Param->Property, PropertyValue,
 			[&SourceWriter, &RPC](const FString& PropertyValue)
 		{
-			SourceWriter.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"%%s: RPC %s queued. %s is unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
+			SourceWriter.Printf("UE_LOG(LogSpatialGDKInterop, Log, TEXT(\"%%s: RPC %s queued. %s is unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
 				*RPC->Function->GetName(),
 				*PropertyValue);
 			SourceWriter.Printf("return {Cast<UObject>(%s)};", *PropertyValue);
@@ -2049,7 +2049,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 	SourceWriter.Printf(R"""(
 		// Send RPC
 		RPCPayload.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%%s: Sending RPC: %s, target: %%s %%s"),
+		UE_LOG(LogSpatialGDKInterop, Verbose, TEXT("%%s: Sending RPC: %s, target: %%s %%s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
 			*ObjectRefToString(TargetObjectRef));
@@ -2101,7 +2101,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 		SourceWriter.Printf("// A legal static object reference should never be unresolved.");
 		SourceWriter.Printf("checkf(%s.path().empty(), TEXT(\"A stably named object should not need resolution.\"));", *ObjectRef);
 		SourceWriter.Printf(R"""(
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: %s_OnRPCPayload: %s %%s is not resolved on this worker."),
+			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%%s: %s_OnRPCPayload: %s %%s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ObjectRefToString(%s));
 			return {%s};)""",
@@ -2171,7 +2171,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 	SourceWriter.PrintNewLine();
 	SourceWriter.Print("// Call implementation.");
 	SourceWriter.Printf(R"""(
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%%s: Received RPC: %s, target: %%s %%s"),
+				UE_LOG(LogSpatialGDKInterop, Verbose, TEXT("%%s: Received RPC: %s, target: %%s %%s"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*TargetObject->GetName(),
 					*ObjectRefToString(TargetObjectRef));)""",
@@ -2185,7 +2185,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 		}
 		else
 		{
-			UE_LOG(LogSpatialOSInterop, Error, TEXT("%%s: %s_OnRPCPayload: Function not found. Object: %%s, Function: %s."),
+			UE_LOG(LogSpatialGDKInterop, Error, TEXT("%%s: %s_OnRPCPayload: Function not found. Object: %%s, Function: %s."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*TargetObject->GetFullName());
 		})""",
