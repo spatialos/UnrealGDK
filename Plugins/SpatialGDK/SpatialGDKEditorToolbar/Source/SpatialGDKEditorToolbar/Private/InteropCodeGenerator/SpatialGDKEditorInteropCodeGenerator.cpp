@@ -212,13 +212,13 @@ bool SpatialGDKGenerateInteropCode()
 	const FString UserClassesSectionName = "InteropCodeGen.ClassesToGenerate";
 	if (const FConfigSection* UserInteropCodeGenSection = GetConfigSection(ConfigFilePath, UserClassesSectionName))
 	{
-		Classes = GenerateClassHeaderMap(UserInteropCodeGenSection);
-		if (!CheckClassNameListValidity(Classes))
+		SupportedClasses = GenerateClassHeaderMap(UserInteropCodeGenSection);
+		if (!CheckClassNameListValidity(SupportedClasses))
 		{
 			return false;
 		}
 
-		if (!ClassesExist(Classes))
+		if (!ClassesExist(SupportedClasses))
 		{
 			return false;
 		}
@@ -241,7 +241,7 @@ bool SpatialGDKGenerateInteropCode()
 
 		if (FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath) && FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
 		{
-			GenerateInteropFromClasses(Classes, AbsoluteCombinedSchemaIntermediatePath, AbsoluteCombinedIntermediatePath);
+			GenerateInteropFromClasses(SupportedClasses, AbsoluteCombinedSchemaIntermediatePath, AbsoluteCombinedIntermediatePath);
 
 			const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
 

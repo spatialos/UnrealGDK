@@ -126,14 +126,14 @@ private:
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 
 	UPROPERTY(transient)
-		USpatialNetDriver* SpatialNetDriver;
+	USpatialNetDriver* SpatialNetDriver;
 
 	FVector LastSpatialPosition;
 	TArray<uint8> MigratablePropertyShadowData;
 
 	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
 	UPROPERTY(Transient)
-		bool bCreatingNewEntity;
+	bool bCreatingNewEntity;
 
 private:
 	void UpdateSpatialPosition();

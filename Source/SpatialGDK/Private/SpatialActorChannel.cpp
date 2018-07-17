@@ -397,10 +397,13 @@ bool USpatialActorChannel::ReplicateActor()
 	{
 		for (UActorComponent* ActorComp : Actor->GetReplicatedComponents())
 		{
-			USpatialTypeBinding* ComponentTypeBinding = Interop->GetTypeBindingByClass(ActorComp->GetClass());
-			if (ActorComp && ActorComp->GetIsReplicated() && ComponentTypeBinding) // Only replicated subobjects with type bindings
+			if (ActorComp && ActorComp->GetIsReplicated()) // Only replicated subobjects with type bindings
 			{
-				bWroteSomethingImportant |= ReplicateSubobject(ActorComp, RepFlags);
+				USpatialTypeBinding* ComponentTypeBinding = Interop->GetTypeBindingByClass(ActorComp->GetClass());
+				if (ComponentTypeBinding)
+				{
+					bWroteSomethingImportant |= ReplicateSubobject(ActorComp, RepFlags);
+				}
 			}
 		}
 	}

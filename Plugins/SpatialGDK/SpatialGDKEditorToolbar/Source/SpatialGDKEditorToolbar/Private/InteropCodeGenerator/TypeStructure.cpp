@@ -5,7 +5,7 @@
 
 #include "Engine/SCS_Node.h"
 
-ClassHeaderMap Classes;
+ClassHeaderMap SupportedClasses;
 
 FString GetFullCPPName(UClass* Class)
 {
@@ -569,7 +569,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 
 		for (UActorComponent* Component : NativeComponents)
 		{
-			if (Classes.Find(Component->GetClass()->GetName()))
+			if (SupportedClasses.Find(Component->GetClass()->GetName()))
 			{
 				ComponentClasses.Add(Component->GetClass());
 			}
@@ -584,7 +584,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 				{
 					if (Node->ComponentTemplate)
 					{
-						if (Classes.Find(Node->ComponentTemplate->GetClass()->GetName()))
+						if (SupportedClasses.Find(Node->ComponentTemplate->GetClass()->GetName()))
 						{
 							ComponentClasses.Add(Node->ComponentTemplate->GetClass());
 						}
