@@ -156,7 +156,7 @@ using FCmdHandlePropertyMap = TMap<uint16, TSharedPtr<FUnrealProperty>>;
 
 typedef TMap<FString, TArray<FString>> ClassHeaderMap;
 
-extern ClassHeaderMap SupportedClasses;
+extern ClassHeaderMap InteropGeneratedClasses;
 
 // Given a UClass, returns either "AFoo" or "UFoo" depending on whether Foo is a subclass of actor.
 FString GetFullCPPName(UClass* Class);
