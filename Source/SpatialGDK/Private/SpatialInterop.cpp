@@ -201,7 +201,7 @@ void USpatialInterop::InvokeRPC(UObject* TargetObject, const UFunction* const Fu
 	if (!Binding)
 	{
 		UE_LOG(LogSpatialGDKInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send RPC on unsupported class %s."),
-			*TargetActor->GetClass()->GetName());
+			*TargetObject->GetClass()->GetName());
 		return;
 	}
 
