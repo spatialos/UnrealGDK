@@ -282,7 +282,7 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 	}
 
 	// Workaround for camera loss on migration: prevent UnPossess() (non-authoritative destruction of pawn, while being authoritative over the controller)
-	// TODO: Check how AI controllers are affected by this
+	// TODO: Check how AI controllers are affected by this (UNR-430)
 	// TODO: This should be solved properly by working sets (UNR-411)
 	if (APawn* Pawn = Cast<APawn>(Actor))
 	{
