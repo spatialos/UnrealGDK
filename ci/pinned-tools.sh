@@ -62,8 +62,13 @@ function unpackToWithClean() {
 
 # Variable declarations
 
-PROGRAMFILES_X86=$(cmd.exe /c "echo %ProgramFiles(x86)%")
-MSBUILD="${PROGRAMFILES_X86}\MSBuild\14.0\Bin\MSBuild.exe"
+if isTeamCity ; then
+  PROGRAMFILES_X86=$(cmd.exe /c "echo %ProgramFiles(x86)%")
+  MSBUILD="${PROGRAMFILES_X86}\MSBuild\14.0\Bin\MSBuild.exe"
+else
+  # Resolved MSBuild path is returned with double quotes, so remove them
+  MSBUILD=$(cmd.exe /c ".\ci\GetMSBuildPath.bat" | tr -d "\"")
+fi
 
 GOPATH="$(pwd)/go"
 
