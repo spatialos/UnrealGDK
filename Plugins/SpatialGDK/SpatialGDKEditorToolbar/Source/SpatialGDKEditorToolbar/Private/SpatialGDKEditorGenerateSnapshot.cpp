@@ -95,7 +95,7 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 		return false;
 	}
 
-	if(!FPaths::DirectoryExists(SavePath))
+	if (!FPaths::DirectoryExists(SavePath))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Path non existent - creating path for snapshot"));
 
@@ -121,8 +121,8 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 	// Create level entities.
 	for (auto EntityPair : CreateLevelEntities(World))
 	{
-	    Result = OutputStream.WriteEntity(EntityPair.first, EntityPair.second);
-
+		Result = OutputStream.WriteEntity(EntityPair.first, EntityPair.second);
+		
 		if (!Result.empty())
 		{
 			LogSnaphotOutputStreamError(Result);
