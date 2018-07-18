@@ -70,10 +70,10 @@ public:
 		};
 	}
 
-	FORCEINLINE FPropertyChangeState GetChangeStateSubobject(UObject* obj, FObjectReplicator* Replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged) const
+	FORCEINLINE FPropertyChangeState GetChangeStateSubobject(UObject* Obj, FObjectReplicator* Replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged) const
 	{
 		return {
-			(uint8*)obj,
+			(uint8*)Obj,
 			RepChanged,
 			Replicator->RepLayout->Cmds,
 			Replicator->RepLayout->BaseHandleToCmdIndex,

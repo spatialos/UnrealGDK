@@ -582,12 +582,14 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 			{
 				for (USCS_Node* Node : SCS->GetAllNodes())
 				{
-					if (Node->ComponentTemplate)
+					if (Node->ComponentTemplate == nullptr)
 					{
-						if (InteropGeneratedClasses.Find(Node->ComponentTemplate->GetClass()->GetName()))
-						{
-							ComponentClasses.Add(Node->ComponentTemplate->GetClass());
-						}
+						continue;
+					}
+
+					if (InteropGeneratedClasses.Find(Node->ComponentTemplate->GetClass()->GetName()))
+					{
+						ComponentClasses.Add(Node->ComponentTemplate->GetClass());
 					}
 				}
 			}
