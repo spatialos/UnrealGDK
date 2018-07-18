@@ -127,25 +127,19 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 
 	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Delete Entity request on %d. Has authority: %d "), ActorEntityId.ToSpatialEntityId(), bHasAuthority);
 
-	// If we have authority and aren't trying to delete the spawner, delete the entity
-	if (bHasAuthority && ActorEntityId.ToSpatialEntityId() != SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
+	// If we have authority and aren't trying to delete a critical entity, delete it
+	if (bHasAuthority && !IsCriticalEntity())
 	{
 		Interop->DeleteEntity(ActorEntityId);
 	}
 }
 
-bool USpatialActorChannel::ShouldDeleteEntity()
+bool USpatialActorChannel::IsCriticalEntity()
 {
-	// Don't delete if we don't have authority
-	if (!Actor->HasAuthority())
-	{
-		return false;
-	}
-
 	// Don't delete if the actor is the spawner
 	if (ActorEntityId.ToSpatialEntityId() == SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
 	{
-		return false;
+		return true;
 	}
 
 	// Don't delete if a Singleton
@@ -154,11 +148,11 @@ bool USpatialActorChannel::ShouldDeleteEntity()
 	{
 		if (it->second == ActorEntityId.ToSpatialEntityId())
 		{
-			return false;
+			return true;
 		}
 	}
 
-	return true;
+	return false;
 }
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)

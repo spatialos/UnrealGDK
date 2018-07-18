@@ -716,6 +716,12 @@ void USpatialInterop::HandleSingletonActorLinking()
 			FString ClassName = UTF8_TO_TCHAR(it->first.c_str());
 			UClass* SingletonActorClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);
 
+			if (SingletonActorClass == nullptr)
+			{
+				UE_LOG(LogSpatialGDKInterop, Error, TEXT("Failed to find Singleton Actor %s in World."), *ClassName);
+				continue;
+			}
+
 			// Get Singleton Actor in world
 			TArray<AActor*> SingletonActorList;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), SingletonActorClass, SingletonActorList);
@@ -735,6 +741,7 @@ void USpatialInterop::HandleSingletonActorLinking()
 			Channel->SetEntityId(SingletonEntityId);
 			Channel->SetChannelActor(SingletonActor);
 
+			// Add to entity registry
 			NetDriver->GetEntityRegistry()->AddToRegistry(SingletonEntityId, SingletonActor);
 
 			TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
@@ -744,8 +751,8 @@ void USpatialInterop::HandleSingletonActorLinking()
 			USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
 			check(PackageMap);
 
-			FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, metadata->subobject_name_to_offset());
-			UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Linked Singleton Actor %s with id %d"), *ClassName, SingletonEntityId.ToSpatialEntityId());
+			PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, metadata->subobject_name_to_offset());
+			UE_LOG(LogSpatialGDKInterop, Log, TEXT("Linked Singleton Actor %s with id %d"), *ClassName, SingletonEntityId.ToSpatialEntityId());
 		}
 	}
 }
@@ -757,7 +764,6 @@ void USpatialInterop::HandleSingletonActorReplication()
 		FEntityId SingletonEntityId{ it->second };
 		if (SingletonEntityId == FEntityId{})
 		{
-
 			// Get Singleton Class from component map
 			FString ClassName = UTF8_TO_TCHAR(it->first.c_str());
 			UClass* SingletonActorClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);

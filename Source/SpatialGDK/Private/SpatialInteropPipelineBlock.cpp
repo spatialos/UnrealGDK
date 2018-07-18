@@ -358,7 +358,8 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		USpatialInterop* Interop = NetDriver->GetSpatialInterop();
 		check(Interop);
 		USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(ActorClass);
-		// If singleton entity on server, return. This is handled with a different flow.
+
+		// Singleton Actor replication is handled with a different flow on the server.
 		if (Binding && NetDriver->IsServer() && Binding->IsSingleton())
 		{
 			return EntityActor;
@@ -396,7 +397,8 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			USpatialInterop* Interop = NetDriver->GetSpatialInterop();
 			check(Interop);
 			USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(ActorClass);
-			// If singleton entity on server, return. This is handled with a different flow.
+
+			// Singleton Actor replication is handled with a different flow on the server.
 			if (Binding && NetDriver->IsServer() && Binding->IsSingleton())
 			{
 				return EntityActor;
