@@ -104,7 +104,7 @@ const FConfigSection* GetConfigSection(const FString& ConfigFilePath, const FStr
 //		Forgetting _C in blueprints
 //
 // Return "" if no class can be found with the name.
-const FString GetCorrectClassName(const FName& ClassKey, bool& bOutSuccess)
+FString GetCorrectClassName(const FName& ClassKey, bool& bOutSuccess)
 {
 	FString ClassName = ClassKey.ToString();
 	UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassName);
@@ -128,26 +128,17 @@ const FString GetCorrectClassName(const FName& ClassKey, bool& bOutSuccess)
 
 			bOutSuccess = false;
 			return "";
-
 		}
-
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning,
-			   TEXT("Changing class name %s to %s... Please also make this change in "
-					"DefaultEditorSpatialGDK.ini to remove this warning."),
-			   *ClassKey.ToString(), *ClassName);
 	}
 
 	return ClassName;
 }
 
-// bOutSuccess is set to false if not all classes are found.
-// This behavior can be changed.
-const ClassHeaderMap GenerateClassHeaderMap(const FConfigSection* UserInteropCodeGenSection, bool& bOutSuccess)
+bool SuccessfullyGenerateClassHeaderMap(const FConfigSection* UserInteropCodeGenSection, ClassHeaderMap& OutClasses)
 {
-	bOutSuccess = true;
 	TArray<FName> AllCodeGenKeys;
 	UserInteropCodeGenSection->GetKeys(AllCodeGenKeys);
-	ClassHeaderMap Classes;
+	bool bSuccess = true;
 
 	// Iterate over the keys (class names) and extract header includes.
 	for (FName ClassKey : AllCodeGenKeys)
@@ -156,13 +147,14 @@ const ClassHeaderMap GenerateClassHeaderMap(const FConfigSection* UserInteropCod
 		UserInteropCodeGenSection->MultiFind(ClassKey, HeaderValueArray);
 
 		// Check for class name typos.
-		FString ClassName = GetCorrectClassName(ClassKey, bOutSuccess);
+		// bSuccess will be set to false if class cannot be found.
+		FString ClassName = GetCorrectClassName(ClassKey, bSuccess);
 
 		if (!ClassName.IsEmpty())
 		{
 			// Now, ClassName is a class that must exist.
 			// Note this doesn't modify UserInteropCodeGenSection, which still contains old class names without _C.
-			Classes.Add(ClassName, HeaderValueArray);
+			OutClasses.Add(ClassName, HeaderValueArray);
 
 			// Just for some user facing logging.
 			FString Headers;
@@ -173,10 +165,10 @@ const ClassHeaderMap GenerateClassHeaderMap(const FConfigSection* UserInteropCod
 			UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("Found class to generate interop code for: '%s', with includes %s"), *ClassName, *Headers);
 		}
 	}
-	return Classes;
+	return bSuccess;
 }
 
-const FString GetOutputPath(const FString& ConfigFilePath)
+FString GetOutputPath(const FString& ConfigFilePath)
 {
 	FString OutputPath = FString::Printf(TEXT("%s/Generated/"), FApp::GetProjectName());
 	const FString SettingsSectionName = "InteropCodeGen.Settings";
@@ -246,74 +238,81 @@ bool SpatialGDKGenerateInteropCode()
 	GConfig->LoadFile(ConfigFilePath);
 
 	const FString UserClassesSectionName = "InteropCodeGen.ClassesToGenerate";
-	if (const FConfigSection* UserInteropCodeGenSection = GetConfigSection(ConfigFilePath, UserClassesSectionName))
+	const FConfigSection* UserInteropCodeGenSection =
+		GetConfigSection(ConfigFilePath, UserClassesSectionName);
+
+	if (UserInteropCodeGenSection == nullptr)
 	{
-		bool bSuccess = true;
-		ClassHeaderMap Classes = GenerateClassHeaderMap(UserInteropCodeGenSection, bSuccess);  // this also checks for class existence
-
-		if (!bSuccess)  // if not all classes are found; skip this for silent handling
-		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Not all classes found; check your DefaultEditorSpatialGDK.ini file."));
-			return false;
-		}
-
-		if (!CheckClassNameListValidity(Classes))
-		{
-			return false;
-		}
-
-		const FString CombinedSchemaIntermediatePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Intermediate/Improbable/"), *FGuid::NewGuid().ToString(), TEXT("/"));
-		FString AbsoluteCombinedSchemaIntermediatePath = FPaths::ConvertRelativePathToFull(CombinedSchemaIntermediatePath);
-		FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*AbsoluteCombinedSchemaIntermediatePath);
-
-		const FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../spatial/schema/improbable/unreal/generated/"));
-		FString AbsoluteCombinedSchemaPath = FPaths::ConvertRelativePathToFull(CombinedSchemaPath);
-
-		const FString CombinedIntermediatePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Intermediate/Improbable/"), *FGuid::NewGuid().ToString(), TEXT("/"));
-		FString AbsoluteCombinedIntermediatePath = FPaths::ConvertRelativePathToFull(CombinedIntermediatePath);
-		FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*AbsoluteCombinedIntermediatePath);
-
-		const FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GameSourceDir()), *GetOutputPath(ConfigFilePath));
-		FString AbsoluteCombinedForwardingCodePath = FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
-
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *AbsoluteCombinedSchemaPath, *AbsoluteCombinedForwardingCodePath);
-
-		if (FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath) && FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
-		{
-			GenerateInteropFromClasses(InteropGeneratedClasses, AbsoluteCombinedSchemaIntermediatePath, AbsoluteCombinedIntermediatePath);
-
-			const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
-
-			// Copy Interop files.
-			FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *AbsoluteCombinedIntermediatePath, *AbsoluteCombinedForwardingCodePath);
-			bSuccess = RunProcess(DiffCopyPath, DiffCopyArguments);			
-			
-			if (!bSuccess)
-			{
-				return false;
-			}
-
-			// Copy schema files
-			DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *AbsoluteCombinedSchemaIntermediatePath, *AbsoluteCombinedSchemaPath);
-			bSuccess = RunProcess(DiffCopyPath, DiffCopyArguments);
-
-			if (!bSuccess)
-			{
-				return false;
-			}
-			
-			// Run Codegen
-			const FString CodegenPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/Codegen.bat")));
-			bSuccess = RunProcess(CodegenPath, TEXT(""));
-
-			return bSuccess;
-		}
-		else
-		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Path was invalid - schema not generated"));
-			return false;
-		}
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Unable to find section 'InteropCodeGen.ClassesToGenerate'."));
+		return false;
 	}
 
-	return false;
+	if (!SuccessfullyGenerateClassHeaderMap(UserInteropCodeGenSection, InteropGeneratedClasses))  // Checks that all classes are found and generate the class mapping.
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Not all classes found; check your DefaultEditorSpatialGDK.ini file."));
+		return false;
+	}
+
+	if (!CheckClassNameListValidity(InteropGeneratedClasses))
+	{
+		return false;
+	}
+
+	const FString CombinedSchemaIntermediatePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Intermediate/Improbable/"), *FGuid::NewGuid().ToString(), TEXT("/"));
+	FString AbsoluteCombinedSchemaIntermediatePath = FPaths::ConvertRelativePathToFull(CombinedSchemaIntermediatePath);
+	FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*AbsoluteCombinedSchemaIntermediatePath);
+
+	const FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../spatial/schema/improbable/unreal/generated/"));
+	FString AbsoluteCombinedSchemaPath = FPaths::ConvertRelativePathToFull(CombinedSchemaPath);
+
+	const FString CombinedIntermediatePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Intermediate/Improbable/"), *FGuid::NewGuid().ToString(), TEXT("/"));
+	FString AbsoluteCombinedIntermediatePath = FPaths::ConvertRelativePathToFull(CombinedIntermediatePath);
+	FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*AbsoluteCombinedIntermediatePath);
+
+	const FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GameSourceDir()), *GetOutputPath(ConfigFilePath));
+	FString AbsoluteCombinedForwardingCodePath = FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
+
+	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *AbsoluteCombinedSchemaPath, *AbsoluteCombinedForwardingCodePath);
+
+	// Check schema path is valid.
+	if (!FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath)
+		|| !FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Path was invalid - schema not generated"));
+		return false;
+	}
+
+
+	GenerateInteropFromClasses(InteropGeneratedClasses, AbsoluteCombinedSchemaIntermediatePath, AbsoluteCombinedIntermediatePath);
+
+	const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
+
+	// Copy Interop files.
+	FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *AbsoluteCombinedIntermediatePath, *AbsoluteCombinedForwardingCodePath);	
+	if (!RunProcess(DiffCopyPath, DiffCopyArguments))
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not copy Interop files"));
+		return false;
+	}
+
+	// Copy schema files
+	DiffCopyArguments =
+		FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"),
+						*AbsoluteCombinedSchemaIntermediatePath, *AbsoluteCombinedSchemaPath);
+	if (!RunProcess(DiffCopyPath, DiffCopyArguments))
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not copy Schema files."));
+		return false;
+	}
+			
+	// Run Codegen
+	const FString CodegenPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/Codegen.bat")));
+	if (!RunProcess(CodegenPath, TEXT("")))
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Codegen failed."));
+			
+		return false;
+	}
+
+	return true;
 }
