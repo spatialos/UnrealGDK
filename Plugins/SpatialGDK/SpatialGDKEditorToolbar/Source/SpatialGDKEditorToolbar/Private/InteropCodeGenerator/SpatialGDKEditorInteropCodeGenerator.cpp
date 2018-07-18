@@ -99,12 +99,12 @@ const FConfigSection* GetConfigSection(const FString& ConfigFilePath, const FStr
 	return nullptr;
 }
 
-// Correct for common user mistakes.
+// Correct for common user mistakes in InteropCodeGen.ClassesToGenerate in Config/DefaultEditorSpatialGDK.ini
 // Currently supporting:
 //		Forgetting _C in blueprints
 //
 // Return "" if no class can be found with the name.
-const FString GetCorrectClassName(const FName& ClassKey, bool *bOutSuccess)
+const FString GetCorrectClassName(const FName& ClassKey, bool& bOutSuccess)
 {
 	FString ClassName = ClassKey.ToString();
 	UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassName);
@@ -126,7 +126,7 @@ const FString GetCorrectClassName(const FName& ClassKey, bool *bOutSuccess)
 				   TEXT("Could not find unreal class for interop code generation: '%s', skipping."),
 				   *ClassKey.ToString());
 
-			*bOutSuccess = false;
+			bOutSuccess = false;
 			return "";
 
 		}
@@ -140,12 +140,11 @@ const FString GetCorrectClassName(const FName& ClassKey, bool *bOutSuccess)
 	return ClassName;
 }
 
-
 // bOutSuccess is set to false if not all classes are found.
 // This behavior can be changed.
-const ClassHeaderMap GenerateClassHeaderMap(const FConfigSection* UserInteropCodeGenSection, bool *bOutSuccess)
+const ClassHeaderMap GenerateClassHeaderMap(const FConfigSection* UserInteropCodeGenSection, bool& bOutSuccess)
 {
-	*bOutSuccess = true;
+	bOutSuccess = true;
 	TArray<FName> AllCodeGenKeys;
 	UserInteropCodeGenSection->GetKeys(AllCodeGenKeys);
 	ClassHeaderMap Classes;
@@ -194,7 +193,6 @@ const FString GetOutputPath(const FString& ConfigFilePath)
 
 	return OutputPath;
 }
-
 
 void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
 {
@@ -251,7 +249,7 @@ bool SpatialGDKGenerateInteropCode()
 	if (const FConfigSection* UserInteropCodeGenSection = GetConfigSection(ConfigFilePath, UserClassesSectionName))
 	{
 		bool bSuccess = true;
-		ClassHeaderMap Classes = GenerateClassHeaderMap(UserInteropCodeGenSection, &bSuccess);  // this also checks for class existence
+		ClassHeaderMap Classes = GenerateClassHeaderMap(UserInteropCodeGenSection, bSuccess);  // this also checks for class existence
 
 		if (!bSuccess)  // if not all classes are found; skip this for silent handling
 		{
