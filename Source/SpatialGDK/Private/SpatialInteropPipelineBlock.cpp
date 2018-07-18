@@ -185,6 +185,8 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 		RemoveEntityImpl(PendingRemoveEntity);
 	}
 
+	NetDriver->GetSpatialInterop()->OnLeaveCriticalSection();
+
 	// Mark that we've left the critical section.
 	bInCriticalSection = false;
 	PendingAddEntities.Empty();
@@ -264,13 +266,38 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 {
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(EntityId);
 
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: Remove Entity Impl: %s %d"), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId.ToSpatialEntityId());
+
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
 	if (!Actor || Actor->IsPendingKill())
 	{
+		CleanupDeletedEntity(EntityId);
 		return;
 	}
 
-	World->DestroyActor(Actor, true);
+	if (APlayerController* PC = Cast<APlayerController>(Actor))
+	{
+		// Force APlayerController::DestroyNetworkActorHandled to return false
+		PC->Player = nullptr;
+	}
+
+	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
+	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
+	// is currently owned by this worker before issuing a entity delete request. If the associated entity hasn't migrated off 
+	// this server just yet, we need to make sure this client doesn't issue a entity delete request, as this entity is really 
+	// migrating, it's just a few frames behind it's associated entity. 
+	// We make the assumption that if we're destroying actors here (due to a remove entity op), then this is only due to two
+	// situations;
+	// 1. Actor's entity has migrated off this server
+	// 2. The Actor was deleted on another server
+	// In neither situation do we want to delete associated entities, so prevent them from being issued.
+	// TODO: fix this with working sets (UNR-411)
+	NetDriver->GetSpatialInterop()->StartIgnoringAuthoritativeDestruction();
+	if (World->DestroyActor(Actor, true) == false)
+	{
+		UE_LOG(LogSpatialGDKInteropPipelineBlock, Error, TEXT("World->DestroyActor failed on RemoveEntity %s %d"), *Actor->GetName(), EntityId.ToSpatialEntityId());
+	}
+	NetDriver->GetSpatialInterop()->StopIgnoringAuthoritativeDestruction();
 
 	CleanupDeletedEntity(EntityId);
 }
@@ -396,10 +423,19 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			auto Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
 			check(Channel);
 
+			if (bDoingDeferredSpawn)
+			{
+				auto InitialLocation = SpatialConstants::SpatialOSCoordinatesToLocation(PositionComponent->coords());
+				FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
+				EntityActor->FinishSpawning(FTransform(FRotator::ZeroRotator, SpawnLocation));
+			}
+
 			PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
 			Channel->SetChannelActor(EntityActor);
 
 			// Apply initial replicated properties.
+			// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
+			// Potentially we could split out the initial actor state and the initial component state
 			for (FPendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 			{
 				NetDriver->GetSpatialInterop()->ReceiveAddComponent(Channel, PendingAddComponent.AddComponentOp);
@@ -407,13 +443,6 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 
 			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
 			NetDriver->GetSpatialInterop()->SendComponentInterests(Channel, EntityId.ToSpatialEntityId());
-
-			if (bDoingDeferredSpawn)
-			{
-				auto InitialLocation = SpatialConstants::SpatialOSCoordinatesToLocation(PositionComponent->coords());
-				FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
-				EntityActor->FinishSpawning(FTransform(FRotator::ZeroRotator, SpawnLocation));
-			}
 
 			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 			// a player index. For now we don't support split screen, so the number is always 0.

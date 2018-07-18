@@ -56,10 +56,10 @@ FORCEINLINE bool HasComponentAuthority(TWeakPtr<worker::View> View, const worker
 struct FPropertyChangeState
 {
 	const uint8* RESTRICT SourceData;
-	const TArray<uint16>& RepChanged; // changed replicated properties
+	const TArray<uint16> RepChanged; // changed replicated properties
 	TArray<FRepLayoutCmd>& RepCmds;
 	TArray<FHandleToCmdIndex>& RepBaseHandleToCmdIndex;
-	const TArray<uint16>& MigChanged; // changed migratable properties
+	const TArray<uint16> MigChanged; // changed migratable properties
 };
 
 // A structure containing information about a replicated property.

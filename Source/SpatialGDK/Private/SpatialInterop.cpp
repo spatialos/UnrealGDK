@@ -17,7 +17,7 @@
 #include <improbable/unreal/gdk/player.h>
 #include <improbable/unreal/gdk/unreal_metadata.h>
 
-DEFINE_LOG_CATEGORY(LogSpatialOSInterop);
+DEFINE_LOG_CATEGORY(LogSpatialGDKInterop);
 
 USpatialInterop::USpatialInterop()
 {
@@ -29,6 +29,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	NetDriver = Driver;
 	TimerManager = InTimerManager;
 	PackageMap = Cast<USpatialPackageMapClient>(Driver->GetSpatialOSNetConnection()->PackageMap);
+	bAuthoritativeDestruction = false;
 
 	// Collect all type binding classes.
 	TArray<UClass*> TypeBindingClasses;
@@ -45,12 +46,12 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	{
 		if (UClass* BoundClass = TypeBindingClass->GetDefaultObject<USpatialTypeBinding>()->GetBoundClass())
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("Registered type binding class %s handling replicated properties of %s."), *TypeBindingClass->GetName(), *BoundClass->GetName());
+			UE_LOG(LogSpatialGDKInterop, Log, TEXT("Registered type binding class %s handling replicated properties of %s."), *TypeBindingClass->GetName(), *BoundClass->GetName());
 			RegisterInteropType(BoundClass, NewObject<USpatialTypeBinding>(this, TypeBindingClass));
 		}
 		else
 		{
-			UE_LOG(LogSpatialOSInterop, Warning, TEXT("Could not find and register 'bound class' for type binding class %s. If this is a blueprint class, make sure it is referenced by the world."), *TypeBindingClass->GetName());
+			UE_LOG(LogSpatialGDKInterop, Warning, TEXT("Could not find and register 'bound class' for type binding class %s. If this is a blueprint class, make sure it is referenced by the world."), *TypeBindingClass->GetName());
 		}
 	}
 }
@@ -138,12 +139,12 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
 		}
-		UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
+		UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
 			*SpatialOSInstance->GetWorkerId(), *Actor->GetName(), Channel->GetEntityId().ToSpatialEntityId(), CreateEntityRequestId.Id);
 	}
 	else
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
+		UE_LOG(LogSpatialGDKInterop, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
 	}
 	return CreateEntityRequestId;
 }
@@ -165,7 +166,7 @@ void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const
 	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
 	if (!PinnedConnection.IsValid())
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
+		UE_LOG(LogSpatialGDKInterop, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
 	}
 	improbable::Position::Update PositionUpdate;
 	PositionUpdate.set_coords(SpatialConstants::LocationToSpatialOSCoordinates(Location));
@@ -177,24 +178,34 @@ void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TAr
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
 	{
-		//UE_LOG(LogSpatialOSInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
+		//UE_LOG(LogSpatialGDKInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
 		//	*Channel->Actor->GetClass()->GetName());
 		return;
 	}
 	Binding->SendComponentUpdates(Channel->GetChangeState(RepChanged, MigChanged), Channel, Channel->GetEntityId());
 }
 
-void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, UObject* CallingObject, void* Parameters)
+void USpatialInterop::SendSpatialUpdateSubobject(USpatialActorChannel* Channel, UObject* Subobject, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
 {
-	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
+	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Subobject->GetClass());
 	if (!Binding)
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send RPC on unsupported class %s."),
-			*TargetActor->GetClass()->GetName());
+		return;
+	}
+	Binding->SendComponentUpdates(Channel->GetChangeStateSubobject(Subobject, replicator, RepChanged, MigChanged), Channel, Channel->GetEntityId());
+}
+
+void USpatialInterop::InvokeRPC(UObject* TargetObject, const UFunction* const Function, void* Parameters)
+{
+	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetObject->GetClass());
+	if (!Binding)
+	{
+		UE_LOG(LogSpatialGDKInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send RPC on unsupported class %s."),
+			*TargetObject->GetClass()->GetName());
 		return;
 	}
 
-	Binding->SendRPCCommand(CallingObject, Function, Parameters);
+	Binding->SendRPCCommand(TargetObject, Function, Parameters);
 }
 
 void USpatialInterop::ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp)
@@ -207,19 +218,30 @@ void USpatialInterop::ReceiveAddComponent(USpatialActorChannel* Channel, UAddCom
 	Binding->ReceiveAddComponent(Channel, AddComponentOp);
 }
 
-void USpatialInterop::PreReceiveSpatialUpdate(USpatialActorChannel* Channel)
-{
-	Channel->PreReceiveSpatialUpdate();
-}
-
-void USpatialInterop::PostReceiveSpatialUpdate(USpatialActorChannel* Channel, const TArray<UProperty*>& RepNotifies)
-{
-	Channel->PostReceiveSpatialUpdate(RepNotifies);
-}
-
 void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
-	UE_LOG(LogSpatialOSInterop, Log, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRefToString(ObjectRef));
+	if (NetDriver->InteropPipelineBlock->IsInCriticalSection())
+	{
+		ResolvedObjectQueue.Add(TPair<UObject*, const improbable::unreal::UnrealObjectRef>{ Object, ObjectRef });
+		return;
+	}
+
+	ResolvePendingOperations_Internal(Object, ObjectRef);
+}
+
+void USpatialInterop::OnLeaveCriticalSection()
+{
+	for (auto& It : ResolvedObjectQueue)
+	{
+		ResolvePendingOperations_Internal(It.Key, It.Value);
+	}
+
+	ResolvedObjectQueue.Empty();
+}
+
+void USpatialInterop::ResolvePendingOperations_Internal(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
+{
+	UE_LOG(LogSpatialGDKInterop, Log, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRefToString(ObjectRef));
 	ResolvePendingOutgoingObjectUpdates(Object);
 	ResolvePendingOutgoingRPCs(Object);
 	ResolvePendingOutgoingArrayUpdates(Object);
@@ -236,7 +258,7 @@ void USpatialInterop::RemoveActorChannel(const FEntityId& EntityId)
 {
 	if (EntityToActorChannel.Find(EntityId) == nullptr)
 	{
-		UE_LOG(LogSpatialOSInterop, Warning, TEXT("Failed to find entity/channel mapping for %s."), *ToString(EntityId.ToSpatialEntityId()));
+		UE_LOG(LogSpatialGDKInterop, Warning, TEXT("Failed to find entity/channel mapping for %s."), *ToString(EntityId.ToSpatialEntityId()));
 		return;
 	}
 
@@ -340,7 +362,7 @@ void USpatialInterop::HandleCommandResponse_Internal(const FString& RPCName, FUn
 		if (RetryContext->NumAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 		{
 			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(RetryContext->NumAttempts);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"), *RPCName, WaitTime, (int)StatusCode, *Message);
+			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"), *RPCName, WaitTime, (int)StatusCode, *Message);
 
 			// Queue retry.
 			FTimerHandle RetryTimer;
@@ -360,7 +382,7 @@ void USpatialInterop::HandleCommandResponse_Internal(const FString& RPCName, FUn
 		}
 		else
 		{
-			UE_LOG(LogSpatialOSInterop, Error, TEXT("%s: failed too many times, giving up (%u attempts). Error code: %d Message: %s"), *RPCName, SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)StatusCode, *Message);
+			UE_LOG(LogSpatialGDKInterop, Error, TEXT("%s: failed too many times, giving up (%u attempts). Error code: %d Message: %s"), *RPCName, SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)StatusCode, *Message);
 		}
 	}
 }
@@ -567,12 +589,13 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 		FPendingIncomingProperties& Properties = ChannelProperties.Value;
 
 		// Trigger pending updates.
-		PreReceiveSpatialUpdate(DependentChannel);
+		DependentChannel->PreReceiveSpatialUpdate(Object);
+
 		TSet<UProperty*> RepNotifies;
 		for (const FRepHandleData* RepData : Properties.Key)
 		{
 			ApplyIncomingReplicatedPropertyUpdate(*RepData, DependentChannel->Actor, &Object, RepNotifies);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object replicated property update. actor %s (%lld), property %s"),
+			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received queued object replicated property update. actor %s (%lld), property %s"),
 				*SpatialOSInstance->GetWorkerId(),
 				*DependentChannel->Actor->GetName(),
 				DependentChannel->GetEntityId().ToSpatialEntityId(),
@@ -581,13 +604,14 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 		for (const FMigratableHandleData* MigData : Properties.Value)
 		{
 			ApplyIncomingMigratablePropertyUpdate(*MigData, DependentChannel->Actor, &Object);
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received queued object migratable property update. actor %s (%lld), property %s"),
+			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received queued object migratable property update. actor %s (%lld), property %s"),
 				*SpatialOSInstance->GetWorkerId(),
 				*DependentChannel->Actor->GetName(),
 				DependentChannel->GetEntityId().ToSpatialEntityId(),
 				*MigData->Property->GetName());
 		}
-		PostReceiveSpatialUpdate(DependentChannel, RepNotifies.Array());
+
+		DependentChannel->PostReceiveSpatialUpdate(Object, RepNotifies.Array());
 	}
 
 	PendingIncomingObjectUpdates.Remove(ObjectRef);
