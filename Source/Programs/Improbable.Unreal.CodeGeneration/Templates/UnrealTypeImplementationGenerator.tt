@@ -10,6 +10,14 @@
 
 #include "<#= unrealType.CapitalisedName #>.h"
 
+<# foreach (var fieldDetails in unrealType.FieldDetailsList) { #>
+<# if (fieldDetails.IsUObject()) { #>
+<# foreach (var requiredInclude in fieldDetails.TypeReference.RequiredIncludes) { #>
+#include <#= requiredInclude #>
+<# } #>
+<# } #>
+<# } #>
+
 U<#= unrealType.CapitalisedName #>::U<#= unrealType.CapitalisedName #>()
 {
 <# var parameterList = unrealType.FieldDetailsList.Select(field => field.TypeReference.DefaultInitialisationString).ToArray(); 
