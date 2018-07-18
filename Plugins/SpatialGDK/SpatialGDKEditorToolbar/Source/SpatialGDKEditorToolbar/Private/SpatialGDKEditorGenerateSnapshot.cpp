@@ -77,16 +77,8 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 }
 } // ::
 
-void LogSnaphotOutputStreamError(worker::Option<std::string> Result)
-{
-	std::string ErrorString = Result.value_or("");
-	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(ErrorString.c_str()));
-}
-
-
 bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 {
-
 	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Save path %s"), *SavePath);
 
 	if (!FPaths::CollapseRelativeDirectories(SavePath))
@@ -114,7 +106,7 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 
 	if (!Result.empty())
 	{
-		LogSnaphotOutputStreamError(Result);
+		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
 		return false;
 	}
 
@@ -125,7 +117,7 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 		
 		if (!Result.empty())
 		{
-			LogSnaphotOutputStreamError(Result);
+			UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
 			return false;
 		}
 	}
