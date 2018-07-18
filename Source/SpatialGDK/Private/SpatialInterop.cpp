@@ -185,17 +185,27 @@ void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TAr
 	Binding->SendComponentUpdates(Channel->GetChangeState(RepChanged, MigChanged), Channel, Channel->GetEntityId());
 }
 
-void USpatialInterop::InvokeRPC(AActor* TargetActor, const UFunction* const Function, UObject* CallingObject, void* Parameters)
+void USpatialInterop::SendSpatialUpdateSubobject(USpatialActorChannel* Channel, UObject* Subobject, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
 {
-	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetActor->GetClass());
+	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Subobject->GetClass());
+	if (!Binding)
+	{
+		return;
+	}
+	Binding->SendComponentUpdates(Channel->GetChangeStateSubobject(Subobject, replicator, RepChanged, MigChanged), Channel, Channel->GetEntityId());
+}
+
+void USpatialInterop::InvokeRPC(UObject* TargetObject, const UFunction* const Function, void* Parameters)
+{
+	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetObject->GetClass());
 	if (!Binding)
 	{
 		UE_LOG(LogSpatialGDKInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send RPC on unsupported class %s."),
-			*TargetActor->GetClass()->GetName());
+			*TargetObject->GetClass()->GetName());
 		return;
 	}
 
-	Binding->SendRPCCommand(CallingObject, Function, Parameters);
+	Binding->SendRPCCommand(TargetObject, Function, Parameters);
 }
 
 void USpatialInterop::ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp)
@@ -206,16 +216,6 @@ void USpatialInterop::ReceiveAddComponent(USpatialActorChannel* Channel, UAddCom
 		return;
 	}
 	Binding->ReceiveAddComponent(Channel, AddComponentOp);
-}
-
-void USpatialInterop::PreReceiveSpatialUpdate(USpatialActorChannel* Channel)
-{
-	Channel->PreReceiveSpatialUpdate();
-}
-
-void USpatialInterop::PostReceiveSpatialUpdate(USpatialActorChannel* Channel, const TArray<UProperty*>& RepNotifies)
-{
-	Channel->PostReceiveSpatialUpdate(RepNotifies);
 }
 
 void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
@@ -589,7 +589,8 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 		FPendingIncomingProperties& Properties = ChannelProperties.Value;
 
 		// Trigger pending updates.
-		PreReceiveSpatialUpdate(DependentChannel);
+		DependentChannel->PreReceiveSpatialUpdate(Object);
+
 		TSet<UProperty*> RepNotifies;
 		for (const FRepHandleData* RepData : Properties.Key)
 		{
@@ -609,7 +610,8 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 				DependentChannel->GetEntityId().ToSpatialEntityId(),
 				*MigData->Property->GetName());
 		}
-		PostReceiveSpatialUpdate(DependentChannel, RepNotifies.Array());
+
+		DependentChannel->PostReceiveSpatialUpdate(Object, RepNotifies.Array());
 	}
 
 	PendingIncomingObjectUpdates.Remove(ObjectRef);
