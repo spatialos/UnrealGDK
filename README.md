@@ -12,6 +12,9 @@ The **SpatialOS Unreal GDK** is an Unreal Engine 4 (UE4) module made by Improbab
 There is an accompanying sample game at [github.com/improbable/unreal-gdk-sample-game](https://github.com/improbable/unreal-gdk-sample-game) which you can use to explore SpatialOS Unreal GDK development. <br/> 
 (TODO: Fix repo link for external users - [JIRA TICKET](https://improbableio.atlassian.net/browse/UNR-304))
 
+## Recommended use <br>
+To write
+
 ## Documentation <br/>
 For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/13.0/shared/concepts/spatialos). <br/> 
 For guidance on using the SpatialOS Unreal GDK, see the [documentation in this GitHub repository](docs/readme.md).
@@ -29,7 +32,7 @@ Find us in the [**#unreal** channel](https://discordapp.com/channels/31127363330
 Visit the **feedback** section in our [forums](https://forums.improbable.io/) and use the **unreal-gdk** tag. [This link](https://forums.improbable.io/new-topic?category=Feedback&tags=unreal-gdk) takes you there and pre-fills the category and tag.
 
 **GitHub issues**<br>
-Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issues).
+Create an issue in [this repository](https://github.com/spatialos/unreal-gdk/issues).
 
 ## Contributions <br/>
 **Public contributors**<br>

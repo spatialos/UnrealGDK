@@ -8,7 +8,7 @@ later releases and we’ll keep you posted on this). However, we are taking issu
 [feedback](../README.md#give-us-feedback).
 
 * **Improbable developers**: <br/>
-See the [Contributions guide](https://improbableio.atlassian.net/wiki/x/foDrDw) {CHANGE THIS}.
+See the [Contributions guide](https://improbableio.atlassian.net/wiki/x/foDrDw).
 
 ## Coding standards
 See the [Unreal GDK C++ coding standards guide](../docs/contributions/unreal-gdk-coding-standards.md).
