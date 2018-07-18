@@ -104,7 +104,7 @@ const FConfigSection* GetConfigSection(const FString& ConfigFilePath, const FStr
 //		Forgetting _C in blueprints
 //
 // Return "" if no class can be found with the name.
-const FString GetCorrectClassName(const FName ClassKey, bool *bOutSuccess)
+const FString GetCorrectClassName(const FName& ClassKey, bool *bOutSuccess)
 {
 	FString ClassName = ClassKey.ToString();
 	UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassName);
