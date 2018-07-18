@@ -154,10 +154,6 @@ using FUnrealFlatRepData = TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPt
 using FUnrealRPCsByType = TMap<ERPCType, TArray<TSharedPtr<FUnrealRPC>>>;
 using FCmdHandlePropertyMap = TMap<uint16, TSharedPtr<FUnrealProperty>>;
 
-typedef TMap<FString, TArray<FString>> ClassHeaderMap;
-
-extern ClassHeaderMap InteropGeneratedClasses;
-
 // Given a UClass, returns either "AFoo" or "UFoo" depending on whether Foo is a subclass of actor.
 FString GetFullCPPName(UClass* Class);
 
@@ -226,9 +222,6 @@ FCmdHandlePropertyMap GetFlatMigratableData(TSharedPtr<FUnrealType> TypeInfo);
 //
 // This function will traverse into subobject properties.
 FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo);
-
-// Get all supported components (not all subobjects) of an Actor class
-TArray<UClass*> GetAllSupportedComponents(UClass* Class);
 
 // Given an AST, traverses all its parameters (and properties within structs) and generates a complete flattened list of properties.
 TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode);

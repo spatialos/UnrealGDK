@@ -3,10 +3,6 @@
 #include "TypeStructure.h"
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 
-#include "Engine/SCS_Node.h"
-
-ClassHeaderMap InteropGeneratedClasses;
-
 FString GetFullCPPName(UClass* Class)
 {
 	if (Class->IsChildOf(AActor::StaticClass()))
@@ -555,48 +551,8 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 			RPCsByType.FindOrAdd(RPC.Value->Type).Add(RPC.Value);
 		}
 		return true;
-	}, false);
+	}, true);
 	return RPCsByType;
-}
-
-TArray<UClass*> GetAllSupportedComponents(UClass* Class)
-{
-	TArray<UClass*> ComponentClasses;
-	if (AActor* ContainerCDO = Cast<AActor>(Class->GetDefaultObject()))
-	{
-		TInlineComponentArray<UActorComponent*> NativeComponents;
-		ContainerCDO->GetComponents(NativeComponents);
-
-		for (UActorComponent* Component : NativeComponents)
-		{
-			if (InteropGeneratedClasses.Find(Component->GetClass()->GetName()))
-			{
-				ComponentClasses.Add(Component->GetClass());
-			}
-		}
-
-		// Components that are added in a blueprint won't appear in the CDO.
-		if (UBlueprintGeneratedClass* BGC = Cast<UBlueprintGeneratedClass>(Class))
-		{
-			if (USimpleConstructionScript* SCS = BGC->SimpleConstructionScript)
-			{
-				for (USCS_Node* Node : SCS->GetAllNodes())
-				{
-					if (Node->ComponentTemplate == nullptr)
-					{
-						continue;
-					}
-
-					if (InteropGeneratedClasses.Find(Node->ComponentTemplate->GetClass()->GetName()))
-					{
-						ComponentClasses.Add(Node->ComponentTemplate->GetClass());
-					}
-				}
-			}
-		}
-	}
-
-	return ComponentClasses;
 }
 
 TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode)
