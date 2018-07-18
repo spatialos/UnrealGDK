@@ -128,7 +128,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Delete Entity request on %d. Has authority: %d "), ActorEntityId.ToSpatialEntityId(), bHasAuthority);
 
 	// If we have authority and aren't trying to delete a critical entity, delete it
-	if (bHasAuthority && !IsCriticalEntity())
+	if (!IsCriticalEntity())
 	{
 		Interop->DeleteEntity(ActorEntityId);
 	}
