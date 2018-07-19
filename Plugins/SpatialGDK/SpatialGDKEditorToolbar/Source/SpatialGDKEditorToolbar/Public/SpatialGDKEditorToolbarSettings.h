@@ -18,7 +18,7 @@ public:
 	FDirectoryPath ProjectRootFolder;
 
 	/** Launch configuration file used for `spatial local launch` */
-	UPROPERTY(EditAnywhere, config, Category = SpatialOSKEditor, meta = (ConfigRestartRequired = false))
+	UPROPERTY(EditAnywhere, config, Category = SpatialOSEditor, meta = (ConfigRestartRequired = false))
 	FString SpatialOSLaunchArgument;
 
 	/** Stop spatial.exe when shutting down editor. */
