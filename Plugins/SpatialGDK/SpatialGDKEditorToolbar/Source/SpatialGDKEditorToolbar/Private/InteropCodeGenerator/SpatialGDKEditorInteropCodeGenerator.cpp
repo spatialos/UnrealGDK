@@ -17,6 +17,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 
 namespace
 {
+
 int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<FString>& TypeBindingHeaders)
 {
 	FCodeWriter OutputSchema;
@@ -44,8 +45,7 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 
 bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
 {
-	// Pull out all the class names from the map. (These might contain underscores like
-	// "One_TwoThree" and "OneTwo_Three").
+	// Pull out all the class names from the map. (These might contain underscores like "One_TwoThree" and "OneTwo_Three").
 	TArray<FString> ClassNames;
 	Classes.GetKeys(ClassNames);
 
@@ -69,7 +69,7 @@ bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
 	}
 	return true;
 }
-}  // ::
+}// ::
 
 const FConfigFile* GetConfigFile(const FString& ConfigFilePath)
 {
@@ -153,11 +153,7 @@ bool GenerateClassHeaderMap(const FConfigSection* UserInteropCodeGenSection, Cla
 		OutClasses.Add(ClassName, HeaderValueArray);
 
 		// Just for some user facing logging.
-		FString Headers;
-		for (FString& Header : HeaderValueArray)
-		{
-			Headers.Append(FString::Printf(TEXT("\"%s\" "), *Header));
-		}
+		FString Headers = FString::Join(HeaderValueArray, TEXT(" "));
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("Found class to generate interop code for: '%s', with includes %s"), *ClassName, *Headers);
 	}
 	return true;
