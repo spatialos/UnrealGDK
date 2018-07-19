@@ -75,8 +75,6 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 
 bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 {
-	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Save path: %s"), *SavePath);
-
 	if (!FPaths::CollapseRelativeDirectories(SavePath))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Invalid path: %s - snapshot not generated"), *SavePath);
