@@ -86,7 +86,6 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 	if (!FPaths::DirectoryExists(SavePath))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Path non existent - creating path for snapshot"));
-
 		if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*SavePath))
 		{
 			UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Unable to create path - exiting snapshot generation"));
@@ -110,7 +109,6 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 	for (const auto& EntityPair : CreateLevelEntities(World))
 	{
 		Result = OutputStream.WriteEntity(EntityPair.first, EntityPair.second);
-		
 		if (!Result.empty())
 		{
 			UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
