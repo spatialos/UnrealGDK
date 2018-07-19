@@ -1,16 +1,17 @@
-# SpatialOS Unreal GDK module for developing SpatialOS games
+# The SpatialOS Unreal GDK readme (pre-alpha)
 
-* Repository: [github.com/improbable/unreal-gdk](https://github.com/improbable/unreal-gdk)<br/>
-(TODO: Fix repo link for external users - [JIRA TICKET](https://improbableio.atlassian.net/browse/UNR-304))
+Welcome to the SpatialOS and Unreal GDK community.
 
-* By: [improbable.io](https://improbable.io/)
+Our SpatialOS community shapes the functionality of the Unreal GDK, so make sure you are part of the conversation. Come and find us on [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368) or talk to us on the **Feedback** section in our [forums](https://forums.improbable.io/) (use the **unreal-gdk** tag - [this link](https://forums.improbable.io/new-topic?category=Feedback&tags=unreal-gdk) takes you there and pre-fills the category and tag).
 
-* License: Use of the contents of this repository is subject to the [Improbable license](LICENSE.md).
+#### What's the Unreal GDK all about?
+The **SpatialOS Unreal GDK** is an Unreal Engine 4 (UE4) module made by Improbable. You can use the Unreal GDK to integrate persistent multiplayer worlds into your Unreal game using the SpatialOS platform. 
 
-The **SpatialOS Unreal GDK** is an Unreal Engine 4 (UE4) module made by Improbable. You can use the Unreal GDK to integrate persistent multiplayer worlds into your Unreal game using the SpatialOS platform.
+You can [sign up for SpatialOS Unreal GDK updates](link) direct to your mailbox.
 
-There is an accompanying sample game at [github.com/improbable/unreal-gdk-sample-game](https://github.com/improbable/unreal-gdk-sample-game) which you can use to explore SpatialOS Unreal GDK development. <br/> 
-(TODO: Fix repo link for external users - [JIRA TICKET](https://improbableio.atlassian.net/browse/UNR-304))
+* License: use of the contents of this repository is subject to the [Improbable license](LICENSE.md)
+* Version: pre-alpha (for evaluation only)
+* Unreal Game Development Kit repository: [github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
 
 ## Recommended use
 This pre-alpha version software and its documentation is, by its very nature, rough and ready; every part of it is subject to change and it isn’t optimised for performance.
@@ -19,10 +20,6 @@ This release is for evaluation and feedback only, with limited documentation; we
 
 **Who is it for?** <br>
 This pre-alpha release is for experienced Unreal developers who have some understanding of [SpatialOS concepts](https://docs.improbable.io/reference/13.0/shared/concepts/spatialos), and want to give early feedback.
-
-## Documentation
-For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/13.0/shared/concepts/spatialos). <br/> 
-For guidance on using the SpatialOS Unreal GDK, see the [documentation in this GitHub repository](docs/readme.md).
 
 ## Installation and setup
 For prerequisites, installation and setup, see the [Installation and setup](docs/setup-and-installing.md) documentation.
@@ -40,16 +37,30 @@ Visit the **feedback** section in our [forums](https://forums.improbable.io/) an
 Create an issue in [this repository](https://github.com/spatialos/unreal-gdk/issues).
 
 ## Contributions
-**Public contributors**<br>
 We are not currently accepting public contributions - see our [contributions](https://github.com/improbabl/unreal-gdk/.github/CONTRIBUTING.md) policy. However, we are accepting issues and we do want your feedback.
 
+## Documentation
+For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/13.0/shared/concepts/spatialos). <br/> 
+For guidance on using the SpatialOS Unreal GDK, see the [documentation in this GitHub repository](docs/readme.md).
+
 ## Support
-TBD [JIRA ticket DEV-2087](https://improbableio.atlassian.net/browse/DEV-2087)
+We are not supporting the pre-alpha release for game development, as this version is for evaluation only. However, please give us your [feedback](#give-us-feedback).
+
+## Migration from the SpatialOS Unreal SDK
+
+Currently the Unreal GDK is in its early development, so there is no migration path from the [Unreal SDK](https://github.com/spatialos/UnrealSDK) to the Unreal GDK. There will be a migration path in later releases.
+
+## Roadmap
+See the [latest roadmap]() Trello board and let us know what you'd like to see in there.
 
 ## Known issues
  See the [Known issues](docs/known-issues.md) documentation.
 
 ## Unreal Engine changes
-We have to make a small number of changes to UE4 source code: these are mostly limited in scope and only consist of class access, polymorphism, and dll-export-related changes. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our [UnrealEngine repo, `UnrealEngine419_SpatialGDK` branch](https://github.com/improbable/UnrealEngine/tree/UnrealEngine419_SpatialGDK). <br/>  (TODO Remove internal download for external users [JIRA TICKET](https://improbableio.atlassian.net/browse/UNR-304))
+We have to make a small number of changes to UE4 source code: these are mostly limited in scope and only consist of class access, polymorphism, and dll-export-related changes. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our [UnrealEngine repo, `UnrealEngine419_SpatialGDK` branch](https://github.com/improbable/UnrealEngine/tree/UnrealEngine419_SpatialGDK). <br/>
+
+## Email updates
+
+You can [sign up for SpatialOS Unreal GDK updates](link) direct to your mailbox.
 
 (c) 2018 Improbable
