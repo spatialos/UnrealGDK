@@ -42,10 +42,20 @@ private:
 	void SetupToolbar(TSharedPtr<FUICommandList> PluginCommands);
 	void AddToolbarExtension(FToolBarBuilder& Builder);
 	void AddMenuExtension(FMenuBuilder& Builder);
+	void StartSpatialOSButtonClicked();
+	void StopSpatialOSButtonClicked();
+	void LaunchInspectorWebpageButtonClicked();
+	bool StartSpatialOSStackCanExecute() const;
+	bool StopSpatialOSStackCanExecute() const;
+	void CheckForRunningStack();
+	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
+
+	void StopRunningStack();
 
 	void CreateSnapshotButtonClicked();
 	void GenerateInteropCodeButtonClicked();
 	bool CanExecuteInteropCodeGen();
+
 
 private:
 
@@ -56,6 +66,11 @@ private:
 	static void ShowCompileLog();
 
 	TSharedPtr<FUICommandList> PluginCommands;
+	FDelegateHandle OnPropertyChangedDelegateHandle;
+	FProcHandle SpatialOSStackProcHandle;
+	bool bStopSpatialOnExit;
+	
+	uint32 SpatialOSStackProcessID;
 
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 
