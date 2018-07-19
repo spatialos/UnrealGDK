@@ -206,11 +206,11 @@ public:
 	void QueueOutgoingArrayRepUpdate_Internal(const TSet<const UObject*>& UnresolvedObjects, USpatialActorChannel* DependentChannel, uint16 Handle);
 
 	// Update GlobalStateManager when EntityId is reserved
-	void UpdateGlobalStateManager(FString ClassName, FEntityId EntityId);
+	void UpdateGlobalStateManager(FString ClassName, FEntityId SingletonEntityId);
 	// Handle GSM checkout
-	void HandleSingletonActorLinking();
+	void LinkExistingSingletonActors();
 	// Handle GSM Authority received
-	void HandleSingletonActorReplication();
+	void ExecuteInitialSingletonActorReplication();
 
 	// Accessors.
 	USpatialOS* GetSpatialOS() const
@@ -280,4 +280,6 @@ private:
 	void ResolvePendingIncomingRPCs(const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	void ResolvePendingOutgoingArrayUpdates(UObject* Object);
+
+	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
 };

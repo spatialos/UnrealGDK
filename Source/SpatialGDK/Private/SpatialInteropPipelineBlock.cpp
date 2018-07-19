@@ -97,13 +97,6 @@ void USpatialInteropPipelineBlock::AddComponent(UAddComponentOpWrapperBase* AddC
 		InitialiseNewComponentImpl(FComponentIdentifier{AddComponentOp->EntityId, AddComponentOp->ComponentId}, AddComponentOp);
 	}
 
-	if (AddComponentOp->ComponentId == 100007)
-	{
-		UGlobalStateManagerAddComponentOp* GSM = Cast<UGlobalStateManagerAddComponentOp>(AddComponentOp);
-		NetDriver->GetSpatialInterop()->SingletonToId = GSM->Data->singleton_to_id();
-		//NetDriver->GetSpatialInterop()->HandleSingletonActorLinking();
-	}
-
 	if (NextBlock)
 	{
 		NextBlock->AddComponent(AddComponentOp);
@@ -142,11 +135,6 @@ void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId Com
 	if (bInCriticalSection && PendingAddEntities.Contains(FEntityId(AuthChangeOp.EntityId)))
 	{
 		PendingAuthorityChanges.Emplace(FComponentIdentifier{AuthChangeOp.EntityId, ComponentId}, AuthChangeOp);
-	}
-
-	if (ComponentId == 100007 && AuthChangeOp.Authority == worker::Authority::kAuthoritative)
-	{
-		NetDriver->GetSpatialInterop()->HandleSingletonActorReplication();
 	}
 
 	if (NextBlock)
