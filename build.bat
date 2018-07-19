@@ -5,6 +5,10 @@ setlocal
 pushd "%~dp0"
 
 call :MarkStartOfBlock "Check dependencies"
+    if defined TEAMCITY_CAPTURE_ENV (
+        set UNREAL_HOME=C:\Unreal\UnrealEngine-4.19-GDK-dc2f7ad81ce
+    )
+
     if not defined UNREAL_HOME (
         echo Error: Please set UNREAL_HOME environment variable to point to the Unreal Engine folder.
         if not defined TEAMCITY_CAPTURE_ENV pause
