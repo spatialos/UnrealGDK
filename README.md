@@ -17,10 +17,10 @@ For guidance on SpatialOS concepts see the documentation on the [SpatialOS websi
 For guidance on using the SpatialOS Unreal GDK, see the [documentation in this GitHub repository](docs/readme.md).
 
 **Prerequisites** <br/> 
-See the [Getting started](docs/setup-and-installation.md#prerequisites) documentation.
+See the [Getting started](docs/setup-and-installing.md#prerequisites) documentation.
 
 **Installation and setup** <br/> 
-See the [Getting started](docs/setup-and-installation.md) documentation.
+See the [Getting started](docs/setup-and-installing.md) documentation.
 
 **Contributions** <br/>
 TBD [JIRA ticket DEV-2087](https://improbableio.atlassian.net/browse/DEV-2087)
