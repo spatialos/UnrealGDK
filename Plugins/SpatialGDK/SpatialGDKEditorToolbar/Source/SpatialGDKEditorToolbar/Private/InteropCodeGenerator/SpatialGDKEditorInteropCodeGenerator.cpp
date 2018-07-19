@@ -99,16 +99,13 @@ const FConfigSection* GetConfigSection(const FString& ConfigFilePath, const FStr
 	return nullptr;
 }
 
-// Correct for common user mistakes in InteropCodeGen.ClassesToGenerate in
-// Config/DefaultEditorSpatialGDK.ini Currently supporting:
-//		Forgetting _C in blueprints
-//
-// This will modify ClassName in place to correct for above-mentioned cases
-bool ValidateClassName(FString& ClassName)
-{
-	UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassName);
 
-	if (Class)
+// Handle Unreal's naming of blueprint C++ files which are appended with _C.
+// It is common for users to not know about this feature and simply add the blueprint name to the DefaultSpatialGDK.ini ClassesToGenerate section
+// As such, when the passed in ClassName is invalid, we will add '_C' to the user provided ClassName if that gives us a valid class.
+bool ValidateClassNameWithCorrectionForBlueprints(FString& ClassName)
+{
+	if (FindObject<UClass>(ANY_PACKAGE, *ClassName))
 	{
 		return true;
 	}
@@ -117,14 +114,13 @@ bool ValidateClassName(FString& ClassName)
 
 	// Add _C if class doesn't exist in case the user forgot to do so for blueprints.
 	ClassName.Append(TEXT("_C"));
-	Class = FindObject<UClass>(ANY_PACKAGE, *ClassName);
 
-	if (Class)
+	if (FindObject<UClass>(ANY_PACKAGE, *ClassName))
 	{
 		return true;
 	}
 
-	UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find unreal class for interop code generation: '%s', skipping."), *ClassName);
+	UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find unreal class for interop code generation: '%s'."), *ClassName);
 
 	return false;
 }
@@ -141,15 +137,14 @@ bool GenerateClassHeaderMap(const FConfigSection* UserInteropCodeGenSection, Cla
 		UserInteropCodeGenSection->MultiFind(ClassKey, HeaderValueArray);
 		FString ClassName = ClassKey.ToString();
 
-		// Check for class name typos.
-		if (!ValidateClassName(ClassName))
+		// Check class exists, correcting user typos if necessary.
+		if (!ValidateClassNameWithCorrectionForBlueprints(ClassName))
 		{
 			return false;
 		}
 
 		// Now, ClassName is a class that must exist.
-		// Note this doesn't modify UserInteropCodeGenSection, which still contains old class
-		// names without _C.
+		// Note this doesn't modify UserInteropCodeGenSection, which still contains old class names without _C.
 		OutClasses.Add(ClassName, HeaderValueArray);
 
 		// Just for some user facing logging.
@@ -265,10 +260,15 @@ bool SpatialGDKGenerateInteropCode()
 	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *AbsoluteCombinedSchemaPath, *AbsoluteCombinedForwardingCodePath);
 
 	// Check schema path is valid.
-	if (!FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath) ||
-		!FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
+	if (!FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath))
 	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Path was invalid - schema not generated"));
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Invalid path: '%s'. Schema not generated."), *AbsoluteCombinedSchemaPath);
+		return false;
+	}
+
+	if (!FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Invalid path: '%s'. schema not generated."), *AbsoluteCombinedForwardingCodePath);
 		return false;
 	}
 
@@ -280,7 +280,7 @@ bool SpatialGDKGenerateInteropCode()
 	FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *AbsoluteCombinedIntermediatePath, *AbsoluteCombinedForwardingCodePath);
 	if (!RunProcess(DiffCopyPath, DiffCopyArguments))
 	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not copy Interop files"));
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not move generated interop files during the diff-copy stage. Path: '%s', arguments: '%s'."), *DiffCopyPath, *DiffCopyArguments);
 		return false;
 	}
 
@@ -288,7 +288,7 @@ bool SpatialGDKGenerateInteropCode()
 	DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *AbsoluteCombinedSchemaIntermediatePath, *AbsoluteCombinedSchemaPath);
 	if (!RunProcess(DiffCopyPath, DiffCopyArguments))
 	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not copy Schema files."));
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not move generated schema files during the diff-copy stage. Path: '%s', arguments: '%s'."), *DiffCopyPath, *DiffCopyArguments);
 		return false;
 	}
 
@@ -296,7 +296,7 @@ bool SpatialGDKGenerateInteropCode()
 	const FString CodegenPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/Codegen.bat")));
 	if (!RunProcess(CodegenPath, TEXT("")))
 	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Codegen failed."));
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Spatial C++ Worker Codegen failed. Path: '%s'."), *CodegenPath);
 		return false;
 	}
 
