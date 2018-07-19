@@ -1,12 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#include "SpatialOSEditorToolbarSettings.h"
+#include "SpatialGDKEditorToolbarSettings.h"
 
-USpatialOSEditorToolbarSettings::USpatialOSEditorToolbarSettings(const FObjectInitializer& ObjectInitializer) : SpatialOSLaunchArgument(TEXT("default_launch.json")), bStopSpatialOnExit(false), Super(ObjectInitializer)
+USpatialGDKEditorToolbarSettings::USpatialGDKEditorToolbarSettings(const FObjectInitializer& ObjectInitializer) : SpatialOSLaunchArgument(TEXT("default_launch.json")), bStopSpatialOnExit(false), Super(ObjectInitializer)
 {
 	ProjectRootFolder.Path = FPaths::ConvertRelativePathToFull(FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../spatial/")));
 }
 
-FString USpatialOSEditorToolbarSettings::ToString()
+FString USpatialGDKEditorToolbarSettings::ToString()
 {
 	TArray<FStringFormatArg> Args;
 	Args.Add(ProjectRootFolder.Path);

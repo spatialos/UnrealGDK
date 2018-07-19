@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Framework/Commands/Commands.h"
 #include "SpatialGDKEditorToolbarStyle.h"
+#include "SpatialGDKEditorToolbarCommands.h"
 
 class FSpatialGDKEditorToolbarCommands : public TCommands<FSpatialGDKEditorToolbarCommands>
 {

@@ -12,6 +12,7 @@
 #include "SpatialGDKEditorGenerateSnapshot.h"
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 #include "SpatialGDKEditorToolbarCommands.h"
+#include "SpatialGDKEditorToolbarSettings.h"
 #include "SpatialGDKEditorToolbarStyle.h"
 
 #include "Editor/EditorEngine.h"
@@ -25,8 +26,10 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorToolbarModule"
 
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
+: SpatialOSStackProcessID(0), bStopSpatialOnExit(false)
 {
 }
+
 
 void FSpatialGDKEditorToolbarModule::StartupModule()
 {
@@ -40,6 +43,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	SetupToolbar(PluginCommands);
 
 	RegisterSettings();
+	CheckForRunningStack();
 
 	// load sounds
 	ExecutionStartSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileStart_Cue.CompileStart_Cue"));
@@ -48,12 +52,18 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionSuccessSound->AddToRoot();
 	ExecutionFailSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileFailed_Cue.CompileFailed_Cue"));
 	ExecutionFailSound->AddToRoot();
-
 	InteropCodeGenRunning = false;
+
+	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(
+	  this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
+
+	auto SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	bStopSpatialOnExit = SpatialGDKToolbarSettings->bStopSpatialOnExit;
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
 {
+	FCoreUObjectDelegates::OnObjectPropertyChanged.Remove(OnPropertyChangedDelegateHandle);
 
 	if (ExecutionStartSound != nullptr)
 	{
@@ -93,14 +103,44 @@ void FSpatialGDKEditorToolbarModule::ShutdownModule()
 
 void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 {
+	if (bStopSpatialOnExit)
+	{
+		StopRunningStack();
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 {
+	if (SpatialOSStackProcessID != 0 &&
+		!FPlatformProcess::IsApplicationRunning(SpatialOSStackProcessID))
+	{
+		FPlatformProcess::CloseProc(SpatialOSStackProcHandle);
+		SpatialOSStackProcessID = 0;
+	}	
 }
 
 void FSpatialGDKEditorToolbarModule::RegisterSettings()
 {
+	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	{
+		ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
+
+		SettingsContainer->DescribeCategory(
+			"SpatialOSEditorToolbar", LOCTEXT("RuntimeWDCategoryName", "SpatialOS - Toolbar"),
+			LOCTEXT("RuntimeWDCategoryDescription",
+					"Configuration for the SpatialOS Editor toolbar plugin"));
+
+		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings(
+			"Project", "SpatialOS", "Toolbar", LOCTEXT("RuntimeGeneralSettingsName", "Toolbar"),
+			LOCTEXT("RuntimeGeneralSettingsDescription",
+					"Configuration for SpatialOS Editor toolbar plugin."),
+			GetMutableDefault<USpatialGDKEditorToolbarSettings>());
+
+		if (SettingsSection.IsValid())
+		{
+			SettingsSection->OnModified().BindRaw(this, &FSpatialGDKEditorToolbarModule::HandleSettingsSaved);
+		}
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::UnregisterSettings()
@@ -113,6 +153,9 @@ void FSpatialGDKEditorToolbarModule::UnregisterSettings()
 
 bool FSpatialGDKEditorToolbarModule::HandleSettingsSaved()
 {
+	USpatialGDKEditorToolbarSettings* Settings = GetMutableDefault<USpatialGDKEditorToolbarSettings>();
+	Settings->SaveConfig();
+
 	return true;
 }
 
@@ -125,15 +168,28 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 {
 	PluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot,
-		FExecuteAction::CreateRaw(
-			this, &FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked),
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked),
 		FCanExecuteAction());
 
 	PluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode,
-		FExecuteAction::CreateRaw(
-			this, &FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked),
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteInteropCodeGen));
+	
+	PluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().StartSpatialOSStackAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialOSStackCanExecute));
+
+	PluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().StopSpatialOSStackAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialOSButtonClicked),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialOSStackCanExecute));
+
+	PluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked),
+		FCanExecuteAction());
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> PluginCommands)
@@ -163,10 +219,11 @@ void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandLis
 
 void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 {
-	Builder.BeginSection("SpatialGDK", LOCTEXT("SpatialGDK", "SpatialGDK"));
+	Builder.BeginSection("SpatialOS", LOCTEXT("SpatialOS", "SpatialOS"));
 	{
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
 	}
 	Builder.EndSection();
 }
@@ -176,6 +233,9 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 	Builder.AddSeparator(NAME_None);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialOSStackAction);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialOSStackAction);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
 }
 
 void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
@@ -276,6 +336,129 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 			GEditor->PlayEditorSound(ExecutionFailSound);
 		}
 	});
+}
+
+void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
+{
+	auto SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
+
+	const FString ExecuteAbsolutePath =
+		FPaths::ConvertRelativePathToFull(SpatialGDKToolbarSettings->ProjectRootFolder.Path);
+	const FString CmdExecutable = TEXT("cmd.exe");
+	const FString SpatialCmdArgument = FString::Printf(
+		TEXT("/c spatial.exe local launch %s"), *SpatialGDKToolbarSettings->SpatialOSLaunchArgument);
+
+	UE_LOG(LogSpatialGDKEditor, Log, TEXT("Starting cmd.exe with `%s` arguments."),
+		 *SpatialCmdArgument);
+	// Temporary workaround to get spatial.exe to properly show a window we have to call cmd.exe to
+	// execute it.
+	// We currently can't use pipes to capture output as it doesn't work properly with current
+	// spatial.exe.
+	SpatialOSStackProcHandle = FPlatformProcess::CreateProc(
+		*(CmdExecutable), *SpatialCmdArgument, true, false, false, &SpatialOSStackProcessID, 0,
+		*ExecuteAbsolutePath, nullptr, nullptr);
+
+	FNotificationInfo Info(SpatialOSStackProcHandle.IsValid() == true
+							 ? FText::FromString(TEXT("SpatialOS Starting..."))
+							 : FText::FromString(TEXT("Failed to start SpatialOS")));
+	Info.ExpireDuration = 3.0f;
+	Info.bUseSuccessFailIcons = true;
+	auto NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+
+	if (!SpatialOSStackProcHandle.IsValid())
+	{
+	NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+	const auto LogPath =
+		SpatialGDKToolbarSettings->ProjectRootFolder.Path + FString(TEXT("/logs/spatial.log"));
+	UE_LOG(LogSpatialGDKEditor, Error,
+			 TEXT("Failed to start SpatialOS, please refer to log file `%s` for more information."),
+			 *LogPath);
+	}
+	else
+	{
+	NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
+	}
+
+	NotificationItem->ExpireAndFadeout();
+}
+
+void FSpatialGDKEditorToolbarModule::StopSpatialOSButtonClicked()
+{
+	StopRunningStack();
+}
+
+void FSpatialGDKEditorToolbarModule::StopRunningStack()
+{
+	if (SpatialOSStackProcHandle.IsValid())
+	{
+	if (FPlatformProcess::IsProcRunning(SpatialOSStackProcHandle))
+	{
+		FPlatformProcess::TerminateProc(SpatialOSStackProcHandle, true);
+	}
+	FPlatformProcess::CloseProc(SpatialOSStackProcHandle);
+	SpatialOSStackProcessID = 0;
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
+{
+	FString WebError;
+	FPlatformProcess::LaunchURL(TEXT("http://localhost:21000/inspector"), TEXT(""), &WebError);
+	if (!WebError.IsEmpty())
+	{
+	FNotificationInfo Info(FText::FromString(WebError));
+	Info.ExpireDuration = 3.0f;
+	Info.bUseSuccessFailIcons = true;
+	auto NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+	NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+	NotificationItem->ExpireAndFadeout();
+	}
+}
+
+bool FSpatialGDKEditorToolbarModule::StartSpatialOSStackCanExecute() const
+{
+	return !SpatialOSStackProcHandle.IsValid() &&
+		!FPlatformProcess::IsApplicationRunning(SpatialOSStackProcessID);
+}
+
+bool FSpatialGDKEditorToolbarModule::StopSpatialOSStackCanExecute() const
+{
+	return SpatialOSStackProcHandle.IsValid();
+}
+
+void FSpatialGDKEditorToolbarModule::CheckForRunningStack()
+{
+	FPlatformProcess::FProcEnumerator ProcEnumerator;
+	do
+	{
+	auto Proc = ProcEnumerator.GetCurrent();
+	const auto ProcName = Proc.GetName();
+	if (ProcName.Compare(TEXT("spatial.exe"), ESearchCase::IgnoreCase) == 0)
+	{
+		auto ProcPID = Proc.GetPID();
+		SpatialOSStackProcHandle = FPlatformProcess::OpenProcess(ProcPID);
+		if (SpatialOSStackProcHandle.IsValid())
+		{
+		SpatialOSStackProcessID = ProcPID;
+		}
+	}
+	} while (ProcEnumerator.MoveNext() && !SpatialOSStackProcHandle.IsValid());
+}
+
+void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModified,
+														FPropertyChangedEvent& PropertyChangedEvent)
+{
+	if (USpatialGDKEditorToolbarSettings* ToolbarSettings =
+			Cast<USpatialGDKEditorToolbarSettings>(ObjectBeingModified))
+	{
+	FName PropertyName = PropertyChangedEvent.Property != nullptr
+		? PropertyChangedEvent.Property->GetFName()
+		: NAME_None;
+	if (PropertyName.ToString() == TEXT("bStopSpatialOnExit"))
+	{
+		bStopSpatialOnExit = ToolbarSettings->bStopSpatialOnExit;
+	}
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -60,6 +60,24 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 	Style->Set("SpatialGDKEditorToolbar.GenerateInteropCode.Small",
 		new IMAGE_BRUSH(TEXT("CodegenIcon"), Icon20x20));
 
+	Style->Set("SpatialOSEditorToolbar.StartSpatialOSStackAction",
+		new IMAGE_BRUSH(TEXT("ImprobableIcon_40x"), Icon40x40));
+	
+	Style->Set("SpatialOSEditorToolbar.StopSpatialOSStackAction",
+		new IMAGE_BRUSH(TEXT("ImprobableIconStop_40x"), Icon40x40));
+	
+	Style->Set("SpatialOSEditorToolbar.LaunchInspectorWebPageAction",
+		new IMAGE_BRUSH(TEXT("BrowserIcon_40x"), Icon40x40));
+
+	Style->Set("SpatialOSEditorToolbar.StartSpatialOSStackAction.Small",
+		new IMAGE_BRUSH(TEXT("ImprobableIcon_40x"), Icon20x20));
+	
+	Style->Set("SpatialOSEditorToolbar.StopSpatialOSStackAction.Small",
+		new IMAGE_BRUSH(TEXT("ImprobableIconStop_40x"), Icon20x20));
+	
+	Style->Set("SpatialOSEditorToolbar.LaunchInspectorWebPageAction.Small",
+		new IMAGE_BRUSH(TEXT("BrowserIcon_40x"), Icon20x20));
+
 	return Style;
 }
 
