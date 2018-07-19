@@ -66,58 +66,58 @@ rem Start Section: Setup variables.
 rem End Section: Setup variables.
 
 rem Start Section: Clean folders.
-    rd /s /q %BUILD_DIR%          2>nul
-    rd /s /q %PACKAGE_TARGET_DIR% 2>nul
-    rd /s /q %WORKER_SDK_DIR%     2>nul
-    rd /s /q %BINARIES_DIR%       2>nul
+    rd /s /q "%BUILD_DIR%"          2>nul
+    rd /s /q "%PACKAGE_TARGET_DIR%" 2>nul
+    rd /s /q "%WORKER_SDK_DIR%"     2>nul
+    rd /s /q "%BINARIES_DIR%"       2>nul
 rem End Section: Clean folders.
 
 rem Start Section: Create folders.
-    md %PACKAGE_TARGET_DIR%        >nul 2>nul
-    md %WORKER_SDK_DIR%            >nul 2>nul
-    md %CORE_SDK_DIR%\schema       >nul 2>nul
-    md %CORE_SDK_DIR%\tools        >nul 2>nul
-    md %CORE_SDK_DIR%\worker_sdk   >nul 2>nul
-    md %BUILD_DIR%\code_generation >nul 2>nul
-    md %BINARIES_DIR%              >nul 2>nul
+    md "%PACKAGE_TARGET_DIR%"        >nul 2>nul
+    md "%WORKER_SDK_DIR%"            >nul 2>nul
+    md "%CORE_SDK_DIR%\schema"       >nul 2>nul
+    md "%CORE_SDK_DIR%\tools"        >nul 2>nul
+    md "%CORE_SDK_DIR%\worker_sdk"   >nul 2>nul
+    md "%BUILD_DIR%\code_generation" >nul 2>nul
+    md "%BINARIES_DIR%"              >nul 2>nul
 rem End Section: Create folders.
 
 rem Start Section: Retrieve dependencies.
-    spatial package retrieve tools           schema_compiler-x86_64-win32     %PINNED_CORE_SDK_VERSION%       %CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip
-    spatial package retrieve schema          standard_library                 %PINNED_CORE_SDK_VERSION%       %CORE_SDK_DIR%\schema\standard_library.zip
-    spatial package retrieve worker_sdk      core-dynamic-x86-win32           %PINNED_CORE_SDK_VERSION%       %CORE_SDK_DIR%\worker_sdk\core-dynamic-x86-win32.zip
-    spatial package retrieve worker_sdk      core-dynamic-x86_64-win32        %PINNED_CORE_SDK_VERSION%       %CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-win32.zip
-    spatial package retrieve worker_sdk      core-dynamic-x86_64-linux        %PINNED_CORE_SDK_VERSION%       %CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-linux.zip
-    spatial package retrieve code_generation Improbable.CodeGeneration        %PINNED_CODE_GENERATOR_VERSION% %BUILD_DIR%\code_generation\Improbable.CodeGeneration.zip
+    spatial package retrieve tools           schema_compiler-x86_64-win32     %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
+    spatial package retrieve schema          standard_library                 %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\schema\standard_library.zip"
+    spatial package retrieve worker_sdk      core-dynamic-x86-win32           %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86-win32.zip"
+    spatial package retrieve worker_sdk      core-dynamic-x86_64-win32        %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-win32.zip"
+    spatial package retrieve worker_sdk      core-dynamic-x86_64-linux        %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-linux.zip"
+    spatial package retrieve code_generation Improbable.CodeGeneration        %PINNED_CODE_GENERATOR_VERSION% "%BUILD_DIR%\code_generation\Improbable.CodeGeneration.zip"
     rem Download the C++ SDK for its headers, only.
-    spatial package retrieve worker_sdk      cpp-static-x86_64-msvc_mtd-win32 %PINNED_CORE_SDK_VERSION%       %CORE_SDK_DIR%\cpp-static-x86_64-msvc_mtd-win32.zip
+    spatial package retrieve worker_sdk      cpp-static-x86_64-msvc_mtd-win32 %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\cpp-static-x86_64-msvc_mtd-win32.zip"
 rem End Section: Retrieve dependencies.
 
 rem Start Section: Unpack dependencies.
-    powershell -Command "Expand-Archive -Path %CORE_SDK_DIR%\cpp-static-x86_64-msvc_mtd-win32.zip       -DestinationPath %CORE_SDK_DIR%\cpp-src -Force; "^
-                        "Expand-Archive -Path %CORE_SDK_DIR%\worker_sdk\core-dynamic-x86-win32.zip      -DestinationPath %BINARIES_DIR%\Win32 -Force; "^
-                        "Expand-Archive -Path %CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-win32.zip   -DestinationPath %BINARIES_DIR%\Win64 -Force; "^
-                        "Expand-Archive -Path %CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-linux.zip   -DestinationPath %BINARIES_DIR%\Linux -Force; "^
-                        "Expand-Archive -Path %CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip     -DestinationPath %BINARIES_DIR%\Programs -Force; "^
-                        "Expand-Archive -Path %CORE_SDK_DIR%\schema\standard_library.zip                -DestinationPath %BINARIES_DIR%\Programs\schema -Force; "^
-                        "Expand-Archive -Path %BUILD_DIR%\code_generation\Improbable.CodeGeneration.zip -DestinationPath %PACKAGE_TARGET_DIR%\Improbable.CodeGeneration -Force; "^
-                        "Expand-Archive -Path %~dp0Source\Programs\Improbable.Unreal.CodeGeneration.Test\NUnit\NUnit.zip -DestinationPath %PACKAGE_TARGET_DIR% -Force"
+    powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\cpp-static-x86_64-msvc_mtd-win32.zip\"       -DestinationPath \"%CORE_SDK_DIR%\cpp-src\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86-win32.zip\"      -DestinationPath \"%BINARIES_DIR%\Win32\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-win32.zip\"   -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-linux.zip\"   -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"     -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force; "^
+                        "Expand-Archive -Path \"%BUILD_DIR%\code_generation\Improbable.CodeGeneration.zip\" -DestinationPath \"%PACKAGE_TARGET_DIR%\Improbable.CodeGeneration\" -Force; "^
+                        "Expand-Archive -Path \"%~dp0Source\Programs\Improbable.Unreal.CodeGeneration.Test\NUnit\NUnit.zip\" -DestinationPath \"%PACKAGE_TARGET_DIR%\" -Force"
 
     rem Include the WorkerSDK header files.
-    xcopy /s /i /q %CORE_SDK_DIR%\cpp-src\include %WORKER_SDK_DIR%
+    xcopy /s /i /q "%CORE_SDK_DIR%\cpp-src\include" "%WORKER_SDK_DIR%"
 rem End Section: Unpack dependencies.
 
 rem Start Section: Build CodeGeneration.
     %MSBUILD_EXE% /nologo /verbosity:minimal Source\Programs\Improbable.Unreal.CodeGeneration\UnrealCodeGeneration.sln /property:Configuration=Release /property:SolutionDir=..\
 
-    xcopy /i /q Source\Programs\Improbable.Unreal.CodeGeneration\bin\Release\*.dll %BINARIES_DIR%\Programs
-    xcopy /i /q Source\Programs\Improbable.Unreal.CodeGeneration\bin\Release\*.exe %BINARIES_DIR%\Programs
+    xcopy /i /q Source\Programs\Improbable.Unreal.CodeGeneration\bin\Release\*.dll "%BINARIES_DIR%\Programs"
+    xcopy /i /q Source\Programs\Improbable.Unreal.CodeGeneration\bin\Release\*.exe "%BINARIES_DIR%\Programs"
 rem End Section: Build CodeGeneration.
 
 rem Start Section: Build C# utilities.
-    %CSC_EXE% Scripts\Build.cs   Scripts\Codegen.cs Scripts\Common.cs -main:Improbable.Build -nologo -out:%BINARIES_DIR%\Programs\Build.exe
-    %CSC_EXE% Scripts\Codegen.cs Scripts\Common.cs                                           -nologo -out:%BINARIES_DIR%\Programs\Codegen.exe
-    %CSC_EXE% Scripts\DiffCopy.cs                                                            -nologo -out:%BINARIES_DIR%\Programs\DiffCopy.exe
+    %CSC_EXE% Scripts\Build.cs   Scripts\Codegen.cs Scripts\Common.cs -main:Improbable.Build -nologo -out:"%BINARIES_DIR%\Programs\Build.exe"
+    %CSC_EXE% Scripts\Codegen.cs Scripts\Common.cs                                           -nologo -out:"%BINARIES_DIR%\Programs\Codegen.exe"
+    %CSC_EXE% Scripts\DiffCopy.cs                                                            -nologo -out:"%BINARIES_DIR%\Programs\DiffCopy.exe"
 rem End Section: Build C# utilities.
 
 popd
