@@ -112,7 +112,7 @@ bool ValidateClassNameWithCorrectionForBlueprints(FString& ClassName)
 
 	UE_LOG(LogSpatialGDKInteropCodeGenerator, Verbose, TEXT("Could not find unreal class for interop code generation: '%s', trying to find %s_C..."), *ClassName, *ClassName);
 
-	if (FindObject<UClass>(ANY_PACKAGE, *(ClassName + "_C")))
+	if (FindObject<UClass>(ANY_PACKAGE, *(ClassName + TEXT("_C"))))
 	{
 		// Correct for user mistake: add _C to ClassName so we return the valid blueprint name
 		ClassName.Append(TEXT("_C"));
