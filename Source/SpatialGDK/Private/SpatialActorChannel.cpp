@@ -457,6 +457,11 @@ bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, const FReplicationFl
 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
 {
+	//To account for stably named actors
+	if (SpatialNetDriver->GetSpatialInterop()->GetTypeBindingByClass(InActor->GetClass()) && InActor->IsFullNameStableForNetworking()) {
+		Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap)->ResolveStablyNamedObject(InActor);
+	}
+
 	Super::SetChannelActor(InActor);
 
 	if (!bCoreActor)
