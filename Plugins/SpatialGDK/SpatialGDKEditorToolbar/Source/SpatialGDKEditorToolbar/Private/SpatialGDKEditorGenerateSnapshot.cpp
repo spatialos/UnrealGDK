@@ -75,25 +75,26 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 
 bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 {
-	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Save path %s"), *SavePath);
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Save path: %s"), *SavePath);
 
 	if (!FPaths::CollapseRelativeDirectories(SavePath))
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Path was invalid - snapshot not generated"));
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Invalid path: %s - snapshot not generated"), *SavePath);
 		return false;
 	}
 
 	if (!FPaths::DirectoryExists(SavePath))
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Path non existent - creating path for snapshot"));
+		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot directory does not exist - creating directory: %s"), *SavePath);
 		if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*SavePath))
 		{
-			UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Unable to create path - exiting snapshot generation"));
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Unable to create directory: %s - snapshot not generated"), *SavePath);
 			return false;
 		}
 	}
 
 	const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Saving snapshot to: %s"), *FullPath);
 	worker::SnapshotOutputStream OutputStream = worker::SnapshotOutputStream(improbable::unreal::Components{}, TCHAR_TO_UTF8(*FullPath));
 
 	// Create spawner entity.
@@ -101,7 +102,7 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 
 	if (!Result.empty())
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
 		return false;
 	}
 
@@ -111,11 +112,11 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 		Result = OutputStream.WriteEntity(EntityPair.first, EntityPair.second);
 		if (!Result.empty())
 		{
-			UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
 			return false;
 		}
 	}
 
-	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path %s"), *FullPath);
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path: %s"), *FullPath);
 	return true;
 }
