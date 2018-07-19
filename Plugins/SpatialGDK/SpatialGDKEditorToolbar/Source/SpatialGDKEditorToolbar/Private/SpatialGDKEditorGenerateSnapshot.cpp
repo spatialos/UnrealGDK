@@ -4,10 +4,6 @@
 #include "EntityBuilder.h"
 #include "SpatialConstants.h"
 #include "SpatialOSCommon.h"
-
-#include "CoreMinimal.h"
-#include "EngineUtils.h"
-#include "GameFramework/Actor.h"
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
 
 #include <improbable/standard_library.h>
@@ -48,6 +44,7 @@ worker::Entity CreateSpawnerEntity()
 worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 {
 	worker::Map<worker::EntityId, worker::Entity> LevelEntities;
+
 
 	// Set up grid of "placeholder" entities to allow workers to be authoritative over _something_.
 	int PlaceholderCount = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST - SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST + 1;
