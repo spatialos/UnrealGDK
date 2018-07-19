@@ -45,7 +45,6 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 {
 	worker::Map<worker::EntityId, worker::Entity> LevelEntities;
 
-
 	// Set up grid of "placeholder" entities to allow workers to be authoritative over _something_.
 	int PlaceholderCount = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST - SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST + 1;
 	int PlaceholderCountAxis = sqrt(PlaceholderCount);
@@ -108,7 +107,7 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 	}
 
 	// Create level entities.
-	for (auto EntityPair : CreateLevelEntities(World))
+	for (const auto& EntityPair : CreateLevelEntities(World))
 	{
 		Result = OutputStream.WriteEntity(EntityPair.first, EntityPair.second);
 		
