@@ -83,8 +83,6 @@ public:
 
 	TMap<FString, USpatialActorChannel*> SingletonActorChannels;
 
-	//FORCED_INLINE USpatialPackageMapClient* GetPackageMap() { return PackageMap; }
-
 protected:
 	FSpatialGDKWorkerConfigurationData WorkerConfig;
 

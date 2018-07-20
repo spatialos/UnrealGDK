@@ -106,6 +106,7 @@ worker::Map<std::string, worker::EntityId> CreateSingletonToIdMap()
 
 	for (FName ClassName : SingletonActorClasses)
 	{
+		// Id is initially 0 since no Singleton entities have been created.
 		SingletonToId.emplace(std::string(TCHAR_TO_UTF8(*(ClassName.ToString()))), 0);
 	}
 
@@ -114,7 +115,7 @@ worker::Map<std::string, worker::EntityId> CreateSingletonToIdMap()
 
 worker::Entity CreateGlobalStateManagerEntity()
 {
-	auto SingletonToId = CreateSingletonToIdMap();
+	worker::Map<std::string, worker::EntityId> SingletonToId = CreateSingletonToIdMap();
 
 	return improbable::unreal::FEntityBuilder::Begin()
 		.AddPositionComponent(Position::Data{Origin}, UnrealWorkerWritePermission)

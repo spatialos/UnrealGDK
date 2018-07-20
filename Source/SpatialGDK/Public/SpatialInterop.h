@@ -223,7 +223,7 @@ public:
 		return NetDriver;
 	}
 
-	worker::Map<std::string, worker::EntityId> SingletonToId;
+	worker::Map<std::string, worker::EntityId> SingletonNameToEntityId;
 
 private:
 	UPROPERTY()

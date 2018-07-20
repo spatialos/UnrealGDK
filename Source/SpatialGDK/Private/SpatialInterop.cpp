@@ -60,7 +60,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	// Global State Manager setup
 	View->OnAddComponent<improbable::unreal::GlobalStateManager>([this](const worker::AddComponentOp <improbable::unreal::GlobalStateManager>& op)
 	{
-		SingletonToId = op.Data.singleton_to_id();
+		SingletonNameToEntityId = op.Data.singleton_to_id();
 		LinkExistingSingletonActors();
 	});
 
@@ -68,7 +68,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	{
 		if (op.Update.singleton_to_id().data())
 		{
-			SingletonToId = *op.Update.singleton_to_id().data();
+			SingletonNameToEntityId = *op.Update.singleton_to_id().data();
 			LinkExistingSingletonActors();
 		}
 	});
@@ -718,7 +718,7 @@ void USpatialInterop::LinkExistingSingletonActors()
 		return;
 	}
 
-	for (auto it = SingletonToId.begin(); it != SingletonToId.end(); it++)
+	for (auto it = SingletonNameToEntityId.begin(); it != SingletonNameToEntityId.end(); it++)
 	{
 		FEntityId SingletonEntityId{ it->second };
 		if (SingletonEntityId != FEntityId{})
@@ -747,9 +747,7 @@ void USpatialInterop::LinkExistingSingletonActors()
 			TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
 			auto EntityIterator = LockedView->Entities.find(SingletonEntityId.ToSpatialEntityId());
 			improbable::unreal::UnrealMetadataData* metadata = EntityIterator->second.Get<improbable::unreal::UnrealMetadata>().data();
-			check(metadata);
 			USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
-			check(PackageMap);
 
 			// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
 			PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, metadata->subobject_name_to_offset());
@@ -762,7 +760,7 @@ void USpatialInterop::LinkExistingSingletonActors()
 
 void USpatialInterop::ExecuteInitialSingletonActorReplication()
 {
-	for (auto it = SingletonToId.begin(); it != SingletonToId.end(); it++)
+	for (auto it = SingletonNameToEntityId.begin(); it != SingletonNameToEntityId.end(); it++)
 	{
 		FEntityId SingletonEntityId{ it->second };
 		if (SingletonEntityId == FEntityId{})
@@ -817,10 +815,10 @@ void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& Ou
 void USpatialInterop::UpdateGlobalStateManager(FString ClassName, FEntityId SingletonEntityId)
 {
 	std::string singletonName(TCHAR_TO_UTF8(*ClassName));
-	SingletonToId[singletonName] = SingletonEntityId.ToSpatialEntityId();
+	SingletonNameToEntityId[singletonName] = SingletonEntityId.ToSpatialEntityId();
 
 	improbable::unreal::GlobalStateManager::Update update;
-	update.set_singleton_to_id(SingletonToId);
+	update.set_singleton_to_id(SingletonNameToEntityId);
 
 	TSharedPtr<worker::Connection> Connection = SpatialOSInstance->GetConnection().Pin();
 	Connection->SendComponentUpdate<improbable::unreal::GlobalStateManager>(worker::EntityId((long)SpatialConstants::GLOBAL_STATE_MANAGER), update);
