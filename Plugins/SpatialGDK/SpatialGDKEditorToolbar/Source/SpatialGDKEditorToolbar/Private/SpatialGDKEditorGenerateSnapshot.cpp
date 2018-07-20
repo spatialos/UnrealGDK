@@ -16,6 +16,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
 using namespace improbable;
 
+typedef worker::Map<std::string, worker::EntityId> NameToEntityIdMap;
+
 const WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
 const WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
 
@@ -72,10 +74,8 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 	return LevelEntities;
 }
 
-worker::Map<std::string, worker::EntityId> CreateSingletonToIdMap()
+bool CreateSingletonToIdMap(NameToEntityIdMap SingletonNameToEntityId)
 {
-	worker::Map<std::string, worker::EntityId> SingletonToId;
-
 	const FString FileName = "DefaultEditorSpatialGDK.ini";
 	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
 
@@ -85,7 +85,7 @@ worker::Map<std::string, worker::EntityId> CreateSingletonToIdMap()
 	if (!ConfigFile)
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Could not open .ini file: \"%s\""), *ConfigFilePath);
-		return SingletonToId;
+		return false;
 	}
 
 	const FString SectionName = "SnapshotGenerator.SingletonActorClasses";
@@ -93,7 +93,7 @@ worker::Map<std::string, worker::EntityId> CreateSingletonToIdMap()
 	if (SingletonActorClassesSection == nullptr)
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Could not find section '%s' in '%s'."), *SectionName, *ConfigFilePath);
-		return SingletonToId;
+		return false;
 	}
 
 	TArray<FName> SingletonActorClasses;
@@ -102,28 +102,25 @@ worker::Map<std::string, worker::EntityId> CreateSingletonToIdMap()
 	for (FName ClassName : SingletonActorClasses)
 	{
 		// Id is initially 0 since no Singleton entities have been created.
-		SingletonToId.emplace(std::string(TCHAR_TO_UTF8(*(ClassName.ToString()))), 0);
+		SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*(ClassName.ToString()))), 0);
 	}
 
-	return SingletonToId;
+	return true;
 }
 
-worker::Entity CreateGlobalStateManagerEntity()
+worker::Entity CreateGlobalStateManagerEntity(NameToEntityIdMap SingletonNameToEntityId)
 {
-	worker::Map<std::string, worker::EntityId> SingletonToId = CreateSingletonToIdMap();
-
 	return improbable::unreal::FEntityBuilder::Begin()
 		.AddPositionComponent(Position::Data{Origin}, UnrealWorkerWritePermission)
 		.AddMetadataComponent(Metadata::Data("GlobalStateManager"))
 		.SetPersistence(true)
 		.SetReadAcl(AnyWorkerReadPermission)
-		.AddComponent<unreal::GlobalStateManager>(unreal::GlobalStateManager::Data{SingletonToId}, UnrealWorkerWritePermission)
+		.AddComponent<unreal::GlobalStateManager>(unreal::GlobalStateManager::Data{SingletonNameToEntityId}, UnrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{}, UnrealWorkerWritePermission)
 		.Build();
 }
 
 } // ::
-
 
 bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 {
@@ -157,7 +154,15 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 	}
 
 	// Create Global State Manager
-	Result = OutputStream.WriteEntity(SpatialConstants::GLOBAL_STATE_MANAGER, CreateGlobalStateManagerEntity());
+	NameToEntityIdMap SingletonNameToEntityId;
+	bool bSuccess = CreateSingletonToIdMap(SingletonNameToEntityId);
+	if (!bSuccess)
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: Couldn't create Singleton Name to EntityId map"));
+		return false;
+	}
+
+	Result = OutputStream.WriteEntity(SpatialConstants::GLOBAL_STATE_MANAGER, CreateGlobalStateManagerEntity(SingletonNameToEntityId));
 	if (!Result.empty())
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
