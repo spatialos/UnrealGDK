@@ -30,7 +30,6 @@ FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 {
 }
 
-
 void FSpatialGDKEditorToolbarModule::StartupModule()
 {
 	FSpatialGDKEditorToolbarStyle::Initialize();
@@ -57,7 +56,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(
 		this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
 
-	auto SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 	bStopSpatialOnExit = SpatialGDKToolbarSettings->bStopSpatialOnExit;
 }
 
@@ -111,8 +110,7 @@ void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 
 void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 {
-	if (SpatialOSStackProcessID != 0 &&
-		!FPlatformProcess::IsApplicationRunning(SpatialOSStackProcessID))
+	if (SpatialOSStackProcessID != 0 && !FPlatformProcess::IsApplicationRunning(SpatialOSStackProcessID))
 	{
 		FPlatformProcess::CloseProc(SpatialOSStackProcHandle);
 		SpatialOSStackProcessID = 0;
@@ -340,7 +338,7 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 
 void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 {
-	auto SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
 	const FString ExecuteAbsolutePath =
 		FPaths::ConvertRelativePathToFull(SpatialGDKToolbarSettings->ProjectRootFolder.Path);
@@ -363,12 +361,12 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 							 : FText::FromString(TEXT("Failed to start SpatialOS")));
 	Info.ExpireDuration = 3.0f;
 	Info.bUseSuccessFailIcons = true;
-	auto NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+	TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
 
 	if (!SpatialOSStackProcHandle.IsValid())
 	{
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
-		const auto LogPath =
+		const FString LogPath =
 			SpatialGDKToolbarSettings->ProjectRootFolder.Path + FString(TEXT("/logs/spatial.log"));
 		UE_LOG(LogSpatialGDKEditor, Error,
 				TEXT("Failed to start SpatialOS, please refer to log file `%s` for more information."),
@@ -409,7 +407,7 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		FNotificationInfo Info(FText::FromString(WebError));
 		Info.ExpireDuration = 3.0f;
 		Info.bUseSuccessFailIcons = true;
-		auto NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 		NotificationItem->ExpireAndFadeout();
 	}
@@ -417,8 +415,7 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialOSStackCanExecute() const
 {
-	return !SpatialOSStackProcHandle.IsValid() &&
-		!FPlatformProcess::IsApplicationRunning(SpatialOSStackProcessID);
+	return !SpatialOSStackProcHandle.IsValid() && !FPlatformProcess::IsApplicationRunning(SpatialOSStackProcessID);
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialOSStackCanExecute() const
@@ -431,11 +428,11 @@ void FSpatialGDKEditorToolbarModule::CheckForRunningStack()
 	FPlatformProcess::FProcEnumerator ProcEnumerator;
 	do
 	{
-		auto Proc = ProcEnumerator.GetCurrent();
-		const auto ProcName = Proc.GetName();
+		FPlatformProcess::FProcEnumInfo Proc = ProcEnumerator.GetCurrent();
+		const FString ProcName = Proc.GetName();
 		if (ProcName.Compare(TEXT("spatial.exe"), ESearchCase::IgnoreCase) == 0)
 		{
-			auto ProcPID = Proc.GetPID();
+			uint32 ProcPID = Proc.GetPID();
 			SpatialOSStackProcHandle = FPlatformProcess::OpenProcess(ProcPID);
 			if (SpatialOSStackProcHandle.IsValid())
 			{
@@ -448,8 +445,7 @@ void FSpatialGDKEditorToolbarModule::CheckForRunningStack()
 void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModified,
 														FPropertyChangedEvent& PropertyChangedEvent)
 {
-	if (USpatialGDKEditorToolbarSettings* ToolbarSettings =
-			Cast<USpatialGDKEditorToolbarSettings>(ObjectBeingModified))
+	if (USpatialGDKEditorToolbarSettings* ToolbarSettings = Cast<USpatialGDKEditorToolbarSettings>(ObjectBeingModified))
 	{
 		FName PropertyName = PropertyChangedEvent.Property != nullptr
 			? PropertyChangedEvent.Property->GetFName()
