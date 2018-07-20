@@ -442,8 +442,7 @@ void FSpatialGDKEditorToolbarModule::CheckForRunningStack()
 	} while (ProcEnumerator.MoveNext() && !SpatialOSStackProcHandle.IsValid());
 }
 
-void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModified,
-														FPropertyChangedEvent& PropertyChangedEvent)
+void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent)
 {
 	if (USpatialGDKEditorToolbarSettings* ToolbarSettings = Cast<USpatialGDKEditorToolbarSettings>(ObjectBeingModified))
 	{
