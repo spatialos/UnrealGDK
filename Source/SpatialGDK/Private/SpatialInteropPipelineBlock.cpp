@@ -283,6 +283,19 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 		PC->Player = nullptr;
 	}
 
+	// Workaround for camera loss on migration: prevent UnPossess() (non-authoritative destruction of pawn, while being authoritative over the controller)
+	// TODO: Check how AI controllers are affected by this (UNR-430)
+	// TODO: This should be solved properly by working sets (UNR-411)
+	if (APawn* Pawn = Cast<APawn>(Actor))
+	{
+		AController* Controller = Pawn->Controller;
+
+		if (Controller != nullptr && Controller->HasAuthority())
+		{
+			Pawn->Controller = nullptr;
+		}
+	}
+
 	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
 	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
 	// is currently owned by this worker before issuing a entity delete request. If the associated entity hasn't migrated off 
