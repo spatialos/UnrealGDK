@@ -1,4 +1,4 @@
-@if not defined TEAMCITY_CAPTURE_ENV echo off
+@if not defined TEAMCITY_CAPTURE_ENV ( echo off ) else ( echo on )
 
 setlocal
 
@@ -15,8 +15,9 @@ call :MarkStartOfBlock "Check dependencies"
         exit /b 1
     )
 
-    rem Use Unreal Engine's script to get the path to MSBuild.
+    rem Use Unreal Engine's script to get the path to MSBuild. This turns off echo so turn it back on for TeamCity.
     call "%UNREAL_HOME%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
+    if defined TEAMCITY_CAPTURE_ENV echo on
 
     if not defined MSBUILD_EXE (
         echo Error: Could not find the MSBuild executable. Please make sure you have Microsoft Visual Studio or Microsoft Build Tools installed.
