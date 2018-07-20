@@ -1,4 +1,4 @@
-@echo off
+@if not defined TEAMCITY_CAPTURE_ENV echo off
 
 setlocal
 
