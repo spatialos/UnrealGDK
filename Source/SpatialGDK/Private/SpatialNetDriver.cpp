@@ -773,7 +773,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 void USpatialNetDriver::TickFlush(float DeltaTime)
 {
-	// Super::Ticklush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
+	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
 	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
 
 #if USE_SERVER_PERF_COUNTERS
