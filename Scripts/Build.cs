@@ -20,7 +20,7 @@ chown -R $NEW_USER:$NEW_USER $(pwd) 2>/dev/null
 chmod -R o+rw /improbable/logs 2>/dev/null
 SCRIPT=""$(pwd)/${WORKER_NAME}Server.sh""
 chmod +x $SCRIPT
-gosu $NEW_USER ""${SCRIPT}"" ""$@"" 2> >(grep -v xdg-user-dir >&2)`";
+gosu $NEW_USER ""${SCRIPT}"" ""$@"" 2> >(grep -v xdg-user-dir >&2)";
 
         private const string RunEditorScript =
             @"setlocal ENABLEDELAYEDEXPANSION
@@ -169,9 +169,9 @@ exit /b !ERRORLEVEL!
                 });
 
                 // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
+                // Also ensure script uses Linux line endings
                 var linuxServerPath = Path.Combine(stagingDir, "LinuxServer");
-                File.WriteAllText(Path.Combine(linuxServerPath, "StartWorker.sh"), UnrealWorkerShellScript,
-                    new UTF8Encoding(false));
+                File.WriteAllText(Path.Combine(linuxServerPath, "StartWorker.sh"), UnrealWorkerShellScript.Replace("\r\n", "\n"), new UTF8Encoding(false));
 
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {

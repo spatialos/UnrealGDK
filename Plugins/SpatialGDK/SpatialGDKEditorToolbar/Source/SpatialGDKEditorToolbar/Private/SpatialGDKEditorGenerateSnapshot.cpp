@@ -4,10 +4,7 @@
 #include "EntityBuilder.h"
 #include "SpatialConstants.h"
 #include "SpatialOSCommon.h"
-
-#include "CoreMinimal.h"
-#include "EngineUtils.h"
-#include "GameFramework/Actor.h"
+#include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
 
 #include <improbable/standard_library.h>
 #include <improbable/unreal/gdk/level_data.h>
@@ -78,39 +75,46 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 
 bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 {
-	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Save path %s"), *SavePath);
-	if (FPaths::CollapseRelativeDirectories(SavePath))
+	if (!FPaths::CollapseRelativeDirectories(SavePath))
 	{
-		std::unordered_map<worker::EntityId, worker::Entity> SnapshotEntities;
-
-		// Create spawner.
-		SnapshotEntities.emplace(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
-
-		// Create level entities.
-		for (auto EntityPair : CreateLevelEntities(World))
-		{
-			SnapshotEntities.emplace(std::move(EntityPair));
-		}
-
-		const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
-
-		// Save snapshot.
-		worker::Option<std::string> Result = worker::SaveSnapshot(improbable::unreal::Components{}, TCHAR_TO_UTF8(*FullPath), SnapshotEntities);
-		if (!Result.empty())
-		{
-			std::string ErrorString = Result.value_or("");
-			UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(ErrorString.c_str()));
-			return false;
-		}
-		else
-		{
-			UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path %s"), *FullPath);
-			return true;
-		}
-	}
-	else
-	{
-		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Path was invalid - snapshot not generated"));
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Invalid path: %s - snapshot not generated"), *SavePath);
 		return false;
 	}
+
+	if (!FPaths::DirectoryExists(SavePath))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot directory does not exist - creating directory: %s"), *SavePath);
+		if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*SavePath))
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Unable to create directory: %s - snapshot not generated"), *SavePath);
+			return false;
+		}
+	}
+
+	const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Saving snapshot to: %s"), *FullPath);
+	worker::SnapshotOutputStream OutputStream = worker::SnapshotOutputStream(improbable::unreal::Components{}, TCHAR_TO_UTF8(*FullPath));
+
+	// Create spawner entity.
+	worker::Option<std::string> Result = OutputStream.WriteEntity(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
+
+	if (!Result.empty())
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
+		return false;
+	}
+
+	// Create level entities.
+	for (const auto& EntityPair : CreateLevelEntities(World))
+	{
+		Result = OutputStream.WriteEntity(EntityPair.first, EntityPair.second);
+		if (!Result.empty())
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
+			return false;
+		}
+	}
+
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path: %s"), *FullPath);
+	return true;
 }
