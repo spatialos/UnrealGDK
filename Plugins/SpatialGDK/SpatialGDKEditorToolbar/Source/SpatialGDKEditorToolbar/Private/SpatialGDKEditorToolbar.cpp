@@ -124,15 +124,14 @@ void FSpatialGDKEditorToolbarModule::RegisterSettings()
 	{
 		ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
 
-		SettingsContainer->DescribeCategory(
-			"SpatialOSEditorToolbar", LOCTEXT("RuntimeWDCategoryName", "SpatialOS - Toolbar"),
+		SettingsContainer->DescribeCategory("SpatialOSEditorToolbar", LOCTEXT("RuntimeWDCategoryName", "SpatialOS - Toolbar"),
 			LOCTEXT("RuntimeWDCategoryDescription",
-					"Configuration for the SpatialOS Editor toolbar plugin"));
+			"Configuration for the SpatialOS Editor toolbar plugin"));
 
-		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings(
-			"Project", "SpatialOS", "Toolbar", LOCTEXT("RuntimeGeneralSettingsName", "Toolbar"),
+		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings("Project", "SpatialOS", "Toolbar",
+			LOCTEXT("RuntimeGeneralSettingsName", "Toolbar"),
 			LOCTEXT("RuntimeGeneralSettingsDescription",
-					"Configuration for SpatialOS Editor toolbar plugin."),
+			"Configuration for SpatialOS Editor toolbar plugin."),
 			GetMutableDefault<USpatialGDKEditorToolbarSettings>());
 
 		if (SettingsSection.IsValid())
@@ -252,6 +251,7 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 	else
 	{
 		ShowFailedNotification("Snapshot generation failed!");
+		ShowFailedNotification("Snapshot generation failed!");
 	}
 }
 
@@ -347,11 +347,9 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	const FString SpatialCmdArgument = FString::Printf(
 		TEXT("/c spatial.exe local launch %s"), *SpatialGDKToolbarSettings->SpatialOSLaunchArgument);
 
-	UE_LOG(LogSpatialGDKEditor, Log, TEXT("Starting cmd.exe with `%s` arguments."),
-		 *SpatialCmdArgument);
+	UE_LOG(LogSpatialGDKEditor, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround to get spatial.exe to properly show a window we have to call cmd.exe to
-	// execute it.
-	// We currently can't use pipes to capture output as it doesn't work properly with current
+	// execute it. We currently can't use pipes to capture output as it doesn't work properly with current
 	// spatial.exe.
 	SpatialOSStackProcHandle = FPlatformProcess::CreateProc(
 		*(CmdExecutable), *SpatialCmdArgument, true, false, false, &SpatialOSStackProcessID, 0,
