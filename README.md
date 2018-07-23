@@ -39,7 +39,7 @@ Visit the **feedback** section in our [forums](https://forums.improbable.io/) an
 **GitHub issues**<br>
 Create an issue in [this repository](https://github.com/spatialos/unreal-gdk/issues).
 
-v## Contributions
+## Contributions
 We are not currently accepting public contributions - see our [contributions](https://github.com/improbabl/unreal-gdk/.github/CONTRIBUTING.md) policy. However, we are accepting issues and we do want your feedback.
 
 ## Documentation
