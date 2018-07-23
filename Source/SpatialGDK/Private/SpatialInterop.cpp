@@ -16,7 +16,6 @@
 #include <improbable/standard_library.h>
 #include <improbable/unreal/gdk/player.h>
 #include <improbable/unreal/gdk/unreal_metadata.h>
-#include <improbable/unreal/gdk/global_state_manager.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKInterop);
 
@@ -61,16 +60,14 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	// Global State Manager setup
 	View->OnAddComponent<improbable::unreal::GlobalStateManager>([this](const worker::AddComponentOp<improbable::unreal::GlobalStateManager>& op)
 	{
-		SingletonNameToEntityId = op.Data.singleton_to_id();
-		LinkExistingSingletonActors();
+		LinkExistingSingletonActors(op.Data.singleton_name_to_entity_id());
 	});
 
 	View->OnComponentUpdate<improbable::unreal::GlobalStateManager>([this](const worker::ComponentUpdateOp<improbable::unreal::GlobalStateManager>& op)
 	{
-		if (op.Update.singleton_to_id().data())
+		if (op.Update.singleton_name_to_entity_id().data())
 		{
-			SingletonNameToEntityId = *op.Update.singleton_to_id().data();
-			LinkExistingSingletonActors();
+			LinkExistingSingletonActors(*op.Update.singleton_name_to_entity_id().data());
 		}
 	});
 
@@ -78,7 +75,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	{
 		if (op.Authority == worker::Authority::kAuthoritative)
 		{
-			ExecuteInitialSingletonActorReplication();
+			ExecuteInitialSingletonActorReplication(*GetSingletonNameToEntityId());
 		}
 	});
 }
@@ -712,7 +709,7 @@ void USpatialInterop::ResolvePendingOutgoingArrayUpdates(UObject* Object)
 	ObjectToOPAR.Remove(Object);
 }
 
-void USpatialInterop::LinkExistingSingletonActors()
+void USpatialInterop::LinkExistingSingletonActors(const NameToEntityIdMap& SingletonNameToEntityId)
 {
 	if (!NetDriver->IsServer())
 	{
@@ -733,14 +730,8 @@ void USpatialInterop::LinkExistingSingletonActors()
 		USpatialActorChannel* Channel = nullptr;
 		GetSingletonActorAndChannel(UTF8_TO_TCHAR(Pair.first.c_str()), SingletonActor, Channel);
 
-		// Singleton wasn't found
-		if (Channel == nullptr)
-		{
-			continue;
-		}
-
-		// Channel already set up
-		if (Channel->Actor != nullptr)
+		// Singleton wasn't found or channel is already set up
+		if (Channel == nullptr || Channel->Actor != nullptr)
 		{
 			continue;
 		}
@@ -752,7 +743,20 @@ void USpatialInterop::LinkExistingSingletonActors()
 		Channel->SetChannelActor(SingletonActor);
 
 		TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
+
+		// Couldn't get View
+		if (LockedView.IsValid())
+		{
+			continue;
+		}
+
 		auto EntityIterator = LockedView->Entities.find(SingletonEntityId.ToSpatialEntityId());
+		if (EntityIterator == LockedView->Entities.end())
+		{
+			// Don't have entity checked out
+			continue;
+		}
+
 		improbable::unreal::UnrealMetadataData* Metadata = EntityIterator->second.Get<improbable::unreal::UnrealMetadata>().data();
 		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
 
@@ -762,7 +766,7 @@ void USpatialInterop::LinkExistingSingletonActors()
 	}
 }
 
-void USpatialInterop::ExecuteInitialSingletonActorReplication()
+void USpatialInterop::ExecuteInitialSingletonActorReplication(const NameToEntityIdMap& SingletonNameToEntityId)
 {
 	for (const auto& pair : SingletonNameToEntityId)
 	{
@@ -830,10 +834,11 @@ void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& Ou
 void USpatialInterop::UpdateGlobalStateManager(FString ClassName, FEntityId SingletonEntityId)
 {
 	std::string SingletonName(TCHAR_TO_UTF8(*ClassName));
+	NameToEntityIdMap& SingletonNameToEntityId = *GetSingletonNameToEntityId();
 	SingletonNameToEntityId[SingletonName] = SingletonEntityId.ToSpatialEntityId();
 
 	improbable::unreal::GlobalStateManager::Update Update;
-	Update.set_singleton_to_id(SingletonNameToEntityId);
+	Update.set_singleton_name_to_entity_id(SingletonNameToEntityId);
 
 	TSharedPtr<worker::Connection> Connection = SpatialOSInstance->GetConnection().Pin();
 	Connection->SendComponentUpdate<improbable::unreal::GlobalStateManager>(worker::EntityId((long)SpatialConstants::GLOBAL_STATE_MANAGER), Update);

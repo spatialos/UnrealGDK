@@ -108,7 +108,7 @@ bool CreateSingletonToIdMap(NameToEntityIdMap& SingletonNameToEntityId)
 	return true;
 }
 
-worker::Entity CreateGlobalStateManagerEntity(NameToEntityIdMap SingletonNameToEntityId)
+worker::Entity CreateGlobalStateManagerEntity(const NameToEntityIdMap& SingletonNameToEntityId)
 {
 	return improbable::unreal::FEntityBuilder::Begin()
 		.AddPositionComponent(Position::Data{Origin}, UnrealWorkerWritePermission)
@@ -155,8 +155,7 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 
 	// Create Global State Manager
 	NameToEntityIdMap SingletonNameToEntityId;
-	bool bSuccess = CreateSingletonToIdMap(SingletonNameToEntityId);
-	if (!bSuccess)
+	if(!CreateSingletonToIdMap(SingletonNameToEntityId))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: Couldn't create Singleton Name to EntityId map"));
 		return false;

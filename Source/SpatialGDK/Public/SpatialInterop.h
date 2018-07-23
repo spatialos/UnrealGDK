@@ -2,9 +2,12 @@
 
 #pragma once
 
+#include <improbable/unreal/gdk/global_state_manager.h>
+
 #include "AddComponentOpWrapperBase.h"
 #include "ComponentIdentifier.h"
 #include "CoreMinimal.h"
+#include "SpatialConstants.h"
 #include "SpatialTypeBinding.h"
 #include "SpatialUnrealObjectRef.h"
 #include "SpatialInterop.generated.h"
@@ -208,9 +211,9 @@ public:
 	// Update GlobalStateManager when EntityId is reserved
 	void UpdateGlobalStateManager(FString ClassName, FEntityId SingletonEntityId);
 	// Handle GSM checkout
-	void LinkExistingSingletonActors();
+	void LinkExistingSingletonActors(const NameToEntityIdMap& SingletonNameToEntityId);
 	// Handle GSM Authority received
-	void ExecuteInitialSingletonActorReplication();
+	void ExecuteInitialSingletonActorReplication(const NameToEntityIdMap& SingletonNameToEntityId);
 
 	bool IsSingletonClass(UClass* Class);
 
@@ -225,7 +228,19 @@ public:
 		return NetDriver;
 	}
 
-	NameToEntityIdMap SingletonNameToEntityId;
+	NameToEntityIdMap* GetSingletonNameToEntityId() const
+	{
+		TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
+		auto It = View->Entities.find(SpatialConstants::GLOBAL_STATE_MANAGER);
+
+		if (It != View->Entities.end())
+		{
+			improbable::unreal::GlobalStateManagerData* GSM = It->second.Get<improbable::unreal::GlobalStateManager>().data();
+			return &(GSM->singleton_name_to_entity_id());
+		}
+
+		return nullptr;
+	}
 
 private:
 	UPROPERTY()
