@@ -26,7 +26,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorToolbarModule"
 
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
-: SpatialOSStackProcessID(0), bStopSpatialOnExit(false)
+: SpatialOSStackProcessID(0),
+bStopSpatialOnExit(false)
 {
 }
 

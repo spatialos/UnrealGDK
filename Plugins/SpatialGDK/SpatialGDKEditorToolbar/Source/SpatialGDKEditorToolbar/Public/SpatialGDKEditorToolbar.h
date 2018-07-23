@@ -51,13 +51,13 @@ private:
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
 	void GenerateInteropCodeButtonClicked();
-	bool CanExecuteInteropCodeGen();
-
-	void StopRunningStack();
-	void CheckForRunningStack();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
 private:
+	bool CanExecuteInteropCodeGen();
+	void StopRunningStack();
+	void CheckForRunningStack();
+
 	void ShowTaskStartNotification(const FString& NotificationText);
 	void ShowSuccessNotification(const FString& NotificationText);
 	void ShowFailedNotification(const FString& NotificationText);
