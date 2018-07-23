@@ -25,7 +25,7 @@ namespace Improbable
             Directory.CreateDirectory(intermediateSchemaCompilerDirectory);
             var arguments = new[]
             {
-                $"--cpp_out={intermediateSchemaCompilerDirectory}",
+                $"--cpp_out=\"{intermediateSchemaCompilerDirectory}\"",
                 @"--ast_json_out=Intermediate\Improbable\Json",
                 @"--schema_path=..\spatial\schema",
                 @"--schema_path=Binaries\ThirdParty\Improbable\Programs\schema"
@@ -44,7 +44,7 @@ namespace Improbable
 
             Common.RunRedirected(@"Scripts\DiffCopy.bat", new[]
             {
-                $"{intermediateSchemaCompilerDirectory}",
+                $"\"{intermediateSchemaCompilerDirectory}\"",
                 @"Source\SpatialGDK\Generated\Cpp",
                 @"--remove-input"
             });
@@ -54,11 +54,11 @@ namespace Improbable
             Common.RunRedirected(@"Binaries\ThirdParty\Improbable\Programs\UnrealCodeGenerator.exe", new[]
             {
                 @"--json-dir=Intermediate/Improbable/Json",
-                $"--output-dir={intermediateUnrealCodegenDirectory}"
+                $"--output-dir=\"{intermediateUnrealCodegenDirectory}\""
             });
             Common.RunRedirected(@"Scripts\DiffCopy.bat", new[]
             {
-                $"{intermediateUnrealCodegenDirectory}",
+                $"\"{intermediateUnrealCodegenDirectory}\"",
                 @"Source/SpatialGDK/Generated/UClasses",
                 @"--remove-input"
             });
