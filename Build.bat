@@ -52,7 +52,7 @@ call :MarkStartOfBlock "Check dependencies"
     :CSCDefined
 
     where spatial >nul
-    if errorlevel 1 (
+    if ERRORLEVEL 1 (
         echo Error: Could not find spatial. Please make sure you have it installed and the containing directory added to PATH environment variable.
         if not defined TEAMCITY_CAPTURE_ENV pause
         exit /b 1
