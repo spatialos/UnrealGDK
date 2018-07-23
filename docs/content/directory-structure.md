@@ -1,5 +1,5 @@
 # Unreal GDK directory structure
-The table below contains the contents of the built Unreal GDK after running ci/build.sh
+The table below contains the contents of the built Unreal GDK after running `ci/build.bat`.
 
 | Directory | Purpose
 |-----------|---------
@@ -8,16 +8,15 @@ The table below contains the contents of the built Unreal GDK after running ci/b
 | `ci/` | Contains the CI build scripts required to build the Unreal GDK.
 | `ci/linting/` | Contains the linting scripts required to build the Unreal GDK.
 | `docs` | Contains the documentation for the Unreal GDK.
-| `fastbuild` | Contains files related to installing fastbuild. **Note** these currently only work for Improbable engineers.
+| `fastbuild` | Contains files related to installing FASTBuild. **Note** these currently only work for Improbable engineers.
 | `go/src/improbable.io/linter/` | A stand-alone application used to clean GDK workers.
 | `packages/` | (Not tracked in git) Contains the dependencies for building the old Unreal SDK codegen.
 | `Plugins/SpatialGDK/SpatialGDKEditorToolbar/` | The Unreal GDK UE4 editor toolbar containing the interop codegen. (See [GenerateInteropCodeCommandlet](#generateinteropcodecommandlet).)
-| `Plugins/SpatialGDK/SpatialOSEditorToolbar/` | Contains the source of the forked [GitHub-hosted Unreal SDK 1.0.0 SpatialOS editor toolbar](https://github.com/improbable/unified-unreal-sdk/tree/master/Plugins/SpatialOS/SpatialOSEditorToolbar/Source/SpatialOSEditorToolbar).
-| `schema` | Contains the schemas required to when the GDK interacts with spatial
+| `schema` | Contains the schemas required when the GDK interacts with SpatialOS.
 | `Scripts/` | Contains a set of helper scripts used to build a GDK worker.
-| `Source/Programs/` | Contains the forked version of the [GitHub-hosted Unreal SDK 1.0.0 code generator](https://github.com/improbable/unified-unreal-sdk/tree/master/Source/Programs/Improbable.Unreal.CodeGeneration).
-| `Source/SpatialGDK/Legacy/` | Contains the forked source code from the [GitHub-hosted Unreal SDK 1.0.0](https://github.com/improbable/unified-unreal-sdk/tree/master/Source/SpatialOS).
-| `Source/SpatialGDK/Legacy/Deprecated/` | Contains the forked source code from the [GitHub-hosted Unreal SDK 1.0.0](https://github.com/improbable/unified-unreal-sdk/tree/master/Source/SpatialOS) that are not dependencies for the GDK and purely present for backwards compatibility.
-| `Source/SpatialGDK/Public/WorkerSdk/` | (Not tracked in git) Contains the worker SDK headers. You install these when you run `ci/build.bat`
+| `Source/Programs/` | Contains the forked version of the [GitHub-hosted Unreal SDK code generator](https://github.com/improbable/unified-unreal-sdk/tree/master/Source/Programs/Improbable.Unreal.CodeGeneration).
+| `Source/SpatialGDK/Legacy/` | Contains the forked source code from the [GitHub-hosted Unreal SDK](https://github.com/improbable/unified-unreal-sdk/tree/master/Source/SpatialOS).
+| `Source/SpatialGDK/Legacy/Deprecated/` | Contains the forked source code from the [GitHub-hosted Unreal SDK](https://github.com/improbable/unified-unreal-sdk/tree/master/Source/SpatialOS) that the GDK does not depend on. This is present purely for backwards compatibility.
+| `Source/SpatialGDK/Public/WorkerSdk/` | (Not tracked in git) Contains the [C++ worker SDK](https://docs.improbable.io/reference/latest/cppsdk/using) headers. You install these when you run `ci/build.bat`
 | `Source/SpatialGDK/Public` | Public source code of the Unreal GDK module.
 | `Source/SpatialGDK/Private` | Private source code of the Unreal GDK module.
