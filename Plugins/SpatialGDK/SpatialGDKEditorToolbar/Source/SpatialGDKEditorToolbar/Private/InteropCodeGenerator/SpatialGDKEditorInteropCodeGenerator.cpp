@@ -234,9 +234,9 @@ void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& Co
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
 
 		const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
-		bool isSingleton = SingletonList.Find(ClassHeaderList.Key) != INDEX_NONE;
+		bool bIsSingleton = SingletonList.Find(ClassHeaderList.Key) != INDEX_NONE;
 
-		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, TypeBindingHeaders, isSingleton);
+		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, TypeBindingHeaders, bIsSingleton);
 	}
 }
 

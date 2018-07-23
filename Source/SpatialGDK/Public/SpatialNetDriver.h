@@ -128,6 +128,5 @@ protected:
 private:
 	FPlayerSpawnRequestSender PlayerSpawner;
 
-
 	friend class USpatialNetConnection;
 };

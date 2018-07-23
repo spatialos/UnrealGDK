@@ -16,7 +16,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
 using namespace improbable;
 
-typedef worker::Map<std::string, worker::EntityId> NameToEntityIdMap;
+using NameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
 
 const WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
 const WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
@@ -74,7 +74,7 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 	return LevelEntities;
 }
 
-bool CreateSingletonToIdMap(NameToEntityIdMap SingletonNameToEntityId)
+bool CreateSingletonToIdMap(NameToEntityIdMap& SingletonNameToEntityId)
 {
 	const FString FileName = "DefaultEditorSpatialGDK.ini";
 	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);

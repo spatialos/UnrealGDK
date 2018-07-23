@@ -467,14 +467,13 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
 					if (Channel)
 					{
-						const USpatialTypeBinding* TypeBinding = Interop->GetTypeBindingByClass(Actor->GetClass());
-						if (TypeBinding == nullptr)
+						if (Interop->GetTypeBindingByClass(Actor->GetClass()) == nullptr)
 						{
 							Channel->bCoreActor = false;
 						}
 
 						// If Singleton, add to map and don't set up channel. Entity might already exist
-						if (TypeBinding && TypeBinding->IsSingleton())
+						if (Interop->IsSingletonClass(Actor->GetClass()))
 						{
 							SingletonActorChannels.Add(Actor->GetClass()->GetName(), Channel);
 						}

@@ -16,6 +16,7 @@
 #include <improbable/standard_library.h>
 #include <improbable/unreal/gdk/player.h>
 #include <improbable/unreal/gdk/unreal_metadata.h>
+#include <improbable/unreal/gdk/global_state_manager.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKInterop);
 
@@ -718,14 +719,14 @@ void USpatialInterop::LinkExistingSingletonActors()
 		return;
 	}
 
-	for (auto it = SingletonNameToEntityId.begin(); it != SingletonNameToEntityId.end(); it++)
+	for (auto& pair : SingletonNameToEntityId)
 	{
-		FEntityId SingletonEntityId{ it->second };
+		FEntityId SingletonEntityId{ pair.second };
 		if (SingletonEntityId != FEntityId{})
 		{
 			AActor* SingletonActor = nullptr;
 			USpatialActorChannel* Channel = nullptr;
-			GetSingletonActorAndChannel(UTF8_TO_TCHAR(it->first.c_str()), SingletonActor, Channel);
+			GetSingletonActorAndChannel(UTF8_TO_TCHAR(pair.first.c_str()), SingletonActor, Channel);
 
 			// Singleton wasn't found
 			if (Channel == nullptr)
@@ -740,6 +741,7 @@ void USpatialInterop::LinkExistingSingletonActors()
 			}
 
 			// Add to entity registry
+			// This indirectly causes SetChannelActor to not create a new entity for this actor
 			NetDriver->GetEntityRegistry()->AddToRegistry(SingletonEntityId, SingletonActor);
 
 			Channel->SetChannelActor(SingletonActor);
@@ -769,12 +771,15 @@ void USpatialInterop::ExecuteInitialSingletonActorReplication()
 			USpatialActorChannel* Channel = nullptr;
 			GetSingletonActorAndChannel(UTF8_TO_TCHAR(it->first.c_str()), SingletonActor, Channel);
 
-			// Set entity id of channel from the GlobalStateManager.
-			// If the id was 0, SetChannelActor will create the entity.
-			// If the id is not 0, it will start replicating to that entity.
-			Channel->SetChannelActor(SingletonActor);
+			if (Channel != nullptr)
+			{
+				// Set entity id of channel from the GlobalStateManager.
+				// If the id was 0, SetChannelActor will create the entity.
+				// If the id is not 0, it will start replicating to that entity.
+				Channel->SetChannelActor(SingletonActor);
 
-			UE_LOG(LogSpatialGDKInterop, Log, TEXT("Started replication of Singleton Actor %s"), *SingletonActor->GetClass()->GetName());
+				UE_LOG(LogSpatialGDKInterop, Log, TEXT("Started replication of Singleton Actor %s"), *SingletonActor->GetClass()->GetName());
+			}
 		}
 	}
 }
@@ -785,7 +790,7 @@ void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& Ou
 
 	if (SingletonActorClass == nullptr)
 	{
-		UE_LOG(LogSpatialGDKInterop, Error, TEXT("Failed to find Singleton Actor %s in World."), *ClassName);
+		UE_LOG(LogSpatialGDKInterop, Error, TEXT("Failed to find Singleton Actor Class."));
 		OutActor = nullptr;
 		OutChannel = nullptr;
 		return;
@@ -814,12 +819,24 @@ void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& Ou
 
 void USpatialInterop::UpdateGlobalStateManager(FString ClassName, FEntityId SingletonEntityId)
 {
-	std::string singletonName(TCHAR_TO_UTF8(*ClassName));
-	SingletonNameToEntityId[singletonName] = SingletonEntityId.ToSpatialEntityId();
+	std::string SingletonName(TCHAR_TO_UTF8(*ClassName));
+	SingletonNameToEntityId[SingletonName] = SingletonEntityId.ToSpatialEntityId();
 
-	improbable::unreal::GlobalStateManager::Update update;
-	update.set_singleton_to_id(SingletonNameToEntityId);
+	improbable::unreal::GlobalStateManager::Update Update;
+	Update.set_singleton_to_id(SingletonNameToEntityId);
 
 	TSharedPtr<worker::Connection> Connection = SpatialOSInstance->GetConnection().Pin();
-	Connection->SendComponentUpdate<improbable::unreal::GlobalStateManager>(worker::EntityId((long)SpatialConstants::GLOBAL_STATE_MANAGER), update);
+	Connection->SendComponentUpdate<improbable::unreal::GlobalStateManager>(worker::EntityId((long)SpatialConstants::GLOBAL_STATE_MANAGER), Update);
+}
+
+bool USpatialInterop::IsSingletonClass(UClass* Class)
+{
+	USpatialTypeBinding* Binding = GetTypeBindingByClass(Class);
+
+	if (Binding != nullptr)
+	{
+		return Binding->IsSingleton();
+	}
+
+	return false;
 }

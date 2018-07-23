@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <improbable/unreal/gdk/global_state_manager.h>
-
 #include "AddComponentOpWrapperBase.h"
 #include "ComponentIdentifier.h"
 #include "CoreMinimal.h"
@@ -20,6 +18,8 @@ SPATIALGDK_API DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInterop, Log, All);
 
 // An general version of worker::RequestId.
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
+
+using NameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
 
 // Stores the result of an attempt to call an RPC sender function. Either we have an unresolved object which needs
 // to be resolved before we can send this RPC, or we successfully sent a command request.
@@ -212,6 +212,8 @@ public:
 	// Handle GSM Authority received
 	void ExecuteInitialSingletonActorReplication();
 
+	bool IsSingletonClass(UClass* Class);
+
 	// Accessors.
 	USpatialOS* GetSpatialOS() const
 	{
@@ -223,7 +225,7 @@ public:
 		return NetDriver;
 	}
 
-	worker::Map<std::string, worker::EntityId> SingletonNameToEntityId;
+	NameToEntityIdMap SingletonNameToEntityId;
 
 private:
 	UPROPERTY()

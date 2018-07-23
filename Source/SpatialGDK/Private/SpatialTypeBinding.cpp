@@ -9,5 +9,5 @@ void USpatialTypeBinding::Init(USpatialInterop* InInterop, USpatialPackageMapCli
 	check(InPackageMap);
 	Interop = InInterop;
 	PackageMap = InPackageMap;
-	isSingleton = false;
+	bIsSingleton = false;
 }

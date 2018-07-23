@@ -356,13 +356,6 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		UClass* ActorClass = GetNativeEntityClass(MetadataComponent);
 		USpatialInterop* Interop = NetDriver->GetSpatialInterop();
 		check(Interop);
-		USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(ActorClass);
-
-		// Singleton Actor replication is handled with a different flow on the server.
-		if (Binding && NetDriver->IsServer() && Binding->IsSingleton())
-		{
-			return EntityActor;
-		}
 
 		// Option 1
 		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
@@ -395,10 +388,9 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			// Option 3
 			USpatialInterop* Interop = NetDriver->GetSpatialInterop();
 			check(Interop);
-			USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(ActorClass);
 
-			// Singleton Actor replication is handled with a different flow on the server.
-			if (Binding && NetDriver->IsServer() && Binding->IsSingleton())
+			// Initial Singleton Actor replication is handled with USpatialInterop::LinkExistingSingletonActors
+			if (NetDriver->IsServer() && Interop->IsSingletonClass(ActorClass))
 			{
 				return EntityActor;
 			}

@@ -128,7 +128,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Delete Entity request on %d. Has authority: %d "), ActorEntityId.ToSpatialEntityId(), bHasAuthority);
 
 	// If we have authority and aren't trying to delete a critical entity, delete it
-	if (!IsCriticalEntity())
+	if (bHasAuthority && !IsCriticalEntity())
 	{
 		Interop->DeleteEntity(ActorEntityId);
 	}
@@ -143,10 +143,10 @@ bool USpatialActorChannel::IsCriticalEntity()
 	}
 
 	// Don't delete if a Singleton
-	worker::Map<std::string, worker::EntityId>& SingletonToId = SpatialNetDriver->GetSpatialInterop()->SingletonNameToEntityId;
-	for (auto it = SingletonToId.begin(); it != SingletonToId.end(); it++)
+	NameToEntityIdMap& SingletonNameToEntityId = SpatialNetDriver->GetSpatialInterop()->SingletonNameToEntityId;
+	for(auto& pair : SingletonNameToEntityId)
 	{
-		if (it->second == ActorEntityId.ToSpatialEntityId())
+		if (pair.second == ActorEntityId.ToSpatialEntityId())
 		{
 			return true;
 		}
@@ -603,8 +603,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 
 	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 	check(Interop);
-	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(Actor->GetClass());
-	if (Binding && Binding->IsSingleton())
+	if (Interop->IsSingletonClass(Actor->GetClass()))
 	{
 		Interop->UpdateGlobalStateManager(Actor->GetClass()->GetName(), ActorEntityId);
 	}
