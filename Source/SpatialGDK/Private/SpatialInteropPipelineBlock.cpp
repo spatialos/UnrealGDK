@@ -300,7 +300,7 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
 	// is currently owned by this worker before issuing an entity delete request. If the associated entity is still authoritative 
 	// on this server, we need to make sure this worker doesn't issue an entity delete request, as this entity is really 
-	// transitioning to the same server as Actor, and is just a few frames behind. 
+	// transitioning to the same server as the actor we're currently operating on, and is just a few frames behind. 
 	// We make the assumption that if we're destroying actors here (due to a remove entity op), then this is only due to two
 	// situations;
 	// 1. Actor's entity has been transitioned to another server
