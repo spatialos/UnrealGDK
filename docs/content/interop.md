@@ -107,7 +107,6 @@ The `.schema` files have names relevant to the class name you give them. From th
     Some `.schema` files have a `Types` tag;  in this situation `PlayerCharacter.schema` files have the filename `PlayerCharacterTypes.schema`.  This indicates this is a schema containing RPC types which child or sibling classes can reuse.
 
 * The generated `SpatialTypeBinding` files are in the [Unreal GDK repository](https://github.com/improbable/unreal-gdk) at `<Project Root>/workers/unreal/Game/source/GameName/Generated/`. 
-(TODO: Fix link to Unreal GDL repo for external users [JIRA TICKET](https://improbableio.atlassian.net/browse/UNR-304).)
 
 ### Editing the Interop Code Generator tool
 If you edit the Interop Code Generator tool itself, you might wish to delete the ICG generated folders as they can cause compilation issues if any of your changes introduce badly generated code.
