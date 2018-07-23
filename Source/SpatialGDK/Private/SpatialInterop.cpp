@@ -719,7 +719,7 @@ void USpatialInterop::LinkExistingSingletonActors()
 		return;
 	}
 
-	for (auto& pair : SingletonNameToEntityId)
+	for (const auto& pair : SingletonNameToEntityId)
 	{
 		FEntityId SingletonEntityId{ pair.second };
 
@@ -764,7 +764,7 @@ void USpatialInterop::LinkExistingSingletonActors()
 
 void USpatialInterop::ExecuteInitialSingletonActorReplication()
 {
-	for (auto& pair : SingletonNameToEntityId)
+	for (const auto& pair : SingletonNameToEntityId)
 	{
 		FEntityId SingletonEntityId{ pair.second };
 
