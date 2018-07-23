@@ -5,8 +5,9 @@ setlocal
 pushd "%~dp0"
 
 call :MarkStartOfBlock "Check dependencies"
+    set /p UNREAL_VERSION=<unreal-engine.version
     if defined TEAMCITY_CAPTURE_ENV (
-        set UNREAL_HOME=C:\Unreal\UnrealEngine-4.19-GDK-dc2f7ad81ce
+        set UNREAL_HOME=C:\Unreal\UnrealEngine-%UNREAL_VERSION%
     )
 
     if not defined UNREAL_HOME (
