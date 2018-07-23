@@ -94,7 +94,7 @@ USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 	return nullptr;
 }
 
-worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
+worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
@@ -108,7 +108,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 
 		if (TypeBinding)
 		{
-			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, MigChanged), Channel);
+			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
 		}
 		else
@@ -198,7 +198,7 @@ void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const
 	PinnedConnection->SendComponentUpdate<improbable::Position>(EntityId.ToSpatialEntityId(), PositionUpdate);
 }
 
-void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
+void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
@@ -207,17 +207,17 @@ void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TAr
 		//	*Channel->Actor->GetClass()->GetName());
 		return;
 	}
-	Binding->SendComponentUpdates(Channel->GetChangeState(RepChanged, MigChanged), Channel, Channel->GetEntityId());
+	Binding->SendComponentUpdates(Channel->GetChangeState(RepChanged, HandoverChanged), Channel, Channel->GetEntityId());
 }
 
-void USpatialInterop::SendSpatialUpdateSubobject(USpatialActorChannel* Channel, UObject* Subobject, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
+void USpatialInterop::SendSpatialUpdateSubobject(USpatialActorChannel* Channel, UObject* Subobject, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Subobject->GetClass());
 	if (!Binding)
 	{
 		return;
 	}
-	Binding->SendComponentUpdates(Channel->GetChangeStateSubobject(Subobject, replicator, RepChanged, MigChanged), Channel, Channel->GetEntityId());
+	Binding->SendComponentUpdates(Channel->GetChangeStateSubobject(Subobject, replicator, RepChanged, HandoverChanged), Channel, Channel->GetEntityId());
 }
 
 void USpatialInterop::InvokeRPC(UObject* TargetObject, const UFunction* const Function, void* Parameters)
@@ -449,7 +449,7 @@ void USpatialInterop::QueueIncomingObjectRepUpdate_Internal(const improbable::un
 	PendingIncomingObjectUpdates.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Key.Add(RepHandleData);
 }
 
-void USpatialInterop::QueueIncomingObjectMigUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FMigratableHandleData* RepHandleData)
+void USpatialInterop::QueueIncomingObjectMigUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FHandoverHandleData* RepHandleData)
 {
 	check(DependentChannel);
 	check(RepHandleData);
@@ -626,14 +626,14 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 				DependentChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName());
 		}
-		for (const FMigratableHandleData* MigData : Properties.Value)
+		for (const FHandoverHandleData* HandoverData : Properties.Value)
 		{
-			ApplyIncomingMigratablePropertyUpdate(*MigData, DependentChannel->Actor, &Object);
-			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received queued object migratable property update. actor %s (%lld), property %s"),
+			ApplyIncomingHandoverPropertyUpdate(*HandoverData, DependentChannel->Actor, &Object);
+			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received queued object handover property update. actor %s (%lld), property %s"),
 				*SpatialOSInstance->GetWorkerId(),
 				*DependentChannel->Actor->GetName(),
 				DependentChannel->GetEntityId().ToSpatialEntityId(),
-				*MigData->Property->GetName());
+				*HandoverData->Property->GetName());
 		}
 
 		DependentChannel->PostReceiveSpatialUpdate(Object, RepNotifies.Array());

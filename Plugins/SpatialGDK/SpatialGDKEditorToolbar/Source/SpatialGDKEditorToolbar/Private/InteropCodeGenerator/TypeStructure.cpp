@@ -456,13 +456,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	} // END CMD FOR LOOP
 
 	// Find the handover properties.
-	uint16 MigratableDataHandle = 1;
-	VisitAllProperties(TypeNode, [&MigratableDataHandle](TSharedPtr<FUnrealProperty> PropertyInfo)
+	uint16 HandoverDataHandle = 1;
+	VisitAllProperties(TypeNode, [&HandoverDataHandle](TSharedPtr<FUnrealProperty> PropertyInfo)
 	{
 		if (PropertyInfo->Property->PropertyFlags & CPF_Handover)
 		{
-			PropertyInfo->MigratableData = MakeShared<FUnrealMigratableData>();
-			PropertyInfo->MigratableData->Handle = MigratableDataHandle++;
+			PropertyInfo->HandoverData = MakeShared<FUnrealHandoverData>();
+			PropertyInfo->HandoverData->Handle = HandoverDataHandle++;
 		}
 		return true;
 	}, true);
@@ -505,24 +505,24 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 	return RepData;
 }
 
-FCmdHandlePropertyMap GetFlatMigratableData(TSharedPtr<FUnrealType> TypeInfo)
+FCmdHandlePropertyMap GetFlatHandoverData(TSharedPtr<FUnrealType> TypeInfo)
 {
-	FCmdHandlePropertyMap MigratableData;
-	VisitAllProperties(TypeInfo, [&MigratableData](TSharedPtr<FUnrealProperty> PropertyInfo)
+	FCmdHandlePropertyMap HandoverData;
+	VisitAllProperties(TypeInfo, [&HandoverData](TSharedPtr<FUnrealProperty> PropertyInfo)
 	{
-		if (PropertyInfo->MigratableData.IsValid())
+		if (PropertyInfo->HandoverData.IsValid())
 		{
-			MigratableData.Add(PropertyInfo->MigratableData->Handle, PropertyInfo);
+			HandoverData.Add(PropertyInfo->HandoverData->Handle, PropertyInfo);
 		}
 		return true;
 	}, true);
 
 	// Sort by property handle.
-	MigratableData.KeySort([](uint16 A, uint16 B)
+	HandoverData.KeySort([](uint16 A, uint16 B)
 	{
 		return A < B;
 	});
-	return MigratableData;
+	return HandoverData;
 }
 
 // Goes through all RPCs in the TypeInfo and returns a list of all the unique RPC source classes.
