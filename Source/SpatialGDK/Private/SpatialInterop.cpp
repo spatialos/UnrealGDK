@@ -762,8 +762,6 @@ void USpatialInterop::LinkExistingSingletonActors()
 	}
 }
 
-
-
 void USpatialInterop::ExecuteInitialSingletonActorReplication()
 {
 	for (auto& pair : SingletonNameToEntityId)
