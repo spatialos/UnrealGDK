@@ -17,6 +17,6 @@ The table below contains the contents of the built Unreal GDK after running `ci/
 | `Source/Programs/` | Contains the forked version of the [GitHub-hosted Unreal SDK code generator](https://github.com/improbable/unified-unreal-sdk/tree/master/Source/Programs/Improbable.Unreal.CodeGeneration).
 | `Source/SpatialGDK/Legacy/` | Contains the forked source code from the [GitHub-hosted Unreal SDK](https://github.com/improbable/unified-unreal-sdk/tree/master/Source/SpatialOS).
 | `Source/SpatialGDK/Legacy/Deprecated/` | Contains the forked source code from the [GitHub-hosted Unreal SDK](https://github.com/improbable/unified-unreal-sdk/tree/master/Source/SpatialOS) that the GDK does not depend on. This is present purely for backwards compatibility.
-| `Source/SpatialGDK/Public/WorkerSdk/` | (Not tracked in git) Contains the [C++ worker SDK](https://docs.improbable.io/reference/latest/cppsdk/using) headers. You install these when you run `ci/build.bat`
+| `Source/SpatialGDK/Public/WorkerSdk/` | (Not tracked in git) Contains the [C++ worker SDK](https://docs.improbable.io/reference/13.0/cppsdk/introduction) headers. You install these when you run `ci/build.bat`
 | `Source/SpatialGDK/Public` | Public source code of the Unreal GDK module.
 | `Source/SpatialGDK/Private` | Private source code of the Unreal GDK module.
