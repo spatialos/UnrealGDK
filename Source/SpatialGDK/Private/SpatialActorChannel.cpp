@@ -144,9 +144,9 @@ bool USpatialActorChannel::IsCriticalEntity()
 
 	// Don't delete if a Singleton
 	NameToEntityIdMap& SingletonNameToEntityId = SpatialNetDriver->GetSpatialInterop()->SingletonNameToEntityId;
-	for(const auto& pair : SingletonNameToEntityId)
+	for(const auto& Pair : SingletonNameToEntityId)
 	{
-		if (pair.second == ActorEntityId.ToSpatialEntityId())
+		if (Pair.second == ActorEntityId.ToSpatialEntityId())
 		{
 			return true;
 		}

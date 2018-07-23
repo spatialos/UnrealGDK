@@ -59,7 +59,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
 
 	// Global State Manager setup
-	View->OnAddComponent<improbable::unreal::GlobalStateManager>([this](const worker::AddComponentOp <improbable::unreal::GlobalStateManager>& op)
+	View->OnAddComponent<improbable::unreal::GlobalStateManager>([this](const worker::AddComponentOp<improbable::unreal::GlobalStateManager>& op)
 	{
 		SingletonNameToEntityId = op.Data.singleton_to_id();
 		LinkExistingSingletonActors();
@@ -719,9 +719,9 @@ void USpatialInterop::LinkExistingSingletonActors()
 		return;
 	}
 
-	for (const auto& pair : SingletonNameToEntityId)
+	for (const auto& Pair : SingletonNameToEntityId)
 	{
-		FEntityId SingletonEntityId{ pair.second };
+		FEntityId SingletonEntityId{ Pair.second };
 
 		// Singleton Entity hasn't been created yet
 		if (SingletonEntityId == FEntityId{})
@@ -731,7 +731,7 @@ void USpatialInterop::LinkExistingSingletonActors()
 
 		AActor* SingletonActor = nullptr;
 		USpatialActorChannel* Channel = nullptr;
-		GetSingletonActorAndChannel(UTF8_TO_TCHAR(pair.first.c_str()), SingletonActor, Channel);
+		GetSingletonActorAndChannel(UTF8_TO_TCHAR(Pair.first.c_str()), SingletonActor, Channel);
 
 		// Singleton wasn't found
 		if (Channel == nullptr)
@@ -753,11 +753,11 @@ void USpatialInterop::LinkExistingSingletonActors()
 
 		TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
 		auto EntityIterator = LockedView->Entities.find(SingletonEntityId.ToSpatialEntityId());
-		improbable::unreal::UnrealMetadataData* metadata = EntityIterator->second.Get<improbable::unreal::UnrealMetadata>().data();
+		improbable::unreal::UnrealMetadataData* Metadata = EntityIterator->second.Get<improbable::unreal::UnrealMetadata>().data();
 		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
 
 		// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
-		PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, metadata->subobject_name_to_offset());
+		PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, Metadata->subobject_name_to_offset());
 		UE_LOG(LogSpatialGDKInterop, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId.ToSpatialEntityId());
 	}
 }
@@ -795,42 +795,36 @@ void USpatialInterop::ExecuteInitialSingletonActorReplication()
 
 void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel)
 {
+	OutActor = nullptr;
+	OutChannel = nullptr;
+
 	UClass* SingletonActorClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);
 
 	if (SingletonActorClass == nullptr)
 	{
 		UE_LOG(LogSpatialGDKInterop, Error, TEXT("Failed to find Singleton Actor Class."));
-		OutActor = nullptr;
-		OutChannel = nullptr;
 		return;
 	}
 
-	AActor* SingletonActor = nullptr;
-	USpatialActorChannel* Channel = nullptr;
-
-	TPair<AActor*, USpatialActorChannel*>* pair = NetDriver->SingletonActorChannels.Find(SingletonActorClass);
-	if (pair != nullptr)
+	TPair<AActor*, USpatialActorChannel*>* Pair = NetDriver->SingletonActorChannels.Find(SingletonActorClass);
+	if (Pair != nullptr)
 	{
-		SingletonActor = pair->Key;
-		Channel = pair->Value;
+		OutActor = Pair->Key;
+		OutChannel = Pair->Value;
+		return;
 	}
 
-	if (SingletonActor == nullptr)
-	{
-		// Get Singleton Actor in world
-		TArray<AActor*> SingletonActorList;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), SingletonActorClass, SingletonActorList);
-		check(SingletonActorList.Num() == 1);
-		SingletonActor = SingletonActorList[0];
+	// Class doesn't exist in our map, have to find actor and create channel
+	// Get Singleton Actor in world
+	TArray<AActor*> SingletonActorList;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), SingletonActorClass, SingletonActorList);
+	check(SingletonActorList.Num() == 1);
+	OutActor = SingletonActorList[0];
 
-		USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
+	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
 
-		Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
-		NetDriver->SingletonActorChannels.Add(SingletonActorClass, TPair<AActor*, USpatialActorChannel*>(SingletonActor, Channel));
-	}
-
-	OutActor = SingletonActor;
-	OutChannel = Channel;
+	OutChannel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
+	NetDriver->SingletonActorChannels.Add(SingletonActorClass, TPair<AActor*, USpatialActorChannel*>(OutActor, OutChannel));
 }
 
 void USpatialInterop::UpdateGlobalStateManager(FString ClassName, FEntityId SingletonEntityId)
