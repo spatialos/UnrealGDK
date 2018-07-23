@@ -475,7 +475,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 						// If Singleton, add to map and don't set up channel. Entity might already exist
 						if (Interop->IsSingletonClass(Actor->GetClass()))
 						{
-							SingletonActorChannels.Add(Actor->GetClass()->GetName(), Channel);
+							SingletonActorChannels.Add(Actor, Channel);
 						}
 						else
 						{

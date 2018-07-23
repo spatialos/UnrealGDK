@@ -796,21 +796,30 @@ void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& Ou
 		return;
 	}
 
-	// Get Singleton Actor in world
-	TArray<AActor*> SingletonActorList;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), SingletonActorClass, SingletonActorList);
-	check(SingletonActorList.Num() == 1);
-	AActor* SingletonActor = SingletonActorList[0];
-
-	// Get channel associated with singleton Actor
-	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
-	USpatialActorChannel* Channel = NetDriver->SingletonActorChannels.FindRef(SingletonActor->GetClass()->GetName());
-
-	// If channel does not exist yet (since actor has not tried to replicate) create it.
-	if (Channel == nullptr)
+	AActor* SingletonActor = nullptr;
+	USpatialActorChannel* Channel = nullptr;
+	for(auto& pair : NetDriver->SingletonActorChannels)
 	{
+		if(pair.Key->GetClass()->GetName().Equals(ClassName))
+		{
+			SingletonActor = pair.Key;
+			Channel = pair.Value;
+			break;
+		}
+	}
+
+	if (SingletonActor == nullptr)
+	{
+		// Get Singleton Actor in world
+		TArray<AActor*> SingletonActorList;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), SingletonActorClass, SingletonActorList);
+		check(SingletonActorList.Num() == 1);
+		SingletonActor = SingletonActorList[0];
+
+		USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
+
 		Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
-		NetDriver->SingletonActorChannels.Add(SingletonActor->GetClass()->GetName(), Channel);
+		NetDriver->SingletonActorChannels.Add(SingletonActor, Channel);
 	}
 
 	OutActor = SingletonActor;
