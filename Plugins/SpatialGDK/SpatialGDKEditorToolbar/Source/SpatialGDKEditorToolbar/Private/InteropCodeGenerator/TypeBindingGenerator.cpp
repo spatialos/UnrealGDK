@@ -1589,12 +1589,12 @@ void GenerateFunction_ServerSendUpdate_HandoverData(FCodeWriter& SourceWriter, U
 		SourceWriter.Print("switch (Handle)");
 		SourceWriter.BeginScope();
 
-		for (auto& MigProp : HandoverData)
+		for (auto& HandoverProp : HandoverData)
 		{
-			auto Handle = MigProp.Key;
-			UProperty* Property = MigProp.Value->Property;
+			auto Handle = HandoverProp.Key;
+			UProperty* Property = HandoverProp.Value->Property;
 
-			SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(MigProp.Value));
+			SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(HandoverProp.Value));
 			SourceWriter.BeginScope();
 
 			// Get unreal data by deserialising from the reader, convert and set the corresponding field in the update object.
@@ -1613,13 +1613,13 @@ void GenerateFunction_ServerSendUpdate_HandoverData(FCodeWriter& SourceWriter, U
 			}
 			SourceWriter.PrintNewLine();
 
-			FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(MigProp.Value);
+			FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(HandoverProp.Value);
 
 			GenerateUnrealToSchemaConversion(
-				SourceWriter, SpatialValueSetter, MigProp.Value->Property, PropertyValueName,
+				SourceWriter, SpatialValueSetter, HandoverProp.Value->Property, PropertyValueName,
 				[&SourceWriter, Handle](const FString& PropertyValue)
 			{
-				SourceWriter.Printf("Interop->QueueOutgoingObjectMigUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
+				SourceWriter.Printf("Interop->QueueOutgoingObjectHandoverUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
 			}, false, false);
 			SourceWriter.Print("break;");
 			SourceWriter.End();
@@ -1858,16 +1858,16 @@ void GenerateFunction_ReceiveUpdate_HandoverData(FCodeWriter& SourceWriter, UCla
 	{
 		SourceWriter.Print("const FHandoverHandlePropertyMap& HandleToPropertyMap = GetHandoverHandlePropertyMap();");
 		SourceWriter.PrintNewLine();
-		for (auto& MigProp : HandoverData)
+		for (auto& HandoverProp : HandoverData)
 		{
-			auto Handle = MigProp.Key;
-			UProperty* Property = MigProp.Value->Property;
+			auto Handle = HandoverProp.Key;
+			UProperty* Property = HandoverProp.Value->Property;
 
 			// Check if this property is in the update.
-			SourceWriter.Printf("if (!Update.%s().empty())", *SchemaFieldName(MigProp.Value));
+			SourceWriter.Printf("if (!Update.%s().empty())", *SchemaFieldName(HandoverProp.Value));
 			SourceWriter.BeginScope();
 
-			SourceWriter.Printf("// %s", *SchemaFieldName(MigProp.Value));
+			SourceWriter.Printf("// %s", *SchemaFieldName(HandoverProp.Value));
 			SourceWriter.Printf("uint16 Handle = %d;", Handle);
 			SourceWriter.Print("const FHandoverHandleData* HandoverData = &HandleToPropertyMap[Handle];");
 
@@ -1892,10 +1892,10 @@ void GenerateFunction_ReceiveUpdate_HandoverData(FCodeWriter& SourceWriter, UCla
 			}
 			SourceWriter.PrintNewLine();
 
-			FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(MigProp.Value));
+			FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(HandoverProp.Value));
 
 			GeneratePropertyToUnrealConversion(
-				SourceWriter, SpatialValue, MigProp.Value->Property, PropertyValueName,
+				SourceWriter, SpatialValue, HandoverProp.Value->Property, PropertyValueName,
 				[&SourceWriter](const FString& PropertyValue)
 			{
 				SourceWriter.Print(R"""(
@@ -1907,7 +1907,7 @@ void GenerateFunction_ReceiveUpdate_HandoverData(FCodeWriter& SourceWriter, UCla
 						*HandoverData->Property->GetName(),
 						Handle);)""");
 				SourceWriter.Print("bWriteObjectProperty = false;");
-				SourceWriter.Print("Interop->QueueIncomingObjectMigUpdate_Internal(ObjectRef, ActorChannel, HandoverData);");
+				SourceWriter.Print("Interop->QueueIncomingObjectHandoverUpdate_Internal(ObjectRef, ActorChannel, HandoverData);");
 			}, false);
 
 			SourceWriter.PrintNewLine();
