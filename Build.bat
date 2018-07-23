@@ -4,6 +4,8 @@ setlocal
 
 pushd "%~dp0"
 
+call :MarkStartOfBlock "%~0"
+
 call :MarkStartOfBlock "Check dependencies"
     set /p UNREAL_VERSION=<unreal-engine.version
     if defined TEAMCITY_CAPTURE_ENV (
@@ -122,6 +124,8 @@ call :MarkStartOfBlock "Build C# utilities"
     %CSC_EXE% Scripts\Codegen.cs Scripts\Common.cs                                           -nologo -out:"%BINARIES_DIR%\Programs\Codegen.exe"
     %CSC_EXE% Scripts\DiffCopy.cs                                                            -nologo -out:"%BINARIES_DIR%\Programs\DiffCopy.exe"
 call :MarkEndOfBlock "Build C# utilities"
+
+call :MarkEndOfBlock "%~0"
 
 popd
 
