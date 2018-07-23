@@ -11,8 +11,7 @@ These classes:
 * send and receive Unreal RPCs (remote procedure calls) via SpatialOS commands.
 * have logic to handle conditional replication based on Unreal Actor ownership.
 
-> [Known Issue](../known-issues.md): the ICG is not optimized. 
-[//]: # (Update note about current lack of optimisation (JIRA: UNR-412).)
+> [Known Issue](../known-issues.md): the ICG is not optimized.
 
 ## Running the Interop Code Generator (ICG)
 
@@ -30,7 +29,6 @@ TODO: SCREEN GRAB OF TOOLBAR <image of Generate Interop button>
 
 Click **Interop Codegen** to trigger the the ICG process.
 
-
 ## Setting up the Interop Code Generator
 
 In order for the ICG to run correctly, you need to add any new user-defined class, along with its dependencies, to a `DefaultEditorSpatialGDK.ini` file before you run it. 
@@ -38,8 +36,6 @@ In order for the ICG to run correctly, you need to add any new user-defined clas
 Using the Unreal GDK Starter Project as an example, to do this:
 1. Locate the `DefaultEditorSpatialGDK.ini` file in the Starter Project repository which you cloned during installation and setup - it’s at `Game/Config/DefaultEditorSpatialGDK.ini`.
 1. Open the file in your favorite editor and add your user-defined class as shown in the file snippet and file description below.
-
-
 
 **Example file snippet**<br/>
 In the example file snippet below, your game is Example Game and the class you want to add is `ExampleGameMyClass`.
@@ -89,9 +85,6 @@ ExampleGameMyClass=Dependencies/MyClassDependency.h
 ```
 
 The [Unreal GDK Starter Project’s](https://github.com/improbable/UnrealGDKStarterProject)  `DefaultEditorSpatialGDK.ini` file contains the following:<br/>
-(TODO: Fix link to Starter Project repo for external users [JIRA TICKET](https://improbableio.atlassian.net/browse/UNR-304).)
-
-
 
 ```
 ;PlayerController
@@ -121,5 +114,6 @@ The `.schema` files have names relevant to the class name you give them. From th
 If you edit the Interop Code Generator tool itself, you might wish to delete the ICG generated folders as they can cause compilation issues if any of your changes introduce badly generated code.
 
 [//]: # (Editorial review status: Full review 2018-07-13)
-[//]: # (Issues to deal with (but not limited to):)
-[//]: # (1. Update note about current lack of optimisation (JIRA: UNR-412).)
+[//]: # (Issues to deal, with but not limited to:)
+[//]: # (1. Update note about current lack of optimisation - JIRA: UNR-412)
+[//]: # (2. Add screenshot of toolbar)
