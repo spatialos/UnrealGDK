@@ -722,39 +722,43 @@ void USpatialInterop::LinkExistingSingletonActors()
 	for (auto& pair : SingletonNameToEntityId)
 	{
 		FEntityId SingletonEntityId{ pair.second };
-		if (SingletonEntityId != FEntityId{})
+
+		// Singleton Entity hasn't been created yet
+		if (SingletonEntityId == FEntityId{})
 		{
-			AActor* SingletonActor = nullptr;
-			USpatialActorChannel* Channel = nullptr;
-			GetSingletonActorAndChannel(UTF8_TO_TCHAR(pair.first.c_str()), SingletonActor, Channel);
-
-			// Singleton wasn't found
-			if (Channel == nullptr)
-			{
-				continue;
-			}
-
-			// Channel already set up
-			if (Channel->Actor != nullptr)
-			{
-				continue;
-			}
-
-			// Add to entity registry
-			// This indirectly causes SetChannelActor to not create a new entity for this actor
-			NetDriver->GetEntityRegistry()->AddToRegistry(SingletonEntityId, SingletonActor);
-
-			Channel->SetChannelActor(SingletonActor);
-
-			TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
-			auto EntityIterator = LockedView->Entities.find(SingletonEntityId.ToSpatialEntityId());
-			improbable::unreal::UnrealMetadataData* metadata = EntityIterator->second.Get<improbable::unreal::UnrealMetadata>().data();
-			USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
-
-			// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
-			PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, metadata->subobject_name_to_offset());
-			UE_LOG(LogSpatialGDKInterop, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId.ToSpatialEntityId());
+			continue;
 		}
+
+		AActor* SingletonActor = nullptr;
+		USpatialActorChannel* Channel = nullptr;
+		GetSingletonActorAndChannel(UTF8_TO_TCHAR(pair.first.c_str()), SingletonActor, Channel);
+
+		// Singleton wasn't found
+		if (Channel == nullptr)
+		{
+			continue;
+		}
+
+		// Channel already set up
+		if (Channel->Actor != nullptr)
+		{
+			continue;
+		}
+
+		// Add to entity registry
+		// This indirectly causes SetChannelActor to not create a new entity for this actor
+		NetDriver->GetEntityRegistry()->AddToRegistry(SingletonEntityId, SingletonActor);
+
+		Channel->SetChannelActor(SingletonActor);
+
+		TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
+		auto EntityIterator = LockedView->Entities.find(SingletonEntityId.ToSpatialEntityId());
+		improbable::unreal::UnrealMetadataData* metadata = EntityIterator->second.Get<improbable::unreal::UnrealMetadata>().data();
+		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
+
+		// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
+		PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, metadata->subobject_name_to_offset());
+		UE_LOG(LogSpatialGDKInterop, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId.ToSpatialEntityId());
 	}
 }
 
@@ -762,25 +766,32 @@ void USpatialInterop::LinkExistingSingletonActors()
 
 void USpatialInterop::ExecuteInitialSingletonActorReplication()
 {
-	for (auto it = SingletonNameToEntityId.begin(); it != SingletonNameToEntityId.end(); it++)
+	for (auto& pair : SingletonNameToEntityId)
 	{
-		FEntityId SingletonEntityId{ it->second };
-		if (SingletonEntityId == FEntityId{})
+		FEntityId SingletonEntityId{ pair.second };
+
+		// Entity has already been created
+		if (SingletonEntityId != FEntityId{})
 		{
-			AActor* SingletonActor = nullptr;
-			USpatialActorChannel* Channel = nullptr;
-			GetSingletonActorAndChannel(UTF8_TO_TCHAR(it->first.c_str()), SingletonActor, Channel);
-
-			if (Channel != nullptr)
-			{
-				// Set entity id of channel from the GlobalStateManager.
-				// If the id was 0, SetChannelActor will create the entity.
-				// If the id is not 0, it will start replicating to that entity.
-				Channel->SetChannelActor(SingletonActor);
-
-				UE_LOG(LogSpatialGDKInterop, Log, TEXT("Started replication of Singleton Actor %s"), *SingletonActor->GetClass()->GetName());
-			}
+			continue;
 		}
+
+		AActor* SingletonActor = nullptr;
+		USpatialActorChannel* Channel = nullptr;
+		GetSingletonActorAndChannel(UTF8_TO_TCHAR(pair.first.c_str()), SingletonActor, Channel);
+
+		// Class couldn't be found
+		if (Channel == nullptr)
+		{
+			continue;
+		}
+
+		// Set entity id of channel from the GlobalStateManager.
+		// If the id was 0, SetChannelActor will create the entity.
+		// If the id is not 0, it will start replicating to that entity.
+		Channel->SetChannelActor(SingletonActor);
+
+		UE_LOG(LogSpatialGDKInterop, Log, TEXT("Started replication of Singleton Actor %s"), *SingletonActor->GetClass()->GetName());
 	}
 }
 
@@ -798,14 +809,12 @@ void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& Ou
 
 	AActor* SingletonActor = nullptr;
 	USpatialActorChannel* Channel = nullptr;
-	for(auto& pair : NetDriver->SingletonActorChannels)
+
+	TPair<AActor*, USpatialActorChannel*>* pair = NetDriver->SingletonActorChannels.Find(SingletonActorClass);
+	if (pair != nullptr)
 	{
-		if(pair.Key->GetClass()->GetName().Equals(ClassName))
-		{
-			SingletonActor = pair.Key;
-			Channel = pair.Value;
-			break;
-		}
+		SingletonActor = pair->Key;
+		Channel = pair->Value;
 	}
 
 	if (SingletonActor == nullptr)
@@ -819,7 +828,7 @@ void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& Ou
 		USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
 
 		Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
-		NetDriver->SingletonActorChannels.Add(SingletonActor, Channel);
+		NetDriver->SingletonActorChannels.Add(SingletonActorClass, TPair<AActor*, USpatialActorChannel*>(SingletonActor, Channel));
 	}
 
 	OutActor = SingletonActor;

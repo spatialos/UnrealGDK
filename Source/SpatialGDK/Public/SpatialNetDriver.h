@@ -81,7 +81,8 @@ public:
 		return Interop;
 	}
 
-	TMap<AActor*, USpatialActorChannel*> SingletonActorChannels;
+	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
+	//TMap<AActor*, USpatialActorChannel*> SingletonActorChannels;
 
 protected:
 	FSpatialGDKWorkerConfigurationData WorkerConfig;

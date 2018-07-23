@@ -208,8 +208,8 @@ void USpatialInteropPipelineBlock::AddEntityImpl(const FEntityId& EntityId)
 	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
 	TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
 
-	// Create / get actor for this entity.
-	GetOrCreateActor(LockedConnection, LockedView, EntityId);
+	// Create and/or resolve actor for this entity.
+	CreateActor(LockedConnection, LockedView, EntityId);
 }
 
 void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp)
@@ -329,7 +329,7 @@ void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>&, co
 {
 }
 
-AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId)
+void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId)
 {
 	checkf(World, TEXT("We should have a world whilst processing ops."));
 
@@ -338,7 +338,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 
 	if (!PositionComponent || !MetadataComponent)
 	{
-		return nullptr;
+		return;
 	}
 
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
@@ -392,7 +392,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			// Initial Singleton Actor replication is handled with USpatialInterop::LinkExistingSingletonActors
 			if (NetDriver->IsServer() && Interop->IsSingletonClass(ActorClass))
 			{
-				return EntityActor;
+				return;
 			}
 
 			UNetConnection* Connection = nullptr;
@@ -494,7 +494,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			}
 		}
 	}
-	return EntityActor;
+	return;
 }
 
 // Note that in SpatialGDK, this function will not be called on the spawning worker.
