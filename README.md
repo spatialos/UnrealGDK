@@ -13,6 +13,9 @@ You can [sign up for SpatialOS Unreal GDK updates](link) direct to your mailbox.
 * Version: pre-alpha (for evaluation only)
 * Unreal Game Development Kit repository: [github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
 
+## Known issues
+ See the [Known issues](docs/known-issues.md) documentation.
+
 ## Recommended use
 This pre-alpha version software and its documentation is, by its very nature, rough and ready; every part of it is subject to change and it isn’t optimised for performance.
 
@@ -36,7 +39,7 @@ Visit the **feedback** section in our [forums](https://forums.improbable.io/) an
 **GitHub issues**<br>
 Create an issue in [this repository](https://github.com/spatialos/unreal-gdk/issues).
 
-## Contributions
+v## Contributions
 We are not currently accepting public contributions - see our [contributions](https://github.com/improbabl/unreal-gdk/.github/CONTRIBUTING.md) policy. However, we are accepting issues and we do want your feedback.
 
 ## Documentation
@@ -46,21 +49,11 @@ For guidance on using the SpatialOS Unreal GDK, see the [documentation in this G
 ## Support
 We are not supporting the pre-alpha release for game development, as this version is for evaluation only. However, please give us your [feedback](#give-us-feedback).
 
-## Migration from the SpatialOS Unreal SDK
-
-Currently the Unreal GDK is in its early development, so there is no migration path from the [Unreal SDK](https://github.com/spatialos/UnrealSDK) to the Unreal GDK. There will be a migration path in later releases.
-
-## Roadmap
-See the [latest roadmap]() Trello board and let us know what you'd like to see in there.
-
-## Known issues
- See the [Known issues](docs/known-issues.md) documentation.
-
 ## Unreal Engine changes
 We have to make a small number of changes to UE4 source code: these are mostly limited in scope and only consist of class access, polymorphism, and dll-export-related changes. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our [UnrealEngine repo, `UnrealEngine419_SpatialGDK` branch](https://github.com/improbable/UnrealEngine/tree/UnrealEngine419_SpatialGDK). <br/>
 
 ## Email updates
 
-You can [sign up for SpatialOS Unreal GDK updates](link) direct to your mailbox.
+You can [sign up for SpatialOS Unreal GDK updates](http://go.pardot.com/l/169082/2018-06-15/27ld2t) direct to your mailbox.
 
 (c) 2018 Improbable
