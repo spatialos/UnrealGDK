@@ -82,7 +82,6 @@ public:
 	}
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
-	//TMap<AActor*, USpatialActorChannel*> SingletonActorChannels;
 
 protected:
 	FSpatialGDKWorkerConfigurationData WorkerConfig;

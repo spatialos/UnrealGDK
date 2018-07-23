@@ -598,11 +598,12 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
 
-	// Inform USpatialInterop of this new actor channel/entity pairing
-	SpatialNetDriver->GetSpatialInterop()->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
-
 	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
-	check(Interop);
+
+	// Inform USpatialInterop of this new actor channel/entity pairing
+	Interop->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
+
+	// If a Singleton was created, update the GSM with the proper Id.
 	if (Interop->IsSingletonClass(Actor->GetClass()))
 	{
 		Interop->UpdateGlobalStateManager(Actor->GetClass()->GetName(), ActorEntityId);
