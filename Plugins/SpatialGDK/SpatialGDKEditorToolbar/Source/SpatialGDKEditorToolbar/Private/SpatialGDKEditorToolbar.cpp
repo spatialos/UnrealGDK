@@ -124,14 +124,12 @@ void FSpatialGDKEditorToolbarModule::RegisterSettings()
 	{
 		ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
 
-		SettingsContainer->DescribeCategory("SpatialOSEditorToolbar", LOCTEXT("RuntimeWDCategoryName", "SpatialOS - Toolbar"),
-			LOCTEXT("RuntimeWDCategoryDescription",
-			"Configuration for the SpatialOS Editor toolbar plugin"));
+		SettingsContainer->DescribeCategory("SpatialGDKEditorToolbar", LOCTEXT("RuntimeWDCategoryName", "SpatialGDK - Toolbar"),
+			LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialGDK Editor toolbar plugin"));
 
-		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings("Project", "SpatialOS", "Toolbar",
+		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDK", "Toolbar",
 			LOCTEXT("RuntimeGeneralSettingsName", "Toolbar"),
-			LOCTEXT("RuntimeGeneralSettingsDescription",
-			"Configuration for SpatialOS Editor toolbar plugin."),
+			LOCTEXT("RuntimeGeneralSettingsDescription", "Configuration for SpatialGDK Editor toolbar plugin."),
 			GetMutableDefault<USpatialGDKEditorToolbarSettings>());
 
 		if (SettingsSection.IsValid())
@@ -217,7 +215,7 @@ void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandLis
 
 void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 {
-	Builder.BeginSection("SpatialOS", LOCTEXT("SpatialOS", "SpatialOS"));
+	Builder.BeginSection("SpatialGDK", LOCTEXT("SpatialGDK", "SpatialGDK"));
 	{
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode);
