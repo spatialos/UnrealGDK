@@ -467,13 +467,20 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
 					if (Channel)
 					{
-						const USpatialTypeBinding* TypeBinding = Interop->GetTypeBindingByClass(Actor->GetClass());
-						if (TypeBinding == nullptr)
+						if (Interop->GetTypeBindingByClass(Actor->GetClass()) == nullptr)
 						{
 							Channel->bCoreActor = false;
 						}
 
-						Channel->SetChannelActor(Actor);
+						// If Singleton, add to map and don't set up channel. Entity might already exist
+						if (Interop->IsSingletonClass(Actor->GetClass()))
+						{
+							SingletonActorChannels.Add(Actor, Channel);
+						}
+						else
+						{
+							Channel->SetChannelActor(Actor);
+						}
 					}
 					// if we couldn't replicate it for a reason that should be temporary, and this Actor is updated very infrequently, make sure we update it again soon
 					else if (Actor->NetUpdateFrequency < 1.0f)
@@ -508,7 +515,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 								LastSentActors.Add(Actor);
 							}
 
-							// Calculate min delta (max rate actor will upate), and max delta (slowest rate actor will update)
+							// Calculate min delta (max rate actor will update), and max delta (slowest rate actor will update)
 							const float MinOptimalDelta = 1.0f / Actor->NetUpdateFrequency;
 							const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
 							const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);

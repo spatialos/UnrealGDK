@@ -9,11 +9,14 @@
 #include <improbable/standard_library.h>
 #include <improbable/unreal/gdk/level_data.h>
 #include <improbable/unreal/gdk/spawner.h>
+#include <improbable/unreal/gdk/global_state_manager.h>
 #include <improbable/worker.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
 using namespace improbable;
+
+using NameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
 
 const WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
 const WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
@@ -22,22 +25,21 @@ const WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet
 const WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
 const WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
 
+const Coordinates Origin{0, 0, 0};
+
 namespace
 {
 worker::Entity CreateSpawnerEntity()
 {
-	const Coordinates InitialPosition{0, 0, 0};
-	improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
-	improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
 	improbable::unreal::UnrealMetadata::Data UnrealMetadata;
 
 	return improbable::unreal::FEntityBuilder::Begin()
-		.AddPositionComponent(Position::Data{InitialPosition}, UnrealWorkerWritePermission)
+		.AddPositionComponent(Position::Data{Origin}, UnrealWorkerWritePermission)
 		.AddMetadataComponent(Metadata::Data("SpatialSpawner"))
 		.SetPersistence(true)
 		.SetReadAcl(AnyWorkerReadPermission)
 		.AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{}, UnrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, UnrealWorkerWritePermission)
 		.Build();
 }
 
@@ -71,6 +73,53 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 	check(PlaceholderEntityIdCounter == SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1);
 	return LevelEntities;
 }
+
+bool CreateSingletonToIdMap(NameToEntityIdMap& SingletonNameToEntityId)
+{
+	const FString FileName = "DefaultEditorSpatialGDK.ini";
+	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
+
+	// Load the SpatialGDK config file
+	GConfig->LoadFile(ConfigFilePath);
+	FConfigFile* ConfigFile = GConfig->Find(ConfigFilePath, false);
+	if (!ConfigFile)
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Could not open .ini file: \"%s\""), *ConfigFilePath);
+		return false;
+	}
+
+	const FString SectionName = "SnapshotGenerator.SingletonActorClasses";
+	FConfigSection* SingletonActorClassesSection = ConfigFile->Find(SectionName);
+	if (SingletonActorClassesSection == nullptr)
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Could not find section '%s' in '%s'."), *SectionName, *ConfigFilePath);
+		return false;
+	}
+
+	TArray<FName> SingletonActorClasses;
+	SingletonActorClassesSection->GetKeys(SingletonActorClasses);
+
+	for (FName ClassName : SingletonActorClasses)
+	{
+		// Id is initially 0 since no Singleton entities have been created.
+		SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*(ClassName.ToString()))), 0);
+	}
+
+	return true;
+}
+
+worker::Entity CreateGlobalStateManagerEntity(NameToEntityIdMap SingletonNameToEntityId)
+{
+	return improbable::unreal::FEntityBuilder::Begin()
+		.AddPositionComponent(Position::Data{Origin}, UnrealWorkerWritePermission)
+		.AddMetadataComponent(Metadata::Data("GlobalStateManager"))
+		.SetPersistence(true)
+		.SetReadAcl(AnyWorkerReadPermission)
+		.AddComponent<unreal::GlobalStateManager>(unreal::GlobalStateManager::Data{SingletonNameToEntityId}, UnrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{}, UnrealWorkerWritePermission)
+		.Build();
+}
+
 } // ::
 
 bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
@@ -98,6 +147,22 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 	// Create spawner entity.
 	worker::Option<std::string> Result = OutputStream.WriteEntity(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
 
+	if (!Result.empty())
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
+		return false;
+	}
+
+	// Create Global State Manager
+	NameToEntityIdMap SingletonNameToEntityId;
+	bool bSuccess = CreateSingletonToIdMap(SingletonNameToEntityId);
+	if (!bSuccess)
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: Couldn't create Singleton Name to EntityId map"));
+		return false;
+	}
+
+	Result = OutputStream.WriteEntity(SpatialConstants::GLOBAL_STATE_MANAGER, CreateGlobalStateManagerEntity(SingletonNameToEntityId));
 	if (!Result.empty())
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));

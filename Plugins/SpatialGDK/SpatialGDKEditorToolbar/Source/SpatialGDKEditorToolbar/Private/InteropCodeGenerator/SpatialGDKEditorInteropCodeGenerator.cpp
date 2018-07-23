@@ -18,7 +18,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 namespace
 {
 
-int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<FString>& TypeBindingHeaders)
+int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<FString>& TypeBindingHeaders, bool bIsSingleton)
 {
 	FCodeWriter OutputSchema;
 	FCodeWriter OutputHeader;
@@ -36,7 +36,7 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 
 	// Generate forwarding code.
 	GenerateTypeBindingHeader(OutputHeader, SchemaFilename, TypeBindingFilename, Class, TypeInfo);
-	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, TypeBindingHeaders);
+	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, TypeBindingHeaders, bIsSingleton);
 	OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *TypeBindingFilename));
 	OutputSource.WriteToFile(FString::Printf(TEXT("%s%s.cpp"), *ForwardingCodePath, *TypeBindingFilename));
 
@@ -171,8 +171,62 @@ FString GetOutputPath(const FString& ConfigFilePath)
 	return OutputPath;
 }
 
+const bool ClassesExist(const ClassHeaderMap& Classes)
+{
+	for (const auto& ClassHeaderList : Classes)
+	{
+		const UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
+
+		// If the class doesn't exist then print an error and carry on.
+		if (!Class)
+		{
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find unreal class for interop code generation: '%s', terminating."), *ClassHeaderList.Key);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+TArray<FString> CreateSingletonListFromConfigFile()
+{
+	TArray<FString> SingletonList;
+
+	const FString FileName = "DefaultEditorSpatialGDK.ini";
+	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
+
+	// Load the SpatialGDK config file
+	GConfig->LoadFile(ConfigFilePath);
+	FConfigFile* ConfigFile = GConfig->Find(ConfigFilePath, false);
+	if (!ConfigFile)
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not open .ini file: \"%s\""), *ConfigFilePath);
+		return SingletonList;
+	}
+
+	const FString SectionName = "SnapshotGenerator.SingletonActorClasses";
+	FConfigSection* SingletonActorClassesSection = ConfigFile->Find(SectionName);
+	if (SingletonActorClassesSection == nullptr)
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find section '%s' in '%s'."), *SectionName, *ConfigFilePath);
+		return SingletonList;
+	}
+
+	TArray<FName> SingletonActorClasses;
+	SingletonActorClassesSection->GetKeys(SingletonActorClasses);
+
+	for (FName ClassName : SingletonActorClasses)
+	{
+		SingletonList.Add(ClassName.ToString());
+	}
+
+	return SingletonList;
+}
+
 void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
 {
+	TArray<FString> SingletonList = CreateSingletonListFromConfigFile();
+
 	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 	int ComponentId = 100010;
 	for (auto& ClassHeaderList : Classes)
@@ -180,7 +234,9 @@ void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& Co
 		UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
 
 		const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
-		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, TypeBindingHeaders);
+		bool bIsSingleton = SingletonList.Find(ClassHeaderList.Key) != INDEX_NONE;
+
+		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, TypeBindingHeaders, bIsSingleton);
 	}
 }
 

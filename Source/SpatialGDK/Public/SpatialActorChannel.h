@@ -31,6 +31,11 @@ public:
 		return ActorEntityId;
 	}
 
+	FORCEINLINE void SetEntityId(FEntityId ActorEntityId)
+	{
+		this->ActorEntityId = ActorEntityId;
+	}
+
 	FORCEINLINE bool IsReadyForReplication() const
 	{
 		// Wait until we've reserved an entity ID.		
@@ -109,8 +114,8 @@ private:
 	void BindToSpatialView();
 	void UnbindFromSpatialView() const;
 
-	// Sends a DeleteEntity request to SpatialOS for the underlying entity, if we have authority to do so.
 	void DeleteEntityIfAuthoritative();
+	bool IsCriticalEntity();
 
 	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
 	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);

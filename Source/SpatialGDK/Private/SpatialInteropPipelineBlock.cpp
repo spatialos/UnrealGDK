@@ -19,6 +19,8 @@
 #include "PositionAddComponentOp.h"
 #include "PositionComponent.h"
 #include "SpatialConstants.h"
+#include "GlobalStateManagerAddComponentOp.h"
+#include "GlobalStateManagerComponent.h"
 #include "UnrealMetadataAddComponentOp.h"
 #include "UnrealMetadataComponent.h"
 
@@ -351,6 +353,10 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 
 	if (EntityActor)
 	{
+		UClass* ActorClass = GetNativeEntityClass(MetadataComponent);
+		USpatialInterop* Interop = NetDriver->GetSpatialInterop();
+		check(Interop);
+
 		// Option 1
 		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 		SetupComponentInterests(EntityActor, EntityId, LockedConnection);
@@ -380,6 +386,15 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		else if ((ActorClass = GetNativeEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 3
+			USpatialInterop* Interop = NetDriver->GetSpatialInterop();
+			check(Interop);
+
+			// Initial Singleton Actor replication is handled with USpatialInterop::LinkExistingSingletonActors
+			if (NetDriver->IsServer() && Interop->IsSingletonClass(ActorClass))
+			{
+				return EntityActor;
+			}
+
 			UNetConnection* Connection = nullptr;
 			improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
 			check(UnrealMetadataComponent);
