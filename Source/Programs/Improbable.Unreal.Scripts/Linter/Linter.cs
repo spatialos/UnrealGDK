@@ -108,12 +108,11 @@ namespace Improbable
 
         private static bool IsIncluded(DirectoryInfo Directory)
         {
-            var result = Common.RunRedirected("git", new[]
+            var result = Common.RunRedirectedWithExitCode("git", new[]
             {
                 "check-ignore",
                 Directory.FullName
-            },
-            false);
+            });
 
             return result != 0;
         }

@@ -26,8 +26,7 @@ namespace Improbable
 
             Directory.CreateDirectory(dir);
         }
-
-        public static int RunRedirected(string command, IEnumerable<string> arguments, bool throwOnErrorCode = true)
+        public static int RunRedirectedWithExitCode(string command, IEnumerable<string> arguments)
         {
             command = Environment.ExpandEnvironmentVariables(command);
             arguments = arguments.Select(Environment.ExpandEnvironmentVariables).ToArray();
@@ -69,22 +68,23 @@ namespace Improbable
 
                         process.WaitForExit();
 
-                        if (process.ExitCode != 0 && throwOnErrorCode)
-                        {
-                            throw new Exception($"Exit code {process.ExitCode}");
-                        }
-
                         return process.ExitCode;
-                    }
-                    else
-                    {
-                        throw new Exception("Process is null");
                     }
                 }
             }
             catch (System.Exception ex)
             {
                 throw new Exception($"{ex.Message} while running:\n{command}\n\t{string.Join("\n\t", arguments)}");
+            }
+            return 1;
+        }
+
+        public static void RunRedirected(string command, IEnumerable<string> arguments)
+        {
+            var exitCode = RunRedirectedWithExitCode(command, arguments);
+            if (exitCode != 0)
+            {
+                throw new Exception($"Exit code {exitCode} while running:\n{command}\n\t{string.Join("\n\t", arguments)}");
             }
         }
 
