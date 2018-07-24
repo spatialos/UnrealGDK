@@ -39,7 +39,7 @@ namespace Improbable
                 }
                 else
                 {
-                    TestLint(paths);
+                    FixLint(paths);
                 }
             }
             catch (System.Exception e)
@@ -65,18 +65,13 @@ namespace Improbable
         {
 	        var pathsWithLint = GetFailedValidationPaths(paths);
 
-            foreach(var path in pathsWithLint)
-            {
-                Console.WriteLine(@"{0} - missing copyright header", path);
-            }
-
             if(pathsWithLint.Count > 0)
             {
                 Console.Error.WriteLine(@"{0} files failed linting", pathsWithLint.Count);
             }
         }
 
-        private static void TestLint(List<string> paths)
+        private static void FixLint(List<string> paths)
         {
             var pathsWithLint = GetFailedValidationPaths(paths);
 
@@ -123,7 +118,8 @@ namespace Improbable
             {
                 "check-ignore",
                 Directory.FullName
-            });
+            },
+            false);
 
             return result == 0;
         }
