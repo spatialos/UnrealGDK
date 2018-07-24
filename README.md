@@ -49,8 +49,12 @@ For guidance on using the SpatialOS Unreal GDK, see the [documentation in this G
 ## Support
 We are not supporting the pre-alpha release for game development, as this version is for evaluation only. However, please give us your [feedback](#give-us-feedback).
 
+## Roadmap
+
+TODO add roadmap
+
 ## Unreal Engine changes
-We have to make a small number of changes to UE4 source code: these are mostly limited in scope and only consist of class access, polymorphism, and dll-export-related changes. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our [UnrealEngine repo, `UnrealEngine419_SpatialGDK` branch](https://github.com/improbable/UnrealEngine/tree/UnrealEngine419_SpatialGDK). <br/>
+In order to transform Unreal from a single server engine to a distributed model, we had to make a small number of changes to UE4 code. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our forked [Unreal Engine repo, `UnrealEngine419_SpatialGDK` branch](https://github.com/improbable/UnrealEngine/tree/UnrealEngine419_SpatialGDK). <br/>
 
 ## Email updates
 
