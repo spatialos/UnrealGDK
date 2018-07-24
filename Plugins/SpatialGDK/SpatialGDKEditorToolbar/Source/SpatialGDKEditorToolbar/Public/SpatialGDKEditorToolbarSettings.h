@@ -13,16 +13,16 @@ class USpatialGDKEditorToolbarSettings : public UObject
 public:
 	USpatialGDKEditorToolbarSettings(const FObjectInitializer& ObjectInitializer);
 
-	/** Root folder of your SpatialOS project */
-	UPROPERTY(EditAnywhere, config, Category = SpatialOSEditor, meta = (ConfigRestartRequired = false))
+	/** Root folder of your SpatialOS Unreal GDK project. */
+	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Unreal GDK Editor", meta = (ConfigRestartRequired = false))
 	FDirectoryPath ProjectRootFolder;
 
-	/** Launch configuration file used for `spatial local launch` */
-	UPROPERTY(EditAnywhere, config, Category = SpatialOSEditor, meta = (ConfigRestartRequired = false))
-	FString SpatialOSLaunchArgument;
+	/** Launch configuration file used for `spatial local launch`. */
+	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Unreal GDK Editor", meta = (ConfigRestartRequired = false, DisplayName = "'spatial CLI' Launch Configuration"))
+	FString SpatialOSLaunchConfig;
 
-	/** Stop spatial.exe when shutting down editor. */
-	UPROPERTY(EditAnywhere, config, Category = SpatialOSEditor, meta = (ConfigRestartRequired = false))
+	/** Stop 'spatial CLI' when shutting down editor. */
+	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Unreal GDK Editor", meta = (ConfigRestartRequired = false, DisplayName = "Stop 'spatial CLI' on Exit"))
 	bool bStopSpatialOnExit;
 
 	UFUNCTION()
