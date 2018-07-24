@@ -120,9 +120,16 @@ call :MarkStartOfBlock "Build CodeGeneration"
 call :MarkEndOfBlock "Build CodeGeneration"
 
 call :MarkStartOfBlock "Build C# utilities"
-    %CSC_EXE% Scripts\Build.cs   Scripts\Codegen.cs Scripts\Common.cs -main:Improbable.Build -nologo -out:"%BINARIES_DIR%\Programs\Build.exe"
-    %CSC_EXE% Scripts\Codegen.cs Scripts\Common.cs                                           -nologo -out:"%BINARIES_DIR%\Programs\Codegen.exe"
-    %CSC_EXE% Scripts\DiffCopy.cs                                                            -nologo -out:"%BINARIES_DIR%\Programs\DiffCopy.exe"
+    %MSBUILD_EXE% /nologo /verbosity:minimal Source\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /property:SolutionDir=..\
+
+    xcopy /i /q Source\Programs\Improbable.Unreal.Scripts\Common\bin\Release\*.dll "%BINARIES_DIR%\Programs"
+    xcopy /i /q Source\Programs\Improbable.Unreal.Scripts\Codegen\bin\Release\*.exe "%BINARIES_DIR%\Programs"
+    xcopy /i /q Source\Programs\Improbable.Unreal.Scripts\DiffCopy\bin\Release\*.dll "%BINARIES_DIR%\Programs"
+    xcopy /i /q Source\Programs\Improbable.Unreal.Scripts\Linter\bin\Release\*.exe "%BINARIES_DIR%\Programs"
+
+    rem %CSC_EXE% Scripts\Build.cs   Scripts\Codegen.cs Scripts\Common.cs -main:Improbable.Build -nologo -out:"%BINARIES_DIR%\Programs\Build.exe"
+    rem %CSC_EXE% Scripts\Codegen.cs Scripts\Common.cs                                           -nologo -out:"%BINARIES_DIR%\Programs\Codegen.exe"
+    rem %CSC_EXE% Scripts\DiffCopy.cs                                                            -nologo -out:"%BINARIES_DIR%\Programs\DiffCopy.exe"
 call :MarkEndOfBlock "Build C# utilities"
 
 call :MarkEndOfBlock "%~0"
