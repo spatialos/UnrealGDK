@@ -47,9 +47,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Codegen\Codegen.csproj">
       <Project>{15b21139-098d-4de5-ac54-b3624aaf31e9}</Project>
       <Name>Codegen</Name>
