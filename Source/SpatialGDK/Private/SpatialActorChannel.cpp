@@ -13,6 +13,7 @@
 #include "SpatialOS.h"
 #include "SpatialPackageMapClient.h"
 #include "SpatialTypeBinding.h"
+#include "SpatialInteropPipelineBlock.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
 
@@ -321,6 +322,8 @@ bool USpatialActorChannel::ReplicateActor()
 	{		
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
+			check(!Actor->IsFullNameStableForNetworking() || SpatialNetDriver->GetSpatialInterop()->CanSpawnReplicatedStablyNamedActors());
+
 			// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
 			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
 			// player controller, get the player state.
@@ -457,11 +460,6 @@ bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, const FReplicationFl
 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
 {
-	//To account for stably named actors
-	if (SpatialNetDriver->GetSpatialInterop()->GetTypeBindingByClass(InActor->GetClass()) && InActor->IsFullNameStableForNetworking()) {
-		Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap)->ResolveStablyNamedObject(InActor);
-	}
-
 	Super::SetChannelActor(InActor);
 
 	if (!bCoreActor)
@@ -501,13 +499,16 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	// If the entity registry has no entry for this actor, this means we need to create it.
 	if (ActorEntityId == 0)
 	{
-		USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
-		check(SpatialConnection);
-
-		// Mark this channel as being responsible for creating this entity once we have an entity ID.
-		bCreatingNewEntity = true;
-
-		Interop->SendReserveEntityIdRequest(this);
+		if (InActor->IsFullNameStableForNetworking())
+		{
+			USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
+			PackageMap->ResolveStablyNamedObject(InActor);
+			SpatialNetDriver->GetSpatialInterop()->ReserveReplicatedStablyNamedActor(this);
+		}
+		else
+		{
+			SendReserveEntityIdRequest();
+		}
 	}
 	else
 	{
@@ -516,6 +517,17 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		// Inform USpatialInterop of this new actor channel/entity pairing
 		SpatialNetDriver->GetSpatialInterop()->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
 	}
+}
+
+void USpatialActorChannel::SendReserveEntityIdRequest()
+{
+	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
+	check(SpatialConnection);
+
+	// Mark this channel as being responsible for creating this entity once we have an entity ID.
+	bCreatingNewEntity = true;
+
+	SpatialNetDriver->GetSpatialInterop()->SendReserveEntityIdRequest(this);
 }
 
 void USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)

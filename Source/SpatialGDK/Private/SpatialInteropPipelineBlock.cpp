@@ -130,6 +130,12 @@ void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId Com
 	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::ChangeAuthorityOp component ID: %u entity ID: %lld inCriticalSection: %d"),
 		ComponentId, AuthChangeOp.EntityId, (int)bInCriticalSection);
 
+	// Receive authority over the spawner, makes us a "super" authoritative worker
+	// TODO: Fire level spawning only once
+	if (AuthChangeOp.EntityId == SpatialConstants::SPAWNER_ENTITY_ID && AuthChangeOp.Authority == worker::Authority::kAuthoritative) {
+		NetDriver->GetSpatialInterop()->ReserveReplicatedStablyNamedActors();
+	}
+
 	// When a component is initialised, the callback dispatcher will automatically deal with authority changes. Therefore, we need
 	// to only queue changes if the entity itself has been queued for addition, which can only happen in a critical section.
 	if (bInCriticalSection && PendingAddEntities.Contains(FEntityId(AuthChangeOp.EntityId)))
@@ -344,6 +350,12 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
 	UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Checked out entity with entity ID %lld"), EntityId.ToSpatialEntityId());
 
+	USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
+	check(PackageMap);
+
+	USpatialInterop* Interop = NetDriver->GetSpatialInterop();
+	check(Interop);
+
 	// There are 3 main options when we get here with regards to how this entity was created:
 	// 1) A SpawnActor() call (through interop) on this worker, which means it already has an actor associated with it.
 	//	  This usually happens on the Unreal server only (as servers are the only workers which can spawn actors).
@@ -353,9 +365,11 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 
 	if (EntityActor)
 	{
-		UClass* ActorClass = GetNativeEntityClass(MetadataComponent);
-		USpatialInterop* Interop = NetDriver->GetSpatialInterop();
-		check(Interop);
+		//To account for stably named actors
+		if (EntityActor->IsFullNameStableForNetworking())
+		{
+			PackageMap->RemoveStablyNamedObject(EntityActor);
+		}
 
 		// Option 1
 		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
@@ -364,14 +378,11 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 		improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
 		check(UnrealMetadataComponent);
 
-		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
-		check(PackageMap);
-
 		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
 		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
 		
 		// actor channel/entity mapping should be registered by this point
-		check(NetDriver->GetSpatialInterop()->GetActorChannelByEntityId(EntityId.ToSpatialEntityId()));
+		check(Interop->GetActorChannelByEntityId(EntityId.ToSpatialEntityId()));
 	}
 	else
 	{
@@ -386,8 +397,6 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 		else if ((ActorClass = GetNativeEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 3
-			USpatialInterop* Interop = NetDriver->GetSpatialInterop();
-			check(Interop);
 
 			// Initial Singleton Actor replication is handled with USpatialInterop::LinkExistingSingletonActors
 			if (NetDriver->IsServer() && Interop->IsSingletonClass(ActorClass))
@@ -447,7 +456,6 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 			EntityRegistry->AddToRegistry(EntityId, EntityActor);
 
 			// Set up actor channel.
-			auto PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
 			auto Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
 			check(Channel);
 

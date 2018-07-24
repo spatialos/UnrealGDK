@@ -223,6 +223,28 @@ worker::RequestId<worker::DeleteEntityRequest> USpatialInterop::SendDeleteEntity
 	return DeleteEntityRequestId;
 }
 
+void USpatialInterop::ReserveReplicatedStablyNamedActor(USpatialActorChannel* Channel)
+{
+	if (!bCanSpawnReplicatedStablyNamedActors)
+	{
+		ReplicatedStablyNamedActorQueue.Add(Channel);
+	}
+	else
+	{
+		Channel->SendReserveEntityIdRequest();
+	}
+}
+
+void USpatialInterop::ReserveReplicatedStablyNamedActors()
+{
+	bCanSpawnReplicatedStablyNamedActors = true;
+	for (USpatialActorChannel* Channel : ReplicatedStablyNamedActorQueue) 
+	{
+		Channel->SendReserveEntityIdRequest();
+	}
+	ReplicatedStablyNamedActorQueue.Empty();
+}
+
 void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location)
 {
 	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
