@@ -64,9 +64,9 @@ namespace Improbable
 
         private static void CheckLint(List<string> paths)
         {
-	        var pathsWithLint = GetFailedValidationPaths(paths);
+            var pathsWithLint = GetFailedValidationPaths(paths);
 
-            if(pathsWithLint.Count > 0)
+            if (pathsWithLint.Count > 0)
             {
                 Console.Error.WriteLine(@"{0} files failed linting", pathsWithLint.Count);
             }
