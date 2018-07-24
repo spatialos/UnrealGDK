@@ -823,7 +823,7 @@ void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& Ou
 	TArray<AActor*> SingletonActorList;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), SingletonActorClass, SingletonActorList);
 
-	if (SingletonActorList.Num() >= 1)
+	if (SingletonActorList.Num() > 1)
 	{
 		UE_LOG(LogSpatialGDKInterop, Error, TEXT("More than one Singleton Actor exists of type %s"), *ClassName);
 		return;
