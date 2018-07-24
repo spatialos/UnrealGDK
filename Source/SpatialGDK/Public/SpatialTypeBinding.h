@@ -59,7 +59,7 @@ struct FPropertyChangeState
 	const TArray<uint16> RepChanged; // changed replicated properties
 	TArray<FRepLayoutCmd>& RepCmds;
 	TArray<FHandleToCmdIndex>& RepBaseHandleToCmdIndex;
-	const TArray<uint16> MigChanged; // changed migratable properties
+	const TArray<uint16> HandoverChanged; // changed handover properties
 };
 
 // A structure containing information about a replicated property.
@@ -122,11 +122,11 @@ private:
 	int32 Offset;
 };
 
-// A structure containing information about a migratable property.
-class FMigratableHandleData
+// A structure containing information about a handover property.
+class FHandoverHandleData
 {
 public:
-	FMigratableHandleData(UClass* Class, TArray<FName> PropertyNames) :
+	FHandoverHandleData(UClass* Class, TArray<FName> PropertyNames) :
     SubobjectProperty(false),
     Offset(0)
 	{
@@ -180,7 +180,7 @@ public:
 				// If we're not the last property in the chain.
 				if (i < (PropertyChain.Num() - 1))
 				{
-					// Migratable property chains can cross into subobjects, so we will need to deal with objects which are not inlined into the container.
+					// Handover property chains can cross into subobjects, so we will need to deal with objects which are not inlined into the container.
 					UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyChain[i]);
 					if (ObjectProperty)
 					{
@@ -213,8 +213,8 @@ private:
 // A map from rep handle to rep handle data.
 using FRepHandlePropertyMap = TMap<uint16, FRepHandleData>;
 
-// A map from migratable handle to migratable handle data.
-using FMigratableHandlePropertyMap = TMap<uint16, FMigratableHandleData>;
+// A map from handover handle to handover handle data.
+using FHandoverHandlePropertyMap = TMap<uint16, FHandoverHandleData>;
 
 UCLASS()
 class SPATIALGDK_API USpatialTypeBinding : public UObject
@@ -224,8 +224,8 @@ class SPATIALGDK_API USpatialTypeBinding : public UObject
 public:
 	virtual const FRepHandlePropertyMap& GetRepHandlePropertyMap() const
 		PURE_VIRTUAL(USpatialTypeBinding::GetRepHandlePropertyMap, static FRepHandlePropertyMap Map; return Map; );
-	virtual const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() const
-		PURE_VIRTUAL(USpatialTypeBinding::GetMigratableHandlePropertyMap, static FMigratableHandlePropertyMap Map; return Map; );
+	virtual const FHandoverHandlePropertyMap& GetHandoverHandlePropertyMap() const
+		PURE_VIRTUAL(USpatialTypeBinding::GetHandoverHandlePropertyMap, static FHandoverHandlePropertyMap Map; return Map; );
 
 	virtual void Init(USpatialInterop* Interop, USpatialPackageMapClient* PackageMap);
 	virtual void BindToView(bool bIsClient) PURE_VIRTUAL(USpatialTypeBinding::BindToView, );

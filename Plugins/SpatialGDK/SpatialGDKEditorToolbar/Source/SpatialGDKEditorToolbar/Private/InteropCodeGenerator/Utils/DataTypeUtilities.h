@@ -16,9 +16,9 @@ FString UnrealNameToSchemaTypeName(const FString& UnrealName);
 // For example: UnrealCharacterMultiClientRepData
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type, bool bPrependNamespace = false);
 
-// Given an unreal type, generates the name of the component which stores worker to worker replication data.
-// For example: UnrealCharacterMigratableData
-FString SchemaMigratableDataName(UStruct* Type, bool bPrependNamespace = false);
+// Given an unreal type, generates the name of the component which stores server to server replication data.
+// For example: UnrealCharacterHandoverData
+FString SchemaHandoverDataName(UStruct* Type, bool bPrependNamespace = false);
 
 // Given an RPC type and Unreal type, generates the name of the corresponding RPC container component.
 // For example: UnrealCharacterClientRPCs

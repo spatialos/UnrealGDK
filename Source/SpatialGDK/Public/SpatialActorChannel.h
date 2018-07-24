@@ -64,25 +64,25 @@ public:
 		return false;
 	}
 
-	FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged) const
+	FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged) const
 	{
 		return {
 			(uint8*)Actor,
 			RepChanged,
 			ActorReplicator->RepLayout->Cmds,
 			ActorReplicator->RepLayout->BaseHandleToCmdIndex,
-			MigChanged
+			HandoverChanged
 		};
 	}
 
-	FORCEINLINE FPropertyChangeState GetChangeStateSubobject(UObject* Obj, FObjectReplicator* Replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged) const
+	FORCEINLINE FPropertyChangeState GetChangeStateSubobject(UObject* Obj, FObjectReplicator* Replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged) const
 	{
 		return {
 			(uint8*)Obj,
 			RepChanged,
 			Replicator->RepLayout->Cmds,
 			Replicator->RepLayout->BaseHandleToCmdIndex,
-			MigChanged
+			HandoverChanged
 		};
 	}
 
@@ -136,7 +136,7 @@ private:
 	USpatialNetDriver* SpatialNetDriver;
 
 	FVector LastSpatialPosition;
-	TArray<uint8> MigratablePropertyShadowData;
+	TArray<uint8> HandoverPropertyShadowData;
 
 	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
 	UPROPERTY(Transient)
