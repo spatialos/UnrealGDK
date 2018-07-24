@@ -121,7 +121,7 @@ namespace Improbable
         private static bool NeedsChanges(FileInfo fileInfo)
         {
             var content = File.ReadAllText(fileInfo.FullName);
-            if(!content.StartsWith(copyrightHeader))
+            if(!content.StartsWith("// Copyright"))
             {
                 Console.Error.WriteLine(@"{0} is missing the copyright header", fileInfo.FullName);
                 return true;
