@@ -940,10 +940,15 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 		}
 	}
 
+	SourceWriter.PrintNewLine();
+
 	if (bIsSingleton)
 	{
-		SourceWriter.PrintNewLine();
 		SourceWriter.Printf("bIsSingleton = true;");
+	}
+	else
+	{
+		SourceWriter.Printf("bIsSingleton = false;");
 	}
 
 	SourceWriter.End();

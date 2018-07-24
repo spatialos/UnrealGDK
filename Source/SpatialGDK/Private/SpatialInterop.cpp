@@ -16,6 +16,7 @@
 #include <improbable/standard_library.h>
 #include <improbable/unreal/gdk/player.h>
 #include <improbable/unreal/gdk/unreal_metadata.h>
+#include <improbable/unreal/gdk/global_state_manager.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKInterop);
 
@@ -772,7 +773,7 @@ void USpatialInterop::ExecuteInitialSingletonActorReplication(const NameToEntity
 	{
 		FEntityId SingletonEntityId{ pair.second };
 
-		// Entity has already been created
+		// Entity has already been created on another server
 		if (SingletonEntityId != FEntityId{})
 		{
 			continue;
@@ -810,8 +811,7 @@ void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& Ou
 		return;
 	}
 
-	TPair<AActor*, USpatialActorChannel*>* Pair = NetDriver->SingletonActorChannels.Find(SingletonActorClass);
-	if (Pair != nullptr)
+	if(TPair<AActor*, USpatialActorChannel*>* Pair = NetDriver->SingletonActorChannels.Find(SingletonActorClass))
 	{
 		OutActor = Pair->Key;
 		OutChannel = Pair->Value;
@@ -822,7 +822,13 @@ void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& Ou
 	// Get Singleton Actor in world
 	TArray<AActor*> SingletonActorList;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), SingletonActorClass, SingletonActorList);
-	check(SingletonActorList.Num() == 1);
+
+	if (SingletonActorList.Num() >= 1)
+	{
+		UE_LOG(LogSpatialGDKInterop, Error, TEXT("More than one Singleton Actor exists of type %s"), *ClassName);
+		return;
+	}
+
 	OutActor = SingletonActorList[0];
 
 	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
@@ -846,12 +852,24 @@ void USpatialInterop::UpdateGlobalStateManager(const FString& ClassName, const F
 
 bool USpatialInterop::IsSingletonClass(UClass* Class)
 {
-	USpatialTypeBinding* Binding = GetTypeBindingByClass(Class);
-
-	if (Binding != nullptr)
+	if(USpatialTypeBinding* Binding = GetTypeBindingByClass(Class))
 	{
 		return Binding->IsSingleton();
 	}
 
 	return false;
+}
+
+NameToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
+{
+	TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
+	auto It = View->Entities.find(SpatialConstants::GLOBAL_STATE_MANAGER);
+
+	if (It != View->Entities.end())
+	{
+		improbable::unreal::GlobalStateManagerData* GSM = It->second.Get<improbable::unreal::GlobalStateManager>().data();
+		return &(GSM->singleton_name_to_entity_id());
+	}
+
+	return nullptr;
 }

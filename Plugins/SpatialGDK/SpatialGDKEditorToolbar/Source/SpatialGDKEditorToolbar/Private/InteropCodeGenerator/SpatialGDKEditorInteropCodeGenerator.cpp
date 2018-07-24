@@ -177,7 +177,6 @@ const bool ClassesExist(const ClassHeaderMap& Classes)
 	{
 		const UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
 
-		// If the class doesn't exist then print an error and carry on.
 		if (!Class)
 		{
 			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find unreal class for interop code generation: '%s', terminating."), *ClassHeaderList.Key);

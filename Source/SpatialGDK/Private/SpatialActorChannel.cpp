@@ -142,7 +142,7 @@ bool USpatialActorChannel::IsCriticalEntity()
 		return true;
 	}
 
-	// Don't delete if a Singleton
+	// Don't delete if the actor is a Singleton
 	NameToEntityIdMap* SingletonNameToEntityId = SpatialNetDriver->GetSpatialInterop()->GetSingletonNameToEntityId();
 
 	if (SingletonNameToEntityId == nullptr)

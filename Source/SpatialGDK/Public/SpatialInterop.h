@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <improbable/unreal/gdk/global_state_manager.h>
-
 #include "AddComponentOpWrapperBase.h"
 #include "ComponentIdentifier.h"
 #include "CoreMinimal.h"
@@ -214,8 +212,8 @@ public:
 	void LinkExistingSingletonActors(const NameToEntityIdMap& SingletonNameToEntityId);
 	// Handle GSM Authority received
 	void ExecuteInitialSingletonActorReplication(const NameToEntityIdMap& SingletonNameToEntityId);
-
 	bool IsSingletonClass(UClass* Class);
+	NameToEntityIdMap* GetSingletonNameToEntityId() const;
 
 	// Accessors.
 	USpatialOS* GetSpatialOS() const
@@ -226,20 +224,6 @@ public:
 	USpatialNetDriver* GetNetDriver() const
 	{
 		return NetDriver;
-	}
-
-	NameToEntityIdMap* GetSingletonNameToEntityId() const
-	{
-		TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
-		auto It = View->Entities.find(SpatialConstants::GLOBAL_STATE_MANAGER);
-
-		if (It != View->Entities.end())
-		{
-			improbable::unreal::GlobalStateManagerData* GSM = It->second.Get<improbable::unreal::GlobalStateManager>().data();
-			return &(GSM->singleton_name_to_entity_id());
-		}
-
-		return nullptr;
 	}
 
 private:

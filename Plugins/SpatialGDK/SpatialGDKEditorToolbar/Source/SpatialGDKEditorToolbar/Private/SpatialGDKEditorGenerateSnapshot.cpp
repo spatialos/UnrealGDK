@@ -16,6 +16,9 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
 using namespace improbable;
 
+namespace
+{
+
 using NameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
 
 const WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
@@ -27,8 +30,6 @@ const WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, Un
 
 const Coordinates Origin{0, 0, 0};
 
-namespace
-{
 worker::Entity CreateSpawnerEntity()
 {
 	improbable::unreal::UnrealMetadata::Data UnrealMetadata;
@@ -101,7 +102,8 @@ bool CreateSingletonToIdMap(NameToEntityIdMap& SingletonNameToEntityId)
 
 	for (FName ClassName : SingletonActorClasses)
 	{
-		// Id is initially 0 since no Singleton entities have been created.
+		// Id is initially 0 to indicate that this Singleton entity has not been created yet.
+		// When the worker authoritative over the GSM sees 0, it knows it is safe to create it.
 		SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*(ClassName.ToString()))), 0);
 	}
 

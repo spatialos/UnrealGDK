@@ -115,6 +115,8 @@ private:
 	void UnbindFromSpatialView() const;
 
 	void DeleteEntityIfAuthoritative();
+
+	// A critical entity is any entity built into the snapshot which should not be deleted by any worker.
 	bool IsCriticalEntity();
 
 	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
