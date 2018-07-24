@@ -1,6 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #include "SpatialGDKEditorToolbar.h"
 #include "Async.h"
 #include "EditorStyleSet.h"

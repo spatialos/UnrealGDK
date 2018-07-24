@@ -1,6 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 // ===========
 // DO NOT EDIT - this file is automatically regenerated.
 // ===========

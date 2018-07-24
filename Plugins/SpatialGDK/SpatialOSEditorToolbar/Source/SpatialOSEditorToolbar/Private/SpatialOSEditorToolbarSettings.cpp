@@ -1,6 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #include "SpatialOSEditorToolbarSettings.h"
 
 USpatialOSEditorToolbarSettings::USpatialOSEditorToolbarSettings(const FObjectInitializer& ObjectInitializer) : SpatialOSLaunchArgument(TEXT("default_launch.json")), bStopSpatialOnExit(false), Super(ObjectInitializer)

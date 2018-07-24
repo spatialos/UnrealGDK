@@ -1,7 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-// Copyright (c) Impro bable Worlds Ltd, All Rights Reserved
-
 #pragma once
 
 #include "improbable/unreal/gdk/spawner.h"
