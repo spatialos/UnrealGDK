@@ -121,17 +121,44 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
 	{
-		bHasAuthority =		Interop->IsAuthoritativeDestructionAllowed()
-						&&	PinnedView->GetAuthority<improbable::Position>(ActorEntityId.ToSpatialEntityId()) == worker::Authority::kAuthoritative;
+		bHasAuthority = Interop->IsAuthoritativeDestructionAllowed()
+			&& PinnedView->GetAuthority<improbable::Position>(ActorEntityId.ToSpatialEntityId()) == worker::Authority::kAuthoritative;
 	}
 
 	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Delete Entity request on %d. Has authority: %d "), ActorEntityId.ToSpatialEntityId(), bHasAuthority);
 
-	// If we have authority and aren't trying to delete the spawner, delete the entity
-	if (bHasAuthority && ActorEntityId.ToSpatialEntityId() != SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
-	{		
+	// If we have authority and aren't trying to delete a critical entity, delete it
+	if (bHasAuthority && !IsCriticalEntity())
+	{
 		Interop->DeleteEntity(ActorEntityId);
 	}
+}
+
+bool USpatialActorChannel::IsCriticalEntity()
+{
+	// Don't delete if the actor is the spawner
+	if (ActorEntityId.ToSpatialEntityId() == SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
+	{
+		return true;
+	}
+
+	// Don't delete if the actor is a Singleton
+	NameToEntityIdMap* SingletonNameToEntityId = SpatialNetDriver->GetSpatialInterop()->GetSingletonNameToEntityId();
+
+	if (SingletonNameToEntityId == nullptr)
+	{
+		return false;
+	}
+
+	for(const auto& Pair : *SingletonNameToEntityId)
+	{
+		if (Pair.second == ActorEntityId.ToSpatialEntityId())
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
@@ -577,8 +604,16 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
 
+	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+
 	// Inform USpatialInterop of this new actor channel/entity pairing
-	SpatialNetDriver->GetSpatialInterop()->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
+	Interop->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
+
+	// If a Singleton was created, update the GSM with the proper Id.
+	if (Interop->IsSingletonClass(Actor->GetClass()))
+	{
+		Interop->UpdateGlobalStateManager(Actor->GetClass()->GetName(), ActorEntityId);
+	}
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)

@@ -19,6 +19,8 @@
 #include "PositionAddComponentOp.h"
 #include "PositionComponent.h"
 #include "SpatialConstants.h"
+#include "GlobalStateManagerAddComponentOp.h"
+#include "GlobalStateManagerComponent.h"
 #include "UnrealMetadataAddComponentOp.h"
 #include "UnrealMetadataComponent.h"
 
@@ -206,8 +208,8 @@ void USpatialInteropPipelineBlock::AddEntityImpl(const FEntityId& EntityId)
 	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
 	TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
 
-	// Create / get actor for this entity.
-	GetOrCreateActor(LockedConnection, LockedView, EntityId);
+	// Create and/or resolve actor for this entity.
+	CreateActor(LockedConnection, LockedView, EntityId);
 }
 
 void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp)
@@ -327,7 +329,7 @@ void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>&, co
 {
 }
 
-AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId)
+void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId)
 {
 	checkf(World, TEXT("We should have a world whilst processing ops."));
 
@@ -336,7 +338,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 
 	if (!PositionComponent || !MetadataComponent)
 	{
-		return nullptr;
+		return;
 	}
 
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
@@ -351,6 +353,10 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 
 	if (EntityActor)
 	{
+		UClass* ActorClass = GetNativeEntityClass(MetadataComponent);
+		USpatialInterop* Interop = NetDriver->GetSpatialInterop();
+		check(Interop);
+
 		// Option 1
 		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 		SetupComponentInterests(EntityActor, EntityId, LockedConnection);
@@ -380,6 +386,15 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		else if ((ActorClass = GetNativeEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 3
+			USpatialInterop* Interop = NetDriver->GetSpatialInterop();
+			check(Interop);
+
+			// Initial Singleton Actor replication is handled with USpatialInterop::LinkExistingSingletonActors
+			if (NetDriver->IsServer() && Interop->IsSingletonClass(ActorClass))
+			{
+				return;
+			}
+
 			UNetConnection* Connection = nullptr;
 			improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
 			check(UnrealMetadataComponent);
@@ -479,7 +494,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			}
 		}
 	}
-	return EntityActor;
+	return;
 }
 
 // Note that in SpatialGDK, this function will not be called on the spawning worker.

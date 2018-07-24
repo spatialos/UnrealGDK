@@ -13,7 +13,7 @@ namespace SpatialConstants
 	enum EntityIds
 	{
 		SPAWNER_ENTITY_ID = 1,
-		LEVEL_DATA_ENTITY_ID = 2,
+		GLOBAL_STATE_MANAGER = 2,
 		PLACEHOLDER_ENTITY_ID_FIRST = 3,
 		PLACEHOLDER_ENTITY_ID_LAST = PLACEHOLDER_ENTITY_ID_FIRST + 35, // 36 placeholder entities.
 	};

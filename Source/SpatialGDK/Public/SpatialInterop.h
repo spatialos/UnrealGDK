@@ -5,6 +5,7 @@
 #include "AddComponentOpWrapperBase.h"
 #include "ComponentIdentifier.h"
 #include "CoreMinimal.h"
+#include "SpatialConstants.h"
 #include "SpatialTypeBinding.h"
 #include "SpatialUnrealObjectRef.h"
 #include "SpatialInterop.generated.h"
@@ -18,6 +19,8 @@ SPATIALGDK_API DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInterop, Log, All);
 
 // An general version of worker::RequestId.
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
+
+using NameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
 
 // Stores the result of an attempt to call an RPC sender function. Either we have an unresolved object which needs
 // to be resolved before we can send this RPC, or we successfully sent a command request.
@@ -202,7 +205,16 @@ public:
 
 	void ResetOutgoingArrayRepUpdate_Internal(USpatialActorChannel* DependentChannel, uint16 Handle);
 	void QueueOutgoingArrayRepUpdate_Internal(const TSet<const UObject*>& UnresolvedObjects, USpatialActorChannel* DependentChannel, uint16 Handle);
-	
+
+	// Update GlobalStateManager when EntityId is reserved
+	void UpdateGlobalStateManager(const FString& ClassName, const FEntityId& SingletonEntityId);
+	// Handle GSM checkout
+	void LinkExistingSingletonActors(const NameToEntityIdMap& SingletonNameToEntityId);
+	// Handle GSM Authority received
+	void ExecuteInitialSingletonActorReplication(const NameToEntityIdMap& SingletonNameToEntityId);
+	bool IsSingletonClass(UClass* Class);
+	NameToEntityIdMap* GetSingletonNameToEntityId() const;
+
 	// Accessors.
 	USpatialOS* GetSpatialOS() const
 	{
@@ -269,4 +281,6 @@ private:
 	void ResolvePendingIncomingRPCs(const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	void ResolvePendingOutgoingArrayUpdates(UObject* Object);
+
+	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
 };
