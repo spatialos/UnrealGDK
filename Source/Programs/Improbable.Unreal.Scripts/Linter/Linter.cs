@@ -19,7 +19,6 @@ namespace Improbable
                 PrintHelp();
             }
 
-Console.WriteLine("TEST:");
             var command = args[0];
             if ((command != "check" && command != "fix") || help)
             {
@@ -30,7 +29,7 @@ Console.WriteLine("TEST:");
 
                 Environment.Exit(exitCode);
             }
-Console.WriteLine("TEST:");
+
             try
             {
                 var paths = args.Skip(1).ToList();

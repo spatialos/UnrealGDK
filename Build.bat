@@ -127,10 +127,6 @@ call :MarkStartOfBlock "Build C# utilities"
     xcopy /i /q Source\Programs\Improbable.Unreal.Scripts\Codegen\bin\Release\*.exe "%BINARIES_DIR%\Programs"
     xcopy /i /q Source\Programs\Improbable.Unreal.Scripts\DiffCopy\bin\Release\*.exe "%BINARIES_DIR%\Programs"
     xcopy /i /q Source\Programs\Improbable.Unreal.Scripts\Linter\bin\Release\*.exe "%BINARIES_DIR%\Programs"
-
-    rem %CSC_EXE% Scripts\Build.cs   Scripts\Codegen.cs Scripts\Common.cs -main:Improbable.Build -nologo -out:"%BINARIES_DIR%\Programs\Build.exe"
-    rem %CSC_EXE% Scripts\Codegen.cs Scripts\Common.cs                                           -nologo -out:"%BINARIES_DIR%\Programs\Codegen.exe"
-    rem %CSC_EXE% Scripts\DiffCopy.cs                                                            -nologo -out:"%BINARIES_DIR%\Programs\DiffCopy.exe"
 call :MarkEndOfBlock "Build C# utilities"
 
 call :MarkEndOfBlock "%~0"
