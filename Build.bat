@@ -97,7 +97,7 @@ call :MarkStartOfBlock "Build CodeGeneration"
 call :MarkEndOfBlock "Build CodeGeneration"
 
 call :MarkStartOfBlock "Build C# utilities"
-    %MSBUILD_EXE% /nologo /verbosity:minimal Source\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /property:SolutionDir=..\
+    %MSBUILD_EXE% /nologo /verbosity:minimal Source\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
 call :MarkEndOfBlock "Build C# utilities"
 
 call :MarkEndOfBlock "%~0"
