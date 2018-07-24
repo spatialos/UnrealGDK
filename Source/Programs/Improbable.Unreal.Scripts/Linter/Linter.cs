@@ -8,6 +8,9 @@ namespace Improbable
 {
     public static class Linter
     {
+        /// <summary>
+        /// The linter currently only checks for missing copyright headers
+        /// </summary>
         public static void Main(string[] args)
         {
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
