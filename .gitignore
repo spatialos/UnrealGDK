@@ -82,3 +82,6 @@ logs/
 Scripts/spatialos.*.build.json
 
 !Source/Programs/Improbable.Unreal.CodeGeneration/UnrealCodeGeneration.sln
+
+# Don't ignore the Build util
+!Source/Programs/Improbable.Unreal.Scripts/Build/
