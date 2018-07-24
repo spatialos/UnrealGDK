@@ -18,6 +18,5 @@ public:
 	void ShutdownModule() override;
 
 private:
-	
 	FSpatialGDKLoader Loader;
 };
