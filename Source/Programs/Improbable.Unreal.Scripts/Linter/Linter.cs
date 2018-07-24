@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Improbable
 {
@@ -10,36 +11,38 @@ namespace Improbable
         public static void Main(string[] args)
         {
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
-
-            if (args.Length == 0 || args.Length < 2)
+            var validCommand = args.Count(arg => arg.ToLowerInvariant() == checkCommand || arg.ToLowerInvariant() == fixCommand) == 1;
+            int exitCode = 0;
+                        
+            if (help || args.Length < 2 || !validCommand)
             {
-                help = true;
-                exitCode = 1;
-                Console.Error.WriteLine("Command and paths must be specified");
                 PrintHelp();
-            }
-
-            var command = args[0];
-            if ((command != "check" && command != "fix") || help)
-            {
-                Console.WriteLine("Usage: [Command] <paths>");
-                Console.WriteLine("Available Commands:");
-                Console.WriteLine("\tcheck : Checks the paths for lint.");
-                Console.WriteLine("\tfix: fix lint in the specified paths.");
-
+                exitCode = 1;
                 Environment.Exit(exitCode);
             }
 
             try
             {
+                var command = args.First().ToLower();
                 var paths = args.Skip(1).ToList();
-                if(command == "check")
+                switch(command)
                 {
-                    CheckLint(paths);
-                }
-                else
-                {
-                    FixLint(paths);
+                    case checkCommand:
+                        {
+                            CheckLint(paths);
+                        }
+                        break;
+                    case "fix":
+                        {
+                            FixLint(paths);
+                        }
+                        break;
+                    default:
+                        {
+                            PrintHelp();
+                            exitCode = 1;
+                        }
+                        break;
                 }
             }
             catch (System.Exception e)
@@ -57,8 +60,6 @@ namespace Improbable
             Console.WriteLine("Available Commands:");
             Console.WriteLine("\tcheck : Checks the paths for lint.");
             Console.WriteLine("\tfix: fix lint in the specified paths.");
-
-            Environment.Exit(exitCode);
         }
 
         private static void CheckLint(List<string> paths)
@@ -78,9 +79,8 @@ namespace Improbable
             foreach(var path in pathsWithLint)
             {
                 var content = File.ReadAllText(path);
-                content = "// Copyright (c) Improbable Worlds Ltd, All Rights Reserved\r\n\r\n" + content;
-
-                File.WriteAllText(path, content);
+                content = copyrightHeader + content;
+                File.WriteAllText(path, content, new UTF8Encoding(false));
 
                 Console.WriteLine(@"Fixed {0}", path);
             }
@@ -92,27 +92,21 @@ namespace Improbable
 
             List<string> filesWithLint = new List<string>();
 
-            foreach(var directory in directories)
+            foreach(var directory in directories.Where(IsIncluded))
             {
-                if(!IsExcluded(directory))
-                {
-                    var files = directory.EnumerateFiles("*.*", SearchOption.AllDirectories)
-                                         .Where(s => s.FullName.EndsWith(".h") || s.FullName.EndsWith(".cpp")|| s.FullName.EndsWith(".Build.cs"));
+                var files = directory.EnumerateFiles("*.*", SearchOption.AllDirectories)
+                                     .Where(s => s.FullName.EndsWith(".h") || s.FullName.EndsWith(".cpp") || s.FullName.EndsWith(".Build.cs"));
 
-                    foreach(var file in files)
-                    {
-                        if(NeedsChanges(file))
-                        {
-                            filesWithLint.Add(file.FullName);
-                        }
-                    }
+                foreach (var file in files.Where(NeedsChanges))
+                {
+                    filesWithLint.Add(file.FullName);
                 }
             }
 
             return filesWithLint;
         }
 
-        private static bool IsExcluded(DirectoryInfo Directory)
+        private static bool IsIncluded(DirectoryInfo Directory)
         {
             var result = Common.RunRedirected("git", new[]
             {
@@ -121,14 +115,13 @@ namespace Improbable
             },
             false);
 
-            return result == 0;
+            return result != 0;
         }
 
         private static bool NeedsChanges(FileInfo fileInfo)
         {
             var content = File.ReadAllText(fileInfo.FullName);
-
-            if(!content.StartsWith("// Copyright"))
+            if(!content.StartsWith(copyrightHeader))
             {
                 Console.Error.WriteLine(@"{0} is missing the copyright header", fileInfo.FullName);
                 return true;
@@ -137,6 +130,8 @@ namespace Improbable
             return false;
         }
 
-        private static int exitCode = 0;
+        private const string copyrightHeader = "// Copyright (c) Improbable Worlds Ltd, All Rights Reserved\r\n\r\n";
+        private const string checkCommand = "check";
+        private const string fixCommand = "fix";
     }
 }
