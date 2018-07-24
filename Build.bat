@@ -28,29 +28,6 @@ call :MarkStartOfBlock "Check dependencies"
         exit /b 1
     )
 
-    if defined CSC_EXE goto CSCDefined
-
-    rem Get directory from MSBuild path.
-    for /f "delims=" %%i in (%MSBUILD_EXE%) do (
-        set MSBUILD_DIR=%%~dpi
-    )
-
-    rem C# compiler should live in the same directory or inside Roslyn subfolder.
-    if exist "%MSBUILD_DIR%csc.exe" (
-        set CSC_EXE="%MSBUILD_DIR%csc.exe"
-    )
-    if exist "%MSBUILD_DIR%Roslyn\csc.exe" (
-        set CSC_EXE="%MSBUILD_DIR%Roslyn\csc.exe"
-    )
-    if not defined CSC_EXE (
-        echo Error: Could not find csc.exe. If you have C# compiler installed in a different location, please specify it in CSC_EXE environment variable.
-        if not defined TEAMCITY_CAPTURE_ENV pause
-        exit /b 1
-    )
-    echo Found csc.exe: %CSC_EXE%
-
-    :CSCDefined
-
     where spatial >nul
     if ERRORLEVEL 1 (
         echo Error: Could not find spatial. Please make sure you have it installed and the containing directory added to PATH environment variable.
