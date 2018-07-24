@@ -90,10 +90,7 @@ call :MarkStartOfBlock "Unpack dependencies"
 call :MarkEndOfBlock "Unpack dependencies"
 
 call :MarkStartOfBlock "Build CodeGeneration"
-    %MSBUILD_EXE% /nologo /verbosity:minimal Source\Programs\Improbable.Unreal.CodeGeneration\UnrealCodeGeneration.sln /property:Configuration=Release /property:SolutionDir=..\
-
-    xcopy /i /q Source\Programs\Improbable.Unreal.CodeGeneration\bin\Release\*.dll "%BINARIES_DIR%\Programs"
-    xcopy /i /q Source\Programs\Improbable.Unreal.CodeGeneration\bin\Release\*.exe "%BINARIES_DIR%\Programs"
+    %MSBUILD_EXE% /nologo /verbosity:minimal Source\Programs\Improbable.Unreal.CodeGeneration\UnrealCodeGeneration.sln /property:Configuration=Release
 call :MarkEndOfBlock "Build CodeGeneration"
 
 call :MarkStartOfBlock "Build C# utilities"
