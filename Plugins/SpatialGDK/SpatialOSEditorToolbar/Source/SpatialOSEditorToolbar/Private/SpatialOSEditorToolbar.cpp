@@ -1,4 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #include "SpatialOSEditorToolbar.h"
 #include "Async.h"
 #include "EditorStyleSet.h"

@@ -1,4 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma once
 
 #include "ComponentIdentifier.h"
