@@ -13,11 +13,10 @@ namespace Improbable
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
             var validCommand = args.Count(arg => arg.ToLowerInvariant() == checkCommand || arg.ToLowerInvariant() == fixCommand) == 1;
             int exitCode = 0;
-                        
+
             if (help || args.Length < 2 || !validCommand)
             {
                 PrintHelp();
-                exitCode = 1;
                 Environment.Exit(exitCode);
             }
 
@@ -25,14 +24,14 @@ namespace Improbable
             {
                 var command = args.First().ToLower();
                 var paths = args.Skip(1).ToList();
-                switch(command)
+                switch (command)
                 {
                     case checkCommand:
                         {
                             CheckLint(paths);
                         }
                         break;
-                    case "fix":
+                    case fixCommand:
                         {
                             FixLint(paths);
                         }
@@ -59,7 +58,7 @@ namespace Improbable
             Console.WriteLine("Usage: [Command] <paths>");
             Console.WriteLine("Available Commands:");
             Console.WriteLine("\tcheck : Checks the paths for lint.");
-            Console.WriteLine("\tfix: fix lint in the specified paths.");
+            Console.WriteLine("\tix: Fix lint in the specified paths.");
         }
 
         private static void CheckLint(List<string> paths)
@@ -76,7 +75,7 @@ namespace Improbable
         {
             var pathsWithLint = GetFailedValidationPaths(paths);
 
-            foreach(var path in pathsWithLint)
+            foreach (var path in pathsWithLint)
             {
                 var content = File.ReadAllText(path);
                 content = copyrightHeader + content;
@@ -92,7 +91,7 @@ namespace Improbable
 
             List<string> filesWithLint = new List<string>();
 
-            foreach(var directory in directories.Where(IsIncluded))
+            foreach (var directory in directories.Where(IsIncluded))
             {
                 var files = directory.EnumerateFiles("*.*", SearchOption.AllDirectories)
                                      .Where(s => s.FullName.EndsWith(".h") || s.FullName.EndsWith(".cpp") || s.FullName.EndsWith(".Build.cs"));
@@ -120,7 +119,7 @@ namespace Improbable
         private static bool NeedsChanges(FileInfo fileInfo)
         {
             var content = File.ReadAllText(fileInfo.FullName);
-            if(!content.StartsWith("// Copyright"))
+            if (!content.StartsWith("// Copyright"))
             {
                 Console.Error.WriteLine(@"{0} is missing the copyright header", fileInfo.FullName);
                 return true;
