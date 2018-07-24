@@ -121,12 +121,6 @@ call :MarkEndOfBlock "Build CodeGeneration"
 
 call :MarkStartOfBlock "Build C# utilities"
     %MSBUILD_EXE% /nologo /verbosity:minimal Source\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /property:SolutionDir=..\
-
-    xcopy /i /q Source\Programs\Improbable.Unreal.Scripts\Build\bin\Release\*.exe "%BINARIES_DIR%\Programs"
-    xcopy /i /q Source\Programs\Improbable.Unreal.Scripts\Common\bin\Release\*.dll "%BINARIES_DIR%\Programs"
-    xcopy /i /q Source\Programs\Improbable.Unreal.Scripts\Codegen\bin\Release\*.exe "%BINARIES_DIR%\Programs"
-    xcopy /i /q Source\Programs\Improbable.Unreal.Scripts\DiffCopy\bin\Release\*.exe "%BINARIES_DIR%\Programs"
-    xcopy /i /q Source\Programs\Improbable.Unreal.Scripts\Linter\bin\Release\*.exe "%BINARIES_DIR%\Programs"
 call :MarkEndOfBlock "Build C# utilities"
 
 call :MarkEndOfBlock "%~0"
