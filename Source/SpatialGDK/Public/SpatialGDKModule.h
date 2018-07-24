@@ -18,9 +18,6 @@ public:
 	void ShutdownModule() override;
 
 private:
-	void RegisterSettings();
-	void UnregisterSettings();
-	bool HandleSettingsSaved();
-
+	
 	FSpatialGDKLoader Loader;
 };
