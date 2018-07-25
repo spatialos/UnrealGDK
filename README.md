@@ -37,10 +37,10 @@ Find us in the [**#unreal** channel](https://discordapp.com/channels/31127363330
 Visit the **feedback** section in our [forums](https://forums.improbable.io/) and use the **unreal-gdk** tag. [This link](https://forums.improbable.io/new-topic?category=Feedback&tags=unreal-gdk) takes you there and pre-fills the category and tag.
 
 **GitHub issues**<br>
-Create an issue in [this repository](https://github.com/spatialos/unreal-gdk/issues).
+Create an issue in [this repository](https://github.com/improbable/UnrealGDK/issues).
 
 ## Contributions
-We are not currently accepting public contributions - see our [contributions](https://github.com/improbabl/unreal-gdk/.github/CONTRIBUTING.md) policy. However, we are accepting issues and we do want your feedback.
+We are not currently accepting public contributions - see our [contributions](.github/CONTRIBUTING.md) policy. However, we are accepting issues and we do want your feedback.
 
 ## Documentation
 For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/13.0/shared/concepts/spatialos). <br/> 
