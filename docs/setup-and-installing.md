@@ -138,3 +138,12 @@ Choose one of the two build options:
 1. On the Unreal Editor toolbar, select the **Active Play Mode** drop-down.
 1. In the drop-down, under Multiplayer Options, enter the number of players as **2** and check the box next to Run Dedicated Server. Then, under Modes, select **New Editor Window (PIE)**.
 1. On the toolbar, click **Play** to run the game.
+
+### Gettings started with the GDK and actor replication
+
+Unreal provides a system called Actor replication to make it easy to make a networked game. The SpatialOS Unreal GDK allows you to continue using the native workflow of Unreal without changes to your game code.
+
+To enable actor replication you need to go through two steps:
+
+1. Setup your actor for replication (including property replication and RPCs) as per native unreal workflow.
+1. Generate type bindings for your actor (See Setting up Interop Code Generator, which allows the GDK to serialize Unreals replication data to SpatialOS.
