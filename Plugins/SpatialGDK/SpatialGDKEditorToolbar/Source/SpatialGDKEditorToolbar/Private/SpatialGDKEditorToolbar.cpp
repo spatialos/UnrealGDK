@@ -54,11 +54,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionFailSound->AddToRoot();
 	InteropCodeGenRunning = false;
 
-	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(
-		this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
-
-	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
-	bStopSpatialOnExit = SpatialGDKToolbarSettings->bStopSpatialOnExit;
+	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
+	bStopSpatialOnExit = GetDefault<USpatialGDKEditorToolbarSettings>()->bStopSpatialOnExit;
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -219,6 +216,8 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 	{
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialOSStackAction);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialOSStackAction);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
 	}
 	Builder.EndSection();
@@ -248,7 +247,6 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 	}
 	else
 	{
-		ShowFailedNotification("Snapshot generation failed!");
 		ShowFailedNotification("Snapshot generation failed!");
 	}
 }
@@ -346,7 +344,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 		TEXT("/c spatial.exe local launch %s"), *SpatialGDKToolbarSettings->SpatialOSLaunchConfig);
 
 	UE_LOG(LogSpatialGDKEditor, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
-	// Temporary workaround to get spatial.exe to properly show a window we have to call cmd.exe to
+	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
 	// execute it. We currently can't use pipes to capture output as it doesn't work properly with current
 	// spatial.exe.
 	SpatialOSStackProcHandle = FPlatformProcess::CreateProc(
@@ -439,13 +437,19 @@ void FSpatialGDKEditorToolbarModule::CheckForRunningStack()
 	} while (ProcEnumerator.MoveNext() && !SpatialOSStackProcHandle.IsValid());
 }
 
+/**
+* This function is used to update our own local copy of bStopSpatialOnExit as ToolbarSettings change.
+* We keep the copy of the variable as all the USpatialGDKEditorToolbarSettings references get
+* cleaned before all the available callbacks that IModuleInterface exposes. This means that we can't access
+* this variable through its references after the engine is closed.
+*/
 void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent)
 {
 	if (USpatialGDKEditorToolbarSettings* ToolbarSettings = Cast<USpatialGDKEditorToolbarSettings>(ObjectBeingModified))
 	{
 		FName PropertyName = PropertyChangedEvent.Property != nullptr
-			? PropertyChangedEvent.Property->GetFName()
-			: NAME_None;
+				? PropertyChangedEvent.Property->GetFName()
+				: NAME_None;
 		if (PropertyName.ToString() == TEXT("bStopSpatialOnExit"))
 		{
 			bStopSpatialOnExit = ToolbarSettings->bStopSpatialOnExit;
