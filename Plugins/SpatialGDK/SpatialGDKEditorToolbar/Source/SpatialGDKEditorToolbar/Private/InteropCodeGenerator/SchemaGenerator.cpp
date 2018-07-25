@@ -120,11 +120,11 @@ void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> 
 	);
 }
 
-void WriteSchemaMigratableField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> MigratableProp, const int FieldCounter)
+void WriteSchemaHandoverField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> HandoverProp, const int FieldCounter)
 {
 	Writer.Printf("%s %s = %d;",
-		*PropertyToSchemaType(MigratableProp->Property, false),
-		*SchemaFieldName(MigratableProp),
+		*PropertyToSchemaType(HandoverProp->Property, false),
+		*SchemaFieldName(HandoverProp),
 		FieldCounter
 	);
 }
@@ -200,15 +200,15 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		Writer.Outdent().Print("}");
 	}
 
-	// Worker-worker replicated properties.
-	Writer.Printf("component %s {", *SchemaMigratableDataName(Class));
+	// Handover (server to server) replicated properties.
+	Writer.Printf("component %s {", *SchemaHandoverDataName(Class));
 	Writer.Indent();
 	Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
 	int FieldCounter = 0;
-	for (auto& Prop : GetFlatMigratableData(TypeInfo))
+	for (auto& Prop : GetFlatHandoverData(TypeInfo))
 	{
 		FieldCounter++;
-		WriteSchemaMigratableField(Writer,
+		WriteSchemaHandoverField(Writer,
 			Prop.Value,
 			FieldCounter);
 	}

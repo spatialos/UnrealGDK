@@ -28,29 +28,6 @@ call :MarkStartOfBlock "Check dependencies"
         exit /b 1
     )
 
-    if defined CSC_EXE goto CSCDefined
-
-    rem Get directory from MSBuild path.
-    for /f "delims=" %%i in (%MSBUILD_EXE%) do (
-        set MSBUILD_DIR=%%~dpi
-    )
-
-    rem C# compiler should live in the same directory or inside Roslyn subfolder.
-    if exist "%MSBUILD_DIR%csc.exe" (
-        set CSC_EXE="%MSBUILD_DIR%csc.exe"
-    )
-    if exist "%MSBUILD_DIR%Roslyn\csc.exe" (
-        set CSC_EXE="%MSBUILD_DIR%Roslyn\csc.exe"
-    )
-    if not defined CSC_EXE (
-        echo Error: Could not find csc.exe. If you have C# compiler installed in a different location, please specify it in CSC_EXE environment variable.
-        if not defined TEAMCITY_CAPTURE_ENV pause
-        exit /b 1
-    )
-    echo Found csc.exe: %CSC_EXE%
-
-    :CSCDefined
-
     where spatial >nul
     if ERRORLEVEL 1 (
         echo Error: Could not find spatial. Please make sure you have it installed and the containing directory added to PATH environment variable.
@@ -113,16 +90,11 @@ call :MarkStartOfBlock "Unpack dependencies"
 call :MarkEndOfBlock "Unpack dependencies"
 
 call :MarkStartOfBlock "Build CodeGeneration"
-    %MSBUILD_EXE% /nologo /verbosity:minimal Source\Programs\Improbable.Unreal.CodeGeneration\UnrealCodeGeneration.sln /property:Configuration=Release /property:SolutionDir=..\
-
-    xcopy /i /q Source\Programs\Improbable.Unreal.CodeGeneration\bin\Release\*.dll "%BINARIES_DIR%\Programs"
-    xcopy /i /q Source\Programs\Improbable.Unreal.CodeGeneration\bin\Release\*.exe "%BINARIES_DIR%\Programs"
+    %MSBUILD_EXE% /nologo /verbosity:minimal Source\Programs\Improbable.Unreal.CodeGeneration\UnrealCodeGeneration.sln /property:Configuration=Release
 call :MarkEndOfBlock "Build CodeGeneration"
 
 call :MarkStartOfBlock "Build C# utilities"
-    %CSC_EXE% Scripts\Build.cs   Scripts\Codegen.cs Scripts\Common.cs -main:Improbable.Build -nologo -out:"%BINARIES_DIR%\Programs\Build.exe"
-    %CSC_EXE% Scripts\Codegen.cs Scripts\Common.cs                                           -nologo -out:"%BINARIES_DIR%\Programs\Codegen.exe"
-    %CSC_EXE% Scripts\DiffCopy.cs                                                            -nologo -out:"%BINARIES_DIR%\Programs\DiffCopy.exe"
+    %MSBUILD_EXE% /nologo /verbosity:minimal Source\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
 call :MarkEndOfBlock "Build C# utilities"
 
 call :MarkEndOfBlock "%~0"

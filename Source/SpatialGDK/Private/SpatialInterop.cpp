@@ -16,6 +16,7 @@
 #include <improbable/standard_library.h>
 #include <improbable/unreal/gdk/player.h>
 #include <improbable/unreal/gdk/unreal_metadata.h>
+#include <improbable/unreal/gdk/global_state_manager.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKInterop);
 
@@ -54,6 +55,30 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 			UE_LOG(LogSpatialGDKInterop, Warning, TEXT("Could not find and register 'bound class' for type binding class %s. If this is a blueprint class, make sure it is referenced by the world."), *TypeBindingClass->GetName());
 		}
 	}
+
+	TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
+
+	// Global State Manager setup
+	View->OnAddComponent<improbable::unreal::GlobalStateManager>([this](const worker::AddComponentOp<improbable::unreal::GlobalStateManager>& op)
+	{
+		LinkExistingSingletonActors(op.Data.singleton_name_to_entity_id());
+	});
+
+	View->OnComponentUpdate<improbable::unreal::GlobalStateManager>([this](const worker::ComponentUpdateOp<improbable::unreal::GlobalStateManager>& op)
+	{
+		if (op.Update.singleton_name_to_entity_id().data())
+		{
+			LinkExistingSingletonActors(*op.Update.singleton_name_to_entity_id().data());
+		}
+	});
+
+	View->OnAuthorityChange<improbable::unreal::GlobalStateManager>([this](const worker::AuthorityChangeOp& op)
+	{
+		if (op.Authority == worker::Authority::kAuthoritative)
+		{
+			ExecuteInitialSingletonActorReplication(*GetSingletonNameToEntityId());
+		}
+	});
 }
 
 USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
@@ -69,7 +94,7 @@ USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 	return nullptr;
 }
 
-worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
+worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
@@ -83,7 +108,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 
 		if (TypeBinding)
 		{
-			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, MigChanged), Channel);
+			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
 		}
 		else
@@ -173,7 +198,7 @@ void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const
 	PinnedConnection->SendComponentUpdate<improbable::Position>(EntityId.ToSpatialEntityId(), PositionUpdate);
 }
 
-void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
+void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
@@ -182,17 +207,17 @@ void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TAr
 		//	*Channel->Actor->GetClass()->GetName());
 		return;
 	}
-	Binding->SendComponentUpdates(Channel->GetChangeState(RepChanged, MigChanged), Channel, Channel->GetEntityId());
+	Binding->SendComponentUpdates(Channel->GetChangeState(RepChanged, HandoverChanged), Channel, Channel->GetEntityId());
 }
 
-void USpatialInterop::SendSpatialUpdateSubobject(USpatialActorChannel* Channel, UObject* Subobject, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged)
+void USpatialInterop::SendSpatialUpdateSubobject(USpatialActorChannel* Channel, UObject* Subobject, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Subobject->GetClass());
 	if (!Binding)
 	{
 		return;
 	}
-	Binding->SendComponentUpdates(Channel->GetChangeStateSubobject(Subobject, replicator, RepChanged, MigChanged), Channel, Channel->GetEntityId());
+	Binding->SendComponentUpdates(Channel->GetChangeStateSubobject(Subobject, replicator, RepChanged, HandoverChanged), Channel, Channel->GetEntityId());
 }
 
 void USpatialInterop::InvokeRPC(UObject* TargetObject, const UFunction* const Function, void* Parameters)
@@ -397,7 +422,7 @@ void USpatialInterop::QueueOutgoingObjectRepUpdate_Internal(const UObject* Unres
 	PendingOutgoingObjectUpdates.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel).Key.Add(Handle);
 }
 
-void USpatialInterop::QueueOutgoingObjectMigUpdate_Internal(const UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
+void USpatialInterop::QueueOutgoingObjectHandoverUpdate_Internal(const UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle)
 {
 	check(UnresolvedObject);
 	check(DependentChannel);
@@ -424,7 +449,7 @@ void USpatialInterop::QueueIncomingObjectRepUpdate_Internal(const improbable::un
 	PendingIncomingObjectUpdates.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Key.Add(RepHandleData);
 }
 
-void USpatialInterop::QueueIncomingObjectMigUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FMigratableHandleData* RepHandleData)
+void USpatialInterop::QueueIncomingObjectHandoverUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FHandoverHandleData* RepHandleData)
 {
 	check(DependentChannel);
 	check(RepHandleData);
@@ -601,14 +626,14 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 				DependentChannel->GetEntityId().ToSpatialEntityId(),
 				*RepData->Property->GetName());
 		}
-		for (const FMigratableHandleData* MigData : Properties.Value)
+		for (const FHandoverHandleData* HandoverData : Properties.Value)
 		{
-			ApplyIncomingMigratablePropertyUpdate(*MigData, DependentChannel->Actor, &Object);
-			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received queued object migratable property update. actor %s (%lld), property %s"),
+			ApplyIncomingHandoverPropertyUpdate(*HandoverData, DependentChannel->Actor, &Object);
+			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received queued object handover property update. actor %s (%lld), property %s"),
 				*SpatialOSInstance->GetWorkerId(),
 				*DependentChannel->Actor->GetName(),
 				DependentChannel->GetEntityId().ToSpatialEntityId(),
-				*MigData->Property->GetName());
+				*HandoverData->Property->GetName());
 		}
 
 		DependentChannel->PostReceiveSpatialUpdate(Object, RepNotifies.Array());
@@ -683,4 +708,168 @@ void USpatialInterop::ResolvePendingOutgoingArrayUpdates(UObject* Object)
 	// For any array that was resolved in this function, this will remove the last instances of the shared ptrs of
 	// the OPARs, which will destroy them.
 	ObjectToOPAR.Remove(Object);
+}
+
+void USpatialInterop::LinkExistingSingletonActors(const NameToEntityIdMap& SingletonNameToEntityId)
+{
+	if (!NetDriver->IsServer())
+	{
+		return;
+	}
+
+	for (const auto& Pair : SingletonNameToEntityId)
+	{
+		FEntityId SingletonEntityId{ Pair.second };
+
+		// Singleton Entity hasn't been created yet
+		if (SingletonEntityId == FEntityId{})
+		{
+			continue;
+		}
+
+		AActor* SingletonActor = nullptr;
+		USpatialActorChannel* Channel = nullptr;
+		GetSingletonActorAndChannel(UTF8_TO_TCHAR(Pair.first.c_str()), SingletonActor, Channel);
+
+		// Singleton wasn't found or channel is already set up
+		if (Channel == nullptr || Channel->Actor != nullptr)
+		{
+			continue;
+		}
+
+		// Add to entity registry
+		// This indirectly causes SetChannelActor to not create a new entity for this actor
+		NetDriver->GetEntityRegistry()->AddToRegistry(SingletonEntityId, SingletonActor);
+
+		Channel->SetChannelActor(SingletonActor);
+
+		TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
+
+		// Couldn't get View
+		if (LockedView.IsValid())
+		{
+			continue;
+		}
+
+		auto EntityIterator = LockedView->Entities.find(SingletonEntityId.ToSpatialEntityId());
+		if (EntityIterator == LockedView->Entities.end())
+		{
+			// Don't have entity checked out
+			continue;
+		}
+
+		improbable::unreal::UnrealMetadataData* Metadata = EntityIterator->second.Get<improbable::unreal::UnrealMetadata>().data();
+		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
+
+		// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
+		PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, Metadata->subobject_name_to_offset());
+		UE_LOG(LogSpatialGDKInterop, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId.ToSpatialEntityId());
+	}
+}
+
+void USpatialInterop::ExecuteInitialSingletonActorReplication(const NameToEntityIdMap& SingletonNameToEntityId)
+{
+	for (const auto& pair : SingletonNameToEntityId)
+	{
+		FEntityId SingletonEntityId{ pair.second };
+
+		// Entity has already been created on another server
+		if (SingletonEntityId != FEntityId{})
+		{
+			continue;
+		}
+
+		AActor* SingletonActor = nullptr;
+		USpatialActorChannel* Channel = nullptr;
+		GetSingletonActorAndChannel(UTF8_TO_TCHAR(pair.first.c_str()), SingletonActor, Channel);
+
+		// Class couldn't be found
+		if (Channel == nullptr)
+		{
+			continue;
+		}
+
+		// Set entity id of channel from the GlobalStateManager.
+		// If the id was 0, SetChannelActor will create the entity.
+		// If the id is not 0, it will start replicating to that entity.
+		Channel->SetChannelActor(SingletonActor);
+
+		UE_LOG(LogSpatialGDKInterop, Log, TEXT("Started replication of Singleton Actor %s"), *SingletonActor->GetClass()->GetName());
+	}
+}
+
+void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel)
+{
+	OutActor = nullptr;
+	OutChannel = nullptr;
+
+	UClass* SingletonActorClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);
+
+	if (SingletonActorClass == nullptr)
+	{
+		UE_LOG(LogSpatialGDKInterop, Error, TEXT("Failed to find Singleton Actor Class."));
+		return;
+	}
+
+	if(TPair<AActor*, USpatialActorChannel*>* Pair = NetDriver->SingletonActorChannels.Find(SingletonActorClass))
+	{
+		OutActor = Pair->Key;
+		OutChannel = Pair->Value;
+		return;
+	}
+
+	// Class doesn't exist in our map, have to find actor and create channel
+	// Get Singleton Actor in world
+	TArray<AActor*> SingletonActorList;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), SingletonActorClass, SingletonActorList);
+
+	if (SingletonActorList.Num() > 1)
+	{
+		UE_LOG(LogSpatialGDKInterop, Error, TEXT("More than one Singleton Actor exists of type %s"), *ClassName);
+		return;
+	}
+
+	OutActor = SingletonActorList[0];
+
+	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
+
+	OutChannel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
+	NetDriver->SingletonActorChannels.Add(SingletonActorClass, TPair<AActor*, USpatialActorChannel*>(OutActor, OutChannel));
+}
+
+void USpatialInterop::UpdateGlobalStateManager(const FString& ClassName, const FEntityId& SingletonEntityId)
+{
+	std::string SingletonName(TCHAR_TO_UTF8(*ClassName));
+	NameToEntityIdMap& SingletonNameToEntityId = *GetSingletonNameToEntityId();
+	SingletonNameToEntityId[SingletonName] = SingletonEntityId.ToSpatialEntityId();
+
+	improbable::unreal::GlobalStateManager::Update Update;
+	Update.set_singleton_name_to_entity_id(SingletonNameToEntityId);
+
+	TSharedPtr<worker::Connection> Connection = SpatialOSInstance->GetConnection().Pin();
+	Connection->SendComponentUpdate<improbable::unreal::GlobalStateManager>(worker::EntityId((long)SpatialConstants::GLOBAL_STATE_MANAGER), Update);
+}
+
+bool USpatialInterop::IsSingletonClass(UClass* Class)
+{
+	if(USpatialTypeBinding* Binding = GetTypeBindingByClass(Class))
+	{
+		return Binding->IsSingleton();
+	}
+
+	return false;
+}
+
+NameToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
+{
+	TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
+	auto It = View->Entities.find(SpatialConstants::GLOBAL_STATE_MANAGER);
+
+	if (It != View->Entities.end())
+	{
+		improbable::unreal::GlobalStateManagerData* GSM = It->second.Get<improbable::unreal::GlobalStateManager>().data();
+		return &(GSM->singleton_name_to_entity_id());
+	}
+
+	return nullptr;
 }

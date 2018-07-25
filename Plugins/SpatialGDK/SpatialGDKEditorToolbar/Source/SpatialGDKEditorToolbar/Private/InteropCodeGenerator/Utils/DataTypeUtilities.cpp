@@ -37,9 +37,9 @@ FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type, 
 	return FString::Printf(TEXT("%s%s%sRepData"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()), *GetReplicatedPropertyGroupName(Group));
 }
 
-FString SchemaMigratableDataName(UStruct* Type, bool bPrependNamespace /*= false*/)
+FString SchemaHandoverDataName(UStruct* Type, bool bPrependNamespace /*= false*/)
 {
-	return FString::Printf(TEXT("%s%sMigratableData"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()));
+	return FString::Printf(TEXT("%s%sHandoverData"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()));
 }
 
 FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNamespace /*= false*/)

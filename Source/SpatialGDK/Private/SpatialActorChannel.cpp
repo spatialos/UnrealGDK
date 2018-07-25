@@ -121,17 +121,44 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
 	{
-		bHasAuthority =		Interop->IsAuthoritativeDestructionAllowed()
-						&&	PinnedView->GetAuthority<improbable::Position>(ActorEntityId.ToSpatialEntityId()) == worker::Authority::kAuthoritative;
+		bHasAuthority = Interop->IsAuthoritativeDestructionAllowed()
+			&& PinnedView->GetAuthority<improbable::Position>(ActorEntityId.ToSpatialEntityId()) == worker::Authority::kAuthoritative;
 	}
 
 	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Delete Entity request on %d. Has authority: %d "), ActorEntityId.ToSpatialEntityId(), bHasAuthority);
 
-	// If we have authority and aren't trying to delete the spawner, delete the entity
-	if (bHasAuthority && ActorEntityId.ToSpatialEntityId() != SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
-	{		
+	// If we have authority and aren't trying to delete a critical entity, delete it
+	if (bHasAuthority && !IsCriticalEntity())
+	{
 		Interop->DeleteEntity(ActorEntityId);
 	}
+}
+
+bool USpatialActorChannel::IsCriticalEntity()
+{
+	// Don't delete if the actor is the spawner
+	if (ActorEntityId.ToSpatialEntityId() == SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
+	{
+		return true;
+	}
+
+	// Don't delete if the actor is a Singleton
+	NameToEntityIdMap* SingletonNameToEntityId = SpatialNetDriver->GetSpatialInterop()->GetSingletonNameToEntityId();
+
+	if (SingletonNameToEntityId == nullptr)
+	{
+		return false;
+	}
+
+	for(const auto& Pair : *SingletonNameToEntityId)
+	{
+		if (Pair.second == ActorEntityId.ToSpatialEntityId())
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
@@ -298,21 +325,21 @@ bool USpatialActorChannel::ReplicateActor()
 	const bool bCompareIndexSame = ActorReplicator->RepState->LastCompareIndex == ChangelistState->CompareIndex;
 	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
-	// Update the migratable property change list.
+	// Update the handover property change list.
 	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(Actor->GetClass());
-	TArray<uint16> MigratableChanged;
+	TArray<uint16> HandoverChanged;
 	if (Binding)
 	{
 		uint32 ShadowDataOffset = 0;
-		for (auto& PropertyInfo : Binding->GetMigratableHandlePropertyMap())
+		for (auto& PropertyInfo : Binding->GetHandoverHandlePropertyMap())
 		{
 			const uint8* Data = PropertyInfo.Value.GetPropertyData((uint8*)Actor);
 
 			// Compare and assign.
-			if (RepFlags.bNetInitial || !PropertyInfo.Value.Property->Identical(MigratablePropertyShadowData.GetData() + ShadowDataOffset, Data))
+			if (RepFlags.bNetInitial || !PropertyInfo.Value.Property->Identical(HandoverPropertyShadowData.GetData() + ShadowDataOffset, Data))
 			{
-				MigratableChanged.Add(PropertyInfo.Key);
-				PropertyInfo.Value.Property->CopyCompleteValue(MigratablePropertyShadowData.GetData() + ShadowDataOffset, Data);
+				HandoverChanged.Add(PropertyInfo.Key);
+				PropertyInfo.Value.Property->CopyCompleteValue(HandoverPropertyShadowData.GetData() + ShadowDataOffset, Data);
 			}
 			ShadowDataOffset += PropertyInfo.Value.Property->GetSize();
 		}
@@ -320,7 +347,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 	// We can skip the core actor if there are no new changelists to send, and we are not creating a new entity.
 	bool bReplicateCoreActor = true;
-	if (!bCreatingNewEntity && MigratableChanged.Num() == 0)
+	if (!bCreatingNewEntity && HandoverChanged.Num() == 0)
 	{
 		if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
 		{
@@ -333,7 +360,7 @@ bool USpatialActorChannel::ReplicateActor()
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
 	// If any properties have changed, send a component update.
-	if (bReplicateCoreActor && (RepFlags.bNetInitial || RepChanged.Num() > 0 || MigratableChanged.Num() > 0))
+	if (bReplicateCoreActor && (RepFlags.bNetInitial || RepChanged.Num() > 0 || HandoverChanged.Num() > 0))
 	{		
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
@@ -372,11 +399,11 @@ bool USpatialActorChannel::ReplicateActor()
 
 			// Calculate initial spatial position (but don't send component update) and create the entity.
 			LastSpatialPosition = GetActorSpatialPosition(Actor);
-			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialRepChanged, MigratableChanged);
+			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialRepChanged, HandoverChanged);
 		}
 		else
 		{
-			Interop->SendSpatialUpdate(this, RepChanged, MigratableChanged);
+			Interop->SendSpatialUpdate(this, RepChanged, HandoverChanged);
 		}
 
 		bWroteSomethingImportant = true;
@@ -480,24 +507,24 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		return;
 	}
 
-	// Set up the shadow data for the migratable properties. This is used later to compare the properties and send only changed ones.
+	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
 	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 	check(Interop);
 	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(InActor->GetClass());
 	if (Binding)
 	{
-		const FMigratableHandlePropertyMap& MigratableProperties = Binding->GetMigratableHandlePropertyMap();
+		const FHandoverHandlePropertyMap& HandoverProperties = Binding->GetHandoverHandlePropertyMap();
 		uint32 Size = 0;
-		for (auto& Property : MigratableProperties)
+		for (auto& Property : HandoverProperties)
 		{
 			Size += Property.Value.Property->GetSize();
 		}
-		MigratablePropertyShadowData.Empty();
-		MigratablePropertyShadowData.AddZeroed(Size);
+		HandoverPropertyShadowData.Empty();
+		HandoverPropertyShadowData.AddZeroed(Size);
 		uint32 Offset = 0;
-		for (auto& Property : MigratableProperties)
+		for (auto& Property : HandoverProperties)
 		{
-			Property.Value.Property->InitializeValue(MigratablePropertyShadowData.GetData() + Offset);
+			Property.Value.Property->InitializeValue(HandoverPropertyShadowData.GetData() + Offset);
 			Offset += Property.Value.Property->GetSize();
 		}
 	}
@@ -577,8 +604,16 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
 
+	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+
 	// Inform USpatialInterop of this new actor channel/entity pairing
-	SpatialNetDriver->GetSpatialInterop()->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
+	Interop->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
+
+	// If a Singleton was created, update the GSM with the proper Id.
+	if (Interop->IsSingletonClass(Actor->GetClass()))
+	{
+		Interop->UpdateGlobalStateManager(Actor->GetClass()->GetName(), ActorEntityId);
+	}
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
@@ -606,7 +641,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 void USpatialActorChannel::UpdateSpatialPosition()
 {
 	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
-	// migrated between workers at the same time (which is not guaranteed), we ensure that we update the position component 
+	// handed between workers at the same time (which is not guaranteed), we ensure that we update the position component 
 	// of the PlayerController and PlayerState at the same time as the pawn.
 
 	// Check that it has moved sufficiently far to be updated

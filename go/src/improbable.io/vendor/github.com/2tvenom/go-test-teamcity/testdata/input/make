@@ -1,2 +1,0 @@
-Makefile:276: .bootstrap: No such file or directory
-git submodule update --init
