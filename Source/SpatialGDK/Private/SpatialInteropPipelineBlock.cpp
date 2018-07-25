@@ -19,6 +19,8 @@
 #include "PositionAddComponentOp.h"
 #include "PositionComponent.h"
 #include "SpatialConstants.h"
+#include "GlobalStateManagerAddComponentOp.h"
+#include "GlobalStateManagerComponent.h"
 #include "UnrealMetadataAddComponentOp.h"
 #include "UnrealMetadataComponent.h"
 
@@ -206,8 +208,8 @@ void USpatialInteropPipelineBlock::AddEntityImpl(const FEntityId& EntityId)
 	TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
 	TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
 
-	// Create / get actor for this entity.
-	GetOrCreateActor(LockedConnection, LockedView, EntityId);
+	// Create and/or resolve actor for this entity.
+	CreateActor(LockedConnection, LockedView, EntityId);
 }
 
 void USpatialInteropPipelineBlock::InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp)
@@ -281,7 +283,7 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 		PC->Player = nullptr;
 	}
 
-	// Workaround for camera loss on migration: prevent UnPossess() (non-authoritative destruction of pawn, while being authoritative over the controller)
+	// Workaround for camera loss on handover: prevent UnPossess() (non-authoritative destruction of pawn, while being authoritative over the controller)
 	// TODO: Check how AI controllers are affected by this (UNR-430)
 	// TODO: This should be solved properly by working sets (UNR-411)
 	if (APawn* Pawn = Cast<APawn>(Actor))
@@ -296,12 +298,12 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 
 	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
 	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
-	// is currently owned by this worker before issuing a entity delete request. If the associated entity hasn't migrated off 
-	// this server just yet, we need to make sure this client doesn't issue a entity delete request, as this entity is really 
-	// migrating, it's just a few frames behind it's associated entity. 
+	// is currently owned by this worker before issuing an entity delete request. If the associated entity is still authoritative 
+	// on this server, we need to make sure this worker doesn't issue an entity delete request, as this entity is really 
+	// transitioning to the same server as the actor we're currently operating on, and is just a few frames behind. 
 	// We make the assumption that if we're destroying actors here (due to a remove entity op), then this is only due to two
 	// situations;
-	// 1. Actor's entity has migrated off this server
+	// 1. Actor's entity has been transitioned to another server
 	// 2. The Actor was deleted on another server
 	// In neither situation do we want to delete associated entities, so prevent them from being issued.
 	// TODO: fix this with working sets (UNR-411)
@@ -327,7 +329,7 @@ void USpatialInteropPipelineBlock::ProcessOps(const TWeakPtr<SpatialOSView>&, co
 {
 }
 
-AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId)
+void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId)
 {
 	checkf(World, TEXT("We should have a world whilst processing ops."));
 
@@ -336,7 +338,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 
 	if (!PositionComponent || !MetadataComponent)
 	{
-		return nullptr;
+		return;
 	}
 
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
@@ -347,10 +349,14 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 	//	  This usually happens on the Unreal server only (as servers are the only workers which can spawn actors).
 	// 2) A "pure" Spatial create entity request, which means we need to spawn an actor that was manually registered to correspond to it.
 	// 3) A SpawnActor() call that was initiated from a different worker, which means we need to find and spawn the corresponding "native" actor that corresponds to it.
-	//	  This can happen on either the client (for all actors) or server (for actors which were spawned by a different server worker, or are migrated).
+	//	  This can happen on either the client (for all actors) or server (for actors which were spawned by a different server worker, or are transitioning).
 
 	if (EntityActor)
 	{
+		UClass* ActorClass = GetNativeEntityClass(MetadataComponent);
+		USpatialInterop* Interop = NetDriver->GetSpatialInterop();
+		check(Interop);
+
 		// Option 1
 		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 		SetupComponentInterests(EntityActor, EntityId, LockedConnection);
@@ -380,6 +386,15 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 		else if ((ActorClass = GetNativeEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 3
+			USpatialInterop* Interop = NetDriver->GetSpatialInterop();
+			check(Interop);
+
+			// Initial Singleton Actor replication is handled with USpatialInterop::LinkExistingSingletonActors
+			if (NetDriver->IsServer() && Interop->IsSingletonClass(ActorClass))
+			{
+				return;
+			}
+
 			UNetConnection* Connection = nullptr;
 			improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
 			check(UnrealMetadataComponent);
@@ -479,7 +494,7 @@ AActor* USpatialInteropPipelineBlock::GetOrCreateActor(TSharedPtr<worker::Connec
 			}
 		}
 	}
-	return EntityActor;
+	return;
 }
 
 // Note that in SpatialGDK, this function will not be called on the spawning worker.
