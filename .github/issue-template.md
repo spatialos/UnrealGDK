@@ -28,6 +28,6 @@ What were you trying to accomplish?
 
 Please include your spatial diagnose output in full.
 
-Please detail your OS and Unreal versions.
+Please detail your OS and Unreal Engine versions.
 
 Provide a general summary of the issue in the title field above.
