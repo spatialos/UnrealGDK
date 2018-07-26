@@ -43,8 +43,9 @@ Create an issue in [this repository](https://github.com/improbable/UnrealGDK/iss
 We are not currently accepting public contributions - see our [contributions](.github/CONTRIBUTING.md) policy. However, we are accepting issues and we do want your feedback.
 
 ## Documentation
-For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/13.0/shared/concepts/spatialos). <br/> 
 For guidance on using the SpatialOS Unreal GDK, see the [documentation in this GitHub repository](docs/readme.md).
+
+For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/13.0/shared/concepts/spatialos). <br/> 
 
 ## Support
 We are not supporting the pre-alpha release for game development, as this version is for evaluation only. However, please give us your [feedback](#give-us-feedback).
