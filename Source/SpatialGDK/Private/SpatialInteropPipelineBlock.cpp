@@ -363,12 +363,17 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 	// 3) A SpawnActor() call that was initiated from a different worker, which means we need to find and spawn the corresponding "native" actor that corresponds to it.
 	//	  This can happen on either the client (for all actors) or server (for actors which were spawned by a different server worker, or are transitioning).
 
-	if (EntityActor)
+	if (EntityActor && !EntityActor->IsPendingKill())
 	{
-		//To account for stably named actors
+		// To account for stably named actors
 		if (EntityActor->IsFullNameStableForNetworking())
 		{
-			PackageMap->RemoveStablyNamedObject(EntityActor);
+			Interop->StartIgnoringAuthoritativeDestruction();
+			World->DestroyActor(EntityActor, true);
+			Interop->StopIgnoringAuthoritativeDestruction();
+
+			CreateActor(LockedConnection, LockedView, EntityId);
+			return;
 		}
 
 		// Option 1
@@ -422,19 +427,26 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 			}
 			else
 			{
-				// Either spawn the actor or get it from the level if it has a persistent name.
-				if (UnrealMetadataComponent->static_path().empty())
-				{
-					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
-					EntityActor = SpawnNewEntity(PositionComponent, ActorClass, true);
-					bDoingDeferredSpawn = true;
-				}
-				else
+				// If the actor has a persistent name, delete the stably named version and replace it with a dynamic one
+				// TODO: This causes references by path to the stably named actor to be broken (UNR-473), possible fix by retroactively assigning the stable path from the UnrealMetadata
+				if (!UnrealMetadataComponent->static_path().empty())
 				{
 					FString FullPath = UTF8_TO_TCHAR(UnrealMetadataComponent->static_path().data()->c_str());
 					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
 					EntityActor = FindObject<AActor>(World, *FullPath);
+
+					if (EntityActor)
+					{
+						Interop->StartIgnoringAuthoritativeDestruction();
+						World->DestroyActor(EntityActor, true);
+						Interop->StopIgnoringAuthoritativeDestruction();
+					}
 				}
+
+				UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
+				EntityActor = SpawnNewEntity(PositionComponent, ActorClass, true);
+				bDoingDeferredSpawn = true;
+
 				check(EntityActor);
 
 				// Get the net connection for this actor.
