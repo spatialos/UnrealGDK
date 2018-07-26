@@ -13,7 +13,7 @@ See the [SpatialOS glossary](https://docs.improbable.io/reference/latest/shared/
 
 | Term | Description | 
 | ---- | ---- |
-| actor handover |  |
+| actor handover | The Actor handover is a tag marking property fields in an Actor’s class. The `Handover` tag allows games built in Unreal which uses single-server architecture to take advantage of SpatialOS’ distributed, persistent server architecture. See [Actor and entity property handover between server-workers](/docs/content/handover-between-server-workers.md). |
 | codegen | Legacy system for generating interop code from SpatialOS. See “interop code” listing below and the [SpatialOS documentation on codegen](https://docs.improbable.io/reference/13.1/shared/spatial-cli/spatial-worker-codegen). |
 | Global State Manager | The Global State Manager (GSM) makes sure that Singleton Actors are replicated properly, by only allowing the server with [authority](https://docs.improbable.io/reference/13.1/shared/glossary#read-and-write-access-authority) over the GSM to execute the initial replication of these Actors. See documentation on [Singleton Actors](#singleton-actors.md).|
 | GSM | Short for "Global State Manager". |
