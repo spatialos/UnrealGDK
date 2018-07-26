@@ -3,7 +3,7 @@ We are accepting issues and we want your [feedback](../README.md#give-us-feedbac
 
 -------
 
-#### Description
+## Description
 Describe your issue.
 
 ## Expected behaviour
@@ -26,8 +26,8 @@ Provide an unambiguous set of steps to reproduce this bug. Include code snippets
 ## Environment
 What were you trying to accomplish?
 
-Please include your spatial diagnose output in full
+Please include your spatial diagnose output in full.
 
-Please detail your OS & Unity versions.
+Please detail your OS and Unreal Engine versions.
 
 Provide a general summary of the issue in the title field above.
