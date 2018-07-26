@@ -8,7 +8,7 @@ call :MarkStartOfBlock "%~0"
 
 set LINTER_EXE="Binaries\ThirdParty\Improbable\Programs\Linter.exe"
 if not exist %LINTER_EXE% (
-    echo Error: Could not find %LINTER_EXE%. Please run Build.bat to generate it.
+    echo Error: Could not find %LINTER_EXE%. Please run BuildGDK.bat to generate it.
     if not defined TEAMCITY_CAPTURE_ENV pause
     exit /b 1
 )
