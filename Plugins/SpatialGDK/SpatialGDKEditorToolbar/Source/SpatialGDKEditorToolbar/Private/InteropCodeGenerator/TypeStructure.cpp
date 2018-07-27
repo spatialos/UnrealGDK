@@ -567,7 +567,7 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 
 TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 {
-	TArray<UClass*> ComponentClasses;
+	TSet<UClass*> ComponentClasses;
 
 	if (AActor* ContainerCDO = Cast<AActor>(Class->GetDefaultObject()))
 	{
@@ -576,21 +576,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 
 		for (UActorComponent* Component : NativeComponents)
 		{
-			UClass* ComponentClass = Component->GetClass();
-			if (InteropGeneratedClasses.Find(ComponentClass->GetName()))
-			{
-				if (ComponentClasses.Find(ComponentClass) == INDEX_NONE)
-				{
-					ComponentClasses.Add(ComponentClass);
-				}
-				else
-				{
-					FMessageDialog::Debugf(FText::FromString(FString::Printf(*Errors::DuplicateComponentError,
-						*Class->GetName(),
-						*ComponentClass->GetName(),
-						*ComponentClass->GetName())));
-				}
-			}
+			AddComponentClassToSet(Class, Component->GetClass(), ComponentClasses);
 		}
 
 		// Components that are added in a blueprint won't appear in the CDO.
@@ -605,27 +591,31 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 						continue;
 					}
 
-					UClass* ComponentClass = Node->ComponentTemplate->GetClass();
-					if (InteropGeneratedClasses.Find(ComponentClass->GetName()))
-					{
-						if (ComponentClasses.Find(ComponentClass) == INDEX_NONE)
-						{
-							ComponentClasses.Add(Node->ComponentTemplate->GetClass());
-						}
-						else
-						{
-							FMessageDialog::Debugf(FText::FromString(FString::Printf(*Errors::DuplicateComponentError,
-								*ComponentClass->GetName(),
-								*Class->GetName(),
-								*ComponentClass->GetName())));
-						}
-					}
+					AddComponentClassToSet(Class, Node->ComponentTemplate->GetClass(), ComponentClasses);
 				}
 			}
 		}
 	}
 
-	return ComponentClasses;
+	return ComponentClasses.Array();
+}
+
+void AddComponentClassToSet(UClass* ActorClass, UClass* ComponentClass, TSet<UClass*>& ComponentClasses)
+{
+	if (InteropGeneratedClasses.Find(ComponentClass->GetName()))
+	{
+		if (ComponentClasses.Find(ComponentClass) == nullptr)
+		{
+			ComponentClasses.Add(ComponentClass);
+		}
+		else
+		{
+			FMessageDialog::Debugf(FText::FromString(FString::Printf(*Errors::DuplicateComponentError,
+				*ActorClass->GetName(),
+				*ComponentClass->GetName(),
+				*ComponentClass->GetName())));
+		}
+	}
 }
 
 TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode)

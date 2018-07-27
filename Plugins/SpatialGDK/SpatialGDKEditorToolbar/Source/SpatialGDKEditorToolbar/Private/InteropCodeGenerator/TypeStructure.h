@@ -224,6 +224,9 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo);
 // Get all supported components (not all subobjects) of an Actor class
 TArray<UClass*> GetAllSupportedComponents(UClass* Class);
 
+// Properly add a component class to a set
+void AddComponentClassToSet(UClass* ActorClass, UClass* ComponentClass, TSet<UClass*>& ComponentClasses);
+
 // Given an AST, traverses all its parameters (and properties within structs) and generates a complete flattened list of properties.
 TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode);
 
