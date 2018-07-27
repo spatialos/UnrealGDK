@@ -50,7 +50,7 @@ To use the Unreal GDK, you need to build the SpatialOS fork of Unreal Engine 4 f
     * (SSH) `git clone git@github.com:improbable/UnrealEngine.git -b UnrealEngine419_SpatialGDK`
 1. To build Unreal server workers for SpatialOS deployments, you need to build targeting Linux. This requires cross-compilation of your SpatialOS project and Unreal Engine fork.
 
-    From Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) setup guide, next to **v11**, click **clang 5.0.0-based** to download the archive **v11_clang-5.0.0-centos.zip** containing the linux cross compilation toolchain, then unzip.
+    From Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) setup guide, next to **v11**, click **clang 5.0.0-based** to download the archive **v11_clang-5.0.0-centos.zip** containing the Linux cross-compilation toolchain, then unzip.
 
 ### Adding environment variables
 
@@ -119,7 +119,7 @@ Build the Unreal GDK module dependencies which the Starter Project needs to work
     1. Select the path to the Unreal Engine fork you cloned earlier.
 1. Open **StarterProject.sln** in Visual Studio and make sure it’s set as your StartUp Project. 
 1. Build the project.
-1. Open **StarterProject.uproject** in the Unreal Editor and click [**Codegen**](content/interop.md) to generate [type bindings](content/glossary). 
+1. Open **StarterProject.uproject** in the Unreal Editor and click [**Codegen**](content/interop.md) to generate [type bindings](content/glossary.md). 
 1. Close the Unreal Editor and build the project again in Visual Studio.
 
 ### Running the Starter Project locally
