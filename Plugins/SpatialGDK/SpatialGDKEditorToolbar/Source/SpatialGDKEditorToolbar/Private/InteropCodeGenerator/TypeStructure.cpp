@@ -7,6 +7,12 @@
 
 ClassHeaderMap InteropGeneratedClasses;
 
+namespace Errors
+{
+	FString DuplicateComponentError = TEXT("WARNING: Unreal GDK does not currently support static components of the same type.\n"
+		"Make sure %s has only one instance of %s or don't generate type bindings for %s");
+}
+
 FString GetFullCPPName(UClass* Class)
 {
 	if (Class->IsChildOf(AActor::StaticClass()))
@@ -562,6 +568,7 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 {
 	TArray<UClass*> ComponentClasses;
+
 	if (AActor* ContainerCDO = Cast<AActor>(Class->GetDefaultObject()))
 	{
 		TInlineComponentArray<UActorComponent*> NativeComponents;
@@ -571,7 +578,17 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 		{
 			if (InteropGeneratedClasses.Find(Component->GetClass()->GetName()))
 			{
-				ComponentClasses.Add(Component->GetClass());
+				if (ComponentClasses.Find(Component->GetClass()) == INDEX_NONE)
+				{
+					ComponentClasses.Add(Component->GetClass());
+				}
+				else
+				{
+					FMessageDialog::Debugf(FText::FromString(FString::Printf(*Errors::DuplicateComponentError,
+						*Class->GetName(),
+						*Component->GetClass()->GetName(),
+						*Component->GetClass()->GetName())));
+				}
 			}
 		}
 
@@ -587,9 +604,21 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 						continue;
 					}
 
-					if (InteropGeneratedClasses.Find(Node->ComponentTemplate->GetClass()->GetName()))
+					UClass* ComponentClass = Node->ComponentTemplate->GetClass();
+
+					if (InteropGeneratedClasses.Find(ComponentClass->GetName()))
 					{
-						ComponentClasses.Add(Node->ComponentTemplate->GetClass());
+						if (ComponentClasses.Find(ComponentClass) == INDEX_NONE)
+						{
+							ComponentClasses.Add(Node->ComponentTemplate->GetClass());
+						}
+						else
+						{
+							FMessageDialog::Debugf(FText::FromString(FString::Printf(*Errors::DuplicateComponentError,
+								*ComponentClass->GetName(),
+								*Class->GetName(),
+								*ComponentClass->GetName())));
+						}
 					}
 				}
 			}

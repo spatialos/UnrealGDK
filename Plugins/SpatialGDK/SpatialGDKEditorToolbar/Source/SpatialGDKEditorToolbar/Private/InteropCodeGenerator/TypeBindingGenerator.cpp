@@ -751,7 +751,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	GenerateFunction_UnbindFromView(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_CreateActorEntity(SourceWriter, Class);
+	GenerateFunction_CreateActorEntity(SourceWriter, Class, Components);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_SendComponentUpdates(SourceWriter, Class);
@@ -760,7 +760,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	GenerateFunction_SendRPCCommand(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_ReceiveAddComponent(SourceWriter, Class);
+	GenerateFunction_ReceiveAddComponent(SourceWriter, Class, Components);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_GetInterestOverrideMap(SourceWriter, Class);
@@ -1074,7 +1074,7 @@ void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class)
+void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, TArray<UClass*> Components)
 {
 	SourceWriter.BeginFunction(
 		{"worker::Entity", "CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const"},
@@ -1095,8 +1095,6 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 	SourceWriter.Print(TEXT("// Setup initial data."));
 
 	GenerateBody_SpatialComponents(SourceWriter, Class, SpatialComponents);
-
-	TArray<UClass*> Components = GetAllSupportedComponents(Class);
 
 	for (UClass* ComponentClass : Components)
 	{
@@ -1297,7 +1295,7 @@ void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class)
+void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class, TArray<UClass*> Components)
 {
 	SourceWriter.BeginFunction(
 		{"void", "ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const"},
@@ -1329,8 +1327,6 @@ void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Cla
 		})""",
 		*SchemaHandoverDataName(Class),
 		*SchemaHandoverDataName(Class, true));
-
-	TArray<UClass*> Components = GetAllSupportedComponents(Class);
 
 	for (UClass* ComponentClass : Components)
 	{
