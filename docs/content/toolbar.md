@@ -1,6 +1,6 @@
 # The SpatialOS Unreal GDK toolbar
 
-The SpatialOS Unreal GDK toolbar is an easy way to run and alter [`spatial` command-line tool (SpatialOS documentation)](https://docs.improbable.io/reference/13.1/shared/glossary#the-spatial-command-line-tool) commands from inside the Unreal editor.
+The SpatialOS Unreal GDK toolbar is an easy way to run and alter [`spatial` command-line tool](https://docs.improbable.io/reference/13.1/shared/glossary#the-spatial-command-line-tool) (SpatialOS documentation) commands from inside the Unreal editor.
 
 ## Add the SpatialOS Unreal GDK toolbar to your Unreal project
 
@@ -21,7 +21,7 @@ To enable the SpatialOS Unreal GDK toolbar:
 	    ```
         
    Or:
-	* Inside the Unreal Editor, navigate to **Edit > Plugins** and scroll down
+	* Inside the Unreal Editor, navigate to **Edit** > **Plugins** and scroll down
 	to the bottom. Select the **SpatialOS Unreal GDK** section and enable the toolbar:
 
 		![Toolbar](../assets/screen_grabs/toolbar/enable_toolbar.png)
@@ -30,7 +30,7 @@ To enable the SpatialOS Unreal GDK toolbar:
 
 ## SpatialOS Unreal GDK toolbar
 
-The SpatialOS Unreal GDK toolbar has five features mapped to individual buttons, and is displayed in the main editor toolbar to the right of the `Launch` button. 
+The SpatialOS Unreal GDK toolbar has five features mapped to individual buttons, and is displayed in the main editor toolbar to the right of the `Launch` button: 
 
  ![Toolbar](../assets/screen_grabs/toolbar/toolbar_buttons.png)
 
@@ -39,25 +39,20 @@ You can also access these from the **Window** menu:
  ![Toolbar](../assets/screen_grabs/toolbar/window_access.png)
 
 
-* Snapshot
+* Snapshot</br>
+    Generates a [SpatialOS snapshot](https://docs.improbable.io/reference/13.1/shared/glossary#snapshot) (SpatialOS documentation).
 
-    Generates a [SpatialOS snapshot (SpatialOS documentation)](https://docs.improbable.io/reference/13.1/shared/glossary#snapshot).
+* Codegen</br>
+    Creates [SpatialOS Unreal GDK interop code](./interop.md).
 
-* Codegen
-
-    Creates [SpatialOS Unreal GDK interop code](./codegen.md).
-
-* Launch
-
+* Launch</br>
     Runs `spatial local launch` with the launch configuration specified in the settings (see [below](#settings)).
 
-* Stop
-
+* Stop</br>
     Stops `spatial local launch`.
 
-* Inspector
-
-    Opens the [Inspector (SpatialOS documentation)](https://docs.improbable.io/reference/13.1/shared/glossary#inspector) in a browser.
+* Inspector</br>
+    Opens the [Inspector](https://docs.improbable.io/reference/13.1/shared/glossary#inspector) (SpatialOS documentation) in a browser.
 
 ## Settings
 
@@ -66,14 +61,11 @@ The toolbar settings are in **Edit > Project Settings > SpatialOS Unreal GDK > T
  ![Ttoolbar](../assets/screen_grabs/toolbar/toolbar_settings.png)
 
 
-* Project Root Folder
-
+* Project Root Folder</br>
     By default, this points to the root folder of your SpatialOS Unreal GDK project. If you're using a non-standard structure, you'll need to set this yourself.
 
-* Launch Configuration
-
+* Launch Configuration</br>
     The [launch configuration file (SpatialOS documentation)](https://docs.improbable.io/reference/13.1/shared/reference/file-formats/launch-config) to use when running `spatial local launch` using the `Launch` button.
 
-* Stop on Exit
-
+* Stop on Exit</br>
     If enabled, shuts down running deployments when you close the Unreal Editor.
