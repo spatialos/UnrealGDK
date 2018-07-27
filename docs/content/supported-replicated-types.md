@@ -43,7 +43,7 @@
 | ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where both T1 and T2 are POD | No | No | --- | Currently not tested |
 | ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where either T1 or T2 are UStruct | No | No | --- | Currently not tested |
 | ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where either T1 or T2 are UObject* | No | No | --- | Currently not tested |
-| ![#800000](https://placehold.it/15/800000/000000?text=+) TWeakObjPtr<T> where T is UObject* | Yes | No | --- | Currently not tested |
+| ![#800000](https://placehold.it/15/800000/000000?text=+) TWeakObjPtr<T> where T is UObject* | Yes | Yes | --- | Currently not tested |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with POD members only | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with a nested UStruct | Yes | Yes | --- | ---|
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with a dynamically created AActor | Yes | Yes | --- | --- |
@@ -100,7 +100,7 @@
 | ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where both T1 and T2 are POD | No | No | --- | Currently not tested |
 | ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where either T1 or T2 are UStruct | No | No | --- | Currently not tested |
 | ![#800000](https://placehold.it/15/800000/000000?text=+) TMap<T1, T2> where either T1 or T2 are UObject* | No | No | --- | Currently not tested |
-| ![#800000](https://placehold.it/15/800000/000000?text=+) TWeakObjPtr<T> where T is UObject* | Yes | No | --- | Currently not tested |
+| ![#800000](https://placehold.it/15/800000/000000?text=+) TWeakObjPtr<T> where T is UObject* | Yes | Yes | --- | Currently not tested |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with POD members only | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with a nested UStruct | Yes | Yes | --- | ---|
 | ![#008000](https://placehold.it/15/008000/000000?text=+) UStruct with a dynamically created AActor | Yes | Yes | --- | --- |
