@@ -1,6 +1,6 @@
 # The SpatialOS Unreal GDK toolbar
 
-The SpatialOS Unreal GDK toolbar is an easy way to run and alter [`spatial` command-line tool](https://docs.improbable.io/reference/13.1/shared/glossary#the-spatial-command-line-tool) (SpatialOS documentation) commands from inside the Unreal editor.
+The SpatialOS Unreal GDK toolbar is an easy way to run and alter [`spatial` command-line tool](https://docs.improbable.io/reference/13.1/shared/glossary#the-spatial-command-line-tool) (SpatialOS documentation) commands from inside the Unreal Editor.
 
 ## Add the SpatialOS Unreal GDK toolbar to your Unreal project
 
@@ -28,7 +28,7 @@ To enable the SpatialOS Unreal GDK toolbar:
 
 
 
-## SpatialOS Unreal GDK toolbar
+## Buttons
 
 The SpatialOS Unreal GDK toolbar has five features mapped to individual buttons, and is displayed in the main editor toolbar to the right of the `Launch` button: 
 
@@ -56,7 +56,7 @@ You can also access these from the **Window** menu:
 
 ## Settings
 
-The toolbar settings are in **Edit > Project Settings > SpatialOS Unreal GDK > Toolbar**.
+The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal GDK** > **Toolbar**.
 
  ![Ttoolbar](../assets/screen_grabs/toolbar/toolbar_settings.png)
 
@@ -65,7 +65,7 @@ The toolbar settings are in **Edit > Project Settings > SpatialOS Unreal GDK > T
     By default, this points to the root folder of your SpatialOS Unreal GDK project. If you're using a non-standard structure, you'll need to set this yourself.
 
 * Launch Configuration</br>
-    The [launch configuration file (SpatialOS documentation)](https://docs.improbable.io/reference/13.1/shared/reference/file-formats/launch-config) to use when running `spatial local launch` using the `Launch` button.
+    The [launch configuration file](https://docs.improbable.io/reference/13.1/shared/reference/file-formats/launch-config) (SpatialOS documentation) to use when running `spatial local launch` using the `Launch` button.
 
 * Stop on Exit</br>
     If enabled, shuts down running deployments when you close the Unreal Editor.
