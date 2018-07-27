@@ -1,20 +1,24 @@
 # Set up and get started with the SpatialOS Unreal GDK
 
+This guide explains how to set up the SpatialOS Unreal GDK and the Unreal Engine fork for use with the Starter Project. If you want to use your own native Unreal project, follow the below steps up to and including [Cloning](#cloning), and then follow the [guide to porting your project from Unreal](content/porting-a-native-unreal-project).
+
 ## Contents
 
 * [Prerequisites](#prerequisites)
     * [Hardware](#hardware)
     * [Network settings](#network-settings)
     * [Software](#software)
-* [Setting up the SpatialOS fork of Unreal Engine](#setting-up-the-spatialos-fork-of-unreal-engine)
-    * [Getting the Unreal Engine fork source code](#getting-the-unreal-engine-fork-source-code)
+    * [Other](#other)
+* [Getting and building the SpatialOS Unreal GDK fork of Unreal Engine](#getting-and-building-the-spatialos-unreal-gdk-fork-of-unreal-engine)
+    * [Getting the Unreal Engine fork source code and Unreal Linux cross-platform support](#getting-the-unreal-engine-fork-source-code-and-linux-cross-platform-support)
+    * [Adding environment variables](#adding-environment-variables)
     * [Building Unreal Engine](#building-unreal-engine)
-* [Setting up the Unreal GDK module and Sample Game](#setting-up-the-unreal-gdk-module-and-sample-game)
+* [Setting up the Unreal GDK module and Starter Project](#setting-up-the-unreal-gdk-module-and-starter-project)
     * [Cloning](#cloning)
     * [Building](#building)
-        * [Building for standard development](#building-for-standard-development)
-        * [Building for Unreal GDK modification development](#building-for-unreal-gdk-modification-development)
-* [Running the Sample Game](#running-the-sample-game)
+* [Running the Starter Project locally](#running-the-starter-project-locally)
+* [Running the Starter Project in the cloud](#running-the-starter-project-in-the-cloud)
+* [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -35,8 +39,6 @@ To build the SpatialOS Unreal GDK module you need the following installed:
 
 ### Other
 You need to have an Epic Games account and be able to access the Unreal Engine source code on GitHub. To set this up, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
-
-INTRO? SUMMARY
 
 ## Getting and building the SpatialOS Unreal GDK fork of Unreal Engine
 
@@ -62,8 +64,6 @@ You need to add two environment variables: one to set the path to the Unreal Eng
 1. Set the variable value to be the path to the directory you unzipped `v11 clang 5.0.0-based - for UE4 4.19` into.
 1. Make sure that the new environment variable is registered by restarting your terminal and running `echo %LINUX_MULTIARCH_ROOT%` (Command Prompt) or `echo $Env:LINUX_MULTIARCH_ROOT` (PowerShell). 
 If the environment variable is registered correctly, this returns the path you unzipped `v11 clang 5.0.0-based - for UE4 4.19` into. If it doesn’t, check that you’ve set the environment variable correctly.
-
-
 
 ### Building Unreal Engine
 
@@ -95,13 +95,13 @@ Follow the steps below to:
 
 ### Cloning
 
-1. In a Git Bash terminal window, clone the [Unreal GDK](https://github.com/improbable/unreal-gdk) repository by running either:
-    * (HTTPS) `git clone https://github.com/improbable/unreal-gdk.git`
-    * (SSH) `git clone git@github.com:improbable/unreal-gdk.git`
+1. In a Git Bash terminal window, clone the [Unreal GDK](https://github.com/improbable/UnrealGDK) repository by running either:
+    * (HTTPS) `git clone https://github.com/improbable/UnrealGDK.git`
+    * (SSH) `git clone git@github.com:improbable/UnrealGDK.git`
 
-1. Clone the [Unreal GDK Starter Project](https://github.com/improbable/unreal-gdk-sample-game/) repository by running either:
-    * (HTTPS) `git clone https://github.com/improbable/unreal-gdk-sample-game.git`
-    * (SSH) `git clone git@github.com:improbable/unreal-gdk-sample-game.git`
+1. Clone the [Unreal GDK Starter Project](https://github.com/improbable/UnrealGDKStarterProject/) repository by running either:
+    * (HTTPS) `git clone https://github.com/improbable/UnrealGDKStarterProject.git`
+    * (SSH) `git clone git@github.com:improbable/UnrealGDKStarterProject.git`
 
 ### Building
 
@@ -121,7 +121,7 @@ Build the Unreal GDK module dependencies which the Starter Project needs to work
     1. Select the path to the Unreal Engine fork you cloned earlier.
 1. Open **StarterProject.sln** in Visual Studio and make sure it’s set as your StartUp Project. 
 1. Build the project.
-1. Open **StarterProject.uproject** in the Unreal Editor and click [**Codegen**](#interop.md) to generate [type bindings](#glossary). 
+1. Open **StarterProject.uproject** in the Unreal Editor and click [**Codegen**](content/interop.md) to generate [type bindings](content/glossary). 
 1. Close the Unreal Editor and build the project again in Visual Studio.
 
 ### Running the Starter Project locally
@@ -137,4 +137,11 @@ TODO add steps
 
 # Next steps
 
-See the [documentation readme]() for guidance on what to set up next.
+## Setting up Actor replication
+
+Unreal provides a system called Actor replication to make it easy to make a networked game. The SpatialOS Unreal GDK allows you to continue using the native Unreal workflow without changes to your game code. However, you need to do an additional step in order for Actor replication to work with the SpatialOS Unreal GDK.
+
+To set up Actor replication:
+
+1. Set up your Actor for replication (including property replication and RPCs) using the native Unreal workflow.
+1. Generate type bindings for your Actor (see the documentation on the [Interop Code Generator](content/interop.md)). This allows the SpatialOS Unreal GDK to serialize Unreal's replication data to SpatialOS.
