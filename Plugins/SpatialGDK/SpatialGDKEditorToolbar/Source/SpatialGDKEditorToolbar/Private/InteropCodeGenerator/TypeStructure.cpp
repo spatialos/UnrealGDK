@@ -576,18 +576,19 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 
 		for (UActorComponent* Component : NativeComponents)
 		{
-			if (InteropGeneratedClasses.Find(Component->GetClass()->GetName()))
+			UClass* ComponentClass = Component->GetClass();
+			if (InteropGeneratedClasses.Find(ComponentClass->GetName()))
 			{
-				if (ComponentClasses.Find(Component->GetClass()) == INDEX_NONE)
+				if (ComponentClasses.Find(ComponentClass) == INDEX_NONE)
 				{
-					ComponentClasses.Add(Component->GetClass());
+					ComponentClasses.Add(ComponentClass);
 				}
 				else
 				{
 					FMessageDialog::Debugf(FText::FromString(FString::Printf(*Errors::DuplicateComponentError,
 						*Class->GetName(),
-						*Component->GetClass()->GetName(),
-						*Component->GetClass()->GetName())));
+						*ComponentClass->GetName(),
+						*ComponentClass->GetName())));
 				}
 			}
 		}
@@ -605,7 +606,6 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 					}
 
 					UClass* ComponentClass = Node->ComponentTemplate->GetClass();
-
 					if (InteropGeneratedClasses.Find(ComponentClass->GetName()))
 					{
 						if (ComponentClasses.Find(ComponentClass) == INDEX_NONE)
