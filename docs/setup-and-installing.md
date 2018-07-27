@@ -33,12 +33,12 @@ This guide explains how to set up the SpatialOS Unreal GDK and the Unreal Engine
 To build the SpatialOS Unreal GDK module you need the following installed:
 * Windows 10, with Command Prompt or PowerShell as your terminal
 * [Git for Windows](https://gitforwindows.org)
-* [SpatialOS version 13](https://docs.improbable.io/reference/13.0/shared/get-started/setup/win)
+* [SpatialOS version 13](https://docs.improbable.io/reference/13.1/shared/get-started/setup/win)
 * The [Windows SDK 8.1](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive)
 * Visual Studio [2015](https://visualstudio.microsoft.com/vs/older-downloads/) or [2017](https://visualstudio.microsoft.com/downloads/) (we recommend 2017)
 
 ### Other
-You need to have an Epic Games account and be able to access the Unreal Engine source code on GitHub. To set this up, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
+As part of your Unreal GDK setup, you need to clone the SpatialOS fork of the Unreal Engine source code on GitHub. In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the Unreal GDK without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
 
 ## Getting and building the SpatialOS Unreal GDK fork of Unreal Engine
 

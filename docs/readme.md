@@ -30,7 +30,7 @@ We are currently not accepting public contributions. However, we are accepting i
 * [Adding a replicated property](content/adding-a-replicated-property.md)
 * [Generating a snapshot](content/generating-a-snapshot.md)
 * [Supported replicated types](content/supported-replicated-types.md)
-* [Interop](content/interop.md)
+* [Interop Code Generator](content/interop.md)
 * TODO add more pages here and review order. <br>
 actor handover, singleton actor/Game State Manager, snapshots, toolbar
 
