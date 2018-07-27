@@ -759,6 +759,12 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		return;
 	}
 
+	if (!Actor->GetNetConnection())
+	{
+		UE_LOG(LogNet, Warning, TEXT("No owning connection for actor %s. Function %s will not be processed."), *Actor->GetName(), *Function->GetName());
+		return;
+	}
+
 	// The RPC might have been called by an actor directly, or by a subobject on that actor (e.g. UCharacterMovementComponent).
 	UObject* CallingObject = SubObject ? SubObject : Actor;
 
