@@ -1,6 +1,6 @@
 # Set up and get started with the SpatialOS Unreal GDK
 
-This guide explains how to set up the SpatialOS Unreal GDK and the Unreal Engine fork for use with the Starter Project. If you want to use your own native Unreal project, follow the below steps up to and including [Cloning](#cloning), and then follow the [guide to porting your project from Unreal](content/porting-a-native-unreal-project).
+This guide explains how to set up the SpatialOS Unreal GDK and the Unreal Engine fork for use with the Starter Project. If you want to use your own native Unreal project, follow the below steps up to and including [Cloning](content/cloning.md), and then follow the [guide to porting your project from Unreal](content/porting-a-native-unreal-project).
 
 ## Contents
 
@@ -70,19 +70,19 @@ If the environment variable is registered correctly, this returns the path you u
 > Building the Unreal Engine fork from source could take up to a few hours.
 
 1. Open **File Explorer** and navigate to the directory you cloned the Unreal Engine fork into.
-1. Double-click **Setup.bat**.
-<br>This installs prerequisites for building Unreal Engine 4, and may take a while.
+1. Double-click **`Setup.bat`**.
+</br>This installs prerequisites for building Unreal Engine 4, and may take a while.
     >  While running the Setup file, you should see `Checking dependencies (excluding Mac, Android)...`. If it also says `excluding Linux`, make sure that you set the environment variable `LINUX_MULTIARCH_ROOT` correctly, and run the Setup file again.
-1. In the same directory, double-click **GenerateProjectFiles.bat**.
-<br>This sets up the project files required to build Unreal Engine 4.
+1. In the same directory, double-click **`GenerateProjectFiles.bat`**.
+</br>This sets up the project files required to build Unreal Engine 4.
         
     > Note: If you encounter an `error MSB4036: The "GetReferenceNearestTargetFrameworkTask" task was not found` when building with Visual Studio 2017, check that you have NuGet Package Manager installed via the Visual Studio installer.
 1. In the same directory, open **UE4.sln** in Visual Studio.
 1. In Visual Studio, on the toolbar, go to **Build > Configuration Manager** and set your active solution configuration to **Development Editor** and your active solution platform to **Win64**.
-1. In the Solution Explorer window, right-click on the **UE4** project and select **Build** (you may be prompted to install some dependencies first).<br>
+1. In the Solution Explorer window, right-click on the **UE4** project and select **Build** (you may be prompted to install some dependencies first).</br>
     This builds Unreal Engine, which can take up to a couple of hours.
 1. Once the build succeeds, in the Solution Explorer, find **Programs > AutomationTool**. Right-click this project and select Build. 
-<br>You have now built Unreal Engine 4 for cross-compilation for Linux.
+</br>You have now built Unreal Engine 4 for cross-compilation for Linux.
     > Once you've built Unreal Engine, *don't move it into another directory*: that will break the integration.
 
 ## Setting up the Unreal GDK module and Starter Project
@@ -107,12 +107,12 @@ Follow the steps below to:
 
 Build the Unreal GDK module dependencies which the Starter Project needs to work with the GDK and add the Unreal GDK to the Starter Project.
 
-1. Open **File Explorer**, navigate to the root directory of the Unreal GDK repository, and double-click **BuildGDK.bat**. This requires authorization with your SpatialOS account.
+1. Open **File Explorer**, navigate to the root directory of the Unreal GDK repository, and double-click **`BuildGDK.bat`**. This requires authorization with your SpatialOS account.
 1. Navigate to the root directory of the Unreal GDK Starter Project repository.
 1. Create symlinks between the Starter Project and the Unreal GDK:
     1. Open another instance of **File Explorer** and navigate to the root directory of the Starter Project. Within this directory, there’s a batch script named **GenerateGDKSymlinks.bat**.
-    1. Drag the Unreal GDK folder onto the batch script **GenerateGDKSymlinks.bat**.<br>This brings up a terminal window, and the output should be something like `Successfully created symlinks to “C:\Users\name\Documents\unreal-gdk”`.<br>For more information on helper scripts, see [Helper scripts](https://github.com/improbable/UnrealGDKStarterProject#helper-scripts) in the Starter Project readme.
-1. Within the root directory of the Starter Project repository, go to **Game > Scripts** and double-click **Codegen.bat**. <br>This initializes the project. It should succeed quickly and silently.
+    1. Drag the Unreal GDK folder onto the batch script **GenerateGDKSymlinks.bat**.</br>This brings up a terminal window, and the output should be something like `Successfully created symlinks to “C:\Users\name\Documents\unreal-gdk”`.</br>For more information on helper scripts, see [Helper scripts](https://github.com/improbable/UnrealGDKStarterProject#helper-scripts) in the Starter Project readme.
+1. Within the root directory of the Starter Project repository, go to **Game > Scripts** and double-click **`Codegen.bat`**. </br>This initializes the project. It should succeed quickly and silently.
 1. Set the Starter Project to work with the Unreal Engine fork you cloned and installed earlier. To do this:
     1. In File Explorer, navigate to the root directory of the Unreal GDK Starter Project repository, and then to the **Game** directory within it. 
     1. Right-click **StarterProject.uproject** and select **Switch Unreal Engine version**.
@@ -131,7 +131,7 @@ Build the Unreal GDK module dependencies which the Starter Project needs to work
 
 ### Running the Starter Project in the cloud
 
-To run a cloud deployment, you'll need to prepare your server-worker and client-worker assemblies, and upload them to the cloud.
+To run a cloud deployment, you need to prepare your server-worker and client-worker assemblies, and upload them to the cloud.
 
 > Building the assemblies can take a while - we recommend installing IncrediBuild, FastBuild, or another build distributor.
 
@@ -142,7 +142,6 @@ To run a cloud deployment, you'll need to prepare your server-worker and client-
 1. Upload the assemblies to the cloud, specifying an assembly name (this covers both assemblies): `spatial cloud upload <assembly_name>`
 1. Launch a deployment, specifying a deployment name: `spatial cloud launch <assembly_name> default_launch.json <deployment_name> --snapshot=snapshots\default.snapshot`
 1. Follow the steps [here](https://docs.improbable.io/reference/13.1/shared/get-started/tour#start-a-game-client) (SpatialOS documentation) to launch the game.
-
 
 # Next steps
 
