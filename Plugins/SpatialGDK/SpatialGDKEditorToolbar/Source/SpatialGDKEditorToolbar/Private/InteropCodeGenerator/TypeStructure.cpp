@@ -9,7 +9,7 @@ ClassHeaderMap InteropGeneratedClasses;
 
 namespace Errors
 {
-	FString DuplicateComponentError = TEXT("WARNING: Unreal GDK does not currently support static components of the same type.\n"
+	FString DuplicateComponentError = TEXT("WARNING: Unreal GDK does not currently support multiple static components of the same type.\n"
 		"Make sure %s has only one instance of %s or don't generate type bindings for %s");
 }
 
