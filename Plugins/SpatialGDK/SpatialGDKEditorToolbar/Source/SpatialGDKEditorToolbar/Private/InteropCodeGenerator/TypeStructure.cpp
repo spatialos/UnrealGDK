@@ -7,6 +7,12 @@
 
 ClassHeaderMap InteropGeneratedClasses;
 
+namespace Errors
+{
+	FString DuplicateComponentError = TEXT("WARNING: Unreal GDK does not currently support multiple static components of the same type.\n"
+		"Make sure %s has only one instance of %s or don't generate type bindings for %s");
+}
+
 FString GetFullCPPName(UClass* Class)
 {
 	if (Class->IsChildOf(AActor::StaticClass()))
@@ -561,7 +567,8 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 
 TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 {
-	TArray<UClass*> ComponentClasses;
+	TSet<UClass*> ComponentClasses;
+
 	if (AActor* ContainerCDO = Cast<AActor>(Class->GetDefaultObject()))
 	{
 		TInlineComponentArray<UActorComponent*> NativeComponents;
@@ -569,10 +576,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 
 		for (UActorComponent* Component : NativeComponents)
 		{
-			if (InteropGeneratedClasses.Find(Component->GetClass()->GetName()))
-			{
-				ComponentClasses.Add(Component->GetClass());
-			}
+			AddComponentClassToSet(Component->GetClass(), ComponentClasses, Class);
 		}
 
 		// Components that are added in a blueprint won't appear in the CDO.
@@ -587,16 +591,31 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 						continue;
 					}
 
-					if (InteropGeneratedClasses.Find(Node->ComponentTemplate->GetClass()->GetName()))
-					{
-						ComponentClasses.Add(Node->ComponentTemplate->GetClass());
-					}
+					AddComponentClassToSet(Node->ComponentTemplate->GetClass(), ComponentClasses, Class);
 				}
 			}
 		}
 	}
 
-	return ComponentClasses;
+	return ComponentClasses.Array();
+}
+
+void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass)
+{
+	if (InteropGeneratedClasses.Find(ComponentClass->GetName()))
+	{
+		if (ComponentClasses.Find(ComponentClass) == nullptr)
+		{
+			ComponentClasses.Add(ComponentClass);
+		}
+		else
+		{
+			FMessageDialog::Debugf(FText::FromString(FString::Printf(*Errors::DuplicateComponentError,
+				*ActorClass->GetName(),
+				*ComponentClass->GetName(),
+				*ComponentClass->GetName())));
+		}
+	}
 }
 
 TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode)
