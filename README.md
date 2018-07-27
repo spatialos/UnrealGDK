@@ -13,16 +13,17 @@ You can [sign up for SpatialOS Unreal GDK updates](link) direct to your mailbox.
 * Version: pre-alpha (for evaluation only)
 * Unreal Game Development Kit repository: [github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
 
+## Recommended use
+Since the GDK is in pre-alpha, expect that everything can change. Our priority is to react to feedback and iterate quickly. This means that we won't have a deprecation cycle for APIs and workflows for now.
+
+Moreover, some aspects of the GDK are unoptimized so we can't yet recommend it for a game in production stage. We recommend to only start using the GDK if:
+* You want to be an early adopter and don't mind the rough edges and you are interested in directly or indirectly contributing to the GDK.
+- You want to start evaluating or prototyping for a long term project.
+
+"Although every feature you need to build your optimal game may not be ready yet, this is a great time to get involved and shape the Unreal GDK for what you want to see. We are committed to improving the GDK very rapidly, aiming for an alpha release in September.
+
 ## Known issues
  See the [Known issues](docs/known-issues.md) documentation.
-
-## Recommended use
-This pre-alpha version software and its documentation is, by its very nature, rough and ready; every part of it is subject to change and it isn’t optimised for performance.
-
-This release is for evaluation and feedback only, with limited documentation; we aren’t supporting any game development on the pre-alpha version of the Unreal GDK.
-
-**Who is it for?** <br>
-This pre-alpha release is for experienced Unreal developers who have some understanding of [SpatialOS concepts](https://docs.improbable.io/reference/13.0/shared/concepts/spatialos), and want to give early feedback.
 
 ## Installation and setup
 For prerequisites, installation and setup, see the [Installation and setup](docs/setup-and-installing.md) documentation.
@@ -37,14 +38,15 @@ Find us in the [**#unreal** channel](https://discordapp.com/channels/31127363330
 Visit the **feedback** section in our [forums](https://forums.improbable.io/) and use the **unreal-gdk** tag. [This link](https://forums.improbable.io/new-topic?category=Feedback&tags=unreal-gdk) takes you there and pre-fills the category and tag.
 
 **GitHub issues**<br>
-Create an issue in [this repository](https://github.com/spatialos/unreal-gdk/issues).
+Create an issue in [this repository](https://github.com/improbable/UnrealGDK/issues).
 
 ## Contributions
-We are not currently accepting public contributions - see our [contributions](https://github.com/improbabl/unreal-gdk/.github/CONTRIBUTING.md) policy. However, we are accepting issues and we do want your feedback.
+We are not currently accepting public contributions - see our [contributions](.github/CONTRIBUTING.md) policy. However, we are accepting issues and we do want your feedback.
 
 ## Documentation
-For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/13.0/shared/concepts/spatialos). <br/> 
 For guidance on using the SpatialOS Unreal GDK, see the [documentation in this GitHub repository](docs/readme.md).
+
+For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/13.0/shared/concepts/spatialos). <br/> 
 
 ## Support
 We are not supporting the pre-alpha release for game development, as this version is for evaluation only. However, please give us your [feedback](#give-us-feedback).
