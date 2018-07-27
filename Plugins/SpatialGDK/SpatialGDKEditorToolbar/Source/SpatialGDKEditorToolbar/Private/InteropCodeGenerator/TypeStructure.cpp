@@ -576,7 +576,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 
 		for (UActorComponent* Component : NativeComponents)
 		{
-			AddComponentClassToSet(Class, Component->GetClass(), ComponentClasses);
+			AddComponentClassToSet(Component->GetClass(), ComponentClasses, Class);
 		}
 
 		// Components that are added in a blueprint won't appear in the CDO.
@@ -591,7 +591,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 						continue;
 					}
 
-					AddComponentClassToSet(Class, Node->ComponentTemplate->GetClass(), ComponentClasses);
+					AddComponentClassToSet(Node->ComponentTemplate->GetClass(), ComponentClasses, Class);
 				}
 			}
 		}
@@ -600,7 +600,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 	return ComponentClasses.Array();
 }
 
-void AddComponentClassToSet(UClass* ActorClass, UClass* ComponentClass, TSet<UClass*>& ComponentClasses)
+void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass)
 {
 	if (InteropGeneratedClasses.Find(ComponentClass->GetName()))
 	{
