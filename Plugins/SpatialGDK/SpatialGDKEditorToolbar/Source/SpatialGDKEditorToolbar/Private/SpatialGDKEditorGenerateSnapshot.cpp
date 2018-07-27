@@ -95,7 +95,7 @@ worker::Entity CreateGlobalStateManagerEntity(const NameToEntityIdMap& Singleton
 		.AddMetadataComponent(Metadata::Data("GlobalStateManager"))
 		.SetPersistence(true)
 		.SetReadAcl(AnyWorkerReadPermission)
-		.AddComponent<unreal::GlobalStateManager>(unreal::GlobalStateManager::Data{SingletonNameToEntityId}, UnrealWorkerWritePermission)
+		.AddComponent<unreal::GlobalStateManager>(unreal::GlobalStateManager::Data{ SingletonNameToEntityId, {} }, UnrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{}, UnrealWorkerWritePermission)
 		.Build();
 }

@@ -130,12 +130,6 @@ void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId Com
 	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: worker::ChangeAuthorityOp component ID: %u entity ID: %lld inCriticalSection: %d"),
 		ComponentId, AuthChangeOp.EntityId, (int)bInCriticalSection);
 
-	// Receive authority over the spawner, makes us a "super" authoritative worker
-	// TODO: Fire level spawning only once
-	if (AuthChangeOp.EntityId == SpatialConstants::SPAWNER_ENTITY_ID && AuthChangeOp.Authority == worker::Authority::kAuthoritative) {
-		NetDriver->GetSpatialInterop()->ReserveReplicatedStablyNamedActors();
-	}
-
 	// When a component is initialised, the callback dispatcher will automatically deal with authority changes. Therefore, we need
 	// to only queue changes if the entity itself has been queued for addition, which can only happen in a critical section.
 	if (bInCriticalSection && PendingAddEntities.Contains(FEntityId(AuthChangeOp.EntityId)))
@@ -468,6 +462,7 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 			EntityRegistry->AddToRegistry(EntityId, EntityActor);
 
 			// Set up actor channel.
+			auto PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
 			auto Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
 			check(Channel);
 

@@ -14,6 +14,11 @@ class USpatialOS;
 class USpatialActorChannel;
 class USpatialPackageMapClient;
 class USpatialNetDriver;
+namespace improbable {
+	namespace unreal {
+		class GlobalStateManagerData;
+	}
+}
 
 SPATIALGDK_API DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInterop, Log, All);
 
@@ -21,6 +26,7 @@ SPATIALGDK_API DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInterop, Log, All);
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
 
 using NameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
+using EntityIdToPathMap = worker::Map<worker::EntityId, std::string>;
 
 // Stores the result of an attempt to call an RPC sender function. Either we have an unresolved object which needs
 // to be resolved before we can send this RPC, or we successfully sent a command request.
@@ -167,8 +173,6 @@ public:
 	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
 	worker::RequestId<worker::ReserveEntityIdRequest> SendReserveEntityIdRequest(USpatialActorChannel* Channel);
 	worker::RequestId<worker::DeleteEntityRequest> SendDeleteEntityRequest(const FEntityId& EntityId);
-	void ReserveReplicatedStablyNamedActor(USpatialActorChannel* Channel);
-	void ReserveReplicatedStablyNamedActors();
 	void SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
 	void SendSpatialUpdateSubobject(USpatialActorChannel* Channel, UObject* Subobject, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
@@ -220,7 +224,13 @@ public:
 	// Handle GSM Authority received
 	void ExecuteInitialSingletonActorReplication(const NameToEntityIdMap& SingletonNameToEntityId);
 	bool IsSingletonClass(UClass* Class);
+	improbable::unreal::GlobalStateManagerData* GetGlobalStateManagerData() const;
 	NameToEntityIdMap* GetSingletonNameToEntityId() const;
+	EntityIdToPathMap* GetEntityIdToReplicatedStablyNamedPath() const;
+
+	void ReserveReplicatedStablyNamedActor(USpatialActorChannel* Channel);
+	void AddReplicatedStablyNamedActorToGSM(const FEntityId& EntityId, AActor* Actor);
+	void ReserveReplicatedStablyNamedActors();
 
 	// Accessors.
 	USpatialOS* GetSpatialOS() const

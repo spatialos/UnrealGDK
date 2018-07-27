@@ -77,6 +77,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 		if (op.Authority == worker::Authority::kAuthoritative)
 		{
 			ExecuteInitialSingletonActorReplication(*GetSingletonNameToEntityId());
+			ReserveReplicatedStablyNamedActors();
 		}
 	});
 
@@ -221,28 +222,6 @@ worker::RequestId<worker::DeleteEntityRequest> USpatialInterop::SendDeleteEntity
 	}
 
 	return DeleteEntityRequestId;
-}
-
-void USpatialInterop::ReserveReplicatedStablyNamedActor(USpatialActorChannel* Channel)
-{
-	if (!bCanSpawnReplicatedStablyNamedActors)
-	{
-		ReplicatedStablyNamedActorQueue.Add(Channel);
-	}
-	else
-	{
-		Channel->SendReserveEntityIdRequest();
-	}
-}
-
-void USpatialInterop::ReserveReplicatedStablyNamedActors()
-{
-	bCanSpawnReplicatedStablyNamedActors = true;
-	for (USpatialActorChannel* Channel : ReplicatedStablyNamedActorQueue) 
-	{
-		Channel->SendReserveEntityIdRequest();
-	}
-	ReplicatedStablyNamedActorQueue.Empty();
 }
 
 void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location)
@@ -944,7 +923,7 @@ bool USpatialInterop::IsSingletonClass(UClass* Class)
 	return false;
 }
 
-NameToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
+improbable::unreal::GlobalStateManagerData* USpatialInterop::GetGlobalStateManagerData() const
 {
 	TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
 	auto It = View->Entities.find(SpatialConstants::GLOBAL_STATE_MANAGER);
@@ -952,8 +931,82 @@ NameToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
 	if (It != View->Entities.end())
 	{
 		improbable::unreal::GlobalStateManagerData* GSM = It->second.Get<improbable::unreal::GlobalStateManager>().data();
-		return &(GSM->singleton_name_to_entity_id());
+		return GSM;
 	}
 
 	return nullptr;
+}
+
+NameToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
+{
+	improbable::unreal::GlobalStateManagerData* GSM = GetGlobalStateManagerData();
+
+	if (GSM == nullptr) return nullptr;
+
+	return &(GSM->singleton_name_to_entity_id());
+}
+
+worker::Map<worker::EntityId, std::string>* USpatialInterop::GetEntityIdToReplicatedStablyNamedPath() const
+{
+	improbable::unreal::GlobalStateManagerData* GSM = GetGlobalStateManagerData();
+
+	if (GSM == nullptr) return nullptr;
+
+	return &(GSM->entity_id_to_replicated_stably_named_path());
+}
+
+void USpatialInterop::ReserveReplicatedStablyNamedActor(USpatialActorChannel* Channel)
+{
+	ReplicatedStablyNamedActorQueue.Add(Channel);
+	if (bCanSpawnReplicatedStablyNamedActors)
+	{
+		ReserveReplicatedStablyNamedActors();
+	}
+}
+
+void USpatialInterop::AddReplicatedStablyNamedActorToGSM(const FEntityId& EntityId, AActor* Actor)
+{
+	EntityIdToPathMap& EntityIdToReplicatedStablyNamedPathMap = *GetEntityIdToReplicatedStablyNamedPath();
+	// If the map already has the mapping, meaning the actor was already spawned, return early
+	if (EntityIdToReplicatedStablyNamedPathMap.count(EntityId.ToSpatialEntityId()) != 0) return;
+
+	std::string Path = std::string(TCHAR_TO_UTF8(*Actor->GetFName().ToString()));
+	EntityIdToReplicatedStablyNamedPathMap.emplace(EntityId.ToSpatialEntityId(), Path);
+
+	improbable::unreal::GlobalStateManager::Update Update;
+	Update.set_entity_id_to_replicated_stably_named_path(EntityIdToReplicatedStablyNamedPathMap);
+
+	TSharedPtr<worker::Connection> Connection = SpatialOSInstance->GetConnection().Pin();
+	Connection->SendComponentUpdate<improbable::unreal::GlobalStateManager>(worker::EntityId((long)SpatialConstants::GLOBAL_STATE_MANAGER), Update);
+}
+
+void USpatialInterop::ReserveReplicatedStablyNamedActors()
+{
+	bCanSpawnReplicatedStablyNamedActors = true;
+	EntityIdToPathMap& EntityIdToReplicatedStablyNamedPath = *GetEntityIdToReplicatedStablyNamedPath();
+
+	for (USpatialActorChannel* Channel : ReplicatedStablyNamedActorQueue)
+	{
+		std::string Path = TCHAR_TO_UTF8(*Channel->Actor->GetFName().ToString());
+
+		// Inefficient, check if we have already spawned this actor
+		bool Found = false;
+		for (const auto& Pair : EntityIdToReplicatedStablyNamedPath)
+		{
+			if (Pair.second == Path)
+			{
+				Found = true;
+				Channel->RegisterEntityId(FEntityId{ Pair.first });
+				break;
+			}
+		}
+		if (Found)
+		{
+			continue;
+		}
+
+		Channel->SendReserveEntityIdRequest();
+	}
+
+	ReplicatedStablyNamedActorQueue.Empty();
 }
