@@ -401,7 +401,7 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 			bool bDoingDeferredSpawn = false;
 
 			// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
-			if (NetDriver->IsServer() && ActorClass == APlayerController::StaticClass())
+			if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
 			{
 				checkf(!UnrealMetadataComponent->owner_worker_id().empty(), TEXT("A player controller entity must have an owner worker ID."));
 				FString URLString = FURL().ToString();
