@@ -4,7 +4,7 @@
 
 # Unreal GDK C++ coding standards
 
-> In general, we follow the [Coding Standard](https://docs.unrealengine.com/en-us/Programming/Development/CodingStandard) set out by Epic. This page highlights some additions to Epic's guidelines.
+> In general, we follow the [Coding Standard](https://docs.unrealengine.com/en-us/Programming/Development/CodingStandard) (Unreal documentation) set out by Epic. This page highlights some additions to Epic's guidelines.
 
 * Avoid assignments in if statements unless the variable is declared in the statement.
 
