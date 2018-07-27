@@ -42,7 +42,7 @@ You need to have an Epic Games account and be able to access the Unreal Engine s
 
 ## Getting and building the SpatialOS Unreal GDK fork of Unreal Engine
 
-To use the Unreal GDK, you need to build Unreal Engine 4 from source.
+To use the Unreal GDK, you need to build the SpatialOS fork of Unreal Engine 4 from source.
 
 ### Getting the Unreal Engine fork source code and Unreal Linux cross-platform support
 1. In a terminal window, clone the [Unreal Engine fork](https://github.com/improbable/UnrealEngine/tree/UnrealEngine419_SpatialGDK) repository and check out the fork by running either:
@@ -50,7 +50,7 @@ To use the Unreal GDK, you need to build Unreal Engine 4 from source.
     * (SSH) `git clone git@github.com:improbable/UnrealEngine.git -b UnrealEngine419_SpatialGDK`
 1. To build Unreal server workers for SpatialOS deployments, you need to build targeting Linux. This requires cross-compilation of your SpatialOS project and Unreal Engine fork.
 
-    From Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) setup guide, download and unzip `v11 clang 5.0.0-based - for UE4 4.19`.
+    From Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) setup guide, next to **v11**, click **clang 5.0.0-based** to download the archive **v11_clang-5.0.0-centos.zip** containing the linux cross compilation toolchain, then unzip.
 
 ### Adding environment variables
 
@@ -61,7 +61,7 @@ You need to add two environment variables: one to set the path to the Unreal Eng
 1. Set the variable value to be the path to the directory you cloned the Unreal Engine fork into.
 1. Make sure that the new environment variable is registered by restarting your terminal and running `echo %UNREAL_HOME%` (Command Prompt) or `echo $Env:UNREAL_HOME` (PowerShell). If the environment variable is registered correctly, this returns the path to the directory you cloned the Unreal Engine fork into. If it doesn’t, check that you’ve set the environment variable correctly.
 1. Create a system variable named **LINUX_MULTIARCH_ROOT**.
-1. Set the variable value to be the path to the directory you unzipped `v11 clang 5.0.0-based - for UE4 4.19` into.
+1. Set the variable value to be the path to the directory of your unzipped Linux cross compilation toolchain.
 1. Make sure that the new environment variable is registered by restarting your terminal and running `echo %LINUX_MULTIARCH_ROOT%` (Command Prompt) or `echo $Env:LINUX_MULTIARCH_ROOT` (PowerShell). 
 If the environment variable is registered correctly, this returns the path you unzipped `v11 clang 5.0.0-based - for UE4 4.19` into. If it doesn’t, check that you’ve set the environment variable correctly.
 
@@ -91,8 +91,6 @@ Follow the steps below to:
 * Clone the Unreal GDK and Starter Project repositories.
 * Build the Unreal GDK module dependencies which the Starter Project needs so it can work with the GDK, and add the Unreal GDK to the Starter Project.
 
-> You need to clone and set up the Starter Project even if you don’t plan to use it. Otherwise, you won’t be able to use the Unreal GDK.
-
 ### Cloning
 
 1. In a Git Bash terminal window, clone the [Unreal GDK](https://github.com/improbable/UnrealGDK) repository by running either:
@@ -105,7 +103,7 @@ Follow the steps below to:
 
 ### Building
 
-> If you want to port an existing Unreal project to the Unreal GDK, follow [this guide](#porting-a-native-unreal-project) instead of continuing to follow these steps. 
+> If you want to port an existing Unreal project to the Unreal GDK, follow [this guide](./porting-a-native-unreal-project) instead of continuing to follow these steps. 
 
 Build the Unreal GDK module dependencies which the Starter Project needs to work with the GDK and add the Unreal GDK to the Starter Project.
 
@@ -133,15 +131,26 @@ Build the Unreal GDK module dependencies which the Starter Project needs to work
 
 ### Running the Starter Project in the cloud
 
-TODO add steps
+To run a cloud deployment, you'll need to prepare your server-worker and client-worker assemblies, and upload them to the cloud.
+
+> Building the assemblies can take a while - we recommend installing IncrediBuild, FastBuild, or another build distributor.
+
+1. In a terminal window, navigate to the root directory of the Starter Project repository.
+1. Build a server-worker assembly: `Game\Scripts\Build.bat StarterProjectServer Linux Development StarterProject.uproject`
+1. Build a client-worker assembly: `Game\Scripts\Build.bat StarterProject Win64 Development StarterProject.uproject`
+1. Navigate to `StarterProject\spatial`.
+1. Upload the assemblies to the cloud, specifying an assembly name (this covers both assemblies): `spatial cloud upload <assembly_name>`
+1. Launch a deployment, specifying a deployment name: `spatial cloud launch <assembly_name> default_launch.json <deployment_name> --snapshot=snapshots\default.snapshot`
+1. Follow the steps [here](https://docs.improbable.io/reference/13.1/shared/get-started/tour#start-a-game-client) (SpatialOS documentation) to launch the game.
+
 
 # Next steps
 
 ## Setting up Actor replication
 
-Unreal provides a system called Actor replication to make it easy to make a networked game. The SpatialOS Unreal GDK allows you to continue using the native Unreal workflow without changes to your game code. However, you need to do an additional step in order for Actor replication to work with the SpatialOS Unreal GDK.
+Unreal provides a system called [Actor replication](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors) (Unreal documentation) to make it easy to make a networked game. The SpatialOS Unreal GDK allows you to continue using the native Unreal workflow without changes to your game code. However, you need to do an additional step in order for Actor replication to work with the SpatialOS Unreal GDK.
 
 To set up Actor replication:
 
-1. Set up your Actor for replication (including property replication and RPCs) using the native Unreal workflow.
+1. Set up your Actor for replication (including property replication and RPCs) using the [native Unreal workflow](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors) (Unreal documentation).
 1. Generate type bindings for your Actor (see the documentation on the [Interop Code Generator](content/interop.md)). This allows the SpatialOS Unreal GDK to serialize Unreal's replication data to SpatialOS.
