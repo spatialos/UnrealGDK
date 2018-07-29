@@ -1666,7 +1666,6 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 				const FRepHandlePropertyMap& HandleToPropertyMap = GetRepHandlePropertyMap();
 				FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);)""",
 			*SchemaRPCComponentName(ERPCType::RPC_Client, Class, true));
-
 		SourceWriter.PrintNewLine();
 		for (auto& RepProp : RepData[Group])
 		{
