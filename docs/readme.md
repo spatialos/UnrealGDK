@@ -36,7 +36,10 @@ We are currently not accepting public contributions. However, we are accepting i
 * [Generating a snapshot](content/generating-a-snapshot.md)
 * [Supported replicated types](content/supported-replicated-types.md)
 * [Interop Code Generator](content/interop.md)
-* TODO add more pages here and review order. </br>
-actor handover, singleton actor/Game State Manager, snapshots, toolbar
+* [Snapshots](content/snapshots.md)
+* [Singleton Actors and Global State Manager](content/singleton-actors.md)
+* [The SpatialOS Unreal GDK toolbar](content/toolbar.md)
+* [Actor handover](content/actor-handover.md)
+
 
 &copy; 2018 Improbable

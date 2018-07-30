@@ -53,7 +53,7 @@ We are not supporting the pre-alpha release for game development, as this versio
 
 ## Roadmap
 
-TODO add roadmap
+See the [latest roadmap (Trello board)](https://trello.com/b/7wtbtwmL/unreal-gdk-roadmap) and let us know what you'd like to see in there.
 
 ## Unreal Engine changes
 In order to transform Unreal from a single server engine to a distributed model, we had to make a small number of changes to UE4 code. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our forked [Unreal Engine repo, `UnrealEngine419_SpatialGDK` branch](https://github.com/improbable/UnrealEngine/tree/UnrealEngine419_SpatialGDK). <br/>
