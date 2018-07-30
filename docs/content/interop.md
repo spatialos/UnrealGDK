@@ -4,7 +4,7 @@ The Interop Code Generator (ICG) is part of the SpatialOS Unreal GDK toolbar. It
 
 The ICG creates SpatialOS `.schema` files from `UObject` class layouts via Unreal's reflection system (a system in Unreal for programs to self-examine). See the Unreal website’s blog on [the reflection system](https://www.unrealengine.com/en-US/blog/unreal-property-system-reflection) and SpatialOS [documentation on schema](https://docs.improbable.io/reference/13.0/shared/schema/introduction).
 
-The `.schema` files enable SpatialOS to understand and store Unreal data. The ICG also creates `SpatialTypeBinding` classes (known as [type bindings](./glossary.md”)). 
+The `.schema` files enable SpatialOS to understand and store Unreal data. The ICG also creates `SpatialTypeBinding` classes (known as [type bindings](./glossary.md#type-bindings”)). 
 
 These classes:
 * convert entity property updates to and from SpatialOS in the form of [component updates](https://docs.improbable.io/reference/13.1/csharpsdk/using/sending-data#sending-and-receiving-component-updates).
@@ -25,7 +25,7 @@ As the Interop Code Generator is an plugin for the Unreal toolbar, to use it you
 
 The SpatialOS build of Unreal has an **Interop Codegen** button; on the SpatialOS Unreal GDK toolbar, select **Interop Codegen** to trigger the ICG process:
 
-![Interop Codegen button on toolbar](../assets/screen_grabs/interop_codegen.png)
+![Interop Codegen button on toolbar](../assets/screen_grabs/codegen.png)
 
 ## Setting up the Interop Code Generator
 
@@ -81,7 +81,7 @@ ExampleGameMyClass=ExampleGameMyClass.h
 ExampleGameMyClass=Dependencies/MyClassDependency.h
 ```
 
-The [Unreal GDK Starter Project’s](https://github.com/improbable/UnrealGDKStarterProject)  `DefaultEditorSpatialGDK.ini` file contains the following:<br/>
+The [Unreal GDK Starter Project’s](https://github.com/spatialos/UnrealGDKStarterProject)  `DefaultEditorSpatialGDK.ini` file contains the following:<br/>
 
 ```
 ;PlayerController
@@ -104,7 +104,7 @@ The `.schema` files have names relevant to the class name you give them. From th
 
     Some `.schema` files have a `Types` tag;  in this situation `PlayerCharacter.schema` files have the filename `PlayerCharacterTypes.schema`.  This indicates this is a schema containing RPC types which child or sibling classes can reuse.
 
-* The generated `SpatialTypeBinding` files are in the [Unreal GDK repository](https://github.com/improbable/unreal-gdk) at `<Project Root>/workers/unreal/Game/source/GameName/Generated/`. 
+* The generated `SpatialTypeBinding` files are in the [Unreal GDK repository](https://github.com/spatialos/UnrealGDK) at `<Project Root>/workers/unreal/Game/source/GameName/Generated/`. 
 
 ### Editing the Interop Code Generator tool
 If you edit the Interop Code Generator tool itself, you might wish to delete the ICG generated folders as they can cause compilation issues if any of your changes introduce badly generated code.
