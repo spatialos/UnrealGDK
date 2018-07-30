@@ -58,11 +58,11 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
  ![Ttoolbar](../assets/screen_grabs/toolbar/toolbar_settings.png)
 
 
-* Project Root Folder</br>
+* **Project Root Folder**</br>
 By default, this points to the root folder of your SpatialOS Unreal GDK project. If you're using a non-standard structure, you'll need to set this yourself.
 
-* Launch Configuration</br>
+* **Launch Configuration**</br>
 The [launch configuration file](https://docs.improbable.io/reference/13.1/shared/reference/file-formats/launch-config) (SpatialOS documentation) to use when running `spatial local launch` using the `Launch` button.
 
-* Stop on Exit</br>
+* **Stop on Exit**</br>
 If enabled, shuts down running deployments when you close the Unreal Editor.
