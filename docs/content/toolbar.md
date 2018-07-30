@@ -1,4 +1,4 @@
-# The SpatialOS Unreal GDK toolbar
+# SpatialOS Unreal GDK toolbar
 
 The SpatialOS Unreal GDK toolbar is an easy way to run and alter [`spatial` command-line tool](https://docs.improbable.io/reference/13.1/shared/glossary#the-spatial-command-line-tool) (SpatialOS documentation) commands from inside the Unreal Editor.
 
