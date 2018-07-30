@@ -130,11 +130,11 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
 1. In `<GameRoot>\Config`, open `DefaultEngine.ini` and add:
 
     ``` ini
-    [\Script\Engine.Engine]
+    [/Script/Engine.Engine]
     !NetDriverDefinitions=ClearArray
     +NetDriverDefinitions=(DefName="GameNetDriver",DriverClassName="\Script\SpatialGDK.SpatialNetDriver",DriverClassNameFallback="\Script\SpatialGDK.SpatialNetDriver")
 
-    [\Script\SpatialGDK.SpatialNetDriver]
+    [/Script/SpatialGDK.SpatialNetDriver]
     NetConnectionClassName="\Script\SpatialGDK.SpatialNetConnection"
     ```
 
