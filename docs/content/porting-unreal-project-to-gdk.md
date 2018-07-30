@@ -12,7 +12,6 @@
 * [Running the Interop Code Generator and setting up the UE4 Editor](#running-the-interop-code-generator-and-setting-up-the-UE4-editor)
 * [Running your game](#running-your-game)
 
-
 > This workflow is very subject to change. We're aware that it's not optimized, and one of our priorities is to improve iteration times.
 ## Prerequisites
 Follow the [setup guide](../setup-and-installing.md) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**.
@@ -132,11 +131,11 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
     ```
 
     > These lines ensure that the SpatialOS Unreal GDK can override Unreal’s network replication.
-    > 
+    >
     > If you ever need to run with Unreal networking for workflow or validation reasons, simply add `-NetDriverOverrides=/Script/OnlineSubsystemUtils.IpNetDriver` to your command line arguments when you’re launching the game (to do this in the Visual Studio Solution Explorer, right-click the project and select **Properties**, then **Debugging**, and add to the list of Command Arguments).
-    > 
-    > You can easily switch between networking modes using this argument. As the SpatialOS Unreal GDK is in pre-alpha, switching back to Unreal’s networking may be a viable way to work around some issues you may encounter, and may speed up your iteration. However, in Unreal networking mode you lose access to key multi-server features of the GDK, which may lead to erratic behavior. 
-    > 
+    >
+    > You can easily switch between networking modes using this argument. As the SpatialOS Unreal GDK is in pre-alpha, switching back to Unreal’s networking may be a viable way to work around some issues you may encounter, and may speed up your iteration. However, in Unreal networking mode you lose access to key multi-server features of the GDK, which may lead to erratic behavior.
+    >
     > In the future, we expect to achieve parity with Unreal networking in terms of iteration speed and stability, thus removing the need for a networking mode switch.
 1. Open File Explorer and copy the file `<UnrealGDKStarterProject>\Game\Config\DefaultEditorSpatialGDK.ini` into the directory `<ProjectRoot>\<GameRoot>\Config`.
 
@@ -187,7 +186,7 @@ This initializes the project. It should succeed quickly and silently.
 1. Compile and run again with the same build configuration (new source files that require compilation will have been generated when you ran the Interop Code Generator).
 
     > You may now have compilation errors in your *TypeBinding generated files from missing `#include`s. Identify what header file each class is missing, and add it to the DefaultEditorSpatialGDK.ini config file.
-    > 
+    >
     > For example, if you get the error `No reference to CameraAnim`, you need to add `StarterProjectPlayerController=Camera/CameraAnim.h` to `DefaultEditorSpatialGDK.ini`.
 
 ## Running your game
