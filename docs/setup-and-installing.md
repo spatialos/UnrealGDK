@@ -45,9 +45,9 @@ As part of your Unreal GDK setup, you need to clone the SpatialOS fork of the Un
 To use the Unreal GDK, you need to build the SpatialOS fork of Unreal Engine 4 from source.
 
 ### Getting the Unreal Engine fork source code and Unreal Linux cross-platform support
-1. In a terminal window, clone the [Unreal Engine fork](https://github.com/improbable/UnrealEngine/tree/UnrealEngine419_SpatialGDK) repository and check out the fork by running either:
-    * (HTTPS) `git clone https://github.com/improbable/UnrealEngine.git -b UnrealEngine419_SpatialGDK`
-    * (SSH) `git clone git@github.com:improbable/UnrealEngine.git -b UnrealEngine419_SpatialGDK`
+1. In a terminal window, clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK) repository and check out the fork by running either:
+    * (HTTPS) `git clone https://github.com/spatialos/UnrealEngine.git -b 4.19-SpatialOSUnrealGDK`
+    * (SSH) `git clone git@github.com:spatialos/UnrealEngine.git -b 4.19-SpatialOSUnrealGDK`
 1. To build Unreal server workers for SpatialOS deployments, you need to build targeting Linux. This requires cross-compilation of your SpatialOS project and Unreal Engine fork.
 
     From Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) setup guide, next to **v11**, click **clang 5.0.0-based** to download the archive **v11_clang-5.0.0-centos.zip** containing the Linux cross-compilation toolchain, then unzip.
@@ -93,13 +93,13 @@ Follow the steps below to:
 
 ### Cloning
 
-1. In a Git Bash terminal window, clone the [Unreal GDK](https://github.com/improbable/UnrealGDK) repository by running either:
-    * (HTTPS) `git clone https://github.com/improbable/UnrealGDK.git`
-    * (SSH) `git clone git@github.com:improbable/UnrealGDK.git`
+1. In a Git Bash terminal window, clone the [Unreal GDK](https://github.com/spatialos/UnrealGDK) repository by running either:
+    * (HTTPS) `git clone https://github.com/spatialos/UnrealGDK.git`
+    * (SSH) `git clone git@github.com:spatialos/UnrealGDK.git`
 
-1. Clone the [Unreal GDK Starter Project](https://github.com/improbable/UnrealGDKStarterProject/) repository by running either:
-    * (HTTPS) `git clone https://github.com/improbable/UnrealGDKStarterProject.git`
-    * (SSH) `git clone git@github.com:improbable/UnrealGDKStarterProject.git`
+1. Clone the [Unreal GDK Starter Project](https://github.com/spatialos/UnrealGDKStarterProject/) repository by running either:
+    * (HTTPS) `git clone https://github.com/spatialos/UnrealGDKStarterProject.git`
+    * (SSH) `git clone git@github.com:spatialos/UnrealGDKStarterProject.git`
 
 ### Building
 
@@ -111,7 +111,7 @@ Build the Unreal GDK module dependencies which the Starter Project needs to work
 1. Navigate to the root directory of the Unreal GDK Starter Project repository.
 1. Create symlinks between the Starter Project and the Unreal GDK:
     1. Open another instance of **File Explorer** and navigate to the root directory of the Starter Project. Within this directory, there’s a batch script named **GenerateGDKSymlinks.bat**.
-    1. Drag the Unreal GDK folder onto the batch script **GenerateGDKSymlinks.bat**.</br>This brings up a terminal window, and the output should be something like `Successfully created symlinks to “C:\Users\name\Documents\unreal-gdk”`.</br>For more information on helper scripts, see [Helper scripts](https://github.com/improbable/UnrealGDKStarterProject#helper-scripts) in the Starter Project readme.
+    1. Drag the Unreal GDK folder onto the batch script **GenerateGDKSymlinks.bat**.</br>This brings up a terminal window, and the output should be something like `Successfully created symlinks to “C:\Users\name\Documents\unreal-gdk”`.</br>For more information on helper scripts, see [Helper scripts](https://github.com/spatialos/UnrealGDKStarterProject#helper-scripts) in the Starter Project readme.
 1. Within the root directory of the Starter Project repository, go to **Game > Scripts** and double-click **`Codegen.bat`**. </br>This initializes the project. It should succeed quickly and silently.
 1. Set the Starter Project to work with the Unreal Engine fork you cloned and installed earlier. To do this:
     1. In File Explorer, navigate to the root directory of the Unreal GDK Starter Project repository, and then to the **Game** directory within it. 

@@ -4,10 +4,11 @@
 See the [SpatialOS glossary](https://docs.improbable.io/reference/latest/shared/glossary) for terms specific to SpatialOS.
 
 ## Unreal GDK repositories
-* The SpatialOS Unreal GDK: https://github.com/improbable/UnrealGDK
-* Starter Project: https://github.com/improbable/UnrealGDKStarterProject
-* Test Suite: https://github.com/improbable/UnrealGDKTestSuite
-* Third Person Shooter: https://github.com/improbable/UnrealGDKThirdPersonShooter
+* The SpatialOS Unreal GDK: https://github.com/spatialos/UnrealGDK
+* Starter Project: https://github.com/spatialos/UnrealGDKStarterProject
+* SpatialOS Unreal GDK fork of Unreal Engine: https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK
+* Third-Person Shooter: https://github.com/spatialos/UnrealGDKThirdPersonShooter
+* Test Suite: https://github.com/spatialos/UnrealGDKTestSuite
 
 ## Unreal GDK terms
 
