@@ -62,7 +62,7 @@ Note that you may see similar errors if the same issue applies to the schema gen
 **Q:** When I try to start SpatialOS from the toolbar plugin, I get the following notification:
 `[improbable.worker.assembly.WorkerAssemblyProvider] The worker assembly does not contain any worker configurations. No workers will be able to connect to this deployment. Unless you specifically intended to start a deployment without any workers, please make sure your assembly was built correctly, and in case of a cloud deployment, also make sure it was uploaded correctly.`
 
-**A:** This is an indication that you haven’t built the worker configurations for the server and the clients. You can fix this by running the `Scripts/BuildWorkerConfig.bat` script. This generates the worker configs which allow your workers to connect to the local instance of SpatialOS.
+**A:** This is an indication that you haven’t built the worker configurations for the server-workers and client-workers. You can fix this by running the `Scripts/BuildWorkerConfig.bat` script. This generates the worker configs which allow your workers to connect to the local instance of SpatialOS.
 
 ------
 
