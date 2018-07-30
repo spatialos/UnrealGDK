@@ -14,13 +14,16 @@ You can [sign up for SpatialOS Unreal GDK updates](link) direct to your mailbox.
 * Unreal Game Development Kit repository: [github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
 
 ## Recommended use
-Since the GDK is in pre-alpha, expect that everything can change. Our priority is to react to feedback and iterate quickly. This means that we won't have a deprecation cycle for APIs and workflows for now.
+We are releasing the GDK in [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) so we can react to feedback and iterate on development quickly. To facilitate this, during our pre-alpha stage we don't have a formal deprecation cycle for APIs and workflows. This means that everything and anything can change. In addition, documentation is limited and some aspects of the GDK are not optimized.
 
-Moreover, some aspects of the GDK are unoptimized so we can't yet recommend it for a game in production stage. We recommend to only start using the GDK if:
-* You want to be an early adopter and don't mind the rough edges and you are interested in directly or indirectly contributing to the GDK.
-- You want to start evaluating or prototyping for a long term project.
+Given this, we don’t recommend using the the Unreal GDK for games in the production phase just yet.
 
-"Although every feature you need to build your optimal game may not be ready yet, this is a great time to get involved and shape the Unreal GDK for what you want to see. We are committed to improving the GDK very rapidly, aiming for an alpha release in September.
+**Who is it for?**<br>
+We recommend you start using the GDK if:
+* You don’t mind the rough edges and are interested in contributing to the GDK (see our [contributions](.github/CONTRIBUTING.md) policy).
+* You want to start evaluating the GDK or prototyping on it for a future project.
+
+Although every feature you need to build your optimal SpatialOS game may not be ready yet, this is a great time to get involved and shape the Unreal GDK. We are committed to improving the GDK rapidly, aiming for an alpha release in Autumn 2018.
 
 ## Known issues
  See the [Known issues](docs/known-issues.md) documentation.
