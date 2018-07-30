@@ -11,7 +11,7 @@ After you've run through the setup guide (including setting up Actor replication
 * [Interop Code Generator](content/interop.md)   
 * [Actor handover](content/actor-handover.md)
 
-We want your feedback on the Unreal GDK, its documentation and its [roadmap (Trello board)](TODO add link) - see [Give us feedback](../README.md#give-us-feedback).
+We want your feedback on the Unreal GDK, its documentation and its [roadmap](https://trello.com/b/7wtbtwmL/unreal-gdk-roadmap) (Trello board) - see [Give us feedback](../README.md#give-us-feedback).
 
 ## Documentation 
 
@@ -29,14 +29,21 @@ We are currently not accepting public contributions. However, we are accepting i
 * [Coding standards](contributions/unreal-gdk-coding-standards.md)
 
 ##### Contents
+
+Reference docs
 * [Glossary](content/glossary.md)
 * [Directory structure](content/directory-structure.md)
-* [Setting up a blank project](content/setting-up-a-blank-project.md)
-* [Adding a replicated property](content/adding-a-replicated-property.md)
-* [Generating a snapshot](content/generating-a-snapshot.md)
-* [Supported replicated types](content/supported-replicated-types.md)
+* [Helper scripts](content/helper-scripts.md)
+* [The SpatialOS Unreal GDK toolbar](content/toolbar.md)
 * [Interop Code Generator](content/interop.md)
-* TODO add more pages here and review order. </br>
-actor handover, singleton actor/Game State Manager, snapshots, toolbar
+* [Supported replicated types](content/supported-replicated-types.md)
+* [Actor property handover between SpatialOS servers](content/handover-between-server-workers.md)
+* [Singleton Actors](content/singleton-actors.md)
+* [Troubleshooting](content/troubleshooting.md)
+
+
+How-to docs
+* [Porting a native Unreal project to the Unreal GDK](content/porting-unreal-project-to-gdk.md)
+* [Generating a snapshot](content/snapshots.md)
 
 &copy; 2018 Improbable

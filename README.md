@@ -41,7 +41,7 @@ Find us in the [**#unreal** channel](https://discordapp.com/channels/31127363330
 Visit the **feedback** section in our [forums](https://forums.improbable.io/) and use the **unreal-gdk** tag. [This link](https://forums.improbable.io/new-topic?category=Feedback&tags=unreal-gdk) takes you there and pre-fills the category and tag.
 
 **GitHub issues**</br>
-Create an issue in [this repository](https://github.com/improbable/UnrealGDK/issues).
+Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issues).
 
 ## Contributions
 We are not currently accepting public contributions - see our [contributions](.github/CONTRIBUTING.md) policy. However, we are accepting issues and we do want your feedback.
@@ -49,17 +49,17 @@ We are not currently accepting public contributions - see our [contributions](.g
 ## Documentation
 For guidance on using the SpatialOS Unreal GDK, see the [documentation in this GitHub repository](docs/readme.md).
 
-For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/13.0/shared/concepts/spatialos). <br/> 
+For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/13.1/shared/concepts/spatialos). <br/> 
 
 ## Support
 We are not supporting the pre-alpha release for game development, as this version is for evaluation only. However, please give us your [feedback](#give-us-feedback).
 
 ## Roadmap
 
-TODO add roadmap
+See the [latest roadmap (Trello board)](https://trello.com/b/7wtbtwmL/unreal-gdk-roadmap) and let us know what you'd like to see in there.
 
 ## Unreal Engine changes
-In order to transform Unreal from a single server engine to a distributed model, we had to make a small number of changes to UE4 code. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our forked [Unreal Engine repo, `UnrealEngine419_SpatialGDK` branch](https://github.com/improbable/UnrealEngine/tree/UnrealEngine419_SpatialGDK). <br/>
+In order to transform Unreal from a single server engine to a distributed model, we had to make a small number of changes to UE4 code. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our forked [Unreal Engine repo, `4.19-SpatialOSUnrealGDK` branch](https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK). <br/>
 
 ## Email updates
 

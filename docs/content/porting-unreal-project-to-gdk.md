@@ -29,7 +29,7 @@ Follow the [setup guide](../setup-and-installing.md) to the end of **Setting up 
     1. Open another instance of **File Explorer** and locate the Unreal GDK directory (but don’t open it).
     1. Drag the Unreal GDK directory onto the batch script **`GenerateGDKSymlinks.bat`** (located within `<ProjectRoot>`).
 This brings up a terminal window, and the output should be something like `Successfully created symlinks to “C:\Users\name\Documents\UnrealGDK”`.
-For more information on helper scripts, see [Helper scripts](https://github.com/improbable/UnrealGDKStarterProject#helper-scripts) in the Starter Project readme.
+For more information on helper scripts, see [Helper scripts](https://github.com/spatialos/UnrealGDKStarterProject#helper-scripts) in the Starter Project readme.
 
 ## Adding the SpatialGDK module to your project
 1. In your project’s `*.build.cs` file, add “SpatialGDK” to the `PublicDependencyModuleNames`.
