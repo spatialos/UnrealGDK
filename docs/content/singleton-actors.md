@@ -36,7 +36,7 @@ ExampleGameGameState=
 ;ClassName=include_path.h
 ;Leave empty if no includes required.
 
-;GameState
+;ExampleGameGameState
 ExampleGameGameState=ExampleGameGameState.h
 ExampleGameGameState=IncludePath/MyClassDependency.h
 
