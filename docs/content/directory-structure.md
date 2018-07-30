@@ -9,7 +9,7 @@ The table below contains the contents of the built Unreal GDK after running `Bui
 | `docs` | Contains the documentation for the Unreal GDK.
 | `fastbuild` | Contains files related to installing FASTBuild. **Note** these currently only work for Improbable engineers.
 | `packages/` | (Not tracked in git) Contains the dependencies for building the Unreal SDK codegen.
-| `Plugins/SpatialGDK/SpatialGDKEditorToolbar/` | The Unreal GDK UE4 editor toolbar containing the interop codegen. (See [GenerateInteropCodeCommandlet](#generateinteropcodecommandlet).)
+| `Plugins/SpatialGDK/SpatialGDKEditorToolbar/` | The [SpatialOS Unreal GDK toolbar](./toolbar.md) within the Unreal Editor, from which you can take snapshots, generate interop code, start and stop deployments, and access the SpatialOS Inspector.
 | `schema` | Contains the schema files required for the GDK to interact with SpatialOS.
 | `Scripts/` | Contains a set of helper scripts used to build a GDK worker.
 | `Source/Programs/` | Contains the Unreal SDK code generator.
