@@ -41,7 +41,7 @@ Validate that the SpatialOS entity that represents your Actor appears in the ins
 
 **Q:** When running interop code generation, I’m getting the following error: `Error: Could not move generated interop files during the diff-copy stage.`.
 
-**A:** Due to the [known issue](http:://Link-to-known-issues-page) with piped input from child processes, it is not possible to get the exact error message. However, the most likely cause of the error, especially when working with perforce is that some of the files in the output folder (See the second argument in the error message) are marked as read only. If that is the cause, then the error will be resolved by changing all files to be writable.
+**A:** Due to the [known issue](../known-issues.md) with piped input from child processes, it is not possible to get the exact error message. However, the most likely cause of the error, especially when working with perforce is that some of the files in the output folder (See the second argument in the error message) are marked as read only. If that is the cause, then the error will be resolved by changing all files to be writable.
 
 Note that you may see similar errors if the same issue applies to the schema generation or the legacy sdk codegen output within the interop code generation step.
 
