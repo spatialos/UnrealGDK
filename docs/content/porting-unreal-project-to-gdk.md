@@ -118,7 +118,7 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
     }
     ```
     
-1. In the file(s) you added the `InitPlayerState` function definition, add the following includes:
+1. In the file(s) where you added the `InitPlayerState` function definition, add the following `#include`s:
 
     ``` cpp
     #include "SpatialNetDriver.h"
