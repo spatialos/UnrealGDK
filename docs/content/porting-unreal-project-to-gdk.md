@@ -132,10 +132,10 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
     ``` ini
     [/Script/Engine.Engine]
     !NetDriverDefinitions=ClearArray
-    +NetDriverDefinitions=(DefName="GameNetDriver",DriverClassName="\Script\SpatialGDK.SpatialNetDriver",DriverClassNameFallback="\Script\SpatialGDK.SpatialNetDriver")
+    +NetDriverDefinitions=(DefName="GameNetDriver",DriverClassName="/Script/SpatialGDK.SpatialNetDriver",DriverClassNameFallback="/Script/SpatialGDK.SpatialNetDriver")
 
     [/Script/SpatialGDK.SpatialNetDriver]
-    NetConnectionClassName="\Script\SpatialGDK.SpatialNetConnection"
+    NetConnectionClassName="/Script/SpatialGDK.SpatialNetConnection"
     ```
 
     > These lines ensure that the SpatialOS Unreal GDK can override Unreal’s network replication.
