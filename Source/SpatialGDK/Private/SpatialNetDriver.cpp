@@ -760,9 +760,9 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	}
 
 	/** This check mimics the way Unreal natively checks whether an AActor has ownership for sending server RPCs.
-		The function GetNetConnection() goes up the AActor ownership chain until it reaches an AActor that posseses an AController and
-		hence a UNetConnection. Server RPCs should only be sent by AActor instances that either have a UNetConnection or are owned by
-		other AActor instances possessing a UNetConnection.*/
+		The function GetNetConnection() goes up the AActor ownership chain until it reaches an AActor that is possesed by an AController and
+		hence a UNetConnection. Server RPCs should only be sent by AActor instances that either are possessed by a UNetConnection or are owned by
+		other AActor instances possessed by a UNetConnection.*/
 	if (!Actor->GetNetConnection())
 	{
 		UE_LOG(LogNet, Warning, TEXT("No owning connection for actor %s. Function %s will not be processed."), *Actor->GetName(), *Function->GetName());
