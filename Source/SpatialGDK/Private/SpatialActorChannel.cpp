@@ -8,6 +8,7 @@
 #include "Net/NetworkProfiler.h"
 #include "SpatialConstants.h"
 #include "SpatialInterop.h"
+#include "SpatialInteropPipelineBlock.h"
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
 #include "SpatialOS.h"
@@ -579,12 +580,6 @@ void USpatialActorChannel::RegisterEntityId(const FEntityId& ActorEntityId)
 	{
 		Interop->UpdateGlobalStateManager(Actor->GetClass()->GetPathName(), ActorEntityId);
 	}
-
-	// If a replicated stably named actor was created, update the GSM with the proper path and entity id
-	if (Actor->IsFullNameStableForNetworking())
-	{
-		Interop->AddReplicatedStablyNamedActorToGSM(ActorEntityId, Actor);
-	}
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
@@ -597,7 +592,22 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		return;
 	}
+
 	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Created entity (%lld) for: %s."), ActorEntityId.ToSpatialEntityId(), *Actor->GetName());
+
+	auto PinnedView = WorkerView.Pin();
+	if (PinnedView.IsValid())
+	{
+		PinnedView->Remove(CreateEntityCallback);
+	}
+
+	// If a replicated stably named actor was created, update the GSM with the proper path and entity id
+	if (Actor->IsFullNameStableForNetworking())
+	{
+		SpatialNetDriver->GetSpatialInterop()->AddReplicatedStablyNamedActorToGSM(ActorEntityId, Actor);
+	}
+
+	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received create entity response op for %lld"), ActorEntityId.ToSpatialEntityId());
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()

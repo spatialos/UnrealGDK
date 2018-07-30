@@ -70,7 +70,18 @@ FNetworkGUID USpatialPackageMapClient::ResolveStablyNamedObject(const UObject* O
 {
 	check(Object->IsFullNameStableForNetworking());
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	return SpatialGuidCache->AssignNewStablyNamedObjectNetGUID(Object);	
+	return SpatialGuidCache->AssignNewStablyNamedObjectNetGUID(Object);
+}
+
+void USpatialPackageMapClient::RemoveStablyNamedObject(const UObject* Object)
+{
+	check(Object->IsFullNameStableForNetworking());
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	FNetworkGUID NetGUID = GetNetGUIDFromStablyNamedObject(Object);
+	if (NetGUID.IsValid())
+	{
+		SpatialGuidCache->RemoveNetGUID(NetGUID);
+	}
 }
 
 improbable::unreal::UnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromNetGUID(const FNetworkGUID & NetGUID) const

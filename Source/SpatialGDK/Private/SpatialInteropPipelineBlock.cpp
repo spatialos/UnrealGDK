@@ -268,7 +268,7 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 {
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(EntityId);
 
-	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: Remove Entity Impl: %s %d"), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId.ToSpatialEntityId());
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("USpatialInteropPipelineBlock: Remove Entity Impl: %s %d"), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId.ToSpatialEntityId());
 
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
 	if (!Actor || Actor->IsPendingKill())
@@ -362,12 +362,9 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 		// To account for stably named actors
 		if (EntityActor->IsFullNameStableForNetworking())
 		{
-			Interop->StartIgnoringAuthoritativeDestruction();
-			World->DestroyActor(EntityActor, true);
-			Interop->StopIgnoringAuthoritativeDestruction();
+			PackageMap->RemoveStablyNamedObject(EntityActor);
 
-			CreateActor(LockedConnection, LockedView, EntityId);
-			return;
+			UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Unregistering stably named actor: %s"), *EntityActor->GetName());
 		}
 
 		// Option 1
@@ -426,20 +423,24 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 				if (!UnrealMetadataComponent->static_path().empty())
 				{
 					FString FullPath = UTF8_TO_TCHAR(UnrealMetadataComponent->static_path().data()->c_str());
-					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
 					EntityActor = FindObject<AActor>(World, *FullPath);
 
-					if (EntityActor)
+					/*if (EntityActor != nullptr)
 					{
 						Interop->StartIgnoringAuthoritativeDestruction();
 						World->DestroyActor(EntityActor, true);
 						Interop->StopIgnoringAuthoritativeDestruction();
-					}
+
+						EntityActor = nullptr;
+					}*/
 				}
 
-				UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
-				EntityActor = SpawnNewEntity(PositionComponent, ActorClass, true);
-				bDoingDeferredSpawn = true;
+				if (EntityActor == nullptr)
+				{
+					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
+					EntityActor = SpawnNewEntity(PositionComponent, ActorClass, true);
+					bDoingDeferredSpawn = true;
+				}
 
 				check(EntityActor);
 

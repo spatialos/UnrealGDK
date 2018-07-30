@@ -30,7 +30,8 @@ public:
 	void RemoveEntityActor(const FEntityId& EntityId);
 
 	FNetworkGUID ResolveStablyNamedObject(const UObject* Object);
-
+	void RemoveStablyNamedObject(const UObject* Object);
+	
 	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;

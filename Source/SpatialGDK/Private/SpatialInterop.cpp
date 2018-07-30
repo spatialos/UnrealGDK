@@ -958,6 +958,21 @@ worker::Map<worker::EntityId, std::string>* USpatialInterop::GetEntityIdToReplic
 void USpatialInterop::ReserveReplicatedStablyNamedActor(USpatialActorChannel* Channel)
 {
 	ReplicatedStablyNamedActorQueue.Add(Channel);
+
+	FTimerHandle RetryTimer;
+	FTimerDelegate TimerCallback;
+	TimerCallback.BindLambda([Channel, this] {
+		if (Channel != nullptr && Channel->Actor != nullptr && Channel->Actor->IsFullNameStableForNetworking() && !PackageMap->GetNetGUIDFromEntityId(Channel->GetEntityId().ToSpatialEntityId()).IsValid())
+		{
+			UE_LOG(LogSpatialGDKInterop, Log, TEXT("Timed out (deleted) replicated stably named actor: %s"), *Channel->Actor->GetName());
+
+			StartIgnoringAuthoritativeDestruction();
+			Channel->Actor->GetWorld()->DestroyActor(Channel->Actor, true);
+			StopIgnoringAuthoritativeDestruction();
+		}
+	});
+	TimerManager->SetTimer(RetryTimer, TimerCallback, SpatialConstants::REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS, false);
+
 	if (bCanSpawnReplicatedStablyNamedActors)
 	{
 		ReserveReplicatedStablyNamedActors();
@@ -970,7 +985,7 @@ void USpatialInterop::AddReplicatedStablyNamedActorToGSM(const FEntityId& Entity
 	// If the map already has the mapping, meaning the actor was already spawned, return early
 	if (EntityIdToReplicatedStablyNamedPathMap.count(EntityId.ToSpatialEntityId()) != 0) return;
 
-	std::string Path = std::string(TCHAR_TO_UTF8(*Actor->GetFName().ToString()));
+	std::string Path = TCHAR_TO_UTF8(*Actor->GetPathName(Actor->GetWorld()));
 	EntityIdToReplicatedStablyNamedPathMap.emplace(EntityId.ToSpatialEntityId(), Path);
 
 	improbable::unreal::GlobalStateManager::Update Update;
@@ -987,7 +1002,7 @@ void USpatialInterop::ReserveReplicatedStablyNamedActors()
 
 	for (USpatialActorChannel* Channel : ReplicatedStablyNamedActorQueue)
 	{
-		std::string Path = TCHAR_TO_UTF8(*Channel->Actor->GetFName().ToString());
+		std::string Path = TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()));
 
 		// Inefficient, check if we have already spawned this actor
 		bool Found = false;
