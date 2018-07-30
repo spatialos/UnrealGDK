@@ -119,7 +119,7 @@ Build the Unreal GDK module dependencies which the Starter Project needs to work
     1. Select the path to the Unreal Engine fork you cloned earlier.
 1. Open **StarterProject.sln** in Visual Studio and make sure it’s set as your StartUp Project. 
 1. Build the project.
-1. Open **StarterProject.uproject** in the Unreal Editor and click [**Codegen**](content/interop.md) to generate [type bindings](content/glossary.md). 
+1. Open **StarterProject.uproject** in the Unreal Editor and click [**Codegen**](content/interop.md) to generate [type bindings](content/glossary.md#type-bindings). 
 1. Close the Unreal Editor and build the project again in Visual Studio.
 
 ### Running the Starter Project locally

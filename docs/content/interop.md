@@ -4,7 +4,7 @@ The Interop Code Generator (ICG) is part of the SpatialOS Unreal GDK toolbar. It
 
 The ICG creates SpatialOS `.schema` files from `UObject` class layouts via Unreal's reflection system (a system in Unreal for programs to self-examine). See the Unreal website’s blog on [the reflection system](https://www.unrealengine.com/en-US/blog/unreal-property-system-reflection) and SpatialOS [documentation on schema](https://docs.improbable.io/reference/13.0/shared/schema/introduction).
 
-The `.schema` files enable SpatialOS to understand and store Unreal data. The ICG also creates `SpatialTypeBinding` classes (known as [type bindings](./glossary.md”)). 
+The `.schema` files enable SpatialOS to understand and store Unreal data. The ICG also creates `SpatialTypeBinding` classes (known as [type bindings](./glossary.md#type-bindings”)). 
 
 These classes:
 * convert entity property updates to and from SpatialOS in the form of [component updates](https://docs.improbable.io/reference/13.1/csharpsdk/using/sending-data#sending-and-receiving-component-updates).
