@@ -14,8 +14,8 @@
 
 **A:** There could be a few different reasons for this. The list below provides some of the most common ones, ordered by likelihood:
 1. It's easy to forget to generate the [type bindings](./interop.md) for your replicated Actor. Make sure you run the Interop Code Generator and rebuild your project with these type bindings setup.
-1. As per Unreal Engine’s [replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors), your Actor needs to be created on the server before it can replicate to the clients.
-1. Ensure that your call to `SpawnActor` is happening on your server.
+1. As per Unreal Engine’s [replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors), your Actor needs to be created on the server-worker before it can replicate to the client-workers.
+1. Ensure that your call to `SpawnActor` is happening on your server-worker.
 Validate that the SpatialOS entity that represents your Actor appears in the Inspector. If it doesn't, then it's likely that it's not marked up for replication correctly.
 1. Mark your Actor for replication as per [Unreal Engine’s Actor replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors). You can validate that your Actor is replicated in `USpatialNetDriver::ServerReplicateActors`.
 1. Validate that you receive an `AddEntityOp` for the entity representing your Actor in the `USpatialnteropPipelineBlock` and that your entity is spawned in `USpatialnteropPipelineBlock::CreateEntity`.
@@ -51,7 +51,7 @@ Note that you may see similar errors if the same issue applies to the schema gen
 
 **Q:** My game uses reliable multicast RPCs - why does the SpatialOS Unreal GDK not support these?
 
-**A:** The underlying implementation of multicast RPCs uses SpatialOS [events](https://docs.improbable.io/reference/13.1/shared/glossary#event) (SpatialOS documentation). SpatialOS events can only be sent unreliably. Additionally, the cost of a multicast RPC scales with the number of clients present in a deployment, which means they can get very expensive. A better approach would be to send RPCs to only the workers that are close to the broadcasting worker.
+**A:** The underlying implementation of multicast RPCs uses SpatialOS [events](https://docs.improbable.io/reference/13.1/shared/glossary#event) (SpatialOS documentation). SpatialOS events can only be sent unreliably. Additionally, the cost of a multicast RPC scales with the number of client-workers present in a deployment, which means they can get very expensive. A better approach would be to send RPCs to only the workers that are close to the broadcasting worker.
 
 ------
 
