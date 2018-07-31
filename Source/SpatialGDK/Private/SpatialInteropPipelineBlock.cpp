@@ -357,7 +357,7 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 	// 3) A SpawnActor() call that was initiated from a different worker, which means we need to find and spawn the corresponding "native" actor that corresponds to it.
 	//	  This can happen on either the client (for all actors) or server (for actors which were spawned by a different server worker, or are transitioning).
 
-	if (EntityActor && !EntityActor->IsPendingKill())
+	if (EntityActor)
 	{
 		// To account for stably named actors
 		if (EntityActor->IsFullNameStableForNetworking())
@@ -418,21 +418,20 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 			}
 			else
 			{
-				// If the actor has a persistent name, delete the stably named version and replace it with a dynamic one
-				// TODO: This causes references by path to the stably named actor to be broken (UNR-473), possible fix by retroactively assigning the stable path from the UnrealMetadata
+				// If the actor has a persistent name, link it if possible
+				// TODO: References by path to the stably named actor are still broken on migration (UNR-473), possible fix by retroactively assigning the stable path from the UnrealMetadata
 				if (!UnrealMetadataComponent->static_path().empty())
 				{
 					FString FullPath = UTF8_TO_TCHAR(UnrealMetadataComponent->static_path().data()->c_str());
 					EntityActor = FindObject<AActor>(World, *FullPath);
 
-					/*if (EntityActor != nullptr)
+					// Server will naturally create SpatialActorChannels for the replicated stably named actors, so remove the stable reference
+					// Clients do not create SpatialActorChannels, so continue on the normal path
+					if (EntityActor != nullptr && NetDriver->IsServer())
 					{
-						Interop->StartIgnoringAuthoritativeDestruction();
-						World->DestroyActor(EntityActor, true);
-						Interop->StopIgnoringAuthoritativeDestruction();
-
-						EntityActor = nullptr;
-					}*/
+						PackageMap->RemoveStablyNamedObject(EntityActor);
+						Interop->UnreserveReplicatedStablyNamedActor(EntityActor);
+					}
 				}
 
 				if (EntityActor == nullptr)

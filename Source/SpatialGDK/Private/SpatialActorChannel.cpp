@@ -503,7 +503,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		{
 			USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
 			PackageMap->ResolveStablyNamedObject(InActor);
-			SpatialNetDriver->GetSpatialInterop()->ReserveReplicatedStablyNamedActor(this);
+			SpatialNetDriver->GetSpatialInterop()->ReserveReplicatedStablyNamedActorChannel(this);
 		}
 		else
 		{
