@@ -112,8 +112,8 @@ Build the Unreal GDK module dependencies which the Starter Project needs to work
 1. Open **File Explorer**, navigate to the root directory of the Unreal GDK repository, and double-click **`BuildGDK.bat`**. This requires authorization with your SpatialOS account.
 1. Navigate to the root directory of the Unreal GDK Starter Project repository.
 1. Create symlinks between the Starter Project and the Unreal GDK:
-    1. Open another instance of **File Explorer** and navigate to the root directory of the Starter Project. Within this directory, there’s a batch script named **GenerateGDKSymlinks.bat**.
-    1. Drag the Unreal GDK folder onto the batch script **GenerateGDKSymlinks.bat**.</br>This brings up a terminal window, and the output should be something like `Successfully created symlinks to “C:\Users\name\Documents\unreal-gdk”`.</br>For more information on helper scripts, see [Helper scripts](https://github.com/spatialos/UnrealGDKStarterProject#helper-scripts) in the Starter Project readme.
+    1. Open another instance of **File Explorer** and navigate to the root directory of the Starter Project. Within this directory, there’s a batch script named **CreateGDKSymlinks.bat**.
+    1. Drag the Unreal GDK folder onto the batch script **CreateGDKSymlinks.bat**.</br>This brings up a terminal window, and the output should be something like `Successfully created symlinks to “C:\Users\name\Documents\unreal-gdk”`.</br>For more information on helper scripts, see [Helper scripts](https://github.com/spatialos/UnrealGDKStarterProject#helper-scripts) in the Starter Project readme.
 1. Within the root directory of the Starter Project repository, go to **Game > Scripts** and double-click **`Codegen.bat`**. </br>This initializes the project. It should succeed quickly and silently.
 1. Set the Starter Project to work with the Unreal Engine fork you cloned and installed earlier. To do this:
     1. In File Explorer, navigate to the root directory of the Unreal GDK Starter Project repository, and then to the **Game** directory within it. 
