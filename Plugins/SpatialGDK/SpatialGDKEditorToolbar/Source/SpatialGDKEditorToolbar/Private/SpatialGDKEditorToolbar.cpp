@@ -256,7 +256,7 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 	ShowTaskStartNotification("Generating Interop Code");
 	InteropCodeGenRunning = true;
 
-	AsyncTask(ENamedThreads::AnyHiPriThreadHiPriTask, [this] {
+	AsyncTask(ENamedThreads::GameThread, [this] {
 		bool bSuccess = SpatialGDKGenerateInteropCode();
 
 		if (bSuccess)
@@ -297,7 +297,7 @@ void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& No
 
 void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& NotificationText)
 {
-	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]{
+	AsyncTask(ENamedThreads::AnyHiPriThreadNormalTask, [this, NotificationText]{
 		TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
 		Notification->SetFadeInDuration(0.1f);
 		Notification->SetFadeOutDuration(0.5f);
@@ -318,7 +318,7 @@ void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& Noti
 
 void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& NotificationText)
 {
-	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]{
+	AsyncTask(ENamedThreads::AnyHiPriThreadNormalTask, [this, NotificationText]{
 		TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
 		Notification->SetText(FText::AsCultureInvariant(NotificationText));
 		Notification->SetCompletionState(SNotificationItem::CS_Fail);
@@ -330,6 +330,8 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 		{
 			GEditor->PlayEditorSound(ExecutionFailSound);
 		}
+
+		InteropCodeGenRunning = false;
 	});
 }
 
