@@ -79,4 +79,4 @@ Note that you may see similar errors if the same issue applies to the schema gen
 check(!Value->IsFullNameStableForNetworking())
 ```
 
-**A:** This is mostly likely caused by attempting to replicate a stably-named actor. This can occur if you place an Actor within a level and mark it for replication. We don't currently support this combination, although we will soon. Until them please spawn your actor dynamically at runtime.
+**A:** This is mostly likely caused by attempting to replicate a stably-named actor. This can occur if you place an Actor within a level and mark it for replication. We don't currently support this combination, although we will soon. Until then please spawn your actor dynamically at runtime.
