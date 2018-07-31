@@ -1,7 +1,5 @@
 
-**Warning** <br/>
-This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the GDK Core is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](https://github.com/spatialos/UnityGDK/blob/master/README.md#recommended-use).
---------------
+> This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the "GDK Core" is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](https://github.com/spatialos/UnityGDK/blob/master/README.md#recommended-use).
 
 # Actor property handover between SpatialOS servers
 ## Overview
