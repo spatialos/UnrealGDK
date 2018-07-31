@@ -28,11 +28,11 @@ Follow the [setup guide](../setup-and-installing.md) to the end of **Setting up 
 1. Create symlinks between your Unreal project and the Unreal GDK:
     1. Open another instance of **File Explorer** and locate the Unreal GDK directory (but don’t open it).
     1. Drag the Unreal GDK directory onto the batch script **`GenerateGDKSymlinks.bat`** (located within `<ProjectRoot>`).
-This brings up a terminal window, and the output should be something like `Successfully created symlinks to “C:\Users\name\Documents\UnrealGDK”`.
+This brings up a terminal window, and the output should be something like `Successfully created symlinks to "C:\Users\name\Documents\UnrealGDK"`.
 For more information on helper scripts, see [Helper scripts](https://github.com/spatialos/UnrealGDKStarterProject#helper-scripts) in the Starter Project readme.
 
 ## Adding the SpatialGDK module to your project
-1. In your project’s `*.build.cs` file, add “SpatialGDK” to the `PublicDependencyModuleNames`.
+1. In your project’s `*.build.cs` file, add "SpatialGDK" to the `PublicDependencyModuleNames`.
     For example:
     ``` csharp
     PublicDependencyModuleNames.AddRange(`
@@ -97,10 +97,10 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
 1. In your project’s `PlayerController` header file(s), add the method declaration
 `virtual void InitPlayerState() override;`.
 
-1. In your game’s `PlayerController` class(es), add the following definition to the `InitPlayerState` function:
+1. In your game’s `PlayerController` class(es), add the following definition of the `InitPlayerState` function:
 
     ``` cpp
-    void ATestSuitePlayerController::InitPlayerState()
+    void AYourProjectPlayerController::InitPlayerState()
     {
         UWorld* World = GetWorld();
         check(World);
@@ -119,17 +119,25 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
         Super::InitPlayerState();
     }
     ```
+    
+1. In the file(s) where you added the `InitPlayerState` function definition, add the following `#include`s:
+
+    ``` cpp
+    #include "SpatialNetDriver.h"
+    #include "EntityId.h"
+    #include "EntityRegistry.h"
+    ```
 
 ## Adding Unreal GDK configurations
 1. In `<GameRoot>\Config`, open `DefaultEngine.ini` and add:
 
     ``` ini
-    [\Script\Engine.Engine]
+    [/Script/Engine.Engine]
     !NetDriverDefinitions=ClearArray
-    +NetDriverDefinitions=(DefName="GameNetDriver",DriverClassName="\Script\SpatialGDK.SpatialNetDriver",DriverClassNameFallback="\Script\SpatialGDK.SpatialNetDriver")
+    +NetDriverDefinitions=(DefName="GameNetDriver",DriverClassName="/Script/SpatialGDK.SpatialNetDriver",DriverClassNameFallback="/Script/SpatialGDK.SpatialNetDriver")
 
-    [\Script\SpatialGDK.SpatialNetDriver]
-    NetConnectionClassName="\Script\SpatialGDK.SpatialNetConnection”
+    [/Script/SpatialGDK.SpatialNetDriver]
+    NetConnectionClassName="/Script/SpatialGDK.SpatialNetConnection"
     ```
 
     > These lines ensure that the SpatialOS Unreal GDK can override Unreal’s network replication.
