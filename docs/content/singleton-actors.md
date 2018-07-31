@@ -23,7 +23,7 @@ To properly set up Singleton Actors for your project, you need to:
 
 You need to specify Singleton Actors in `DefaultEditorSpatialGDK.ini` before creating the snapshot and running SpatialOS.
 
-Using the [Unreal GDK Starter Project](https://github.com/improbable/UnrealGDKStarterProject) as an example, to do this:
+Using the [Unreal GDK Starter Project](https://github.com/spatialos/UnrealGDKStarterProject) as an example, to do this:
 1. Locate the `DefaultEditorSpatialGDK.ini` file in the Starter Project repository which you cloned during installation and setup - it's located at `Game/Config/DefaultEditorSpatialGDK.ini`.
 2. Open the file in your editor and add your Singleton Actors as shown in the file snippet below.
 
