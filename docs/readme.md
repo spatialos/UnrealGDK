@@ -32,6 +32,7 @@ We are currently not accepting public contributions. However, we are accepting i
 Reference docs
 * [Glossary](content/glossary.md)
 * [Directory structure](content/directory-structure.md)
+* [Features](./features.md)
 * [Helper scripts](content/helper-scripts.md)
 * [The SpatialOS Unreal GDK toolbar](content/toolbar.md)
 * [Interop Code Generator](content/interop.md)
