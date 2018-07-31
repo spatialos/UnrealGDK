@@ -140,8 +140,8 @@ To run a cloud deployment, you need to prepare your server-worker and client-wor
 > Building the assemblies can take a while - we recommend installing IncrediBuild, FastBuild, or another build distributor.
 
 1. In a terminal window, navigate to the root directory of the Starter Project repository.
-1. Build a server-worker assembly: `Game\Scripts\Build.bat StarterProjectServer Linux Development StarterProject.uproject`
-1. Build a client-worker assembly: `Game\Scripts\Build.bat StarterProject Win64 Development StarterProject.uproject`
+1. Build a server-worker assembly: `Game\Scripts\BuildWorker.bat StarterProjectServer Linux Development StarterProject.uproject`
+1. Build a client-worker assembly: `Game\Scripts\BuildWorker.bat StarterProject Win64 Development StarterProject.uproject`
 1. Navigate to `StarterProject\spatial`.
 1. Upload the assemblies to the cloud, specifying an assembly name (this covers both assemblies): `spatial cloud upload <assembly_name>`
 1. Launch a deployment, specifying a deployment name: `spatial cloud launch <assembly_name> default_launch.json <deployment_name> --snapshot=snapshots\default.snapshot`
