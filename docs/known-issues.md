@@ -1,4 +1,4 @@
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](/README.md#recommended-use).
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](../README.md#recommended-use).
 
 # Unreal GDK known issues
 
@@ -23,3 +23,5 @@ Known issue = any major user-facing bug or lack of user-facing feature that:
 | Interop code generation stalls if its child processes produce console output during execution. |2018-07-19 | [UNR-422](https://improbableio.atlassian.net/browse/UNR-422) |  | No |
 | Having generated files in the symlinked folder `Source/SpatialGDK` means you can’t work in two projects at the same time using the same clone of the SpatialOS Unreal GDK. | 2018-07-23 | [UNR-458](https://improbableio.atlassian.net/browse/UNR-458) | Clone the Unreal GDK separately for each project. | No |
 | We don't support listen servers. | 2018-07-30 | | Use dedicated servers instead. | No |
+| Attempting to use stably-named replicated objects (ie. placed level actors marked for replication) will result in runtime assertions. | 2018-07-31 | [UNR-397](https://improbableio.atlassian.net/browse/UNR-397) | For now, please spawn Actor at runtime instead. | No
+| Attempting to find the bound class of a blueprint class' typebinding fails if the blueprint hasn't previously been loaded. | 2018-07-31 | [UNR-273](https://improbableio.atlassian.net/browse/UNR-273) | Add a reference to the blueprint in default level. | No

@@ -7,12 +7,12 @@ We recommend you start by following the [Installation and setup guide](setup-and
 
 After you've run through the setup guide (including setting up Actor replication), we recommend you have a look at the following pages, which explain some of the things that relate to working with SpatialOS:
 
-* [Interop Code Generator](content/interop.md)   
-* [Actor handover](content/actor-handover.md)
+* [Interop Code Generator](./content/interop.md)
+* [Actor handover](./content/handover-between-server-workers.md)
 
-We want your feedback on the Unreal GDK, its documentation and its [roadmap](https://trello.com/b/7wtbtwmL/unreal-gdk-roadmap) (Trello board) - see [Give us feedback](../README.md#give-us-feedback).
+We want your feedback on the Unreal GDK, its documentation and its [roadmap](https://trello.com/b/7wtbtwmL/unreal-gdk-roadmap) (Trello board) - [find out how to give us feedback](../README.md#give-us-feedback).
 
-## Documentation 
+## Documentation
 
 ### SpatialOS
 The Unreal GDK documentation assumes you are familiar with SpatialOS concepts. For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/latest/shared/concepts/spatialos).
@@ -21,27 +21,32 @@ The Unreal GDK documentation assumes you are familiar with SpatialOS concepts. F
 
 #### Getting started
 * [Installation and setup](setup-and-installing.md)
+* [Features list](features.md)
 
-#### Contributions
-We are currently not accepting public contributions. However, we are accepting issues and we do want your [feedback](../README.md#give-us-feedback).
-* [Contributions policy](../.github/CONTRIBUTING.md)
-* [Coding standards](contributions/unreal-gdk-coding-standards.md)
+#### Known issues
+* [Known issues](known-issues.md)
 
 #### Contents
 
 Reference docs
 * [Glossary](content/glossary.md)
 * [Directory structure](content/directory-structure.md)
+* [Features](./features.md)
 * [Helper scripts](content/helper-scripts.md)
 * [The SpatialOS Unreal GDK toolbar](content/toolbar.md)
-* [Interop Code Generator](content/interop.md)
+* [Interop Code Generator (and type bindings)](content/interop.md)
 * [Supported replicated types](content/supported-replicated-types.md)
 * [Actor property handover between SpatialOS servers](content/handover-between-server-workers.md)
-* [Singleton Actors](content/singleton-actors.md)
+* [Singleton Actors (and the Global State Manager)](content/singleton-actors.md)
 * [Troubleshooting](content/troubleshooting.md)
 
 How-to docs
 * [Porting a native Unreal project to the Unreal GDK](content/porting-unreal-project-to-gdk.md)
-* [Generating a snapshot](content/snapshots.md)
+* [Generating a snapshot](./content/generating-a-snapshot.md)
+
+#### Contributions
+We are currently not accepting public contributions. However, we are accepting issues and we do want your [feedback](../README.md#give-us-feedback).
+* [Contributions policy](../.github/CONTRIBUTING.md)
+* [Coding standards](contributions/unreal-gdk-coding-standards.md)
 
 &copy; 2018 Improbable

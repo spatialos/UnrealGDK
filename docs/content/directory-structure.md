@@ -1,4 +1,4 @@
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](/README.md#recommended-use).
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](../../README.md#recommended-use).
 
 # Unreal GDK directory structure
 The table below contains the contents of the built Unreal GDK after running `BuildGDK.bat`.
@@ -17,6 +17,6 @@ The table below contains the contents of the built Unreal GDK after running `Bui
 | `Source/Programs/` | Contains the Unreal SDK code generator.
 | `Source/SpatialGDK/Legacy/` | Contains the source code from the [GitHub-hosted Unreal SDK](https://github.com/spatialos/UnrealSDK/tree/master/Game/Source/SpatialOS).
 | `Source/SpatialGDK/Legacy/Deprecated/` | Contains the forked source code from the [GitHub-hosted Unreal SDK](https://github.com/spatialos/UnrealSDK/tree/master/Game/Source/SpatialOS) that the GDK does not depend on. This is present purely for backwards compatibility.
-| `Source/SpatialGDK/Public/WorkerSdk/` | (Not tracked in git) Contains the [C++ worker SDK](https://docs.improbable.io/reference/13.0/cppsdk/introduction) headers. You install these when you run `BuildGDK.bat`
+| `Source/SpatialGDK/Public/WorkerSdk/` | (Not tracked in git) Contains the [C++ worker SDK](https://docs.improbable.io/reference/13.1/cppsdk/introduction) headers. You install these when you run `BuildGDK.bat`
 | `Source/SpatialGDK/Public` | Public source code of the Unreal GDK module.
 | `Source/SpatialGDK/Private` | Private source code of the Unreal GDK module.

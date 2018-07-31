@@ -1,4 +1,4 @@
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](/README.md#recommended-use).
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](../../README.md#recommended-use).
 
 # SpatialOS Unreal GDK toolbar
 
@@ -20,7 +20,7 @@ To enable the SpatialOS Unreal GDK toolbar:
 	        }
 	    ],
 	    ```
-        
+
    Or:
 	* Inside the Unreal Editor, navigate to **Edit** > **Plugins** and scroll down
 	to the bottom. Select the **SpatialOS Unreal GDK** section and enable the toolbar:
@@ -29,7 +29,7 @@ To enable the SpatialOS Unreal GDK toolbar:
 
 ## Buttons
 
-The SpatialOS Unreal GDK toolbar has five features mapped to individual buttons, and is displayed in the main editor toolbar to the right of the `Launch` button: 
+The SpatialOS Unreal GDK toolbar has five features mapped to individual buttons, and is displayed in the main editor toolbar to the right of the `Launch` button:
 
  ![Toolbar](../assets/screen_grabs/toolbar/toolbar_buttons.png)
 

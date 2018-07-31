@@ -1,4 +1,4 @@
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](/README.md#recommended-use).
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](../../README.md#recommended-use).
 
 # Generating a snapshot
 
@@ -11,12 +11,12 @@ The SpatialOS Unreal GDK snapshots contain two kinds of entities: critical entit
 Critical entities are entities which are used for functionality critical to the GDK and are never deleted. They are saved into the initial snapshot and must always exist when launching a deployment.
 
 Currently the critical entities are:
-* `SpatialSpawner` - an entity with the `PlayerSpawner` component which has a command. Connecting clients use this entity to spawn their player.
+* `SpatialSpawner` - an entity with the `PlayerSpawner` component which has a command. Connecting client-workers use this entity to spawn their player.
 * `GlobalStateManager` - an entity with the `GlobalStateManager` component which has a map of singleton classes to entity IDs. This entity is used for orchestrating the replication of [Singleton Actors](./singleton-actors.md).
 
 ### Placeholders
 
-These entities exists only to set up server boundaries in a way that is easy to test in a two-server scenario. They will not spawn as actors when checked out and serve no purpose within the GDK. For most intents and purposes, you can safely ignore them.
+These entities exists only to set up server-worker boundaries in a way that is easy to test in a scenario with two server-workers. They will not spawn as actors when checked out and serve no purpose within the GDK. For most intents and purposes, you can safely ignore them.
 
 ## Generating a snapshot
 
