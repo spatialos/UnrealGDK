@@ -1,5 +1,5 @@
 
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](/README.md#recommended-use).
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](../../README.md#recommended-use).
 
 # Porting a native Unreal project to the Unreal GDK
 
@@ -119,7 +119,7 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
         Super::InitPlayerState();
     }
     ```
-    
+
 1. In the file(s) where you added the `InitPlayerState` function definition, add the following `#include`s:
 
     ``` cpp
