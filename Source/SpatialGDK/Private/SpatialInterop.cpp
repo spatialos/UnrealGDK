@@ -951,7 +951,7 @@ NameToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
 	return &(GSM->singleton_name_to_entity_id());
 }
 
-worker::Map<worker::EntityId, std::string>* USpatialInterop::GetEntityIdToReplicatedStablyNamedPath() const
+EntityIdToPathMap* USpatialInterop::GetEntityIdToReplicatedStablyNamedPath() const
 {
 	improbable::unreal::GlobalStateManagerData* GSM = GetGlobalStateManagerData();
 
@@ -990,7 +990,7 @@ void USpatialInterop::UnreserveReplicatedStablyNamedActor(AActor* Actor)
 void USpatialInterop::AddReplicatedStablyNamedActorToGSM(const FEntityId& EntityId, AActor* Actor)
 {
 	EntityIdToPathMap& EntityIdToReplicatedStablyNamedPathMap = *GetEntityIdToReplicatedStablyNamedPath();
-	// If the map already has the mapping, meaning the actor was already spawned, return early
+	// If the map already has the entity id, meaning the actor was already spawned, return early
 	if (EntityIdToReplicatedStablyNamedPathMap.count(EntityId.ToSpatialEntityId()) != 0) return;
 
 	std::string Path = TCHAR_TO_UTF8(*Actor->GetPathName(Actor->GetWorld()));

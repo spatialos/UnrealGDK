@@ -268,7 +268,7 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 {
 	AActor* Actor = EntityRegistry->GetActorFromEntityId(EntityId);
 
-	UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("USpatialInteropPipelineBlock: Remove Entity Impl: %s %d"), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId.ToSpatialEntityId());
+	UE_LOG(LogSpatialGDKInteropPipelineBlock, Verbose, TEXT("USpatialInteropPipelineBlock: Remove Entity Impl: %s %d"), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId.ToSpatialEntityId());
 
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
 	if (!Actor || Actor->IsPendingKill())
@@ -423,6 +423,7 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 				if (!UnrealMetadataComponent->static_path().empty())
 				{
 					FString FullPath = UTF8_TO_TCHAR(UnrealMetadataComponent->static_path().data()->c_str());
+					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
 					EntityActor = FindObject<AActor>(World, *FullPath);
 
 					// Server will naturally create SpatialActorChannels for the replicated stably named actors, so remove the stable reference
