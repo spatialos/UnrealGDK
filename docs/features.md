@@ -28,7 +28,7 @@ The SpatialOS Unreal GDK also supports:
 
 ## Static component replication
 
-The SpatialOS Unreal GDK supports only one instance of each type of static component replication for components owned by an Actor. For example, an Actor can have only one FooComponent and one BarComponent; it can’t have two FooComponents or two BarFooComponents. 
+The SpatialOS Unreal GDK supports only one instance of each type of static component replication for components owned by an Actor. For example, an Actor can have only one `FooComponent` and one `BarComponent`; it can’t have two `FooComponent`s or two `BarFooComponent`s. 
 
 
 Properties and RPCs within components have the same support as an Actor’s properties and RPCs.
@@ -37,14 +37,14 @@ Properties and RPCs within components have the same support as an Actor’s prop
 
 ## Property handover
 
-Actor property handover is a new feature we’ve added to Unreal. It replicates server-side properties between servers so Unreal games can take advantage of the SpatialOS cloud server architecture. For more information, see [the Actor property handover](./content/handover-between-server-workers.md) documentation.
+Actor property handover is a new feature we’re introducing with the SpatialOS Unreal GDK. It replicates server-side properties between servers so Unreal games can take advantage of the SpatialOS cloud server architecture. For more information, see [the Actor property handover](./content/handover-between-server-workers.md) documentation.
 
 ## Singleton Actors
 
 “Singleton Actors” is a new term that describes Actors which contain global state and logic.  Only one of these Actors exists in a game world. For more information see the documentation on [Singleton Actors](https://github.com/spatialos/UnrealGDK/blob/master/docs/contents/singleton-actors.md).
 
-**Note:** Currently, the SpatialOS Unreal GDK supports proper replication of public singletons, such as GameState, between multiple servers. It does not support private singletons, such as GameMode, but we plan to support this in the future..
+> Currently, the SpatialOS Unreal GDK supports proper replication of public Singleton Actors, such as `GameState`, between multiple servers. It does not support private Singleton Actors, such as `GameMode`, but we plan to support this in the future.
 
 ## Networking switch
 
-We’ve implemented a way to switch between the native Unreal networking to SpatialOS networking with a command line argument. This is useful to test valid functionality on a single server and performance. See the documentation on the networking switch in the [Troubleshooting](??? Not sure of doc link) documentation.
+We’ve implemented a way to switch between the native Unreal networking and SpatialOS networking with a command line argument. This is useful to test valid functionality on a single server, and performance. See the documentation on the networking switch on the [Troubleshooting](content/troubleshooting.md) page.
