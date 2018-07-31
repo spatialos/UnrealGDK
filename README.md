@@ -26,14 +26,8 @@ We recommend you start using the GDK if:
 Although every feature you need to build your optimal SpatialOS game may not be ready yet, this is a great time to get involved and shape the Unreal GDK. We are committed to improving the GDK rapidly, aiming for an alpha release in Autumn 2018.
 
 ## Feature List
-  See the [full feature list](docs/features.md) for what is supported in the Unreal GDK
-
-## Known issues
- See the [Known issues](docs/known-issues.md) documentation.
-
-## Installation and setup
-For prerequisites, installation and setup, see the [Installation and setup](docs/setup-and-installing.md) documentation.
-
+See the [full feature list](docs/features.md) for what is supported in the Unreal GDK
+  
 ## Give us feedback
 We have released the Unreal GDK this early in development because we want your feedback. Please come and talk to us about the software and the documentation via:
 
@@ -54,11 +48,16 @@ For guidance on using the SpatialOS Unreal GDK, see the [documentation in this G
 
 For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/13.1/shared/concepts/spatialos). <br/>
 
+## Installation and setup
+For prerequisites, installation and setup, see the [Installation and setup](docs/setup-and-installing.md) documentation.
+
+## Known issues
+See the [Known issues](docs/known-issues.md) documentation.
+
 ## Support
 We are not supporting the pre-alpha release for game development, as this version is for evaluation only. However, please give us your [feedback](#give-us-feedback).
 
 ## Roadmap
-
 See the [latest roadmap (Trello board)](https://trello.com/b/7wtbtwmL/unreal-gdk-roadmap) and let us know what you'd like to see in there.
 
 ## Unreal Engine changes
@@ -66,7 +65,6 @@ In order to transform Unreal from a single server engine to a distributed model,
 > You may get a 404 error from this link. To get access, see [these instructions](docs/setup-and-installing.md#other). <br/>
 
 ## Email updates
-
 You can [sign up for SpatialOS Unreal GDK updates](http://go.pardot.com/l/169082/2018-06-15/27ld2t) direct to your mailbox.
 
 (c) 2018 Improbable
