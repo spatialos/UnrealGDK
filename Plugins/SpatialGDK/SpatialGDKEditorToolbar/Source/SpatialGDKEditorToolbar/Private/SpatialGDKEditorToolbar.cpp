@@ -112,7 +112,7 @@ void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 	{
 		FPlatformProcess::CloseProc(SpatialOSStackProcHandle);
 		SpatialOSStackProcessID = 0;
-	}	
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::RegisterSettings()
@@ -323,7 +323,7 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 		Notification->SetText(FText::AsCultureInvariant(NotificationText));
 		Notification->SetCompletionState(SNotificationItem::CS_Fail);
 		Notification->SetExpireDuration(5.0f);
-		
+
 		Notification->ExpireAndFadeout();
 
 		if (GEditor && ExecutionFailSound)
