@@ -1,7 +1,7 @@
 # SpatialOS Unreal GDK documentation
 
 #### Warning
-This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the GDK Core is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](../README.md#recommended-use).
+This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](../README.md#recommended-use).
 
 #### How to get started
 We recommend you start by following the [Installation and setup guide](setup-and-installing.md) to set up the Unreal GDK, the SpatialOS Unreal Engine fork, and the Starter Project (or your own Unreal project).
