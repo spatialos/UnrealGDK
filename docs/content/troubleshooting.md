@@ -71,3 +71,12 @@ Note that you may see similar errors if the same issue applies to the schema gen
 **Q:** I’m getting compilation errors in my type bindings about missing classes and/or namespaces.
 
 **A:** Make sure you've added the required headers to `DefaultEditorSpatialGDK.ini` as per the [Interop Code Generator](./interop.md) documentation.
+
+------
+
+**Q:** I'm getting a check failure in one of my typebinding classes:
+```
+check(!Value->IsFullNameStableForNetworking())
+```
+
+**A:** This is mostly likely caused by attempting to replicate a stably-named actor. This can occur if you place an Actor within a level and mark it for replication. We don't currently support this combination, although we will soon. Until them please spawn your actor dynamically at runtime.
