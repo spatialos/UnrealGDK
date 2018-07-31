@@ -1,3 +1,5 @@
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](/README.md#recommended-use).
+
 # Glossary
 
 ## SpatialOS terms
@@ -6,7 +8,8 @@ See the [SpatialOS glossary](https://docs.improbable.io/reference/latest/shared/
 ## Unreal GDK repositories
 * The SpatialOS Unreal GDK: https://github.com/spatialos/UnrealGDK
 * Starter Project: https://github.com/spatialos/UnrealGDKStarterProject
-* SpatialOS Unreal GDK fork of Unreal Engine: https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK
+* SpatialOS Unreal GDK fork of Unreal Engine: https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK<br>
+You may get a 404 error from this link. To get access, see [these instructions](../setup-and-installing.md#other).
 * Third-Person Shooter: https://github.com/spatialos/UnrealGDKThirdPersonShooter
 * Test Suite: https://github.com/spatialos/UnrealGDKTestSuite
 

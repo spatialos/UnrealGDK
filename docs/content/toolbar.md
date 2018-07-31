@@ -1,3 +1,5 @@
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](/README.md#recommended-use).
+
 # SpatialOS Unreal GDK toolbar
 
 The SpatialOS Unreal GDK toolbar is an easy way to run and alter [`spatial` command-line tool](https://docs.improbable.io/reference/13.1/shared/glossary#the-spatial-command-line-tool) (SpatialOS documentation) commands from inside the Unreal Editor.

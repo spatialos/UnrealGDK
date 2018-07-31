@@ -1,3 +1,5 @@
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](/README.md#recommended-use).
+
 # Interop Code Generator (ICG)
 
 The Interop Code Generator (ICG) is part of the SpatialOS Unreal GDK toolbar. It takes a set of Unreal classes and generates routing code (called ["type bindings"](./glossary.md#type-bindings)) that enables automated communication between Unreal and SpatialOS.

@@ -1,3 +1,5 @@
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](/README.md#recommended-use).
+
 # Singleton Actors
 
 Singleton Actors allow a single source of truth for both operations and data across a multi-server simulation. They are server-side authoritative [Actors](https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Actors) that are restricted to one instantiation on SpatialOS. 

@@ -1,4 +1,6 @@
-## Unreal GDK Known Issues
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](/README.md#recommended-use).
+
+# Unreal GDK known issues
 
 Known issue = any major user-facing bug or lack of user-facing feature that:
 1. diverges from vanilla Unreal design or implementation (e.g. ordering of reliable RPCs), **OR**
