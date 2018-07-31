@@ -49,34 +49,34 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 		TEXT("Resources"));
 
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot",
-		new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon40x40));
+		new IMAGE_BRUSH(TEXT("Snapshot"), Icon40x40));
 
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot.Small",
-		new IMAGE_BRUSH(TEXT("CreateSnapshotIcon"), Icon20x20));
+		new IMAGE_BRUSH(TEXT("Snapshot@0.5x"), Icon20x20));
 
 	Style->Set("SpatialGDKEditorToolbar.GenerateInteropCode",
-		new IMAGE_BRUSH(TEXT("CodegenIcon"), Icon40x40));
+		new IMAGE_BRUSH(TEXT("Codegen"), Icon40x40));
 
 	Style->Set("SpatialGDKEditorToolbar.GenerateInteropCode.Small",
-		new IMAGE_BRUSH(TEXT("CodegenIcon"), Icon20x20));
+		new IMAGE_BRUSH(TEXT("Codegen@0.5x"), Icon20x20));
 
 	Style->Set("SpatialGDKEditorToolbar.StartSpatialOSStackAction",
-		new IMAGE_BRUSH(TEXT("ImprobableIcon_40x"), Icon40x40));
-	
-	Style->Set("SpatialGDKEditorToolbar.StopSpatialOSStackAction",
-		new IMAGE_BRUSH(TEXT("ImprobableIconStop_40x"), Icon40x40));
-	
-	Style->Set("SpatialGDKEditorToolbar.LaunchInspectorWebPageAction",
-		new IMAGE_BRUSH(TEXT("BrowserIcon_40x"), Icon40x40));
+		new IMAGE_BRUSH(TEXT("Launch"), Icon40x40));
 
 	Style->Set("SpatialGDKEditorToolbar.StartSpatialOSStackAction.Small",
-		new IMAGE_BRUSH(TEXT("ImprobableIcon_40x"), Icon20x20));
+		new IMAGE_BRUSH(TEXT("Launch@0.5x"), Icon20x20));
 	
+	Style->Set("SpatialGDKEditorToolbar.StopSpatialOSStackAction",
+		new IMAGE_BRUSH(TEXT("Stop"), Icon40x40));
+
 	Style->Set("SpatialGDKEditorToolbar.StopSpatialOSStackAction.Small",
-		new IMAGE_BRUSH(TEXT("ImprobableIconStop_40x"), Icon20x20));
+		new IMAGE_BRUSH(TEXT("Stop@0.5x"), Icon20x20));
+	
+	Style->Set("SpatialGDKEditorToolbar.LaunchInspectorWebPageAction",
+		new IMAGE_BRUSH(TEXT("Inspector"), Icon40x40));
 	
 	Style->Set("SpatialGDKEditorToolbar.LaunchInspectorWebPageAction.Small",
-		new IMAGE_BRUSH(TEXT("BrowserIcon_40x"), Icon20x20));
+		new IMAGE_BRUSH(TEXT("Inspector@0.5x"), Icon20x20));
 
 	return Style;
 }
