@@ -19,7 +19,7 @@
 | ![#008000](https://placehold.it/15/008000/000000?text=+) float | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) double | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) bool | Yes | Yes | --- | --- |
-| ![#008000](https://placehold.it/15/008000/000000?text=+) byte | No | No | --- | Use uint8 instead |
+| ![#008000](https://placehold.it/15/008000/000000?text=+) byte | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) TCHAR | No | No | --- | Use uint8 instead |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) FName | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) FText | Yes | Yes | --- | Basic implementation, currently it does not support localised strings. |
@@ -76,7 +76,7 @@
 | ![#008000](https://placehold.it/15/008000/000000?text=+) float | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) double | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) bool | Yes | Yes | --- | --- |
-| ![#008000](https://placehold.it/15/008000/000000?text=+) byte | No | No | --- | Use uint8 instead |
+| ![#008000](https://placehold.it/15/008000/000000?text=+) byte | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) TCHAR | No | No | --- | Use uint8 instead |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) FName | Yes | Yes | --- | --- |
 | ![#008000](https://placehold.it/15/008000/000000?text=+) FText | Yes | Yes | --- | Basic implementation, currently it does not support localised strings. |
