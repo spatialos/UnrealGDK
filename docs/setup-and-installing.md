@@ -47,7 +47,8 @@ As part of your Unreal GDK setup, you need to clone the SpatialOS fork of the Un
 To use the Unreal GDK, you need to build the SpatialOS fork of Unreal Engine 4 from source.
 
 ### Getting the Unreal Engine fork source code and Unreal Linux cross-platform support
-1. In a terminal window, clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK) repository and check out the fork by running either:
+1. In a terminal window, clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK) repository. (You may get a 404 from this link. See  the instructions above, under _Other_, on how to get access.) <br/><br/>
+Check out the fork by running either:
     * (HTTPS) `git clone https://github.com/improbableio/UnrealEngine.git -b 4.19-SpatialOSUnrealGDK`
     * (SSH) `git clone git@github.com:improbableio/UnrealEngine.git -b 4.19-SpatialOSUnrealGDK`
 1. To build Unreal server-workers for SpatialOS deployments, you need to build targeting Linux. This requires cross-compilation of your SpatialOS project and Unreal Engine fork.
