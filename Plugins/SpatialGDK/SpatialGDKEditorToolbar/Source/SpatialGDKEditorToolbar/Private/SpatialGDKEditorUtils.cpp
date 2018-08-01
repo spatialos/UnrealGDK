@@ -2,7 +2,7 @@
 
 #include "SpatialGDKEditorUtils.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbarUtils)
+DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbarUtils);
 
 const FConfigFile* GetConfigFile(const FString& ConfigFilePath)
 {
@@ -29,10 +29,9 @@ const FConfigSection* GetConfigSection(const FString& ConfigFilePath, const FStr
 		{
 			return Section;
 		}
-		else
-		{
-			UE_LOG(LogSpatialGDKEditorToolbarUtils, Error, TEXT("Could not find section '%s' in '%s'."), *SectionName, *ConfigFilePath);
-		}
+
+		UE_LOG(LogSpatialGDKEditorToolbarUtils, Error, TEXT("Could not find section '%s' in '%s'."), *SectionName, *ConfigFilePath);
 	}
+
 	return nullptr;
 }
