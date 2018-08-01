@@ -174,10 +174,9 @@ TArray<FString> CreateSingletonListFromConfigFile()
 	}
 
 	const FString SectionName = "SnapshotGenerator.SingletonActorClasses";
-	const FConfigSection* SingletonActorClassesSection = ConfigFile->Find(SectionName);
+	const FConfigSection* SingletonActorClassesSection = GetConfigSection(ConfigFilePath, SectionName);
 	if (SingletonActorClassesSection == nullptr)
 	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find section '%s' in '%s'."), *SectionName, *ConfigFilePath);
 		return SingletonList;
 	}
 
