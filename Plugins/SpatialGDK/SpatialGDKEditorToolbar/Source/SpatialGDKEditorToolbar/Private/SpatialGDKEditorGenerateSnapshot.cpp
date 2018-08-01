@@ -162,7 +162,7 @@ worker::Option<FString> SetupSnapshotGenerationPath(FString SavePath)
 
 bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 {
-	FString FullSavePath = SetupSnapshotGenerationPath(SavePath).value_or("");
+	const FString FullSavePath = SetupSnapshotGenerationPath(SavePath).value_or("");
 
 	if (FullSavePath.IsEmpty())
 	{
