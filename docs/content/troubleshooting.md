@@ -80,3 +80,15 @@ check(!Value->IsFullNameStableForNetworking())
 ```
 
 **A:** This is mostly likely caused by attempting to replicate a stably-named actor. This can occur if you place an Actor within a level and mark it for replication. We don't currently support this combination, although we will soon. Until then please spawn your actor dynamically at runtime.
+
+------
+
+**Q:** My character is stuck in a T-pose on connecting.
+
+**A:** This is a known issue due to a bug in SpatialOS where a server-worker will sometimes not get authortiy over an entity (in this case the Global State Manager). The workaround at the moment is to try reconnecting to the deployment until it works. This bug is currently being worked on.
+
+------
+
+**Q:** My replicated properties in my game state aren't updating in the Inspector or on my client.0
+
+**A:** This is a known issue due to a bug in SpatialOS where a server-worker will sometimes not get authortiy over an entity (in this case the GameState). The workaround at the moment is to try reconnecting to the deployment until it works. This bug is currently being worked on.
