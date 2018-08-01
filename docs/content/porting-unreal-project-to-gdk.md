@@ -160,6 +160,14 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
         [InteropCodeGen.Settings]
         OutputPath=YourProject\Generated\
         ```
+        
+    1. In `SnapshotGenerator.SingletonActorClasses`, modify the `StarterProjectGameStateBase` to the GameState class in your game.
+    
+        For example:
+        
+        ```ini
+        [SnapshotGenerator.SingletonActorClasses]
+        YourProjectGameState=
 
     1. For any classes you want to replicate, you need to add the headers which those classes require, in the format `MyReplicationClass=ImportedHeader.h`.
 
