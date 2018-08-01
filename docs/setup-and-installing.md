@@ -147,7 +147,7 @@ To run a cloud deployment, you need to prepare your server-worker and client-wor
 1. Build a client-worker assembly: `Game\Scripts\BuildWorker.bat StarterProject Win64 Development StarterProject.uproject`
 1. Navigate to `StarterProject\spatial`.
 1. Upload the assemblies to the cloud, specifying an assembly name (this covers both assemblies): `spatial cloud upload <assembly_name>`
-1. Launch a deployment, specifying a deployment name: `spatial cloud launch <assembly_name> default_launch.json <deployment_name> --snapshot=snapshots\default.snapshot`
+1. Launch a deployment, specifying a deployment name: `spatial cloud launch <assembly_name> one_worker_test.json <deployment_name> --snapshot=snapshots\default.snapshot`
 1. Follow the steps [here](https://docs.improbable.io/reference/13.1/shared/get-started/tour#start-a-game-client) (SpatialOS documentation) to launch the game.
 
 # Next steps
