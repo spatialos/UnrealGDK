@@ -68,3 +68,9 @@ The [launch configuration file](https://docs.improbable.io/reference/13.1/shared
 
 * **Stop on Exit**</br>
 If enabled, shuts down running deployments when you close the Unreal Editor.
+
+* **Snapshot path**</br>
+Path to your SpatialOS Unreal GDK snapshot.
+
+* **Snapshot file name**</br>
+Name of your SpatialOS Unreal GDK snapshot file.
