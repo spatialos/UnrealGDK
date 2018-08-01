@@ -59,9 +59,10 @@ public:
 	uint32 NumAttempts;
 };
 
-// Helper types used by the maps below.
+// Helper types used by the maps below. Note 'pending' ~ 'unresolved'
 using FPendingOutgoingProperties = TPair<TArray<uint16>, TArray<uint16>>;
-using FPendingIncomingProperties = TPair<TMap<UObject*, TArray<const FRepHandleData*>>, TArray<const FHandoverHandleData*>>;  // Pending incoming properties (replicated and handover).
+using FPendingRepUpdates = TMap<UObject*, TArray<const FRepHandleData*>>;  // ApplyIncomingReplicatedPropertyUpdate needs to know which object each replicated property belongs to
+using FPendingIncomingProperties = TPair<FPendingRepUpdates, TArray<const FHandoverHandleData*>>;  // Pending incoming properties (replicated and handover).
 
 // Map types for pending objects/RPCs. For pending updates, they store a map from an unresolved object to a map of channels to properties
 // within those channels which depend on the unresolved object. For Replicated Properties, we need to store a pointer to the owning target object (Actor or ActorComponent).
@@ -95,8 +96,8 @@ using FOutgoingPendingArrayUpdateMap = TMap<const UObject*, FChannelToHandleToOP
 using FResolvedObjects = TArray<TPair<UObject*, const improbable::unreal::UnrealObjectRef>>;
 
 // Helper function to write incoming replicated property data to an object
-// TargetObject is the actor or actor component that owns the replicated property and its RepNotifies, NOT the root actor channel
-// to-do: unify how replicated properties and handover are handled
+// TargetObject is the actor or actor component that owns the replicated property and its RepNotifies, not necessarily the channel actor
+// to-do: unify how replicated properties and handover are handled (UNR-485)
 FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& RepHandleData, UObject* TargetObject, const void* ReplicatedPropertyValue, TSet<UProperty*>& RepNotifies)
 {
 	uint8* Dest = RepHandleData.GetPropertyData(reinterpret_cast<uint8*>(TargetObject));

@@ -615,16 +615,16 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* IncomingObjec
 
 		// Replicated Properties
 		TSet<UProperty*> RepNotifies;
-		for (auto& ObjsToReplicate : Properties.Key)  // TPair<UObject*, TArray<const FRepHandleData*>>
+		for (TPair<UObject*, TArray<const FRepHandleData*>>& ObjsToReplicate : Properties.Key)
 		{
 			// Iterate through our list of target objects, either an actor or component
 			// For each, we resolve all replicated properties under that object
 			UObject* TargetObject = ObjsToReplicate.Key;
 			DependentChannel->PreReceiveSpatialUpdate(TargetObject);
 
-			for (const FRepHandleData* RepData : ObjsToReplicate.Value) {  // Iterating through TArray<const FRepHandleData*>
+			for (const FRepHandleData* RepData : ObjsToReplicate.Value) {
 				ApplyIncomingReplicatedPropertyUpdate(*RepData, TargetObject, &IncomingObject, RepNotifies);
-				UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received queued object replicated property update. Channel actor (root actor) %s (%lld), target object %s, property %s"),
+				UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received queued object replicated property update. Channel actor %s (%lld), target object %s, property %s"),
 					*SpatialOSInstance->GetWorkerId(),
 					*DependentChannel->Actor->GetName(),
 					DependentChannel->GetEntityId().ToSpatialEntityId(),
@@ -638,7 +638,7 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* IncomingObjec
 		// Handover
 		for (const FHandoverHandleData* HandoverData : Properties.Value)
 		{
-			ApplyIncomingHandoverPropertyUpdate(*HandoverData, DependentChannel->Actor, &IncomingObject);  // HandoverHandleData will find the correct TargetObject for our replicated property, so we can just pass in the root actor
+			ApplyIncomingHandoverPropertyUpdate(*HandoverData, DependentChannel->Actor, &IncomingObject);  // HandoverHandleData will find the correct TargetObject for our replicated property, so we can just pass in the owning actor (channel actor)
 			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received queued object handover property update. Channel actor %s (%lld), property %s"),
 				*SpatialOSInstance->GetWorkerId(),
 				*DependentChannel->Actor->GetName(),
