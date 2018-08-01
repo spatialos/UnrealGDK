@@ -331,8 +331,7 @@ bool USpatialActorChannel::ReplicateActor()
 			APlayerState* PlayerState = Cast<APlayerState>(Actor);
 			if (!PlayerState)
 			{
-				APawn* Pawn = Cast<APawn>(Actor);
-				if (Pawn)
+				if (APawn* Pawn = Cast<APawn>(Actor))
 				{
 					PlayerState = Pawn->PlayerState;
 				}
@@ -499,6 +498,8 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	// If the entity registry has no entry for this actor, this means we need to create it.
 	if (ActorEntityId == 0)
 	{
+		// If the actor is stably named, we only want to start the creation process on one server (the one that
+		// has the Global State Manager) to avoid having multiple copies of replicated stably named actors in SpatialOS
 		if (InActor->IsFullNameStableForNetworking())
 		{
 			USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
@@ -602,6 +603,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 	}
 
 	// If a replicated stably named actor was created, update the GSM with the proper path and entity id
+	// This ensures each stably named actor is only created once
 	if (Actor->IsFullNameStableForNetworking())
 	{
 		SpatialNetDriver->GetSpatialInterop()->AddReplicatedStablyNamedActorToGSM(ActorEntityId, Actor);

@@ -359,7 +359,8 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 
 	if (EntityActor)
 	{
-		// To account for stably named actors
+		// If the actor is stably named and exists on this worker, it means that it was previously resolved as a stably named object
+		// As we want to refer to it dynamically later on, we remove this resolution, and add a dynamic one (ResolveEntityActor)
 		if (EntityActor->IsFullNameStableForNetworking())
 		{
 			PackageMap->RemoveStablyNamedObject(EntityActor);

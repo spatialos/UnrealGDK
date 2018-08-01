@@ -31,6 +31,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	TimerManager = InTimerManager;
 	PackageMap = Cast<USpatialPackageMapClient>(Driver->GetSpatialOSNetConnection()->PackageMap);
 	bAuthoritativeDestruction = true;
+	bCanSpawnReplicatedStablyNamedActors = false;
 
 	// Collect all type binding classes.
 	TArray<UClass*> TypeBindingClasses;
@@ -946,7 +947,10 @@ NameToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
 {
 	improbable::unreal::GlobalStateManagerData* GSM = GetGlobalStateManagerData();
 
-	if (GSM == nullptr) return nullptr;
+	if (GSM == nullptr)
+	{
+		return nullptr;
+	}
 
 	return &(GSM->singleton_name_to_entity_id());
 }
@@ -955,7 +959,10 @@ EntityIdToPathMap* USpatialInterop::GetEntityIdToReplicatedStablyNamedPath() con
 {
 	improbable::unreal::GlobalStateManagerData* GSM = GetGlobalStateManagerData();
 
-	if (GSM == nullptr) return nullptr;
+	if (GSM == nullptr)
+	{
+		return nullptr;
+	}
 
 	return &(GSM->entity_id_to_replicated_stably_named_path());
 }
@@ -964,7 +971,7 @@ void USpatialInterop::ReserveReplicatedStablyNamedActorChannel(USpatialActorChan
 {
 	ReplicatedStablyNamedActorChannelQueue.Add(Channel);
 
-	if (bCanSpawnReplicatedStablyNamedActors)
+	if (CanSpawnReplicatedStablyNamedActors())
 	{
 		ReserveReplicatedStablyNamedActors();
 	}
@@ -976,13 +983,15 @@ void USpatialInterop::UnreserveReplicatedStablyNamedActor(AActor* Actor)
 	USpatialActorChannel* Channel = nullptr;
 	for (auto& It : ReplicatedStablyNamedActorChannelQueue)
 	{
-		if (It->Actor == Actor) {
+		if (It->Actor == Actor)
+		{
 			Channel = It;
 			break;
 		}
 	}
 
-	if (Channel != nullptr) {
+	if (Channel != nullptr)
+	{
 		ReplicatedStablyNamedActorChannelQueue.Remove(Channel);
 	}
 }
@@ -991,7 +1000,10 @@ void USpatialInterop::AddReplicatedStablyNamedActorToGSM(const FEntityId& Entity
 {
 	EntityIdToPathMap& EntityIdToReplicatedStablyNamedPathMap = *GetEntityIdToReplicatedStablyNamedPath();
 	// If the map already has the entity id, meaning the actor was already spawned, return early
-	if (EntityIdToReplicatedStablyNamedPathMap.count(EntityId.ToSpatialEntityId()) != 0) return;
+	if (EntityIdToReplicatedStablyNamedPathMap.count(EntityId.ToSpatialEntityId()) != 0)
+	{
+		return;
+	}
 
 	std::string Path = TCHAR_TO_UTF8(*Actor->GetPathName(Actor->GetWorld()));
 	EntityIdToReplicatedStablyNamedPathMap.emplace(EntityId.ToSpatialEntityId(), Path);
@@ -1013,17 +1025,17 @@ void USpatialInterop::ReserveReplicatedStablyNamedActors()
 		std::string Path = TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()));
 
 		// Inefficient, check if we have already spawned this actor
-		bool Found = false;
+		bool bFound = false;
 		for (const auto& Pair : EntityIdToReplicatedStablyNamedPath)
 		{
 			if (Pair.second == Path)
 			{
-				Found = true;
+				bFound = true;
 				Channel->RegisterEntityId(FEntityId{ Pair.first });
 				break;
 			}
 		}
-		if (Found)
+		if (bFound)
 		{
 			continue;
 		}
@@ -1047,8 +1059,9 @@ void USpatialInterop::DeleteIrrelevantReplicatedStablyNamedActors(const EntityId
 			FTimerHandle RetryTimer;
 			FTimerDelegate TimerCallback;
 			TimerCallback.BindLambda([Actor, EntityId, this] {
-				if (Actor != nullptr && Actor->IsFullNameStableForNetworking() && !PackageMap->GetNetGUIDFromEntityId(EntityId).IsValid())
+				if (Actor != nullptr && !PackageMap->GetNetGUIDFromEntityId(EntityId).IsValid())
 				{
+					ReplicatedStablyNamedActorTimeoutMap.Remove(Actor);
 					UE_LOG(LogSpatialGDKInterop, Log, TEXT("Timed out (deleted) replicated stably named actor: %s"), *Actor->GetName());
 
 					StartIgnoringAuthoritativeDestruction();

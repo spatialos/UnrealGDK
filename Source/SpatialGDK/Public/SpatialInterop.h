@@ -14,8 +14,11 @@ class USpatialOS;
 class USpatialActorChannel;
 class USpatialPackageMapClient;
 class USpatialNetDriver;
-namespace improbable {
-	namespace unreal {
+
+namespace improbable
+{
+	namespace unreal 
+	{
 		class GlobalStateManagerData;
 	}
 }
