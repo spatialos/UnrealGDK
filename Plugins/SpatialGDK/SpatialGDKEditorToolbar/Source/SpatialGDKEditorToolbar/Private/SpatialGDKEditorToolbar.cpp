@@ -256,43 +256,43 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 	ShowTaskStartNotification("Generating Interop Code");
 	bInteropCodeGenRunning = true;
 
-	//AsyncTask(ENamedThreads::GameThread, [this] {
-		bool bSuccess = SpatialGDKGenerateInteropCode();
+	bool bSuccess = SpatialGDKGenerateInteropCode();
 
-		if (bSuccess)
-		{
-			ShowSuccessNotification("Interop Codegen Completed!");
-		}
-		else
-		{
-			ShowFailedNotification("Interop Codegen Failed");
-		}
-	//});
+	if (bSuccess)
+	{
+		ShowSuccessNotification("Interop Codegen Completed!");
+	}
+	else
+	{
+		ShowFailedNotification("Interop Codegen Failed");
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& NotificationText)
 {
-	if (TaskNotificationPtr.IsValid())
-	{
-		TaskNotificationPtr.Pin()->ExpireAndFadeout();
-	}
+	AsyncTask(ENamedThreads::AnyHiPriThreadNormalTask, [this, NotificationText] {
+		if (TaskNotificationPtr.IsValid())
+		{
+			TaskNotificationPtr.Pin()->ExpireAndFadeout();
+		}
 
-	if (GEditor && ExecutionStartSound)
-	{
-		GEditor->PlayEditorSound(ExecutionStartSound);
-	}
+		if (GEditor && ExecutionStartSound)
+		{
+			GEditor->PlayEditorSound(ExecutionStartSound);
+		}
 
-	FNotificationInfo Info(FText::AsCultureInvariant(NotificationText));
-	Info.Image = FEditorStyle::GetBrush(TEXT("LevelEditor.RecompileGameCode"));
-	Info.ExpireDuration = 5.0f;
-	Info.bFireAndForget = false;
+		FNotificationInfo Info(FText::AsCultureInvariant(NotificationText));
+		Info.Image = FEditorStyle::GetBrush(TEXT("LevelEditor.RecompileGameCode"));
+		Info.ExpireDuration = 5.0f;
+		Info.bFireAndForget = false;
 
-	TaskNotificationPtr = FSlateNotificationManager::Get().AddNotification(Info);
+		TaskNotificationPtr = FSlateNotificationManager::Get().AddNotification(Info);
 
-	if (TaskNotificationPtr.IsValid())
-	{
-		TaskNotificationPtr.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
-	}
+		if (TaskNotificationPtr.IsValid())
+		{
+			TaskNotificationPtr.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
+		}
+	});
 }
 
 void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& NotificationText)
