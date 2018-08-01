@@ -25,3 +25,4 @@ Known issue = any major user-facing bug or lack of user-facing feature that:
 | We don't support listen servers. | 2018-07-30 | | Use dedicated servers instead. | No |
 | Attempting to use stably-named replicated objects (ie. placed level actors marked for replication) will result in runtime assertions. | 2018-07-31 | [UNR-397](https://improbableio.atlassian.net/browse/UNR-397) | For now, please spawn Actor at runtime instead. | No
 | Attempting to find the bound class of a blueprint class' typebinding fails if the blueprint hasn't previously been loaded. | 2018-07-31 | [UNR-273](https://improbableio.atlassian.net/browse/UNR-273) | Add a reference to the blueprint in default level. | No
+| GameState is sometimes not created/updating properly. In a new deployment this can cause characters to be in a T-pose. | 2018-07-31 | [UNR-475](https://improbableio.atlassian.net/browse/UNR-475) | Try reconnecting until it works. | No
