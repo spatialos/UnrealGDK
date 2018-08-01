@@ -7,12 +7,12 @@ We recommend you start by following the [Installation and setup guide](setup-and
 
 After you've run through the setup guide (including setting up Actor replication), we recommend you have a look at the following pages, which explain some of the things that relate to working with SpatialOS:
 
-* [Interop Code Generator](content/interop.md)   
-* [Actor handover](content/actor-handover.md)
+* [Interop Code Generator](./content/interop.md)
+* [Actor handover](./content/handover-between-server-workers.md)
 
 We want your feedback on the Unreal GDK, its documentation and its [roadmap](https://trello.com/b/7wtbtwmL/unreal-gdk-roadmap) (Trello board) - [find out how to give us feedback](../README.md#give-us-feedback).
 
-## Documentation 
+## Documentation
 
 ### SpatialOS
 The Unreal GDK documentation assumes you are familiar with SpatialOS concepts. For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/latest/shared/concepts/spatialos).
@@ -42,7 +42,7 @@ Reference docs
 
 How-to docs
 * [Porting a native Unreal project to the Unreal GDK](content/porting-unreal-project-to-gdk.md)
-* [Generating a snapshot](content/snapshots.md)
+* [Generating a snapshot](./content/generating-a-snapshot.md)
 
 #### Contributions
 We are currently not accepting public contributions. However, we are accepting issues and we do want your [feedback](../README.md#give-us-feedback).

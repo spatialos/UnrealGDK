@@ -1,4 +1,4 @@
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](/README.md#recommended-use).
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](../../README.md#recommended-use).
 
 # Unreal GDK Troubleshooting/FAQ
 
@@ -6,7 +6,7 @@
 
 **Q:** I’m getting the error `"Could not find definition for module 'SpatialGDK' (referenced via Target -> <ProjectName>.Build.cs)"` when building my project.
 
-**A:** You need to setup symlinks to the GDK as per [step 3 here](./setup-and-installing.md#building).
+**A:** You need to setup symlinks to the GDK as per [step 3 here](../setup-and-installing.md#building).
 
 ------
 
@@ -80,3 +80,15 @@ check(!Value->IsFullNameStableForNetworking())
 ```
 
 **A:** This is mostly likely caused by attempting to replicate a stably-named actor. This can occur if you place an Actor within a level and mark it for replication. We don't currently support this combination, although we will soon. Until then please spawn your actor dynamically at runtime.
+
+------
+
+**Q:** My character is stuck in a T-pose on connecting.
+
+**A:** This is a known issue due to a bug in SpatialOS where a server-worker will sometimes not get authority over an entity (in this case the Global State Manager). The workaround at the moment is to try reconnecting to the deployment until it works. The fix for this bug is currently being worked on.
+
+------
+
+**Q:** My replicated properties in my game state aren't updating in the Inspector or on my client-worker.
+
+**A:** This is a known issue due to a bug in SpatialOS where a server-worker will sometimes not get authority over an entity (in this case the GameState). The workaround at the moment is to try reconnecting to the deployment until it works. The fix for this bug is currently being worked on.
