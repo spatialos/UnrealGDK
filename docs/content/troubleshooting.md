@@ -91,4 +91,4 @@ check(!Value->IsFullNameStableForNetworking())
 
 **Q:** My replicated properties in my game state aren't updating in the Inspector or on my client.0
 
-**A:** This is a known issue due to a bug in SpatialOS where a server-worker will sometimes not get authortiy over an entity (in this case the GameState). The workaround at the moment is to try reconnecting to the deployment until it works. This bug is currently being worked on.
+**A:** This is a known issue due to a bug in SpatialOS where a server-worker will sometimes not get authority over an entity (in this case the GameState). The workaround at the moment is to try reconnecting to the deployment until it works. This bug is currently being worked on.
