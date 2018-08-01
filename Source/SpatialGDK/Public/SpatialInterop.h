@@ -97,7 +97,7 @@ using FResolvedObjects = TArray<TPair<UObject*, const improbable::unreal::Unreal
 
 // Helper function to write incoming replicated property data to an object
 // TargetObject is the actor or actor component that owns the replicated property and its RepNotifies, not necessarily the channel actor
-// to-do: unify how replicated properties and handover are handled (UNR-485)
+// TODO: unify how replicated properties and handover are handled (UNR-485)
 FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& RepHandleData, UObject* TargetObject, const void* ReplicatedPropertyValue, TSet<UProperty*>& RepNotifies)
 {
 	uint8* Dest = RepHandleData.GetPropertyData(reinterpret_cast<uint8*>(TargetObject));
