@@ -256,7 +256,7 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 	ShowTaskStartNotification("Generating Interop Code");
 	bInteropCodeGenRunning = true;
 
-	AsyncTask(ENamedThreads::GameThread, [this] {
+	//AsyncTask(ENamedThreads::GameThread, [this] {
 		bool bSuccess = SpatialGDKGenerateInteropCode();
 
 		if (bSuccess)
@@ -267,7 +267,7 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 		{
 			ShowFailedNotification("Interop Codegen Failed");
 		}
-	});
+	//});
 }
 
 void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& NotificationText)
