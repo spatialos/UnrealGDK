@@ -4,6 +4,7 @@
 #include "EntityBuilder.h"
 #include "SpatialConstants.h"
 #include "SpatialOSCommon.h"
+#include "SpatialGDKEditorUtils.h"
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
 
 #include <improbable/standard_library.h>
@@ -81,16 +82,14 @@ bool CreateSingletonToIdMap(NameToEntityIdMap& SingletonNameToEntityId)
 	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
 
 	// Load the SpatialGDK config file
-	GConfig->LoadFile(ConfigFilePath);
-	FConfigFile* ConfigFile = GConfig->Find(ConfigFilePath, false);
+	const FConfigFile* ConfigFile = LoadConfigFile(ConfigFilePath);
 	if (!ConfigFile)
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Could not open .ini file: \"%s\""), *ConfigFilePath);
 		return false;
 	}
 
 	const FString SectionName = "SnapshotGenerator.SingletonActorClasses";
-	FConfigSection* SingletonActorClassesSection = ConfigFile->Find(SectionName);
+	const FConfigSection* SingletonActorClassesSection = ConfigFile->Find(SectionName);
 	if (SingletonActorClassesSection == nullptr)
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Could not find section '%s' in '%s'."), *SectionName, *ConfigFilePath);

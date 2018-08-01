@@ -7,6 +7,7 @@
 #include "SchemaGenerator.h"
 #include "TypeBindingGenerator.h"
 #include "TypeStructure.h"
+#include "SpatialGDKEditorUtils.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
@@ -70,35 +71,6 @@ bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
 	return true;
 }
 }// ::
-
-const FConfigFile* GetConfigFile(const FString& ConfigFilePath)
-{
-	const FConfigFile* ConfigFile = GConfig->Find(ConfigFilePath, false);
-	if (!ConfigFile)
-	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not open .ini file: \"%s\""), *ConfigFilePath);
-		return nullptr;
-	}
-	return ConfigFile;
-}
-
-const FConfigSection* GetConfigSection(const FString& ConfigFilePath, const FString& SectionName)
-{
-	if (const FConfigFile* ConfigFile = GetConfigFile(ConfigFilePath))
-	{
-		// Get the key-value pairs in the InteropCodeGenSection.
-		if (const FConfigSection* Section = ConfigFile->Find(SectionName))
-		{
-			return Section;
-		}
-		else
-		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find section '%s' in '%s'."), *SectionName, *ConfigFilePath);
-		}
-	}
-	return nullptr;
-}
-
 
 // Handle Unreal's naming of blueprint C++ files which are appended with _C.
 // It is common for users to not know about this feature and simply add the blueprint name to the DefaultSpatialGDK.ini ClassesToGenerate section
@@ -195,16 +167,14 @@ TArray<FString> CreateSingletonListFromConfigFile()
 	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
 
 	// Load the SpatialGDK config file
-	GConfig->LoadFile(ConfigFilePath);
-	FConfigFile* ConfigFile = GConfig->Find(ConfigFilePath, false);
+	const FConfigFile* ConfigFile = LoadConfigFile(ConfigFilePath);
 	if (!ConfigFile)
 	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not open .ini file: \"%s\""), *ConfigFilePath);
 		return SingletonList;
 	}
 
 	const FString SectionName = "SnapshotGenerator.SingletonActorClasses";
-	FConfigSection* SingletonActorClassesSection = ConfigFile->Find(SectionName);
+	const FConfigSection* SingletonActorClassesSection = ConfigFile->Find(SectionName);
 	if (SingletonActorClassesSection == nullptr)
 	{
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find section '%s' in '%s'."), *SectionName, *ConfigFilePath);
@@ -275,7 +245,7 @@ bool SpatialGDKGenerateInteropCode()
 	const FString FileName = "DefaultEditorSpatialGDK.ini";
 	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
 	// Load the SpatialGDK config file
-	GConfig->LoadFile(ConfigFilePath);
+	LoadConfigFile(ConfigFilePath);
 
 	const FString UserClassesSectionName = "InteropCodeGen.ClassesToGenerate";
 	const FConfigSection* UserInteropCodeGenSection = GetConfigSection(ConfigFilePath, UserClassesSectionName);
