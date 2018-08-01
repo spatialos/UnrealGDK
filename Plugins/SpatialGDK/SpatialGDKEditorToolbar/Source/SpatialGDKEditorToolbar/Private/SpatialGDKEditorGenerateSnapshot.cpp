@@ -122,12 +122,11 @@ worker::Entity CreateGlobalStateManagerEntity(const NameToEntityIdMap& Singleton
 
 } // ::
 
-worker::Option<FString> SetupSnapshotGenerationPath(FString SavePath)
+bool SetupSnapshotGenerationPath(FString& SavePath)
 {
-	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
 	FString SnapshotFileName = TEXT("default.snapshot");
 
-	if (Settings != nullptr)
+	if (const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>())
 	{
 		if (!Settings->SpatialOSSnapshotPath.Path.IsEmpty())
 		{
@@ -143,7 +142,7 @@ worker::Option<FString> SetupSnapshotGenerationPath(FString SavePath)
 	if (!FPaths::CollapseRelativeDirectories(SavePath))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Invalid path: %s - snapshot not generated"), *SavePath);
-		return {};
+		return false;
 	}
 
 	if (!FPaths::DirectoryExists(SavePath))
@@ -152,25 +151,23 @@ worker::Option<FString> SetupSnapshotGenerationPath(FString SavePath)
 		if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*SavePath))
 		{
 			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Unable to create directory: %s - snapshot not generated"), *SavePath);
-			return {};
+			return false;
 		}
 	}
 
-	FString FullPath = FPaths::Combine(*SavePath, SnapshotFileName);
-	return { FullPath };
+	SavePath = FPaths::Combine(*SavePath, SnapshotFileName);
+	return true;
 }
 
-bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
+bool SpatialGDKGenerateSnapshot(FString& SavePath, UWorld* World)
 {
-	const FString FullSavePath = SetupSnapshotGenerationPath(SavePath).value_or("");
-
-	if (FullSavePath.IsEmpty())
+	if (!SetupSnapshotGenerationPath(SavePath))
 	{
 		return false;
 	}
 
-	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Saving snapshot to: %s"), *FullSavePath);
-	worker::SnapshotOutputStream OutputStream = worker::SnapshotOutputStream(improbable::unreal::Components{}, TCHAR_TO_UTF8(*FullSavePath));
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Saving snapshot to: %s"), *SavePath);
+	worker::SnapshotOutputStream OutputStream = worker::SnapshotOutputStream(improbable::unreal::Components{}, TCHAR_TO_UTF8(*SavePath));
 
 	// Create spawner entity.
 	worker::Option<std::string> Result = OutputStream.WriteEntity(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
@@ -207,6 +204,6 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 		}
 	}
 
-	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path: %s"), *FullSavePath);
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path: %s"), *SavePath);
 	return true;
 }
