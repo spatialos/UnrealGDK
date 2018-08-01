@@ -1796,7 +1796,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 			SourceWriter.Printf("// A legal static object reference should never be unresolved.");
 			SourceWriter.Printf("check(ObjectRef.path().empty());");
 			SourceWriter.Print("bWriteObjectProperty = false;");
-			SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);");
+			SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, TargetObject, RepData);");
 		}
 	}, false);
 
