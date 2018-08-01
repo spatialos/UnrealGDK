@@ -50,7 +50,7 @@ public:
 		
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityNetGUID(worker::EntityId EntityId);
-	void RemoveNetGUID(FNetworkGUID NetGUID);
+	void RemoveNetGUID(const FNetworkGUID& NetGUID);
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(const UObject* Object);
 	

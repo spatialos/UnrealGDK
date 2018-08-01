@@ -19,7 +19,7 @@ using namespace improbable;
 namespace
 {
 
-using NameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
+using StringToEntityIdMap = worker::Map<std::string, worker::EntityId>;
 
 const WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
 const WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
@@ -75,7 +75,7 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 	return LevelEntities;
 }
 
-bool CreateSingletonToIdMap(NameToEntityIdMap& SingletonNameToEntityId)
+bool CreateSingletonToIdMap(StringToEntityIdMap& SingletonNameToEntityId)
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 	for (UClass* Class : SpatialGDKToolbarSettings->SingletonClasses)
@@ -88,7 +88,7 @@ bool CreateSingletonToIdMap(NameToEntityIdMap& SingletonNameToEntityId)
 	return true;
 }
 
-worker::Entity CreateGlobalStateManagerEntity(const NameToEntityIdMap& SingletonNameToEntityId)
+worker::Entity CreateGlobalStateManagerEntity(const StringToEntityIdMap& SingletonNameToEntityId)
 {
 	return improbable::unreal::FEntityBuilder::Begin()
 		.AddPositionComponent(Position::Data{Origin}, UnrealWorkerWritePermission)
@@ -145,7 +145,7 @@ bool SpatialGDKGenerateSnapshot(UWorld* World)
 	}
 
 	// Create Global State Manager
-	NameToEntityIdMap SingletonNameToEntityId;
+	StringToEntityIdMap SingletonNameToEntityId;
 	if(!CreateSingletonToIdMap(SingletonNameToEntityId))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: Couldn't create Singleton Name to EntityId map"));

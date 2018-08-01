@@ -307,12 +307,7 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 	// 2. The Actor was deleted on another server
 	// In neither situation do we want to delete associated entities, so prevent them from being issued.
 	// TODO: fix this with working sets (UNR-411)
-	NetDriver->GetSpatialInterop()->StartIgnoringAuthoritativeDestruction();
-	if (World->DestroyActor(Actor, true) == false)
-	{
-		UE_LOG(LogSpatialGDKInteropPipelineBlock, Error, TEXT("World->DestroyActor failed on RemoveEntity %s %d"), *Actor->GetName(), EntityId.ToSpatialEntityId());
-	}
-	NetDriver->GetSpatialInterop()->StopIgnoringAuthoritativeDestruction();
+	NetDriver->GetSpatialInterop()->LocallyDeleteActor(Actor);
 
 	CleanupDeletedEntity(EntityId);
 }

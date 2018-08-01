@@ -76,10 +76,10 @@ FNetworkGUID USpatialPackageMapClient::ResolveStablyNamedObject(const UObject* O
 void USpatialPackageMapClient::RemoveStablyNamedObject(const UObject* Object)
 {
 	check(Object->IsFullNameStableForNetworking());
-	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	FNetworkGUID NetGUID = GetNetGUIDFromStablyNamedObject(Object);
 	if (NetGUID.IsValid())
 	{
+		FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 		SpatialGuidCache->RemoveNetGUID(NetGUID);
 	}
 }
@@ -203,7 +203,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(worker::EntityId EntityId)
 	RemoveNetGUID(EntityNetGUID);
 }
 
-void FSpatialNetGUIDCache::RemoveNetGUID(FNetworkGUID NetGUID)
+void FSpatialNetGUIDCache::RemoveNetGUID(const FNetworkGUID& NetGUID)
 {
 	FHashableUnrealObjectRef* ObjectRef = NetGUIDToUnrealObjectRef.Find(NetGUID);
 	UnrealObjectRefToNetGUID.Remove(*ObjectRef);

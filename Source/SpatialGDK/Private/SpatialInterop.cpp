@@ -63,7 +63,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	View->OnAddComponent<improbable::unreal::GlobalStateManager>([this](const worker::AddComponentOp<improbable::unreal::GlobalStateManager>& op)
 	{
 		LinkExistingSingletonActors(op.Data.singleton_name_to_entity_id());
-		DeleteIrrelevantReplicatedStablyNamedActors(op.Data.entity_id_to_replicated_stably_named_path());
+		DeleteIrrelevantReplicatedStablyNamedActors(op.Data.stably_named_path_to_entity_id());
 	});
 
 	View->OnComponentUpdate<improbable::unreal::GlobalStateManager>([this](const worker::ComponentUpdateOp<improbable::unreal::GlobalStateManager>& op)
@@ -72,9 +72,9 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 		{
 			LinkExistingSingletonActors(*op.Update.singleton_name_to_entity_id().data());
 		}
-		if (op.Update.entity_id_to_replicated_stably_named_path().data())
+		if (op.Update.stably_named_path_to_entity_id().data())
 		{
-			DeleteIrrelevantReplicatedStablyNamedActors(*op.Update.entity_id_to_replicated_stably_named_path().data());
+			DeleteIrrelevantReplicatedStablyNamedActors(*op.Update.stably_named_path_to_entity_id().data());
 		}
 	});
 
@@ -83,7 +83,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 		if (op.Authority == worker::Authority::kAuthoritative)
 		{
 			ExecuteInitialSingletonActorReplication(*GetSingletonNameToEntityId());
-			ReserveReplicatedStablyNamedActors();
+			RegisterReplicatedStablyNamedActors();
 		}
 	});
 
@@ -779,7 +779,7 @@ void USpatialInterop::ResolvePendingOutgoingArrayUpdates(UObject* Object)
 	ObjectToOPAR.Remove(Object);
 }
 
-void USpatialInterop::LinkExistingSingletonActors(const NameToEntityIdMap& SingletonNameToEntityId)
+void USpatialInterop::LinkExistingSingletonActors(const StringToEntityIdMap& SingletonNameToEntityId)
 {
 	if (!NetDriver->IsServer())
 	{
@@ -836,7 +836,7 @@ void USpatialInterop::LinkExistingSingletonActors(const NameToEntityIdMap& Singl
 	}
 }
 
-void USpatialInterop::ExecuteInitialSingletonActorReplication(const NameToEntityIdMap& SingletonNameToEntityId)
+void USpatialInterop::ExecuteInitialSingletonActorReplication(const StringToEntityIdMap& SingletonNameToEntityId)
 {
 	for (const auto& pair : SingletonNameToEntityId)
 	{
@@ -906,10 +906,10 @@ void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& Ou
 	NetDriver->SingletonActorChannels.Add(SingletonActorClass, TPair<AActor*, USpatialActorChannel*>(OutActor, OutChannel));
 }
 
-void USpatialInterop::UpdateGlobalStateManager(const FString& ClassName, const FEntityId& SingletonEntityId)
+void USpatialInterop::AddSingletonToGSM(const FString& ClassName, const FEntityId& SingletonEntityId)
 {
 	std::string SingletonName(TCHAR_TO_UTF8(*ClassName));
-	NameToEntityIdMap& SingletonNameToEntityId = *GetSingletonNameToEntityId();
+	StringToEntityIdMap& SingletonNameToEntityId = *GetSingletonNameToEntityId();
 	SingletonNameToEntityId[SingletonName] = SingletonEntityId.ToSpatialEntityId();
 
 	improbable::unreal::GlobalStateManager::Update Update;
@@ -943,134 +943,126 @@ improbable::unreal::GlobalStateManagerData* USpatialInterop::GetGlobalStateManag
 	return nullptr;
 }
 
-NameToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
+StringToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
 {
-	improbable::unreal::GlobalStateManagerData* GSM = GetGlobalStateManagerData();
+	improbable::unreal::GlobalStateManagerData* GSMD = GetGlobalStateManagerData();
 
-	if (GSM == nullptr)
+	if (GSMD)
 	{
-		return nullptr;
+		return &(GSMD->singleton_name_to_entity_id());
 	}
 
-	return &(GSM->singleton_name_to_entity_id());
+	return nullptr;
 }
 
-EntityIdToPathMap* USpatialInterop::GetEntityIdToReplicatedStablyNamedPath() const
+StringToEntityIdMap* USpatialInterop::GetStablyNamedPathToEntityId() const
 {
-	improbable::unreal::GlobalStateManagerData* GSM = GetGlobalStateManagerData();
+	improbable::unreal::GlobalStateManagerData* GSMD = GetGlobalStateManagerData();
 
-	if (GSM == nullptr)
+	if (GSMD)
 	{
-		return nullptr;
+		return &(GSMD->stably_named_path_to_entity_id());
 	}
 
-	return &(GSM->entity_id_to_replicated_stably_named_path());
+	return nullptr;
 }
 
 void USpatialInterop::ReserveReplicatedStablyNamedActorChannel(USpatialActorChannel* Channel)
 {
-	ReplicatedStablyNamedActorChannelQueue.Add(Channel);
+	ReplicatedStablyNamedActorQueue.Emplace(Channel->Actor, Channel);
 
 	if (CanSpawnReplicatedStablyNamedActors())
 	{
-		ReserveReplicatedStablyNamedActors();
+		RegisterReplicatedStablyNamedActors();
 	}
 }
 
 void USpatialInterop::UnreserveReplicatedStablyNamedActor(AActor* Actor)
 {
-	// Slightly inefficient linear search, could use a hashmap
-	USpatialActorChannel* Channel = nullptr;
-	for (auto& It : ReplicatedStablyNamedActorChannelQueue)
-	{
-		if (It->Actor == Actor)
-		{
-			Channel = It;
-			break;
-		}
-	}
-
-	if (Channel != nullptr)
-	{
-		ReplicatedStablyNamedActorChannelQueue.Remove(Channel);
-	}
+	ReplicatedStablyNamedActorQueue.Remove(Actor);
 }
 
 void USpatialInterop::AddReplicatedStablyNamedActorToGSM(const FEntityId& EntityId, AActor* Actor)
 {
-	EntityIdToPathMap& EntityIdToReplicatedStablyNamedPathMap = *GetEntityIdToReplicatedStablyNamedPath();
+	StringToEntityIdMap& StablyNamedPathToEntityId = *GetStablyNamedPathToEntityId();
+	std::string Path = TCHAR_TO_UTF8(*Actor->GetPathName(Actor->GetWorld()));
+
 	// If the map already has the entity id, meaning the actor was already spawned, return early
-	if (EntityIdToReplicatedStablyNamedPathMap.count(EntityId.ToSpatialEntityId()) != 0)
+	if (StablyNamedPathToEntityId.count(Path))
 	{
 		return;
 	}
 
-	std::string Path = TCHAR_TO_UTF8(*Actor->GetPathName(Actor->GetWorld()));
-	EntityIdToReplicatedStablyNamedPathMap.emplace(EntityId.ToSpatialEntityId(), Path);
+	StablyNamedPathToEntityId.emplace(Path, EntityId.ToSpatialEntityId());
 
 	improbable::unreal::GlobalStateManager::Update Update;
-	Update.set_entity_id_to_replicated_stably_named_path(EntityIdToReplicatedStablyNamedPathMap);
+	Update.set_stably_named_path_to_entity_id(StablyNamedPathToEntityId);
 
 	TSharedPtr<worker::Connection> Connection = SpatialOSInstance->GetConnection().Pin();
 	Connection->SendComponentUpdate<improbable::unreal::GlobalStateManager>(worker::EntityId((long)SpatialConstants::GLOBAL_STATE_MANAGER), Update);
 }
 
-void USpatialInterop::ReserveReplicatedStablyNamedActors()
+void USpatialInterop::RegisterReplicatedStablyNamedActors()
 {
 	bCanSpawnReplicatedStablyNamedActors = true;
-	EntityIdToPathMap& EntityIdToReplicatedStablyNamedPath = *GetEntityIdToReplicatedStablyNamedPath();
+	StringToEntityIdMap& StablyNamedPathToEntityId = *GetStablyNamedPathToEntityId();
 
-	for (USpatialActorChannel* Channel : ReplicatedStablyNamedActorChannelQueue)
+	for (auto& Pair : ReplicatedStablyNamedActorQueue)
 	{
-		std::string Path = TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()));
+		USpatialActorChannel* Channel = Pair.Value;
+		AActor* Actor = Pair.Key;
+		std::string Path = TCHAR_TO_UTF8(*Actor->GetPathName(Actor->GetWorld()));
 
-		// Inefficient, check if we have already spawned this actor
-		bool bFound = false;
-		for (const auto& Pair : EntityIdToReplicatedStablyNamedPath)
+		// If the Actor was already spawned, just register the EntityId
+		if (StablyNamedPathToEntityId.count(Path))
 		{
-			if (Pair.second == Path)
-			{
-				bFound = true;
-				Channel->RegisterEntityId(FEntityId{ Pair.first });
-				break;
-			}
-		}
-		if (bFound)
-		{
+			Channel->RegisterEntityId(StablyNamedPathToEntityId[Path]);
 			continue;
 		}
 
+		// Otherwise, initiate the reservation (and thus creation) process
 		Channel->SendReserveEntityIdRequest();
 	}
 
-	ReplicatedStablyNamedActorChannelQueue.Empty();
+	ReplicatedStablyNamedActorQueue.Empty();
 }
 
-void USpatialInterop::DeleteIrrelevantReplicatedStablyNamedActors(const EntityIdToPathMap& EntityIdToReplicatedStablyNamedPath)
+void USpatialInterop::DeleteIrrelevantReplicatedStablyNamedActors(const StringToEntityIdMap& StablyNamedPathToEntityId)
 {
-	for (auto& Pair : EntityIdToReplicatedStablyNamedPath)
+	for (auto& Pair : StablyNamedPathToEntityId)
 	{
-		FString FullPath = UTF8_TO_TCHAR(Pair.second.c_str());
+		FString FullPath = UTF8_TO_TCHAR(Pair.first.c_str());
 		AActor* Actor = FindObject<AActor>(GetWorld(), *FullPath);
-		worker::EntityId EntityId = Pair.first;
+		worker::EntityId EntityId = Pair.second;
 
 		if (Actor != nullptr && ReplicatedStablyNamedActorTimeoutMap.Find(Actor) == nullptr)
 		{
-			FTimerHandle RetryTimer;
+			TWeakObjectPtr<AActor> ActorPtr = Actor;
+			FTimerHandle TimerHandle;
 			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([Actor, EntityId, this] {
-				if (Actor != nullptr && !PackageMap->GetNetGUIDFromEntityId(EntityId).IsValid())
-				{
-					ReplicatedStablyNamedActorTimeoutMap.Remove(Actor);
-					UE_LOG(LogSpatialGDKInterop, Log, TEXT("Timed out (deleted) replicated stably named actor: %s"), *Actor->GetName());
+			TimerCallback.BindLambda([Actor, ActorPtr, EntityId, this] {
+				check(Actor);
+				ReplicatedStablyNamedActorTimeoutMap.Remove(Actor);
 
-					StartIgnoringAuthoritativeDestruction();
-					Actor->GetWorld()->DestroyActor(Actor, true);
-					StopIgnoringAuthoritativeDestruction();
+				if (ActorPtr.IsValid() && !ActorPtr->IsPendingKill() && !PackageMap->GetNetGUIDFromEntityId(EntityId).IsValid())
+				{
+					UE_LOG(LogSpatialGDKInterop, Log, TEXT("Timed out (deleted) replicated stably named actor: %s"), *ActorPtr->GetName());
+
+					LocallyDeleteActor(ActorPtr.Get());
 				}
 			});
-			TimerManager->SetTimer(RetryTimer, TimerCallback, SpatialConstants::REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS, false);
+			TimerManager->SetTimer(TimerHandle, TimerCallback, SpatialConstants::REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS, false);
 			ReplicatedStablyNamedActorTimeoutMap.Add(Actor, TimerCallback);
 		}
 	}
+}
+
+void USpatialInterop::LocallyDeleteActor(AActor* Actor)
+{
+	StartIgnoringAuthoritativeDestruction();
+	if (Actor->GetWorld()->DestroyActor(Actor, true) == false)
+	{
+		UE_LOG(LogSpatialGDKInterop, Error, TEXT("World->DestroyActor locally failed on %s"), *Actor->GetName());
+	}
+	StopIgnoringAuthoritativeDestruction();
 }

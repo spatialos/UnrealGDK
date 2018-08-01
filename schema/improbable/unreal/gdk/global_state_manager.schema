@@ -3,5 +3,5 @@ package improbable.unreal;
 component GlobalStateManager {
     id = 100007;
     map<string, EntityId> singleton_name_to_entity_id = 1;
-    map<EntityId, string> entity_id_to_replicated_stably_named_path = 2;
+    map<string, EntityId> stably_named_path_to_entity_id = 2;
 }
