@@ -615,14 +615,15 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* IncomingObjec
 
 		// Replicated Properties
 		TSet<UProperty*> RepNotifies;
-		for (TPair<UObject*, TArray<const FRepHandleData*>>& ObjsToReplicate : Properties.Key)
+		for (TPair<UObject*, TArray<const FRepHandleData*>>& ObjectsRepPropertyUpdate : Properties.Key)
 		{
 			// Iterate through our list of target objects, either an actor or component
 			// For each, we resolve all replicated properties under that object
-			UObject* TargetObject = ObjsToReplicate.Key;
+			UObject* TargetObject = ObjectsRepPropertyUpdate.Key;
 			DependentChannel->PreReceiveSpatialUpdate(TargetObject);
 
-			for (const FRepHandleData* RepData : ObjsToReplicate.Value) {
+			for (const FRepHandleData* RepData : ObjectsRepPropertyUpdate.Value)
+			{
 				ApplyIncomingReplicatedPropertyUpdate(*RepData, TargetObject, &IncomingObject, RepNotifies);
 				UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received queued object replicated property update. Channel actor %s (%lld), target object %s, property %s"),
 					*SpatialOSInstance->GetWorkerId(),
