@@ -765,7 +765,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	// other AActor instances possessed by a UNetConnection. For native Unreal reference see ProcessRemoteFunction() of IpNetDriver.cpp.
 	if (!Actor->GetNetConnection())
 	{
-		UE_LOG(LogNet, Warning, TEXT("No owning connection for actor %s. Function %s will not be processed."), *Actor->GetName(), *Function->GetName());
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("No owning connection for actor %s. Function %s will not be processed."), *Actor->GetName(), *Function->GetName());
 		return;
 	}
 
