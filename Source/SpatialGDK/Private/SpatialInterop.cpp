@@ -440,13 +440,13 @@ void USpatialInterop::QueueOutgoingRPC_Internal(const UObject* UnresolvedObject,
 	PendingOutgoingRPCs.FindOrAdd(UnresolvedObject).Add(TPair<FRPCCommandRequestFunc, bool>{CommandSender, bReliable});
 }
 
-void USpatialInterop::QueueIncomingObjectRepUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData)
+void USpatialInterop::QueueIncomingObjectRepUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, UObject* TargetObject, const FRepHandleData* RepHandleData)
 {
 	check(DependentChannel);
 	check(RepHandleData);
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref depending on object ref: %s, channel: %s, property: %s."),
-		*ObjectRefToString(UnresolvedObjectRef), *DependentChannel->GetName(), *RepHandleData->Property->GetName());
-	PendingIncomingObjectUpdates.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Key.Add(RepHandleData);
+	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Added pending incoming object ref: %s, channel: %s, target object: %s, property: %s. Setting TargetObject->Property = ObjectRef."),
+		*ObjectRefToString(UnresolvedObjectRef), *DependentChannel->GetName(), *TargetObject->GetName(), *RepHandleData->Property->GetName());
+	PendingIncomingObjectUpdates.FindOrAdd(UnresolvedObjectRef).FindOrAdd(DependentChannel).Key.FindOrAdd(TargetObject).Add(RepHandleData);
 }
 
 void USpatialInterop::QueueIncomingObjectHandoverUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FHandoverHandleData* RepHandleData)
@@ -600,7 +600,7 @@ void USpatialInterop::ResolvePendingOutgoingRPCs(UObject* Object)
 	}
 }
 
-void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
+void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* IncomingObject, const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
 	auto* DependentChannels = PendingIncomingObjectUpdates.Find(ObjectRef);
 	if (DependentChannels == nullptr)
@@ -613,30 +613,39 @@ void USpatialInterop::ResolvePendingIncomingObjectUpdates(UObject* Object, const
 		USpatialActorChannel* DependentChannel = ChannelProperties.Key;
 		FPendingIncomingProperties& Properties = ChannelProperties.Value;
 
-		// Trigger pending updates.
-		DependentChannel->PreReceiveSpatialUpdate(Object);
-
+		// Replicated Properties
 		TSet<UProperty*> RepNotifies;
-		for (const FRepHandleData* RepData : Properties.Key)
+		for (TPair<UObject*, TArray<const FRepHandleData*>>& ObjectsRepPropertyUpdate : Properties.Key)
 		{
-			ApplyIncomingReplicatedPropertyUpdate(*RepData, DependentChannel->Actor, &Object, RepNotifies);
-			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received queued object replicated property update. actor %s (%lld), property %s"),
-				*SpatialOSInstance->GetWorkerId(),
-				*DependentChannel->Actor->GetName(),
-				DependentChannel->GetEntityId().ToSpatialEntityId(),
-				*RepData->Property->GetName());
+			// Iterate through our list of target objects, either an actor or component
+			// For each, we resolve all replicated properties under that object
+			UObject* TargetObject = ObjectsRepPropertyUpdate.Key;
+			DependentChannel->PreReceiveSpatialUpdate(TargetObject);
+
+			for (const FRepHandleData* RepData : ObjectsRepPropertyUpdate.Value)
+			{
+				ApplyIncomingReplicatedPropertyUpdate(*RepData, TargetObject, &IncomingObject, RepNotifies);
+				UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received queued object replicated property update. Channel actor %s (%lld), target object %s, property %s"),
+					*SpatialOSInstance->GetWorkerId(),
+					*DependentChannel->Actor->GetName(),
+					DependentChannel->GetEntityId().ToSpatialEntityId(),
+					*TargetObject->GetName(),
+					*RepData->Property->GetName());
+			}
+
+			DependentChannel->PostReceiveSpatialUpdate(TargetObject, RepNotifies.Array());
 		}
+
+		// Handover
 		for (const FHandoverHandleData* HandoverData : Properties.Value)
 		{
-			ApplyIncomingHandoverPropertyUpdate(*HandoverData, DependentChannel->Actor, &Object);
-			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received queued object handover property update. actor %s (%lld), property %s"),
+			ApplyIncomingHandoverPropertyUpdate(*HandoverData, DependentChannel->Actor, &IncomingObject);  // HandoverHandleData will find the correct TargetObject for our replicated property, so we can just pass in the owning actor (channel actor)
+			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received queued object handover property update. Channel actor %s (%lld), property %s"),
 				*SpatialOSInstance->GetWorkerId(),
 				*DependentChannel->Actor->GetName(),
 				DependentChannel->GetEntityId().ToSpatialEntityId(),
 				*HandoverData->Property->GetName());
 		}
-
-		DependentChannel->PostReceiveSpatialUpdate(Object, RepNotifies.Array());
 	}
 
 	PendingIncomingObjectUpdates.Remove(ObjectRef);
