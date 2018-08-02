@@ -984,19 +984,25 @@ void USpatialInterop::UnreserveReplicatedStablyNamedActor(AActor* Actor)
 
 void USpatialInterop::AddReplicatedStablyNamedActorToGSM(const FEntityId& EntityId, AActor* Actor)
 {
-	StringToEntityIdMap& StablyNamedPathToEntityId = *GetStablyNamedPathToEntityId();
-	std::string Path = TCHAR_TO_UTF8(*Actor->GetPathName(Actor->GetWorld()));
+	StringToEntityIdMap* StablyNamedPathToEntityId = GetStablyNamedPathToEntityId();
 
-	// If the map already has the entity id, meaning the actor was already spawned, return early
-	if (StablyNamedPathToEntityId.count(Path))
+	if (StablyNamedPathToEntityId == nullptr)
 	{
 		return;
 	}
 
-	StablyNamedPathToEntityId.emplace(Path, EntityId.ToSpatialEntityId());
+	std::string Path = TCHAR_TO_UTF8(*Actor->GetPathName(Actor->GetWorld()));
+
+	// If the map already has the entity id, meaning the actor was already spawned, return early
+	if (StablyNamedPathToEntityId->count(Path))
+	{
+		return;
+	}
+
+	StablyNamedPathToEntityId->emplace(Path, EntityId.ToSpatialEntityId());
 
 	improbable::unreal::GlobalStateManager::Update Update;
-	Update.set_stably_named_path_to_entity_id(StablyNamedPathToEntityId);
+	Update.set_stably_named_path_to_entity_id(*StablyNamedPathToEntityId);
 
 	TSharedPtr<worker::Connection> Connection = SpatialOSInstance->GetConnection().Pin();
 	Connection->SendComponentUpdate<improbable::unreal::GlobalStateManager>(worker::EntityId((long)SpatialConstants::GLOBAL_STATE_MANAGER), Update);
