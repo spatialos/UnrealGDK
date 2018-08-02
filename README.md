@@ -23,7 +23,7 @@ We recommend you start using the GDK if:
 * You don’t mind the rough edges and are interested in contributing to the GDK (see our [contributions](.github/CONTRIBUTING.md) policy).
 * You want to start evaluating the GDK or prototyping on it for a future project.
 
-Although every feature you need to build your optimal SpatialOS game may not be ready yet, this is a great time to get involved and shape the Unreal GDK. We are committed to improving the GDK rapidly, aiming for an alpha release in Autumn 2018.
+Although every feature you need to build your optimal SpatialOS game may not be ready yet, this is a great time to get involved and shape the Unreal GDK. We are committed to improving the GDK rapidly, aiming for an alpha release in Fall 2018.
 
 ## Feature List
 See the [full feature list](docs/features.md) for what is supported in the Unreal GDK
