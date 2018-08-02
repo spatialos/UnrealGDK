@@ -2,7 +2,7 @@
 
 # Set up and get started with the SpatialOS Unreal GDK
 
-This guide explains how to set up the SpatialOS Unreal GDK and the Unreal Engine fork for use with the Starter Project. If you want to use your own native Unreal project, follow the below steps up to and including [Cloning](#cloning), and then follow the [guide to porting your project from Unreal](./content/porting-unreal-project-to-gdk.md).
+This guide explains how to set up the [SpatialOS Unreal GDK](https://github.com/spatialos/UnrealGDK) and our [Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK) for use with the [Unreal GDK Starter Project](https://github.com/spatialos/UnrealGDKStarterProject). If you want to use your own native Unreal project, follow the below steps up to and including [Cloning](#cloning), and then follow the [guide to porting your project from Unreal](./content/porting-unreal-project-to-gdk.md).
 
 ## Contents
 
@@ -10,7 +10,7 @@ This guide explains how to set up the SpatialOS Unreal GDK and the Unreal Engine
     * [Hardware](#hardware)
     * [Network settings](#network-settings)
     * [Software](#software)
-    * [Other](#other)
+    * [Unreal Engine EULA](#unreal-engine-eula)
 * [Getting and building the SpatialOS Unreal GDK fork of Unreal Engine](#getting-and-building-the-spatialos-unreal-gdk-fork-of-unreal-engine)
     * [Getting the Unreal Engine fork source code and Unreal Linux cross-platform support](#getting-the-unreal-engine-fork-source-code-and-unreal-linux-cross-platform-support)
     * [Adding environment variables](#adding-environment-variables)
@@ -35,25 +35,29 @@ This guide explains how to set up the SpatialOS Unreal GDK and the Unreal Engine
 To build the SpatialOS Unreal GDK module you need the following installed:
 * Windows 10, with Command Prompt or PowerShell as your terminal
 * [Git for Windows](https://gitforwindows.org)
-* [SpatialOS version 13](https://docs.improbable.io/reference/13.1/shared/get-started/setup/win)
+* [SpatialOS version 13.1](https://console.improbable.io/installer/download/stable/latest/win).
+This installs:<br>
+		- the [`spatial` CLI](https://docs.improbable.io/reference/13.0/shared/spatial-cli-introduction)<br>
+		- the SpatialOS [Launcher](https://docs.improbable.io/reference/13.0/shared/operate/launcher)<br>
+		- the 32-bit and 64-bit Visual C++ Redistributables
 * The [Windows SDK 8.1](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive)
 * Visual Studio [2015](https://visualstudio.microsoft.com/vs/older-downloads/) or [2017](https://visualstudio.microsoft.com/downloads/) (we recommend 2017)
 
-### Other
-As part of your Unreal GDK setup, you need to clone the SpatialOS fork of the Unreal Engine source code on GitHub. In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the Unreal GDK without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
+### Unreal Engine EULA
+As part of your Unreal GDK setup, you need to clone our SpatialOS fork of the Unreal Engine source code on GitHub. In order to get access to our fork, you need to link your GitHub account to a verified Epic Games account, and agree to the Unreal Engine End User License Agreement ([EULA](https://www.unrealengine.com/en-US/eula)). You will not be able to use the Unreal GDK without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
 
-## Getting and building the SpatialOS Unreal GDK fork of Unreal Engine
+## Getting and building our SpatialOS Unreal GDK fork of Unreal Engine
 
-To use the Unreal GDK, you need to build the SpatialOS fork of Unreal Engine 4 from source.
+To use the Unreal GDK, you need to build our SpatialOS fork of Unreal Engine 4 from source.
 
 ### Getting the Unreal Engine fork source code and Unreal Linux cross-platform support
-1. In a terminal window, clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK) repository. (You may get a 404 from this link. See  the instructions above, under _Other_, on how to get access.) <br/><br/>
+1. In a terminal window, clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK) repository. (You may get a 404 from this link. See  the instructions above, under _Unreal Engine EULA_, on how to get access.) <br/><br/>
 Check out the fork by running either:
     * (HTTPS) `git clone https://github.com/improbableio/UnrealEngine.git -b 4.19-SpatialOSUnrealGDK`
     * (SSH) `git clone git@github.com:improbableio/UnrealEngine.git -b 4.19-SpatialOSUnrealGDK`
-1. To build Unreal server-workers for SpatialOS deployments, you need to build targeting Linux. This requires cross-compilation of your SpatialOS project and Unreal Engine fork.
+1. To build Unreal server-workers for SpatialOS deployments, you need to build targeting Linux. This requires cross-compilation of your SpatialOS project and the Unreal Engine fork.
 
-    From Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) setup guide, next to **v11**, click **clang 5.0.0-based** to download the archive **v11_clang-5.0.0-centos.zip** containing the Linux cross-compilation toolchain, then unzip.
+    In Unreal's [compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) documentation, in the **getting the toolchain** section, click **clang 5.0.0-based** to download the archive **v11_clang-5.0.0-centos7.zip** containing the Linux cross-compilation toolchain, then unzip.
 
 ### Adding environment variables
 
@@ -66,7 +70,7 @@ You need to add two environment variables: one to set the path to the Unreal Eng
 1. Create a system variable named **LINUX_MULTIARCH_ROOT**.
 1. Set the variable value to be the path to the directory of your unzipped Linux cross compilation toolchain.
 1. Make sure that the new environment variable is registered by restarting your terminal and running `echo %LINUX_MULTIARCH_ROOT%` (Command Prompt) or `echo $Env:LINUX_MULTIARCH_ROOT` (PowerShell).
-If the environment variable is registered correctly, this returns the path you unzipped `v11 clang 5.0.0-based - for UE4 4.19` into. If it doesn’t, check that you’ve set the environment variable correctly.
+If the environment variable is registered correctly, this returns the path you unzipped `v11_clang-5.0.0-centos7` into. If it doesn’t, check that you’ve set the environment variable correctly.
 
 ### Building Unreal Engine
 
