@@ -89,16 +89,16 @@ The [Unreal GDK Starter Project’s](https://github.com/spatialos/UnrealGDKStart
 
 ```
 ;PlayerController
-StarterProjectPlayerController=StarterProjectPlayerController.h
-StarterProjectPlayerController=Camera/CameraAnim.h
-StarterProjectPlayerController=Camera/CameraShake.h
-StarterProjectPlayerController=GameFramework/HUD.h
-StarterProjectPlayerController=GameFramework/LocalMessage.h
-StarterProjectPlayerController=Particles/EmitterCameraLensEffectBase.h
+/Script/StarterProject.StarterProjectPlayerController=StarterProjectPlayerController.h
+/Script/StarterProject.StarterProjectPlayerController=Camera/CameraAnim.h
+/Script/StarterProject.StarterProjectPlayerController=Camera/CameraShake.h
+/Script/StarterProject.StarterProjectPlayerController=GameFramework/HUD.h
+/Script/StarterProject.StarterProjectPlayerController=GameFramework/LocalMessage.h
+/Script/StarterProject.StarterProjectPlayerController=Particles/EmitterCameraLensEffectBase.h
 
 ;PlayerCharacter
-PlayerCharacter=Weapons/Weapon.h
-PlayerCharacter=Items/Item.h
+/Script/StarterProject.PlayerCharacter=Weapons/Weapon.h
+/Script/StarterProject.PlayerCharacter=Items/Item.h
 ```
 
 This generates the appropriate `.schema` files and type bindings as `SpatialTypeBinding` files. Using the Starter Project example:

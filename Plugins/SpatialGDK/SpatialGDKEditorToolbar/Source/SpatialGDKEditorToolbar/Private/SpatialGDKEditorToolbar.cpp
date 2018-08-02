@@ -52,7 +52,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionSuccessSound->AddToRoot();
 	ExecutionFailSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileFailed_Cue.CompileFailed_Cue"));
 	ExecutionFailSound->AddToRoot();
-	InteropCodeGenRunning = false;
+	bInteropCodeGenRunning = false;
 
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
 	bStopSpatialOnExit = GetDefault<USpatialGDKEditorToolbarSettings>()->bStopSpatialOnExit;
@@ -154,7 +154,7 @@ bool FSpatialGDKEditorToolbarModule::HandleSettingsSaved()
 
 bool FSpatialGDKEditorToolbarModule::CanExecuteInteropCodeGen()
 {
-	return !InteropCodeGenRunning;
+	return !bInteropCodeGenRunning;
 }
 
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> PluginCommands)
@@ -254,7 +254,7 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 {
 	ShowTaskStartNotification("Generating Interop Code");
-	InteropCodeGenRunning = true;
+	bInteropCodeGenRunning = true;
 
 	AsyncTask(ENamedThreads::GameThread, [this] {
 		bool bSuccess = SpatialGDKGenerateInteropCode();
@@ -312,7 +312,7 @@ void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& Noti
 			GEditor->PlayEditorSound(ExecutionSuccessSound);
 		}
 
-		InteropCodeGenRunning = false;
+		bInteropCodeGenRunning = false;
 	});
 }
 
@@ -331,7 +331,7 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 			GEditor->PlayEditorSound(ExecutionFailSound);
 		}
 
-		InteropCodeGenRunning = false;
+		bInteropCodeGenRunning = false;
 	});
 }
 

@@ -842,7 +842,6 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	if (Class->ClassGeneratedBy)
 	{
 		// This is a blueprint class, so use Unreal's reflection to find UClass pointer at runtime.
-		//SourceWriter.Printf("return FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));", *Class->GetName());
 		SourceWriter.Printf("return LoadObject<UClass>(nullptr, TEXT(\"%s\"), nullptr, LOAD_None, nullptr);", *Class->GetPathName());
 	}
 	else
