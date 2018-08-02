@@ -114,7 +114,7 @@ Follow the steps below to:
 
 Build the Unreal GDK module dependencies which the Starter Project needs to work with the GDK and add the Unreal GDK to the Starter Project.
 
-1. Open **File Explorer**, navigate to the root directory of the Unreal GDK repository, and double-click **`BuildGDK.bat`**. This requires authorization with your SpatialOS account.
+1. Open **File Explorer**, navigate to the root directory of the Unreal GDK repository, and double-click **`BuildGDK.bat`**. You may be prompted to sign into your SpatialOS account if you have not already.
 1. Navigate to the root directory of the Unreal GDK Starter Project repository.
 1. Create symlinks between the Starter Project and the Unreal GDK:
     1. Open another instance of **File Explorer** and navigate to the root directory of the Starter Project. Within this directory, there’s a batch script named **CreateGDKSymlinks.bat**.
@@ -124,8 +124,8 @@ Build the Unreal GDK module dependencies which the Starter Project needs to work
     1. In File Explorer, navigate to the root directory of the Unreal GDK Starter Project repository, and then to the **Game** directory within it.
     1. Right-click **StarterProject.uproject** and select **Switch Unreal Engine version**.
     1. Select the path to the Unreal Engine fork you cloned earlier.
-1. Open **StarterProject.sln** in Visual Studio and make sure it’s set as your StartUp Project.
-1. Build the project.
+1. Open **StarterProject.sln** in Visual Studio. In the Solution Explorer window, right-click on *StarterProject* and select *Set as StartUp Project* (optional).
+1. In the Solution Explorer window, right-click on *StarterProject* and select “Build.
 1. Open **StarterProject.uproject** in the Unreal Editor and click [**Codegen**](content/interop.md) to generate [type bindings](content/glossary.md#type-bindings).
 1. Close the Unreal Editor and build the project again in Visual Studio.
 1. In File Explorer, navigate to the root directory of the Unreal GDK Starter Project repository, then to **`\Game\Scripts`**, and run **`BuildWorkerConfig.bat`**.
@@ -136,6 +136,7 @@ Build the Unreal GDK module dependencies which the Starter Project needs to work
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
 1. Under **Multiplayer Options**, enter the number of players as **2** and check the box next to Run **Dedicated Server**. Then, under Modes, select **New Editor Window (PIE)**.
 1. On the toolbar, click **Play** to run the game.
+1. When you're done, click **Stop** to stop the client, and click the **Stop** button in the SpatialOS secion of the toolbar to stop your local SpatialOS deployment.
 
 ### Running the Starter Project in the cloud
 
@@ -158,7 +159,7 @@ To run a cloud deployment, you need to prepare your server-worker and client-wor
 
 ## Setting up Actor replication
 
-Unreal provides a system called [Actor replication](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors) (Unreal documentation) to make it easy to make a networked game. The SpatialOS Unreal GDK allows you to continue using the native Unreal workflow without changes to your game code. However, you need to do an additional step in order for Actor replication to work with the SpatialOS Unreal GDK.
+Unreal provides a system called [Actor replication](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors) to make it easy to make a networked game. The SpatialOS Unreal GDK allows you to continue using the native Unreal workflow without changes to your game code. However, you need to do an additional step in order for Actor replication to work with the SpatialOS Unreal GDK.
 
 To set up Actor replication:
 
