@@ -54,6 +54,9 @@ For prerequisites, installation and setup, see the [Installation and setup](docs
 ## Known issues
 See the [Known issues](docs/known-issues.md) documentation.
 
+## Troubleshooting
+Run into problems? See the [troubleshooting](docs/content/troubleshooting.md) documentation.
+
 ## Support
 We are not supporting the pre-alpha release for game development, as this version is for evaluation only. However, please give us your [feedback](#give-us-feedback).
 
