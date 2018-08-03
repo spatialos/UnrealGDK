@@ -620,7 +620,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		for (auto& RPC : RPCsByType[Group])
 		{
 			HeaderWriter.Printf("void %s_SendRPC(worker::Connection* const Connection, void* Parameters, UObject* TargetObject);",
-				*RPC->Function->GetName());
+				*UnrealNameToCppName(RPC->Function->GetName()));
 		}
 	}
 
@@ -633,13 +633,13 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 			if (Group == RPC_NetMulticast)
 			{
 				HeaderWriter.Printf("void %s_OnRPCPayload(const worker::EntityId EntityId, const %s& EventData);",			
-					*RPC->Function->GetName(),
+					*UnrealNameToCppName(RPC->Function->GetName()),
 					*SchemaRPCRequestType(RPC->Function, true));
 			}
 			else
 			{
 				HeaderWriter.Printf("void %s_OnRPCPayload(const worker::CommandRequestOp<%s::Commands::%s>& Op);",
-					*RPC->Function->GetName(),
+					*UnrealNameToCppName(RPC->Function->GetName()),
 					*SchemaRPCComponentName(Group, Class, true),
 					*CPPCommandClassName(Class, RPC->Function));
 			}
@@ -661,7 +661,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		for (auto& RPC : RPCsByType[Group])
 		{
 			HeaderWriter.Printf("void %s_OnCommandResponse(const worker::CommandResponseOp<%s::Commands::%s>& Op);",
-				*RPC->Function->GetName(),
+				*UnrealNameToCppName(RPC->Function->GetName()),
 				*SchemaRPCComponentName(Group, Class, true),
 				*CPPCommandClassName(Class, RPC->Function));
 		}
@@ -842,7 +842,7 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	if (Class->ClassGeneratedBy)
 	{
 		// This is a blueprint class, so use Unreal's reflection to find UClass pointer at runtime.
-		SourceWriter.Printf("return FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));", *Class->GetName());
+		SourceWriter.Printf("return LoadObject<UClass>(nullptr, TEXT(\"%s\"), nullptr, LOAD_None, nullptr);", *Class->GetPathName());
 	}
 	else
 	{
@@ -861,7 +861,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 	{
 		for (auto& RPC : RPCsByType[Group])
 		{
-			SourceWriter.Printf("RPCToSenderMap.Emplace(\"%s\", &%s::%s_SendRPC);", *RPC->Function->GetName(), *TypeBindingName(Class), *RPC->Function->GetName());
+			SourceWriter.Printf("RPCToSenderMap.Emplace(\"%s\", &%s::%s_SendRPC);", *RPC->Function->GetName(), *TypeBindingName(Class), *UnrealNameToCppName(RPC->Function->GetName()));
 		}
 	}
 
@@ -1051,7 +1051,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 					*GetRPCTypeName(Group),
 					*CPPCommandClassName(Class, RPC->Function),
 					*TypeBindingName(Class),
-					*RPC->Function->GetName());
+					*UnrealNameToCppName(RPC->Function->GetName()));
 			}
 			for (auto& RPC : RPCsByType[Group])
 			{
@@ -1059,7 +1059,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 					*GetRPCTypeName(Group),
 					*CPPCommandClassName(Class, RPC->Function),
 					*TypeBindingName(Class),
-					*RPC->Function->GetName());
+					*UnrealNameToCppName(RPC->Function->GetName()));
 			}
 		}
 	}
@@ -1953,7 +1953,7 @@ void GenerateFunction_ReceiveUpdate_MulticastRPCs(FCodeWriter& SourceWriter, UCl
 				%s_OnRPCPayload(EntityId, event);
 			})""",
 			*SchemaRPCName(Class, RPC->Function),
-			*RPC->Function->GetName());
+			*UnrealNameToCppName(RPC->Function->GetName()));
 
 		SourceWriter.PrintNewLine();
 	}
@@ -1966,7 +1966,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 	FFunctionSignature SendCommandSignature{
 		"void",
 		FString::Printf(TEXT("%s_SendRPC(worker::Connection* const Connection, void* Parameters, UObject* TargetObject)"),
-			*RPC->Function->GetName())
+			*UnrealNameToCppName(RPC->Function->GetName()))
 	};
 	SourceWriter.BeginFunction(SendCommandSignature, TypeBindingName(Class));
 		
@@ -2029,7 +2029,6 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 		SourceWriter.End();
 	}
 
-
 	FString RPCSendingMethod;
 	if (RPC->Type == RPC_NetMulticast)
 	{
@@ -2042,7 +2041,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 			*SchemaRPCComponentName(RPC->Type, Class, true),
 			*SchemaRPCName(Class, RPC->Function),
 			*SchemaRPCName(Class, RPC->Function),
-			*RPC->Function->GetName(),
+			*UnrealNameToCppName(RPC->Function->GetName()),
 			*SchemaRPCComponentName(RPC->Type, Class, true));
 	}
 	else
@@ -2087,7 +2086,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 	}
 
 	FString RequestFuncName = FString::Printf(TEXT("%s_OnRPCPayload(%s)"),
-		*RPC->Function->GetName(), *FunctionParameters);
+		*UnrealNameToCppName(RPC->Function->GetName()), *FunctionParameters);
 
 	SourceWriter.BeginFunction({ "void", RequestFuncName }, TypeBindingName(Class));
 
@@ -2114,7 +2113,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ObjectRefToString(%s));
 			return {%s};)""",
-			*RPC->Function->GetName(),
+			*UnrealNameToCppName(RPC->Function->GetName()),
 			*PropertyName,
 			*ObjectRef,
 			*ObjectRef,
@@ -2200,8 +2199,8 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 		})""",
 		*RPC->Function->GetName(),
 		*RPCParametersStruct,
-		*RPC->Function->GetName(),
-		*RPC->Function->GetName());
+		*UnrealNameToCppName(RPC->Function->GetName()),
+		*UnrealNameToCppName(RPC->Function->GetName()));
 	SourceWriter.PrintNewLine();
 
 	if (RPC->Type != RPC_NetMulticast)
@@ -2224,7 +2223,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 void GenerateFunction_RPCOnCommandResponse(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC)
 {
 	FString ResponseFuncName = FString::Printf(TEXT("%s_OnCommandResponse(const worker::CommandResponseOp<%s::Commands::%s>& Op)"),
-		*RPC->Function->GetName(),
+		*UnrealNameToCppName(RPC->Function->GetName()),
 		*SchemaRPCComponentName(RPC->Type, Class, true),
 		*CPPCommandClassName(Class, RPC->Function));
 

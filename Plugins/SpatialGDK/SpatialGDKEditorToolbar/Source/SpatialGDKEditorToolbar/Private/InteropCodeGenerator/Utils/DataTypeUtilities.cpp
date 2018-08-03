@@ -28,8 +28,14 @@ FString GetEnumDataType(const UEnumProperty* EnumProperty)
 
 FString UnrealNameToSchemaTypeName(const FString& UnrealName)
 {
-	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-	return UnrealName.Replace(TEXT("_"), TEXT(""));
+	// Note: Removing underscores and spaces to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
+	return UnrealName.Replace(TEXT("_"), TEXT("")).Replace(TEXT(" "), TEXT(""));
+}
+
+FString UnrealNameToCppName(const FString& UnrealName)
+{
+	// Note: Blueprints can have functions with spaces
+	return UnrealName.Replace(TEXT(" "), TEXT(""));
 }
 
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type, bool bPrependNamespace /*= false*/)

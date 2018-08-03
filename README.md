@@ -54,6 +54,9 @@ For prerequisites, installation and setup, see the [Installation and setup](docs
 ## Known issues
 See the [Known issues](docs/known-issues.md) documentation.
 
+## Troubleshooting
+Run into problems? See the [troubleshooting](docs/content/troubleshooting.md) documentation.
+
 ## Support
 We are not supporting the pre-alpha release for game development, as this version is for evaluation only. However, please give us your [feedback](#give-us-feedback).
 
@@ -62,7 +65,7 @@ See the [latest roadmap (Trello board)](https://trello.com/b/7wtbtwmL/unreal-gdk
 
 ## Unreal Engine changes
 In order to transform Unreal from a single server engine to a distributed model, we had to make a small number of changes to UE4 code. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our forked [Unreal Engine repo, `4.19-SpatialOSUnrealGDK` branch](https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK).
-> You may get a 404 error from this link. To get access, see [these instructions](docs/setup-and-installing.md#other). <br/>
+> You may get a 404 error from this link. To get access, see [these instructions](docs/setup-and-installing.md#unreal-engine-eula). <br/>
 
 ## Email updates
 You can [sign up for SpatialOS Unreal GDK updates](http://go.pardot.com/l/169082/2018-06-15/27ld2t) direct to your mailbox.
