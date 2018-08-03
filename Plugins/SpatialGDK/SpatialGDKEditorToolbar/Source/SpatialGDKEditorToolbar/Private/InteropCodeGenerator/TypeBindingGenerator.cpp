@@ -672,7 +672,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename,
 	UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo, const TArray<FString>& TypeBindingHeaders,
-	bool bIsSingleton)
+	bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses)
 {
 	SourceWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -712,7 +712,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	}
 	SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaHandoverDataName(Class));
 
-	TArray<UClass*> Components = GetAllSupportedComponents(Class);
+	TArray<UClass*> Components = GetAllSupportedComponents(Class, InteropGeneratedClasses);
 
 	for (UClass* ComponentClass : Components)
 	{

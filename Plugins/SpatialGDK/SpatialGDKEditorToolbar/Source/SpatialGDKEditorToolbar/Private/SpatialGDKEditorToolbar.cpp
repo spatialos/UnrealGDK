@@ -256,7 +256,15 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 	ShowTaskStartNotification("Generating Interop Code");
 	bInteropCodeGenRunning = true;
 
-	bool bSuccess = SpatialGDKGenerateInteropCode();
+	ClassHeaderMap InteropGeneratedClasses;
+	if (!GenerateClassHeaderMap(InteropGeneratedClasses))  // Checks that all classes are found and generate the class mapping.
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Not all classes found; check your DefaultEditorSpatialGDK.ini file."));
+		ShowFailedNotification("Interop Codegen Failed");
+		return;
+	}
+
+	bool bSuccess = SpatialGDKGenerateInteropCode(InteropGeneratedClasses);
 
 	if (bSuccess)
 	{
@@ -270,7 +278,7 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& NotificationText)
 {
-	AsyncTask(ENamedThreads::AnyHiPriThreadNormalTask, [this, NotificationText] {
+	//AsyncTask(ENamedThreads::AnyHiPriThreadNormalTask, [this, NotificationText] {
 		if (TaskNotificationPtr.IsValid())
 		{
 			TaskNotificationPtr.Pin()->ExpireAndFadeout();
@@ -292,7 +300,7 @@ void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& No
 		{
 			TaskNotificationPtr.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
 		}
-	});
+	//});
 }
 
 void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& NotificationText)
