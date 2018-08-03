@@ -5,10 +5,12 @@
 ## How to get started
 We recommend you start by following the [Installation and setup guide](setup-and-installing.md) to set up the Unreal GDK, the SpatialOS Unreal Engine fork, and the Starter Project (or your own Unreal project).
 
-After you've run through the setup guide (including setting up Actor replication), we recommend you have a look at the following pages, which explain some of the things that relate to working with SpatialOS:
+After you've run through the setup guide (including setting up Actor replication), have a look at the following pages, which explain some of the things that relate to working with SpatialOS:
 
 * [Interop Code Generator](./content/interop.md)
 * [Actor handover](./content/handover-between-server-workers.md)
+
+To get some background on the GDK, you can check out [our blogpost](https://improbable.io/games/blog/spatialos-unreal-gdk-pre-alpha).
 
 We want your feedback on the Unreal GDK, its documentation and its [roadmap](https://trello.com/b/7wtbtwmL/unreal-gdk-roadmap) (Trello board) - [find out how to give us feedback](../README.md#give-us-feedback).
 
