@@ -135,7 +135,7 @@ Build the Unreal GDK module dependencies which the Starter Project needs to work
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
 1. Under **Multiplayer Options**, enter the number of players as **2** and check the box next to Run **Dedicated Server**. Then, under Modes, select **New Editor Window (PIE)**.
 1. On the toolbar, click **Play** to run the game.
-1. When you're done, click **Stop** to stop the client, and click the **Stop** button in the SpatialOS secion of the toolbar to stop your local SpatialOS deployment.
+1. When you're done, click **Stop** to stop the client worker, and click the **Stop** button in the SpatialOS secion of the toolbar to stop your local SpatialOS deployment.
 
 ### Running the Starter Project in the cloud
 
