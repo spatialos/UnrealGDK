@@ -24,7 +24,7 @@ namespace
 
 static void OnStatusOutput(FString Message)
 {
-	UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("%s"), *Message);
+	UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("%s"), *Message);
 }
 
 int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<FString>& TypeBindingHeaders, bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses)
@@ -250,6 +250,24 @@ bool RunProcess(const FString& Command, const FString& Arguments)
 	return true;
 }
 
+bool RunProcessNew(const FString DiffCopyPath, FString DiffCopyArguments)
+{
+	TSharedPtr<FMonitoredProcess> TestProcess = MakeShareable(new FMonitoredProcess(DiffCopyPath, DiffCopyArguments, true));
+	TestProcess->OnOutput().BindStatic(&OnStatusOutput);
+	TestProcess->Launch();
+	while (TestProcess->Update())
+	{
+		FPlatformProcess::Sleep(0.01f);
+	}
+
+	if (TestProcess->GetReturnCode() != 0)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses)
 {
 	if (!CheckClassNameListValidity(InteropGeneratedClasses))
@@ -292,30 +310,16 @@ bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses
 
 	const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
 	// Copy Interop files.
-	FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --remove-input"), *AbsoluteCombinedIntermediatePath, *AbsoluteCombinedForwardingCodePath);
-	//TSharedPtr<FMonitoredProcess> TestProcess = MakeShareable(new FMonitoredProcess(DiffCopyPath, DiffCopyArguments, true));
-	//TestProcess->OnOutput().BindStatic(&OnStatusOutput);
-	//TestProcess->Launch();
-	//while (TestProcess->Update())
-	//{
-	//	FPlatformProcess::Sleep(0.01f);
-	//}
-
-	//if (TestProcess->GetReturnCode() != 0)
-	//{
-	//	UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not move generated interop files during the diff-copy stage. Path: '%s', arguments: '%s'."), *DiffCopyPath, *DiffCopyArguments);
-	//	return false;
-	//}
-
-	if (!RunProcess(DiffCopyPath, DiffCopyArguments))
+	FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *AbsoluteCombinedIntermediatePath, *AbsoluteCombinedForwardingCodePath);
+	if (!RunProcessNew(DiffCopyPath, DiffCopyArguments))
 	{
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not move generated interop files during the diff-copy stage. Path: '%s', arguments: '%s'."), *DiffCopyPath, *DiffCopyArguments);
 		return false;
 	}
 
 	// Copy schema files
-	DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --remove-input"), *AbsoluteCombinedSchemaIntermediatePath, *AbsoluteCombinedSchemaPath);
-	if (!RunProcess(DiffCopyPath, DiffCopyArguments))
+	DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *AbsoluteCombinedSchemaIntermediatePath, *AbsoluteCombinedSchemaPath);
+	if (!RunProcessNew(DiffCopyPath, DiffCopyArguments))
 	{
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not move generated schema files during the diff-copy stage. Path: '%s', arguments: '%s'."), *DiffCopyPath, *DiffCopyArguments);
 		return false;
@@ -323,7 +327,7 @@ bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses
 
 	// Run Codegen
 	const FString CodegenPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/Codegen.bat")));
-	if (!RunProcess(CodegenPath, TEXT("")))
+	if (!RunProcessNew(CodegenPath, TEXT("")))
 	{
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Spatial C++ Worker Codegen failed. Path: '%s'."), *CodegenPath);
 		return false;
