@@ -1,8 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #include "SpatialGDKEditorToolbarSettings.h"
 
-USpatialGDKEditorToolbarSettings::USpatialGDKEditorToolbarSettings(const FObjectInitializer& ObjectInitializer) : SpatialOSLaunchConfig(TEXT("default_launch.json")), bStopSpatialOnExit(false),
-	SpatialOSSnapshotFile(FString(TEXT("default.snapshot"))), Super(ObjectInitializer)
+USpatialGDKEditorToolbarSettings::USpatialGDKEditorToolbarSettings(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer),
+	SpatialOSLaunchConfig(TEXT("default_launch.json")),
+	bStopSpatialOnExit(false),
+	SpatialOSSnapshotFile(FString(TEXT("default.snapshot")))
 {
 	ProjectRootFolder.Path = FPaths::ConvertRelativePathToFull(FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../spatial/")));
 	SpatialOSSnapshotPath.Path = FPaths::Combine(*ProjectRootFolder.Path, TEXT("snapshots/"));
