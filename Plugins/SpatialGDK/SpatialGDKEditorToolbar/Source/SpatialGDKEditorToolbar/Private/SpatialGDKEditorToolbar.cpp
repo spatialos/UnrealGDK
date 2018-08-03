@@ -271,16 +271,13 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 
 	TFunction<void()> CompleteCallback = [this]() 
 	{
-		if (InteropCodegenResult.IsReady())
+		if (!InteropCodegenResult.IsReady() || InteropCodegenResult.Get() != true)
 		{
-			if (InteropCodegenResult.Get() == true)
-			{
-				ShowSuccessNotification("Interop Codegen Completed!");
-			}
-			else
-			{
-				ShowFailedNotification("Interop Codegen Failed");
-			}
+			ShowFailedNotification("Interop Codegen Failed");
+		}
+		else
+		{
+			ShowSuccessNotification("Interop Codegen Completed!");
 		}
 		bInteropCodeGenRunning = false;
 	};
