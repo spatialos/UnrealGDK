@@ -215,7 +215,7 @@ void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& Co
 	}
 }
 
-bool RunProcessNew(const FString ExecutablePath, FString Arguments)
+bool RunProcess(const FString ExecutablePath, FString Arguments)
 {
 	TSharedPtr<FMonitoredProcess> Process = MakeShareable(new FMonitoredProcess(ExecutablePath, Arguments, true));
 	Process->OnOutput().BindStatic(&OnStatusOutput);
@@ -276,7 +276,7 @@ bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses
 	const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
 	// Copy Interop files.
 	FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *AbsoluteCombinedIntermediatePath, *AbsoluteCombinedForwardingCodePath);
-	if (!RunProcessNew(DiffCopyPath, DiffCopyArguments))
+	if (!RunProcess(DiffCopyPath, DiffCopyArguments))
 	{
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not move generated interop files during the diff-copy stage. Path: '%s', arguments: '%s'."), *DiffCopyPath, *DiffCopyArguments);
 		return false;
@@ -284,7 +284,7 @@ bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses
 
 	// Copy schema files
 	DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *AbsoluteCombinedSchemaIntermediatePath, *AbsoluteCombinedSchemaPath);
-	if (!RunProcessNew(DiffCopyPath, DiffCopyArguments))
+	if (!RunProcess(DiffCopyPath, DiffCopyArguments))
 	{
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not move generated schema files during the diff-copy stage. Path: '%s', arguments: '%s'."), *DiffCopyPath, *DiffCopyArguments);
 		return false;
@@ -292,7 +292,7 @@ bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses
 
 	// Run Codegen
 	const FString CodegenPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/Codegen.bat")));
-	if (!RunProcessNew(CodegenPath, TEXT("")))
+	if (!RunProcess(CodegenPath, TEXT("")))
 	{
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Spatial C++ Worker Codegen failed. Path: '%s'."), *CodegenPath);
 		return false;
