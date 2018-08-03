@@ -29,7 +29,7 @@ This guide explains how to set up the [SpatialOS Unreal GDK](https://github.com/
 * Recommended storage: 15GB+ available space
 
 ### Network settings
-* Refer to the [SpatialOS network settings](https://docs.improbable.io/reference/latest/shared/get-started/requirements#network-settings) (SpatialOS documentation)
+* Refer to the [SpatialOS network settings](https://docs.improbable.io/reference/13.1/shared/get-started/requirements#network-settings) (SpatialOS documentation)
 
 ### Software
 To build the SpatialOS Unreal GDK module you need the following installed:
@@ -37,8 +37,8 @@ To build the SpatialOS Unreal GDK module you need the following installed:
 * [Git for Windows](https://gitforwindows.org)
 * [SpatialOS version 13.1](https://console.improbable.io/installer/download/stable/latest/win).
 This installs:<br>
-		- the [`spatial` CLI](https://docs.improbable.io/reference/13.0/shared/spatial-cli-introduction)<br>
-		- the SpatialOS [Launcher](https://docs.improbable.io/reference/13.0/shared/operate/launcher)<br>
+		- the [`spatial` CLI](https://docs.improbable.io/reference/13.1/shared/spatial-cli-introduction)<br>
+		- the SpatialOS [Launcher](https://docs.improbable.io/reference/13.1/shared/operate/launcher)<br>
 		- the 32-bit and 64-bit Visual C++ Redistributables
 * The [Windows SDK 8.1](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive)
 * Visual Studio [2015](https://visualstudio.microsoft.com/vs/older-downloads/) or [2017](https://visualstudio.microsoft.com/downloads/) (we recommend 2017)
