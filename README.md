@@ -5,7 +5,7 @@ Welcome to the SpatialOS and Unreal GDK community.
 Our SpatialOS community shapes the functionality of the Unreal GDK, so make sure you are part of the conversation. Come and find us on [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368) or talk to us on the **Feedback** section in our [forums](https://forums.improbable.io/) (use the **unreal-gdk** tag - [this link](https://forums.improbable.io/new-topic?category=Feedback&tags=unreal-gdk) takes you there and pre-fills the category and tag). You can also [sign up for SpatialOS Unreal GDK updates](http://go.pardot.com/l/169082/2018-06-15/27ld2t) direct to your mailbox.
 
 #### What's the Unreal GDK all about?
-The **SpatialOS Unreal GDK** is an Unreal Engine 4 (UE4) module made by Improbable. You can use the Unreal GDK to integrate persistent multiplayer worlds into your Unreal game using the SpatialOS platform.
+The **SpatialOS Unreal GDK** is an Unreal Engine 4 (UE4) [module](https://docs.unrealengine.com/en-us/Programming/UnrealBuildSystem/ModuleFiles) made by Improbable. You can use the Unreal GDK to integrate persistent multiplayer worlds into your Unreal game using the SpatialOS platform.
 
 You can [sign up for SpatialOS Unreal GDK updates](http://go.pardot.com/l/169082/2018-06-15/27ld2t) direct to your mailbox.
 
@@ -23,7 +23,7 @@ We recommend you start using the GDK if:
 * You don’t mind the rough edges and are interested in contributing to the GDK (see our [contributions](.github/CONTRIBUTING.md) policy).
 * You want to start evaluating the GDK or prototyping on it for a future project.
 
-Although every feature you need to build your optimal SpatialOS game may not be ready yet, this is a great time to get involved and shape the Unreal GDK. We are committed to improving the GDK rapidly, aiming for an alpha release in Autumn 2018.
+Although every feature you need to build your optimal SpatialOS game may not be ready yet, this is a great time to get involved and shape the Unreal GDK. We are committed to improving the GDK rapidly, aiming for an alpha release in Fall 2018.
 
 ## Feature List
 See the [full feature list](docs/features.md) for what is supported in the Unreal GDK
