@@ -264,43 +264,55 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 		return;
 	}
 
-	bool bSuccess = SpatialGDKGenerateInteropCode(InteropGeneratedClasses);
+	TFunction<bool()> CodegenTask = [InteropGeneratedClasses]()
+	{
+		return SpatialGDKGenerateInteropCode(InteropGeneratedClasses);
+	};
 
-	if (bSuccess)
+	TFunction<void()> CompleteCallback = [this]() 
 	{
-		ShowSuccessNotification("Interop Codegen Completed!");
-	}
-	else
-	{
-		ShowFailedNotification("Interop Codegen Failed");
-	}
+		if (InteropCodegenResult.IsReady())
+		{
+			if (InteropCodegenResult.Get() == true)
+			{
+				ShowSuccessNotification("Interop Codegen Completed!");
+			}
+			else
+			{
+				ShowFailedNotification("Interop Codegen Failed");
+			}
+		}
+		bInteropCodeGenRunning = false;
+	};
+
+	InteropCodegenResult = Async(EAsyncExecution::Thread, CodegenTask, CompleteCallback);
+
 }
+		
 
 void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& NotificationText)
 {
-	//AsyncTask(ENamedThreads::AnyHiPriThreadNormalTask, [this, NotificationText] {
-		if (TaskNotificationPtr.IsValid())
-		{
-			TaskNotificationPtr.Pin()->ExpireAndFadeout();
-		}
+	if (TaskNotificationPtr.IsValid())
+	{
+		TaskNotificationPtr.Pin()->ExpireAndFadeout();
+	}
 
-		if (GEditor && ExecutionStartSound)
-		{
-			GEditor->PlayEditorSound(ExecutionStartSound);
-		}
+	if (GEditor && ExecutionStartSound)
+	{
+		GEditor->PlayEditorSound(ExecutionStartSound);
+	}
 
-		FNotificationInfo Info(FText::AsCultureInvariant(NotificationText));
-		Info.Image = FEditorStyle::GetBrush(TEXT("LevelEditor.RecompileGameCode"));
-		Info.ExpireDuration = 5.0f;
-		Info.bFireAndForget = false;
+	FNotificationInfo Info(FText::AsCultureInvariant(NotificationText));
+	Info.Image = FEditorStyle::GetBrush(TEXT("LevelEditor.RecompileGameCode"));
+	Info.ExpireDuration = 5.0f;
+	Info.bFireAndForget = false;
 
-		TaskNotificationPtr = FSlateNotificationManager::Get().AddNotification(Info);
+	TaskNotificationPtr = FSlateNotificationManager::Get().AddNotification(Info);
 
-		if (TaskNotificationPtr.IsValid())
-		{
-			TaskNotificationPtr.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
-		}
-	//});
+	if (TaskNotificationPtr.IsValid())
+	{
+		TaskNotificationPtr.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& NotificationText)
