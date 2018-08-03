@@ -70,7 +70,7 @@ You need to add two environment variables: one to set the path to the Unreal Eng
 1. Create a system variable named **LINUX_MULTIARCH_ROOT**.
 1. Set the variable value to be the path to the directory of your unzipped Linux cross compilation toolchain.
 1. Make sure that the new environment variable is registered by restarting your terminal and running `echo %LINUX_MULTIARCH_ROOT%` (Command Prompt) or `echo $Env:LINUX_MULTIARCH_ROOT` (PowerShell).
-If the environment variable is registered correctly, this returns the path you unzipped `v11_clang-5.0.0-centos7` into. If it doesn’t, check that you’ve set the environment variable correctly.
+If the environment variable is registered correctly, this returns the path you unzipped `v11_clang-5.0.0-centos7.zip` into. If it doesn’t, check that you’ve set the environment variable correctly.
 
 ### Building Unreal Engine
 
