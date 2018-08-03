@@ -57,7 +57,7 @@ Check out the fork by running either:
     * (SSH) `git clone git@github.com:improbableio/UnrealEngine.git -b 4.19-SpatialOSUnrealGDK`
 1. To build Unreal server-workers for SpatialOS deployments, you need to build targeting Linux. This requires cross-compilation of your SpatialOS project and the Unreal Engine fork.
 
-    In Unreal's [compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) documentation, in the **getting the toolchain** section, click v11 **clang 5.0.0-based** to download the archive **v11_clang-5.0.0-centos7.zip** containing the Linux cross-compilation toolchain, then unzip.
+    In Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) documentation, in the **getting the toolchain** section, click v11 **clang 5.0.0-based** to download the archive **v11_clang-5.0.0-centos7.zip** containing the Linux cross-compilation toolchain, then unzip.
 
 ### Adding environment variables
 
