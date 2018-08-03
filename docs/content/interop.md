@@ -49,8 +49,8 @@ OutputPath=ExampleGame/Generated/
 ;Leave empty if no includes required.
 
 ;MyClass
-ExampleGameMyClass=ExampleGameMyClass.h
-ExampleGameMyClass=IncludePath/MyClassDependency.h
+/Script/ExampleGame.ExampleGameMyClass=ExampleGameMyClass.h
+/Script/ExampleGame.ExampleGameMyClass=IncludePath/MyClassDependency.h
 ```
 
 ### Example file description
@@ -73,30 +73,32 @@ OutputPath=ExampleGame/Generated/
 **`InteropCodeGen.ClassesToGenerate`**<br/>
 The `InteropCodeGen.ClassesToGenerate` section contains a list of the classes you want the ICG to create `.schema` and type bindings for.
 
+**Note:** You need to specify your class with the full PathName, which can be aqcuired by opening the context menu item **Copy reference** of the class in the **Content Browser** within the unreal editor.
+
 The section also contains the dependencies these classes require. These dependencies are an `#include` which the ICG adds to its generated code, so you need to make sure you list all the dependencies the classes need.
 
 In the example above, this is:
 
 ```
 ;MyClass
-ExampleGameMyClass=ExampleGameMyClass.h
-ExampleGameMyClass=Dependencies/MyClassDependency.h
+/Script/ExampleGame.ExampleGameMyClass=ExampleGameMyClass.h
+/Script/ExampleGame.ExampleGameMyClass=Dependencies/MyClassDependency.h
 ```
 
 The [Unreal GDK Starter Project’s](https://github.com/spatialos/UnrealGDKStarterProject)  `DefaultEditorSpatialGDK.ini` file contains the following:<br/>
 
 ```
 ;PlayerController
-StarterProjectPlayerController=StarterProjectPlayerController.h
-StarterProjectPlayerController=Camera/CameraAnim.h
-StarterProjectPlayerController=Camera/CameraShake.h
-StarterProjectPlayerController=GameFramework/HUD.h
-StarterProjectPlayerController=GameFramework/LocalMessage.h
-StarterProjectPlayerController=Particles/EmitterCameraLensEffectBase.h
+/Script/StarterProject.StarterProjectPlayerController=StarterProjectPlayerController.h
+/Script/StarterProject.StarterProjectPlayerController=Camera/CameraAnim.h
+/Script/StarterProject.StarterProjectPlayerController=Camera/CameraShake.h
+/Script/StarterProject.StarterProjectPlayerController=GameFramework/HUD.h
+/Script/StarterProject.StarterProjectPlayerController=GameFramework/LocalMessage.h
+/Script/StarterProject.StarterProjectPlayerController=Particles/EmitterCameraLensEffectBase.h
 
 ;PlayerCharacter
-PlayerCharacter=Weapons/Weapon.h
-PlayerCharacter=Items/Item.h
+/Script/StarterProject.PlayerCharacter=Weapons/Weapon.h
+/Script/StarterProject.PlayerCharacter=Items/Item.h
 ```
 
 This generates the appropriate `.schema` files and type bindings as `SpatialTypeBinding` files. Using the Starter Project example:

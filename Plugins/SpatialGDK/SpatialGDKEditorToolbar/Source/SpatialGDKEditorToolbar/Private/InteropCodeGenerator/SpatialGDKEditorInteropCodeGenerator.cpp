@@ -75,16 +75,16 @@ bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
 // Handle Unreal's naming of blueprint C++ files which are appended with _C.
 // It is common for users to not know about this feature and simply add the blueprint name to the DefaultSpatialGDK.ini ClassesToGenerate section
 // As such, when the passed in ClassName is invalid, we will add '_C' to the user provided ClassName if that gives us a valid class.
-bool ValidateClassNameWithCorrectionForBlueprints(FString& ClassName)
+bool CheckClassExistsWithCorrectionForBlueprints(FString& ClassName)
 {
-	if (FindObject<UClass>(ANY_PACKAGE, *ClassName))
+	if (LoadObject<UClass>(nullptr, *ClassName, nullptr, LOAD_EditorOnly, nullptr))
 	{
 		return true;
 	}
 
 	UE_LOG(LogSpatialGDKInteropCodeGenerator, Verbose, TEXT("Could not find unreal class for interop code generation: '%s', trying to find %s_C..."), *ClassName, *ClassName);
 
-	if (FindObject<UClass>(ANY_PACKAGE, *(ClassName + TEXT("_C"))))
+	if (LoadObject<UClass>(nullptr, *(ClassName + TEXT("_C")), nullptr, LOAD_EditorOnly, nullptr))
 	{
 		// Correct for user mistake: add _C to ClassName so we return the valid blueprint name
 		ClassName.Append(TEXT("_C"));
@@ -109,7 +109,7 @@ bool GenerateClassHeaderMap(const FConfigSection* UserInteropCodeGenSection, Cla
 		FString ClassName = ClassKey.ToString();
 
 		// Check class exists, correcting user typos if necessary.
-		if (!ValidateClassNameWithCorrectionForBlueprints(ClassName))
+		if (!CheckClassExistsWithCorrectionForBlueprints(ClassName))
 		{
 			return false;
 		}
@@ -141,22 +141,6 @@ FString GetOutputPath(const FString& ConfigFilePath)
 	OutputPath.AppendChar('/');
 
 	return OutputPath;
-}
-
-const bool ClassesExist(const ClassHeaderMap& Classes)
-{
-	for (const auto& ClassHeaderList : Classes)
-	{
-		const UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
-
-		if (!Class)
-		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find unreal class for interop code generation: '%s', terminating."), *ClassHeaderList.Key);
-			return false;
-		}
-	}
-
-	return true;
 }
 
 TArray<FString> CreateSingletonListFromConfigFile()
