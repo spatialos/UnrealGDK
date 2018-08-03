@@ -286,7 +286,6 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 	};
 
 	InteropCodegenResult = Async(EAsyncExecution::Thread, CodegenTask, CompleteCallback);
-
 }
 		
 
