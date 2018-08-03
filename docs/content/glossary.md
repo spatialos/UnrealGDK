@@ -9,7 +9,7 @@ See the [SpatialOS glossary](https://docs.improbable.io/reference/latest/shared/
 * The SpatialOS Unreal GDK: https://github.com/spatialos/UnrealGDK
 * Starter Project: https://github.com/spatialos/UnrealGDKStarterProject
 * SpatialOS Unreal GDK fork of Unreal Engine: https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK<br>
-You may get a 404 error from this link. To get access, see [these instructions](../setup-and-installing.md#other).
+You may get a 404 error from this link. To get access, see [these instructions](../setup-and-installing.md#unreal-engine-eula).
 * Third-Person Shooter: https://github.com/spatialos/UnrealGDKThirdPersonShooter
 * Test Suite: https://github.com/spatialos/UnrealGDKTestSuite
 
