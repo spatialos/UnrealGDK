@@ -215,52 +215,17 @@ void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& Co
 	}
 }
 
-bool RunProcess(const FString& Command, const FString& Arguments)
+bool RunProcessNew(const FString ExecutablePath, FString Arguments)
 {
-	int32 ReturnCode = 0;
-	FString StandardOutput;
-
-	void* ReadPipe = nullptr;
-	void* WritePipe = nullptr;
-	FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
-	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*Command, *Arguments, false, true, true, nullptr, 0, nullptr, WritePipe);
-
-	while (FPlatformProcess::IsProcRunning(ProcHandle))
-	{
-		FPlatformProcess::Sleep(0.25);
-	}
-
-	//StandardOutput = FPlatformProcess::ReadPipe(ReadPipe);
-
-//	FPlatformProcess::ClosePipe(ReadPipe, WritePipe);
-	FPlatformProcess::CloseProc(ProcHandle);
-
-	if (FPlatformProcess::GetProcReturnCode(ProcHandle, &ReturnCode))
-	{
-		return false;
-	}
-
-	if (ReturnCode != 0)
-	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("%s"), *StandardOutput);
-		return false;
-	}
-
-	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("%s"), *StandardOutput);
-	return true;
-}
-
-bool RunProcessNew(const FString DiffCopyPath, FString DiffCopyArguments)
-{
-	TSharedPtr<FMonitoredProcess> TestProcess = MakeShareable(new FMonitoredProcess(DiffCopyPath, DiffCopyArguments, true));
-	TestProcess->OnOutput().BindStatic(&OnStatusOutput);
-	TestProcess->Launch();
-	while (TestProcess->Update())
+	TSharedPtr<FMonitoredProcess> Process = MakeShareable(new FMonitoredProcess(ExecutablePath, Arguments, true));
+	Process->OnOutput().BindStatic(&OnStatusOutput);
+	Process->Launch();
+	while (Process->Update())
 	{
 		FPlatformProcess::Sleep(0.01f);
 	}
 
-	if (TestProcess->GetReturnCode() != 0)
+	if (Process->GetReturnCode() != 0)
 	{
 		return false;
 	}
