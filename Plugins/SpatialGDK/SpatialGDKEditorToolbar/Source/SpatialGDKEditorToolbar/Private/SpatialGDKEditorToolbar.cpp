@@ -313,7 +313,7 @@ void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& No
 
 void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& NotificationText)
 {
-	AsyncTask(ENamedThreads::AnyHiPriThreadNormalTask, [this, NotificationText]{
+	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]{
 		TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
 		Notification->SetFadeInDuration(0.1f);
 		Notification->SetFadeOutDuration(0.5f);
@@ -334,7 +334,7 @@ void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& Noti
 
 void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& NotificationText)
 {
-	AsyncTask(ENamedThreads::AnyHiPriThreadNormalTask, [this, NotificationText]{
+	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]{
 		TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
 		Notification->SetText(FText::AsCultureInvariant(NotificationText));
 		Notification->SetCompletionState(SNotificationItem::CS_Fail);
