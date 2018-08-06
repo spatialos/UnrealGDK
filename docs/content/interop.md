@@ -8,6 +8,8 @@ The ICG creates SpatialOS `.schema` files from `UObject` class layouts via Unrea
 
 The `.schema` files enable SpatialOS to understand and store Unreal data. The ICG also creates `SpatialTypeBinding` classes (known as [type bindings](./glossary.md#type-bindings”)).
 
+You will want to generate type bindings for all **replicated Actors** and **replicated Actor Components** in your project.
+
 These classes:
 * convert entity property updates to and from SpatialOS in the form of [component updates](https://docs.improbable.io/reference/13.1/csharpsdk/using/sending-data#sending-and-receiving-component-updates).
 * send and receive Unreal RPCs (remote procedure calls) via [SpatialOS commands](https://docs.improbable.io/reference/13.1/shared/design/commands).
