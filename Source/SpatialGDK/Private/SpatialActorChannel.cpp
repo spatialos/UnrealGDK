@@ -331,14 +331,9 @@ bool USpatialActorChannel::ReplicateActor()
 	if (Binding)
 	{
 		uint32 ShadowDataOffset = 0;
-		uint32 MinAlignment = 1;
 		for (auto& PropertyInfo : Binding->GetHandoverHandlePropertyMap())
 		{
-			MinAlignment = PropertyInfo.Value.Property->GetMinAlignment();
-			if (ShadowDataOffset % MinAlignment != 0)
-			{
-				ShadowDataOffset += MinAlignment - (ShadowDataOffset % MinAlignment);
-			}
+			ShadowDataOffset = Align(ShadowDataOffset, PropertyInfo.Value.Property->GetMinAlignment());
 
 			const uint8* Data = PropertyInfo.Value.GetPropertyData((uint8*)Actor);
 
@@ -522,14 +517,10 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	{
 		const FHandoverHandlePropertyMap& HandoverProperties = Binding->GetHandoverHandlePropertyMap();
 		uint32 Size = 0;
-		uint32 MinAlignment = 1;
 		for (auto& Property : HandoverProperties)
 		{
-			MinAlignment = Property.Value.Property->GetMinAlignment();
-			if (Size % MinAlignment != 0)  // Make sure we conform to Unreal's alignment requirements; this is matched below and in ReplicateActor()
-			{
-				Size += MinAlignment - (Size % MinAlignment);
-			}
+			// Make sure we conform to Unreal's alignment requirements; this is matched below and in ReplicateActor()
+			Size = Align(Size, Property.Value.Property->GetMinAlignment());
 			Size += Property.Value.Property->GetSize();
 		}
 		HandoverPropertyShadowData.Empty();
@@ -537,11 +528,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		uint32 Offset = 0;
 		for (auto& Property : HandoverProperties)
 		{
-			MinAlignment = Property.Value.Property->GetMinAlignment();
-			if (Offset % MinAlignment != 0)
-			{
-				Offset += MinAlignment - (Offset % MinAlignment);
-			}
+			Offset = Align(Offset, Property.Value.Property->GetMinAlignment());
 			Property.Value.Property->InitializeValue(HandoverPropertyShadowData.GetData() + Offset);
 			Offset += Property.Value.Property->GetSize();
 		}
