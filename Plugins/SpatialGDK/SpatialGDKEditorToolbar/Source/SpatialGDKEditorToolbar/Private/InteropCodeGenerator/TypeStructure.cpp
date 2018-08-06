@@ -600,7 +600,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& I
 
 void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass, const ClassHeaderMap& InteropGeneratedClasses)
 {
-	if (InteropGeneratedClasses.Find(ComponentClass->GetName()))
+	if (InteropGeneratedClasses.Find(ComponentClass->GetPathName()))
 	{
 		if (ComponentClasses.Find(ComponentClass) == nullptr)
 		{
