@@ -7,4 +7,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInteropCodeGenerator, Log, All);
 
-bool SpatialGDKGenerateInteropCode();
+using ClassHeaderMap = TMap<FString, TArray<FString>>;
+
+bool GenerateClassHeaderMap(ClassHeaderMap& OutClasses);
+
+bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses);
