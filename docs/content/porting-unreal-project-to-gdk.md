@@ -167,7 +167,7 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
         
         ```ini
         [SnapshotGenerator.SingletonActorClasses]
-        YourProjectGameState=
+        /Script/YourProject.YourProjectGameState=
 
     1. For any classes you want to replicate, you need to add the headers which those classes require, in the format `MyReplicationClass=ImportedHeader.h`.
 
@@ -175,16 +175,34 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
 
         ```ini
         ;YourProjectPlayerController
-        YourProjectPlayerController=YourProjectPlayerController.h
+        /Script/YourProject.YourProjectPlayerController=YourProjectPlayerController.h
 
         ;YourProjectPlayerState
-        YourProjectPlayerState=YourProjectPlayerState.h
+        /Script/YourProject.YourProjectPlayerState=YourProjectPlayerState.h
 
         ;YourProjectCharacter
-        YourProjectCharacter=YourProjectCharacter.h
-        YourProjectCharacter=OtherDependency.h
+        /Script/YourProject.YourProjectCharacter=YourProjectCharacter.h
+        /Script/YourProject.YourProjectCharacter=OtherDependency.h
         ```
-
+        
+1. Open your UnrealWorker worker config located in `<ProjectRoot>\spatial\workers\unreal\spatialos.UnrealWorker.worker.json`. Edit the  streaming queries to be the generated component for your Singletons. For the example above your streaming queries would look like so.
+    
+        For example:
+        ```json
+        "streaming_query": [
+          {
+            "global_component_streaming_query": {
+              "component_name": "improbable.unreal.GlobalStateManager"
+            }
+          },
+          {
+            "global_component_streaming_query": {
+              "component_name": "improbable.unreal.generated.yourprojectgamestate.YourProjectGameStateMultiClientRepData"
+            }
+          }
+        ],
+        ```
+    
 ## Generating code for SpatialOS C++ workers and building your project
 1. In your terminal, navigate to `<ProjectRoot>\<GameRoot>\Scripts` and run `Codegen.bat`.
 This initializes the project. It should succeed quickly and silently.
