@@ -53,21 +53,24 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	return NumComponents;
 }
 
-bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
+bool CheckClassNameListValidity(const ClassHeaderMap& Classes, const ClassHeaderMap2& Classes2)
 {
 	// Pull out all the class names from the map. (These might contain underscores like "One_TwoThree" and "OneTwo_Three").
 	TArray<FString> ClassNames;
 	Classes.GetKeys(ClassNames);
 
+	TArray<UClass*> ClassNames2;
+	Classes2.GetKeys(ClassNames2);
+
 	// Remove all underscores from the class names, check for duplicates.
-	for (int i = 0; i < ClassNames.Num() - 1; ++i)
+	for (int i = 0; i < ClassNames2.Num() - 1; ++i)
 	{
-		const FString& ClassA = ClassNames[i];
+		const FString& ClassA = ClassNames2[i]->GetName();
 		const FString SchemaTypeA = UnrealNameToSchemaTypeName(ClassA);
 
-		for (int j = i + 1; j < ClassNames.Num(); ++j)
+		for (int j = i + 1; j < ClassNames2.Num(); ++j)
 		{
-			const FString& ClassB = ClassNames[j];
+			const FString& ClassB = ClassNames2[j]->GetName();
 			const FString SchemaTypeB = UnrealNameToSchemaTypeName(ClassB);
 
 			if (SchemaTypeA.Equals(SchemaTypeB))
@@ -230,17 +233,18 @@ FString GenerateIntermediateDirectory()
 
 bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses)
 {
-	if (!CheckClassNameListValidity(InteropGeneratedClasses))
-	{
-		return false;
-	}
-
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 	if (!SpatialGDKToolbarSettings)
 	{
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("No SpatialGDKEditorToolbarSettings available. Ensure that you have the SpatialGDK editor plugin setup correctly."));
 		return false;
 	}
+
+	if (!CheckClassNameListValidity(InteropGeneratedClasses, SpatialGDKToolbarSettings->InteropCodegenClasses))
+	{
+		return false;
+	}
+
 	FString InteropOutputPath = FPaths::ConvertRelativePathToFull(SpatialGDKToolbarSettings->InteropCodegenOutputFolder.Path);
 	FString SchemaOutputPath = FPaths::ConvertRelativePathToFull(SpatialGDKToolbarSettings->GeneratedSchemaOutputFolder.Path);
 

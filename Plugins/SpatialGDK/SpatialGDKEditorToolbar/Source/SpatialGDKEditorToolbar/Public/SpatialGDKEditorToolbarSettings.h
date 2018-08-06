@@ -5,6 +5,17 @@
 
 #include "SpatialGDKEditorToolbarSettings.generated.h"
 
+USTRUCT()
+struct FIncludeList
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false))
+	TArray<FString> IncludeList;
+};
+
+using ClassHeaderMap2 = TMap<UClass*, FIncludeList>;
+
 UCLASS(config = EditorPerProjectUserSettings, defaultconfig)
 class USpatialGDKEditorToolbarSettings : public UObject
 {
@@ -40,6 +51,12 @@ public:
 	/** Generated schema output path */
 	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the generated schemas."))
 	FDirectoryPath GeneratedSchemaOutputFolder;
+
+	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Singleton classes"))
+	TArray<UClass*> SingletonClasses;
+
+	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Classes to generate typebindings for"))
+	TMap<UClass*, FIncludeList> InteropCodegenClasses;
 
 	UFUNCTION()
 	FString ToString();
