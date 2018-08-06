@@ -33,6 +33,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot file name"))
 	FString SpatialOSSnapshotFile;
 
+	/** Interop codegen output path */
+	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the interop codegeneration."))
+	FDirectoryPath InteropCodegenOutputFolder;
+
 	UFUNCTION()
 	FString ToString();
 };
