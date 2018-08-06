@@ -22,7 +22,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 namespace
 {
 
-static void OnStatusOutput(FString Message)
+void OnStatusOutput(FString Message)
 {
 	UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("%s"), *Message);
 }
@@ -215,11 +215,14 @@ void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& Co
 	}
 }
 
-bool RunProcess(const FString ExecutablePath, FString Arguments)
+bool RunProcess(const FString& ExecutablePath, const FString& Arguments)
 {
 	TSharedPtr<FMonitoredProcess> Process = MakeShareable(new FMonitoredProcess(ExecutablePath, Arguments, true));
 	Process->OnOutput().BindStatic(&OnStatusOutput);
 	Process->Launch();
+	// We currently spin on the thread calling this function as this appears to be
+	// The idiomatic way according to the other usages of the FMonitoredProcess interface in the Unreal engine 
+	// codebase. See TargetPlatformManagerModule.cpp for another example of this setup.
 	while (Process->Update())
 	{
 		FPlatformProcess::Sleep(0.01f);
