@@ -7,6 +7,8 @@ Our SpatialOS community shapes the functionality of the Unreal GDK, so make sure
 #### What's the Unreal GDK all about?
 The **SpatialOS Unreal GDK** is an Unreal Engine 4 (UE4) [module](https://docs.unrealengine.com/en-us/Programming/UnrealBuildSystem/ModuleFiles) made by Improbable. You can use the Unreal GDK to integrate persistent multiplayer worlds into your Unreal game using the SpatialOS platform.
 
+Find out more about the GDK for Unreal in [our blogpost](https://improbable.io/games/blog/spatialos-unreal-gdk-pre-alpha).
+
 You can [sign up for SpatialOS Unreal GDK updates](http://go.pardot.com/l/169082/2018-06-15/27ld2t) direct to your mailbox.
 
 * License: use of the contents of this repository is subject to the [Improbable license](LICENSE.md)
