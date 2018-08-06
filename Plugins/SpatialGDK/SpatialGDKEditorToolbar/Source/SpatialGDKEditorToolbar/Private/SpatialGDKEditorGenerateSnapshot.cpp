@@ -122,12 +122,37 @@ worker::Entity CreateGlobalStateManagerEntity(const NameToEntityIdMap& Singleton
 
 } // ::
 
-bool SetupSnapshotGenerationPath(FString& SavePath)
+bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 {
+	FString DirectoryPath = FPaths::GetPath(SavePath);
+	if (!FPaths::CollapseRelativeDirectories(DirectoryPath))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Invalid path: %s - snapshot not generated"), *DirectoryPath);
+		return false;
+	}
+
+	if (!FPaths::DirectoryExists(DirectoryPath))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot directory does not exist - creating directory: %s"), *DirectoryPath);
+		if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*DirectoryPath))
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Unable to create directory: %s - snapshot not generated"), *DirectoryPath);
+			return false;
+		}
+	}
+	return true;
+}
+
+FString SetupSnapshotGenerationPath()
+{
+	// Default path and file names.
+	const FString& ProjectFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::GetPath(FPaths::GetProjectFilePath()));
+	FString SavePath = FPaths::Combine(*ProjectFilePath, TEXT("../spatial/snapshots"));
 	FString SnapshotFileName = TEXT("default.snapshot");
 
 	if (const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>())
 	{
+
 		if (!Settings->SpatialOSSnapshotPath.Path.IsEmpty())
 		{
 			SavePath = Settings->SpatialOSSnapshotPath.Path;
@@ -139,29 +164,15 @@ bool SetupSnapshotGenerationPath(FString& SavePath)
 		}
 	}
 
-	if (!FPaths::CollapseRelativeDirectories(SavePath))
-	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Invalid path: %s - snapshot not generated"), *SavePath);
-		return false;
-	}
-
-	if (!FPaths::DirectoryExists(SavePath))
-	{
-		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot directory does not exist - creating directory: %s"), *SavePath);
-		if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*SavePath))
-		{
-			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Unable to create directory: %s - snapshot not generated"), *SavePath);
-			return false;
-		}
-	}
-
 	SavePath = FPaths::Combine(*SavePath, SnapshotFileName);
-	return true;
+	return SavePath;
 }
 
-bool SpatialGDKGenerateSnapshot(FString& SavePath, UWorld* World)
+bool SpatialGDKGenerateSnapshot(UWorld* World)
 {
-	if (!SetupSnapshotGenerationPath(SavePath))
+	FString SavePath = SetupSnapshotGenerationPath();
+
+	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
 	{
 		return false;
 	}
