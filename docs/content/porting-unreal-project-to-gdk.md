@@ -168,6 +168,7 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
         ```ini
         [SnapshotGenerator.SingletonActorClasses]
         /Script/YourProject.YourProjectGameState=
+        ```
 
     1. For any classes you want to replicate, you need to add the headers which those classes require, in the format `MyReplicationClass=ImportedHeader.h`.
 
@@ -187,9 +188,8 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
         
 1. Open your UnrealWorker worker config located in `<ProjectRoot>\spatial\workers\unreal\spatialos.UnrealWorker.worker.json`. Edit the  streaming queries to be the generated component for your Singletons. For the example above your streaming queries would look like so.
     
-        For example:
+For example:
 
-        ```json
         "streaming_query": [
           {
             "global_component_streaming_query": {
@@ -202,7 +202,7 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
             }
           }
         ],
-        ```
+        
     
 ## Generating code for SpatialOS C++ workers and building your project
 1. In your terminal, navigate to `<ProjectRoot>\<GameRoot>\Scripts` and run `Codegen.bat`.
