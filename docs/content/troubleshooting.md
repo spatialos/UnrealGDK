@@ -11,6 +11,7 @@
 ------
 
 **Q:** I'm getting the following error when running `BuildGDK.bat` inside the `UnrealGDK` repo:
+
 ```C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\Microsoft.Common.CurrentVersion.targets(1179,5): error MSB3644: The reference assemblies for framework ".NETFramework,Version=v4.5.2" were not found. To resolve this, install the SDK or Targeting Pack for this framework version or retarget your application to a version of the framework for which you have the SDK or Targeting Pack installed. Note that assemblies will be resolved from the Global Assembly Cache (GAC) and will be used in place of reference assemblies. Therefore your assembly may not be correctly targeted for the framework you intend.```
 
 **A:** Download and install .NET Framework 4.5.2 Developer Pack from [this page](https://www.microsoft.com/net/download/visual-studio-sdks).
