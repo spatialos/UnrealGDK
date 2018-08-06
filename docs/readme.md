@@ -5,7 +5,7 @@
 ## How to get started
 We recommend you start by following the [Installation and setup guide](setup-and-installing.md) to set up the Unreal GDK, the SpatialOS Unreal Engine fork, and the Starter Project (or your own Unreal project).
 
-After you've run through the setup guide (including setting up Actor replication), have a look at the following pages, which explain some of the things that relate to working with SpatialOS:
+After you've run through the setup guide (including setting up Actor replication), take a look at the following pages, which explain some of the key concepts to understand when developing SpatialOS games:
 
 * [Interop Code Generator](./content/interop.md)
 * [Actor handover](./content/handover-between-server-workers.md)
