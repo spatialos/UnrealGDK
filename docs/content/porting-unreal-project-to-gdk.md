@@ -186,7 +186,7 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
         /Script/YourProject.YourProjectCharacter=OtherDependency.h
         ```
         
-1. Open your UnrealWorker worker config located in `<ProjectRoot>\spatial\workers\unreal\spatialos.UnrealWorker.worker.json`. Edit the  streaming queries to be the generated component for your Singletons. For the example above your streaming queries would look like so.
+1. Open your UnrealWorker worker config located in `<ProjectRoot>\spatial\workers\unreal\spatialos.UnrealWorker.worker.json`. Add your new Singleton generated component(s) to the streaming queries.
     
 For example:
 
