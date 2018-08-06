@@ -161,7 +161,7 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
         OutputPath=YourProject\Generated\
         ```
         
-    1. In `SnapshotGenerator.SingletonActorClasses`, modify the `StarterProjectGameStateBase` to the GameState class in your game.
+    1. In `SnapshotGenerator.SingletonActorClasses`, modify the `StarterProjectGameStateBase` to the `GameState` class in your game.
     
         For example:
         
