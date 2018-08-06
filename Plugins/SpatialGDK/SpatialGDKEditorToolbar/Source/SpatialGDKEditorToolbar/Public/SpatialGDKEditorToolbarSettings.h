@@ -37,6 +37,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the interop codegeneration."))
 	FDirectoryPath InteropCodegenOutputFolder;
 
+	/** Generated schema output path */
+	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the generated schemas."))
+	FDirectoryPath GeneratedSchemaOutputFolder;
+
 	UFUNCTION()
 	FString ToString();
 };

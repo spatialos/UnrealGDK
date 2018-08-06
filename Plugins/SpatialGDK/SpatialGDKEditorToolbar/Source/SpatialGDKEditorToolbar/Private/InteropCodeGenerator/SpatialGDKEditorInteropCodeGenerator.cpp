@@ -8,6 +8,7 @@
 #include "TypeBindingGenerator.h"
 #include "TypeStructure.h"
 #include "SpatialGDKEditorUtils.h"
+#include "SpatialGDKEditorToolbarSettings.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
@@ -148,24 +149,6 @@ bool GenerateClassHeaderMap(ClassHeaderMap& OutClasses)
 	return true;
 }
 
-FString GetOutputPath(const FString& ConfigFilePath)
-{
-	FString OutputPath = FString::Printf(TEXT("%s/Generated/"), FApp::GetProjectName());
-	const FString SettingsSectionName = "InteropCodeGen.Settings";
-	if (const FConfigSection* SettingsSection = GetConfigSection(ConfigFilePath, SettingsSectionName))
-	{
-		if (const FConfigValue* OutputModuleSetting = SettingsSection->Find("OutputPath"))
-		{
-			OutputPath = OutputModuleSetting->GetValue();
-		}
-	}
-
-	// Ensure that the specified path ends with a path separator.
-	OutputPath.AppendChar('/');
-
-	return OutputPath;
-}
-
 TArray<FString> CreateSingletonListFromConfigFile()
 {
 	TArray<FString> SingletonList;
@@ -236,6 +219,15 @@ bool RunProcess(const FString& ExecutablePath, const FString& Arguments)
 	return true;
 }
 
+FString GenerateIntermediateDirectory()
+{
+	const FString CombinedIntermediatePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Intermediate/Improbable/"), *FGuid::NewGuid().ToString(), TEXT("/"));
+	FString AbsoluteCombinedIntermediatePath = FPaths::ConvertRelativePathToFull(CombinedIntermediatePath);
+	FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*AbsoluteCombinedIntermediatePath);
+
+	return AbsoluteCombinedIntermediatePath;
+}
+
 bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses)
 {
 	if (!CheckClassNameListValidity(InteropGeneratedClasses))
@@ -243,42 +235,37 @@ bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses
 		return false;
 	}
 
-	const FString CombinedSchemaIntermediatePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Intermediate/Improbable/"), *FGuid::NewGuid().ToString(), TEXT("/"));
-	FString AbsoluteCombinedSchemaIntermediatePath = FPaths::ConvertRelativePathToFull(CombinedSchemaIntermediatePath);
-	FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*AbsoluteCombinedSchemaIntermediatePath);
+	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	if (!SpatialGDKToolbarSettings)
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("No SpatialGDKEditorToolbarSettings available. Ensure that you have the SpatialGDK editor plugin setup correctly."));
+		return false;
+	}
+	FString InteropOutputPath = FPaths::ConvertRelativePathToFull(SpatialGDKToolbarSettings->InteropCodegenOutputFolder.Path);
+	FString SchemaOutputPath = FPaths::ConvertRelativePathToFull(SpatialGDKToolbarSettings->GeneratedSchemaOutputFolder.Path);
 
-	const FString CombinedSchemaPath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("../spatial/schema/improbable/unreal/generated/"));
-	FString AbsoluteCombinedSchemaPath = FPaths::ConvertRelativePathToFull(CombinedSchemaPath);
-
-	const FString CombinedIntermediatePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Intermediate/Improbable/"), *FGuid::NewGuid().ToString(), TEXT("/"));
-	FString AbsoluteCombinedIntermediatePath = FPaths::ConvertRelativePathToFull(CombinedIntermediatePath);
-	FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*AbsoluteCombinedIntermediatePath);
-
-	const FString FileName = "DefaultEditorSpatialGDK.ini";
-	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
-	const FString CombinedForwardingCodePath = FPaths::Combine(*FPaths::GetPath(FPaths::GameSourceDir()), *GetOutputPath(ConfigFilePath));
-	FString AbsoluteCombinedForwardingCodePath = FPaths::ConvertRelativePathToFull(CombinedForwardingCodePath);
-
-	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *AbsoluteCombinedSchemaPath, *AbsoluteCombinedForwardingCodePath);
+	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *SchemaOutputPath, *InteropOutputPath);
 
 	// Check schema path is valid.
-	if (!FPaths::CollapseRelativeDirectories(AbsoluteCombinedSchemaPath))
+	if (!FPaths::CollapseRelativeDirectories(SchemaOutputPath))
 	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Invalid path: '%s'. Schema not generated."), *AbsoluteCombinedSchemaPath);
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Invalid path: '%s'. Schema not generated."), *SchemaOutputPath);
 		return false;
 	}
 
-	if (!FPaths::CollapseRelativeDirectories(AbsoluteCombinedForwardingCodePath))
+	if (!FPaths::CollapseRelativeDirectories(InteropOutputPath))
 	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Invalid path: '%s'. schema not generated."), *AbsoluteCombinedForwardingCodePath);
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Invalid path: '%s'. schema not generated."), *InteropOutputPath);
 		return false;
 	}
 
-	GenerateInteropFromClasses(InteropGeneratedClasses, AbsoluteCombinedSchemaIntermediatePath, AbsoluteCombinedIntermediatePath);
+	const FString SchemaIntermediatePath = GenerateIntermediateDirectory();
+	const FString InteropIntermediatePath = GenerateIntermediateDirectory();
+	GenerateInteropFromClasses(InteropGeneratedClasses, SchemaIntermediatePath, InteropIntermediatePath);
 
 	const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
 	// Copy Interop files.
-	FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *AbsoluteCombinedIntermediatePath, *AbsoluteCombinedForwardingCodePath);
+	FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *InteropIntermediatePath, *InteropOutputPath);
 	if (!RunProcess(DiffCopyPath, DiffCopyArguments))
 	{
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not move generated interop files during the diff-copy stage. Path: '%s', arguments: '%s'."), *DiffCopyPath, *DiffCopyArguments);
@@ -286,7 +273,7 @@ bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses
 	}
 
 	// Copy schema files
-	DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *AbsoluteCombinedSchemaIntermediatePath, *AbsoluteCombinedSchemaPath);
+	DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *SchemaIntermediatePath, *SchemaOutputPath);
 	if (!RunProcess(DiffCopyPath, DiffCopyArguments))
 	{
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not move generated schema files during the diff-copy stage. Path: '%s', arguments: '%s'."), *DiffCopyPath, *DiffCopyArguments);
