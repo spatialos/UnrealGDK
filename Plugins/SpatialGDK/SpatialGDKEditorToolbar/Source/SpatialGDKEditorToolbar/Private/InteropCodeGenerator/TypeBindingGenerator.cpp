@@ -296,7 +296,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		Writer.End();
 
 		Writer.Printf("%s(List);", *Update);
-	} 
+	}
 	else if (Property->IsA(UEnumProperty::StaticClass()))
 	{
 		FString DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
@@ -632,7 +632,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		{
 			if (Group == RPC_NetMulticast)
 			{
-				HeaderWriter.Printf("void %s_OnRPCPayload(const worker::EntityId EntityId, const %s& EventData);",			
+				HeaderWriter.Printf("void %s_OnRPCPayload(const worker::EntityId EntityId, const %s& EventData);",
 					*UnrealNameToCppName(RPC->Function->GetName()),
 					*SchemaRPCRequestType(RPC->Function, true));
 			}
@@ -672,7 +672,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename,
 	UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo, const TArray<FString>& TypeBindingHeaders,
-	bool bIsSingleton)
+	bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses)
 {
 	SourceWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -712,7 +712,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	}
 	SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaHandoverDataName(Class));
 
-	TArray<UClass*> Components = GetAllSupportedComponents(Class);
+	TArray<UClass*> Components = GetAllSupportedComponents(Class, InteropGeneratedClasses);
 
 	for (UClass* ComponentClass : Components)
 	{
@@ -842,7 +842,7 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	if (Class->ClassGeneratedBy)
 	{
 		// This is a blueprint class, so use Unreal's reflection to find UClass pointer at runtime.
-		SourceWriter.Printf("return FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));", *Class->GetName());
+		SourceWriter.Printf("return LoadObject<UClass>(nullptr, TEXT(\"%s\"), nullptr, LOAD_None, nullptr);", *Class->GetPathName());
 	}
 	else
 	{
@@ -1145,7 +1145,7 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);)""");
 	SourceWriter.Print("return improbable::unreal::FEntityBuilder::Begin()");
 	SourceWriter.Indent();
-	// If this is a APlayerController entity, ensure that only the owning client and workers have read ACL permissions. 
+	// If this is a APlayerController entity, ensure that only the owning client and workers have read ACL permissions.
 	// This ensures that only one APlayerController object is created per client.
 	SourceWriter.Printf(R"""(
 		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, WorkersOnly)
@@ -1162,7 +1162,7 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 	SourceWriter.End();
 }
 
-void GenerateBody_SpatialComponents(FCodeWriter& SourceWriter, UClass* Class, TArray<FString>& SpatialComponents) 
+void GenerateBody_SpatialComponents(FCodeWriter& SourceWriter, UClass* Class, TArray<FString>& SpatialComponents)
 {
 	SourceWriter.PrintNewLine();
 	FString ClassName = Class->GetName();
@@ -1969,7 +1969,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 			*UnrealNameToCppName(RPC->Function->GetName()))
 	};
 	SourceWriter.BeginFunction(SendCommandSignature, TypeBindingName(Class));
-		
+
 	// Extract RPC arguments from the stack.
 	if (RPC->Function->NumParms > 0)
 	{

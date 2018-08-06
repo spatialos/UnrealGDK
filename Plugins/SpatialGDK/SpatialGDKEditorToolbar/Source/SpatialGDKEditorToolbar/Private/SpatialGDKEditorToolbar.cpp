@@ -52,7 +52,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionSuccessSound->AddToRoot();
 	ExecutionFailSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileFailed_Cue.CompileFailed_Cue"));
 	ExecutionFailSound->AddToRoot();
-	InteropCodeGenRunning = false;
+	bInteropCodeGenRunning = false;
 
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
 	bStopSpatialOnExit = GetDefault<USpatialGDKEditorToolbarSettings>()->bStopSpatialOnExit;
@@ -112,7 +112,7 @@ void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 	{
 		FPlatformProcess::CloseProc(SpatialOSStackProcHandle);
 		SpatialOSStackProcessID = 0;
-	}	
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::RegisterSettings()
@@ -154,7 +154,7 @@ bool FSpatialGDKEditorToolbarModule::HandleSettingsSaved()
 
 bool FSpatialGDKEditorToolbarModule::CanExecuteInteropCodeGen()
 {
-	return !InteropCodeGenRunning;
+	return !bInteropCodeGenRunning;
 }
 
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> PluginCommands)
@@ -254,21 +254,37 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 {
 	ShowTaskStartNotification("Generating Interop Code");
-	InteropCodeGenRunning = true;
+	bInteropCodeGenRunning = true;
 
-	AsyncTask(ENamedThreads::AnyHiPriThreadHiPriTask, [this] {
-		bool bSuccess = SpatialGDKGenerateInteropCode();
+	ClassHeaderMap InteropGeneratedClasses;
+	if (!GenerateClassHeaderMap(InteropGeneratedClasses))  // Checks that all classes are found and generate the class mapping.
+	{
+		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Not all classes found; check your DefaultEditorSpatialGDK.ini file."));
+		ShowFailedNotification("Interop Codegen Failed");
+		return;
+	}
 
-		if (bSuccess)
-		{
-			ShowSuccessNotification("Interop Codegen Completed!");
-		}
-		else
+	TFunction<bool()> CodegenTask = [InteropGeneratedClasses]()
+	{
+		return SpatialGDKGenerateInteropCode(InteropGeneratedClasses);
+	};
+
+	TFunction<void()> CompleteCallback = [this]() 
+	{
+		if (!InteropCodegenResult.IsReady() || InteropCodegenResult.Get() != true)
 		{
 			ShowFailedNotification("Interop Codegen Failed");
 		}
-	});
+		else
+		{
+			ShowSuccessNotification("Interop Codegen Completed!");
+		}
+		bInteropCodeGenRunning = false;
+	};
+
+	InteropCodegenResult = Async(EAsyncExecution::Thread, CodegenTask, CompleteCallback);
 }
+		
 
 void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& NotificationText)
 {
@@ -312,7 +328,7 @@ void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& Noti
 			GEditor->PlayEditorSound(ExecutionSuccessSound);
 		}
 
-		InteropCodeGenRunning = false;
+		bInteropCodeGenRunning = false;
 	});
 }
 
@@ -323,13 +339,15 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 		Notification->SetText(FText::AsCultureInvariant(NotificationText));
 		Notification->SetCompletionState(SNotificationItem::CS_Fail);
 		Notification->SetExpireDuration(5.0f);
-		
+
 		Notification->ExpireAndFadeout();
 
 		if (GEditor && ExecutionFailSound)
 		{
 			GEditor->PlayEditorSound(ExecutionFailSound);
 		}
+
+		bInteropCodeGenRunning = false;
 	});
 }
 
