@@ -50,7 +50,8 @@ void GenerateTypeBindingSource(
 	UClass* Class,
 	const TSharedPtr<FUnrealType>& TypeInfo,
 	const TArray<FString>& TypeBindingHeaders,
-	bool bIsSingleton);
+	bool bIsSingleton,
+	const ClassHeaderMap& InteropGeneratedClasses);
 
 // Helper functions used when generating the source file.
 void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class);

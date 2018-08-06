@@ -41,7 +41,10 @@ This installs:<br>
 		- the SpatialOS [Launcher](https://docs.improbable.io/reference/13.1/shared/operate/launcher)<br>
 		- the 32-bit and 64-bit Visual C++ Redistributables
 * The [Windows SDK 8.1](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive)
-* Visual Studio [2015](https://visualstudio.microsoft.com/vs/older-downloads/) or [2017](https://visualstudio.microsoft.com/downloads/) (we recommend 2017)
+* Visual Studio [2015](https://visualstudio.microsoft.com/vs/older-downloads/) or [2017](https://visualstudio.microsoft.com/downloads/) (we recommend 2017). During the installation, make sure you select the following items in the Workloads tab:<br>
+                - Universal Windows Platform development<br>
+                - Desktop development with C++<br>
+                - Game development with C++
 
 ### Unreal Engine EULA
 As part of your Unreal GDK setup, you need to clone our SpatialOS fork of the Unreal Engine source code on GitHub. In order to get access to our fork, you need to link your GitHub account to a verified Epic Games account, and agree to the Unreal Engine End User License Agreement ([EULA](https://www.unrealengine.com/en-US/eula)). You will not be able to use the Unreal GDK without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
