@@ -78,5 +78,6 @@ private:
 	USoundBase* ExecutionSuccessSound;
 	USoundBase* ExecutionFailSound;
 
+	TFuture<bool> InteropCodegenResult;
 	bool bInteropCodeGenRunning;
 };

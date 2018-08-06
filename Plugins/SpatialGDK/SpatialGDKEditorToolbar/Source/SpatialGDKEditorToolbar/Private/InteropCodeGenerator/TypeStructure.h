@@ -5,6 +5,8 @@
 #include "EngineMinimal.h"
 #include "Net/RepLayout.h"
 
+#include "SpatialGDKEditorInteropCodeGenerator.h"
+
 /*
 
 This file contains functions to generate an abstract syntax tree which is used by the code generating in
@@ -154,10 +156,6 @@ using FUnrealFlatRepData = TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPt
 using FUnrealRPCsByType = TMap<ERPCType, TArray<TSharedPtr<FUnrealRPC>>>;
 using FCmdHandlePropertyMap = TMap<uint16, TSharedPtr<FUnrealProperty>>;
 
-typedef TMap<FString, TArray<FString>> ClassHeaderMap;
-
-extern ClassHeaderMap InteropGeneratedClasses;
-
 // Given a UClass, returns either "AFoo" or "UFoo" depending on whether Foo is a subclass of actor.
 FString GetFullCPPName(UClass* Class);
 
@@ -222,10 +220,10 @@ FCmdHandlePropertyMap GetFlatHandoverData(TSharedPtr<FUnrealType> TypeInfo);
 FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo);
 
 // Get all supported components (not all subobjects) of an Actor class
-TArray<UClass*> GetAllSupportedComponents(UClass* Class);
+TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& InteropGeneratedClasses);
 
 // Properly add a component class to a set
-void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass);
+void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass, const ClassHeaderMap& InteropGeneratedClasses);
 
 // Given an AST, traverses all its parameters (and properties within structs) and generates a complete flattened list of properties.
 TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode);

@@ -5,8 +5,6 @@
 
 #include "Engine/SCS_Node.h"
 
-ClassHeaderMap InteropGeneratedClasses;
-
 namespace Errors
 {
 	FString DuplicateComponentError = TEXT("WARNING: Unreal GDK does not currently support multiple static components of the same type.\n"
@@ -565,7 +563,7 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 	return RPCsByType;
 }
 
-TArray<UClass*> GetAllSupportedComponents(UClass* Class)
+TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& InteropGeneratedClasses)
 {
 	TSet<UClass*> ComponentClasses;
 
@@ -576,7 +574,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 
 		for (UActorComponent* Component : NativeComponents)
 		{
-			AddComponentClassToSet(Component->GetClass(), ComponentClasses, Class);
+			AddComponentClassToSet(Component->GetClass(), ComponentClasses, Class, InteropGeneratedClasses);
 		}
 
 		// Components that are added in a blueprint won't appear in the CDO.
@@ -591,7 +589,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 						continue;
 					}
 
-					AddComponentClassToSet(Node->ComponentTemplate->GetClass(), ComponentClasses, Class);
+					AddComponentClassToSet(Node->ComponentTemplate->GetClass(), ComponentClasses, Class, InteropGeneratedClasses);
 				}
 			}
 		}
@@ -600,7 +598,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 	return ComponentClasses.Array();
 }
 
-void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass)
+void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass, const ClassHeaderMap& InteropGeneratedClasses)
 {
 	if (InteropGeneratedClasses.Find(ComponentClass->GetName()))
 	{
