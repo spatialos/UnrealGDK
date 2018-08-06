@@ -184,20 +184,20 @@ TArray<FString> CreateSingletonListFromConfigFile()
 	return SingletonList;
 }
 
-void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
+void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const ClassHeaderMap2& Classes2, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
 {
 	TArray<FString> SingletonList = CreateSingletonListFromConfigFile();
 
 	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 	int ComponentId = 100010;
-	for (auto& ClassHeaderList : Classes)
+	for (auto& ClassHeaderList : Classes2)
 	{
-		UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
+		//UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
 
-		const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
-		bool bIsSingleton = SingletonList.Find(ClassHeaderList.Key) != INDEX_NONE;
+		const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value.IncludeList;
+		bool bIsSingleton = SingletonList.Find(ClassHeaderList.Key->GetPathName()) != INDEX_NONE;
 
-		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class, TypeBindingHeaders, bIsSingleton, Classes);
+		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, ClassHeaderList.Key, TypeBindingHeaders, bIsSingleton, Classes);
 	}
 }
 
@@ -265,7 +265,7 @@ bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses
 
 	const FString SchemaIntermediatePath = GenerateIntermediateDirectory();
 	const FString InteropIntermediatePath = GenerateIntermediateDirectory();
-	GenerateInteropFromClasses(InteropGeneratedClasses, SchemaIntermediatePath, InteropIntermediatePath);
+	GenerateInteropFromClasses(InteropGeneratedClasses, SpatialGDKToolbarSettings->InteropCodegenClasses, SchemaIntermediatePath, InteropIntermediatePath);
 
 	const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
 	// Copy Interop files.
