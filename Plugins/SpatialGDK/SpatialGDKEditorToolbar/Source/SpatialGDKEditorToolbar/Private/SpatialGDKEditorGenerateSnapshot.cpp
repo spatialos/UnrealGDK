@@ -152,7 +152,6 @@ FString SetupSnapshotGenerationPath()
 
 	if (const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>())
 	{
-
 		if (!Settings->SpatialOSSnapshotPath.Path.IsEmpty())
 		{
 			SavePath = Settings->SpatialOSSnapshotPath.Path;
@@ -171,7 +170,6 @@ FString SetupSnapshotGenerationPath()
 bool SpatialGDKGenerateSnapshot(UWorld* World)
 {
 	FString SavePath = SetupSnapshotGenerationPath();
-
 	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
 	{
 		return false;
