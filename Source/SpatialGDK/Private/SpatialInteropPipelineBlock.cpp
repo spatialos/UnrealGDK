@@ -424,10 +424,18 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 
 					// Server will naturally create SpatialActorChannels for the replicated stably named actors, so remove the stable reference
 					// Clients do not create SpatialActorChannels, so continue on the normal path
-					if (EntityActor != nullptr && NetDriver->IsServer())
+					if (EntityActor != nullptr)
 					{
-						PackageMap->RemoveStablyNamedObject(EntityActor);
-						Interop->UnreserveReplicatedStablyNamedActor(EntityActor);
+						// If the actor is pending kill (probably from timeout or going out and in the view), pretend we did not find it in the level
+						if (EntityActor->IsPendingKill())
+						{
+							EntityActor = nullptr;
+						}
+						else if (NetDriver->IsServer())
+						{
+							PackageMap->RemoveStablyNamedObject(EntityActor);
+							Interop->UnreserveReplicatedStablyNamedActor(EntityActor);
+						}
 					}
 				}
 
