@@ -7,7 +7,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInteropCodeGenerator, Log, All);
 
-using TMap<FString, TArray<FString>> ClassHeaderMap;
+using ClassHeaderMap = TMap<FString, TArray<FString>>;
 
 bool GenerateClassHeaderMap(ClassHeaderMap& OutClasses);
 
