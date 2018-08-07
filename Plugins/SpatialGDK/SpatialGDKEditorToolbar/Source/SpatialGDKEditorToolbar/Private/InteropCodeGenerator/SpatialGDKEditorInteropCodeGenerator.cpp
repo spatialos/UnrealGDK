@@ -81,48 +81,14 @@ bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
 }
 }// ::
 
-TArray<FString> CreateSingletonListFromConfigFile()
+void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath, const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings)
 {
-	TArray<FString> SingletonList;
-
-	const FString FileName = "DefaultEditorSpatialGDK.ini";
-	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
-
-	// Load the SpatialGDK config file
-	const FConfigFile* ConfigFile = LoadConfigFile(ConfigFilePath);
-	if (!ConfigFile)
-	{
-		return SingletonList;
-	}
-
-	const FString SectionName = "SnapshotGenerator.SingletonActorClasses";
-	const FConfigSection* SingletonActorClassesSection = GetConfigSection(ConfigFilePath, SectionName);
-	if (SingletonActorClassesSection == nullptr)
-	{
-		return SingletonList;
-	}
-
-	TArray<FName> SingletonActorClasses;
-	SingletonActorClassesSection->GetKeys(SingletonActorClasses);
-
-	for (FName ClassName : SingletonActorClasses)
-	{
-		SingletonList.Add(ClassName.ToString());
-	}
-
-	return SingletonList;
-}
-
-void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
-{
-	TArray<FString> SingletonList = CreateSingletonListFromConfigFile();
-
 	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 	int ComponentId = 100010;
 	for (auto& ClassHeaderList : Classes)
 	{
 		const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
-		bool bIsSingleton = SingletonList.Find(ClassHeaderList.Key->GetPathName()) != INDEX_NONE;
+		bool bIsSingleton = SpatialGDKToolbarSettings->SingletonClasses.Find(ClassHeaderList.Key) != INDEX_NONE;
 
 		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, ClassHeaderList.Key, TypeBindingHeaders, bIsSingleton, Classes);
 	}
@@ -173,7 +139,6 @@ bool SpatialGDKGenerateInteropCode()
 		InteropGeneratedClasses.Add(element.Actor, element.IncludeList);
 	}
 
-
 	if (!CheckClassNameListValidity(InteropGeneratedClasses))
 	{
 		return false;
@@ -199,7 +164,7 @@ bool SpatialGDKGenerateInteropCode()
 
 	const FString SchemaIntermediatePath = GenerateIntermediateDirectory();
 	const FString InteropIntermediatePath = GenerateIntermediateDirectory();
-	GenerateInteropFromClasses(InteropGeneratedClasses, SchemaIntermediatePath, InteropIntermediatePath);
+	GenerateInteropFromClasses(InteropGeneratedClasses, SchemaIntermediatePath, InteropIntermediatePath, SpatialGDKToolbarSettings);
 
 	const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
 	// Copy Interop files.
