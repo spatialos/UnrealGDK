@@ -679,6 +679,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 		// Note that this file has been generated automatically
 
 		#include "%s.h"
+		#include "Scavenger.h" // IMPROBABLE Sahil Added because of IWYU
 
 		#include "GameFramework/PlayerState.h"
 		#include "NetworkGuid.h"

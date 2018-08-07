@@ -90,7 +90,7 @@ enum EReplicatedPropertyGroup
 enum ERPCType
 {
 	RPC_Client,
-	RPC_Server,
+	RPC_Server,		// Currently, this group includes server and cross-server RPCs.
 	RPC_NetMulticast,
 	RPC_Unknown
 };

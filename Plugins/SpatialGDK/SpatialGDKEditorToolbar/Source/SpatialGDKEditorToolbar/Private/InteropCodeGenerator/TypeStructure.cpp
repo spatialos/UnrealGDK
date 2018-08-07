@@ -72,6 +72,11 @@ ERPCType GetRPCTypeFromFunction(UFunction* Function)
 	{
 		return ERPCType::RPC_Server;
 	}
+	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetCrossServer)
+	{
+		// Deliberately set to RPC_Server as currently cross-server RPCs behave exactly like server RPCs from SpatialOS standpoint.
+		return ERPCType::RPC_Server;
+	}
 	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetMulticast)
 	{
 		return ERPCType::RPC_NetMulticast;
@@ -325,7 +330,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	{
 		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
 			RemoteFunction->FunctionFlags & FUNC_NetServer ||
-			RemoteFunction->FunctionFlags & FUNC_NetMulticast)
+			RemoteFunction->FunctionFlags & FUNC_NetMulticast ||
+			RemoteFunction->FunctionFlags & FUNC_NetCrossServer)
 		{
 			TSharedPtr<FUnrealRPC> RPCNode = MakeShared<FUnrealRPC>();
 			RPCNode->CallerType = Class;
