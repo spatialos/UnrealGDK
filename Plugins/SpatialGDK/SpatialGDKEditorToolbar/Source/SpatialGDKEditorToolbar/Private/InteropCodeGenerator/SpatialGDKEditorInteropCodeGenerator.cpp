@@ -7,7 +7,6 @@
 #include "SchemaGenerator.h"
 #include "TypeBindingGenerator.h"
 #include "TypeStructure.h"
-#include "SpatialGDKEditorUtils.h"
 #include "SpatialGDKEditorToolbarSettings.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
