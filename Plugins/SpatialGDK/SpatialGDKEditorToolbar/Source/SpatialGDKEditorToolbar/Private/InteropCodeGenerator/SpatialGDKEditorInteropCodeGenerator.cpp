@@ -81,74 +81,6 @@ bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
 }
 }// ::
 
-// Handle Unreal's naming of blueprint C++ files which are appended with _C.
-// It is common for users to not know about this feature and simply add the blueprint name to the DefaultSpatialGDK.ini ClassesToGenerate section
-// As such, when the passed in ClassName is invalid, we will add '_C' to the user provided ClassName if that gives us a valid class.
-bool CheckClassExistsWithCorrectionForBlueprints(FString& ClassName)
-{
-	if (LoadObject<UClass>(nullptr, *ClassName, nullptr, LOAD_EditorOnly, nullptr))
-	{
-		return true;
-	}
-
-	UE_LOG(LogSpatialGDKInteropCodeGenerator, Verbose, TEXT("Could not find unreal class for interop code generation: '%s', trying to find %s_C..."), *ClassName, *ClassName);
-
-	if (LoadObject<UClass>(nullptr, *(ClassName + TEXT("_C")), nullptr, LOAD_EditorOnly, nullptr))
-	{
-		// Correct for user mistake: add _C to ClassName so we return the valid blueprint name
-		ClassName.Append(TEXT("_C"));
-		return true;
-	}
-
-	UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not find unreal class for interop code generation: '%s'."), *ClassName);
-
-	return false;
-}
-
-//bool GenerateClassHeaderMap(ClassHeaderMap& OutClasses)
-//{
-//	// SpatialGDK config file definitions.
-//	const FString FileName = "DefaultEditorSpatialGDK.ini";
-//	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
-//	// Load the SpatialGDK config file
-//	LoadConfigFile(ConfigFilePath);
-//
-//	const FString UserClassesSectionName = "InteropCodeGen.ClassesToGenerate";
-//	const FConfigSection* UserInteropCodeGenSection = GetConfigSection(ConfigFilePath, UserClassesSectionName);
-//
-//	if (UserInteropCodeGenSection == nullptr)
-//	{
-//		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Unable to find section 'InteropCodeGen.ClassesToGenerate'."));
-//		return false;
-//	}
-//
-//	TArray<FName> AllCodeGenKeys;
-//	UserInteropCodeGenSection->GetKeys(AllCodeGenKeys);
-//
-//	// Iterate over the keys (class names) and extract header includes.
-//	for (FName ClassKey : AllCodeGenKeys)
-//	{
-//		TArray<FString> HeaderValueArray;
-//		UserInteropCodeGenSection->MultiFind(ClassKey, HeaderValueArray);
-//		FString ClassName = ClassKey.ToString();
-//
-//		// Check class exists, correcting user typos if necessary.
-//		if (!CheckClassExistsWithCorrectionForBlueprints(ClassName))
-//		{
-//			return false;
-//		}
-//
-//		// Now, ClassName is a class that must exist.
-//		// Note this doesn't modify UserInteropCodeGenSection, which still contains old class names without _C.
-//		OutClasses.Add(ClassName, HeaderValueArray);
-//
-//		// Just for some user facing logging.
-//		FString Headers = FString::Join(HeaderValueArray, TEXT(" "));
-//		UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("Found class to generate interop code for: '%s', with includes %s"), *ClassName, *Headers);
-//	}
-//	return true;
-//}
-
 TArray<FString> CreateSingletonListFromConfigFile()
 {
 	TArray<FString> SingletonList;
@@ -226,7 +158,7 @@ FString GenerateIntermediateDirectory()
 	return AbsoluteCombinedIntermediatePath;
 }
 
-bool SpatialGDKGenerateInteropCode(/*const ClassHeaderMap& InteropGeneratedClasses*/)
+bool SpatialGDKGenerateInteropCode()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 	if (!SpatialGDKToolbarSettings)
@@ -235,14 +167,14 @@ bool SpatialGDKGenerateInteropCode(/*const ClassHeaderMap& InteropGeneratedClass
 		return false;
 	}
 
-	ClassHeaderMap InteropClasses;
+	ClassHeaderMap InteropGeneratedClasses;
 	for (auto& element : SpatialGDKToolbarSettings->InteropCodegenClasses)
 	{
-		InteropClasses.Add(element.Actor, element.IncludeList);
+		InteropGeneratedClasses.Add(element.Actor, element.IncludeList);
 	}
 
 
-	if (!CheckClassNameListValidity(InteropClasses))
+	if (!CheckClassNameListValidity(InteropGeneratedClasses))
 	{
 		return false;
 	}
@@ -267,7 +199,7 @@ bool SpatialGDKGenerateInteropCode(/*const ClassHeaderMap& InteropGeneratedClass
 
 	const FString SchemaIntermediatePath = GenerateIntermediateDirectory();
 	const FString InteropIntermediatePath = GenerateIntermediateDirectory();
-	GenerateInteropFromClasses(InteropClasses, SchemaIntermediatePath, InteropIntermediatePath);
+	GenerateInteropFromClasses(InteropGeneratedClasses, SchemaIntermediatePath, InteropIntermediatePath);
 
 	const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
 	// Copy Interop files.

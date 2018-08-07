@@ -254,17 +254,9 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 	ShowTaskStartNotification("Generating Interop Code");
 	bInteropCodeGenRunning = true;
 
-	//ClassHeaderMap InteropGeneratedClasses;
-	//if (!GenerateClassHeaderMap(InteropGeneratedClasses))  // Checks that all classes are found and generate the class mapping.
-	//{
-	//	UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Not all classes found; check your DefaultEditorSpatialGDK.ini file."));
-	//	ShowFailedNotification("Interop Codegen Failed");
-	//	return;
-	//}
-
-	TFunction<bool()> CodegenTask = [/*InteropGeneratedClasses*/]()
+	TFunction<bool()> CodegenTask = []()
 	{
-		return SpatialGDKGenerateInteropCode(/*InteropGeneratedClasses*/);
+		return SpatialGDKGenerateInteropCode();
 	};
 
 	TFunction<void()> CompleteCallback = [this]() 
