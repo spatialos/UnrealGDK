@@ -4,4 +4,4 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSnapshot, Log, All);
 
-bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World);
+bool SpatialGDKGenerateSnapshot(UWorld* World);

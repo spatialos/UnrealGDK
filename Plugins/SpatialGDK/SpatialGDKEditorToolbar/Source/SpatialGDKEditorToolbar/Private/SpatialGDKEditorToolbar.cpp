@@ -237,9 +237,7 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 {
 	ShowTaskStartNotification("Started snapshot generation");
 
-	FString ProjectFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::GetPath(FPaths::GetProjectFilePath()));
-	FString CombinedPath = FPaths::Combine(*ProjectFilePath, TEXT("../spatial/snapshots"));
-	const bool bSuccess = SpatialGDKGenerateSnapshot(CombinedPath, GEditor->GetEditorWorldContext().World());
+	const bool bSuccess = SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World());
 
 	if(bSuccess)
 	{

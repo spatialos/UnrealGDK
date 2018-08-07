@@ -25,6 +25,14 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Stop on Exit"))
 	bool bStopSpatialOnExit;
 
+	/** Path to your SpatialOS snapshot. */
+	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot path"))
+	FDirectoryPath SpatialOSSnapshotPath;
+
+	/** Name of your SpatialOS snapshot file. */
+	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot file name"))
+	FString SpatialOSSnapshotFile;
+
 	UFUNCTION()
 	FString ToString();
 };
