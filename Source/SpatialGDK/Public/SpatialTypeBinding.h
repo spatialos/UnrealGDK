@@ -79,8 +79,7 @@ public:
 			checkf(CurrentContainerType, TEXT("A property in the chain (except the end) is not a container."));
 			UProperty* CurProperty = CurrentContainerType->FindPropertyByName(PropertyName);
 			PropertyChain.Add(CurProperty);
-			UStructProperty* StructProperty = Cast<UStructProperty>(CurProperty);
-			if (StructProperty)
+			if (UStructProperty* StructProperty = Cast<UStructProperty>(CurProperty))
 			{
 				CurrentContainerType = StructProperty->Struct;
 			}
@@ -126,32 +125,35 @@ private:
 class FHandoverHandleData
 {
 public:
-	FHandoverHandleData(UClass* Class, TArray<FName> PropertyNames) :
+	FHandoverHandleData(UClass* Class, TArray<FName> PropertyNames, TArray<int32> InPropertyIndices) :
     SubobjectProperty(false),
-    Offset(0)
+    Offset(0),
+	PropertyIndices(InPropertyIndices)
 	{
 		// Build property chain.
 		check(PropertyNames.Num() > 0);
+		check(PropertyNames.Num() == PropertyIndices.Num());
 		UStruct* CurrentContainerType = Class;
-		for (FName PropertyName : PropertyNames)
+		for (int i = 0; i < PropertyNames.Num(); ++i)
 		{
 			checkf(CurrentContainerType, TEXT("A property in the chain (except the end) is not a container."));
+			const FName& PropertyName = PropertyNames[i];
 			UProperty* CurProperty = CurrentContainerType->FindPropertyByName(PropertyName);
 			check(CurProperty);
 			PropertyChain.Add(CurProperty);
 			if (!SubobjectProperty)
 			{
 				Offset += CurProperty->GetOffset_ForInternal();
+				Offset += PropertyIndices[i] * CurProperty->ElementSize;
 			}
-			UStructProperty* StructProperty = Cast<UStructProperty>(CurProperty);
-			if (StructProperty)
+			
+			if (UStructProperty* StructProperty = Cast<UStructProperty>(CurProperty))
 			{
 				CurrentContainerType = StructProperty->Struct;
 			}
 			else
 			{
-				UObjectProperty* ObjectProperty = Cast<UObjectProperty>(CurProperty);
-				if (ObjectProperty)
+				if (UObjectProperty* ObjectProperty = Cast<UObjectProperty>(CurProperty))
 				{
 					CurrentContainerType = ObjectProperty->PropertyClass;
 					SubobjectProperty = true; // We are now recursing into a subobjects properties.
@@ -176,13 +178,13 @@ public:
 			for (int i = 0; i < PropertyChain.Num(); ++i)
 			{
 				Data += PropertyChain[i]->GetOffset_ForInternal();
+				Data += PropertyIndices[i] * PropertyChain[i]->ElementSize;
 
 				// If we're not the last property in the chain.
 				if (i < (PropertyChain.Num() - 1))
 				{
 					// Handover property chains can cross into subobjects, so we will need to deal with objects which are not inlined into the container.
-					UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyChain[i]);
-					if (ObjectProperty)
+					if (UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyChain[i]))
 					{
 						UObject* PropertyValue = ObjectProperty->GetObjectPropertyValue(Data);
 						Data = (uint8*)PropertyValue;
@@ -204,6 +206,7 @@ public:
 
 	TArray<UProperty*> PropertyChain;
 	UProperty* Property;
+	TArray<int32> PropertyIndices;
 
 private:
 	bool SubobjectProperty;  // If this is true, then this property refers to a property within a subobject.

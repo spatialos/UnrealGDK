@@ -926,17 +926,25 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
+			FString PropertyChainIndicesInitList;
 			TArray<FString> PropertyChainNames;
+			TArray<FString> PropertyChainIndices;
 			Algo::Transform(GetPropertyChain(HandoverProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
 			{
 				return TEXT("\"") + Property->Property->GetFName().ToString() + TEXT("\"");
 			});
 			PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
+			Algo::Transform(GetPropertyChain(HandoverProp.Value), PropertyChainIndices, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
+			{
+				return FString::FromInt(PropertyInfo->StaticArrayIndex);
+			});
+			PropertyChainIndicesInitList = FString::Join(PropertyChainIndices, TEXT(", "));
 
 			// Add the handle data to the map.
-			SourceWriter.Printf("HandoverHandleToPropertyMap.Add(%d, FHandoverHandleData(Class, {%s}));",
+			SourceWriter.Printf("HandoverHandleToPropertyMap.Add(%d, FHandoverHandleData(Class, {%s}, {%s}));",
 				Handle,
-				*PropertyChainInitList);
+				*PropertyChainInitList,
+				*PropertyChainIndicesInitList);
 		}
 	}
 
