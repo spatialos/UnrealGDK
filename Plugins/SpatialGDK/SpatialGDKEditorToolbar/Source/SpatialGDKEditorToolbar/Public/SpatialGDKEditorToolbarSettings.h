@@ -6,15 +6,18 @@
 #include "SpatialGDKEditorToolbarSettings.generated.h"
 
 USTRUCT()
-struct FIncludeList
+struct FInteropClassList
 {
 	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false))
+	UClass* Actor;
 
 	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false))
 	TArray<FString> IncludeList;
 };
 
-using ClassHeaderMap2 = TMap<UClass*, FIncludeList>;
+using ClassHeaderMap2 = TMap<UClass*, TArray<FString>>;
 
 UCLASS(config = EditorPerProjectUserSettings, defaultconfig)
 class USpatialGDKEditorToolbarSettings : public UObject
@@ -56,7 +59,7 @@ public:
 	TArray<UClass*> SingletonClasses;
 
 	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Classes to generate typebindings for"))
-	TMap<UClass*, FIncludeList> InteropCodegenClasses;
+	TArray<FInteropClassList> InteropCodegenClasses;
 
 	UFUNCTION()
 	FString ToString();

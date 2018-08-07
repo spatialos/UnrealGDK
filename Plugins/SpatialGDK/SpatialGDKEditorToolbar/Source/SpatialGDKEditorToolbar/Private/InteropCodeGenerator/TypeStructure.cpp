@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "TypeStructure.h"
-#include "SpatialGDKEditorInteropCodeGenerator.h"
 
 #include "Engine/SCS_Node.h"
 
@@ -191,7 +190,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	for (TFieldIterator<UProperty> It(Type); It; ++It)
 	{
 		UProperty* Property = *It;
-		
+
 		// Create property node and add it to the AST.
 		TSharedPtr<FUnrealProperty> PropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, StaticArrayIndex);
 
@@ -256,7 +255,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		{
 			continue;
 		}
-		
+
 		UObject* ContainerCDO = Class->GetDefaultObject();
 		check(ContainerCDO);
 
@@ -571,7 +570,7 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 	return RPCsByType;
 }
 
-TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& InteropGeneratedClasses)
+TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& InteropGeneratedClasses, const ClassHeaderMap2& Classes2)
 {
 	TSet<UClass*> ComponentClasses;
 
@@ -582,7 +581,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& I
 
 		for (UActorComponent* Component : NativeComponents)
 		{
-			AddComponentClassToSet(Component->GetClass(), ComponentClasses, Class, InteropGeneratedClasses);
+			AddComponentClassToSet(Component->GetClass(), ComponentClasses, Class, InteropGeneratedClasses, Classes2);
 		}
 
 		// Components that are added in a blueprint won't appear in the CDO.
@@ -597,7 +596,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& I
 						continue;
 					}
 
-					AddComponentClassToSet(Node->ComponentTemplate->GetClass(), ComponentClasses, Class, InteropGeneratedClasses);
+					AddComponentClassToSet(Node->ComponentTemplate->GetClass(), ComponentClasses, Class, InteropGeneratedClasses, Classes2);
 				}
 			}
 		}
@@ -606,9 +605,9 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& I
 	return ComponentClasses.Array();
 }
 
-void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass, const ClassHeaderMap& InteropGeneratedClasses)
+void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass, const ClassHeaderMap& InteropGeneratedClasses, const ClassHeaderMap2& Classes2)
 {
-	if (InteropGeneratedClasses.Find(ComponentClass->GetPathName()))
+	if (Classes2.Find(ComponentClass))
 	{
 		if (ComponentClasses.Find(ComponentClass) == nullptr)
 		{

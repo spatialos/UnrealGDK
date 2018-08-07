@@ -28,7 +28,7 @@ void OnStatusOutput(FString Message)
 	UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("%s"), *Message);
 }
 
-int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<FString>& TypeBindingHeaders, bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses)
+int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<FString>& TypeBindingHeaders, bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses, const ClassHeaderMap2& Classes2)
 {
 	FCodeWriter OutputSchema;
 	FCodeWriter OutputHeader;
@@ -46,7 +46,7 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 
 	// Generate forwarding code.
 	GenerateTypeBindingHeader(OutputHeader, SchemaFilename, TypeBindingFilename, Class, TypeInfo);
-	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, TypeBindingHeaders, bIsSingleton, InteropGeneratedClasses);
+	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, TypeBindingHeaders, bIsSingleton, InteropGeneratedClasses, Classes2);
 	OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *TypeBindingFilename));
 	OutputSource.WriteToFile(FString::Printf(TEXT("%s%s.cpp"), *ForwardingCodePath, *TypeBindingFilename));
 
@@ -194,10 +194,10 @@ void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const ClassHeader
 	{
 		//UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
 
-		const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value.IncludeList;
+		const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
 		bool bIsSingleton = SingletonList.Find(ClassHeaderList.Key->GetPathName()) != INDEX_NONE;
 
-		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, ClassHeaderList.Key, TypeBindingHeaders, bIsSingleton, Classes);
+		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, ClassHeaderList.Key, TypeBindingHeaders, bIsSingleton, Classes, Classes2);
 	}
 }
 
@@ -240,7 +240,15 @@ bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses
 		return false;
 	}
 
-	if (!CheckClassNameListValidity(InteropGeneratedClasses, SpatialGDKToolbarSettings->InteropCodegenClasses))
+	ClassHeaderMap2 InteropClasses;
+
+	for (auto& element : SpatialGDKToolbarSettings->InteropCodegenClasses)
+	{
+		InteropClasses.Add(element.Actor, element.IncludeList);
+	}
+
+
+	if (!CheckClassNameListValidity(InteropGeneratedClasses, InteropClasses))
 	{
 		return false;
 	}
@@ -265,7 +273,7 @@ bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses
 
 	const FString SchemaIntermediatePath = GenerateIntermediateDirectory();
 	const FString InteropIntermediatePath = GenerateIntermediateDirectory();
-	GenerateInteropFromClasses(InteropGeneratedClasses, SpatialGDKToolbarSettings->InteropCodegenClasses, SchemaIntermediatePath, InteropIntermediatePath);
+	GenerateInteropFromClasses(InteropGeneratedClasses, InteropClasses, SchemaIntermediatePath, InteropIntermediatePath);
 
 	const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
 	// Copy Interop files.

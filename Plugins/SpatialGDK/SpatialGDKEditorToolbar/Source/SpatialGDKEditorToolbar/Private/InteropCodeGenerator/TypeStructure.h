@@ -5,6 +5,7 @@
 #include "EngineMinimal.h"
 #include "Net/RepLayout.h"
 
+#include "SpatialGDKEditorToolbarSettings.h"
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 
 /*
@@ -221,10 +222,10 @@ FCmdHandlePropertyMap GetFlatHandoverData(TSharedPtr<FUnrealType> TypeInfo);
 FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo);
 
 // Get all supported components (not all subobjects) of an Actor class
-TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& InteropGeneratedClasses);
+TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& InteropGeneratedClasses, const ClassHeaderMap2& Classes2);
 
 // Properly add a component class to a set
-void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass, const ClassHeaderMap& InteropGeneratedClasses);
+void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass, const ClassHeaderMap& InteropGeneratedClasses, const ClassHeaderMap2& Classes2);
 
 // Given an AST, traverses all its parameters (and properties within structs) and generates a complete flattened list of properties.
 TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode);
