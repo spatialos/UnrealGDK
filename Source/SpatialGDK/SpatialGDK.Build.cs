@@ -83,8 +83,8 @@ public class SpatialGDK : ModuleRules
                 throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
         }
 
-        string CoreSdkImportLib = System.String.Format("{0}CoreSdkDll{1}", LibPrefix, ImportLibSuffix);
-        string CoreSdkSharedLib = System.String.Format("{0}CoreSdkDll{1}", LibPrefix, SharedLibSuffix);
+        string CoreSdkImportLib = System.String.Format("{0}worker{1}", LibPrefix, ImportLibSuffix);
+        string CoreSdkSharedLib = System.String.Format("{0}worker{1}", LibPrefix, SharedLibSuffix);
 
         PublicAdditionalLibraries.AddRange(new[] { Path.Combine(CoreSdkLibraryDir, CoreSdkImportLib) });
         RuntimeDependencies.Add(Path.Combine(CoreSdkLibraryDir, CoreSdkSharedLib), StagedFileType.NonUFS);

@@ -24,7 +24,7 @@ public:
 #else
 		Path = Path / TEXT("Win32");
 #endif
-		Path = Path / TEXT("CoreSdkDll.dll");
+		Path = Path / TEXT("worker.dll");
 		CoreSdkHandle = FPlatformProcess::GetDllHandle(*Path);
 #elif PLATFORM_PS4
 		CoreSdkHandle = FPlatformProcess::GetDllHandle(TEXT("libCoreSdkDll.prx"));

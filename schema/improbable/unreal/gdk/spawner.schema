@@ -19,3 +19,9 @@ component PlayerSpawner
     command SpawnPlayerResponse spawn_player(SpawnPlayerRequest);
 }
 
+component SpecialSpawner
+{
+    id = 100003;
+    command SpawnPlayerResponse special_spawn_player(SpawnPlayerRequest);
+}
+

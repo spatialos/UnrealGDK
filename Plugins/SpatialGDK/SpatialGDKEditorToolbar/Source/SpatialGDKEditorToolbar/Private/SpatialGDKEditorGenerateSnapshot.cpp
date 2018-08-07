@@ -29,6 +29,12 @@ const WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet
 const WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
 const WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
 
+// RTTB
+const WorkerAttributeSet CAPIClientAttributeSet{worker::List<std::string>{"CAPIClient"}};
+const WorkerAttributeSet CAPIWorkerAttributeSet{worker::List<std::string>{"CAPIWorker"}};
+const WorkerRequirementSet CAPIWorkerPermission{{CAPIWorkerAttributeSet}};
+const WorkerRequirementSet CAPIPermission{{CAPIClientAttributeSet, CAPIWorkerAttributeSet}};
+
 const Coordinates Origin{0, 0, 0};
 
 worker::Entity CreateSpawnerEntity()
@@ -42,6 +48,20 @@ worker::Entity CreateSpawnerEntity()
 		.SetReadAcl(AnyWorkerReadPermission)
 		.AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{}, UnrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, UnrealWorkerWritePermission)
+		.Build();
+}
+
+worker::Entity CreateSpecialSpawner()
+{
+	improbable::unreal::UnrealMetadata::Data UnrealMetadata;
+
+	return improbable::unreal::FEntityBuilder::Begin()
+		.AddPositionComponent(Position::Data{Origin}, CAPIWorkerPermission)
+		.AddMetadataComponent(Metadata::Data("SpecialSpawner"))
+		.SetPersistence(true)
+		.SetReadAcl(CAPIPermission)
+		.AddComponent<unreal::SpecialSpawner>(unreal::SpecialSpawner::Data{}, CAPIWorkerPermission)
+		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, CAPIWorkerPermission)
 		.Build();
 }
 
@@ -162,6 +182,14 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 	}
 
 	Result = OutputStream.WriteEntity(SpatialConstants::GLOBAL_STATE_MANAGER, CreateGlobalStateManagerEntity(SingletonNameToEntityId));
+	if (!Result.empty())
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
+		return false;
+	}
+
+	Result = OutputStream.WriteEntity(SpatialConstants::SPECIAL_SPAWNER, CreateSpecialSpawner());
+
 	if (!Result.empty())
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
