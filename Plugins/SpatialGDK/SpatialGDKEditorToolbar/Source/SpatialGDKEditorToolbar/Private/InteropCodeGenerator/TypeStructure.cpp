@@ -570,7 +570,7 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 	return RPCsByType;
 }
 
-TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& InteropGeneratedClasses, const ClassHeaderMap2& Classes2)
+TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& InteropGeneratedClasses)
 {
 	TSet<UClass*> ComponentClasses;
 
@@ -581,7 +581,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& I
 
 		for (UActorComponent* Component : NativeComponents)
 		{
-			AddComponentClassToSet(Component->GetClass(), ComponentClasses, Class, InteropGeneratedClasses, Classes2);
+			AddComponentClassToSet(Component->GetClass(), ComponentClasses, Class, InteropGeneratedClasses);
 		}
 
 		// Components that are added in a blueprint won't appear in the CDO.
@@ -596,7 +596,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& I
 						continue;
 					}
 
-					AddComponentClassToSet(Node->ComponentTemplate->GetClass(), ComponentClasses, Class, InteropGeneratedClasses, Classes2);
+					AddComponentClassToSet(Node->ComponentTemplate->GetClass(), ComponentClasses, Class, InteropGeneratedClasses);
 				}
 			}
 		}
@@ -605,9 +605,9 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& I
 	return ComponentClasses.Array();
 }
 
-void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass, const ClassHeaderMap& InteropGeneratedClasses, const ClassHeaderMap2& Classes2)
+void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass, const ClassHeaderMap& InteropGeneratedClasses)
 {
-	if (Classes2.Find(ComponentClass))
+	if (InteropGeneratedClasses.Find(ComponentClass))
 	{
 		if (ComponentClasses.Find(ComponentClass) == nullptr)
 		{

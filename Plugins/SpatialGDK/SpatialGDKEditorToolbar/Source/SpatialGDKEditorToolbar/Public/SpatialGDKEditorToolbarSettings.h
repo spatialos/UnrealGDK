@@ -17,8 +17,6 @@ struct FInteropClassList
 	TArray<FString> IncludeList;
 };
 
-using ClassHeaderMap2 = TMap<UClass*, TArray<FString>>;
-
 UCLASS(config = EditorPerProjectUserSettings, defaultconfig)
 class USpatialGDKEditorToolbarSettings : public UObject
 {

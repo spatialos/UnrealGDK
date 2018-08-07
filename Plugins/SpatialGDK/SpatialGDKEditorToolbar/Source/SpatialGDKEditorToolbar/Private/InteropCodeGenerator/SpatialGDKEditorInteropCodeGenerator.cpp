@@ -28,7 +28,7 @@ void OnStatusOutput(FString Message)
 	UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("%s"), *Message);
 }
 
-int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<FString>& TypeBindingHeaders, bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses, const ClassHeaderMap2& Classes2)
+int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<FString>& TypeBindingHeaders, bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses)
 {
 	FCodeWriter OutputSchema;
 	FCodeWriter OutputHeader;
@@ -46,31 +46,28 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 
 	// Generate forwarding code.
 	GenerateTypeBindingHeader(OutputHeader, SchemaFilename, TypeBindingFilename, Class, TypeInfo);
-	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, TypeBindingHeaders, bIsSingleton, InteropGeneratedClasses, Classes2);
+	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, TypeBindingHeaders, bIsSingleton, InteropGeneratedClasses);
 	OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *TypeBindingFilename));
 	OutputSource.WriteToFile(FString::Printf(TEXT("%s%s.cpp"), *ForwardingCodePath, *TypeBindingFilename));
 
 	return NumComponents;
 }
 
-bool CheckClassNameListValidity(const ClassHeaderMap& Classes, const ClassHeaderMap2& Classes2)
+bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
 {
 	// Pull out all the class names from the map. (These might contain underscores like "One_TwoThree" and "OneTwo_Three").
-	TArray<FString> ClassNames;
+	TArray<UClass*> ClassNames;
 	Classes.GetKeys(ClassNames);
 
-	TArray<UClass*> ClassNames2;
-	Classes2.GetKeys(ClassNames2);
-
 	// Remove all underscores from the class names, check for duplicates.
-	for (int i = 0; i < ClassNames2.Num() - 1; ++i)
+	for (int i = 0; i < ClassNames.Num() - 1; ++i)
 	{
-		const FString& ClassA = ClassNames2[i]->GetName();
+		const FString& ClassA = ClassNames[i]->GetName();
 		const FString SchemaTypeA = UnrealNameToSchemaTypeName(ClassA);
 
-		for (int j = i + 1; j < ClassNames2.Num(); ++j)
+		for (int j = i + 1; j < ClassNames.Num(); ++j)
 		{
-			const FString& ClassB = ClassNames2[j]->GetName();
+			const FString& ClassB = ClassNames[j]->GetName();
 			const FString SchemaTypeB = UnrealNameToSchemaTypeName(ClassB);
 
 			if (SchemaTypeA.Equals(SchemaTypeB))
@@ -108,49 +105,49 @@ bool CheckClassExistsWithCorrectionForBlueprints(FString& ClassName)
 	return false;
 }
 
-bool GenerateClassHeaderMap(ClassHeaderMap& OutClasses)
-{
-	// SpatialGDK config file definitions.
-	const FString FileName = "DefaultEditorSpatialGDK.ini";
-	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
-	// Load the SpatialGDK config file
-	LoadConfigFile(ConfigFilePath);
-
-	const FString UserClassesSectionName = "InteropCodeGen.ClassesToGenerate";
-	const FConfigSection* UserInteropCodeGenSection = GetConfigSection(ConfigFilePath, UserClassesSectionName);
-
-	if (UserInteropCodeGenSection == nullptr)
-	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Unable to find section 'InteropCodeGen.ClassesToGenerate'."));
-		return false;
-	}
-
-	TArray<FName> AllCodeGenKeys;
-	UserInteropCodeGenSection->GetKeys(AllCodeGenKeys);
-
-	// Iterate over the keys (class names) and extract header includes.
-	for (FName ClassKey : AllCodeGenKeys)
-	{
-		TArray<FString> HeaderValueArray;
-		UserInteropCodeGenSection->MultiFind(ClassKey, HeaderValueArray);
-		FString ClassName = ClassKey.ToString();
-
-		// Check class exists, correcting user typos if necessary.
-		if (!CheckClassExistsWithCorrectionForBlueprints(ClassName))
-		{
-			return false;
-		}
-
-		// Now, ClassName is a class that must exist.
-		// Note this doesn't modify UserInteropCodeGenSection, which still contains old class names without _C.
-		OutClasses.Add(ClassName, HeaderValueArray);
-
-		// Just for some user facing logging.
-		FString Headers = FString::Join(HeaderValueArray, TEXT(" "));
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("Found class to generate interop code for: '%s', with includes %s"), *ClassName, *Headers);
-	}
-	return true;
-}
+//bool GenerateClassHeaderMap(ClassHeaderMap& OutClasses)
+//{
+//	// SpatialGDK config file definitions.
+//	const FString FileName = "DefaultEditorSpatialGDK.ini";
+//	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
+//	// Load the SpatialGDK config file
+//	LoadConfigFile(ConfigFilePath);
+//
+//	const FString UserClassesSectionName = "InteropCodeGen.ClassesToGenerate";
+//	const FConfigSection* UserInteropCodeGenSection = GetConfigSection(ConfigFilePath, UserClassesSectionName);
+//
+//	if (UserInteropCodeGenSection == nullptr)
+//	{
+//		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Unable to find section 'InteropCodeGen.ClassesToGenerate'."));
+//		return false;
+//	}
+//
+//	TArray<FName> AllCodeGenKeys;
+//	UserInteropCodeGenSection->GetKeys(AllCodeGenKeys);
+//
+//	// Iterate over the keys (class names) and extract header includes.
+//	for (FName ClassKey : AllCodeGenKeys)
+//	{
+//		TArray<FString> HeaderValueArray;
+//		UserInteropCodeGenSection->MultiFind(ClassKey, HeaderValueArray);
+//		FString ClassName = ClassKey.ToString();
+//
+//		// Check class exists, correcting user typos if necessary.
+//		if (!CheckClassExistsWithCorrectionForBlueprints(ClassName))
+//		{
+//			return false;
+//		}
+//
+//		// Now, ClassName is a class that must exist.
+//		// Note this doesn't modify UserInteropCodeGenSection, which still contains old class names without _C.
+//		OutClasses.Add(ClassName, HeaderValueArray);
+//
+//		// Just for some user facing logging.
+//		FString Headers = FString::Join(HeaderValueArray, TEXT(" "));
+//		UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("Found class to generate interop code for: '%s', with includes %s"), *ClassName, *Headers);
+//	}
+//	return true;
+//}
 
 TArray<FString> CreateSingletonListFromConfigFile()
 {
@@ -184,20 +181,18 @@ TArray<FString> CreateSingletonListFromConfigFile()
 	return SingletonList;
 }
 
-void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const ClassHeaderMap2& Classes2, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
+void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
 {
 	TArray<FString> SingletonList = CreateSingletonListFromConfigFile();
 
 	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 	int ComponentId = 100010;
-	for (auto& ClassHeaderList : Classes2)
+	for (auto& ClassHeaderList : Classes)
 	{
-		//UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassHeaderList.Key);
-
 		const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
 		bool bIsSingleton = SingletonList.Find(ClassHeaderList.Key->GetPathName()) != INDEX_NONE;
 
-		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, ClassHeaderList.Key, TypeBindingHeaders, bIsSingleton, Classes, Classes2);
+		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, ClassHeaderList.Key, TypeBindingHeaders, bIsSingleton, Classes);
 	}
 }
 
@@ -231,7 +226,7 @@ FString GenerateIntermediateDirectory()
 	return AbsoluteCombinedIntermediatePath;
 }
 
-bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses)
+bool SpatialGDKGenerateInteropCode(/*const ClassHeaderMap& InteropGeneratedClasses*/)
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 	if (!SpatialGDKToolbarSettings)
@@ -240,15 +235,14 @@ bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses
 		return false;
 	}
 
-	ClassHeaderMap2 InteropClasses;
-
+	ClassHeaderMap InteropClasses;
 	for (auto& element : SpatialGDKToolbarSettings->InteropCodegenClasses)
 	{
 		InteropClasses.Add(element.Actor, element.IncludeList);
 	}
 
 
-	if (!CheckClassNameListValidity(InteropGeneratedClasses, InteropClasses))
+	if (!CheckClassNameListValidity(InteropClasses))
 	{
 		return false;
 	}
@@ -273,7 +267,7 @@ bool SpatialGDKGenerateInteropCode(const ClassHeaderMap& InteropGeneratedClasses
 
 	const FString SchemaIntermediatePath = GenerateIntermediateDirectory();
 	const FString InteropIntermediatePath = GenerateIntermediateDirectory();
-	GenerateInteropFromClasses(InteropGeneratedClasses, InteropClasses, SchemaIntermediatePath, InteropIntermediatePath);
+	GenerateInteropFromClasses(InteropClasses, SchemaIntermediatePath, InteropIntermediatePath);
 
 	const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
 	// Copy Interop files.
