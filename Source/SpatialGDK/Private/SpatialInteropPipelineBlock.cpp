@@ -187,6 +187,21 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 		RemoveEntityImpl(PendingRemoveEntity);
 	}
 
+	// Notify authority changes
+	for (auto& PendingAuthorityChange : PendingAuthorityChanges)
+	{
+		// Use position component as a proxy for overall actor authority
+		if (PendingAuthorityChange.Key.ComponentId == UPositionComponent::ComponentId)
+		{
+			AActor* EntityActor = EntityRegistry->GetActorFromEntityId(PendingAuthorityChange.Key.EntityId);
+			if (EntityActor)
+			{
+				EntityActor->OnSpatialAuthorityChange();
+				UE_LOG(LogTemp, Log, TEXT("Authority change processed: entityID: %d, componentID: %d, authorityChangeOp: %d"), PendingAuthorityChange.Key.EntityId, PendingAuthorityChange.Key.ComponentId, (int)PendingAuthorityChange.Value.Authority);
+			}
+		}
+	}
+
 	NetDriver->GetSpatialInterop()->OnLeaveCriticalSection();
 
 	// Mark that we've left the critical section.
