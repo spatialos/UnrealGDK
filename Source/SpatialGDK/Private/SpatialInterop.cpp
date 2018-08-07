@@ -79,6 +79,22 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 			ExecuteInitialSingletonActorReplication(*GetSingletonNameToEntityId());
 		}
 	});
+
+	View->OnReserveEntityIdResponse([this](const worker::ReserveEntityIdResponseOp& Op)
+	{
+		if (USpatialActorChannel* Channel = CleanPendingRequest(Op.RequestId.Id))
+		{
+			Channel->OnReserveEntityIdResponse(Op);
+		}
+	});
+
+	View->OnCreateEntityResponse([this](const worker::CreateEntityResponseOp& Op)
+	{
+		if (USpatialActorChannel* Channel = CleanPendingRequest(Op.RequestId.Id))
+		{
+			Channel->OnCreateEntityResponse(Op);
+		}
+	});
 }
 
 USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
@@ -163,6 +179,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 				.Build();
 
 			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
+			AddPendingActorRequest(CreateEntityRequestId.Id, Channel);
 		}
 		UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
 			*SpatialOSInstance->GetWorkerId(), *Actor->GetName(), Channel->GetEntityId().ToSpatialEntityId(), CreateEntityRequestId.Id);
@@ -171,7 +188,25 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 	{
 		UE_LOG(LogSpatialGDKInterop, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
 	}
+
 	return CreateEntityRequestId;
+}
+
+worker::RequestId<worker::ReserveEntityIdRequest> USpatialInterop::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
+{
+	worker::RequestId<worker::ReserveEntityIdRequest> ReserveEntityIdRequest;
+	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
+	if (PinnedConnection.IsValid())
+	{
+		ReserveEntityIdRequest = PinnedConnection->SendReserveEntityIdRequest(0);
+		AddPendingActorRequest(ReserveEntityIdRequest.Id, Channel);
+		UE_LOG(LogSpatialGDKInterop, Log, TEXT("Opened channel for actor with no entity ID. Initiated reserve entity ID. Request id: %d"), ReserveEntityIdRequest.Id);
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKInterop, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
+	}
+	return ReserveEntityIdRequest;
 }
 
 worker::RequestId<worker::DeleteEntityRequest> USpatialInterop::SendDeleteEntityRequest(const FEntityId& EntityId)
@@ -664,6 +699,22 @@ void USpatialInterop::ResolvePendingIncomingRPCs(const improbable::unreal::Unrea
 		}
 		PendingIncomingRPCs.Remove(ObjectRef);
 	}
+}
+
+void USpatialInterop::AddPendingActorRequest(FUntypedRequestId RequestId, USpatialActorChannel* Channel)
+{
+	PendingActorRequests.Emplace(RequestId, Channel);
+}
+
+USpatialActorChannel* USpatialInterop::CleanPendingRequest(FUntypedRequestId RequestId)
+{
+	USpatialActorChannel** Channel = PendingActorRequests.Find(RequestId);
+	if (Channel == nullptr)
+	{
+		return nullptr;
+	}
+	PendingActorRequests.Remove(RequestId);
+	return *Channel;
 }
 
 void USpatialInterop::ResolvePendingOutgoingArrayUpdates(UObject* Object)

@@ -165,6 +165,7 @@ public:
 
 	// Sending component updates and RPCs.
 	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
+	worker::RequestId<worker::ReserveEntityIdRequest> SendReserveEntityIdRequest(USpatialActorChannel* Channel);
 	worker::RequestId<worker::DeleteEntityRequest> SendDeleteEntityRequest(const FEntityId& EntityId);
 	void SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
@@ -253,6 +254,9 @@ private:
 	// Outgoing RPCs (for retry logic).
 	TMap<FUntypedRequestId, TSharedPtr<FOutgoingReliableRPC>> OutgoingReliableRPCs;
 
+	// Pending ReserveEntity and CreateEntity requests.
+	TMap<FUntypedRequestId, USpatialActorChannel*> PendingActorRequests;
+
 	// Pending outgoing object ref property updates.
 	FPendingOutgoingObjectUpdateMap PendingOutgoingObjectUpdates;
 
@@ -287,4 +291,7 @@ private:
 	void ResolvePendingOutgoingArrayUpdates(UObject* Object);
 
 	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
+
+	USpatialActorChannel* CleanPendingRequest(FUntypedRequestId RequestId);
+	void AddPendingActorRequest(FUntypedRequestId RequestId, USpatialActorChannel* Channel);
 };

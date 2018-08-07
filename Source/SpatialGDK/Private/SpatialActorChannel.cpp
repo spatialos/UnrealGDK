@@ -54,8 +54,6 @@ void UpdateChangelistHistory(FRepState * RepState)
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
 	, ActorEntityId(0)
-	, ReserveEntityIdRequestId(-1)
-	, CreateEntityRequestId(-1)
 	, SpatialNetDriver(nullptr)
 {
 	bCoreActor = true;
@@ -70,47 +68,6 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	check(SpatialNetDriver);
 
 	WorkerView = SpatialNetDriver->GetSpatialOS()->GetView();
-	WorkerConnection = SpatialNetDriver->GetSpatialOS()->GetConnection();
-
-	BindToSpatialView();
-}
-
-void USpatialActorChannel::BindToSpatialView()
-{
-	if (SpatialNetDriver->ServerConnection)
-	{
-		// Don't need to bind to reserve/create entity responses on the client.
-		return;
-	}
-
-	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
-	if (PinnedView.IsValid())
-	{
-		ReserveEntityCallback = PinnedView->OnReserveEntityIdResponse([this](const worker::ReserveEntityIdResponseOp& Op)
-		{
-			if (Op.RequestId == ReserveEntityIdRequestId)
-			{
-				OnReserveEntityIdResponse(Op);
-			}			
-		});
-		CreateEntityCallback = PinnedView->OnCreateEntityResponse([this](const worker::CreateEntityResponseOp& Op)
-		{
-			if (Op.RequestId == CreateEntityRequestId)
-			{
-				OnCreateEntityResponse(Op);
-			}
-		});
-	}
-}
-
-void USpatialActorChannel::UnbindFromSpatialView() const
-{
-	//todo-giray: Uncomment the rest when worker sdk finishes the FR that gracefully handles removing unbound callback keys.
-	return;
-	/*
-	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
-	PinnedView->Remove(ReserveEntityCallback);
-	PinnedView->Remove(CreateEntityCallback);*/
 }
 
 void USpatialActorChannel::DeleteEntityIfAuthoritative()
@@ -163,8 +120,6 @@ bool USpatialActorChannel::IsCriticalEntity()
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
-	UnbindFromSpatialView();
-
 #if WITH_EDITOR
 	if (SpatialNetDriver->IsServer() &&
 		SpatialNetDriver->GetWorld()->WorldType == EWorldType::PIE &&
@@ -401,7 +356,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 			// Calculate initial spatial position (but don't send component update) and create the entity.
 			LastSpatialPosition = GetActorSpatialPosition(Actor);
-			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialRepChanged, HandoverChanged);
+			Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialRepChanged, HandoverChanged);
 		}
 		else
 		{
@@ -547,14 +502,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		// Mark this channel as being responsible for creating this entity once we have an entity ID.
 		bCreatingNewEntity = true;
 
-		// Reserve an entity ID for this channel.
-		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
-		if (PinnedConnection.IsValid())
-		{
-			ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
-		}
-		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with no entity ID. Initiated reserve entity ID. Request id: %d"),
-			*InActor->GetName(), ReserveEntityIdRequestId.Id);
+		Interop->SendReserveEntityIdRequest(this);
 	}
 	else
 	{
@@ -594,17 +542,8 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	{
 		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.Message.c_str()));
 		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
-		UnbindFromSpatialView();
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received entity id (%d) for: %s. Request id: %d"), Op.EntityId.value_or(0), *Actor->GetName(), ReserveEntityIdRequestId.Id);
-
-	auto PinnedView = WorkerView.Pin();
-	if (PinnedView.IsValid())
-	{
-		PinnedView->Remove(ReserveEntityCallback);
-	}
-
 	ActorEntityId = *Op.EntityId;
 
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
@@ -629,18 +568,9 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 	{
 		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
 		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
-		UnbindFromSpatialView();
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Created entity (%lld) for: %s. Request id: %d"), ActorEntityId.ToSpatialEntityId(), *Actor->GetName(), ReserveEntityIdRequestId.Id);
-
-	auto PinnedView = WorkerView.Pin();
-	if (PinnedView.IsValid())
-	{
-		PinnedView->Remove(CreateEntityCallback);
-	}
-
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received create entity response op for %lld"), ActorEntityId.ToSpatialEntityId());
+	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Created entity (%lld) for: %s."), ActorEntityId.ToSpatialEntityId(), *Actor->GetName());
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()
