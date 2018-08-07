@@ -146,7 +146,7 @@ bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 FString SetupSnapshotGenerationPath()
 {
 	// Default path and file names.
-	const FString& ProjectFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::GetPath(FPaths::GetProjectFilePath()));
+	const FString& ProjectFilePath = FPaths::ConvertRelativePathToFull(*FPaths::GetPath(FPaths::GetProjectFilePath()));
 	FString SavePath = FPaths::Combine(*ProjectFilePath, TEXT("../spatial/snapshots"));
 	FString SnapshotFileName = TEXT("default.snapshot");
 
