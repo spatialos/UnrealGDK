@@ -617,7 +617,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	// If a Singleton was created, update the GSM with the proper Id.
 	if (Interop->IsSingletonClass(Actor->GetClass()))
 	{
-		Interop->UpdateGlobalStateManager(Actor->GetClass()->GetName(), ActorEntityId);
+		Interop->UpdateGlobalStateManager(Actor->GetClass()->GetPathName(), ActorEntityId);
 	}
 }
 
