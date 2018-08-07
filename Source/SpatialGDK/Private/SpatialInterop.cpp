@@ -82,7 +82,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 
 	View->OnReserveEntityIdResponse([this](const worker::ReserveEntityIdResponseOp& Op)
 	{
-		if (USpatialActorChannel* Channel = CleanPendingRequest(Op.RequestId.Id))
+		if (USpatialActorChannel* Channel = RemovePendingActorRequest(Op.RequestId.Id))
 		{
 			Channel->OnReserveEntityIdResponse(Op);
 		}
@@ -90,7 +90,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 
 	View->OnCreateEntityResponse([this](const worker::CreateEntityResponseOp& Op)
 	{
-		if (USpatialActorChannel* Channel = CleanPendingRequest(Op.RequestId.Id))
+		if (USpatialActorChannel* Channel = RemovePendingActorRequest(Op.RequestId.Id))
 		{
 			Channel->OnCreateEntityResponse(Op);
 		}
@@ -706,7 +706,7 @@ void USpatialInterop::AddPendingActorRequest(FUntypedRequestId RequestId, USpati
 	PendingActorRequests.Emplace(RequestId, Channel);
 }
 
-USpatialActorChannel* USpatialInterop::CleanPendingRequest(FUntypedRequestId RequestId)
+USpatialActorChannel* USpatialInterop::RemovePendingActorRequest(FUntypedRequestId RequestId)
 {
 	USpatialActorChannel** Channel = PendingActorRequests.Find(RequestId);
 	if (Channel == nullptr)

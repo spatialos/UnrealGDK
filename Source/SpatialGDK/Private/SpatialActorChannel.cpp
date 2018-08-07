@@ -544,6 +544,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		return;
 	}
+	UE_LOG(LogSpatialGDKActorChannel, Verbose, TEXT("Received entity id (%d) for: %s."), Op.EntityId.value_or(0), *Actor->GetName());
 	ActorEntityId = *Op.EntityId;
 
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());

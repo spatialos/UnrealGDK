@@ -292,6 +292,6 @@ private:
 
 	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
 
-	USpatialActorChannel* CleanPendingRequest(FUntypedRequestId RequestId);
+	USpatialActorChannel* RemovePendingActorRequest(FUntypedRequestId RequestId);
 	void AddPendingActorRequest(FUntypedRequestId RequestId, USpatialActorChannel* Channel);
 };
