@@ -96,6 +96,8 @@ USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 
 worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
+	// !!! DTB Here
+
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
 	if (PinnedConnection.IsValid())
@@ -200,6 +202,8 @@ void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const
 
 void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
+	// !!! DTB Here
+
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)
 	{
@@ -222,6 +226,8 @@ void USpatialInterop::SendSpatialUpdateSubobject(USpatialActorChannel* Channel, 
 
 void USpatialInterop::InvokeRPC(UObject* TargetObject, const UFunction* const Function, void* Parameters)
 {
+	// !!! DTB Here
+
 	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetObject->GetClass());
 	if (!Binding)
 	{

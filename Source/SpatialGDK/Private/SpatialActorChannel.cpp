@@ -640,6 +640,8 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 
 void USpatialActorChannel::UpdateSpatialPosition()
 {
+	// !!! DTB here
+
 	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
 	// handed between workers at the same time (which is not guaranteed), we ensure that we update the position component 
 	// of the PlayerController and PlayerState at the same time as the pawn.
