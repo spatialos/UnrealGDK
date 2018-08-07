@@ -891,19 +891,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
 			FString PropertyChainIndicesInitList;
-			TArray<FString> PropertyChainNames;
-			TArray<FString> PropertyChainIndices;
-			Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
-			{
-				return TEXT("\"") + PropertyInfo->Property->GetFName().ToString() + TEXT("\"");
-			});
-			PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
-
-			Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainIndices, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
-			{
-				return FString::FromInt(PropertyInfo->StaticArrayIndex);
-			});
-			PropertyChainIndicesInitList = FString::Join(PropertyChainIndices, TEXT(", "));
+			GetPropertyChainListsAsStrings(RepProp.Value, PropertyChainInitList, PropertyChainIndicesInitList);
 
 			SourceWriter.Printf("RepHandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, {%s}, %s, %s));",
 				RepProp.Value->ReplicationData->Handle,
@@ -927,18 +915,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
 			FString PropertyChainIndicesInitList;
-			TArray<FString> PropertyChainNames;
-			TArray<FString> PropertyChainIndices;
-			Algo::Transform(GetPropertyChain(HandoverProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
-			{
-				return TEXT("\"") + Property->Property->GetFName().ToString() + TEXT("\"");
-			});
-			PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
-			Algo::Transform(GetPropertyChain(HandoverProp.Value), PropertyChainIndices, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
-			{
-				return FString::FromInt(PropertyInfo->StaticArrayIndex);
-			});
-			PropertyChainIndicesInitList = FString::Join(PropertyChainIndices, TEXT(", "));
+			GetPropertyChainListsAsStrings(HandoverProp.Value, PropertyChainInitList, PropertyChainIndicesInitList);
 
 			// Add the handle data to the map.
 			SourceWriter.Printf("HandoverHandleToPropertyMap.Add(%d, FHandoverHandleData(Class, {%s}, {%s}));",
@@ -2239,4 +2216,22 @@ void GenerateFunction_RPCOnCommandResponse(FCodeWriter& SourceWriter, UClass* Cl
 	SourceWriter.Printf("Interop->HandleCommandResponse_Internal(TEXT(\"%s\"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));",
 		*RPC->Function->GetName());
 	SourceWriter.End();
+}
+
+void GetPropertyChainListsAsStrings(const TSharedPtr<FUnrealProperty>& Prop, FString& OutNames, FString& OutIndicies)
+{
+	// Create property chain initialiser list.
+	TArray<FString> PropertyChainNames;
+	TArray<FString> PropertyChainIndices;
+	Algo::Transform(GetPropertyChain(Prop), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
+	{
+		return TEXT("\"") + PropertyInfo->Property->GetFName().ToString() + TEXT("\"");
+	});
+	OutNames = FString::Join(PropertyChainNames, TEXT(", "));
+
+	Algo::Transform(GetPropertyChain(Prop), PropertyChainIndices, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
+	{
+		return FString::FromInt(PropertyInfo->StaticArrayIndex);
+	});
+	OutIndicies = FString::Join(PropertyChainIndices, TEXT(", "));
 }

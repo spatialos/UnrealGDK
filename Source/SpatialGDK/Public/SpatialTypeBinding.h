@@ -126,9 +126,9 @@ class FHandoverHandleData
 {
 public:
 	FHandoverHandleData(UClass* Class, TArray<FName> PropertyNames, TArray<int32> InPropertyIndices) :
-    SubobjectProperty(false),
-    Offset(0),
-	PropertyIndices(InPropertyIndices)
+		SubobjectProperty(false),
+		Offset(0),
+		PropertyIndices(InPropertyIndices)
 	{
 		// Build property chain.
 		check(PropertyNames.Num() > 0);
