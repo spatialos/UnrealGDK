@@ -422,8 +422,6 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
 					EntityActor = FindObject<AActor>(World, *FullPath);
 
-					// Server will naturally create SpatialActorChannels for the replicated stably named actors, so remove the stable reference
-					// Clients do not create SpatialActorChannels, so continue on the normal path
 					if (EntityActor != nullptr)
 					{
 						// If the actor is pending kill (probably from timeout or going out and in the view), pretend we did not find it in the level
@@ -431,6 +429,8 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 						{
 							EntityActor = nullptr;
 						}
+						// Server will naturally create SpatialActorChannels for the replicated stably named actors, so remove the stable reference
+						// Clients do not create SpatialActorChannels, so continue on the normal path
 						else if (NetDriver->IsServer())
 						{
 							PackageMap->RemoveStablyNamedObject(EntityActor);
