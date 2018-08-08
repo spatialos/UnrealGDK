@@ -7,8 +7,10 @@ USpatialGDKEditorToolbarSettings::USpatialGDKEditorToolbarSettings(const FObject
 	bStopSpatialOnExit(false),
 	SpatialOSSnapshotFile(FString(TEXT("default.snapshot")))
 {
-	ProjectRootFolder.Path = FPaths::ConvertRelativePathToFull(FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../spatial/")));
+	ProjectRootFolder.Path = TEXT("");
 	SpatialOSSnapshotPath.Path = FPaths::Combine(*ProjectRootFolder.Path, TEXT("snapshots/"));
+	InteropCodegenOutputFolder.Path = TEXT("");
+	GeneratedSchemaOutputFolder.Path = TEXT("");
 }
 
 FString USpatialGDKEditorToolbarSettings::ToString()
@@ -19,9 +21,12 @@ FString USpatialGDKEditorToolbarSettings::ToString()
 	Args.Add(bStopSpatialOnExit);
 	Args.Add(SpatialOSSnapshotPath.Path);
 	Args.Add(SpatialOSSnapshotFile);
+	Args.Add(InteropCodegenOutputFolder.Path);
+	Args.Add(GeneratedSchemaOutputFolder.Path);
 
 	return FString::Format(TEXT("ProjectRootFolder={0}, SpatialOSLaunchArgument={1}, "
-		"bStopSpatialOnExit={2}, SpatialOSSnapshotPath={3}, "
-		"SpatialOSSnapshotFile={4}"),
+								"bStopSpatialOnExit={2}, SpatialOSSnapshotPath={3}, "
+								"SpatialOSSnapshotFile={4}, InteropCodegenOutputFolder={5}"
+								"GeneratedSchemaOutputFolder={6}"),
 						   Args);
 }

@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "TypeStructure.h"
-#include "SpatialGDKEditorInteropCodeGenerator.h"
 
 #include "Engine/SCS_Node.h"
 
@@ -191,7 +190,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	for (TFieldIterator<UProperty> It(Type); It; ++It)
 	{
 		UProperty* Property = *It;
-		
+
 		// Create property node and add it to the AST.
 		TSharedPtr<FUnrealProperty> PropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, StaticArrayIndex);
 
@@ -256,7 +255,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		{
 			continue;
 		}
-		
+
 		UObject* ContainerCDO = Class->GetDefaultObject();
 		check(ContainerCDO);
 
@@ -608,7 +607,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& I
 
 void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass, const ClassHeaderMap& InteropGeneratedClasses)
 {
-	if (InteropGeneratedClasses.Find(ComponentClass->GetPathName()))
+	if (InteropGeneratedClasses.Find(ComponentClass))
 	{
 		if (ComponentClasses.Find(ComponentClass) == nullptr)
 		{

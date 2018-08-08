@@ -4,7 +4,6 @@
 #include "EntityBuilder.h"
 #include "SpatialConstants.h"
 #include "SpatialOSCommon.h"
-#include "SpatialGDKEditorUtils.h"
 #include "SpatialGDKEditorToolbarSettings.h"
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
 #include <improbable/standard_library.h>
@@ -78,31 +77,12 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 
 bool CreateSingletonToIdMap(NameToEntityIdMap& SingletonNameToEntityId)
 {
-	const FString FileName = "DefaultEditorSpatialGDK.ini";
-	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
-
-	// Load the SpatialGDK config file
-	const FConfigFile* ConfigFile = LoadConfigFile(ConfigFilePath);
-	if (!ConfigFile)
-	{
-		return false;
-	}
-
-	const FString SectionName = "SnapshotGenerator.SingletonActorClasses";
-	const FConfigSection* SingletonActorClassesSection = GetConfigSection(ConfigFilePath, SectionName);
-	if (SingletonActorClassesSection == nullptr)
-	{
-		return false;
-	}
-
-	TArray<FName> SingletonActorClasses;
-	SingletonActorClassesSection->GetKeys(SingletonActorClasses);
-
-	for (FName ClassName : SingletonActorClasses)
+	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	for (UClass* Class : SpatialGDKToolbarSettings->SingletonClasses)
 	{
 		// Id is initially 0 to indicate that this Singleton entity has not been created yet.
 		// When the worker authoritative over the GSM sees 0, it knows it is safe to create it.
-		SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*(ClassName.ToString()))), 0);
+		SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*(Class->GetPathName()))), 0);
 	}
 
 	return true;
@@ -150,19 +130,18 @@ FString SetupSnapshotGenerationPath()
 	FString SavePath = FPaths::Combine(*ProjectFilePath, TEXT("../spatial/snapshots"));
 	FString SnapshotFileName = TEXT("default.snapshot");
 
-	if (const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>())
+	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	
+	if (!Settings->SpatialOSSnapshotPath.Path.IsEmpty())
 	{
-		if (!Settings->SpatialOSSnapshotPath.Path.IsEmpty())
-		{
-			SavePath = Settings->SpatialOSSnapshotPath.Path;
-		}
-
-		if (!Settings->SpatialOSSnapshotFile.IsEmpty())
-		{
-			SnapshotFileName = Settings->SpatialOSSnapshotFile;
-		}
+		SavePath = Settings->SpatialOSSnapshotPath.Path;
 	}
 
+	if (!Settings->SpatialOSSnapshotFile.IsEmpty())
+	{
+		SnapshotFileName = Settings->SpatialOSSnapshotFile;
+	}
+	
 	SavePath = FPaths::Combine(*SavePath, SnapshotFileName);
 	return SavePath;
 }

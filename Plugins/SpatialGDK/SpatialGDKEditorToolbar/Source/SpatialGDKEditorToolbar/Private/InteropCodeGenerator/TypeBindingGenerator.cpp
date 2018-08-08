@@ -4,6 +4,8 @@
 #include "SchemaGenerator.h"
 #include "TypeStructure.h"
 
+#include "SpatialGDKEditorToolbarSettings.h"
+
 #include "Utils/CodeWriter.h"
 #include "Utils/DataTypeUtilities.h"
 
