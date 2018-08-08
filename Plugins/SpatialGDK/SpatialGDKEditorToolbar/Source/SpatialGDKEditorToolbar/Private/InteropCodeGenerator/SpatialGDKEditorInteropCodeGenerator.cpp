@@ -52,21 +52,21 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	return NumComponents;
 }
 
-bool CheckClassNameListValidity(const ClassHeaderMap& Classes)
+bool CheckClassNameListValidity(const ClassHeaderMap& ClassMap)
 {
 	// Pull out all the class names from the map. (These might contain underscores like "One_TwoThree" and "OneTwo_Three").
-	TArray<UClass*> ClassNames;
-	Classes.GetKeys(ClassNames);
+	TArray<UClass*> Classes;
+	ClassMap.GetKeys(Classes);
 
 	// Remove all underscores from the class names, check for duplicates.
-	for (int i = 0; i < ClassNames.Num() - 1; ++i)
+	for (int i = 0; i < Classes.Num() - 1; ++i)
 	{
-		const FString& ClassA = ClassNames[i]->GetName();
+		const FString& ClassA = Classes[i]->GetName();
 		const FString SchemaTypeA = UnrealNameToSchemaTypeName(ClassA);
 
-		for (int j = i + 1; j < ClassNames.Num(); ++j)
+		for (int j = i + 1; j < Classes.Num(); ++j)
 		{
-			const FString& ClassB = ClassNames[j]->GetName();
+			const FString& ClassB = Classes[j]->GetName();
 			const FString SchemaTypeB = UnrealNameToSchemaTypeName(ClassB);
 
 			if (SchemaTypeA.Equals(SchemaTypeB))
@@ -133,7 +133,7 @@ bool SpatialGDKGenerateInteropCode()
 	}
 
 	ClassHeaderMap InteropGeneratedClasses;
-	for (auto& element : SpatialGDKToolbarSettings->InteropCodegenClasses)
+	for (auto& Element : SpatialGDKToolbarSettings->InteropCodegenClasses)
 	{
 		InteropGeneratedClasses.Add(element.Actor, element.IncludeList);
 	}
