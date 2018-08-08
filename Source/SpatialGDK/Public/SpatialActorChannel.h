@@ -109,6 +109,9 @@ public:
 	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
 	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
 
+	void OnReserveEntityIdResponseCAPI(const struct Worker_ReserveEntityIdResponseOp& Op);
+	void OnCreateEntityResponseCAPI(const struct Worker_CreateEntityResponseOp& Op);
+
 protected:
 	// UChannel interface
 	virtual bool CleanUp(const bool bForDestroy) override;

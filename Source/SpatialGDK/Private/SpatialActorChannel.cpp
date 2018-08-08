@@ -14,6 +14,8 @@
 #include "SpatialPackageMapClient.h"
 #include "SpatialTypeBinding.h"
 
+#include "DTBManager.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
 
 namespace
@@ -491,8 +493,6 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		}
 	}
 
-	// !!! DTB Here
-
 	// Get the entity ID from the entity registry (or return 0 if it doesn't exist).
 	check(SpatialNetDriver->GetEntityRegistry());
 	ActorEntityId = SpatialNetDriver->GetEntityRegistry()->GetEntityIdFromActor(InActor).ToSpatialEntityId();
@@ -506,7 +506,14 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		// Mark this channel as being responsible for creating this entity once we have an entity ID.
 		bCreatingNewEntity = true;
 
-		Interop->SendReserveEntityIdRequest(this);
+		if (InActor->GetClass()->GetName() == TEXT("DTBActor"))
+		{
+			Interop->DTBManager->SendReserveEntityIdRequest(this);
+		}
+		else
+		{
+			Interop->SendReserveEntityIdRequest(this);
+		}
 	}
 	else
 	{
@@ -578,9 +585,41 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Created entity (%lld) for: %s."), ActorEntityId.ToSpatialEntityId(), *Actor->GetName());
 }
 
+void USpatialActorChannel::OnReserveEntityIdResponseCAPI(const Worker_ReserveEntityIdResponseOp& Op)
+{
+	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+	{
+		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("!!! Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.message));
+		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
+		return;
+	}
+	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("!!! Received entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
+	ActorEntityId = (worker::EntityId)Op.entity_id;
+
+	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
+
+	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+
+	// Inform USpatialInterop of this new actor channel/entity pairing
+	Interop->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
+}
+
+void USpatialActorChannel::OnCreateEntityResponseCAPI(const Worker_CreateEntityResponseOp& Op)
+{
+	check(SpatialNetDriver->GetNetMode() < NM_Client);
+
+	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+	{
+		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("!!! Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
+		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
+		return;
+	}
+	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("!!! Created entity (%lld) for: %s."), ActorEntityId.ToSpatialEntityId(), *Actor->GetName());
+}
+
 void USpatialActorChannel::UpdateSpatialPosition()
 {
-	// !!! DTB here
+	if (Actor->GetClass()->GetName() == TEXT("DTBActor")) return;
 
 	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
 	// handed between workers at the same time (which is not guaranteed), we ensure that we update the position component 

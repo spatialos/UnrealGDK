@@ -195,7 +195,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			WriteSchemaRepField(Writer,
 				RepProp.Value,
 				PropertyPath,
-				FieldCounter);
+				RepProp.Value->ReplicationData->Handle);
 		}
 		Writer.Outdent().Print("}");
 	}

@@ -113,6 +113,10 @@ USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
 	// !!! DTB Here
+	if (Channel->Actor->GetClass()->GetName() == TEXT("DTBActor"))
+	{
+		return worker::RequestId<worker::CreateEntityRequest>(DTBManager->SendCreateEntityRequest(Channel, Location, PlayerWorkerId, RepChanged, HandoverChanged));
+	}
 
 	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();

@@ -2,11 +2,89 @@
 
 #include "DTBManager.h"
 
-const int SPECIAL_SPAWNER_COMPONENT_ID = 100003;
-const int SPECIAL_SPAWNER_ENTITY_ID = 3;
+#include "SpatialActorChannel.h"
+#include "SpatialInterop.h"
+
+#include <map>
+
+const Worker_ComponentId SPECIAL_SPAWNER_COMPONENT_ID = 100003;
+const Worker_EntityId SPECIAL_SPAWNER_ENTITY_ID = 3;
 
 UDTBManager::UDTBManager()
 {
+}
+
+void Schema_AddString(Schema_Object* Object, Schema_FieldId Id, const std::string& Value)
+{
+	uint32_t StringLength = Value.size();
+	uint8_t* StringBuffer = Schema_AllocateBuffer(Object, sizeof(char) * StringLength);
+	memcpy(StringBuffer, Value.c_str(), sizeof(char) * StringLength);
+	Schema_AddBytes(Object, Id, StringBuffer, sizeof(char) * StringLength);
+}
+
+using WorkerAttributeSet = std::vector<std::string>;
+using WorkerRequirementSet = std::vector<WorkerAttributeSet>;
+
+void Schema_AddWorkerRequirementSet(Schema_Object* Object, Schema_FieldId Id, const WorkerRequirementSet& Value)
+{
+	auto RequirementSetObject = Schema_AddObject(Object, Id);
+	for (auto& AttributeSet : Value)
+	{
+		auto AttributeSetObject = Schema_AddObject(RequirementSetObject, 1);
+
+		for (auto& Attribute : AttributeSet)
+		{
+			Schema_AddString(AttributeSetObject, 1, Attribute);
+		}
+	}
+}
+
+const Worker_ComponentId ENTITY_ACL_COMPONENT_ID = 50;
+void CreateEntityAclData(Worker_ComponentData& Data, const WorkerRequirementSet& ReadAcl, const std::map<Worker_ComponentId, WorkerRequirementSet>& ComponentWriteAcl)
+{
+	Data.component_id = ENTITY_ACL_COMPONENT_ID;
+	Data.schema_type = Schema_CreateComponentData(ENTITY_ACL_COMPONENT_ID);
+	auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+	Schema_AddWorkerRequirementSet(ComponentObject, 1, ReadAcl);
+
+	for (auto& KVPair : ComponentWriteAcl)
+	{
+		auto KVPairObject = Schema_AddObject(ComponentObject, 2);
+		Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.first);
+		Schema_AddWorkerRequirementSet(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.second);
+	}
+}
+
+const Worker_ComponentId METADATA_COMPONENT_ID = 53;
+void CreateMetadataData(Worker_ComponentData& Data, std::string EntityType)
+{
+	Data.component_id = METADATA_COMPONENT_ID;
+	Data.schema_type = Schema_CreateComponentData(METADATA_COMPONENT_ID);
+	auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+	Schema_AddString(ComponentObject, 1, EntityType);
+}
+
+const Worker_ComponentId POSITION_COMPONENT_ID = 54;
+void CreatePositionData(Worker_ComponentData& Data, const improbable::Coordinates& Coords)
+{
+	Data.component_id = POSITION_COMPONENT_ID;
+	Data.schema_type = Schema_CreateComponentData(POSITION_COMPONENT_ID);
+	auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+	auto CoordsObject = Schema_AddObject(ComponentObject, 1);
+
+	Schema_AddDouble(CoordsObject, 1, Coords.x());
+	Schema_AddDouble(CoordsObject, 2, Coords.y());
+	Schema_AddDouble(CoordsObject, 3, Coords.z());
+}
+
+const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
+void CreatePersistenceData(Worker_ComponentData& Data)
+{
+	Data.component_id = PERSISTENCE_COMPONENT_ID;
+	Data.schema_type = Schema_CreateComponentData(PERSISTENCE_COMPONENT_ID);
 }
 
 void UDTBManager::InitClient()
@@ -36,7 +114,7 @@ void UDTBManager::InitClient()
 		CommandRequest.component_id = SPECIAL_SPAWNER_COMPONENT_ID;
 		CommandRequest.schema_type = Schema_CreateCommandRequest(SPECIAL_SPAWNER_COMPONENT_ID, 1);
 		auto* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
-		Schema_AddBytes(RequestObject, 1, (const uint8_t*)"Yo dawg", 7);
+		Schema_AddString(RequestObject, 1, "Yo dawg");
 		Worker_CommandParameters CommandParams = {};
 		Worker_Connection_SendCommandRequest(Connection, SPECIAL_SPAWNER_ENTITY_ID, &CommandRequest, 1, nullptr, &CommandParams);
 	}
@@ -51,6 +129,8 @@ void UDTBManager::InitServer()
 	Worker_ConnectionParameters Params = Worker_DefaultConnectionParameters();
 	Params.worker_type = "CAPIWorker";
 	Params.network.tcp.multiplex_level = 4;
+	Params.enable_protocol_logging_at_startup = true;
+	Params.protocol_logging.log_prefix = "C:\\workspace\\UnrealGDK\\UnrealGDKStarterProject\\spatial\\logs\\whyyy";
 	//Params.component_vtable_count = 0;
 	//Params.component_vtables = Vtables.Vtables;
 	Worker_ComponentVtable DefaultVtable = {};
@@ -67,7 +147,7 @@ void UDTBManager::InitServer()
 	}
 }
 
-void OnCommandRequest(Worker_Connection* Connection, Worker_CommandRequestOp& Op)
+void UDTBManager::OnCommandRequest(Worker_CommandRequestOp& Op)
 {
 	auto CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
 	UE_LOG(LogTemp, Log, TEXT("!!! Received command request (entity: %lld, component: %d, command: %d)"), Op.entity_id, Op.request.component_id, CommandIndex);
@@ -95,10 +175,94 @@ void OnCommandRequest(Worker_Connection* Connection, Worker_CommandRequestOp& Op
 	}
 }
 
-void OnCommandResponse(Worker_Connection* Connection, Worker_CommandResponseOp& Op)
+void UDTBManager::OnCommandResponse(Worker_CommandResponseOp& Op)
 {
 	auto CommandIndex = Schema_GetCommandResponseCommandIndex(Op.response.schema_type);
 	UE_LOG(LogTemp, Log, TEXT("!!! Received command response (entity: %lld, component: %d, command: %d)"), Op.entity_id, Op.response.component_id, CommandIndex);
+}
+
+void UDTBManager::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
+{
+	auto RequestId = Worker_Connection_SendReserveEntityIdRequest(Connection, nullptr);
+	AddPendingActorRequest(RequestId, Channel);
+	UE_LOG(LogTemp, Log, TEXT("!!! Opened channel for actor with no entity ID. Initiated reserve entity ID. Request id: %d"), RequestId);
+}
+
+void UDTBManager::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel)
+{
+	PendingActorRequests.Emplace(RequestId, Channel);
+}
+
+USpatialActorChannel* UDTBManager::RemovePendingActorRequest(Worker_RequestId RequestId)
+{
+	USpatialActorChannel** Channel = PendingActorRequests.Find(RequestId);
+	if (Channel == nullptr)
+	{
+		return nullptr;
+	}
+	PendingActorRequests.Remove(RequestId);
+	return *Channel;
+}
+
+void UDTBManager::OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op)
+{
+	if (auto* Channel = RemovePendingActorRequest(Op.request_id))
+	{
+		Channel->OnReserveEntityIdResponseCAPI(Op);
+	}
+}
+
+Worker_RequestId UDTBManager::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
+{
+	if (!Connection) return 0;
+
+	AActor* Actor = Channel->Actor;
+
+	FStringAssetReference ActorClassRef(Actor->GetClass());
+	FString PathStr = ActorClassRef.ToString();
+
+	auto CreateEntityRequestId = CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
+
+	UE_LOG(LogTemp, Log, TEXT("!!! Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
+		*Actor->GetName(), Channel->GetEntityId().ToSpatialEntityId(), CreateEntityRequestId);
+
+	return CreateEntityRequestId;
+}
+
+
+
+Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel)
+{
+	//for (auto& Rep : InitialChanges.RepChanged)
+	//{
+	//	checkf(Rep < InitialChanges.RepBaseHandleToCmdIndex.Num(), TEXT("How did we get a handle that Unreal doesn't know about itself?!"));
+	//}
+
+	// BUILD REP COMPONENT
+
+	std::string ClientWorkerIdString = TCHAR_TO_UTF8(*ClientWorkerId);
+
+	WorkerAttributeSet WorkerAttribute = {"CAPIWorker"};
+	WorkerAttributeSet ClientAttribute = {"CAPIClient"};
+	WorkerAttributeSet OwningClientAttribute = {"workerId:" + ClientWorkerIdString};
+
+	WorkerRequirementSet WorkersOnly = {WorkerAttribute};
+	WorkerRequirementSet ClientsOnly = {ClientAttribute};
+	WorkerRequirementSet OwningClientOnly = {OwningClientAttribute};
+	WorkerRequirementSet AnyUnrealWorkerOrClient = {WorkerAttribute, ClientAttribute};
+	WorkerRequirementSet AnyUnrealWorkerOrOwningClient = {WorkerAttribute, OwningClientAttribute};
+
+	std::map<Worker_ComponentId, WorkerRequirementSet> ComponentWriteAcl;
+	ComponentWriteAcl.emplace(POSITION_COMPONENT_ID, WorkersOnly);
+
+	std::vector<Worker_ComponentData> ComponentDatas(4, Worker_ComponentData{});
+	CreatePositionData(ComponentDatas[0], SpatialConstants::LocationToSpatialOSCoordinates(Position));
+	CreateMetadataData(ComponentDatas[1], TCHAR_TO_UTF8(*Metadata));
+	CreateEntityAclData(ComponentDatas[2], AnyUnrealWorkerOrOwningClient, ComponentWriteAcl);
+	CreatePersistenceData(ComponentDatas[3]);
+
+	Worker_EntityId EntityId = Channel->GetEntityId().ToSpatialEntityId();
+	return Worker_Connection_SendCreateEntityRequest(Connection, ComponentDatas.size(), ComponentDatas.data(), &EntityId, nullptr);
 }
 
 void UDTBManager::Tick()
@@ -117,13 +281,19 @@ void UDTBManager::Tick()
 		case WORKER_OP_TYPE_LOG_MESSAGE:
 			UE_LOG(LogTemp, Log, TEXT("!!! Log: %s"), UTF8_TO_TCHAR(Op->log_message.message));
 			break;
+		case WORKER_OP_TYPE_RESERVE_ENTITY_ID_RESPONSE:
+			OnReserveEntityIdResponse(Op->reserve_entity_id_response);
+			break;
 		case WORKER_OP_TYPE_ADD_COMPONENT:
 			break;
+		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
+			UE_LOG(LogTemp, Log, TEXT("!!! Create entity response"), UTF8_TO_TCHAR(Op->create_entity_response.message));
+			break;
 		case WORKER_OP_TYPE_COMMAND_REQUEST:
-			OnCommandRequest(Connection, Op->command_request);
+			OnCommandRequest(Op->command_request);
 			break;
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			OnCommandResponse(Connection, Op->command_response);
+			OnCommandResponse(Op->command_response);
 			break;
 		default:
 			break;

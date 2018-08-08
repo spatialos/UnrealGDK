@@ -231,6 +231,8 @@ public:
 		return NetDriver;
 	}
 
+	class UDTBManager* DTBManager;
+
 private:
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
