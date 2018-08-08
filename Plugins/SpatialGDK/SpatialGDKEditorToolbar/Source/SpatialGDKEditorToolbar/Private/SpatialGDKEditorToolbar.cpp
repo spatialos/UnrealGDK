@@ -146,8 +146,7 @@ void FSpatialGDKEditorToolbarModule::UnregisterSettings()
 
 bool FSpatialGDKEditorToolbarModule::HandleSettingsSaved()
 {
-	USpatialGDKEditorToolbarSettings* Settings = GetMutableDefault<USpatialGDKEditorToolbarSettings>();
-	Settings->SaveConfig();
+	GetMutableDefault<USpatialGDKEditorToolbarSettings>()->SaveConfig();
 
 	return true;
 }

@@ -78,11 +78,6 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 bool CreateSingletonToIdMap(NameToEntityIdMap& SingletonNameToEntityId)
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
-	if (!SpatialGDKToolbarSettings)
-	{
-		return false;
-	}
-
 	for (UClass* Class : SpatialGDKToolbarSettings->SingletonClasses)
 	{
 		// Id is initially 0 to indicate that this Singleton entity has not been created yet.
@@ -135,19 +130,18 @@ FString SetupSnapshotGenerationPath()
 	FString SavePath = FPaths::Combine(*ProjectFilePath, TEXT("../spatial/snapshots"));
 	FString SnapshotFileName = TEXT("default.snapshot");
 
-	if (const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>())
+	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	
+	if (!Settings->SpatialOSSnapshotPath.Path.IsEmpty())
 	{
-		if (!Settings->SpatialOSSnapshotPath.Path.IsEmpty())
-		{
-			SavePath = Settings->SpatialOSSnapshotPath.Path;
-		}
-
-		if (!Settings->SpatialOSSnapshotFile.IsEmpty())
-		{
-			SnapshotFileName = Settings->SpatialOSSnapshotFile;
-		}
+		SavePath = Settings->SpatialOSSnapshotPath.Path;
 	}
 
+	if (!Settings->SpatialOSSnapshotFile.IsEmpty())
+	{
+		SnapshotFileName = Settings->SpatialOSSnapshotFile;
+	}
+	
 	SavePath = FPaths::Combine(*SavePath, SnapshotFileName);
 	return SavePath;
 }

@@ -80,14 +80,15 @@ bool CheckClassNameListValidity(const ClassHeaderMap& ClassMap)
 }
 }// ::
 
-void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath, const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings)
+void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
 {
+	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 	int ComponentId = 100010;
 	for (auto& ClassHeaderList : Classes)
 	{
 		const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
-		bool bIsSingleton = SpatialGDKToolbarSettings->SingletonClasses.Find(ClassHeaderList.Key) != INDEX_NONE;
+		bool bIsSingleton = GetDefault<USpatialGDKEditorToolbarSettings>()->SingletonClasses.Find(ClassHeaderList.Key) != INDEX_NONE;
 
 		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, ClassHeaderList.Key, TypeBindingHeaders, bIsSingleton, Classes);
 	}
@@ -126,12 +127,6 @@ FString GenerateIntermediateDirectory()
 bool SpatialGDKGenerateInteropCode()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
-	if (!SpatialGDKToolbarSettings)
-	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("No SpatialGDKEditorToolbarSettings available. Ensure that you have the SpatialGDK editor plugin setup correctly."));
-		return false;
-	}
-
 	ClassHeaderMap InteropGeneratedClasses;
 	for (auto& Element : SpatialGDKToolbarSettings->InteropCodegenClasses)
 	{
@@ -163,7 +158,7 @@ bool SpatialGDKGenerateInteropCode()
 
 	const FString SchemaIntermediatePath = GenerateIntermediateDirectory();
 	const FString InteropIntermediatePath = GenerateIntermediateDirectory();
-	GenerateInteropFromClasses(InteropGeneratedClasses, SchemaIntermediatePath, InteropIntermediatePath, SpatialGDKToolbarSettings);
+	GenerateInteropFromClasses(InteropGeneratedClasses, SchemaIntermediatePath, InteropIntermediatePath);
 
 	const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
 	// Copy Interop files.
