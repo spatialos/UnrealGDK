@@ -36,7 +36,7 @@ The SpatialOS build of Unreal has an **Interop Codegen** button; on the SpatialO
 In order for the ICG to run correctly, you need to add any new user-defined class, along with its dependencies, to the **SpatialOS Unreal GDK** settings in the Unreal Engine 4 Editor tab before you run it.
 
 To do this:
-1. Go to ** Edit > Project Settings... > SpatialOS Unreal GDK > Toolbar **.
+1. Go to **Edit** > **Project Settings...** > **SpatialOS Unreal GDK** > **Toolbar**.
 1. In the entry **Classes to generate typebindings for**, add your user-defined class and the include dependencies that the typebinding requires to compile.
 
 For further information on the settings available through the Unreal GDK toolbar, see the [Settings](./toolbar.md#Settings) section of the toolbar documentation.

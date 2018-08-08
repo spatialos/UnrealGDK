@@ -62,7 +62,7 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
 * **Configuration**
 
     * **Project Root Folder**</br>
-    If you're using a non-standard structure, you'll need to set this yourself. By default, this is empty. If this is left empty, then the it will default to `<ProjectFileLocation>/../spatial`.
+    If you're using a non-standard structure, you'll need to set this yourself. This is empty by default. If you leave it empty, it defaults to `<ProjectFileLocation>/../spatial`.
 
     * **Launch Configuration**</br>
     The [launch configuration file](https://docs.improbable.io/reference/13.1/shared/reference/file-formats/launch-config) (SpatialOS documentation) to use when running `spatial local launch` using the `Launch` button.
@@ -71,7 +71,7 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
     If enabled, shuts down running deployments when you close the Unreal Editor.
 
     * **Snapshot path**</br>
-    Path to your SpatialOS Unreal GDK snapshot. **Note* If this is left empty, then the it will default to `<ProjectFileLocation>/../spatial/snapshots`.
+    Use this to specify the filepath of your Unreal GDK snapshot. If you leave this left empty, it defaults to `<ProjectFileLocation>/../spatial/snapshots`.
 
     * **Snapshot file name**</br>
     Name of your SpatialOS Unreal GDK snapshot file.
@@ -79,10 +79,10 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
 * **Interop Codegen**
 
     * **Output path for the interop code generation**</br>
-    Path to the folder to which ICG typebindings will be generated. By default, this is empty. If this is left empty, then the it will default to `<GameSourceDir>/<ProjectName>/Generated`.
+    Use this to specify the filepath of ICG-generated typebindings file.  If you leave this left empty, it defaults to `<GameSourceDir>/<ProjectName>/Generated`.
 
     * **Output path for the generated schemas**</br>
-    Path to the folder to which ICG schemas will be generated. By default, this is empty. If this is left empty, then the it will default to `<ProjectFileLocation>/../spatial/schema/improbable/unreal/generated/`.
+    Use this to specify the filepath of ICG-generated schema file.  If you leave this left empty, it defaults to `<ProjectFileLocation>/../spatial/schema/improbable/unreal/generated/`.
 
     * **Singleton classes**</br>
     Use this to specify the classes which the [ICG](./interop.md) should generate as singleton classes.
