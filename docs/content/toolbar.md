@@ -71,7 +71,7 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
     If enabled, shuts down running deployments when you close the Unreal Editor.
 
     * **Snapshot path**</br>
-    Use this to specify the filepath of your Unreal GDK snapshot. If you leave this left empty, it defaults to `<ProjectFileLocation>/../spatial/snapshots`.
+    Use this to specify the filepath of your Unreal GDK snapshot. If you leave this empty, it defaults to `<ProjectFileLocation>/../spatial/snapshots`.
 
     * **Snapshot file name**</br>
     Name of your SpatialOS Unreal GDK snapshot file.
@@ -79,10 +79,10 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
 * **Interop Codegen**
 
     * **Output path for the interop code generation**</br>
-    Use this to specify the filepath of ICG-generated typebindings file.  If you leave this left empty, it defaults to `<GameSourceDir>/<ProjectName>/Generated`.
+    Use this to specify the filepath of ICG-generated typebindings file.  If you leave this empty, it defaults to `<GameSourceDir>/<ProjectName>/Generated`.
 
     * **Output path for the generated schemas**</br>
-    Use this to specify the filepath of ICG-generated schema file.  If you leave this left empty, it defaults to `<ProjectFileLocation>/../spatial/schema/improbable/unreal/generated/`.
+    Use this to specify the filepath of ICG-generated schema file.  If you leave this empty, it defaults to `<ProjectFileLocation>/../spatial/schema/improbable/unreal/generated/`.
 
     * **Singleton classes**</br>
     Use this to specify the classes which the [ICG](./interop.md) should generate as singleton classes.
