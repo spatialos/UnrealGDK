@@ -25,7 +25,7 @@ You need to use the ICG to generate `.schema` files and type bindings for any ne
 ### How to use the ICG
 As the Interop Code Generator is a plugin for the Unreal toolbar, to use it you must first:
 *  build your game project to access the SpatialOS fork of Unreal Engine as well as the Unreal GDK. (You do this as part of the [installation and setup](../setup-and-installing.md), swapping the “Starter Project” and its file location for your game’s name and file location.)
-* list the classes that you want to create typebindings for in the in the **SpatialOS Unreal GDK** settings in the Unreal Engine 4 editor. For instructions on how to do this, see the guidance on [Setting up the Interop Code Generator](#Setting-up-the-Interop-Code-Generator), below.
+* list the classes that you want to create typebindings for in the in the **SpatialOS Unreal GDK** settings in the Unreal Engine 4 Editor. For instructions on how to do this, see the guidance on [Setting up the Interop Code Generator](#Setting-up-the-Interop-Code-Generator), below.
 
 The SpatialOS build of Unreal has an **Interop Codegen** button; on the SpatialOS Unreal GDK toolbar, select **Interop Codegen** to trigger the ICG process:
 
@@ -33,7 +33,7 @@ The SpatialOS build of Unreal has an **Interop Codegen** button; on the SpatialO
 
 ## Setting up the Interop Code Generator
 
-In order for the ICG to run correctly, you need to add any new user-defined class, along with its dependencies, to the **SpatialOS Unreal GDK** settings in the Unreal engine 4 Editor tab before you run it.
+In order for the ICG to run correctly, you need to add any new user-defined class, along with its dependencies, to the **SpatialOS Unreal GDK** settings in the Unreal Engine 4 Editor tab before you run it.
 
 To do this:
 1. Go to ** Edit > Project Settings... > SpatialOS Unreal GDK > Toolbar **.
