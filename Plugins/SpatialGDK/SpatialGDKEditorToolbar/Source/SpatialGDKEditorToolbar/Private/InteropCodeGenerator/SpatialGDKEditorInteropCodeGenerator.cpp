@@ -135,7 +135,7 @@ bool SpatialGDKGenerateInteropCode()
 	ClassHeaderMap InteropGeneratedClasses;
 	for (auto& Element : SpatialGDKToolbarSettings->InteropCodegenClasses)
 	{
-		InteropGeneratedClasses.Add(element.Actor, element.IncludeList);
+		InteropGeneratedClasses.Add(Element.ReplicatedClass, Element.IncludeList);
 	}
 
 	if (!CheckClassNameListValidity(InteropGeneratedClasses))
@@ -143,8 +143,8 @@ bool SpatialGDKGenerateInteropCode()
 		return false;
 	}
 
-	FString InteropOutputPath = FPaths::ConvertRelativePathToFull(SpatialGDKToolbarSettings->InteropCodegenOutputFolder.Path);
-	FString SchemaOutputPath = FPaths::ConvertRelativePathToFull(SpatialGDKToolbarSettings->GeneratedSchemaOutputFolder.Path);
+	FString InteropOutputPath = SpatialGDKToolbarSettings->GetInteropCodegenOutputFolder();
+	FString SchemaOutputPath = SpatialGDKToolbarSettings->GetGeneratedSchemaOutputFolder();
 
 	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *SchemaOutputPath, *InteropOutputPath);
 

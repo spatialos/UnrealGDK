@@ -7,10 +7,10 @@ USpatialGDKEditorToolbarSettings::USpatialGDKEditorToolbarSettings(const FObject
 	bStopSpatialOnExit(false),
 	SpatialOSSnapshotFile(FString(TEXT("default.snapshot")))
 {
-	ProjectRootFolder.Path = FPaths::ConvertRelativePathToFull(FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../spatial/")));
+	ProjectRootFolder.Path = TEXT("");
 	SpatialOSSnapshotPath.Path = FPaths::Combine(*ProjectRootFolder.Path, TEXT("snapshots/"));
-	InteropCodegenOutputFolder.Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::GameSourceDir(), FString::Printf(TEXT("%s/Generated/"), FApp::GetProjectName())));
-	GeneratedSchemaOutputFolder.Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(ProjectRootFolder.Path, FString(TEXT("schema/improbable/unreal/generated/"))));
+	InteropCodegenOutputFolder.Path = TEXT("");
+	GeneratedSchemaOutputFolder.Path = TEXT("");
 }
 
 FString USpatialGDKEditorToolbarSettings::ToString()

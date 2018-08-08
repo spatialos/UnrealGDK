@@ -59,24 +59,33 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
 
  ![Toolbar](../assets/screen_grabs/toolbar/toolbar_settings.png)
 
+* **Configuration**
 
-* **Project Root Folder**</br>
-By default, this points to the root folder of your SpatialOS Unreal GDK project. If you're using a non-standard structure, you'll need to set this yourself.
+    * **Project Root Folder**</br>
+    If you're using a non-standard structure, you'll need to set this yourself. By default, this is empty. If this is left empty, then the it will default to `<ProjectFileLocation>/../spatial`.
 
-* **Launch Configuration**</br>
-The [launch configuration file](https://docs.improbable.io/reference/13.1/shared/reference/file-formats/launch-config) (SpatialOS documentation) to use when running `spatial local launch` using the `Launch` button.
+    * **Launch Configuration**</br>
+    The [launch configuration file](https://docs.improbable.io/reference/13.1/shared/reference/file-formats/launch-config) (SpatialOS documentation) to use when running `spatial local launch` using the `Launch` button.
 
-* **Stop on Exit**</br>
-If enabled, shuts down running deployments when you close the Unreal Editor.
+    * **Stop on Exit**</br>
+    If enabled, shuts down running deployments when you close the Unreal Editor.
 
-* **Snapshot path**</br>
-Path to your SpatialOS Unreal GDK snapshot.
+    * **Snapshot path**</br>
+    Path to your SpatialOS Unreal GDK snapshot. **Note* If this is left empty, then the it will default to `<ProjectFileLocation>/../spatial/snapshots`.
 
-* **Snapshot file name**</br>
-Name of your SpatialOS Unreal GDK snapshot file.
+    * **Snapshot file name**</br>
+    Name of your SpatialOS Unreal GDK snapshot file.
 
-* **Singleton classes**</br>
-Use this to specify the classes which the [ICG](./interop.md) should generate as singleton classes.
+* **Interop Codegen**
 
-* **Classes to generate typebindings for**</br>
-Use this to specify the classes which the [ICG](./interop.md) should generate [type bindings](./glossary.md#type-bindings) for.
+    * **Output path for the interop code generation**</br>
+    Path to the folder to which ICG typebindings will be generated. By default, this is empty. If this is left empty, then the it will default to `<GameSourceDir>/<ProjectName>/Generated`.
+
+    * **Output path for the generated schemas**</br>
+    Path to the folder to which ICG schemas will be generated. By default, this is empty. If this is left empty, then the it will default to `<ProjectFileLocation>/../spatial/schema/improbable/unreal/generated/`.
+
+    * **Singleton classes**</br>
+    Use this to specify the classes which the [ICG](./interop.md) should generate as singleton classes.
+
+    * **Classes to generate typebindings for**</br>
+    Use this to specify the classes which the [ICG](./interop.md) should generate [type bindings](./glossary.md#type-bindings) for.
