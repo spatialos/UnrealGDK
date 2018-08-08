@@ -91,6 +91,7 @@ enum ERPCType
 {
 	RPC_Client,
 	RPC_Server,
+	RPC_CrossServer,
 	RPC_NetMulticast,
 	RPC_Unknown
 };

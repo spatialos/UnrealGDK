@@ -58,7 +58,7 @@ FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 
 TArray<ERPCType> GetRPCTypes()
 {
-	static TArray<ERPCType> Groups = {RPC_Client, RPC_Server, RPC_NetMulticast};
+	static TArray<ERPCType> Groups = {RPC_Client, RPC_Server, RPC_CrossServer, RPC_NetMulticast};
 	return Groups;
 }
 
@@ -71,6 +71,10 @@ ERPCType GetRPCTypeFromFunction(UFunction* Function)
 	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetServer)
 	{
 		return ERPCType::RPC_Server;
+	}
+	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetCrossServer)
+	{
+		return ERPCType::RPC_CrossServer;
 	}
 	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetMulticast)
 	{
@@ -91,6 +95,8 @@ FString GetRPCTypeName(ERPCType RPCType)
 		return "Client";
 	case ERPCType::RPC_Server:
 		return "Server";
+	case ERPCType::RPC_CrossServer:
+		return "CrossServer";
 	case ERPCType::RPC_NetMulticast:
 		return "NetMulticast";
 	default:
@@ -325,6 +331,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	{
 		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
 			RemoteFunction->FunctionFlags & FUNC_NetServer ||
+			RemoteFunction->FunctionFlags & FUNC_NetCrossServer ||
 			RemoteFunction->FunctionFlags & FUNC_NetMulticast)
 		{
 			TSharedPtr<FUnrealRPC> RPCNode = MakeShared<FUnrealRPC>();
@@ -551,6 +558,7 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 	FUnrealRPCsByType RPCsByType;
 	RPCsByType.Add(RPC_Client);
 	RPCsByType.Add(RPC_Server);
+	RPCsByType.Add(RPC_CrossServer);
 	RPCsByType.Add(RPC_NetMulticast);
 	VisitAllObjects(TypeInfo, [&RPCsByType](TSharedPtr<FUnrealType> Type)
 	{
