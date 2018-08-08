@@ -947,6 +947,7 @@ bool USpatialNetDriver::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& A
 }
 
 // This function is literally a copy paste of UNetDriver::HandleNetDumpServerRPCCommand. Didn't want to refactor to avoid divergence from engine.
+#if !UE_BUILD_SHIPPING
 bool USpatialNetDriver::HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar)
 {
 #if WITH_SERVER_CODE
@@ -1027,6 +1028,7 @@ bool USpatialNetDriver::HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOu
 #endif
 	return true;
 }
+#endif // !UE_BUILD_SHIPPING
 
 USpatialPendingNetGame::USpatialPendingNetGame(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
