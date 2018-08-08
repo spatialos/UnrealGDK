@@ -352,16 +352,16 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 	// 3) A SpawnActor() call that was initiated from a different worker, which means we need to find and spawn the corresponding "native" actor that corresponds to it.
 	//	  This can happen on either the client (for all actors) or server (for actors which were spawned by a different server worker, or are transitioning).
 
-	if (EntityActor)
+	if (EntityActor && !EntityActor->IsPendingKill())
 	{
 		// If the actor is stably named and exists on this worker, it means that it was previously resolved as a stably named object
 		// As we want to refer to it dynamically later on, we remove this resolution, and add a dynamic one (ResolveEntityActor)
-		if (EntityActor->IsFullNameStableForNetworking())
+		/*if (EntityActor->IsFullNameStableForNetworking())
 		{
 			PackageMap->RemoveStablyNamedObject(EntityActor);
 
 			UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Unregistering stably named actor: %s"), *EntityActor->GetName());
-		}
+		}*/
 
 		// Option 1
 		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
@@ -431,11 +431,11 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 						}
 						// Server will naturally create SpatialActorChannels for the replicated stably named actors, so remove the stable reference
 						// Clients do not create SpatialActorChannels, so continue on the normal path
-						else if (NetDriver->IsServer())
+						/*else if (NetDriver->IsServer())
 						{
 							PackageMap->RemoveStablyNamedObject(EntityActor);
 							Interop->UnreserveReplicatedStablyNamedActor(EntityActor);
-						}
+						}*/
 					}
 				}
 

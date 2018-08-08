@@ -322,7 +322,7 @@ bool USpatialActorChannel::ReplicateActor()
 	{		
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
-			check(!Actor->IsFullNameStableForNetworking() || SpatialNetDriver->GetSpatialInterop()->CanSpawnReplicatedStablyNamedActors());
+			check(!Actor->IsFullNameStableForNetworking() || Interop->CanSpawnReplicatedStablyNamedActors());
 
 			// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
 			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
@@ -502,8 +502,8 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		// has the Global State Manager) to avoid having multiple copies of replicated stably named actors in SpatialOS
 		if (InActor->IsFullNameStableForNetworking())
 		{
-			USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
-			PackageMap->ResolveStablyNamedObject(InActor);
+			/*USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
+			PackageMap->ResolveStablyNamedObject(InActor);*/
 			SpatialNetDriver->GetSpatialInterop()->ReserveReplicatedStablyNamedActorChannel(this);
 		}
 		else
@@ -580,6 +580,25 @@ void USpatialActorChannel::RegisterEntityId(const FEntityId& ActorEntityId)
 	if (Interop->IsSingletonClass(Actor->GetClass()))
 	{
 		Interop->AddSingletonToGSM(Actor->GetClass()->GetPathName(), ActorEntityId);
+	}
+
+	if (Actor->IsFullNameStableForNetworking())
+	{
+		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
+
+		uint32 CurrentOffset = 0;
+		worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
+		ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+		{
+			// Objects can only be allocated NetGUIDs if this is true.
+			if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+			{
+				SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+				CurrentOffset++;
+			}
+		});
+
+		PackageMap->ResolveEntityActor(Actor, ActorEntityId, SubobjectNameToOffset);
 	}
 }
 
