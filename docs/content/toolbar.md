@@ -76,8 +76,7 @@ Path to your SpatialOS Unreal GDK snapshot.
 Name of your SpatialOS Unreal GDK snapshot file.
 
 * **Singleton classes**</br>
-Specifies which classes that should be generated as singleton classes during the [ICG process](./interop.md).
+Use this to specify the classes which the [ICG](./interop.md) should generate as singleton classes.
 
 * **Classes to generate typebindings for**</br>
-Specifies the classes for which typebindings should be generated for durint the [ICG process](./interop.md).
-
+Use this to specify the classes which the [ICG](./interop.md) should generate [type bindings](./glossary.md#type-bindings) for.

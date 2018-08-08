@@ -4,10 +4,6 @@
 #include "EntityBuilder.h"
 #include "SpatialConstants.h"
 #include "SpatialOSCommon.h"
-<<<<<<< HEAD
-#include "SpatialGDKEditorUtils.h"
-=======
->>>>>>> Removed unnecessary utils
 #include "SpatialGDKEditorToolbarSettings.h"
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
 #include <improbable/standard_library.h>
