@@ -72,6 +72,8 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 
 void USpatialActorChannel::DeleteEntityIfAuthoritative()
 {
+	// !!! DTB Here
+
 	bool bHasAuthority = false;
 	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 
@@ -488,6 +490,8 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 			Offset += Property.Value.Property->GetSize();
 		}
 	}
+
+	// !!! DTB Here
 
 	// Get the entity ID from the entity registry (or return 0 if it doesn't exist).
 	check(SpatialNetDriver->GetEntityRegistry());
