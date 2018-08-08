@@ -943,7 +943,7 @@ bool USpatialNetDriver::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& A
 		return HandleNetDumpCrossServerRPCCommand(Cmd, Ar);
 	}
 #endif // !UE_BUILD_SHIPPING
-	return false;
+	return UNetDriver::Exec( InWorld, Cmd,Ar);
 }
 
 // This function is literally a copy paste of UNetDriver::HandleNetDumpServerRPCCommand. Didn't want to refactor to avoid divergence from engine.
