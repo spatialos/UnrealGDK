@@ -15,6 +15,7 @@ class UEntityPipeline;
 class UEntityRegistry;
 class UCallbackDispatcher;
 class USpatialOS;
+class USpatialActorChannel;
 class USpatialNetConnection;
 class USpatialInterop;
 class USpatialInteropPipelineBlock;
@@ -85,6 +86,8 @@ public:
 	{
 		return Interop;
 	}
+
+	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
 protected:
 	FSpatialGDKWorkerConfigurationData WorkerConfig;

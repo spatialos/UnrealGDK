@@ -9,16 +9,19 @@
 // Return the string representation of the underlying data type of an enum property
 FString GetEnumDataType(const UEnumProperty* EnumProperty);
 
-// Given a class or function name, generates the name used for naming schema components and types. Currently, this just removes underscores.
+// Given a class or function name, generates the name used for naming schema components and types. Currently, this removes underscores and spaces.
 FString UnrealNameToSchemaTypeName(const FString& UnrealName);
+
+// Given a class or function name, generates the name used for cpp functions and types. Currently, this removes spaces.
+FString UnrealNameToCppName(const FString& UnrealName);
 
 // Given a replicated property group and Unreal type, generates the name of the corresponding schema component.
 // For example: UnrealCharacterMultiClientRepData
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type, bool bPrependNamespace = false);
 
-// Given an unreal type, generates the name of the component which stores worker to worker replication data.
-// For example: UnrealCharacterMigratableData
-FString SchemaMigratableDataName(UStruct* Type, bool bPrependNamespace = false);
+// Given an unreal type, generates the name of the component which stores server to server replication data.
+// For example: UnrealCharacterHandoverData
+FString SchemaHandoverDataName(UStruct* Type, bool bPrependNamespace = false);
 
 // Given an RPC type and Unreal type, generates the name of the corresponding RPC container component.
 // For example: UnrealCharacterClientRPCs

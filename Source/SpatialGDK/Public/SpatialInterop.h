@@ -5,6 +5,7 @@
 #include "AddComponentOpWrapperBase.h"
 #include "ComponentIdentifier.h"
 #include "CoreMinimal.h"
+#include "SpatialConstants.h"
 #include "SpatialTypeBinding.h"
 #include "SpatialUnrealObjectRef.h"
 #include "SpatialInterop.generated.h"
@@ -14,10 +15,12 @@ class USpatialActorChannel;
 class USpatialPackageMapClient;
 class USpatialNetDriver;
 
-SPATIALGDK_API DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSInterop, Log, All);
+SPATIALGDK_API DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInterop, Log, All);
 
 // An general version of worker::RequestId.
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
+
+using NameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
 
 // Stores the result of an attempt to call an RPC sender function. Either we have an unresolved object which needs
 // to be resolved before we can send this RPC, or we successfully sent a command request.
@@ -56,12 +59,14 @@ public:
 	uint32 NumAttempts;
 };
 
-// Helper types used by the maps below.
-using FPendingOutgoingProperties = TPair<TArray<uint16>, TArray<uint16>>; // Pending incoming properties (replicated and migratable).
-using FPendingIncomingProperties = TPair<TArray<const FRepHandleData*>, TArray<const FMigratableHandleData*>>;
+// Helper types used by the maps below. Note 'pending' ~ 'unresolved'
+using FPendingOutgoingProperties = TPair<TArray<uint16>, TArray<uint16>>;
+using FPendingRepUpdates = TMap<UObject*, TArray<const FRepHandleData*>>;  // ApplyIncomingReplicatedPropertyUpdate needs to know which object each replicated property belongs to
+using FPendingIncomingProperties = TPair<FPendingRepUpdates, TArray<const FHandoverHandleData*>>;  // Pending incoming properties (replicated and handover).
 
 // Map types for pending objects/RPCs. For pending updates, they store a map from an unresolved object to a map of channels to properties
-// within those channels which depend on the unresolved object. For pending RPCs, they store a map from an unresolved object to a list of
+// within those channels which depend on the unresolved object. For Replicated Properties, we need to store a pointer to the owning target object (Actor or ActorComponent).
+// For pending RPCs, they store a map from an unresolved object to a list of
 // RPC functor objects which need to be re-executed when the object is resolved.
 using FPendingOutgoingObjectUpdateMap = TMap<const UObject*, TMap<USpatialActorChannel*, FPendingOutgoingProperties>>;
 using FPendingOutgoingRPCMap = TMap<const UObject*, TArray<TPair<FRPCCommandRequestFunc, bool>>>;
@@ -88,10 +93,14 @@ using FChannelToHandleToOPARMap = TMap<USpatialActorChannel*, FHandleToOPARMap>;
 
 using FOutgoingPendingArrayUpdateMap = TMap<const UObject*, FChannelToHandleToOPARMap>;
 
-// Helper function to write incoming replicated property data to an object.
-FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& RepHandleData, UObject* Object, const void* Value, TSet<UProperty*>& RepNotifies)
+using FResolvedObjects = TArray<TPair<UObject*, const improbable::unreal::UnrealObjectRef>>;
+
+// Helper function to write incoming replicated property data to an object
+// TargetObject is the actor or actor component that owns the replicated property and its RepNotifies, not necessarily the channel actor
+// TODO: unify how replicated properties and handover are handled (UNR-485)
+FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& RepHandleData, UObject* TargetObject, const void* ReplicatedPropertyValue, TSet<UProperty*>& RepNotifies)
 {
-	uint8* Dest = RepHandleData.GetPropertyData(reinterpret_cast<uint8*>(Object));
+	uint8* Dest = RepHandleData.GetPropertyData(reinterpret_cast<uint8*>(TargetObject));
 
 	check(RepHandleData.PropertyChain.Num() > 0);
 	check(RepHandleData.PropertyChain[0] != nullptr);
@@ -101,7 +110,7 @@ FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& Rep
 	UProperty* PropertyToNotify = RepHandleData.PropertyChain[0];
 	if (PropertyToNotify->HasAnyPropertyFlags(CPF_RepNotify))
 	{
-		if (RepHandleData.RepNotifyCondition == REPNOTIFY_Always || !RepHandleData.Property->Identical(Dest, Value))
+		if (RepHandleData.RepNotifyCondition == REPNOTIFY_Always || !RepHandleData.Property->Identical(Dest, ReplicatedPropertyValue))
 		{
 			RepNotifies.Add(PropertyToNotify);
 		}
@@ -113,30 +122,30 @@ FORCEINLINE void ApplyIncomingReplicatedPropertyUpdate(const FRepHandleData& Rep
 	{
 		// We use UBoolProperty::SetPropertyValue here explicitly to ensure that packed boolean properties
 		// are de-serialized correctly without clobbering neighboring boolean values in memory.
-		BoolProperty->SetPropertyValue(Dest, *static_cast<const bool*>(Value));
+		BoolProperty->SetPropertyValue(Dest, *static_cast<const bool*>(ReplicatedPropertyValue));
 	}
 	else
 	{
-		RepHandleData.Property->CopySingleValue(Dest, Value);
+		RepHandleData.Property->CopySingleValue(Dest, ReplicatedPropertyValue);
 	}
 }
 
-// Helper function to write incoming migratable property data to an object.
-FORCEINLINE void ApplyIncomingMigratablePropertyUpdate(const FMigratableHandleData& MigratableHandleData, UObject* Object, const void* Value)
+// Helper function to write incoming handover property data to an object.
+FORCEINLINE void ApplyIncomingHandoverPropertyUpdate(const FHandoverHandleData& HandoverHandleData, UObject* ChannelActor, const void* ReplicatedPropertyValue)
 {
-	uint8* Dest = MigratableHandleData.GetPropertyData(reinterpret_cast<uint8*>(Object));
+	uint8* Dest = HandoverHandleData.GetPropertyData(reinterpret_cast<uint8*>(ChannelActor));
 
 	// Write value to destination.
-	UBoolProperty* BoolProperty = Cast<UBoolProperty>(MigratableHandleData.Property);
+	UBoolProperty* BoolProperty = Cast<UBoolProperty>(HandoverHandleData.Property);
 	if (BoolProperty)
 	{
 		// We use UBoolProperty::SetPropertyValue here explicitly to ensure that packed boolean properties
 		// are de-serialized correctly without clobbering neighboring boolean values in memory.
-		BoolProperty->SetPropertyValue(Dest, *static_cast<const bool*>(Value));
+		BoolProperty->SetPropertyValue(Dest, *static_cast<const bool*>(ReplicatedPropertyValue));
 	}
 	else
 	{
-		MigratableHandleData.Property->CopySingleValue(Dest, Value);
+		HandoverHandleData.Property->CopySingleValue(Dest, ReplicatedPropertyValue);
 	}
 }
 
@@ -155,18 +164,23 @@ public:
 	USpatialTypeBinding* GetTypeBindingByClass(UClass* Class) const;
 
 	// Sending component updates and RPCs.
-	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged);
+	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
 	worker::RequestId<worker::DeleteEntityRequest> SendDeleteEntityRequest(const FEntityId& EntityId);
 	void SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location);
-	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& MigChanged);
-	void InvokeRPC(AActor* TargetActor, const UFunction* const Function, UObject* CallingObject, void* Parameters);
+	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
+	void SendSpatialUpdateSubobject(USpatialActorChannel* Channel, UObject* Subobject, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
+	void InvokeRPC(UObject* TargetObject, const UFunction* const Function, void* Parameters);
 	void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp);
-	void PreReceiveSpatialUpdate(USpatialActorChannel* Channel);
-	void PostReceiveSpatialUpdate(USpatialActorChannel* Channel, const TArray<UProperty*>& RepNotifies);
 
 	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.
 	// This will dequeue pending object ref updates and RPCs which depend on this UObject existing in the package map.
 	void ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
+	void OnLeaveCriticalSection();
+	void ResolvePendingOperations_Internal(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
+
+	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
+	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
+	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
 
 	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
 	void AddActorChannel(const FEntityId& EntityId, USpatialActorChannel* Channel);
@@ -187,15 +201,24 @@ public:
 
 	// Used to queue incoming/outgoing object updates/RPCs. Used by generated type bindings.
 	void QueueOutgoingObjectRepUpdate_Internal(const UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
-	void QueueOutgoingObjectMigUpdate_Internal(const UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
+	void QueueOutgoingObjectHandoverUpdate_Internal(const UObject* UnresolvedObject, USpatialActorChannel* DependentChannel, uint16 Handle);
 	void QueueOutgoingRPC_Internal(const UObject* UnresolvedObject, FRPCCommandRequestFunc CommandSender, bool bReliable);
-	void QueueIncomingObjectRepUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FRepHandleData* RepHandleData);
-	void QueueIncomingObjectMigUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FMigratableHandleData* MigHandleData);
+	void QueueIncomingObjectRepUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, UObject* TargetObject, const FRepHandleData* RepHandleData);
+	void QueueIncomingObjectHandoverUpdate_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, USpatialActorChannel* DependentChannel, const FHandoverHandleData* HandoverHandleData);
 	void QueueIncomingRPC_Internal(const improbable::unreal::UnrealObjectRef& UnresolvedObjectRef, FRPCCommandResponseFunc Responder);
 
 	void ResetOutgoingArrayRepUpdate_Internal(USpatialActorChannel* DependentChannel, uint16 Handle);
 	void QueueOutgoingArrayRepUpdate_Internal(const TSet<const UObject*>& UnresolvedObjects, USpatialActorChannel* DependentChannel, uint16 Handle);
-	
+
+	// Update GlobalStateManager when EntityId is reserved
+	void UpdateGlobalStateManager(const FString& ClassName, const FEntityId& SingletonEntityId);
+	// Handle GSM checkout
+	void LinkExistingSingletonActors(const NameToEntityIdMap& SingletonNameToEntityId);
+	// Handle GSM Authority received
+	void ExecuteInitialSingletonActorReplication(const NameToEntityIdMap& SingletonNameToEntityId);
+	bool IsSingletonClass(UClass* Class);
+	NameToEntityIdMap* GetSingletonNameToEntityId() const;
+
 	// Accessors.
 	USpatialOS* GetSpatialOS() const
 	{
@@ -245,6 +268,12 @@ private:
 	FChannelToHandleToOPARMap PropertyToOPAR;
 	FOutgoingPendingArrayUpdateMap ObjectToOPAR;
 
+	// Used to queue resolved objects when added during a critical section. These objects then have
+	// any pending operations resolved on them once the critical section has ended.
+	FResolvedObjects ResolvedObjectQueue;
+
+	bool bAuthoritativeDestruction;
+
 
 private:
 	void RegisterInteropType(UClass* Class, USpatialTypeBinding* Binding);
@@ -252,8 +281,10 @@ private:
 
 	void ResolvePendingOutgoingObjectUpdates(UObject* Object);
 	void ResolvePendingOutgoingRPCs(UObject* Object);
-	void ResolvePendingIncomingObjectUpdates(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef);
+	void ResolvePendingIncomingObjectUpdates(UObject* IncomingObject, const improbable::unreal::UnrealObjectRef& ObjectRef);
 	void ResolvePendingIncomingRPCs(const improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	void ResolvePendingOutgoingArrayUpdates(UObject* Object);
+
+	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
 };

@@ -5,6 +5,8 @@
 #include "EngineMinimal.h"
 #include "Net/RepLayout.h"
 
+#include "SpatialGDKEditorInteropCodeGenerator.h"
+
 /*
 
 This file contains functions to generate an abstract syntax tree which is used by the code generating in
@@ -61,7 +63,7 @@ FUnrealType
 			+ Property: "SomeTransientProperty"
 			+ Type: nullptr
 			+ ReplicationData: nullptr
-			+ MigratableData: FUnrealMigratableData
+			+ HandoverData: FUnrealHandoverData
 				+ RepLayoutType: REPCMD_PropertyFloat
 				+ Handle: 1
 				...
@@ -97,7 +99,7 @@ enum ERPCType
 struct FUnrealProperty;
 struct FUnrealRPC;
 struct FUnrealRepData;
-struct FUnrealMigratableData;
+struct FUnrealHandoverData;
 
 // A node which represents an unreal type, such as ACharacter or UCharacterMovementComponent.
 struct FUnrealType
@@ -114,7 +116,7 @@ struct FUnrealProperty
 	UProperty* Property;
 	TSharedPtr<FUnrealType> Type; // Only set if strong reference to object/struct property.
 	TSharedPtr<FUnrealRepData> ReplicationData; // Only set if property is replicated.
-	TSharedPtr<FUnrealMigratableData> MigratableData; // Only set if property is migratable (and not replicated).
+	TSharedPtr<FUnrealHandoverData> HandoverData; // Only set if property is marked for handover (and not replicated).
 	TWeakPtr<FUnrealType> ContainerType; // Not set if this property is an RPC parameter.
 
 	// These variables are used for unique variable checksum generation. We do this to accurately match properties at run-time.
@@ -145,8 +147,8 @@ struct FUnrealRepData
 	int32 ArrayIndex;
 };
 
-// A node which represents migratable data.
-struct FUnrealMigratableData
+// A node which represents handover (server to server) data.
+struct FUnrealHandoverData
 {
 	uint16 Handle;
 };
@@ -197,12 +199,6 @@ uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 Static
 TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, UProperty* Property, uint32 ParentChecksum, uint32 StaticArrayIndex);
 
 // Generates an AST from an Unreal UStruct or UClass.
-// At the moment, this function receives a manual list of migratable property chains in this form:
-//   {
-//     {"Property"},
-//	   {"OtherProperty", "PropertyWithinOtherProperty"}
-//   }
-// In the future, we can get this information directly from the UStruct*.
 TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksum, int32 StaticArrayIndex, bool bIsRPC);
 
 // Traverses an AST, and generates a flattened list of replicated properties, which will match the Cmds array of FRepLayout.
@@ -212,17 +208,23 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 // This function will _not_ traverse into subobject properties (as the replication system deals with each object separately).
 FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo);
 
-// Traverses an AST, and generates a flattened list of migratable properties. The list of migratable properties will all have
-// the MigratableData field set to a value FUnrealMigratableData node which contains data such as the handle or replication type.
+// Traverses an AST, and generates a flattened list of handover properties. The list of handover properties will all have
+// the HandoverData field set to a value FUnrealHandoverData node which contains data such as the handle or replication type.
 //
 // This function will traverse into subobject properties.
-FCmdHandlePropertyMap GetFlatMigratableData(TSharedPtr<FUnrealType> TypeInfo);
+FCmdHandlePropertyMap GetFlatHandoverData(TSharedPtr<FUnrealType> TypeInfo);
 
 // Traverses an AST fully (including subobjects) and generates a list of all RPCs which would be routed through an actor channel
 // of the Unreal class represented by TypeInfo.
 //
 // This function will traverse into subobject properties.
 FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo);
+
+// Get all supported components (not all subobjects) of an Actor class
+TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& InteropGeneratedClasses);
+
+// Properly add a component class to a set
+void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass, const ClassHeaderMap& InteropGeneratedClasses);
 
 // Given an AST, traverses all its parameters (and properties within structs) and generates a complete flattened list of properties.
 TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode);

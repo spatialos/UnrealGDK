@@ -296,7 +296,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		Writer.End();
 
 		Writer.Printf("%s(List);", *Update);
-	} 
+	}
 	else if (Property->IsA(UEnumProperty::StaticClass()))
 	{
 		FString DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
@@ -544,7 +544,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	HeaderWriter.Outdent().Print("public:").Indent();
 	HeaderWriter.Print(R"""(
 		const FRepHandlePropertyMap& GetRepHandlePropertyMap() const override;
-		const FMigratableHandlePropertyMap& GetMigratableHandlePropertyMap() const override;
+		const FHandoverHandlePropertyMap& GetHandoverHandlePropertyMap() const override;
 		UClass* GetBoundClass() const override;
 
 		void Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap) override;
@@ -557,20 +557,9 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 		void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;
 		worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const override;)""");
-	HeaderWriter.PrintNewLine();
-	HeaderWriter.Outdent().Print("private:").Indent();
-	HeaderWriter.Print("improbable::unreal::callbacks::FScopedViewCallbacks ViewCallbacks;");
-	HeaderWriter.PrintNewLine();
-	HeaderWriter.Printf(R"""(
-		// RPC to sender map.
-		using FRPCSender = void (%s::*)(worker::Connection* const, void*, UObject*);
-		TMap<FName, FRPCSender> RPCToSenderMap;)""", *TypeBindingName(Class));
-	HeaderWriter.PrintNewLine();
-	HeaderWriter.Print("FRepHandlePropertyMap RepHandleToPropertyMap;");
-	HeaderWriter.Print("FMigratableHandlePropertyMap MigratableHandleToPropertyMap;");
+
 	HeaderWriter.PrintNewLine();
 
-	HeaderWriter.Print("// Component update helper functions.");
 	FFunctionSignature BuildComponentUpdateSignature;
 	BuildComponentUpdateSignature.Type = "void";
 	BuildComponentUpdateSignature.NameAndParams = "BuildSpatialComponentUpdate(\n\tconst FPropertyChangeState& Changes,\n\tUSpatialActorChannel* Channel,";
@@ -582,26 +571,41 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 			*GetReplicatedPropertyGroupName(Group),
 			*GetReplicatedPropertyGroupName(Group));
 	}
-	BuildComponentUpdateSignature.NameAndParams += FString::Printf(TEXT("\n\t%s::Update& MigratableDataUpdate,\n\tbool& bMigratableDataUpdateChanged"),
-		*SchemaMigratableDataName(Class, true));
+	BuildComponentUpdateSignature.NameAndParams += FString::Printf(TEXT("\n\t%s::Update& HandoverDataUpdate,\n\tbool& bHandoverDataUpdateChanged"),
+		*SchemaHandoverDataName(Class, true));
 	BuildComponentUpdateSignature.NameAndParams += ") const";
 	HeaderWriter.Print(BuildComponentUpdateSignature.Declaration());
+
+	HeaderWriter.PrintNewLine();
+
+	HeaderWriter.Outdent().Print("private:").Indent();
+	HeaderWriter.Print("improbable::unreal::callbacks::FScopedViewCallbacks ViewCallbacks;");
+	HeaderWriter.PrintNewLine();
+	HeaderWriter.Printf(R"""(
+		// RPC to sender map.
+		using FRPCSender = void (%s::*)(worker::Connection* const, void*, UObject*);
+		TMap<FName, FRPCSender> RPCToSenderMap;)""", *TypeBindingName(Class));
+	HeaderWriter.PrintNewLine();
+	HeaderWriter.Print("FRepHandlePropertyMap RepHandleToPropertyMap;");
+	HeaderWriter.Print("FHandoverHandlePropertyMap HandoverHandleToPropertyMap;");
+	HeaderWriter.PrintNewLine();
+
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
 		HeaderWriter.Printf("void ServerSendUpdate_%s(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, %s::Update& OutUpdate) const;",
 			*GetReplicatedPropertyGroupName(Group),
 			*SchemaReplicatedDataName(Group, Class, true));
 	}
-	HeaderWriter.Printf("void ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, %s::Update& OutUpdate) const;",
-		*SchemaMigratableDataName(Class, true));
+	HeaderWriter.Printf("void ServerSendUpdate_Handover(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, %s::Update& OutUpdate) const;",
+		*SchemaHandoverDataName(Class, true));
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
 		HeaderWriter.Printf("void ReceiveUpdate_%s(USpatialActorChannel* ActorChannel, const %s::Update& Update) const;",
 			*GetReplicatedPropertyGroupName(Group),
 			*SchemaReplicatedDataName(Group, Class, true));
 	}
-	HeaderWriter.Printf("void ReceiveUpdate_Migratable(USpatialActorChannel* ActorChannel, const %s::Update& Update) const;",
-		*SchemaMigratableDataName(Class, true));
+	HeaderWriter.Printf("void ReceiveUpdate_Handover(USpatialActorChannel* ActorChannel, const %s::Update& Update) const;",
+		*SchemaHandoverDataName(Class, true));
 
 	// RPCs.
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
@@ -616,7 +620,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		for (auto& RPC : RPCsByType[Group])
 		{
 			HeaderWriter.Printf("void %s_SendRPC(worker::Connection* const Connection, void* Parameters, UObject* TargetObject);",
-				*RPC->Function->GetName());
+				*UnrealNameToCppName(RPC->Function->GetName()));
 		}
 	}
 
@@ -628,14 +632,14 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		{
 			if (Group == RPC_NetMulticast)
 			{
-				HeaderWriter.Printf("void %s_OnRPCPayload(const worker::EntityId EntityId, const %s& EventData);",			
-					*RPC->Function->GetName(),
+				HeaderWriter.Printf("void %s_OnRPCPayload(const worker::EntityId EntityId, const %s& EventData);",
+					*UnrealNameToCppName(RPC->Function->GetName()),
 					*SchemaRPCRequestType(RPC->Function, true));
 			}
 			else
 			{
 				HeaderWriter.Printf("void %s_OnRPCPayload(const worker::CommandRequestOp<%s::Commands::%s>& Op);",
-					*RPC->Function->GetName(),
+					*UnrealNameToCppName(RPC->Function->GetName()),
 					*SchemaRPCComponentName(Group, Class, true),
 					*CPPCommandClassName(Class, RPC->Function));
 			}
@@ -657,7 +661,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		for (auto& RPC : RPCsByType[Group])
 		{
 			HeaderWriter.Printf("void %s_OnCommandResponse(const worker::CommandResponseOp<%s::Commands::%s>& Op);",
-				*RPC->Function->GetName(),
+				*UnrealNameToCppName(RPC->Function->GetName()),
 				*SchemaRPCComponentName(Group, Class, true),
 				*CPPCommandClassName(Class, RPC->Function));
 		}
@@ -666,7 +670,9 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	HeaderWriter.Print("};");
 }
 
-void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo, const TArray<FString>& TypeBindingHeaders)
+void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename,
+	UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo, const TArray<FString>& TypeBindingHeaders,
+	bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses)
 {
 	SourceWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -704,11 +710,24 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	{
 		SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaReplicatedDataName(Group, Class));
 	}
-	SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaMigratableDataName(Class));
+	SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaHandoverDataName(Class));
+
+	TArray<UClass*> Components = GetAllSupportedComponents(Class, InteropGeneratedClasses);
+
+	for (UClass* ComponentClass : Components)
+	{
+		SourceWriter.PrintNewLine();
+		SourceWriter.Printf("#include \"SpatialTypeBinding_%s.h\"", *ComponentClass->GetName());
+		for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+		{
+			SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaReplicatedDataName(Group, ComponentClass));
+		}
+		SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaHandoverDataName(ComponentClass));
+	}
 
 	// Get replicated data and RPCs.
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
-	FCmdHandlePropertyMap MigratableData = GetFlatMigratableData(TypeInfo);
+	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
 
 	// Generate methods implementations
@@ -717,13 +736,13 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	GenerateFunction_GetRepHandlePropertyMap(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_GetMigratableHandlePropertyMap(SourceWriter, Class);
+	GenerateFunction_GetHandoverHandlePropertyMap(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_GetBoundClass(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_Init(SourceWriter, Class, RPCsByType, RepData, MigratableData);
+	GenerateFunction_Init(SourceWriter, Class, RPCsByType, RepData, HandoverData, bIsSingleton);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_BindToView(SourceWriter, Class, RPCsByType);
@@ -732,7 +751,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	GenerateFunction_UnbindFromView(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_CreateActorEntity(SourceWriter, Class);
+	GenerateFunction_CreateActorEntity(SourceWriter, Class, Components);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_SendComponentUpdates(SourceWriter, Class);
@@ -741,7 +760,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	GenerateFunction_SendRPCCommand(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_ReceiveAddComponent(SourceWriter, Class);
+	GenerateFunction_ReceiveAddComponent(SourceWriter, Class, Components);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_GetInterestOverrideMap(SourceWriter, Class);
@@ -756,7 +775,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	}
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_ServerSendUpdate_MigratableData(SourceWriter, Class, MigratableData);
+	GenerateFunction_ServerSendUpdate_HandoverData(SourceWriter, Class, HandoverData);
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
@@ -765,7 +784,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	}
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_ReceiveUpdate_MigratableData(SourceWriter, Class, MigratableData);
+	GenerateFunction_ReceiveUpdate_HandoverData(SourceWriter, Class, HandoverData);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_ReceiveUpdate_MulticastRPCs(SourceWriter, Class, RPCsByType[RPC_NetMulticast]);
@@ -810,10 +829,10 @@ void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass*
 	SourceWriter.End();
 }
 
-void GenerateFunction_GetMigratableHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class)
+void GenerateFunction_GetHandoverHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class)
 {
-	SourceWriter.BeginFunction({"const FMigratableHandlePropertyMap&", "GetMigratableHandlePropertyMap() const"}, TypeBindingName(Class));
-	SourceWriter.Print("return MigratableHandleToPropertyMap;");
+	SourceWriter.BeginFunction({"const FHandoverHandlePropertyMap&", "GetHandoverHandlePropertyMap() const"}, TypeBindingName(Class));
+	SourceWriter.Print("return HandoverHandleToPropertyMap;");
 	SourceWriter.End();
 }
 
@@ -823,7 +842,7 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	if (Class->ClassGeneratedBy)
 	{
 		// This is a blueprint class, so use Unreal's reflection to find UClass pointer at runtime.
-		SourceWriter.Printf("return FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));", *Class->GetName());
+		SourceWriter.Printf("return LoadObject<UClass>(nullptr, TEXT(\"%s\"), nullptr, LOAD_None, nullptr);", *Class->GetPathName());
 	}
 	else
 	{
@@ -832,7 +851,7 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& MigratableData)
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData, bool bIsSingleton)
 {
 	SourceWriter.BeginFunction({"void", "Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)"}, TypeBindingName(Class));
 
@@ -842,11 +861,11 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 	{
 		for (auto& RPC : RPCsByType[Group])
 		{
-			SourceWriter.Printf("RPCToSenderMap.Emplace(\"%s\", &%s::%s_SendRPC);", *RPC->Function->GetName(), *TypeBindingName(Class), *RPC->Function->GetName());
+			SourceWriter.Printf("RPCToSenderMap.Emplace(\"%s\", &%s::%s_SendRPC);", *RPC->Function->GetName(), *TypeBindingName(Class), *UnrealNameToCppName(RPC->Function->GetName()));
 		}
 	}
 
-	if (RepData.Num() > 0 || MigratableData.Num() > 0)
+	if (RepData.Num() > 0 || HandoverData.Num() > 0)
 	{
 		// Get class.
 		SourceWriter.PrintNewLine();
@@ -895,30 +914,41 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 		}
 	}
 
-	// Populate MigratableHandleToPropertyMap.
-	if (MigratableData.Num() > 0)
+	// Populate HandoverHandleToPropertyMap.
+	if (HandoverData.Num() > 0)
 	{
 		SourceWriter.PrintNewLine();
-		SourceWriter.Print("// Populate MigratableHandleToPropertyMap.");
+		SourceWriter.Print("// Populate HandoverHandleToPropertyMap.");
 
-		for (auto& MigratableProp : MigratableData)
+		for (auto& HandoverProp : HandoverData)
 		{
-			auto Handle = MigratableProp.Key;
+			auto Handle = HandoverProp.Key;
 
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
 			TArray<FString> PropertyChainNames;
-			Algo::Transform(GetPropertyChain(MigratableProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
+			Algo::Transform(GetPropertyChain(HandoverProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
 			{
 				return TEXT("\"") + Property->Property->GetFName().ToString() + TEXT("\"");
 			});
 			PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
 
 			// Add the handle data to the map.
-			SourceWriter.Printf("MigratableHandleToPropertyMap.Add(%d, FMigratableHandleData(Class, {%s}));",
+			SourceWriter.Printf("HandoverHandleToPropertyMap.Add(%d, FHandoverHandleData(Class, {%s}));",
 				Handle,
 				*PropertyChainInitList);
 		}
+	}
+
+	SourceWriter.PrintNewLine();
+
+	if (bIsSingleton)
+	{
+		SourceWriter.Printf("bIsSingleton = true;");
+	}
+	else
+	{
+		SourceWriter.Printf("bIsSingleton = false;");
 	}
 
 	SourceWriter.End();
@@ -958,9 +988,9 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 	}
 	SourceWriter.Printf("if (!bIsClient)");
 	SourceWriter.BeginScope();
-	SourceWriter.Printf("ViewCallbacks.Add(View->OnComponentUpdate<%s>([this](", *SchemaMigratableDataName(Class, true));
+	SourceWriter.Printf("ViewCallbacks.Add(View->OnComponentUpdate<%s>([this](", *SchemaHandoverDataName(Class, true));
 	SourceWriter.Indent();
-	SourceWriter.Printf("const worker::ComponentUpdateOp<%s>& Op)", *SchemaMigratableDataName(Class, true));
+	SourceWriter.Printf("const worker::ComponentUpdateOp<%s>& Op)", *SchemaHandoverDataName(Class, true));
 	SourceWriter.Outdent();
 	SourceWriter.BeginScope();
 	SourceWriter.Printf(R"""(
@@ -968,11 +998,11 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 		if (HasComponentAuthority(Interop->GetSpatialOS()->GetView(), Op.EntityId, %s::ComponentId))
 		{
 			return;
-		})""", *SchemaMigratableDataName(Class, true));
+		})""", *SchemaHandoverDataName(Class, true));
 	SourceWriter.Print(R"""(
 		USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.EntityId);
 		check(ActorChannel);
-		ReceiveUpdate_Migratable(ActorChannel, Op.Update);)""");
+		ReceiveUpdate_Handover(ActorChannel, Op.Update);)""");
 	SourceWriter.Outdent();
 	SourceWriter.Print("}));");
 	SourceWriter.End();
@@ -1021,7 +1051,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 					*GetRPCTypeName(Group),
 					*CPPCommandClassName(Class, RPC->Function),
 					*TypeBindingName(Class),
-					*RPC->Function->GetName());
+					*UnrealNameToCppName(RPC->Function->GetName()));
 			}
 			for (auto& RPC : RPCsByType[Group])
 			{
@@ -1029,7 +1059,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 					*GetRPCTypeName(Group),
 					*CPPCommandClassName(Class, RPC->Function),
 					*TypeBindingName(Class),
-					*RPC->Function->GetName());
+					*UnrealNameToCppName(RPC->Function->GetName()));
 			}
 		}
 	}
@@ -1044,7 +1074,7 @@ void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class)
+void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, TArray<UClass*> Components)
 {
 	SourceWriter.BeginFunction(
 		{"worker::Entity", "CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const"},
@@ -1060,36 +1090,16 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		}
 		)""");
 
+	TArray<FString> SpatialComponents;
+
 	SourceWriter.Print(TEXT("// Setup initial data."));
-	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+
+	GenerateBody_SpatialComponents(SourceWriter, Class, SpatialComponents);
+
+	for (UClass* ComponentClass : Components)
 	{
-		SourceWriter.Printf("%s::Data %sData;",
-			*SchemaReplicatedDataName(Group, Class, true),
-			*GetReplicatedPropertyGroupName(Group));
-		SourceWriter.Printf("%s::Update %sUpdate;",
-			*SchemaReplicatedDataName(Group, Class, true),
-			*GetReplicatedPropertyGroupName(Group));
-		SourceWriter.Printf("bool b%sUpdateChanged = false;", *GetReplicatedPropertyGroupName(Group));
+		GenerateBody_SpatialComponents(SourceWriter, ComponentClass, SpatialComponents);
 	}
-	SourceWriter.Printf("%s::Data MigratableData;", *SchemaMigratableDataName(Class, true));
-	SourceWriter.Printf("%s::Update MigratableDataUpdate;", *SchemaMigratableDataName(Class, true));
-	SourceWriter.Print("bool bMigratableDataUpdateChanged = false;");
-	TArray<FString> BuildUpdateArgs;
-	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
-	{
-		BuildUpdateArgs.Add(FString::Printf(TEXT("%sUpdate"), *GetReplicatedPropertyGroupName(Group)));
-		BuildUpdateArgs.Add(FString::Printf(TEXT("b%sUpdateChanged"), *GetReplicatedPropertyGroupName(Group)));
-	}
-	BuildUpdateArgs.Add("MigratableDataUpdate");
-	BuildUpdateArgs.Add("bMigratableDataUpdateChanged");
-	SourceWriter.Printf("BuildSpatialComponentUpdate(InitialChanges, Channel, %s);", *FString::Join(BuildUpdateArgs, TEXT(", ")));
-	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
-	{
-		SourceWriter.Printf("%sUpdate.ApplyTo(%sData);",
-			*GetReplicatedPropertyGroupName(Group),
-			*GetReplicatedPropertyGroupName(Group));
-	}
-	SourceWriter.Print("MigratableDataUpdate.ApplyTo(MigratableData);");
 
 	// Create Entity.
 	SourceWriter.PrintNewLine();
@@ -1135,7 +1145,7 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Position);)""");
 	SourceWriter.Print("return improbable::unreal::FEntityBuilder::Begin()");
 	SourceWriter.Indent();
-	// If this is a APlayerController entity, ensure that only the owning client and workers have read ACL permissions. 
+	// If this is a APlayerController entity, ensure that only the owning client and workers have read ACL permissions.
 	// This ensures that only one APlayerController object is created per client.
 	SourceWriter.Printf(R"""(
 		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, WorkersOnly)
@@ -1144,23 +1154,79 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 		.SetReadAcl(%s)
 		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly))""",
 		Class->IsChildOf(APlayerController::StaticClass()) ? TEXT("AnyUnrealWorkerOrOwningClient") : TEXT("AnyUnrealWorkerOrClient"));
-	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
-	{
-		SourceWriter.Printf(".AddComponent<%s>(%sData, WorkersOnly)",
-			*SchemaReplicatedDataName(Group, Class, true), *GetReplicatedPropertyGroupName(Group));
-	}
-	SourceWriter.Printf(".AddComponent<%s>(MigratableData, WorkersOnly)", *SchemaMigratableDataName(Class, true));
-	SourceWriter.Printf(".AddComponent<%s>(%s::Data{}, OwningClientOnly)",
-		*SchemaRPCComponentName(ERPCType::RPC_Client, Class, true), *SchemaRPCComponentName(ERPCType::RPC_Client, Class, true));
-	SourceWriter.Printf(".AddComponent<%s>(%s::Data{}, WorkersOnly)",
-		*SchemaRPCComponentName(ERPCType::RPC_Server, Class, true), *SchemaRPCComponentName(ERPCType::RPC_Server, Class, true));
-	SourceWriter.Printf(".AddComponent<%s>(%s::Data{}, WorkersOnly)",
-		*SchemaRPCComponentName(ERPCType::RPC_NetMulticast, Class, true), *SchemaRPCComponentName(ERPCType::RPC_NetMulticast, Class, true));
+	SourceWriter.Printf("%s", *FString::Join(SpatialComponents, TEXT("\n")));
 
 	SourceWriter.Print(".Build();");
 	SourceWriter.Outdent();
 
 	SourceWriter.End();
+}
+
+void GenerateBody_SpatialComponents(FCodeWriter& SourceWriter, UClass* Class, TArray<FString>& SpatialComponents)
+{
+	SourceWriter.PrintNewLine();
+	FString ClassName = Class->GetName();
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		SourceWriter.Printf("%s::Data %s%sData;",
+			*SchemaReplicatedDataName(Group, Class, true),
+			*GetReplicatedPropertyGroupName(Group), *ClassName);
+		SourceWriter.Printf("%s::Update %s%sUpdate;",
+			*SchemaReplicatedDataName(Group, Class, true),
+			*GetReplicatedPropertyGroupName(Group), *ClassName);
+		SourceWriter.Printf("bool b%s%sUpdateChanged = false;", *GetReplicatedPropertyGroupName(Group), *ClassName);
+	}
+	SourceWriter.Printf("%s::Data %sHandoverData;", *SchemaHandoverDataName(Class, true), *ClassName);
+	SourceWriter.Printf("%s::Update %sHandoverDataUpdate;", *SchemaHandoverDataName(Class, true), *ClassName);
+	SourceWriter.Printf("bool b%sHandoverDataUpdateChanged = false;", *ClassName);
+	TArray<FString> BuildUpdateArgs;
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		BuildUpdateArgs.Add(FString::Printf(TEXT("%s%sUpdate"), *GetReplicatedPropertyGroupName(Group), *ClassName));
+		BuildUpdateArgs.Add(FString::Printf(TEXT("b%s%sUpdateChanged"), *GetReplicatedPropertyGroupName(Group), *ClassName));
+	}
+	BuildUpdateArgs.Add(FString::Printf(TEXT("%sHandoverDataUpdate"), *ClassName));
+	BuildUpdateArgs.Add(FString::Printf(TEXT("b%sHandoverDataUpdateChanged"), *ClassName));
+
+	SourceWriter.PrintNewLine();
+
+	if (Class->IsChildOf(UActorComponent::StaticClass()))
+	{
+		SourceWriter.Printf("FPropertyChangeState %sChangeState = Channel->CreateSubobjectChangeState(Channel->Actor->FindComponentByClass<%s>());", *ClassName, *GetFullCPPName(Class));
+		SourceWriter.Printf("USpatialTypeBinding_%s* %sTypeBinding = Cast<USpatialTypeBinding_%s>(Interop->GetTypeBindingByClass(%s::StaticClass()));",
+			*ClassName, *ClassName, *ClassName, *GetFullCPPName(Class));
+		SourceWriter.Printf("%sTypeBinding->BuildSpatialComponentUpdate(%sChangeState, Channel, %s);", *ClassName, *ClassName, *FString::Join(BuildUpdateArgs, TEXT(", ")));
+	}
+	else
+	{
+		SourceWriter.Printf("BuildSpatialComponentUpdate(InitialChanges, Channel, %s);", *FString::Join(BuildUpdateArgs, TEXT(", ")));
+	}
+
+
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		SourceWriter.Printf("%s%sUpdate.ApplyTo(%s%sData);",
+			*GetReplicatedPropertyGroupName(Group),
+			*ClassName,
+			*GetReplicatedPropertyGroupName(Group),
+			*ClassName);
+	}
+	SourceWriter.Printf("%sHandoverDataUpdate.ApplyTo(%sHandoverData);", *ClassName, *ClassName);
+
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		SpatialComponents.Add(FString::Printf(TEXT(".AddComponent<%s>(%s%sData, WorkersOnly)"),
+			*SchemaReplicatedDataName(Group, Class, true), *GetReplicatedPropertyGroupName(Group), *ClassName));
+	}
+	SpatialComponents.Add(FString::Printf(TEXT(".AddComponent<%s>(%sHandoverData, WorkersOnly)"),
+		*SchemaHandoverDataName(Class, true), *ClassName));
+
+	SpatialComponents.Add(FString::Printf(TEXT(".AddComponent<%s>(%s::Data{}, OwningClientOnly)"),
+		*SchemaRPCComponentName(ERPCType::RPC_Client, Class, true), *SchemaRPCComponentName(ERPCType::RPC_Client, Class, true)));
+	SpatialComponents.Add(FString::Printf(TEXT(".AddComponent<%s>(%s::Data{}, WorkersOnly)"),
+		*SchemaRPCComponentName(ERPCType::RPC_Server, Class, true), *SchemaRPCComponentName(ERPCType::RPC_Server, Class, true)));
+	SpatialComponents.Add(FString::Printf(TEXT(".AddComponent<%s>(%s::Data{}, WorkersOnly)"),
+		*SchemaRPCComponentName(ERPCType::RPC_NetMulticast, Class, true), *SchemaRPCComponentName(ERPCType::RPC_NetMulticast, Class, true)));
 }
 
 void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Class)
@@ -1177,8 +1243,8 @@ void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Cl
 			*GetReplicatedPropertyGroupName(Group));
 		SourceWriter.Printf("bool b%sUpdateChanged = false;", *GetReplicatedPropertyGroupName(Group));
 	}
-	SourceWriter.Printf("%s::Update MigratableDataUpdate;", *SchemaMigratableDataName(Class, true));
-	SourceWriter.Print("bool bMigratableDataUpdateChanged = false;");
+	SourceWriter.Printf("%s::Update HandoverDataUpdate;", *SchemaHandoverDataName(Class, true));
+	SourceWriter.Print("bool bHandoverDataUpdateChanged = false;");
 
 	TArray<FString> BuildUpdateArgs;
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
@@ -1186,8 +1252,8 @@ void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Cl
 		BuildUpdateArgs.Add(FString::Printf(TEXT("%sUpdate"), *GetReplicatedPropertyGroupName(Group)));
 		BuildUpdateArgs.Add(FString::Printf(TEXT("b%sUpdateChanged"), *GetReplicatedPropertyGroupName(Group)));
 	}
-	BuildUpdateArgs.Add("MigratableDataUpdate");
-	BuildUpdateArgs.Add("bMigratableDataUpdateChanged");
+	BuildUpdateArgs.Add("HandoverDataUpdate");
+	BuildUpdateArgs.Add("bHandoverDataUpdateChanged");
 	SourceWriter.Printf("BuildSpatialComponentUpdate(Changes, Channel, %s);", *FString::Join(BuildUpdateArgs, TEXT(", ")));
 
 	SourceWriter.PrintNewLine();
@@ -1202,10 +1268,10 @@ void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Cl
 			*GetReplicatedPropertyGroupName(Group));
 		SourceWriter.End();
 	}
-	SourceWriter.Printf("if (bMigratableDataUpdateChanged)");
+	SourceWriter.Printf("if (bHandoverDataUpdateChanged)");
 	SourceWriter.BeginScope();
-	SourceWriter.Printf("Connection->SendComponentUpdate<%s>(EntityId.ToSpatialEntityId(), MigratableDataUpdate);",
-		*SchemaMigratableDataName(Class, true));
+	SourceWriter.Printf("Connection->SendComponentUpdate<%s>(EntityId.ToSpatialEntityId(), HandoverDataUpdate);",
+		*SchemaHandoverDataName(Class, true));
 	SourceWriter.End();
 
 	SourceWriter.End();
@@ -1221,7 +1287,7 @@ void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class)
 		auto SenderFuncIterator = RPCToSenderMap.Find(Function->GetFName());
 		if (SenderFuncIterator == nullptr)
 		{
-			UE_LOG(LogSpatialOSInterop, Error, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
+			UE_LOG(LogSpatialGDKInterop, Error, TEXT("Sender for %s has not been registered with RPCToSenderMap."), *Function->GetFName().ToString());
 			return;
 		}
 		checkf(*SenderFuncIterator, TEXT("Sender for %s has been registered as null."), *Function->GetFName().ToString());
@@ -1229,7 +1295,7 @@ void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class)
+void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class, TArray<UClass*> Components)
 {
 	SourceWriter.BeginFunction(
 		{"void", "ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const"},
@@ -1242,6 +1308,7 @@ void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Cla
 			{
 				auto Update = %s::Update::FromInitialData(*%sAddOp->Data.data());
 				ReceiveUpdate_%s(Channel, Update);
+				return;
 			})""",
 			*GetReplicatedPropertyGroupName(Group),
 			*SchemaReplicatedDataName(Group, Class),
@@ -1251,14 +1318,25 @@ void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Cla
 			*GetReplicatedPropertyGroupName(Group));
 	}
 	SourceWriter.Printf(R"""(
-		auto* MigratableDataAddOp = Cast<U%sAddComponentOp>(AddComponentOp);
-		if (MigratableDataAddOp)
+		auto* HandoverDataAddOp = Cast<U%sAddComponentOp>(AddComponentOp);
+		if (HandoverDataAddOp)
 		{
-			auto Update = %s::Update::FromInitialData(*MigratableDataAddOp->Data.data());
-			ReceiveUpdate_Migratable(Channel, Update);
+			auto Update = %s::Update::FromInitialData(*HandoverDataAddOp->Data.data());
+			ReceiveUpdate_Handover(Channel, Update);
+			return;
 		})""",
-		*SchemaMigratableDataName(Class),
-		*SchemaMigratableDataName(Class, true));
+		*SchemaHandoverDataName(Class),
+		*SchemaHandoverDataName(Class, true));
+
+	for (UClass* ComponentClass : Components)
+	{
+		SourceWriter.PrintNewLine();
+		FString ClassName = ComponentClass->GetName();
+		SourceWriter.Printf("USpatialTypeBinding_%s* %sTypeBinding = Cast<USpatialTypeBinding_%s>(Interop->GetTypeBindingByClass(%s::StaticClass()));",
+			*ClassName, *ClassName, *ClassName, *GetFullCPPName(ComponentClass));
+		SourceWriter.Printf("%sTypeBinding->ReceiveAddComponent(Channel, AddComponentOp);", *ClassName);
+	}
+
 	SourceWriter.End();
 }
 
@@ -1279,7 +1357,7 @@ void GenerateFunction_GetInterestOverrideMap(FCodeWriter& SourceWriter, UClass* 
 		}
 		return Interest;)""",
 		*SchemaReplicatedDataName(REP_SingleClient, Class, true),
-		*SchemaMigratableDataName(Class, true));
+		*SchemaHandoverDataName(Class, true));
 	SourceWriter.End();
 }
 
@@ -1296,13 +1374,13 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 			*GetReplicatedPropertyGroupName(Group),
 			*GetReplicatedPropertyGroupName(Group));
 	}
-	BuildComponentUpdateSignature.NameAndParams += FString::Printf(TEXT("\n\t%s::Update& MigratableDataUpdate,\n\tbool& bMigratableDataUpdateChanged"),
-		*SchemaMigratableDataName(Class, true));
+	BuildComponentUpdateSignature.NameAndParams += FString::Printf(TEXT("\n\t%s::Update& HandoverDataUpdate,\n\tbool& bHandoverDataUpdateChanged"),
+		*SchemaHandoverDataName(Class, true));
 	BuildComponentUpdateSignature.NameAndParams += ") const";
 
 	SourceWriter.BeginFunction(BuildComponentUpdateSignature, TypeBindingName(Class));
 	SourceWriter.Print("const FRepHandlePropertyMap& RepPropertyMap = GetRepHandlePropertyMap();");
-	SourceWriter.Print("const FMigratableHandlePropertyMap& MigPropertyMap = GetMigratableHandlePropertyMap();");
+	SourceWriter.Print("const FHandoverHandlePropertyMap& HandoverPropertyMap = GetHandoverHandlePropertyMap();");
 	SourceWriter.Print("if (Changes.RepChanged.Num() > 0)");
 	SourceWriter.BeginScope();
 
@@ -1316,7 +1394,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 		const FRepLayoutCmd& Cmd = Changes.RepCmds[HandleIterator.CmdIndex];
 		const FRepHandleData& PropertyMapData = RepPropertyMap[HandleIterator.Handle];
 		const uint8* Data = PropertyMapData.GetPropertyData(Changes.SourceData) + HandleIterator.ArrayOffset;
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
+		UE_LOG(LogSpatialGDKInterop, Verbose, TEXT("%s: Sending property update. actor %s (%lld), property %s (handle %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*Channel->Actor->GetName(),
 			Channel->GetEntityId().ToSpatialEntityId(),
@@ -1351,19 +1429,19 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 
 	SourceWriter.PrintNewLine();
 	SourceWriter.Print(R"""(
-		// Populate the migrated data component update from the migrated property changelist.
-		for (uint16 ChangedHandle : Changes.MigChanged)
+		// Populate the handover data component update from the handover property changelist.
+		for (uint16 ChangedHandle : Changes.HandoverChanged)
 		{
-			const FMigratableHandleData& PropertyMapData = MigPropertyMap[ChangedHandle];
+			const FHandoverHandleData& PropertyMapData = HandoverPropertyMap[ChangedHandle];
 			const uint8* Data = PropertyMapData.GetPropertyData(Changes.SourceData);
-			UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Sending migratable property update. actor %s (%lld), property %s (handle %d)"),
+			UE_LOG(LogSpatialGDKInterop, Verbose, TEXT("%s: Sending handover property update. actor %s (%lld), property %s (handle %d)"),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*Channel->Actor->GetName(),
 				Channel->GetEntityId().ToSpatialEntityId(),
 				*PropertyMapData.Property->GetName(),
 				ChangedHandle);
-			ServerSendUpdate_Migratable(Data, ChangedHandle, PropertyMapData.Property, Channel, MigratableDataUpdate);
-			bMigratableDataUpdateChanged = true;
+			ServerSendUpdate_Handover(Data, ChangedHandle, PropertyMapData.Property, Channel, HandoverDataUpdate);
+			bHandoverDataUpdateChanged = true;
 		})""");
 
 	SourceWriter.End();
@@ -1493,26 +1571,26 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	SourceWriter.End();
 }
 
-void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& MigratableData)
+void GenerateFunction_ServerSendUpdate_HandoverData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& HandoverData)
 {
-	// TODO: Support fixed size arrays for migratable data. UNR-282.
+	// TODO: Support fixed size arrays for handover data. UNR-282.
 	FFunctionSignature ServerSendUpdateSignature{"void",
-		FString::Printf(TEXT("ServerSendUpdate_Migratable(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, %s::Update& OutUpdate) const"),
-			*SchemaMigratableDataName(Class, true))
+		FString::Printf(TEXT("ServerSendUpdate_Handover(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, %s::Update& OutUpdate) const"),
+			*SchemaHandoverDataName(Class, true))
 	};
 	SourceWriter.BeginFunction(ServerSendUpdateSignature, TypeBindingName(Class));
 
-	if (MigratableData.Num() > 0)
+	if (HandoverData.Num() > 0)
 	{
 		SourceWriter.Print("switch (Handle)");
 		SourceWriter.BeginScope();
 
-		for (auto& MigProp : MigratableData)
+		for (auto& HandoverProp : HandoverData)
 		{
-			auto Handle = MigProp.Key;
-			UProperty* Property = MigProp.Value->Property;
+			auto Handle = HandoverProp.Key;
+			UProperty* Property = HandoverProp.Value->Property;
 
-			SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(MigProp.Value));
+			SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(HandoverProp.Value));
 			SourceWriter.BeginScope();
 
 			// Get unreal data by deserialising from the reader, convert and set the corresponding field in the update object.
@@ -1531,20 +1609,20 @@ void GenerateFunction_ServerSendUpdate_MigratableData(FCodeWriter& SourceWriter,
 			}
 			SourceWriter.PrintNewLine();
 
-			FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(MigProp.Value);
+			FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(HandoverProp.Value);
 
 			GenerateUnrealToSchemaConversion(
-				SourceWriter, SpatialValueSetter, MigProp.Value->Property, PropertyValueName,
+				SourceWriter, SpatialValueSetter, HandoverProp.Value->Property, PropertyValueName,
 				[&SourceWriter, Handle](const FString& PropertyValue)
 			{
-				SourceWriter.Printf("Interop->QueueOutgoingObjectMigUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
+				SourceWriter.Printf("Interop->QueueOutgoingObjectHandoverUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
 			}, false, false);
 			SourceWriter.Print("break;");
 			SourceWriter.End();
 		}
 		SourceWriter.Outdent().Print("default:");
 		SourceWriter.Indent();
-		SourceWriter.Print("checkf(false, TEXT(\"Unknown migration property handle %d encountered when creating a SpatialOS update.\"));");
+		SourceWriter.Print("checkf(false, TEXT(\"Unknown handover property handle %d encountered when creating a SpatialOS update.\"));");
 		SourceWriter.Print("break;");
 
 		SourceWriter.End();
@@ -1562,8 +1640,21 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 	};
 	SourceWriter.BeginFunction(ReceiveUpdateSignature, TypeBindingName(Class));
 
+	if (Class->IsChildOf(UActorComponent::StaticClass()))
+	{
+		SourceWriter.Printf(R"""(
+			UActorComponent* TargetObject = ActorChannel->Actor->FindComponentByClass<%s>();)""",
+			*GetFullCPPName(Class));
+	}
+	else
+	{
+		SourceWriter.Printf(R"""(
+			AActor* TargetObject = ActorChannel->Actor;)""");
+	}
+
 	SourceWriter.Printf(R"""(
-			Interop->PreReceiveSpatialUpdate(ActorChannel);)""");
+		ActorChannel->PreReceiveSpatialUpdate(TargetObject);)""");
+
 	if (RepData[Group].Num() > 0)
 	{
 		SourceWriter.Printf(R"""(
@@ -1583,13 +1674,14 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 				RepProp.Value->ReplicationData->Handle,
 				RepProp.Value);
 		}
-		SourceWriter.Print("Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies.Array());");
+
+		SourceWriter.Print("ActorChannel->PostReceiveSpatialUpdate(TargetObject, RepNotifies.Array());");
 	}
 	else
 	{
 		SourceWriter.Print(R"""(
 			TArray<UProperty*> RepNotifies;
-			Interop->PostReceiveSpatialUpdate(ActorChannel, RepNotifies);)""");
+			ActorChannel->PostReceiveSpatialUpdate(TargetObject, RepNotifies);)""");
 	}
 
 	SourceWriter.End();
@@ -1637,7 +1729,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 
 	FString PropertyName = TEXT("RepData->Property");
 	//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
-	SourceWriter.Printf("uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));");
+	SourceWriter.Print("uint8* PropertyData = RepData->GetPropertyData(reinterpret_cast<uint8*>(TargetObject));");
 	if (Property->IsA<UBoolProperty>())
 	{
 		SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(%s)->GetPropertyValue(PropertyData);", *PropertyValueName, *PropertyName);
@@ -1682,7 +1774,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 			SourceWriter.Print(R"""(
 				// Pre-alpha limitation: if a UObject* in an array property is unresolved, we currently don't have a way to update it once
 				// it is resolved. It will remain null and will only be updated when the server replicates this array again (when it changes).
-				UE_LOG(LogSpatialOSInterop, Warning, TEXT("%s: Ignoring unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialGDKInterop, Warning, TEXT("%s: Ignoring unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ObjectRefToString(ObjectRef),
 					*ActorChannel->Actor->GetName(),
@@ -1694,7 +1786,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 		else
 		{
 			SourceWriter.Print(R"""(
-				UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ObjectRefToString(ObjectRef),
 					*ActorChannel->Actor->GetName(),
@@ -1704,7 +1796,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 			SourceWriter.Printf("// A legal static object reference should never be unresolved.");
 			SourceWriter.Printf("check(ObjectRef.path().empty());");
 			SourceWriter.Print("bWriteObjectProperty = false;");
-			SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, RepData);");
+			SourceWriter.Print("Interop->QueueIncomingObjectRepUpdate_Internal(ObjectRef, ActorChannel, TargetObject, RepData);");
 		}
 	}, false);
 
@@ -1729,11 +1821,11 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 		SourceWriter.BeginScope();
 	}
 
-	SourceWriter.Print("ApplyIncomingReplicatedPropertyUpdate(*RepData, ActorChannel->Actor, static_cast<const void*>(&Value), RepNotifies);");
+	SourceWriter.Print("ApplyIncomingReplicatedPropertyUpdate(*RepData, TargetObject, static_cast<const void*>(&Value), RepNotifies);");
 	SourceWriter.PrintNewLine();
 
 	SourceWriter.Print(R"""(
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
+		UE_LOG(LogSpatialGDKInterop, Verbose, TEXT("%s: Received replicated property update. actor %s (%lld), property %s (handle %d)"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*ActorChannel->Actor->GetName(),
 			ActorChannel->GetEntityId().ToSpatialEntityId(),
@@ -1749,31 +1841,31 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	SourceWriter.End();
 }
 
-void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& MigratableData)
+void GenerateFunction_ReceiveUpdate_HandoverData(FCodeWriter& SourceWriter, UClass* Class, const FCmdHandlePropertyMap& HandoverData)
 {
-	// TODO: Support fixed size arrays for migratable data. UNR-282.
+	// TODO: Support fixed size arrays for handover data. UNR-282.
 	FFunctionSignature ReceiveUpdateSignature{"void",
-		FString::Printf(TEXT("ReceiveUpdate_Migratable(USpatialActorChannel* ActorChannel, const %s::Update& Update) const"),
-			*SchemaMigratableDataName(Class, true))
+		FString::Printf(TEXT("ReceiveUpdate_Handover(USpatialActorChannel* ActorChannel, const %s::Update& Update) const"),
+			*SchemaHandoverDataName(Class, true))
 	};
 	SourceWriter.BeginFunction(ReceiveUpdateSignature, TypeBindingName(Class));
 
-	if (MigratableData.Num() > 0)
+	if (HandoverData.Num() > 0)
 	{
-		SourceWriter.Print("const FMigratableHandlePropertyMap& HandleToPropertyMap = GetMigratableHandlePropertyMap();");
+		SourceWriter.Print("const FHandoverHandlePropertyMap& HandleToPropertyMap = GetHandoverHandlePropertyMap();");
 		SourceWriter.PrintNewLine();
-		for (auto& MigProp : MigratableData)
+		for (auto& HandoverProp : HandoverData)
 		{
-			auto Handle = MigProp.Key;
-			UProperty* Property = MigProp.Value->Property;
+			auto Handle = HandoverProp.Key;
+			UProperty* Property = HandoverProp.Value->Property;
 
 			// Check if this property is in the update.
-			SourceWriter.Printf("if (!Update.%s().empty())", *SchemaFieldName(MigProp.Value));
+			SourceWriter.Printf("if (!Update.%s().empty())", *SchemaFieldName(HandoverProp.Value));
 			SourceWriter.BeginScope();
 
-			SourceWriter.Printf("// %s", *SchemaFieldName(MigProp.Value));
+			SourceWriter.Printf("// %s", *SchemaFieldName(HandoverProp.Value));
 			SourceWriter.Printf("uint16 Handle = %d;", Handle);
-			SourceWriter.Print("const FMigratableHandleData* MigratableData = &HandleToPropertyMap[Handle];");
+			SourceWriter.Print("const FHandoverHandleData* HandoverData = &HandleToPropertyMap[Handle];");
 
 			if (Property->IsA<UObjectPropertyBase>())
 			{
@@ -1783,9 +1875,9 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 			// Convert update data to the corresponding Unreal type and serialize to OutputWriter.
 			FString PropertyValueName = TEXT("Value");
 			FString PropertyValueCppType = Property->GetCPPType();
-			FString PropertyName = TEXT("MigratableData->Property");
+			FString PropertyName = TEXT("HandoverData->Property");
 			//todo-giray: The reinterpret_cast below is ugly and we believe we can do this more gracefully using Property helper functions.
-			SourceWriter.Printf("uint8* PropertyData = MigratableData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));");
+			SourceWriter.Printf("uint8* PropertyData = HandoverData->GetPropertyData(reinterpret_cast<uint8*>(ActorChannel->Actor));");
 			if (Property->IsA<UBoolProperty>())
 			{
 				SourceWriter.Printf("bool %s = static_cast<UBoolProperty*>(%s)->GetPropertyValue(PropertyData);", *PropertyValueName, *PropertyName);
@@ -1796,22 +1888,22 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 			}
 			SourceWriter.PrintNewLine();
 
-			FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(MigProp.Value));
+			FString SpatialValue = FString::Printf(TEXT("(*%s.%s().data())"), TEXT("Update"), *SchemaFieldName(HandoverProp.Value));
 
 			GeneratePropertyToUnrealConversion(
-				SourceWriter, SpatialValue, MigProp.Value->Property, PropertyValueName,
+				SourceWriter, SpatialValue, HandoverProp.Value->Property, PropertyValueName,
 				[&SourceWriter](const FString& PropertyValue)
 			{
 				SourceWriter.Print(R"""(
-					UE_LOG(LogSpatialOSInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
+					UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Received unresolved object property. Value: %s. actor %s (%lld), property %s (handle %d)"),
 						*Interop->GetSpatialOS()->GetWorkerId(),
 						*ObjectRefToString(ObjectRef),
 						*ActorChannel->Actor->GetName(),
 						ActorChannel->GetEntityId().ToSpatialEntityId(),
-						*MigratableData->Property->GetName(),
+						*HandoverData->Property->GetName(),
 						Handle);)""");
 				SourceWriter.Print("bWriteObjectProperty = false;");
-				SourceWriter.Print("Interop->QueueIncomingObjectMigUpdate_Internal(ObjectRef, ActorChannel, MigratableData);");
+				SourceWriter.Print("Interop->QueueIncomingObjectHandoverUpdate_Internal(ObjectRef, ActorChannel, HandoverData);");
 			}, false);
 
 			SourceWriter.PrintNewLine();
@@ -1822,15 +1914,15 @@ void GenerateFunction_ReceiveUpdate_MigratableData(FCodeWriter& SourceWriter, UC
 				SourceWriter.BeginScope();
 			}
 
-			SourceWriter.Print("ApplyIncomingMigratablePropertyUpdate(*MigratableData, ActorChannel->Actor, static_cast<const void*>(&Value));");
+			SourceWriter.Print("ApplyIncomingHandoverPropertyUpdate(*HandoverData, ActorChannel->Actor, static_cast<const void*>(&Value));");
 			SourceWriter.PrintNewLine();
 
 			SourceWriter.Print(R"""(
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%s: Received migratable property update. actor %s (%lld), property %s (handle %d)"),
+				UE_LOG(LogSpatialGDKInterop, Verbose, TEXT("%s: Received handover property update. actor %s (%lld), property %s (handle %d)"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*ActorChannel->Actor->GetName(),
 					ActorChannel->GetEntityId().ToSpatialEntityId(),
-					*MigratableData->Property->GetName(),
+					*HandoverData->Property->GetName(),
 					Handle);)""");
 
 			if (Property->IsA<UObjectPropertyBase>())
@@ -1861,7 +1953,7 @@ void GenerateFunction_ReceiveUpdate_MulticastRPCs(FCodeWriter& SourceWriter, UCl
 				%s_OnRPCPayload(EntityId, event);
 			})""",
 			*SchemaRPCName(Class, RPC->Function),
-			*RPC->Function->GetName());
+			*UnrealNameToCppName(RPC->Function->GetName()));
 
 		SourceWriter.PrintNewLine();
 	}
@@ -1874,10 +1966,10 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 	FFunctionSignature SendCommandSignature{
 		"void",
 		FString::Printf(TEXT("%s_SendRPC(worker::Connection* const Connection, void* Parameters, UObject* TargetObject)"),
-			*RPC->Function->GetName())
+			*UnrealNameToCppName(RPC->Function->GetName()))
 	};
 	SourceWriter.BeginFunction(SendCommandSignature, TypeBindingName(Class));
-		
+
 	// Extract RPC arguments from the stack.
 	if (RPC->Function->NumParms > 0)
 	{
@@ -1904,7 +1996,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: RPC %s queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
+			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%%s: RPC %s queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
 			return {TargetObject};
 		})""", *RPC->Function->GetName());
 	SourceWriter.PrintNewLine();
@@ -1929,14 +2021,13 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 			SourceWriter, SpatialValueSetter, Param->Property, PropertyValue,
 			[&SourceWriter, &RPC](const FString& PropertyValue)
 		{
-			SourceWriter.Printf("UE_LOG(LogSpatialOSInterop, Log, TEXT(\"%%s: RPC %s queued. %s is unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
+			SourceWriter.Printf("UE_LOG(LogSpatialGDKInterop, Log, TEXT(\"%%s: RPC %s queued. %s is unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",
 				*RPC->Function->GetName(),
 				*PropertyValue);
 			SourceWriter.Printf("return {Cast<UObject>(%s)};", *PropertyValue);
 		}, true, false);
 		SourceWriter.End();
 	}
-
 
 	FString RPCSendingMethod;
 	if (RPC->Type == RPC_NetMulticast)
@@ -1950,7 +2041,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 			*SchemaRPCComponentName(RPC->Type, Class, true),
 			*SchemaRPCName(Class, RPC->Function),
 			*SchemaRPCName(Class, RPC->Function),
-			*RPC->Function->GetName(),
+			*UnrealNameToCppName(RPC->Function->GetName()),
 			*SchemaRPCComponentName(RPC->Type, Class, true));
 	}
 	else
@@ -1966,7 +2057,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 	SourceWriter.Printf(R"""(
 		// Send RPC
 		RPCPayload.set_target_subobject_offset(TargetObjectRef.offset());
-		UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%%s: Sending RPC: %s, target: %%s %%s"),
+		UE_LOG(LogSpatialGDKInterop, Verbose, TEXT("%%s: Sending RPC: %s, target: %%s %%s"),
 			*Interop->GetSpatialOS()->GetWorkerId(),
 			*TargetObject->GetName(),
 			*ObjectRefToString(TargetObjectRef));
@@ -1995,7 +2086,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 	}
 
 	FString RequestFuncName = FString::Printf(TEXT("%s_OnRPCPayload(%s)"),
-		*RPC->Function->GetName(), *FunctionParameters);
+		*UnrealNameToCppName(RPC->Function->GetName()), *FunctionParameters);
 
 	SourceWriter.BeginFunction({ "void", RequestFuncName }, TypeBindingName(Class));
 
@@ -2018,11 +2109,11 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 		SourceWriter.Printf("// A legal static object reference should never be unresolved.");
 		SourceWriter.Printf("checkf(%s.path().empty(), TEXT(\"A stably named object should not need resolution.\"));", *ObjectRef);
 		SourceWriter.Printf(R"""(
-			UE_LOG(LogSpatialOSInterop, Log, TEXT("%%s: %s_OnRPCPayload: %s %%s is not resolved on this worker."),
+			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%%s: %s_OnRPCPayload: %s %%s is not resolved on this worker."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*ObjectRefToString(%s));
 			return {%s};)""",
-			*RPC->Function->GetName(),
+			*UnrealNameToCppName(RPC->Function->GetName()),
 			*PropertyName,
 			*ObjectRef,
 			*ObjectRef,
@@ -2088,7 +2179,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 	SourceWriter.PrintNewLine();
 	SourceWriter.Print("// Call implementation.");
 	SourceWriter.Printf(R"""(
-				UE_LOG(LogSpatialOSInterop, Verbose, TEXT("%%s: Received RPC: %s, target: %%s %%s"),
+				UE_LOG(LogSpatialGDKInterop, Verbose, TEXT("%%s: Received RPC: %s, target: %%s %%s"),
 					*Interop->GetSpatialOS()->GetWorkerId(),
 					*TargetObject->GetName(),
 					*ObjectRefToString(TargetObjectRef));)""",
@@ -2102,14 +2193,14 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 		}
 		else
 		{
-			UE_LOG(LogSpatialOSInterop, Error, TEXT("%%s: %s_OnRPCPayload: Function not found. Object: %%s, Function: %s."),
+			UE_LOG(LogSpatialGDKInterop, Error, TEXT("%%s: %s_OnRPCPayload: Function not found. Object: %%s, Function: %s."),
 				*Interop->GetSpatialOS()->GetWorkerId(),
 				*TargetObject->GetFullName());
 		})""",
 		*RPC->Function->GetName(),
 		*RPCParametersStruct,
-		*RPC->Function->GetName(),
-		*RPC->Function->GetName());
+		*UnrealNameToCppName(RPC->Function->GetName()),
+		*UnrealNameToCppName(RPC->Function->GetName()));
 	SourceWriter.PrintNewLine();
 
 	if (RPC->Type != RPC_NetMulticast)
@@ -2132,7 +2223,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 void GenerateFunction_RPCOnCommandResponse(FCodeWriter& SourceWriter, UClass* Class, const TSharedPtr<FUnrealRPC> RPC)
 {
 	FString ResponseFuncName = FString::Printf(TEXT("%s_OnCommandResponse(const worker::CommandResponseOp<%s::Commands::%s>& Op)"),
-		*RPC->Function->GetName(),
+		*UnrealNameToCppName(RPC->Function->GetName()),
 		*SchemaRPCComponentName(RPC->Type, Class, true),
 		*CPPCommandClassName(Class, RPC->Function));
 

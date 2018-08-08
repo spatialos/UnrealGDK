@@ -63,6 +63,8 @@ public:
 
 	void CleanupDeletedEntity(const FEntityId& EntityId);
 
+	bool IsInCriticalSection() const { return bInCriticalSection; }
+
 private:
 	bool bInCriticalSection;
 
@@ -104,7 +106,7 @@ private:
 		UCallbackDispatcher* CallbackDispatcher) override;
 
 private:
-	AActor* GetOrCreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId);
+	void CreateActor(TSharedPtr<worker::Connection> LockedConnection, TSharedPtr<worker::View> LockedView, const FEntityId& EntityId);
 	AActor* SpawnNewEntity(improbable::PositionData* PositionComponent, UClass* ClassToSpawn, bool bDeferred);
 	
 	UClass* GetNativeEntityClass(improbable::MetadataData* MetadataComponent);

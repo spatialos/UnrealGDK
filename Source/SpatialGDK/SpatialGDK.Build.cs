@@ -47,23 +47,52 @@ public class SpatialGDK : ModuleRules
 		}
 
    		var CoreSdkLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
-        string CoreSdkShared;
 
-        if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
+        string LibPrefix = "";
+        string ImportLibSuffix = "";
+        string SharedLibSuffix = "";
+        bool bAddDelayLoad = false;
+
+        switch (Target.Platform)
         {
-            CoreSdkShared = Path.Combine(CoreSdkLibraryDir, "CoreSdkDll.dll");
-            PublicAdditionalLibraries.AddRange(new[] { Path.Combine(CoreSdkLibraryDir, "CoreSdkDll.lib") });
-        }
-        else
-        {
-            CoreSdkShared = Path.Combine(CoreSdkLibraryDir, "libCoreSdkDll.so");
-            PublicAdditionalLibraries.AddRange(new[] { CoreSdkShared });
+            case UnrealTargetPlatform.Win32:
+            case UnrealTargetPlatform.Win64:
+                ImportLibSuffix = ".lib";
+                SharedLibSuffix = ".dll";
+                bAddDelayLoad = true;
+                break;
+            case UnrealTargetPlatform.Mac:
+                LibPrefix = "lib";
+                ImportLibSuffix = SharedLibSuffix = ".dylib";
+                break;
+            case UnrealTargetPlatform.Linux:
+                LibPrefix = "lib";
+                ImportLibSuffix = SharedLibSuffix = ".so";
+                break;
+            case UnrealTargetPlatform.PS4:
+                LibPrefix = "lib";
+                ImportLibSuffix = "_stub.a";
+                SharedLibSuffix = ".prx";
+                bAddDelayLoad = true;
+                break;
+            case UnrealTargetPlatform.XboxOne:
+                ImportLibSuffix = ".lib";
+                SharedLibSuffix = ".dll";
+                break;
+            default:
+                throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
         }
 
-        RuntimeDependencies.Add(CoreSdkShared, StagedFileType.NonUFS);
+        string CoreSdkImportLib = System.String.Format("{0}CoreSdkDll{1}", LibPrefix, ImportLibSuffix);
+        string CoreSdkSharedLib = System.String.Format("{0}CoreSdkDll{1}", LibPrefix, SharedLibSuffix);
 
+        PublicAdditionalLibraries.AddRange(new[] { Path.Combine(CoreSdkLibraryDir, CoreSdkImportLib) });
+        RuntimeDependencies.Add(Path.Combine(CoreSdkLibraryDir, CoreSdkSharedLib), StagedFileType.NonUFS);
         PublicLibraryPaths.Add(CoreSdkLibraryDir);
-        PublicDelayLoadDLLs.Add("CoreSdkDll.dll");
+        if (bAddDelayLoad)
+        {
+            PublicDelayLoadDLLs.Add(CoreSdkSharedLib);
+        }
 
         // Point generated code to the correct API spec.
         PublicDefinitions.Add("IMPROBABLE_DLL_API=SPATIALGDK_API");

@@ -4,19 +4,23 @@
 #include "EntityBuilder.h"
 #include "SpatialConstants.h"
 #include "SpatialOSCommon.h"
-
-#include "CoreMinimal.h"
-#include "EngineUtils.h"
-#include "GameFramework/Actor.h"
-
+#include "SpatialGDKEditorUtils.h"
+#include "SpatialGDKEditorToolbarSettings.h"
+#include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
 #include <improbable/standard_library.h>
 #include <improbable/unreal/gdk/level_data.h>
 #include <improbable/unreal/gdk/spawner.h>
+#include <improbable/unreal/gdk/global_state_manager.h>
 #include <improbable/worker.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
 using namespace improbable;
+
+namespace
+{
+
+using NameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
 
 const WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
 const WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
@@ -25,22 +29,19 @@ const WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet
 const WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
 const WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
 
-namespace
-{
+const Coordinates Origin{0, 0, 0};
+
 worker::Entity CreateSpawnerEntity()
 {
-	const Coordinates InitialPosition{0, 0, 0};
-	improbable::WorkerAttributeSet WorkerAttribute{{worker::List<std::string>{"UnrealWorker"}}};
-	improbable::WorkerRequirementSet WorkersOnly{{WorkerAttribute}};
 	improbable::unreal::UnrealMetadata::Data UnrealMetadata;
 
 	return improbable::unreal::FEntityBuilder::Begin()
-		.AddPositionComponent(Position::Data{InitialPosition}, UnrealWorkerWritePermission)
+		.AddPositionComponent(Position::Data{Origin}, UnrealWorkerWritePermission)
 		.AddMetadataComponent(Metadata::Data("SpatialSpawner"))
 		.SetPersistence(true)
 		.SetReadAcl(AnyWorkerReadPermission)
 		.AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{}, UnrealWorkerWritePermission)
-		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly)
+		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, UnrealWorkerWritePermission)
 		.Build();
 }
 
@@ -74,43 +75,144 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 	check(PlaceholderEntityIdCounter == SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1);
 	return LevelEntities;
 }
-} // ::
 
-bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
+bool CreateSingletonToIdMap(NameToEntityIdMap& SingletonNameToEntityId)
 {
-	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Save path %s"), *SavePath);
-	if (FPaths::CollapseRelativeDirectories(SavePath))
+	const FString FileName = "DefaultEditorSpatialGDK.ini";
+	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
+
+	// Load the SpatialGDK config file
+	const FConfigFile* ConfigFile = LoadConfigFile(ConfigFilePath);
+	if (!ConfigFile)
 	{
-		std::unordered_map<worker::EntityId, worker::Entity> SnapshotEntities;
-
-		// Create spawner.
-		SnapshotEntities.emplace(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
-
-		// Create level entities.
-		for (auto EntityPair : CreateLevelEntities(World))
-		{
-			SnapshotEntities.emplace(std::move(EntityPair));
-		}
-
-		const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
-
-		// Save snapshot.
-		worker::Option<std::string> Result = worker::SaveSnapshot(improbable::unreal::Components{}, TCHAR_TO_UTF8(*FullPath), SnapshotEntities);
-		if (!Result.empty())
-		{
-			std::string ErrorString = Result.value_or("");
-			UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(ErrorString.c_str()));
-			return false;
-		}
-		else
-		{
-			UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path %s"), *FullPath);
-			return true;
-		}
-	}
-	else
-	{
-		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Path was invalid - snapshot not generated"));
 		return false;
 	}
+
+	const FString SectionName = "SnapshotGenerator.SingletonActorClasses";
+	const FConfigSection* SingletonActorClassesSection = GetConfigSection(ConfigFilePath, SectionName);
+	if (SingletonActorClassesSection == nullptr)
+	{
+		return false;
+	}
+
+	TArray<FName> SingletonActorClasses;
+	SingletonActorClassesSection->GetKeys(SingletonActorClasses);
+
+	for (FName ClassName : SingletonActorClasses)
+	{
+		// Id is initially 0 to indicate that this Singleton entity has not been created yet.
+		// When the worker authoritative over the GSM sees 0, it knows it is safe to create it.
+		SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*(ClassName.ToString()))), 0);
+	}
+
+	return true;
+}
+
+worker::Entity CreateGlobalStateManagerEntity(const NameToEntityIdMap& SingletonNameToEntityId)
+{
+	return improbable::unreal::FEntityBuilder::Begin()
+		.AddPositionComponent(Position::Data{Origin}, UnrealWorkerWritePermission)
+		.AddMetadataComponent(Metadata::Data("GlobalStateManager"))
+		.SetPersistence(true)
+		.SetReadAcl(AnyWorkerReadPermission)
+		.AddComponent<unreal::GlobalStateManager>(unreal::GlobalStateManager::Data{SingletonNameToEntityId}, UnrealWorkerWritePermission)
+		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{}, UnrealWorkerWritePermission)
+		.Build();
+}
+
+} // ::
+
+bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
+{
+	FString DirectoryPath = FPaths::GetPath(SavePath);
+	if (!FPaths::CollapseRelativeDirectories(DirectoryPath))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Invalid path: %s - snapshot not generated"), *DirectoryPath);
+		return false;
+	}
+
+	if (!FPaths::DirectoryExists(DirectoryPath))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot directory does not exist - creating directory: %s"), *DirectoryPath);
+		if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*DirectoryPath))
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Unable to create directory: %s - snapshot not generated"), *DirectoryPath);
+			return false;
+		}
+	}
+	return true;
+}
+
+FString SetupSnapshotGenerationPath()
+{
+	// Default path and file names.
+	const FString& ProjectFilePath = FPaths::ConvertRelativePathToFull(*FPaths::GetPath(FPaths::GetProjectFilePath()));
+	FString SavePath = FPaths::Combine(*ProjectFilePath, TEXT("../spatial/snapshots"));
+	FString SnapshotFileName = TEXT("default.snapshot");
+
+	if (const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>())
+	{
+		if (!Settings->SpatialOSSnapshotPath.Path.IsEmpty())
+		{
+			SavePath = Settings->SpatialOSSnapshotPath.Path;
+		}
+
+		if (!Settings->SpatialOSSnapshotFile.IsEmpty())
+		{
+			SnapshotFileName = Settings->SpatialOSSnapshotFile;
+		}
+	}
+
+	SavePath = FPaths::Combine(*SavePath, SnapshotFileName);
+	return SavePath;
+}
+
+bool SpatialGDKGenerateSnapshot(UWorld* World)
+{
+	FString SavePath = SetupSnapshotGenerationPath();
+	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
+	{
+		return false;
+	}
+
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Saving snapshot to: %s"), *SavePath);
+	worker::SnapshotOutputStream OutputStream = worker::SnapshotOutputStream(improbable::unreal::Components{}, TCHAR_TO_UTF8(*SavePath));
+
+	// Create spawner entity.
+	worker::Option<std::string> Result = OutputStream.WriteEntity(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
+
+	if (!Result.empty())
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
+		return false;
+	}
+
+	// Create Global State Manager
+	NameToEntityIdMap SingletonNameToEntityId;
+	if(!CreateSingletonToIdMap(SingletonNameToEntityId))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: Couldn't create Singleton Name to EntityId map"));
+		return false;
+	}
+
+	Result = OutputStream.WriteEntity(SpatialConstants::GLOBAL_STATE_MANAGER, CreateGlobalStateManagerEntity(SingletonNameToEntityId));
+	if (!Result.empty())
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
+		return false;
+	}
+
+	// Create level entities.
+	for (const auto& EntityPair : CreateLevelEntities(World))
+	{
+		Result = OutputStream.WriteEntity(EntityPair.first, EntityPair.second);
+		if (!Result.empty())
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Result.value_or("").c_str()));
+			return false;
+		}
+	}
+
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path: %s"), *SavePath);
+	return true;
 }

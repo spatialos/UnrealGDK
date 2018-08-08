@@ -3,6 +3,14 @@
 #include "TypeStructure.h"
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 
+#include "Engine/SCS_Node.h"
+
+namespace Errors
+{
+	FString DuplicateComponentError = TEXT("WARNING: Unreal GDK does not currently support multiple static components of the same type.\n"
+		"Make sure %s has only one instance of %s or don't generate type bindings for %s");
+}
+
 FString GetFullCPPName(UClass* Class)
 {
 	if (Class->IsChildOf(AActor::StaticClass()))
@@ -457,13 +465,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	} // END CMD FOR LOOP
 
 	// Find the handover properties.
-	uint16 MigratableDataHandle = 1;
-	VisitAllProperties(TypeNode, [&MigratableDataHandle](TSharedPtr<FUnrealProperty> PropertyInfo)
+	uint16 HandoverDataHandle = 1;
+	VisitAllProperties(TypeNode, [&HandoverDataHandle](TSharedPtr<FUnrealProperty> PropertyInfo)
 	{
 		if (PropertyInfo->Property->PropertyFlags & CPF_Handover)
 		{
-			PropertyInfo->MigratableData = MakeShared<FUnrealMigratableData>();
-			PropertyInfo->MigratableData->Handle = MigratableDataHandle++;
+			PropertyInfo->HandoverData = MakeShared<FUnrealHandoverData>();
+			PropertyInfo->HandoverData->Handle = HandoverDataHandle++;
 		}
 		return true;
 	}, true);
@@ -506,24 +514,24 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 	return RepData;
 }
 
-FCmdHandlePropertyMap GetFlatMigratableData(TSharedPtr<FUnrealType> TypeInfo)
+FCmdHandlePropertyMap GetFlatHandoverData(TSharedPtr<FUnrealType> TypeInfo)
 {
-	FCmdHandlePropertyMap MigratableData;
-	VisitAllProperties(TypeInfo, [&MigratableData](TSharedPtr<FUnrealProperty> PropertyInfo)
+	FCmdHandlePropertyMap HandoverData;
+	VisitAllProperties(TypeInfo, [&HandoverData](TSharedPtr<FUnrealProperty> PropertyInfo)
 	{
-		if (PropertyInfo->MigratableData.IsValid())
+		if (PropertyInfo->HandoverData.IsValid())
 		{
-			MigratableData.Add(PropertyInfo->MigratableData->Handle, PropertyInfo);
+			HandoverData.Add(PropertyInfo->HandoverData->Handle, PropertyInfo);
 		}
 		return true;
 	}, true);
 
 	// Sort by property handle.
-	MigratableData.KeySort([](uint16 A, uint16 B)
+	HandoverData.KeySort([](uint16 A, uint16 B)
 	{
 		return A < B;
 	});
-	return MigratableData;
+	return HandoverData;
 }
 
 // Goes through all RPCs in the TypeInfo and returns a list of all the unique RPC source classes.
@@ -556,8 +564,61 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 			RPCsByType.FindOrAdd(RPC.Value->Type).Add(RPC.Value);
 		}
 		return true;
-	}, true);
+	}, false);
 	return RPCsByType;
+}
+
+TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& InteropGeneratedClasses)
+{
+	TSet<UClass*> ComponentClasses;
+
+	if (AActor* ContainerCDO = Cast<AActor>(Class->GetDefaultObject()))
+	{
+		TInlineComponentArray<UActorComponent*> NativeComponents;
+		ContainerCDO->GetComponents(NativeComponents);
+
+		for (UActorComponent* Component : NativeComponents)
+		{
+			AddComponentClassToSet(Component->GetClass(), ComponentClasses, Class, InteropGeneratedClasses);
+		}
+
+		// Components that are added in a blueprint won't appear in the CDO.
+		if (UBlueprintGeneratedClass* BGC = Cast<UBlueprintGeneratedClass>(Class))
+		{
+			if (USimpleConstructionScript* SCS = BGC->SimpleConstructionScript)
+			{
+				for (USCS_Node* Node : SCS->GetAllNodes())
+				{
+					if (Node->ComponentTemplate == nullptr)
+					{
+						continue;
+					}
+
+					AddComponentClassToSet(Node->ComponentTemplate->GetClass(), ComponentClasses, Class, InteropGeneratedClasses);
+				}
+			}
+		}
+	}
+
+	return ComponentClasses.Array();
+}
+
+void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass, const ClassHeaderMap& InteropGeneratedClasses)
+{
+	if (InteropGeneratedClasses.Find(ComponentClass->GetPathName()))
+	{
+		if (ComponentClasses.Find(ComponentClass) == nullptr)
+		{
+			ComponentClasses.Add(ComponentClass);
+		}
+		else
+		{
+			FMessageDialog::Debugf(FText::FromString(FString::Printf(*Errors::DuplicateComponentError,
+				*ActorClass->GetName(),
+				*ComponentClass->GetName(),
+				*ComponentClass->GetName())));
+		}
+	}
 }
 
 TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode)

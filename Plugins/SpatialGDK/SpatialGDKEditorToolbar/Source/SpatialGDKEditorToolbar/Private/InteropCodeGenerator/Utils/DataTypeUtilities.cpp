@@ -28,8 +28,14 @@ FString GetEnumDataType(const UEnumProperty* EnumProperty)
 
 FString UnrealNameToSchemaTypeName(const FString& UnrealName)
 {
-	// Note: Removing underscores to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-	return UnrealName.Replace(TEXT("_"), TEXT(""));
+	// Note: Removing underscores and spaces to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
+	return UnrealName.Replace(TEXT("_"), TEXT("")).Replace(TEXT(" "), TEXT(""));
+}
+
+FString UnrealNameToCppName(const FString& UnrealName)
+{
+	// Note: Blueprints can have functions with spaces
+	return UnrealName.Replace(TEXT(" "), TEXT(""));
 }
 
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type, bool bPrependNamespace /*= false*/)
@@ -37,9 +43,9 @@ FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type, 
 	return FString::Printf(TEXT("%s%s%sRepData"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()), *GetReplicatedPropertyGroupName(Group));
 }
 
-FString SchemaMigratableDataName(UStruct* Type, bool bPrependNamespace /*= false*/)
+FString SchemaHandoverDataName(UStruct* Type, bool bPrependNamespace /*= false*/)
 {
-	return FString::Printf(TEXT("%s%sMigratableData"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()));
+	return FString::Printf(TEXT("%s%sHandoverData"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()));
 }
 
 FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNamespace /*= false*/)

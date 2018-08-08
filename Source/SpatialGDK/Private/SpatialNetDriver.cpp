@@ -181,7 +181,7 @@ static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Act
 }
 
 // Returns true if this actor is considered dormant (and all properties caught up) to the current connection
-static FORCEINLINE_DEBUGGABLE bool IsActorDormant(FNetworkObjectInfo* ActorInfo, const UNetConnection* Connection)
+static FORCEINLINE_DEBUGGABLE bool IsActorDormant(FNetworkObjectInfo* ActorInfo, UNetConnection* Connection)
 {
 	// If actor is already dormant on this channel, then skip replication entirely
 	return ActorInfo->DormantConnections.Contains(Connection);
@@ -467,13 +467,20 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
 					if (Channel)
 					{
-						const USpatialTypeBinding* TypeBinding = Interop->GetTypeBindingByClass(Actor->GetClass());
-						if (TypeBinding == nullptr)
+						if (Interop->GetTypeBindingByClass(Actor->GetClass()) == nullptr)
 						{
 							Channel->bCoreActor = false;
 						}
 
-						Channel->SetChannelActor(Actor);
+						// If Singleton, add to map and don't set up channel. Entity might already exist
+						if (Interop->IsSingletonClass(Actor->GetClass()))
+						{
+							SingletonActorChannels.Add(Actor->GetClass(), TPair<AActor*, USpatialActorChannel*>(Actor, Channel));
+						}
+						else
+						{
+							Channel->SetChannelActor(Actor);
+						}
 					}
 					// if we couldn't replicate it for a reason that should be temporary, and this Actor is updated very infrequently, make sure we update it again soon
 					else if (Actor->NetUpdateFrequency < 1.0f)
@@ -508,7 +515,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 								LastSentActors.Add(Actor);
 							}
 
-							// Calculate min delta (max rate actor will upate), and max delta (slowest rate actor will update)
+							// Calculate min delta (max rate actor will update), and max delta (slowest rate actor will update)
 							const float MinOptimalDelta = 1.0f / Actor->NetUpdateFrequency;
 							const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
 							const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
@@ -752,12 +759,22 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		return;
 	}
 
+	// This check mimics the way Unreal natively checks whether an AActor has ownership for sending server RPCs.
+	// The function GetNetConnection() goes up the AActor ownership chain until it reaches an AActor that is possesed by an AController and
+	// hence a UNetConnection. Server RPCs should only be sent by AActor instances that either are possessed by a UNetConnection or are owned by
+	// other AActor instances possessed by a UNetConnection. For native Unreal reference see ProcessRemoteFunction() of IpNetDriver.cpp.
+	if (!Actor->GetNetConnection())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("No owning connection for actor %s. Function %s will not be processed."), *Actor->GetName(), *Function->GetName());
+		return;
+	}
+
 	// The RPC might have been called by an actor directly, or by a subobject on that actor (e.g. UCharacterMovementComponent).
 	UObject* CallingObject = SubObject ? SubObject : Actor;
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		Interop->InvokeRPC(Actor, Function, CallingObject, Parameters);
+		Interop->InvokeRPC(CallingObject, Function, Parameters);
 	}
 
 	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver
