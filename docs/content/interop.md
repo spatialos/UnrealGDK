@@ -25,7 +25,7 @@ You need to use the ICG to generate `.schema` files and type bindings for any ne
 ### How to use the ICG
 As the Interop Code Generator is an plugin for the Unreal toolbar, to use it you must first:
 *  build your game project to access the SpatialOS fork of Unreal Engine as well as the Unreal GDK. (You do this as part of the [installation and setup](../setup-and-installing.md), swapping the “Starter Project” and its file location for your game’s name and file location.)
-* set up a `DefaultEditorSpatialGDK.ini` file. See  [Setting up the Interop Code Generator](#Setting-up-the-Interop-Code-Generator), below.
+* List the classes that you want create typebindings for in the `SpatialGDKEditorSettings` from within the editor. See  [Setting up the Interop Code Generator](#Setting-up-the-Interop-Code-Generator), below.
 
 The SpatialOS build of Unreal has an **Interop Codegen** button; on the SpatialOS Unreal GDK toolbar, select **Interop Codegen** to trigger the ICG process:
 
@@ -33,75 +33,19 @@ The SpatialOS build of Unreal has an **Interop Codegen** button; on the SpatialO
 
 ## Setting up the Interop Code Generator
 
-In order for the ICG to run correctly, you need to add any new user-defined class, along with its dependencies, to a `DefaultEditorSpatialGDK.ini` file before you run it.
+In order for the ICG to run correctly, you need to add any new user-defined class, along with its dependencies, in the `SpatialOS Unreal GDK` settings in the Unreal Engine 4 Editor tab before you run it.
 
 Using the Unreal GDK Starter Project as an example, to do this:
-1. Locate the `DefaultEditorSpatialGDK.ini` file in the Starter Project repository which you cloned during installation and setup - it’s at `Game/Config/DefaultEditorSpatialGDK.ini`.
-1. Open the file in your editor and add your user-defined class as shown in the file snippet and file description below.
+1. Go to ** Edit > Project Settings... > SpatialOS Unreal GDK > Toolbar **.
+1. In the entry `Classes to generate typebindings for`, add your user-defined class and the include dependencies that the typebinding require to compile.
 
-### Example file snippet
-In the example file snippet below, your game is `ExampleGame` and the class you want to add is `ExampleGameMyClass`.
+If you want more information on the settings available through the Unreal GDK toolbar, then have a look at the [settings section in the toolbar docs](./toolbar.md#Settings).
 
-```
-[InteropCodeGen.Settings]
-OutputPath=ExampleGame/Generated/
+### Example
 
-[InteropCodeGen.ClassesToGenerate]
-;ClassName=include_path.h
-;Leave empty if no includes required.
+The image below demonstrate how we setup the class `StarterProjectPlayerController` from the [Unreal GDK Starter Project’s](https://github.com/spatialos/UnrealGDKStarterProject), which depends on the include files `StarterProjectPlayerController.h`, `Camera/CameraAnim.h`, `Camera/CameraShake.h`, `GameFramework/HUD.h`, `GameFramework/LocalMessage.h` and `Particles/EmitterCameraLensEffectBase.h`.
 
-;MyClass
-/Script/ExampleGame.ExampleGameMyClass=ExampleGameMyClass.h
-/Script/ExampleGame.ExampleGameMyClass=IncludePath/MyClassDependency.h
-```
-
-### Example file description
-The  `DefaultEditorSpatialGDK.ini` file has two sections:
-* `InteropCodeGen.Settings`
-* `InteropCodeGen.ClassesToGenerate`
-
-**`InteropCodeGen.Settings`**<br/>
-In the  `InteropCodeGen.Settings` section you specify where the generated code goes.<br/>
-Make sure you list the `OutputPath=` relative to the `source` directory of your game.
-
-
-So, in the example above:
-
-```
-[InteropCodeGen.Settings]
-OutputPath=ExampleGame/Generated/
-```
-
-**`InteropCodeGen.ClassesToGenerate`**<br/>
-The `InteropCodeGen.ClassesToGenerate` section contains a list of the classes you want the ICG to create `.schema` and type bindings for.
-
-**Note:** You need to specify your class with the full PathName, which can be aqcuired by opening the context menu item **Copy reference** of the class in the **Content Browser** within the unreal editor.
-
-The section also contains the dependencies these classes require. These dependencies are an `#include` which the ICG adds to its generated code, so you need to make sure you list all the dependencies the classes need.
-
-In the example above, this is:
-
-```
-;MyClass
-/Script/ExampleGame.ExampleGameMyClass=ExampleGameMyClass.h
-/Script/ExampleGame.ExampleGameMyClass=Dependencies/MyClassDependency.h
-```
-
-The [Unreal GDK Starter Project’s](https://github.com/spatialos/UnrealGDKStarterProject)  `DefaultEditorSpatialGDK.ini` file contains the following:<br/>
-
-```
-;PlayerController
-/Script/StarterProject.StarterProjectPlayerController=StarterProjectPlayerController.h
-/Script/StarterProject.StarterProjectPlayerController=Camera/CameraAnim.h
-/Script/StarterProject.StarterProjectPlayerController=Camera/CameraShake.h
-/Script/StarterProject.StarterProjectPlayerController=GameFramework/HUD.h
-/Script/StarterProject.StarterProjectPlayerController=GameFramework/LocalMessage.h
-/Script/StarterProject.StarterProjectPlayerController=Particles/EmitterCameraLensEffectBase.h
-
-;PlayerCharacter
-/Script/StarterProject.PlayerCharacter=Weapons/Weapon.h
-/Script/StarterProject.PlayerCharacter=Items/Item.h
-```
+![Interop Codegen Settings](../assets/screen_grabs/toolbar/ICGSettings.png)
 
 This generates the appropriate `.schema` files and type bindings as `SpatialTypeBinding` files. Using the Starter Project example:
 

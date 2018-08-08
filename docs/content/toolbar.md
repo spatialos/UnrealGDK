@@ -57,7 +57,7 @@ Opens the [Inspector](https://docs.improbable.io/reference/13.1/shared/glossary#
 
 The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal GDK** > **Toolbar**.
 
- ![Ttoolbar](../assets/screen_grabs/toolbar/toolbar_settings.png)
+ ![Toolbar](../assets/screen_grabs/toolbar/toolbar_settings.png)
 
 
 * **Project Root Folder**</br>
@@ -74,3 +74,10 @@ Path to your SpatialOS Unreal GDK snapshot.
 
 * **Snapshot file name**</br>
 Name of your SpatialOS Unreal GDK snapshot file.
+
+* **Singleton classes**</br>
+Specifies which classes that should be generated as singleton classes during the [ICG process](./interop.md).
+
+* **Classes to generate typebindings for**</br>
+Specifies the classes for which typebindings should be generated for durint the [ICG process](./interop.md).
+
