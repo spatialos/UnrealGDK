@@ -106,31 +106,22 @@ public:
 	UPROPERTY(transient)
 	bool bCoreActor;
 
+	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
+	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
+
 protected:
 	// UChannel interface
 	virtual bool CleanUp(const bool bForDestroy) override;
 
 private:
-	void BindToSpatialView();
-	void UnbindFromSpatialView() const;
 
 	void DeleteEntityIfAuthoritative();
 
 	// A critical entity is any entity built into the snapshot which should not be deleted by any worker.
 	bool IsCriticalEntity();
 
-	void OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op);
-	void OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op);
-
-	TWeakPtr<worker::Connection> WorkerConnection;
 	TWeakPtr<worker::View> WorkerView;
 	FEntityId ActorEntityId;
-
-	worker::Dispatcher::CallbackKey ReserveEntityCallback;
-	worker::Dispatcher::CallbackKey CreateEntityCallback;
-
-	worker::RequestId<worker::ReserveEntityIdRequest> ReserveEntityIdRequestId;
-	worker::RequestId<worker::CreateEntityRequest> CreateEntityRequestId;
 
 	UPROPERTY(transient)
 	USpatialNetDriver* SpatialNetDriver;
