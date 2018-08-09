@@ -8,6 +8,7 @@
 
 #include "Utils/CodeWriter.h"
 #include "Utils/DataTypeUtilities.h"
+#include "Engine/UserDefinedStruct.h"
 
 // Needed for Algo::Transform
 #include "Algo/Transform.h"
@@ -182,18 +183,21 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 			TArray<uint8> ValueData;
 			FSpatialMemoryWriter ValueDataWriter(ValueData, PackageMap, UnresolvedObjects);)""");
 
+		bool bCPPDefinedStruct = !Struct->IsA<UUserDefinedStruct>(); // Special case for array of blueprint-defined structs
+
 		if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
+			checkf(bCPPDefinedStruct, TEXT("NetSerialize is not supported for blueprint-defined structs."));
 			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
 			Writer.Printf(R"""(
 				bool bSuccess = true;
 				(const_cast<%s&>(%s)).NetSerialize(ValueDataWriter, PackageMap, bSuccess);
-				checkf(bSuccess, TEXT("NetSerialize on %s failed."));)""", *Struct->GetStructCPPName(), *PropertyValue, *Struct->GetStructCPPName());
+				checkf(bSuccess, TEXT("NetSerialize on %s failed."));)""", *Property->GetCPPType(), *PropertyValue, *Property->GetCPPType());
 		}
 		else
 		{
 			// We do a basic binary serialization for the generic struct.
-			Writer.Printf("%s::StaticStruct()->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&%s)));", *Property->GetCPPType(), *Property->GetCPPType(), *PropertyValue);
+			Writer.Printf("%s%s->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&%s)));", *Property->GetCPPType(), bCPPDefinedStruct ? TEXT("::StaticStruct()") : TEXT("_Struct"), *Property->GetCPPType(), *PropertyValue);
 		}
 
 		Writer.Printf("%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));", *Update);
@@ -333,9 +337,11 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	{
 		const UStructProperty * StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct * Struct = StructProp->Struct;
+		bool bCPPDefinedStruct = !Struct->IsA<UUserDefinedStruct>();  // Special case for array of blueprint-defined structs
 
 		if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
+			checkf(bCPPDefinedStruct, TEXT("NetSerialize is not supported for blueprint-defined structs."));
 			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
 			Writer.Printf(R"""(
 				auto& ValueDataStr = %s;
@@ -353,7 +359,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 				TArray<uint8> ValueData;
 				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 				FSpatialMemoryReader ValueDataReader(ValueData, PackageMap);
-				%s::StaticStruct()->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&%s));)""", *Update, *PropertyType, *PropertyValue);
+				%s%s->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&%s));)""", *Update, *PropertyType, (bCPPDefinedStruct ? TEXT("::StaticStruct()") : TEXT("_Struct")), *PropertyValue);
 		}
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
@@ -1492,6 +1498,18 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 		UProperty* InnerProperty = ArrayProperty->Inner;
+
+		// Special case for array of blueprint-defined structs
+		// Since those structs don't exist in C++ compile time, our generated typebinding files will "fake" the struct by creating a blob of the same size
+		// As the type passed into the TArray. It will then load the blueprint struct at runtime and call SerializeBin() from it.
+		UStructProperty* InnerStructProperty = Cast<UStructProperty>(InnerProperty);
+		if (InnerStructProperty != nullptr && InnerStructProperty->Struct->IsA<UUserDefinedStruct>())
+		{
+			UStruct* Struct = InnerStructProperty->Struct;
+			SourceWriter.Printf("struct %s {uint8 Data[%d];};", *InnerProperty->GetCPPType(), Struct->GetStructureSize());
+			SourceWriter.Printf("UStruct* %s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *InnerProperty->GetCPPType(), *Struct->GetPathName());
+		}
+
 		SourceWriter.Printf("const TArray<%s>& %s = *(reinterpret_cast<TArray<%s> const*>(Data));", *InnerProperty->GetCPPType(), *PropertyValueName, *InnerProperty->GetCPPType());
 
 		if (InnerProperty->IsA<UObjectPropertyBase>() || InnerProperty->IsA<UStructProperty>())
@@ -1727,6 +1745,17 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 		UProperty* InnerProperty = ArrayProperty->Inner;
+
+		// Special case for array of blueprint-defined structs
+		UStructProperty* InnerStructProperty = Cast<UStructProperty>(InnerProperty);
+		if (InnerStructProperty != nullptr && InnerStructProperty->Struct->IsA<UUserDefinedStruct>())
+		{
+			UStruct* Struct = (Cast<UStructProperty>(InnerProperty))->Struct;
+			SourceWriter.Printf("");
+			SourceWriter.Printf("struct %s {uint8 Data[%d];};", *InnerProperty->GetCPPType(), Struct->GetStructureSize());
+			SourceWriter.Printf("UStruct* %s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *InnerProperty->GetCPPType(), *Struct->GetPathName());
+		}
+
 		SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));", *(InnerProperty->GetCPPType()), *PropertyValueName, *(InnerProperty->GetCPPType()));
 		if (InnerProperty->IsA<UObjectPropertyBase>())
 		{
