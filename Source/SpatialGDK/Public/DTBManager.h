@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 
+#include "CAPIPipelineBlock.h"
+
 #include "improbable/c_worker.h"
 #include "improbable/c_schema.h"
 
@@ -46,4 +48,6 @@ public:
 	Worker_Connection* Connection;
 
 	class USpatialInterop* Interop;
+
+	CAPIPipelineBlock PipelineBlock;
 };

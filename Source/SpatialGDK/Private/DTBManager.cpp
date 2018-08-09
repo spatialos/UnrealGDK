@@ -7,84 +7,13 @@
 
 #include <map>
 
+#include "SchemaHelpers.h"
+
 const Worker_ComponentId SPECIAL_SPAWNER_COMPONENT_ID = 100003;
 const Worker_EntityId SPECIAL_SPAWNER_ENTITY_ID = 3;
 
 UDTBManager::UDTBManager()
 {
-}
-
-void Schema_AddString(Schema_Object* Object, Schema_FieldId Id, const std::string& Value)
-{
-	uint32_t StringLength = Value.size();
-	uint8_t* StringBuffer = Schema_AllocateBuffer(Object, sizeof(char) * StringLength);
-	memcpy(StringBuffer, Value.c_str(), sizeof(char) * StringLength);
-	Schema_AddBytes(Object, Id, StringBuffer, sizeof(char) * StringLength);
-}
-
-using WorkerAttributeSet = std::vector<std::string>;
-using WorkerRequirementSet = std::vector<WorkerAttributeSet>;
-
-void Schema_AddWorkerRequirementSet(Schema_Object* Object, Schema_FieldId Id, const WorkerRequirementSet& Value)
-{
-	auto RequirementSetObject = Schema_AddObject(Object, Id);
-	for (auto& AttributeSet : Value)
-	{
-		auto AttributeSetObject = Schema_AddObject(RequirementSetObject, 1);
-
-		for (auto& Attribute : AttributeSet)
-		{
-			Schema_AddString(AttributeSetObject, 1, Attribute);
-		}
-	}
-}
-
-const Worker_ComponentId ENTITY_ACL_COMPONENT_ID = 50;
-void CreateEntityAclData(Worker_ComponentData& Data, const WorkerRequirementSet& ReadAcl, const std::map<Worker_ComponentId, WorkerRequirementSet>& ComponentWriteAcl)
-{
-	Data.component_id = ENTITY_ACL_COMPONENT_ID;
-	Data.schema_type = Schema_CreateComponentData(ENTITY_ACL_COMPONENT_ID);
-	auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-	Schema_AddWorkerRequirementSet(ComponentObject, 1, ReadAcl);
-
-	for (auto& KVPair : ComponentWriteAcl)
-	{
-		auto KVPairObject = Schema_AddObject(ComponentObject, 2);
-		Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.first);
-		Schema_AddWorkerRequirementSet(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.second);
-	}
-}
-
-const Worker_ComponentId METADATA_COMPONENT_ID = 53;
-void CreateMetadataData(Worker_ComponentData& Data, std::string EntityType)
-{
-	Data.component_id = METADATA_COMPONENT_ID;
-	Data.schema_type = Schema_CreateComponentData(METADATA_COMPONENT_ID);
-	auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-	Schema_AddString(ComponentObject, 1, EntityType);
-}
-
-const Worker_ComponentId POSITION_COMPONENT_ID = 54;
-void CreatePositionData(Worker_ComponentData& Data, const improbable::Coordinates& Coords)
-{
-	Data.component_id = POSITION_COMPONENT_ID;
-	Data.schema_type = Schema_CreateComponentData(POSITION_COMPONENT_ID);
-	auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-	auto CoordsObject = Schema_AddObject(ComponentObject, 1);
-
-	Schema_AddDouble(CoordsObject, 1, Coords.x());
-	Schema_AddDouble(CoordsObject, 2, Coords.y());
-	Schema_AddDouble(CoordsObject, 3, Coords.z());
-}
-
-const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
-void CreatePersistenceData(Worker_ComponentData& Data)
-{
-	Data.component_id = PERSISTENCE_COMPONENT_ID;
-	Data.schema_type = Schema_CreateComponentData(PERSISTENCE_COMPONENT_ID);
 }
 
 void UDTBManager::InitClient()
@@ -129,8 +58,6 @@ void UDTBManager::InitServer()
 	Worker_ConnectionParameters Params = Worker_DefaultConnectionParameters();
 	Params.worker_type = "CAPIWorker";
 	Params.network.tcp.multiplex_level = 4;
-	Params.enable_protocol_logging_at_startup = true;
-	Params.protocol_logging.log_prefix = "C:\\workspace\\UnrealGDK\\UnrealGDKStarterProject\\spatial\\logs\\whyyy";
 	//Params.component_vtable_count = 0;
 	//Params.component_vtables = Vtables.Vtables;
 	Worker_ComponentVtable DefaultVtable = {};
@@ -169,7 +96,7 @@ void UDTBManager::OnCommandRequest(Worker_CommandRequestOp& Op)
 		Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, CommandIndex);
 		auto* ResponseObject = Schema_GetCommandResponseObject(Response.schema_type);
 		Schema_AddBool(ResponseObject, 1, 1);
-		Schema_AddBytes(ResponseObject, 2, (const uint8_t*)"", 0);
+		Schema_AddBytes(ResponseObject, 2, (const std::uint8_t*)"", 0);
 		Schema_AddEntityId(ResponseObject, 3, 0);
 		Worker_Connection_SendCommandResponse(Connection, Op.request_id, &Response);
 	}
@@ -240,7 +167,7 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 
 	// BUILD REP COMPONENT
 
-	std::string ClientWorkerIdString = TCHAR_TO_UTF8(*ClientWorkerId);
+	std::string ClientWorkerIdString = "CAPIClient42";//TCHAR_TO_UTF8(*ClientWorkerId);
 
 	WorkerAttributeSet WorkerAttribute = {"CAPIWorker"};
 	WorkerAttributeSet ClientAttribute = {"CAPIClient"};
@@ -255,11 +182,40 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 	std::map<Worker_ComponentId, WorkerRequirementSet> ComponentWriteAcl;
 	ComponentWriteAcl.emplace(POSITION_COMPONENT_ID, WorkersOnly);
 
-	std::vector<Worker_ComponentData> ComponentDatas(4, Worker_ComponentData{});
-	CreatePositionData(ComponentDatas[0], SpatialConstants::LocationToSpatialOSCoordinates(Position));
-	CreateMetadataData(ComponentDatas[1], TCHAR_TO_UTF8(*Metadata));
-	CreateEntityAclData(ComponentDatas[2], AnyUnrealWorkerOrOwningClient, ComponentWriteAcl);
-	CreatePersistenceData(ComponentDatas[3]);
+	// TEMP
+	ComponentWriteAcl.emplace(100038, OwningClientOnly);
+	// TEMP
+
+	std::string StaticPath;
+
+	if (Channel->Actor->IsFullNameStableForNetworking())
+	{
+		StaticPath = TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()));
+	}
+
+	uint32 CurrentOffset = 1;
+	std::map<std::string, std::uint32_t> SubobjectNameToOffset;
+	ForEachObjectWithOuter(Channel->Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+	{
+		// Objects can only be allocated NetGUIDs if this is true.
+		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+		{
+			SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+			CurrentOffset++;
+		}
+	});
+
+	std::vector<Worker_ComponentData> ComponentDatas(6, Worker_ComponentData{});
+	CreatePositionData(ComponentDatas[0], PositionData(LocationToCAPIPosition(Position)));
+	CreateMetadataData(ComponentDatas[1], MetadataData(TCHAR_TO_UTF8(*Metadata)));
+	CreateEntityAclData(ComponentDatas[2], EntityAclData(AnyUnrealWorkerOrOwningClient, ComponentWriteAcl));
+	CreatePersistenceData(ComponentDatas[3], PersistenceData());
+	CreateUnrealMetadataData(ComponentDatas[4], UnrealMetadataData(StaticPath, ClientWorkerIdString, SubobjectNameToOffset));
+
+	// TEMP
+	ComponentDatas[5].component_id = 100038;
+	ComponentDatas[5].schema_type = Schema_CreateComponentData(100038);
+	// TEMP
 
 	Worker_EntityId EntityId = Channel->GetEntityId().ToSpatialEntityId();
 	return Worker_Connection_SendCreateEntityRequest(Connection, ComponentDatas.size(), ComponentDatas.data(), &EntityId, nullptr);
@@ -278,16 +234,50 @@ void UDTBManager::Tick()
 		case WORKER_OP_TYPE_DISCONNECT:
 			UE_LOG(LogTemp, Warning, TEXT("!!! Yo dawg y u disconnect me?! %s"), UTF8_TO_TCHAR(Op->disconnect.reason));
 			break;
+		case WORKER_OP_TYPE_FLAG_UPDATE:
+			break;
 		case WORKER_OP_TYPE_LOG_MESSAGE:
 			UE_LOG(LogTemp, Log, TEXT("!!! Log: %s"), UTF8_TO_TCHAR(Op->log_message.message));
+			break;
+		case WORKER_OP_TYPE_METRICS:
+			break;
+		case WORKER_OP_TYPE_CRITICAL_SECTION:
+			if (Op->critical_section.in_critical_section)
+			{
+				PipelineBlock.EnterCriticalSection();
+			}
+			else
+			{
+				PipelineBlock.LeaveCriticalSection();
+			}
+			break;
+		case WORKER_OP_TYPE_ADD_ENTITY:
+			PipelineBlock.AddEntity(Op->add_entity);
+			break;
+		case WORKER_OP_TYPE_REMOVE_ENTITY:
+			//PipelineBlock.RemoveEntity(Op->remove_entity);
 			break;
 		case WORKER_OP_TYPE_RESERVE_ENTITY_ID_RESPONSE:
 			OnReserveEntityIdResponse(Op->reserve_entity_id_response);
 			break;
-		case WORKER_OP_TYPE_ADD_COMPONENT:
+		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
 			break;
 		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
 			UE_LOG(LogTemp, Log, TEXT("!!! Create entity response"), UTF8_TO_TCHAR(Op->create_entity_response.message));
+			break;
+		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
+			break;
+		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
+			break;
+		case WORKER_OP_TYPE_ADD_COMPONENT:
+			PipelineBlock.AddComponent(Op->add_component);
+			break;
+		case WORKER_OP_TYPE_REMOVE_COMPONENT:
+			//PipelineBlock.RemoveComponent(Op->remove_component);
+			break;
+		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
+			break;
+		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			break;
 		case WORKER_OP_TYPE_COMMAND_REQUEST:
 			OnCommandRequest(Op->command_request);
