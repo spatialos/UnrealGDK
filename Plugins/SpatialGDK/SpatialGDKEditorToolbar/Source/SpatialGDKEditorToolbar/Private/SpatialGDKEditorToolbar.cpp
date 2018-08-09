@@ -146,8 +146,7 @@ void FSpatialGDKEditorToolbarModule::UnregisterSettings()
 
 bool FSpatialGDKEditorToolbarModule::HandleSettingsSaved()
 {
-	USpatialGDKEditorToolbarSettings* Settings = GetMutableDefault<USpatialGDKEditorToolbarSettings>();
-	Settings->SaveConfig();
+	GetMutableDefault<USpatialGDKEditorToolbarSettings>()->SaveConfig();
 
 	return true;
 }
@@ -237,9 +236,7 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 {
 	ShowTaskStartNotification("Started snapshot generation");
 
-	FString ProjectFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::GetPath(FPaths::GetProjectFilePath()));
-	FString CombinedPath = FPaths::Combine(*ProjectFilePath, TEXT("../spatial/snapshots"));
-	const bool bSuccess = SpatialGDKGenerateSnapshot(CombinedPath, GEditor->GetEditorWorldContext().World());
+	const bool bSuccess = SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World());
 
 	if(bSuccess)
 	{
@@ -256,20 +253,7 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 	ShowTaskStartNotification("Generating Interop Code");
 	bInteropCodeGenRunning = true;
 
-	ClassHeaderMap InteropGeneratedClasses;
-	if (!GenerateClassHeaderMap(InteropGeneratedClasses))  // Checks that all classes are found and generate the class mapping.
-	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Not all classes found; check your DefaultEditorSpatialGDK.ini file."));
-		ShowFailedNotification("Interop Codegen Failed");
-		return;
-	}
-
-	TFunction<bool()> CodegenTask = [InteropGeneratedClasses]()
-	{
-		return SpatialGDKGenerateInteropCode(InteropGeneratedClasses);
-	};
-
-	TFunction<void()> CompleteCallback = [this]() 
+	InteropCodegenResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateInteropCode, [this]()
 	{
 		if (!InteropCodegenResult.IsReady() || InteropCodegenResult.Get() != true)
 		{
@@ -280,9 +264,7 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 			ShowSuccessNotification("Interop Codegen Completed!");
 		}
 		bInteropCodeGenRunning = false;
-	};
-
-	InteropCodegenResult = Async(EAsyncExecution::Thread, CodegenTask, CompleteCallback);
+	});
 }
 		
 
@@ -355,8 +337,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
-	const FString ExecuteAbsolutePath =
-		FPaths::ConvertRelativePathToFull(SpatialGDKToolbarSettings->ProjectRootFolder.Path);
+	const FString ExecuteAbsolutePath = SpatialGDKToolbarSettings->GetProjectRoot();
 	const FString CmdExecutable = TEXT("cmd.exe");
 	const FString SpatialCmdArgument = FString::Printf(
 		TEXT("/c spatial.exe local launch %s"), *SpatialGDKToolbarSettings->SpatialOSLaunchConfig);
@@ -380,7 +361,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	{
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 		const FString LogPath =
-			SpatialGDKToolbarSettings->ProjectRootFolder.Path + FString(TEXT("/logs/spatial.log"));
+			SpatialGDKToolbarSettings->GetProjectRoot() + FString(TEXT("/logs/spatial.log"));
 		UE_LOG(LogSpatialGDKEditor, Error,
 				TEXT("Failed to start SpatialOS, please refer to log file `%s` for more information."),
 				*LogPath);

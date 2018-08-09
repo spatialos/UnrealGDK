@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "TypeStructure.h"
-#include "SpatialGDKEditorInteropCodeGenerator.h"
 
 #include "Engine/SCS_Node.h"
 
@@ -58,7 +57,7 @@ FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 
 TArray<ERPCType> GetRPCTypes()
 {
-	static TArray<ERPCType> Groups = {RPC_Client, RPC_Server, RPC_NetMulticast};
+	static TArray<ERPCType> Groups = {RPC_Client, RPC_Server, RPC_CrossServer, RPC_NetMulticast};
 	return Groups;
 }
 
@@ -71,6 +70,10 @@ ERPCType GetRPCTypeFromFunction(UFunction* Function)
 	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetServer)
 	{
 		return ERPCType::RPC_Server;
+	}
+	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetCrossServer)
+	{
+		return ERPCType::RPC_CrossServer;
 	}
 	if (Function->FunctionFlags & EFunctionFlags::FUNC_NetMulticast)
 	{
@@ -91,6 +94,8 @@ FString GetRPCTypeName(ERPCType RPCType)
 		return "Client";
 	case ERPCType::RPC_Server:
 		return "Server";
+	case ERPCType::RPC_CrossServer:
+		return "CrossServer";
 	case ERPCType::RPC_NetMulticast:
 		return "NetMulticast";
 	default:
@@ -185,7 +190,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	for (TFieldIterator<UProperty> It(Type); It; ++It)
 	{
 		UProperty* Property = *It;
-		
+
 		// Create property node and add it to the AST.
 		TSharedPtr<FUnrealProperty> PropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, StaticArrayIndex);
 
@@ -250,7 +255,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		{
 			continue;
 		}
-		
+
 		UObject* ContainerCDO = Class->GetDefaultObject();
 		check(ContainerCDO);
 
@@ -325,6 +330,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	{
 		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
 			RemoteFunction->FunctionFlags & FUNC_NetServer ||
+			RemoteFunction->FunctionFlags & FUNC_NetCrossServer ||
 			RemoteFunction->FunctionFlags & FUNC_NetMulticast)
 		{
 			TSharedPtr<FUnrealRPC> RPCNode = MakeShared<FUnrealRPC>();
@@ -551,6 +557,7 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 	FUnrealRPCsByType RPCsByType;
 	RPCsByType.Add(RPC_Client);
 	RPCsByType.Add(RPC_Server);
+	RPCsByType.Add(RPC_CrossServer);
 	RPCsByType.Add(RPC_NetMulticast);
 	VisitAllObjects(TypeInfo, [&RPCsByType](TSharedPtr<FUnrealType> Type)
 	{
@@ -600,7 +607,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& I
 
 void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass, const ClassHeaderMap& InteropGeneratedClasses)
 {
-	if (InteropGeneratedClasses.Find(ComponentClass->GetPathName()))
+	if (InteropGeneratedClasses.Find(ComponentClass))
 	{
 		if (ComponentClasses.Find(ComponentClass) == nullptr)
 		{

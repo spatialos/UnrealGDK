@@ -583,6 +583,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		return;
 	}
 	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Created entity (%lld) for: %s."), ActorEntityId.ToSpatialEntityId(), *Actor->GetName());
+<<<<<<< HEAD
 }
 
 void USpatialActorChannel::OnReserveEntityIdResponseCAPI(const Worker_ReserveEntityIdResponseOp& Op)
@@ -615,6 +616,8 @@ void USpatialActorChannel::OnCreateEntityResponseCAPI(const Worker_CreateEntityR
 		return;
 	}
 	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("!!! Created entity (%lld) for: %s."), ActorEntityId.ToSpatialEntityId(), *Actor->GetName());
+=======
+>>>>>>> origin/master
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()
