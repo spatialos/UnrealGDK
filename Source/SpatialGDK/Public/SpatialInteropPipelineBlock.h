@@ -99,6 +99,7 @@ private:
 	void InitialiseNewComponentImpl(const FComponentIdentifier& ComponentIdentifier, UAddComponentOpWrapperBase* AddComponentOp);
 	void DisableComponentImpl(const FComponentIdentifier& ComponentIdentifier);
 	void RemoveEntityImpl(const FEntityId& EntityId);
+	void AuthorityChangeImpl(const FComponentIdentifier& ComponentIdentifier, const worker::AuthorityChangeOp& AuthChangeOp);
 
 	// Stub.
 	void ProcessOps(const TWeakPtr<SpatialOSView>& InView,

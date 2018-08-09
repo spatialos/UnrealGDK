@@ -136,6 +136,10 @@ void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId Com
 	{
 		PendingAuthorityChanges.Emplace(FComponentIdentifier{AuthChangeOp.EntityId, ComponentId}, AuthChangeOp);
 	}
+	else
+	{
+		AuthorityChangeImpl(FComponentIdentifier{AuthChangeOp.EntityId, ComponentId}, AuthChangeOp);
+	}
 
 	if (NextBlock)
 	{
@@ -190,16 +194,7 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 	// Notify authority changes
 	for (auto& PendingAuthorityChange : PendingAuthorityChanges)
 	{
-		// Use position component as a proxy for overall actor authority
-		if (PendingAuthorityChange.Key.ComponentId == UPositionComponent::ComponentId)
-		{
-			AActor* EntityActor = EntityRegistry->GetActorFromEntityId(PendingAuthorityChange.Key.EntityId);
-			if (EntityActor)
-			{
-				EntityActor->OnSpatialAuthorityChange();
-				UE_LOG(LogTemp, Log, TEXT("Authority change processed: entityID: %d, componentID: %d, authorityChangeOp: %d"), PendingAuthorityChange.Key.EntityId, PendingAuthorityChange.Key.ComponentId, (int)PendingAuthorityChange.Value.Authority);
-			}
-		}
+		AuthorityChangeImpl(PendingAuthorityChange.Key, PendingAuthorityChange.Value);
 	}
 
 	NetDriver->GetSpatialInterop()->OnLeaveCriticalSection();
@@ -330,6 +325,19 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 	NetDriver->GetSpatialInterop()->StopIgnoringAuthoritativeDestruction();
 
 	CleanupDeletedEntity(EntityId);
+}
+
+void USpatialInteropPipelineBlock::AuthorityChangeImpl(const FComponentIdentifier& ComponentIdentifier, const worker::AuthorityChangeOp& AuthChangeOp)
+{
+	// Use position component as a proxy for overall actor authority
+	if (ComponentIdentifier.ComponentId == UPositionComponent::ComponentId)
+	{
+		if (AActor* EntityActor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId))
+		{
+			EntityActor->OnSpatialAuthorityChange();
+			UE_LOG(LogTemp, Log, TEXT("Authority change processed: entityID: %d, componentID: %d, authorityChangeOp: %d"), ComponentIdentifier.EntityId, ComponentIdentifier.ComponentId, (int)AuthChangeOp.Authority);
+		}
+	}
 }
 
 void USpatialInteropPipelineBlock::CleanupDeletedEntity(const FEntityId& EntityId)
