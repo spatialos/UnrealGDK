@@ -752,6 +752,12 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame* Stack,
 	UObject* SubObject)
 {
+	if(!SpatialOSInstance->IsConnected())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
+		return;
+	}
+
 	USpatialNetConnection* Connection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
 	if (!Connection)
 	{
@@ -763,7 +769,8 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	// The function GetNetConnection() goes up the AActor ownership chain until it reaches an AActor that is possesed by an AController and
 	// hence a UNetConnection. Server RPCs should only be sent by AActor instances that either are possessed by a UNetConnection or are owned by
 	// other AActor instances possessed by a UNetConnection. For native Unreal reference see ProcessRemoteFunction() of IpNetDriver.cpp.
-	if (!Actor->GetNetConnection())
+	// However if we are on the server, and the RPC is a CrossServer RPC, this can be invoked without an owner.
+	if (!Actor->GetNetConnection() && !(Function->FunctionFlags & FUNC_NetCrossServer && IsServer()))
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("No owning connection for actor %s. Function %s will not be processed."), *Actor->GetName(), *Function->GetName());
 		return;

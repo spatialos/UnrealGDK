@@ -1213,6 +1213,8 @@ void GenerateBody_SpatialComponents(FCodeWriter& SourceWriter, UClass* Class, TA
 	SpatialComponents.Add(FString::Printf(TEXT(".AddComponent<%s>(%s::Data{}, WorkersOnly)"),
 		*SchemaRPCComponentName(ERPCType::RPC_Server, Class, true), *SchemaRPCComponentName(ERPCType::RPC_Server, Class, true)));
 	SpatialComponents.Add(FString::Printf(TEXT(".AddComponent<%s>(%s::Data{}, WorkersOnly)"),
+		*SchemaRPCComponentName(ERPCType::RPC_CrossServer, Class, true), *SchemaRPCComponentName(ERPCType::RPC_CrossServer, Class, true)));
+	SpatialComponents.Add(FString::Printf(TEXT(".AddComponent<%s>(%s::Data{}, WorkersOnly)"),
 		*SchemaRPCComponentName(ERPCType::RPC_NetMulticast, Class, true), *SchemaRPCComponentName(ERPCType::RPC_NetMulticast, Class, true)));
 }
 
