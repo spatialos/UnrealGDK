@@ -612,14 +612,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		return;
 	}
-
 	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Created entity (%lld) for: %s."), ActorEntityId.ToSpatialEntityId(), *Actor->GetName());
-
-	auto PinnedView = WorkerView.Pin();
-	if (PinnedView.IsValid())
-	{
-		PinnedView->Remove(CreateEntityCallback);
-	}
 
 	// If a replicated stably named actor was created, update the GSM with the proper path and entity id
 	// This ensures each stably named actor is only created once
@@ -627,8 +620,6 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 	{
 		SpatialNetDriver->GetSpatialInterop()->AddReplicatedStablyNamedActorToGSM(ActorEntityId, Actor);
 	}
-
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received create entity response op for %lld"), ActorEntityId.ToSpatialEntityId());
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()
