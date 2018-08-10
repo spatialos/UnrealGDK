@@ -143,7 +143,7 @@ void USpatialActorChannel::Close()
 	Super::Close();
 }
 
-TArray<uint16> USpatialActorChannel::SkipOverChangelistArrays(FObjectReplicator& Replicator)
+TArray<uint16> USpatialActorChannel::GetAllPropertyHandles(FObjectReplicator& Replicator)
 {
 	TArray<uint16> InitialRepChanged;
 
@@ -182,7 +182,7 @@ FPropertyChangeState USpatialActorChannel::CreateSubobjectChangeState(UActorComp
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Component)).Get();
 
-	TArray<uint16> InitialRepChanged = SkipOverChangelistArrays(Replicator);
+	TArray<uint16> InitialRepChanged = GetAllPropertyHandles(Replicator);
 
 	return GetChangeStateSubobject(Component, &Replicator, InitialRepChanged, TArray<uint16>());
 }
@@ -356,7 +356,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 			// Ensure that the initial changelist contains _every_ property. This ensures that the default properties are written to the entity template.
 			// Otherwise, there will be a mismatch between the rep state shadow data used by CompareProperties and the entity in SpatialOS.
-			TArray<uint16> InitialRepChanged = SkipOverChangelistArrays(*ActorReplicator);
+			TArray<uint16> InitialRepChanged = GetAllPropertyHandles(*ActorReplicator);
 
 			// Calculate initial spatial position (but don't send component update) and create the entity.
 			LastSpatialPosition = GetActorSpatialPosition(Actor);

@@ -3,6 +3,7 @@
 #include "SchemaHelpers.h"
 
 #include "Net/RepLayout.h"
+#include "SpatialMemoryReader.h"
 #include "SpatialMemoryWriter.h"
 
 struct UnrealObjectRef
@@ -47,12 +48,22 @@ struct UnrealObjectRef
 		return CppAPIRef;
 	}
 
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("(entity ID: %lld, offset: %u)"), Entity, Offset);
+	}
+
 	bool operator==(const UnrealObjectRef& Other) const
 	{
 		return Entity == Other.Entity &&
 			   Offset == Other.Offset &&
 			   ((!Path && !Other.Path) || (Path && Other.Path && *Path == *Other.Path)) &&
 			   ((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer));
+	}
+
+	bool operator!=(const UnrealObjectRef& Other) const
+	{
+		return !operator==(Other);
 	}
 
 	Worker_EntityId Entity;
@@ -175,14 +186,6 @@ void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Pro
 	{
 		Schema_AddUint64(Object, Id, UInt64Property->GetPropertyValue(Data));
 	}
-	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
-	{
-		Schema_AddString(Object, Id, TCHAR_TO_UTF8(*NameProperty->GetPropertyValue(Data).ToString()));
-	}
-	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
-	{
-		Schema_AddString(Object, Id, TCHAR_TO_UTF8(*StrProperty->GetPropertyValue(Data)));
-	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
 		UnrealObjectRef ObjectRef = NULL_OBJECT_REF;
@@ -209,6 +212,14 @@ void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Pro
 		}
 
 		Schema_AddObjectRef(Object, Id, ObjectRef);
+	}
+	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
+	{
+		Schema_AddString(Object, Id, TCHAR_TO_UTF8(*NameProperty->GetPropertyValue(Data).ToString()));
+	}
+	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
+	{
+		Schema_AddString(Object, Id, TCHAR_TO_UTF8(*StrProperty->GetPropertyValue(Data)));
 	}
 	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
 	{
@@ -239,7 +250,267 @@ void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Pro
 	}
 }
 
+std::uint32_t Schema_GetPropertyCount(const Schema_Object* Object, Schema_FieldId Id, UProperty* Property)
+{
+	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
+	{
+		return Schema_GetBytesCount(Object, Id);
+	}
+	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
+	{
+		return Schema_GetBoolCount(Object, Id);
+	}
+	else if (UFloatProperty* FloatProperty = Cast<UFloatProperty>(Property))
+	{
+		return Schema_GetFloatCount(Object, Id);
+	}
+	else if (UDoubleProperty* DoubleProperty = Cast<UDoubleProperty>(Property))
+	{
+		return Schema_GetDoubleCount(Object, Id);
+	}
+	else if (UInt8Property* Int8Property = Cast<UInt8Property>(Property))
+	{
+		return Schema_GetInt32Count(Object, Id);
+	}
+	else if (UInt16Property* Int16Property = Cast<UInt16Property>(Property))
+	{
+		return Schema_GetInt32Count(Object, Id);
+	}
+	else if (UIntProperty* IntProperty = Cast<UIntProperty>(Property))
+	{
+		return Schema_GetInt32Count(Object, Id);
+	}
+	else if (UInt64Property* Int64Property = Cast<UInt64Property>(Property))
+	{
+		return Schema_GetInt64Count(Object, Id);
+	}
+	else if (UByteProperty* ByteProperty = Cast<UByteProperty>(Property))
+	{
+		return Schema_GetUint32Count(Object, Id);
+	}
+	else if (UUInt16Property* UInt16Property = Cast<UUInt16Property>(Property))
+	{
+		return Schema_GetUint32Count(Object, Id);
+	}
+	else if (UUInt32Property* UInt32Property = Cast<UUInt32Property>(Property))
+	{
+		return Schema_GetUint32Count(Object, Id);
+	}
+	else if (UUInt64Property* UInt64Property = Cast<UUInt64Property>(Property))
+	{
+		return Schema_GetUint64Count(Object, Id);
+	}
+	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
+	{
+		return Schema_GetObjectCount(Object, Id);
+	}
+	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
+	{
+		return Schema_GetBytesCount(Object, Id);
+	}
+	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
+	{
+		return Schema_GetBytesCount(Object, Id);
+	}
+	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
+	{
+		return Schema_GetBytesCount(Object, Id);
+	}
+	else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property))
+	{
+		// A hack to go into Schema_GetProperty for arrays even if they're empty.
+		// Maybe unnecessary?
+		return 1;
+	}
+	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
+	{
+		if (EnumProperty->ElementSize < 4)
+		{
+			return Schema_GetUint32Count(Object, Id);
+		}
+		else
+		{
+			return Schema_GetPropertyCount(Object, Id, EnumProperty->GetUnderlyingProperty());
+		}
+	}
+	else
+	{
+		checkf(false, TEXT("What is this"));
+		return 0;
+	}
+}
 
+void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index, UProperty* Property, uint8* Data, USpatialPackageMapClient* PackageMap)
+{
+	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
+	{
+		UScriptStruct* Struct = StructProperty->Struct;
+		auto ValueDataStr = Schema_IndexString(Object, Id, Index);
+		TArray<uint8> ValueData;
+		ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
+		FSpatialMemoryReader ValueDataReader(ValueData, PackageMap);
+		if (Struct->StructFlags & STRUCT_NetSerializeNative)
+		{
+			UScriptStruct::ICppStructOps* CppStructOps = Struct->GetCppStructOps();
+			check(CppStructOps); // else should not have STRUCT_NetSerializeNative
+			bool bSuccess = true;
+			CppStructOps->NetSerialize(ValueDataReader, PackageMap, bSuccess, Data);
+			checkf(bSuccess, TEXT("NetSerialize on %s failed."), *Struct->GetStructCPPName());
+		}
+		else
+		{
+			Struct->SerializeBin(ValueDataReader, Data);
+		}
+	}
+	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
+	{
+		BoolProperty->SetPropertyValue(Data, Schema_IndexBool(Object, Id, Index));
+	}
+	else if (UFloatProperty* FloatProperty = Cast<UFloatProperty>(Property))
+	{
+		FloatProperty->SetPropertyValue(Data, Schema_IndexFloat(Object, Id, Index));
+	}
+	else if (UDoubleProperty* DoubleProperty = Cast<UDoubleProperty>(Property))
+	{
+		DoubleProperty->SetPropertyValue(Data, Schema_IndexDouble(Object, Id, Index));
+	}
+	else if (UInt8Property* Int8Property = Cast<UInt8Property>(Property))
+	{
+		Int8Property->SetPropertyValue(Data, (int8)Schema_IndexInt32(Object, Id, Index));
+	}
+	else if (UInt16Property* Int16Property = Cast<UInt16Property>(Property))
+	{
+		Int16Property->SetPropertyValue(Data, (int16)Schema_IndexInt32(Object, Id, Index));
+	}
+	else if (UIntProperty* IntProperty = Cast<UIntProperty>(Property))
+	{
+		IntProperty->SetPropertyValue(Data, Schema_IndexInt32(Object, Id, Index));
+	}
+	else if (UInt64Property* Int64Property = Cast<UInt64Property>(Property))
+	{
+		Int64Property->SetPropertyValue(Data, Schema_IndexInt64(Object, Id, Index));
+	}
+	else if (UByteProperty* ByteProperty = Cast<UByteProperty>(Property))
+	{
+		ByteProperty->SetPropertyValue(Data, (uint32)Schema_IndexUint32(Object, Id, Index));
+	}
+	else if (UUInt16Property* UInt16Property = Cast<UUInt16Property>(Property))
+	{
+		UInt16Property->SetPropertyValue(Data, (uint32)Schema_IndexUint32(Object, Id, Index));
+	}
+	else if (UUInt32Property* UInt32Property = Cast<UUInt32Property>(Property))
+	{
+		UInt32Property->SetPropertyValue(Data, Schema_IndexUint32(Object, Id, Index));
+	}
+	else if (UUInt64Property* UInt64Property = Cast<UUInt64Property>(Property))
+	{
+		UInt64Property->SetPropertyValue(Data, Schema_IndexUint64(Object, Id, Index));
+	}
+	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
+	{
+		UnrealObjectRef ObjectRef = Schema_IndexObjectRef(Object, Id, Index);
+		check(ObjectRef != UNRESOLVED_OBJECT_REF);
+		if (ObjectRef == NULL_OBJECT_REF)
+		{
+			ObjectProperty->SetObjectPropertyValue(Data, nullptr);
+		}
+		else
+		{
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef.ToCppAPI());
+			if (NetGUID.IsValid())
+			{
+				UObject* ObjectValue = PackageMap->GetObjectFromNetGUID(NetGUID, true);
+				checkf(ObjectValue, TEXT("An object ref %s should map to a valid object."), *ObjectRef.ToString());
+				checkf(ObjectValue->IsA(ObjectProperty->PropertyClass), TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRef.ToString(), *ObjectValue->GetFullName());
+				ObjectProperty->SetObjectPropertyValue(Data, ObjectValue);
+			}
+			else
+			{
+				// TODO: Queue up unresolved object ref
+			}
+		}
+	}
+	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
+	{
+		NameProperty->SetPropertyValue(Data, FName(Schema_IndexString(Object, Id, Index).data()));
+	}
+	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
+	{
+		StrProperty->SetPropertyValue(Data, FString(UTF8_TO_TCHAR(Schema_IndexString(Object, Id, Index).c_str())));
+	}
+	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
+	{
+		TextProperty->SetPropertyValue(Data, FText::FromString(FString(UTF8_TO_TCHAR(Schema_IndexString(Object, Id, Index).c_str()))));
+	}
+	else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property))
+	{
+		// TODO: This is potentionally very very jank
+		FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
+
+		int Count = Schema_GetPropertyCount(Object, Id, Property);
+		ArrayHelper.Resize(Count);
+
+		for (int i = 0; i < Count; i++)
+		{
+			Schema_GetProperty(Object, Id, i, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), PackageMap);
+		}
+	}
+	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
+	{
+		if (EnumProperty->ElementSize < 4)
+		{
+			EnumProperty->GetUnderlyingProperty()->SetIntPropertyValue(Data, (uint64)Schema_IndexUint32(Object, Id, Index));
+		}
+		else
+		{
+			Schema_GetProperty(Object, Id, Index, EnumProperty->GetUnderlyingProperty(), Data, PackageMap);
+		}
+	}
+	else
+	{
+		checkf(false, TEXT("What is this"));
+	}
+}
+
+void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap)
+{
+	if (ComponentData.component_id != 100039) return;
+
+	auto RepState = Channel->ActorReplicator->RepState;
+	auto& Cmds				   = Channel->ActorReplicator->RepLayout->Cmds;
+	auto& BaseHandleToCmdIndex = Channel->ActorReplicator->RepLayout->BaseHandleToCmdIndex;
+	auto& Parents			   = Channel->ActorReplicator->RepLayout->Parents;
+
+	auto ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
+
+	auto Handles = Channel->GetAllPropertyHandles(*Channel->ActorReplicator);
+
+	if (Handles.Num() > 0)
+	{
+		FChangelistIterator ChangelistIterator(Handles, 0);
+		FRepHandleIterator HandleIterator(ChangelistIterator, Cmds, BaseHandleToCmdIndex, 0, 1, 0, Cmds.Num() - 1);
+		while (HandleIterator.NextHandle())
+		{
+			const FRepLayoutCmd& Cmd = Cmds[HandleIterator.CmdIndex];
+			const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
+
+			// This swaps Role/RemoteRole as we write it
+			const FRepLayoutCmd& SwappedCmd = Parent.RoleSwapIndex != -1 ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
+
+			uint8* Data = (uint8*)Channel->Actor + HandleIterator.ArrayOffset + SwappedCmd.Offset;
+
+			Schema_GetProperty(ComponentObject, HandleIterator.Handle, 0, SwappedCmd.Property, Data, PackageMap);
+
+			if (Cmd.Type == REPCMD_DynamicArray)
+			{
+				if (!HandleIterator.JumpOverArray())
+				{
+					break;
+				}
+			}
+		}
+	}
+}
 
 void CreateDynamicData(Worker_ComponentData& ComponentData, Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap)
 {

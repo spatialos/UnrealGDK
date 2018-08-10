@@ -248,10 +248,13 @@ void CAPIPipelineBlock::CreateActor(Worker_EntityId EntityId)
 			// Apply initial replicated properties.
 			// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
 			// Potentially we could split out the initial actor state and the initial component state
-			//for (FPendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
-			//{
-			//	NetDriver->GetSpatialInterop()->ReceiveAddComponent(Channel, PendingAddComponent.AddComponentOp);
-			//}
+			for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+			{
+				if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data && PendingAddComponent.Data->bIsDynamic)
+				{
+					ReadDynamicData(*static_cast<DynamicData*>(PendingAddComponent.Data.get())->Data, Channel, PackageMap);
+				}
+			}
 
 			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
 			//NetDriver->GetSpatialInterop()->SendComponentInterests(Channel, EntityId.ToSpatialEntityId());

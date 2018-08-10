@@ -15,13 +15,13 @@ FORCEINLINE void Schema_AddString(Schema_Object* Object, Schema_FieldId Id, cons
 	Schema_AddBytes(Object, Id, StringBuffer, sizeof(char) * StringLength);
 }
 
-FORCEINLINE std::string Schema_IndexString(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index)
+FORCEINLINE std::string Schema_IndexString(const Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index)
 {
 	std::uint32_t StringLength = Schema_IndexBytesLength(Object, Id, Index);
 	return std::string((const char*)Schema_IndexBytes(Object, Id, Index), StringLength);
 }
 
-FORCEINLINE std::string Schema_GetString(Schema_Object* Object, Schema_FieldId Id)
+FORCEINLINE std::string Schema_GetString(const Schema_Object* Object, Schema_FieldId Id)
 {
 	return Schema_IndexString(Object, Id, 0);
 }
@@ -311,4 +311,5 @@ struct DynamicData : ComponentData
 	Worker_ComponentData* Data;
 };
 
+void ReadDynamicData(const Worker_ComponentData& ComponentData, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap);
 void CreateDynamicData(Worker_ComponentData& Data, Worker_ComponentId ComponentId, const struct FPropertyChangeState& InitialChanges, class USpatialPackageMapClient* PackageMap);
