@@ -20,6 +20,7 @@
 #include "Sound/SoundBase.h"
 
 #include "LevelEditor.h"
+#include "AssetRegistryModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 

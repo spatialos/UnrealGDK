@@ -50,16 +50,14 @@ void GenerateTypeBindingSource(
 	FString InteropFilename,
 	UClass* Class,
 	const TSharedPtr<FUnrealType>& TypeInfo,
-	const TArray<FString>& TypeBindingHeaders,
-	bool bIsSingleton,
-	const ClassHeaderMap& InteropGeneratedClasses,
+	BPStructTypesAndPaths& GeneratedStructInfo);
 	BPStructTypesAndPaths& GeneratedStructInfo);
 
 // Helper functions used when generating the source file.
 void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_GetHandoverHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class);
-void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class);
-void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData, bool bIsSingleton, BPStructTypesAndPaths& GeneratedStructInfo);
+void GenerateFunction_GetBoundCla, const FCmdHandlePropertyMap& HandoverData);
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepDatPropertyMap& HandoverData, bool bIsSingleton, BPStructTypesAndPaths& GeneratedStructInfo);
 void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType);
 void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, TArray<UClass*> Components);

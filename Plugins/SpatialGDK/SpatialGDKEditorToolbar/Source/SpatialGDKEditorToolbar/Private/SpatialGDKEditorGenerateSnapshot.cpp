@@ -6,6 +6,7 @@
 #include "SpatialOSCommon.h"
 #include "SpatialGDKEditorToolbarSettings.h"
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
+#include "UObjectIterator.h"
 #include <improbable/standard_library.h>
 #include <improbable/unreal/gdk/level_data.h>
 #include <improbable/unreal/gdk/spawner.h>
@@ -77,12 +78,20 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 
 bool CreateSingletonToIdMap(PathNameToEntityIdMap& SingletonNameToEntityId)
 {
-	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
-	for (UClass* Class : SpatialGDKToolbarSettings->SingletonClasses)
+	TArray<UClass*> SingletonActors;
+	for (TObjectIterator<UClass> It; It; ++It)
+	{
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_PrivateSingleton | SPATIALCLASS_PublicSingleton))
+		{
+			SingletonActors.Add(*It);
+		}
+	}
+
+	for (UClass* Class : SingletonActors)
 	{
 		// Id is initially 0 to indicate that this Singleton entity has not been created yet.
 		// When the worker authoritative over the GSM sees 0, it knows it is safe to create it.
-		SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*(Class->GetPathName()))), 0);
+		SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*Class->GetPathName())), 0);
 	}
 
 	return true;

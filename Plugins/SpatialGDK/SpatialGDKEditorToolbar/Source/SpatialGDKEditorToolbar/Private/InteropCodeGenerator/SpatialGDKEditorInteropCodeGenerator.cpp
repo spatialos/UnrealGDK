@@ -16,6 +16,7 @@
 #include "SharedPointer.h"
 
 #include "Misc/FileHelper.h"
+#include "AssetRegistryModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 
@@ -27,7 +28,7 @@ void OnStatusOutput(FString Message)
 	UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("%s"), *Message);
 }
 
-int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<FString>& TypeBindingHeaders, bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses)
+int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class)
 {
 	FCodeWriter OutputSchema;
 	FCodeWriter OutputHeader;
@@ -46,7 +47,7 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	// Generate forwarding code.
 	BPStructTypesAndPaths GeneratedStructInfo;
 	GenerateTypeBindingHeader(OutputHeader, SchemaFilename, TypeBindingFilename, Class, TypeInfo, GeneratedStructInfo);
-	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, TypeBindingHeaders, bIsSingleton, InteropGeneratedClasses, GeneratedStructInfo);
+	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, GeneratedStructInfo);
 	OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *TypeBindingFilename));
 	OutputSource.WriteToFile(FString::Printf(TEXT("%s%s.cpp"), *ForwardingCodePath, *TypeBindingFilename));
 
@@ -83,15 +84,19 @@ bool CheckClassNameListValidity(const ClassHeaderMap& ClassMap)
 
 void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
 {
-	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 	int ComponentId = 100010;
-	for (auto& ClassHeaderList : Classes)
+	for (TObjectIterator<UClass> It; It; ++It)
 	{
-		const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
-		bool bIsSingleton = GetDefault<USpatialGDKEditorToolbarSettings>()->SingletonClasses.Find(ClassHeaderList.Key) != INDEX_NONE;
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypebindings))
+		{
+			if (*It == UObject::StaticClass())
+			{
+				continue;
+			}
 
-		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, ClassHeaderList.Key, TypeBindingHeaders, bIsSingleton, Classes);
+			ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, *It);
+		}
 	}
 }
 
