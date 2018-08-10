@@ -183,7 +183,8 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 	ComponentWriteAcl.emplace(POSITION_COMPONENT_ID, WorkersOnly);
 
 	// TEMP
-	ComponentWriteAcl.emplace(100038, OwningClientOnly);
+	ComponentWriteAcl.emplace(100039, WorkersOnly);
+	ComponentWriteAcl.emplace(100042, OwningClientOnly);
 	// TEMP
 
 	std::string StaticPath;
@@ -205,16 +206,18 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 		}
 	});
 
-	std::vector<Worker_ComponentData> ComponentDatas(6, Worker_ComponentData{});
+	std::vector<Worker_ComponentData> ComponentDatas(7, Worker_ComponentData{});
 	CreatePositionData(ComponentDatas[0], PositionData(LocationToCAPIPosition(Position)));
 	CreateMetadataData(ComponentDatas[1], MetadataData(TCHAR_TO_UTF8(*Metadata)));
 	CreateEntityAclData(ComponentDatas[2], EntityAclData(AnyUnrealWorkerOrOwningClient, ComponentWriteAcl));
 	CreatePersistenceData(ComponentDatas[3], PersistenceData());
 	CreateUnrealMetadataData(ComponentDatas[4], UnrealMetadataData(StaticPath, ClientWorkerIdString, SubobjectNameToOffset));
 
+	CreateDynamicData(ComponentDatas[5], 100039, InitialChanges, Cast<USpatialPackageMapClient>(PipelineBlock.NetDriver->GetSpatialOSNetConnection()->PackageMap));
+
 	// TEMP
-	ComponentDatas[5].component_id = 100038;
-	ComponentDatas[5].schema_type = Schema_CreateComponentData(100038);
+	ComponentDatas[6].component_id = 100042;
+	ComponentDatas[6].schema_type = Schema_CreateComponentData(100042);
 	// TEMP
 
 	Worker_EntityId EntityId = Channel->GetEntityId().ToSpatialEntityId();

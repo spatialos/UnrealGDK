@@ -77,26 +77,22 @@ void CAPIPipelineBlock::AddComponent(Worker_AddComponentOp& Op)
 	switch (Op.data.component_id)
 	{
 	case ENTITY_ACL_COMPONENT_ID:
-		Data.reset(new EntityAclData());
-		ReadEntityAclData(Op.data, static_cast<EntityAclData&>(*Data));
+		Data.reset(new EntityAclData(Op.data));
 		break;
 	case METADATA_COMPONENT_ID:
-		Data.reset(new MetadataData());
-		ReadMetadataData(Op.data, static_cast<MetadataData&>(*Data));
+		Data.reset(new MetadataData(Op.data));
 		break;
 	case POSITION_COMPONENT_ID:
-		Data.reset(new PositionData());
-		ReadPositionData(Op.data, static_cast<PositionData&>(*Data));
+		Data.reset(new PositionData(Op.data));
 		break;
 	case PERSISTENCE_COMPONENT_ID:
-		Data.reset(new PersistenceData());
-		ReadPersistenceData(Op.data, static_cast<PersistenceData&>(*Data));
+		Data.reset(new PersistenceData(Op.data));
 		break;
 	case UNREAL_METADATA_COMPONENT_ID:
-		Data.reset(new UnrealMetadataData());
-		ReadUnrealMetadataData(Op.data, static_cast<UnrealMetadataData&>(*Data));
+		Data.reset(new UnrealMetadataData(Op.data));
 		break;
 	default:
+		Data.reset(new DynamicData(Op.data));
 		break;
 	}
 
