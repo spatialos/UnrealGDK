@@ -254,6 +254,40 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 	ShowTaskStartNotification("Generating Interop Code");
 	bInteropCodeGenRunning = true;
 
+	// Load the asset registry module
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(FName("AssetRegistry"));
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	TArray<FName> ClassNames;
+	TSet<FName> ExcludedClassNames;
+	TSet<FName> DerivedClassNames;
+	ClassNames.Add(TEXT("Actor"));
+	AssetRegistry.GetDerivedClassNames(ClassNames, ExcludedClassNames, DerivedClassNames);
+
+	for (auto& It : DerivedClassNames)
+	{
+		if (It == TEXT("NoReferenceBPActor_C"))
+		{
+			if (LoadObject<UClass>(nullptr, *It.ToString(), nullptr, LOAD_EditorOnly, nullptr))
+			{
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("%s"), *It.ToString());
+			}
+		}
+	}
+
+	TArray<FAssetData> AssetData;
+	AssetRegistry.GetAssetsByClass(UBlueprint::StaticClass()->GetFName(), AssetData, true);
+	for (auto& It : AssetData)
+	{
+		if (It.AssetClass == TEXT("NoReferenceBPActor_C"))
+		{
+			if (LoadObject<UClass>(nullptr, *It.AssetName.ToString(), nullptr, LOAD_EditorOnly, nullptr))
+			{
+				UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("%s"), *It.AssetName.ToString());
+			}
+		}
+	}
+
 	InteropCodegenResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateInteropCode, [this]()
 	{
 		if (!InteropCodegenResult.IsReady() || InteropCodegenResult.Get() != true)
