@@ -27,6 +27,7 @@ FString TypeBindingName(UClass* Class)
 	return FString::Printf(TEXT("USpatialTypeBinding_%s"), *Class->GetName());
 }
 
+// Returns the first native class in a class' hierarchy
 const UClass* GetFirstNativeClass(const UClass* Class)
 {
 	while (!Class->HasAnyClassFlags(CLASS_Native))
@@ -46,7 +47,6 @@ FString GetNativeClassName(const UClass* Class, bool bIncludePrefix = true)
 FString GetNativeClassName(const UObjectPropertyBase* Property, bool bIncludePrefix = true)
 {
 	return GetNativeClassName(Property->PropertyClass, bIncludePrefix);
-	
 }
 
 FString CPPFieldName(TSharedPtr<FUnrealProperty> Property)
@@ -832,6 +832,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 					ParamTypeName = StructProp->Struct->GetName();
 				}
 
+				// TODO: validate this against blueprint structs UNR-499
 				if (UStruct* const Struct = FindObject<UStruct>(ANY_PACKAGE, *ParamTypeName))
 				{
 					RPCIncludes.Add(Struct->GetMetaData("IncludePath"));
