@@ -68,12 +68,6 @@ Note that you may see similar errors if the same issue applies to the schema gen
 
 ------
 
-**Q:** I’m getting compilation errors in my type bindings about missing classes and/or namespaces.
-
-**A:** Make sure you've added the required headers to `DefaultEditorSpatialGDK.ini` as per the [Interop Code Generator](./interop.md) documentation.
-
-------
-
 **Q:** I'm getting a check failure in one of my typebinding classes:
 ```
 check(!Value->IsFullNameStableForNetworking())
