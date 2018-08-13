@@ -126,8 +126,9 @@ struct EntityAclData : ComponentData
 	std::map<Worker_ComponentId, WorkerRequirementSet> ComponentWriteAcl;
 };
 
-FORCEINLINE void CreateEntityAclData(Worker_ComponentData& Data, const EntityAclData& EntityAcl)
+FORCEINLINE Worker_ComponentData CreateEntityAclData(const EntityAclData& EntityAcl)
 {
+	Worker_ComponentData Data = {};
 	Data.component_id = ENTITY_ACL_COMPONENT_ID;
 	Data.schema_type = Schema_CreateComponentData(ENTITY_ACL_COMPONENT_ID);
 	auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
@@ -140,6 +141,8 @@ FORCEINLINE void CreateEntityAclData(Worker_ComponentData& Data, const EntityAcl
 		Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.first);
 		Schema_AddWorkerRequirementSet(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.second);
 	}
+
+	return Data;
 }
 
 // Metadata
@@ -162,13 +165,16 @@ struct MetadataData : ComponentData
 	std::string EntityType;
 };
 
-FORCEINLINE void CreateMetadataData(Worker_ComponentData& Data, const MetadataData& Metadata)
+FORCEINLINE Worker_ComponentData CreateMetadataData(const MetadataData& Metadata)
 {
+	Worker_ComponentData Data = {};
 	Data.component_id = METADATA_COMPONENT_ID;
 	Data.schema_type = Schema_CreateComponentData(METADATA_COMPONENT_ID);
 	auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 	Schema_AddString(ComponentObject, 1, Metadata.EntityType);
+
+	return Data;
 }
 
 // Position
@@ -195,8 +201,9 @@ struct PositionData : ComponentData
 	Position Coords;
 };
 
-FORCEINLINE void CreatePositionData(Worker_ComponentData& Data, const PositionData& Position)
+FORCEINLINE Worker_ComponentData CreatePositionData(const PositionData& Position)
 {
+	Worker_ComponentData Data = {};
 	Data.component_id = POSITION_COMPONENT_ID;
 	Data.schema_type = Schema_CreateComponentData(POSITION_COMPONENT_ID);
 	auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
@@ -206,6 +213,24 @@ FORCEINLINE void CreatePositionData(Worker_ComponentData& Data, const PositionDa
 	Schema_AddDouble(CoordsObject, 1, Position.Coords.X);
 	Schema_AddDouble(CoordsObject, 2, Position.Coords.Y);
 	Schema_AddDouble(CoordsObject, 3, Position.Coords.Z);
+
+	return Data;
+}
+
+FORCEINLINE Worker_ComponentUpdate CreatePositionUpdate(const Position& Coords)
+{
+	Worker_ComponentUpdate ComponentUpdate = {};
+	ComponentUpdate.component_id = POSITION_COMPONENT_ID;
+	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(POSITION_COMPONENT_ID);
+	auto ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+
+	auto CoordsObject = Schema_AddObject(ComponentObject, 1);
+
+	Schema_AddDouble(CoordsObject, 1, Coords.X);
+	Schema_AddDouble(CoordsObject, 2, Coords.Y);
+	Schema_AddDouble(CoordsObject, 3, Coords.Z);
+
+	return ComponentUpdate;
 }
 
 // Persistence
@@ -221,10 +246,13 @@ struct PersistenceData : ComponentData
 	}
 };
 
-FORCEINLINE void CreatePersistenceData(Worker_ComponentData& Data, const PersistenceData& Persistence)
+FORCEINLINE Worker_ComponentData CreatePersistenceData(const PersistenceData& Persistence)
 {
+	Worker_ComponentData Data = {};
 	Data.component_id = PERSISTENCE_COMPONENT_ID;
 	Data.schema_type = Schema_CreateComponentData(PERSISTENCE_COMPONENT_ID);
+
+	return Data;
 }
 
 // UnrealMetadata
@@ -267,8 +295,9 @@ struct UnrealMetadataData : ComponentData
 	std::map<std::string, std::uint32_t> SubobjectNameToOffset;
 };
 
-FORCEINLINE void CreateUnrealMetadataData(Worker_ComponentData& Data, const UnrealMetadataData& UnrealMetadata)
+FORCEINLINE Worker_ComponentData CreateUnrealMetadataData(const UnrealMetadataData& UnrealMetadata)
 {
+	Worker_ComponentData Data = {};
 	Data.component_id = UNREAL_METADATA_COMPONENT_ID;
 	Data.schema_type = Schema_CreateComponentData(UNREAL_METADATA_COMPONENT_ID);
 	auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
@@ -288,6 +317,8 @@ FORCEINLINE void CreateUnrealMetadataData(Worker_ComponentData& Data, const Unre
 		Schema_AddString(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.first);
 		Schema_AddUint32(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.second);
 	}
+
+	return Data;
 }
 
 // Dynamic (any Unreal Rep component)
@@ -311,5 +342,13 @@ struct DynamicData : ComponentData
 	Worker_ComponentData* Data;
 };
 
+// TEMP
+const Worker_ComponentId MULTI_REP_COMPONENT_ID = 100039;
+const Worker_ComponentId CLIENT_RPCS_COMPONENT_ID = 100041;
+// TEMP
+
 void ReadDynamicData(const Worker_ComponentData& ComponentData, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap);
-void CreateDynamicData(Worker_ComponentData& Data, Worker_ComponentId ComponentId, const struct FPropertyChangeState& InitialChanges, class USpatialPackageMapClient* PackageMap);
+void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap);
+
+Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap);
+Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap);

@@ -167,7 +167,7 @@ public:
 	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
 	worker::RequestId<worker::ReserveEntityIdRequest> SendReserveEntityIdRequest(USpatialActorChannel* Channel);
 	worker::RequestId<worker::DeleteEntityRequest> SendDeleteEntityRequest(const FEntityId& EntityId);
-	void SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location);
+	void SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location, const AActor* Actor);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
 	void SendSpatialUpdateSubobject(USpatialActorChannel* Channel, UObject* Subobject, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
 	void InvokeRPC(UObject* TargetObject, const UFunction* const Function, void* Parameters);

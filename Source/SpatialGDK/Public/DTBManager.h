@@ -24,8 +24,14 @@ public:
 	void InitClient();
 	void InitServer();
 
+	bool DTBHasComponentAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+
 	void OnCommandRequest(Worker_CommandRequestOp& Op);
 	void OnCommandResponse(Worker_CommandResponseOp& Op);
+
+	void OnComponentUpdate(Worker_ComponentUpdateOp& Op);
+
+	void OnAuthorityChange(Worker_AuthorityChangeOp& Op);
 
 	void SendReserveEntityIdRequest(USpatialActorChannel* Channel);
 
@@ -38,8 +44,13 @@ public:
 
 	Worker_RequestId CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const struct FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel);
 
+	void SendSpatialPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
+
+	void SendComponentUpdates(const struct FPropertyChangeState& Changes, USpatialActorChannel* Channel);
+
 	void Tick();
 
+	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> ComponentAuthorityMap;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 
@@ -48,6 +59,7 @@ public:
 	Worker_Connection* Connection;
 
 	class USpatialInterop* Interop;
+	class USpatialPackageMapClient* PackageMap;
 
 	CAPIPipelineBlock PipelineBlock;
 };

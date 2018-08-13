@@ -506,7 +506,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		// Mark this channel as being responsible for creating this entity once we have an entity ID.
 		bCreatingNewEntity = true;
 
-		if (InActor->GetClass()->GetName() == TEXT("DTBActor"))
+		if (InActor->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
 		{
 			Interop->DTBManager->SendReserveEntityIdRequest(this);
 		}
@@ -619,8 +619,6 @@ void USpatialActorChannel::OnCreateEntityResponseCAPI(const Worker_CreateEntityR
 
 void USpatialActorChannel::UpdateSpatialPosition()
 {
-	if (Actor->GetClass()->GetName() == TEXT("DTBActor")) return;
-
 	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
 	// handed between workers at the same time (which is not guaranteed), we ensure that we update the position component 
 	// of the PlayerController and PlayerState at the same time as the pawn.
@@ -636,7 +634,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 
 	LastSpatialPosition = ActorSpatialPosition;
-	Interop->SendSpatialPositionUpdate(GetEntityId(), LastSpatialPosition);
+	Interop->SendSpatialPositionUpdate(GetEntityId(), LastSpatialPosition, Actor);
 
 	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
 	if (APawn* Pawn = Cast<APawn>(Actor))
@@ -646,12 +644,12 @@ void USpatialActorChannel::UpdateSpatialPosition()
 			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController));
 			if (ControllerActorChannel)
 			{
-				Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
+				Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition, PlayerController);
 			}
 			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController->PlayerState));
 			if (PlayerStateActorChannel)
 			{
-				Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
+				Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition, PlayerController->PlayerState);
 			}
 		}
 	}

@@ -43,7 +43,7 @@ public:
 	}
 
 	// Called on the client when receiving an update.
-	FORCEINLINE bool IsClientAutonomousProxy(worker::ComponentId ServerRPCsComponentId)
+	FORCEINLINE bool IsClientAutonomousProxy(worker::ComponentId ClientRPCsComponentId)
 	{
 		if (SpatialNetDriver->GetNetMode() != NM_Client)
 		{
@@ -55,7 +55,7 @@ public:
 		{
 			// This will never fail because we can't have an actor channel without having checked out the entity.
 			auto& EntityAuthority = View->ComponentAuthority[ActorEntityId.ToSpatialEntityId()];
-			auto ComponentIterator = EntityAuthority.find(ServerRPCsComponentId);
+			auto ComponentIterator = EntityAuthority.find(ClientRPCsComponentId);
 			if (ComponentIterator != EntityAuthority.end())
 			{
 				return (*ComponentIterator).second == worker::Authority::kAuthoritative;

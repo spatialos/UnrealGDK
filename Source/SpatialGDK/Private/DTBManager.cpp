@@ -4,9 +4,6 @@
 
 #include "SpatialActorChannel.h"
 #include "SpatialInterop.h"
-
-#include <map>
-
 #include "SchemaHelpers.h"
 
 const Worker_ComponentId SPECIAL_SPAWNER_COMPONENT_ID = 100003;
@@ -20,13 +17,13 @@ void UDTBManager::InitClient()
 {
 	if (Connection) return;
 
-	//auto Vtables = CreateVtables();
-
 	Worker_ConnectionParameters Params = Worker_DefaultConnectionParameters();
 	Params.worker_type = "CAPIClient";
 	Params.network.tcp.multiplex_level = 4;
 	//Params.component_vtable_count = 0;
 	//Params.component_vtables = Vtables.Vtables;
+	//Params.enable_protocol_logging_at_startup = true;
+	//Params.protocol_logging.log_prefix = "C:\\workspace\\UnrealGDK\\UnrealGDKStarterProject\\spatial\\logs\\whyyy";
 	Worker_ComponentVtable DefaultVtable = {};
 	Params.default_component_vtable = &DefaultVtable;
 
@@ -53,8 +50,6 @@ void UDTBManager::InitServer()
 {
 	if (Connection) return;
 
-	//auto Vtables = CreateVtables();
-
 	Worker_ConnectionParameters Params = Worker_DefaultConnectionParameters();
 	Params.worker_type = "CAPIWorker";
 	Params.network.tcp.multiplex_level = 4;
@@ -72,6 +67,20 @@ void UDTBManager::InitServer()
 		Worker_LogMessage Message = { WORKER_LOG_LEVEL_WARN, "Server", "Whaduuuup", nullptr };
 		Worker_Connection_SendLogMessage(Connection, &Message);
 	}
+}
+
+bool UDTBManager::DTBHasComponentAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+{
+	auto EntityAuthority = ComponentAuthorityMap.Find(EntityId);
+	if (EntityAuthority)
+	{
+		auto ComponentAuthority = EntityAuthority->Find(ComponentId);
+		if (ComponentAuthority)
+		{
+			return *ComponentAuthority == WORKER_AUTHORITY_AUTHORITATIVE;
+		}
+	}
+	return false;
 }
 
 void UDTBManager::OnCommandRequest(Worker_CommandRequestOp& Op)
@@ -106,6 +115,57 @@ void UDTBManager::OnCommandResponse(Worker_CommandResponseOp& Op)
 {
 	auto CommandIndex = Schema_GetCommandResponseCommandIndex(Op.response.schema_type);
 	UE_LOG(LogTemp, Log, TEXT("!!! Received command response (entity: %lld, component: %d, command: %d)"), Op.entity_id, Op.response.component_id, CommandIndex);
+}
+
+void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
+{
+	UE_LOG(LogTemp, Verbose, TEXT("!!! Received component update (entity: %lld, component: %d)"), Op.entity_id, Op.update.component_id);
+
+	// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
+	if (DTBHasComponentAuthority(Op.entity_id, Op.update.component_id))
+	{
+		UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping because we sent this update"));
+		return;
+	}
+
+	switch (Op.update.component_id)
+	{
+	case ENTITY_ACL_COMPONENT_ID:
+	case METADATA_COMPONENT_ID:
+	case POSITION_COMPONENT_ID:
+	case PERSISTENCE_COMPONENT_ID:
+	case SPECIAL_SPAWNER_COMPONENT_ID:
+	case UNREAL_METADATA_COMPONENT_ID:
+		UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping because this is hand-written Spatial component"));
+		return;
+
+	// TEMP
+	case MULTI_REP_COMPONENT_ID:
+		if (Interop->GetNetDriver()->GetNetMode() != NM_Client)
+		{
+			UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping MultiRep component because we're a server"));
+			return;
+		}
+		break;
+	case CLIENT_RPCS_COMPONENT_ID:
+		if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
+		{
+			UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping ClientRPCs component because we're a client"));
+			return;
+		}
+		break;
+	// TEMP
+	}
+
+	USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.entity_id);
+	check(ActorChannel);
+	ReceiveDynamicUpdate(Op.update, ActorChannel, PackageMap);
+}
+
+void UDTBManager::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
+{
+	ComponentAuthorityMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.component_id) = (Worker_Authority)Op.authority;
+	UE_LOG(LogTemp, Log, TEXT("!!! Received authority change (entity: %lld, component: %d, authority: %d)"), Op.entity_id, Op.component_id, (int)Op.authority);
 }
 
 void UDTBManager::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
@@ -183,8 +243,8 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 	ComponentWriteAcl.emplace(POSITION_COMPONENT_ID, WorkersOnly);
 
 	// TEMP
-	ComponentWriteAcl.emplace(100039, WorkersOnly);
-	ComponentWriteAcl.emplace(100042, OwningClientOnly);
+	ComponentWriteAcl.emplace(MULTI_REP_COMPONENT_ID, WorkersOnly);
+	ComponentWriteAcl.emplace(CLIENT_RPCS_COMPONENT_ID, OwningClientOnly);
 	// TEMP
 
 	std::string StaticPath;
@@ -206,22 +266,43 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 		}
 	});
 
-	std::vector<Worker_ComponentData> ComponentDatas(7, Worker_ComponentData{});
-	CreatePositionData(ComponentDatas[0], PositionData(LocationToCAPIPosition(Position)));
-	CreateMetadataData(ComponentDatas[1], MetadataData(TCHAR_TO_UTF8(*Metadata)));
-	CreateEntityAclData(ComponentDatas[2], EntityAclData(AnyUnrealWorkerOrOwningClient, ComponentWriteAcl));
-	CreatePersistenceData(ComponentDatas[3], PersistenceData());
-	CreateUnrealMetadataData(ComponentDatas[4], UnrealMetadataData(StaticPath, ClientWorkerIdString, SubobjectNameToOffset));
+	std::vector<Worker_ComponentData> ComponentDatas;
+	ComponentDatas.push_back(CreatePositionData(PositionData(LocationToCAPIPosition(Position))));
+	ComponentDatas.push_back(CreateMetadataData(MetadataData(TCHAR_TO_UTF8(*Metadata))));
+	ComponentDatas.push_back(CreateEntityAclData(EntityAclData(AnyUnrealWorkerOrOwningClient, ComponentWriteAcl)));
+	ComponentDatas.push_back(CreatePersistenceData(PersistenceData()));
+	ComponentDatas.push_back(CreateUnrealMetadataData(UnrealMetadataData(StaticPath, ClientWorkerIdString, SubobjectNameToOffset)));
 
-	CreateDynamicData(ComponentDatas[5], 100039, InitialChanges, Cast<USpatialPackageMapClient>(PipelineBlock.NetDriver->GetSpatialOSNetConnection()->PackageMap));
+	// MultiClientRepData
+	ComponentDatas.push_back(CreateDynamicData(MULTI_REP_COMPONENT_ID, InitialChanges, PackageMap));
 
 	// TEMP
-	ComponentDatas[6].component_id = 100042;
-	ComponentDatas[6].schema_type = Schema_CreateComponentData(100042);
+	// ClientRPCs
+	Worker_ComponentData ClientRPCsData = {};
+	ClientRPCsData.component_id = CLIENT_RPCS_COMPONENT_ID;
+	ClientRPCsData.schema_type = Schema_CreateComponentData(CLIENT_RPCS_COMPONENT_ID);
+	ComponentDatas.push_back(ClientRPCsData);
 	// TEMP
 
 	Worker_EntityId EntityId = Channel->GetEntityId().ToSpatialEntityId();
 	return Worker_Connection_SendCreateEntityRequest(Connection, ComponentDatas.size(), ComponentDatas.data(), &EntityId, nullptr);
+}
+
+void UDTBManager::SendSpatialPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
+{
+	auto ComponentUpdate = CreatePositionUpdate(LocationToCAPIPosition(Location));
+
+	Worker_Connection_SendComponentUpdate(Connection, EntityId, &ComponentUpdate);
+}
+
+void UDTBManager::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel)
+{
+	Worker_EntityId EntityId = Channel->GetEntityId().ToSpatialEntityId();
+	UE_LOG(LogTemp, Verbose, TEXT("!!! Sending component update (actor: %s, entity: %lld)"), *Channel->Actor->GetName(), EntityId);
+
+	auto MultiClientRepDataUpdate = CreateDynamicUpdate(MULTI_REP_COMPONENT_ID, Changes, PackageMap);
+
+	Worker_Connection_SendComponentUpdate(Connection, EntityId, &MultiClientRepDataUpdate);
 }
 
 void UDTBManager::Tick()
@@ -279,8 +360,10 @@ void UDTBManager::Tick()
 			//PipelineBlock.RemoveComponent(Op->remove_component);
 			break;
 		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
+			OnAuthorityChange(Op->authority_change);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
+			OnComponentUpdate(Op->component_update);
 			break;
 		case WORKER_OP_TYPE_COMMAND_REQUEST:
 			OnCommandRequest(Op->command_request);

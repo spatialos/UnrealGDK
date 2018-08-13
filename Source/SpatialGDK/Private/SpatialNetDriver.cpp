@@ -467,7 +467,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
 					if (Channel)
 					{
-						if (Interop->GetTypeBindingByClass(Actor->GetClass()) == nullptr && Actor->GetClass()->GetName() != TEXT("DTBActor"))
+						if (Interop->GetTypeBindingByClass(Actor->GetClass()) == nullptr && !Actor->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
 						{
 							Channel->bCoreActor = false;
 						}

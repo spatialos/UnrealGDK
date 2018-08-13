@@ -113,7 +113,7 @@ USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
 	// !!! DTB Here
-	if (Channel->Actor->GetClass()->GetName() == TEXT("DTBActor"))
+	if (Channel->Actor->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
 	{
 		return worker::RequestId<worker::CreateEntityRequest>(DTBManager->SendCreateEntityRequest(Channel, Location, PlayerWorkerId, RepChanged, HandoverChanged));
 	}
@@ -227,8 +227,14 @@ worker::RequestId<worker::DeleteEntityRequest> USpatialInterop::SendDeleteEntity
 	return DeleteEntityRequestId;
 }
 
-void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location)
+void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location, const AActor* Actor)
 {
+	if (Actor->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
+	{
+		DTBManager->SendSpatialPositionUpdate(EntityId.ToSpatialEntityId(), Location);
+		return;
+	}
+
 	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
 	if (!PinnedConnection.IsValid())
 	{
@@ -241,7 +247,11 @@ void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const
 
 void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
-	// !!! DTB Here
+	if (Channel->Actor->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
+	{
+		DTBManager->SendComponentUpdates(Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
+		return;
+	}
 
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
 	if (!Binding)

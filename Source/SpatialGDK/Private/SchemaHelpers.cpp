@@ -6,6 +6,8 @@
 #include "SpatialMemoryReader.h"
 #include "SpatialMemoryWriter.h"
 
+#include <set>
+
 struct UnrealObjectRef
 {
 	UnrealObjectRef() = default;
@@ -318,9 +320,7 @@ std::uint32_t Schema_GetPropertyCount(const Schema_Object* Object, Schema_FieldI
 	}
 	else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property))
 	{
-		// A hack to go into Schema_GetProperty for arrays even if they're empty.
-		// Maybe unnecessary?
-		return 1;
+		return Schema_GetPropertyCount(Object, Id, ArrayProperty->Inner);
 	}
 	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
 	{
@@ -447,7 +447,7 @@ void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t 
 		// TODO: This is potentionally very very jank
 		FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 
-		int Count = Schema_GetPropertyCount(Object, Id, Property);
+		int Count = Schema_GetPropertyCount(Object, Id, ArrayProperty->Inner);
 		ArrayHelper.Resize(Count);
 
 		for (int i = 0; i < Count; i++)
@@ -472,16 +472,14 @@ void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t 
 	}
 }
 
-void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap)
+void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, bool IsUpdate = false, const std::set<Schema_FieldId>& ClearedIds = std::set<Schema_FieldId>())
 {
-	if (ComponentData.component_id != 100039) return;
+	Channel->PreReceiveSpatialUpdate(Channel->Actor);
 
 	auto RepState = Channel->ActorReplicator->RepState;
-	auto& Cmds				   = Channel->ActorReplicator->RepLayout->Cmds;
+	auto& Cmds = Channel->ActorReplicator->RepLayout->Cmds;
 	auto& BaseHandleToCmdIndex = Channel->ActorReplicator->RepLayout->BaseHandleToCmdIndex;
-	auto& Parents			   = Channel->ActorReplicator->RepLayout->Parents;
-
-	auto ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
+	auto& Parents = Channel->ActorReplicator->RepLayout->Parents;
 
 	auto Handles = Channel->GetAllPropertyHandles(*Channel->ActorReplicator);
 
@@ -499,7 +497,10 @@ void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorCha
 
 			uint8* Data = (uint8*)Channel->Actor + HandleIterator.ArrayOffset + SwappedCmd.Offset;
 
-			Schema_GetProperty(ComponentObject, HandleIterator.Handle, 0, SwappedCmd.Property, Data, PackageMap);
+			if (!IsUpdate || Schema_GetPropertyCount(ComponentObject, HandleIterator.Handle, SwappedCmd.Property) > 0 || ClearedIds.find(HandleIterator.Handle) != ClearedIds.end())
+			{
+				Schema_GetProperty(ComponentObject, HandleIterator.Handle, 0, SwappedCmd.Property, Data, PackageMap);
+			}
 
 			if (Cmd.Type == REPCMD_DynamicArray)
 			{
@@ -510,14 +511,40 @@ void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorCha
 			}
 		}
 	}
+
+	Channel->PostReceiveSpatialUpdate(Channel->Actor, TArray<UProperty*>());
 }
 
-void CreateDynamicData(Worker_ComponentData& ComponentData, Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap)
+void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap)
 {
-	ComponentData.component_id = ComponentId;
-	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
+	if (ComponentData.component_id != MULTI_REP_COMPONENT_ID) return;
+
 	auto ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
+	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap);
+}
+
+void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap)
+{
+	if (ComponentUpdate.component_id != MULTI_REP_COMPONENT_ID) return;
+
+	auto ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+
+	std::vector<Schema_FieldId> ClearedIdsList(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate.schema_type));
+	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate.schema_type, ClearedIdsList.data());
+
+	std::set<Schema_FieldId> ClearedIds;
+
+	for (auto FieldId : ClearedIdsList)
+	{
+		ClearedIds.insert(FieldId);
+	}
+
+	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, true, ClearedIds);
+}
+
+void Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap)
+{
 	// Populate the replicated data component updates from the replicated property changelist.
 	if (Changes.RepChanged.Num() > 0)
 	{
@@ -544,4 +571,28 @@ void CreateDynamicData(Worker_ComponentData& ComponentData, Worker_ComponentId C
 	//for (uint16 ChangedHandle : Changes.HandoverChanged)
 	//{
 	//}
+}
+
+Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap)
+{
+	Worker_ComponentData ComponentData = {};
+	ComponentData.component_id = ComponentId;
+	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
+	auto ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
+
+	Schema_FillDynamicObject(ComponentObject, Changes, PackageMap);
+
+	return ComponentData;
+}
+
+Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap)
+{
+	Worker_ComponentUpdate ComponentUpdate = {};
+	ComponentUpdate.component_id = ComponentId;
+	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+	auto ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+
+	Schema_FillDynamicObject(ComponentObject, Changes, PackageMap);
+
+	return ComponentUpdate;
 }
