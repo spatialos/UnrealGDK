@@ -83,15 +83,10 @@ bool CreateSingletonToIdMap(PathNameToEntityIdMap& SingletonNameToEntityId)
 	{
 		if (It->HasAnySpatialClassFlags(SPATIALCLASS_PrivateSingleton | SPATIALCLASS_PublicSingleton))
 		{
-			SingletonActors.Add(*It);
+			// Id is initially 0 to indicate that this Singleton entity has not been created yet.
+			// When the worker authoritative over the GSM sees 0, it knows it is safe to create it.
+			SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*It->GetPathName())), 0);
 		}
-	}
-
-	for (UClass* Class : SingletonActors)
-	{
-		// Id is initially 0 to indicate that this Singleton entity has not been created yet.
-		// When the worker authoritative over the GSM sees 0, it knows it is safe to create it.
-		SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*Class->GetPathName())), 0);
 	}
 
 	return true;

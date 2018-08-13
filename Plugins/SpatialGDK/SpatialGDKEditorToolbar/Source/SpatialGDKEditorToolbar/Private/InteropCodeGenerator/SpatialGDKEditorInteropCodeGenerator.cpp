@@ -82,9 +82,9 @@ void GenerateInteropFromClasses(const TArray<UClass*>& Classes, const FString& C
 {
 	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 	int ComponentId = 100010;
-	for (auto It : Classes)
+	for (auto Class : Classes)
 	{
-		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, It);
+		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class);
 	}
 }
 
