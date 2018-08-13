@@ -78,7 +78,6 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 
 bool CreateSingletonToIdMap(PathNameToEntityIdMap& SingletonNameToEntityId)
 {
-	TArray<UClass*> SingletonActors;
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
 		if (It->HasAnySpatialClassFlags(SPATIALCLASS_PrivateSingleton | SPATIALCLASS_PublicSingleton))
