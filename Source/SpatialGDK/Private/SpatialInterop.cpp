@@ -125,8 +125,6 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 		if (TypeBinding)
 		{
 			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
-			AddPendingActorRequest(CreateEntityRequestId.Id, Channel);
 		}
 		else
 		{
@@ -178,10 +176,11 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 				// todo-giray: Remove once we're using proper (generated) entity templates here.
 				.AddComponent<improbable::unreal::PlayerControlClient>(improbable::unreal::PlayerControlClient::Data{}, OwnClientOnly)
 				.Build();
-
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
-			AddPendingActorRequest(CreateEntityRequestId.Id, Channel);
 		}
+
+		CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
+		AddPendingActorRequest(CreateEntityRequestId.Id, Channel);
+
 		UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
 			*SpatialOSInstance->GetWorkerId(), *Actor->GetName(), Channel->GetEntityId().ToSpatialEntityId(), CreateEntityRequestId.Id);
 	}
