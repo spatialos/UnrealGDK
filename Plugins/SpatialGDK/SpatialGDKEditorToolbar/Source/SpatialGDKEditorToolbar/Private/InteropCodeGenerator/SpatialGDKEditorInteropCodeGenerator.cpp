@@ -54,12 +54,8 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	return NumComponents;
 }
 
-bool CheckClassNameListValidity(const ClassHeaderMap& ClassMap)
+bool CheckClassNameListValidity(const TArray<UClass*>& Classes)
 {
-	// Pull out all the class names from the map. (These might contain underscores like "One_TwoThree" and "OneTwo_Three").
-	TArray<UClass*> Classes;
-	ClassMap.GetKeys(Classes);
-
 	// Remove all underscores from the class names, check for duplicates.
 	for (int i = 0; i < Classes.Num() - 1; ++i)
 	{
@@ -82,21 +78,13 @@ bool CheckClassNameListValidity(const ClassHeaderMap& ClassMap)
 }
 }// ::
 
-void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
+void GenerateInteropFromClasses(const TArray<UClass*>& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
 {
 	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 	int ComponentId = 100010;
-	for (TObjectIterator<UClass> It; It; ++It)
+	for (auto It : Classes)
 	{
-		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypebindings))
-		{
-			if (*It == UObject::StaticClass())
-			{
-				continue;
-			}
-
-			ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, *It);
-		}
+		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, It);
 	}
 }
 
@@ -133,10 +121,18 @@ FString GenerateIntermediateDirectory()
 bool SpatialGDKGenerateInteropCode()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
-	ClassHeaderMap InteropGeneratedClasses;
-	for (auto& Element : SpatialGDKToolbarSettings->InteropCodegenClasses)
+	TArray<UClass*> InteropGeneratedClasses;
+	for (TObjectIterator<UClass> It; It; ++It)
 	{
-		InteropGeneratedClasses.Add(Element.ReplicatedClass, Element.IncludeList);
+		if (*It == UObject::StaticClass())
+		{
+			continue;
+		}
+
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypebindings))
+		{
+			InteropGeneratedClasses.Add(*It);
+		}
 	}
 
 	if (!CheckClassNameListValidity(InteropGeneratedClasses))
