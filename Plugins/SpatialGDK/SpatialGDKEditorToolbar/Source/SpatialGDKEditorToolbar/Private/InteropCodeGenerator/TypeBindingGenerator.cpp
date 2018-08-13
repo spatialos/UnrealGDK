@@ -474,6 +474,23 @@ void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC
 	StructName = FString::Printf(TEXT("%s_event%s_Parms"), *RPCOwnerClass->GetName(), *RPC->Function->GetName());
 	if (RPCOwnerClass->ClassGeneratedBy)
 	{
+		// Generate BP-defined structs
+		for (auto& PropertyPair : RPC->Parameters)
+		{
+			if (PropertyPair.Value->Type.IsValid() && PropertyPair.Value->Type->Type->IsA<UUserDefinedStruct>())
+			{
+				Writer.Printf("struct %s", *PropertyPair.Key->GetCPPType());
+				Writer.Printf("{").Indent();
+				for (auto& StructProp : PropertyPair.Value->Type->Properties)
+				{
+					FStringOutputDevice PropertyText;
+					StructProp.Key->ExportCppDeclaration(PropertyText, EExportedDeclaration::Local, nullptr);
+					Writer.Printf("%s;", *PropertyText);
+				}
+				Writer.Outdent().Printf("};");
+			}
+		}
+
 		// This RPC is generated from a blueprint class, so we need to generate the parameters struct based on the RPC arguments
 		Writer.Printf("struct %s", *StructName);
 		Writer.Print("{").Indent();
