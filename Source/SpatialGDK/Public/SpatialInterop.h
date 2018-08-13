@@ -8,20 +8,13 @@
 #include "SpatialConstants.h"
 #include "SpatialTypeBinding.h"
 #include "SpatialUnrealObjectRef.h"
+#include <improbable/unreal/gdk/global_state_manager.h>
 #include "SpatialInterop.generated.h"
 
 class USpatialOS;
 class USpatialActorChannel;
 class USpatialPackageMapClient;
 class USpatialNetDriver;
-
-namespace improbable
-{
-	namespace unreal 
-	{
-		class GlobalStateManagerData;
-	}
-}
 
 SPATIALGDK_API DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInterop, Log, All);
 

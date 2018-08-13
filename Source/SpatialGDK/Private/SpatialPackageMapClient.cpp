@@ -9,6 +9,7 @@
 #include "SpatialInterop.h"
 #include "SpatialNetDriver.h"
 #include "SpatialTypeBinding.h"
+#include "UnrealMetadataComponent.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSPackageMap);
 
@@ -200,7 +201,29 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(const UObje
 void FSpatialNetGUIDCache::RemoveEntityNetGUID(worker::EntityId EntityId)
 {
 	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
+	AActor* Actor = Cast<AActor>(GetObjectFromNetGUID(EntityNetGUID, false));
 	RemoveNetGUID(EntityNetGUID);
+
+	// Remove references to the actor's subobjects 
+	// Slightly hacky as this relies on offsets starting from 1 and being consecutive
+	uint32 Offset = 1;
+
+	while(true)
+	{
+		improbable::unreal::UnrealObjectRef ObjectRef{ EntityId,
+			Offset,
+			worker::Option<std::string>{},
+			worker::Option<improbable::unreal::UnrealObjectRef>{} };
+
+		FNetworkGUID SubobjectNetGUID = GetNetGUIDFromUnrealObjectRef(ObjectRef);
+
+		if (!SubobjectNetGUID.IsValid())
+		{
+			break;
+		}
+
+		RemoveNetGUID(SubobjectNetGUID);
+	}
 }
 
 void FSpatialNetGUIDCache::RemoveNetGUID(const FNetworkGUID& NetGUID)

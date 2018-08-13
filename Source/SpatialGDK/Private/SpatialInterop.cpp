@@ -16,7 +16,6 @@
 #include <improbable/standard_library.h>
 #include <improbable/unreal/gdk/player.h>
 #include <improbable/unreal/gdk/unreal_metadata.h>
-#include <improbable/unreal/gdk/global_state_manager.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKInterop);
 
@@ -1039,22 +1038,17 @@ void USpatialInterop::DeleteIrrelevantReplicatedStablyNamedActors(const StringTo
 
 		if (Actor != nullptr && ReplicatedStablyNamedActorTimeoutMap.Find(Actor) == nullptr)
 		{
-			TWeakObjectPtr<AActor> ActorPtr = Actor;
 			FTimerHandle TimerHandle;
 			FTimerDelegate TimerCallback;
-			TimerCallback.BindLambda([Actor, ActorPtr, EntityId, this] {
+			TimerCallback.BindLambda([Actor, EntityId, this] {
 				check(Actor);
 				ReplicatedStablyNamedActorTimeoutMap.Remove(Actor);
 
-				if (ActorPtr.IsValid() && !ActorPtr->IsPendingKill() && !PackageMap->GetNetGUIDFromEntityId(EntityId).IsValid())
+				if (!Actor->IsPendingKill() && !PackageMap->GetNetGUIDFromEntityId(EntityId).IsValid())
 				{
-					UE_LOG(LogSpatialGDKInterop, Log, TEXT("Timed out (deleted) replicated stably named actor: %s"), *ActorPtr->GetName());
+					UE_LOG(LogSpatialGDKInterop, Log, TEXT("Timed out (deleted) replicated stably named actor: %s"), *Actor->GetName());
 
-					/*if (PackageMap->GetNetGUIDFromStablyNamedObject(ActorPtr.Get()).IsValid())
-					{
-						PackageMap->RemoveStablyNamedObject(ActorPtr.Get());
-					}*/
-					LocallyDeleteActor(ActorPtr.Get());
+					LocallyDeleteActor(Actor);
 				}
 			});
 			TimerManager->SetTimer(TimerHandle, TimerCallback, SpatialConstants::REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS, false);

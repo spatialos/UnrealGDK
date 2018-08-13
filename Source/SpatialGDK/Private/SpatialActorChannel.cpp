@@ -498,12 +498,10 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	// If the entity registry has no entry for this actor, this means we need to create it.
 	if (ActorEntityId == 0)
 	{
-		// If the actor is stably named, we only want to start the creation process on one server (the one that
-		// has the Global State Manager) to avoid having multiple copies of replicated stably named actors in SpatialOS
+		// If the actor is stably named, we only want to start the creation process on one server (the one that is authoritative
+		// over the Global State Manager) to avoid having multiple copies of replicated stably named actors in SpatialOS
 		if (InActor->IsFullNameStableForNetworking())
 		{
-			/*USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
-			PackageMap->ResolveStablyNamedObject(InActor);*/
 			SpatialNetDriver->GetSpatialInterop()->ReserveReplicatedStablyNamedActorChannel(this);
 		}
 		else
@@ -586,7 +584,7 @@ void USpatialActorChannel::RegisterEntityId(const FEntityId& ActorEntityId)
 	{
 		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
 
-		uint32 CurrentOffset = 0;
+		uint32 CurrentOffset = 1;
 		worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
 		ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
 		{
