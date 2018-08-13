@@ -805,7 +805,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 
 	// Include this class' header file
 	SourceWriter.PrintNewLine();
-	SourceWriter.Printf("#include \"%s\"", *GetFirstNativeClass(Class)->GetMetaData("ModuleRelativePath"));
+	SourceWriter.Printf("#include \"%s\"", *GetFirstNativeClass(Class)->GetMetaData("IncludePath"));
 
 	// Find all rpc parameter objects and retrieve their path
 	TSet<FString> RPCIncludes;
@@ -834,7 +834,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 
 				if (UStruct* const Struct = FindObject<UStruct>(ANY_PACKAGE, *ParamTypeName))
 				{
-					RPCIncludes.Add(Struct->GetMetaData("ModuleRelativePath"));
+					RPCIncludes.Add(Struct->GetMetaData("IncludePath"));
 				}
 			}
 		}		
@@ -842,7 +842,10 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 
 	for (auto& RPCIncludePath : RPCIncludes)
 	{
-		SourceWriter.Printf("#include \"%s\"", *RPCIncludePath);
+		if (RPCIncludePath.IsEmpty() == false)
+		{
+			SourceWriter.Printf("#include \"%s\"", *RPCIncludePath);
+		}
 	}
 
 	SourceWriter.PrintNewLine();

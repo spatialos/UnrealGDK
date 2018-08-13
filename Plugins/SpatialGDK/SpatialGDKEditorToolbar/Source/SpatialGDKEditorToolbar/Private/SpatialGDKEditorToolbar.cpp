@@ -258,32 +258,19 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(FName("AssetRegistry"));
 	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
 
-	TArray<FName> ClassNames;
-	TSet<FName> ExcludedClassNames;
-	TSet<FName> DerivedClassNames;
-	ClassNames.Add(TEXT("Actor"));
-	AssetRegistry.GetDerivedClassNames(ClassNames, ExcludedClassNames, DerivedClassNames);
-
-	for (auto& It : DerivedClassNames)
-	{
-		if (It == TEXT("NoReferenceBPActor_C"))
-		{
-			if (LoadObject<UClass>(nullptr, *It.ToString(), nullptr, LOAD_EditorOnly, nullptr))
-			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("%s"), *It.ToString());
-			}
-		}
-	}
-
+	// Before running the interop generator, ensure all blueprint classes that have been tagged with 'spatial' are loaded
 	TArray<FAssetData> AssetData;
+	uint32 SpatialClassFlags = 0;
 	AssetRegistry.GetAssetsByClass(UBlueprint::StaticClass()->GetFName(), AssetData, true);
 	for (auto& It : AssetData)
-	{
-		if (It.AssetClass == TEXT("NoReferenceBPActor_C"))
+	{		
+		if (It.GetTagValue("SpatialClassFlags", SpatialClassFlags))
 		{
-			if (LoadObject<UClass>(nullptr, *It.AssetName.ToString(), nullptr, LOAD_EditorOnly, nullptr))
+			if (SpatialClassFlags & SPATIALCLASS_GenerateTypebindings)
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("%s"), *It.AssetName.ToString());
+				FString ObjectPath = It.ObjectPath.ToString() + TEXT("_C");
+				bool bSuccess = LoadObject<UClass>(nullptr, *ObjectPath, nullptr, LOAD_EditorOnly, nullptr);
+				checkf(bSuccess, TEXT("Failed to load blueprint class %s"), *ObjectPath);
 			}
 		}
 	}
