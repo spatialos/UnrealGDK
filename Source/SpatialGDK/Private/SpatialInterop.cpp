@@ -122,9 +122,11 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 		FStringAssetReference ActorClassRef(Actor->GetClass());
 		FString PathStr = ActorClassRef.ToString();
 
+		worker::Entity Entity;
+
 		if (TypeBinding)
 		{
-			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
+			Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
 		}
 		else
 		{
@@ -166,7 +168,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 			// Build entity.
 			const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Location);
 
-			auto Entity = improbable::unreal::FEntityBuilder::Begin()
+			Entity = improbable::unreal::FEntityBuilder::Begin()
 				.AddPositionComponent(SpatialPosition, WorkersOnly)
 				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
 				.SetPersistence(true)
