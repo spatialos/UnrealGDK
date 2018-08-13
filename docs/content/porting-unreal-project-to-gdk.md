@@ -150,13 +150,9 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
 1. Open the game's uproject file in the Editor and navigate to *Edit > Project Settings... > SpatialOS Unreal GDK > Toolbar*.
 
 1. In the Interop Codegen section:
-
     1. Modify the output path for the Interop code generation to: `<ProjectRoot>/spatial/schema/improbable/generated/`.
-
     1. Modify the output path for the generated schemas to: `<GameRoot>/Source/<GameName>/Generated/`.
-
     1. Add your game's `GameState` class to the singleton classes list.
-
     1. Add your game's replicated classes to the `Classes to generate typebindings for` list, along with the headers they may need (refer to the [Interop documentation](./interop.md)).
     
 1. Open your UnrealWorker worker config located in `<ProjectRoot>\spatial\workers\unreal\spatialos.UnrealWorker.worker.json`. Add your new Singleton generated component(s) to the streaming queries.
