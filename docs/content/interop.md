@@ -58,7 +58,7 @@ This generates the appropriate `.schema` files and type bindings as `SpatialType
 * The generated `.schema` files are in the Starter Project repository. They are at `<project root>/spatial /schema/improbable/generated/`.
 The `.schema` files have names relevant to the class name you give them. From the Starter Project example above: `StarterProjectPlayerController.Schema` and `PlayerCharacter.schema`.
 
-    Some `.schema` files have a `Types` tag;  in this situation `PlayerCharacter.schema` files have the filename `PlayerCharacterTypes.schema`.  This indicates this is a schema containing RPC types which child or sibling classes can reuse.
+    Some `.schema` files have a `Types` tag;  in this situation `PlayerCharacter.schema` files have the filename `PlayerCharacterTypes.schema`.  This indicates this is a schema containing RPC types which child classes can reuse.
 
 * The generated `SpatialTypeBinding` files are in the [Unreal GDK repository](https://github.com/spatialos/UnrealGDK) at `<Project Root>/workers/unreal/Game/source/GameName/Generated/`.
 
