@@ -150,6 +150,52 @@ FString PropertyToWorkerSDKType(UProperty* Property, bool bIsRPCProperty)
 	return DataType;
 }
 
+// Generate definition in header file for Blueprint-defined Structs
+void GenerateBlueprintStructDefinition(FCodeWriter& Writer, UProperty* Property, TSet<FString>& GeneratedStructTypes)
+{
+	if (GeneratedStructTypes.Contains(Property->GetCPPType()))
+	{
+		return;
+	}
+
+	if (UArrayProperty *ArrProp = Cast<UArrayProperty>(Property))
+	{
+		GenerateBlueprintStructDefinition(Writer, ArrProp->Inner, GeneratedStructTypes);
+	}
+
+	if (!Property->IsA<UStructProperty>())
+	{
+		return;
+	}
+
+	UStruct* Struct = Cast<UStructProperty>(Property)->Struct;
+	if (!Struct->IsA<UUserDefinedStruct>())
+	{
+		return;
+	}
+
+	GeneratedStructTypes.Add(Property->GetCPPType());
+
+	// Recurse children post-order
+	for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
+	{
+		UProperty* Prop = *PropIt;
+		GenerateBlueprintStructDefinition(Writer, Prop, GeneratedStructTypes);
+	}
+
+	Writer.PrintNewLine();
+	Writer.Printf("struct %s", *Property->GetCPPType());
+	Writer.Printf("{").Indent();
+	for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
+	{
+		UProperty* Prop = *PropIt;
+		FStringOutputDevice PropertyText;
+		Prop->ExportCppDeclaration(PropertyText, EExportedDeclaration::Local, nullptr);
+		Writer.Printf("%s;", *PropertyText);
+	}
+	Writer.Outdent().Printf("};");
+}
+
 void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator, bool bIsRPCProperty, bool bUnresolvedObjectsHandledOutside)
 {
 	// For RPC arguments we may wish to handle them differently.
@@ -474,23 +520,6 @@ void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC
 	StructName = FString::Printf(TEXT("%s_event%s_Parms"), *RPCOwnerClass->GetName(), *RPC->Function->GetName());
 	if (RPCOwnerClass->ClassGeneratedBy)
 	{
-		// Generate BP-defined structs
-		for (auto& PropertyPair : RPC->Parameters)
-		{
-			if (PropertyPair.Value->Type.IsValid() && PropertyPair.Value->Type->Type->IsA<UUserDefinedStruct>())
-			{
-				Writer.Printf("struct %s", *PropertyPair.Key->GetCPPType());
-				Writer.Printf("{").Indent();
-				for (auto& StructProp : PropertyPair.Value->Type->Properties)
-				{
-					FStringOutputDevice PropertyText;
-					StructProp.Key->ExportCppDeclaration(PropertyText, EExportedDeclaration::Local, nullptr);
-					Writer.Printf("%s;", *PropertyText);
-				}
-				Writer.Outdent().Printf("};");
-			}
-		}
-
 		// This RPC is generated from a blueprint class, so we need to generate the parameters struct based on the RPC arguments
 		Writer.Printf("struct %s", *StructName);
 		Writer.Print("{").Indent();
@@ -691,6 +720,19 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 				*CPPCommandClassName(Class, RPC->Function));
 		}
 	}
+
+	// Generate blueprint-defined struct structures
+	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
+
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		TSet<FString> GeneratedStructTypes;
+		for (auto& RepProp : RepData[Group])
+		{
+			GenerateBlueprintStructDefinition(HeaderWriter, RepProp.Value->Property, GeneratedStructTypes);
+		}
+	}
+
 	HeaderWriter.Outdent();
 	HeaderWriter.Print("};");
 }
@@ -1517,14 +1559,11 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 		UProperty* InnerProperty = ArrayProperty->Inner;
 
 		// Special case for array of blueprint-defined structs
-		// Since those structs don't exist in C++ compile time, our generated typebinding files will "fake" the struct by creating a blob of the same size
-		// As the type passed into the TArray. It will then load the blueprint struct at runtime and call SerializeBin() from it.
+		// Since those structs don't exist in C++ compile time, we will load the blueprint struct at runtime and call SerializeBin() from it.
 		UStructProperty* InnerStructProperty = Cast<UStructProperty>(InnerProperty);
 		if (InnerStructProperty != nullptr && InnerStructProperty->Struct->IsA<UUserDefinedStruct>())
 		{
-			UStruct* Struct = InnerStructProperty->Struct;
-			SourceWriter.Printf("struct %s {uint8 Data[%d];};", *InnerProperty->GetCPPType(), Struct->GetStructureSize());
-			SourceWriter.Printf("UStruct* %s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *InnerProperty->GetCPPType(), *Struct->GetPathName());
+			SourceWriter.Printf("UStruct* %s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *InnerProperty->GetCPPType(), *InnerStructProperty->Struct->GetPathName());
 		}
 
 		SourceWriter.Printf("const TArray<%s>& %s = *(reinterpret_cast<TArray<%s> const*>(Data));", *InnerProperty->GetCPPType(), *PropertyValueName, *InnerProperty->GetCPPType());
@@ -1767,10 +1806,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 		UStructProperty* InnerStructProperty = Cast<UStructProperty>(InnerProperty);
 		if (InnerStructProperty != nullptr && InnerStructProperty->Struct->IsA<UUserDefinedStruct>())
 		{
-			UStruct* Struct = (Cast<UStructProperty>(InnerProperty))->Struct;
-			SourceWriter.Printf("");
-			SourceWriter.Printf("struct %s {uint8 Data[%d];};", *InnerProperty->GetCPPType(), Struct->GetStructureSize());
-			SourceWriter.Printf("UStruct* %s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *InnerProperty->GetCPPType(), *Struct->GetPathName());
+			SourceWriter.Printf("UStruct* %s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *InnerProperty->GetCPPType(), *InnerStructProperty->Struct->GetPathName());
 		}
 
 		SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));", *(InnerProperty->GetCPPType()), *PropertyValueName, *(InnerProperty->GetCPPType()));
