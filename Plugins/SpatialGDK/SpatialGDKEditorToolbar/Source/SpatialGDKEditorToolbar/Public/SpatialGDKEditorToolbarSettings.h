@@ -38,6 +38,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Stop on Exit"))
 	bool bStopSpatialOnExit;
 
+private:
 	/** Path to your SpatialOS snapshot. */
 	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot path"))
 	FDirectoryPath SpatialOSSnapshotPath;
@@ -45,7 +46,7 @@ public:
 	/** Name of your SpatialOS snapshot file. */
 	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot file name"))
 	FString SpatialOSSnapshotFile;
-private:
+
 	/** Interop codegen output path */
 	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the interop codegeneration"))
 	FDirectoryPath InteropCodegenOutputFolder;
@@ -84,6 +85,22 @@ public:
 		return GeneratedSchemaOutputFolder.Path.IsEmpty()
 			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetProjectRoot(), FString(TEXT("schema/improbable/unreal/generated/"))))
 			: FPaths::ConvertRelativePathToFull(GeneratedSchemaOutputFolder.Path);
+	}
+
+	UFUNCTION()
+	FORCEINLINE FString GetSpatialOSSnapshotPath() const
+	{
+		return SpatialOSSnapshotPath.Path.IsEmpty()
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetProjectRoot(), TEXT("snapshots/")))
+			: FPaths::ConvertRelativePathToFull(SpatialOSSnapshotPath.Path);
+	}
+
+	UFUNCTION()
+	FORCEINLINE FString GetSpatialOSSnapshotFile() const
+	{
+		return SpatialOSSnapshotFile.IsEmpty()
+			? TEXT("default.snapshot")
+			: SpatialOSSnapshotFile;
 	}
 
 	UFUNCTION()
