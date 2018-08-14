@@ -16,6 +16,7 @@
 #include <improbable/standard_library.h>
 #include <improbable/unreal/gdk/player.h>
 #include <improbable/unreal/gdk/unreal_metadata.h>
+#include <improbable/unreal/gdk/global_state_manager.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKInterop);
 
@@ -778,7 +779,7 @@ void USpatialInterop::ResolvePendingOutgoingArrayUpdates(UObject* Object)
 	ObjectToOPAR.Remove(Object);
 }
 
-void USpatialInterop::LinkExistingSingletonActors(const StringToEntityIdMap& SingletonNameToEntityId)
+void USpatialInterop::LinkExistingSingletonActors(const PathNameToEntityIdMap& SingletonNameToEntityId)
 {
 	if (!NetDriver->IsServer())
 	{
@@ -835,7 +836,7 @@ void USpatialInterop::LinkExistingSingletonActors(const StringToEntityIdMap& Sin
 	}
 }
 
-void USpatialInterop::ExecuteInitialSingletonActorReplication(const StringToEntityIdMap& SingletonNameToEntityId)
+void USpatialInterop::ExecuteInitialSingletonActorReplication(const PathNameToEntityIdMap& SingletonNameToEntityId)
 {
 	for (const auto& pair : SingletonNameToEntityId)
 	{
@@ -908,7 +909,7 @@ void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& Ou
 void USpatialInterop::UpdateSingletonId(const FString& ClassName, const FEntityId& SingletonEntityId)
 {
 	std::string SingletonName(TCHAR_TO_UTF8(*ClassName));
-	StringToEntityIdMap& SingletonNameToEntityId = *GetSingletonNameToEntityId();
+	PathNameToEntityIdMap& SingletonNameToEntityId = *GetSingletonNameToEntityId();
 	SingletonNameToEntityId[SingletonName] = SingletonEntityId.ToSpatialEntityId();
 
 	improbable::unreal::GlobalStateManager::Update Update;
@@ -942,7 +943,7 @@ improbable::unreal::GlobalStateManagerData* USpatialInterop::GetGlobalStateManag
 	return nullptr;
 }
 
-StringToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
+PathNameToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
 {
 	if (improbable::unreal::GlobalStateManagerData* GSMD = GetGlobalStateManagerData())
 	{
@@ -952,7 +953,7 @@ StringToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
 	return nullptr;
 }
 
-StringToEntityIdMap* USpatialInterop::GetStablyNamedPathToEntityId() const
+PathNameToEntityIdMap* USpatialInterop::GetStablyNamedPathToEntityId() const
 {
 	if (improbable::unreal::GlobalStateManagerData* GSMD = GetGlobalStateManagerData())
 	{
@@ -979,7 +980,7 @@ void USpatialInterop::UnreserveReplicatedStablyNamedActor(AActor* Actor)
 
 void USpatialInterop::AddReplicatedStablyNamedActorToGSM(const FEntityId& EntityId, AActor* Actor)
 {
-	StringToEntityIdMap* StablyNamedPathToEntityId = GetStablyNamedPathToEntityId();
+	PathNameToEntityIdMap* StablyNamedPathToEntityId = GetStablyNamedPathToEntityId();
 
 	if (StablyNamedPathToEntityId == nullptr)
 	{
@@ -1006,7 +1007,7 @@ void USpatialInterop::AddReplicatedStablyNamedActorToGSM(const FEntityId& Entity
 void USpatialInterop::RegisterReplicatedStablyNamedActors()
 {
 	bCanSpawnReplicatedStablyNamedActors = true;
-	StringToEntityIdMap& StablyNamedPathToEntityId = *GetStablyNamedPathToEntityId();
+	PathNameToEntityIdMap& StablyNamedPathToEntityId = *GetStablyNamedPathToEntityId();
 
 	for (const auto& Pair : ReplicatedStablyNamedActorQueue)
 	{
@@ -1028,7 +1029,7 @@ void USpatialInterop::RegisterReplicatedStablyNamedActors()
 	ReplicatedStablyNamedActorQueue.Empty();
 }
 
-void USpatialInterop::DeleteIrrelevantReplicatedStablyNamedActors(const StringToEntityIdMap& StablyNamedPathToEntityId)
+void USpatialInterop::DeleteIrrelevantReplicatedStablyNamedActors(const PathNameToEntityIdMap& StablyNamedPathToEntityId)
 {
 	for (const auto& Pair : StablyNamedPathToEntityId)
 	{

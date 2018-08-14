@@ -8,7 +8,6 @@
 #include "Net/NetworkProfiler.h"
 #include "SpatialConstants.h"
 #include "SpatialInterop.h"
-#include "SpatialInteropPipelineBlock.h"
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
 #include "SpatialOS.h"
@@ -101,7 +100,7 @@ bool USpatialActorChannel::IsCriticalEntity()
 	}
 
 	// Don't delete if the actor is a Singleton
-	StringToEntityIdMap* SingletonNameToEntityId = SpatialNetDriver->GetSpatialInterop()->GetSingletonNameToEntityId();
+	PathNameToEntityIdMap* SingletonNameToEntityId = SpatialNetDriver->GetSpatialInterop()->GetSingletonNameToEntityId();
 
 	if (SingletonNameToEntityId == nullptr)
 	{

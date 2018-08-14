@@ -8,8 +8,15 @@
 #include "SpatialConstants.h"
 #include "SpatialTypeBinding.h"
 #include "SpatialUnrealObjectRef.h"
-#include <improbable/unreal/gdk/global_state_manager.h>
 #include "SpatialInterop.generated.h"
+
+namespace improbable
+{
+	namespace unreal
+	{
+		class GlobalStateManagerData;
+	}
+}
 
 class USpatialOS;
 class USpatialActorChannel;
@@ -21,7 +28,7 @@ SPATIALGDK_API DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInterop, Log, All);
 // An general version of worker::RequestId.
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
 
-using StringToEntityIdMap = worker::Map<std::string, worker::EntityId>;
+using PathNameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
 
 // Stores the result of an attempt to call an RPC sender function. Either we have an unresolved object which needs
 // to be resolved before we can send this RPC, or we successfully sent a command request.
@@ -219,13 +226,13 @@ public:
 	// Update GlobalStateManager when EntityId is reserved
 	void UpdateSingletonId(const FString& ClassName, const FEntityId& SingletonEntityId);
 	// Handle GSM checkout
-	void LinkExistingSingletonActors(const StringToEntityIdMap& SingletonNameToEntityId);
+	void LinkExistingSingletonActors(const PathNameToEntityIdMap& SingletonNameToEntityId);
 	// Handle GSM Authority received
-	void ExecuteInitialSingletonActorReplication(const StringToEntityIdMap& SingletonNameToEntityId);
+	void ExecuteInitialSingletonActorReplication(const PathNameToEntityIdMap& SingletonNameToEntityId);
 	bool IsSingletonClass(UClass* Class);
 	improbable::unreal::GlobalStateManagerData* GetGlobalStateManagerData() const;
-	StringToEntityIdMap* GetSingletonNameToEntityId() const;
-	StringToEntityIdMap* GetStablyNamedPathToEntityId() const;
+	PathNameToEntityIdMap* GetSingletonNameToEntityId() const;
+	PathNameToEntityIdMap* GetStablyNamedPathToEntityId() const;
 
 	void ReserveReplicatedStablyNamedActorChannel(USpatialActorChannel* Channel);
 	void UnreserveReplicatedStablyNamedActor(AActor* Actor);
@@ -312,7 +319,7 @@ private:
 	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
 
 	void RegisterReplicatedStablyNamedActors();
-	void DeleteIrrelevantReplicatedStablyNamedActors(const StringToEntityIdMap& EntityIdToReplicatedStablyNamedPath);
+	void DeleteIrrelevantReplicatedStablyNamedActors(const PathNameToEntityIdMap& EntityIdToReplicatedStablyNamedPath);
 
 	USpatialActorChannel* RemovePendingActorRequest(FUntypedRequestId RequestId);
 	void AddPendingActorRequest(FUntypedRequestId RequestId, USpatialActorChannel* Channel);
