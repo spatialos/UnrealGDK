@@ -16,7 +16,7 @@
 	"Modules": [
 		{
 			"Name": "SpatialGDKEditorToolbar",
-			"Type": "Editor",
+			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		}
 	]

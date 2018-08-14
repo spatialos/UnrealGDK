@@ -9,6 +9,7 @@
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
 #include "SpatialPackageMapClient.h"
+#include "DTBManager.h"
 
 template <typename T>
 T* GetComponentData(CAPIPipelineBlock& PipelineBlock, Worker_EntityId EntityId)
@@ -252,7 +253,7 @@ void CAPIPipelineBlock::CreateActor(Worker_EntityId EntityId)
 			{
 				if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data && PendingAddComponent.Data->bIsDynamic)
 				{
-					ReadDynamicData(*static_cast<DynamicData*>(PendingAddComponent.Data.get())->Data, Channel, PackageMap);
+					DTBManager->OnDynamicData(*static_cast<DynamicData*>(PendingAddComponent.Data.get())->Data, Channel, PackageMap);
 				}
 			}
 

@@ -6,6 +6,8 @@
 #include "SpatialInterop.h"
 #include "SchemaHelpers.h"
 
+#include "SpatialGDKEditorToolbarSettings.h"
+
 const Worker_ComponentId SPECIAL_SPAWNER_COMPONENT_ID = 100003;
 const Worker_EntityId SPECIAL_SPAWNER_ENTITY_ID = 3;
 
@@ -13,9 +15,98 @@ UDTBManager::UDTBManager()
 {
 }
 
+ClassInfo* UDTBManager::FindClassInfoByClass(UClass* Class)
+{
+	for (UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
+	{
+		auto Info = ClassInfoMap.Find(CurrentClass);
+		if (Info)
+		{
+			return Info;
+		}
+	}
+	return nullptr;
+}
+
+void UDTBManager::CreateTypebindings()
+{
+	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	TMap<UClass*, TArray<FString>> InteropGeneratedClasses;
+	for (auto& Element : SpatialGDKToolbarSettings->InteropCodegenClasses)
+	{
+		InteropGeneratedClasses.Add(Element.ReplicatedClass, Element.IncludeList);
+	}
+
+	int ComponentId = 100010;
+	for (auto& ClassHeaderList : InteropGeneratedClasses)
+	{
+		auto Class = ClassHeaderList.Key;
+
+		auto AddComponentId = [Class, &ComponentId, this]()
+		{
+			ComponentToClassMap.Add(ComponentId, Class);
+			return ComponentId++;
+		};
+
+		ClassInfo Info;
+
+		for (TFieldIterator<UFunction> RemoteFunction(Class); RemoteFunction; ++RemoteFunction)
+		{
+			if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
+				RemoteFunction->FunctionFlags & FUNC_NetServer ||
+				RemoteFunction->FunctionFlags & FUNC_NetCrossServer ||
+				RemoteFunction->FunctionFlags & FUNC_NetMulticast)
+			{
+				EAlsoRPCType RPCType;
+				if (RemoteFunction->FunctionFlags & FUNC_NetClient)
+				{
+					RPCType = ARPC_Client;
+				}
+				else if (RemoteFunction->FunctionFlags & FUNC_NetServer)
+				{
+					RPCType = ARPC_Server;
+				}
+				else if (RemoteFunction->FunctionFlags & FUNC_NetCrossServer)
+				{
+					RPCType = ARPC_CrossServer;
+				}
+				else if (RemoteFunction->FunctionFlags & FUNC_NetMulticast)
+				{
+					RPCType = ARPC_NetMulticast;
+				}
+				else
+				{
+					checkNoEntry();
+				}
+
+				auto& RPCArray = Info.RPCs.FindOrAdd(RPCType);
+
+				RPCInfo RPCInfo;
+				RPCInfo.Type = RPCType;
+				RPCInfo.Index = RPCArray.Num();
+
+				RPCArray.Add(*RemoteFunction);
+				Info.RPCInfoMap.Add(*RemoteFunction, RPCInfo);
+			}
+		}
+
+		Info.SingleClientComponent = AddComponentId();
+		Info.MultiClientComponent = AddComponentId();
+		Info.HandoverComponent = AddComponentId();
+		for (int RPCType = ARPC_Client; RPCType < ARPC_Count; RPCType++)
+		{
+			Info.RPCComponents[RPCType] = AddComponentId();
+		}
+
+		ClassInfoMap.Add(Class, Info);
+	}
+}
+
 void UDTBManager::InitClient()
 {
 	if (Connection) return;
+
+	CreateTypebindings();
 
 	Worker_ConnectionParameters Params = Worker_DefaultConnectionParameters();
 	Params.worker_type = "CAPIClient";
@@ -49,6 +140,8 @@ void UDTBManager::InitClient()
 void UDTBManager::InitServer()
 {
 	if (Connection) return;
+
+	CreateTypebindings();
 
 	Worker_ConnectionParameters Params = Worker_DefaultConnectionParameters();
 	Params.worker_type = "CAPIWorker";
@@ -117,6 +210,33 @@ void UDTBManager::OnCommandResponse(Worker_CommandResponseOp& Op)
 	UE_LOG(LogTemp, Log, TEXT("!!! Received command response (entity: %lld, component: %d, command: %d)"), Op.entity_id, Op.response.component_id, CommandIndex);
 }
 
+void UDTBManager::OnDynamicData(Worker_ComponentData& Data, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap)
+{
+	auto ClassPtr = ComponentToClassMap.Find(Data.component_id);
+	checkf(ClassPtr, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
+	auto Class = *ClassPtr;
+	check(Channel->Actor->IsA(Class));
+	auto Info = FindClassInfoByClass(Class);
+	check(Info);
+
+	if (Data.component_id == Info->SingleClientComponent)
+	{
+		ReadDynamicData(Data, Channel, PackageMap, AGROUP_SingleClient);
+	}
+	else if (Data.component_id == Info->MultiClientComponent)
+	{
+		ReadDynamicData(Data, Channel, PackageMap, AGROUP_MultiClient);
+	}
+	else if (Data.component_id == Info->HandoverComponent)
+	{
+		// TODO: Handover
+	}
+	else
+	{
+		UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping because RPC components don't have actual data."));
+	}
+}
+
 void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 {
 	UE_LOG(LogTemp, Verbose, TEXT("!!! Received component update (entity: %lld, component: %d)"), Op.entity_id, Op.update.component_id);
@@ -138,28 +258,58 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case UNREAL_METADATA_COMPONENT_ID:
 		UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping because this is hand-written Spatial component"));
 		return;
-
-	// TEMP
-	case MULTI_REP_COMPONENT_ID:
-		if (Interop->GetNetDriver()->GetNetMode() != NM_Client)
-		{
-			UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping MultiRep component because we're a server"));
-			return;
-		}
-		break;
-	case CLIENT_RPCS_COMPONENT_ID:
-		if (Interop->GetNetDriver()->GetNetMode() == NM_Client)
-		{
-			UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping ClientRPCs component because we're a client"));
-			return;
-		}
-		break;
-	// TEMP
 	}
 
+	auto ClassPtr = ComponentToClassMap.Find(Op.update.component_id);
+	checkf(ClassPtr, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
+	auto Class = *ClassPtr;
+	auto Info = FindClassInfoByClass(Class);
+	check(Info);
+
 	USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.entity_id);
-	check(ActorChannel);
-	ReceiveDynamicUpdate(Op.update, ActorChannel, PackageMap);
+	bool bIsServer = Interop->GetNetDriver()->IsServer();
+
+	if (Op.update.component_id == Info->SingleClientComponent)
+	{
+		if (bIsServer)
+		{
+			UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping SingleClient component because we're a server."));
+			return;
+		}
+		check(ActorChannel);
+		ReceiveDynamicUpdate(Op.update, ActorChannel, PackageMap, AGROUP_SingleClient);
+	}
+	else if (Op.update.component_id == Info->MultiClientComponent)
+	{
+		if (bIsServer)
+		{
+			UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping MultiClient component because we're a server."));
+			return;
+		}
+		check(ActorChannel);
+		ReceiveDynamicUpdate(Op.update, ActorChannel, PackageMap, AGROUP_MultiClient);
+	}
+	else if (Op.update.component_id == Info->HandoverComponent)
+	{
+		if (!bIsServer)
+		{
+			UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping Handover component because we're a client."));
+			return;
+		}
+		// TODO: Handover
+	}
+	else if (Op.update.component_id == Info->RPCComponents[ARPC_NetMulticast])
+	{
+		if (bIsServer)
+		{
+			UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping MulticastRPC component because we're a server."));
+			return;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping because it's an empty component update from an RPC component. (most likely as a result of gaining authority)"));
+	}
 }
 
 void UDTBManager::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
@@ -216,17 +366,8 @@ Worker_RequestId UDTBManager::SendCreateEntityRequest(USpatialActorChannel* Chan
 	return CreateEntityRequestId;
 }
 
-
-
 Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel)
 {
-	//for (auto& Rep : InitialChanges.RepChanged)
-	//{
-	//	checkf(Rep < InitialChanges.RepBaseHandleToCmdIndex.Num(), TEXT("How did we get a handle that Unreal doesn't know about itself?!"));
-	//}
-
-	// BUILD REP COMPONENT
-
 	std::string ClientWorkerIdString = "CAPIClient42";//TCHAR_TO_UTF8(*ClientWorkerId);
 
 	WorkerAttributeSet WorkerAttribute = {"CAPIWorker"};
@@ -239,13 +380,19 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 	WorkerRequirementSet AnyUnrealWorkerOrClient = {WorkerAttribute, ClientAttribute};
 	WorkerRequirementSet AnyUnrealWorkerOrOwningClient = {WorkerAttribute, OwningClientAttribute};
 
+	auto Info = FindClassInfoByClass(Channel->Actor->GetClass());
+	check(Info);
+
 	std::map<Worker_ComponentId, WorkerRequirementSet> ComponentWriteAcl;
 	ComponentWriteAcl.emplace(POSITION_COMPONENT_ID, WorkersOnly);
 
-	// TEMP
-	ComponentWriteAcl.emplace(MULTI_REP_COMPONENT_ID, WorkersOnly);
-	ComponentWriteAcl.emplace(CLIENT_RPCS_COMPONENT_ID, OwningClientOnly);
-	// TEMP
+	ComponentWriteAcl.emplace(Info->SingleClientComponent, WorkersOnly);
+	ComponentWriteAcl.emplace(Info->MultiClientComponent, WorkersOnly);
+	ComponentWriteAcl.emplace(Info->HandoverComponent, WorkersOnly);
+	ComponentWriteAcl.emplace(Info->RPCComponents[ARPC_Client], OwningClientOnly);
+	ComponentWriteAcl.emplace(Info->RPCComponents[ARPC_Server], WorkersOnly);
+	ComponentWriteAcl.emplace(Info->RPCComponents[ARPC_CrossServer], WorkersOnly);
+	ComponentWriteAcl.emplace(Info->RPCComponents[ARPC_NetMulticast], WorkersOnly);
 
 	std::string StaticPath;
 
@@ -273,16 +420,22 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 	ComponentDatas.push_back(CreatePersistenceData(PersistenceData()));
 	ComponentDatas.push_back(CreateUnrealMetadataData(UnrealMetadataData(StaticPath, ClientWorkerIdString, SubobjectNameToOffset)));
 
-	// MultiClientRepData
-	ComponentDatas.push_back(CreateDynamicData(MULTI_REP_COMPONENT_ID, InitialChanges, PackageMap));
+	ComponentDatas.push_back(CreateDynamicData(Info->SingleClientComponent, InitialChanges, PackageMap, AGROUP_SingleClient));
+	ComponentDatas.push_back(CreateDynamicData(Info->MultiClientComponent, InitialChanges, PackageMap, AGROUP_MultiClient));
 
-	// TEMP
-	// ClientRPCs
-	Worker_ComponentData ClientRPCsData = {};
-	ClientRPCsData.component_id = CLIENT_RPCS_COMPONENT_ID;
-	ClientRPCsData.schema_type = Schema_CreateComponentData(CLIENT_RPCS_COMPONENT_ID);
-	ComponentDatas.push_back(ClientRPCsData);
-	// TEMP
+	// TODO: Handover
+	Worker_ComponentData HandoverData = {};
+	HandoverData.component_id = Info->HandoverComponent;
+	HandoverData.schema_type = Schema_CreateComponentData(Info->HandoverComponent);
+	ComponentDatas.push_back(HandoverData);
+
+	for (int RPCType = 0; RPCType < ARPC_Count; RPCType++)
+	{
+		Worker_ComponentData RPCData = {};
+		RPCData.component_id = Info->RPCComponents[RPCType];
+		RPCData.schema_type = Schema_CreateComponentData(Info->RPCComponents[RPCType]);
+		ComponentDatas.push_back(RPCData);
+	}
 
 	Worker_EntityId EntityId = Channel->GetEntityId().ToSpatialEntityId();
 	return Worker_Connection_SendCreateEntityRequest(Connection, ComponentDatas.size(), ComponentDatas.data(), &EntityId, nullptr);
@@ -300,9 +453,24 @@ void UDTBManager::SendComponentUpdates(const FPropertyChangeState& Changes, USpa
 	Worker_EntityId EntityId = Channel->GetEntityId().ToSpatialEntityId();
 	UE_LOG(LogTemp, Verbose, TEXT("!!! Sending component update (actor: %s, entity: %lld)"), *Channel->Actor->GetName(), EntityId);
 
-	auto MultiClientRepDataUpdate = CreateDynamicUpdate(MULTI_REP_COMPONENT_ID, Changes, PackageMap);
+	auto Info = FindClassInfoByClass(Channel->Actor->GetClass());
+	check(Info);
 
-	Worker_Connection_SendComponentUpdate(Connection, EntityId, &MultiClientRepDataUpdate);
+	bool bWroteSingleClient = false;
+	auto SingleClientRepDataUpdate = CreateDynamicUpdate(Info->SingleClientComponent, Changes, PackageMap, AGROUP_SingleClient, bWroteSingleClient);
+
+	bool bWroteMultiClient = false;
+	auto MultiClientRepDataUpdate = CreateDynamicUpdate(Info->MultiClientComponent, Changes, PackageMap, AGROUP_MultiClient, bWroteMultiClient);
+
+	if (bWroteSingleClient)
+	{
+		Worker_Connection_SendComponentUpdate(Connection, EntityId, &SingleClientRepDataUpdate);
+	}
+	if (bWroteMultiClient)
+	{
+		Worker_Connection_SendComponentUpdate(Connection, EntityId, &MultiClientRepDataUpdate);
+	}
+	// TODO: Handover
 }
 
 void UDTBManager::Tick()

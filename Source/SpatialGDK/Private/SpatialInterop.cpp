@@ -112,7 +112,6 @@ USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 
 worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
-	// !!! DTB Here
 	if (Channel->Actor->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
 	{
 		return worker::RequestId<worker::CreateEntityRequest>(DTBManager->SendCreateEntityRequest(Channel, Location, PlayerWorkerId, RepChanged, HandoverChanged));
@@ -275,10 +274,8 @@ void USpatialInterop::SendSpatialUpdateSubobject(USpatialActorChannel* Channel, 
 	Binding->SendComponentUpdates(Channel->GetChangeStateSubobject(Subobject, replicator, RepChanged, HandoverChanged), Channel, Channel->GetEntityId());
 }
 
-void USpatialInterop::InvokeRPC(UObject* TargetObject, const UFunction* const Function, void* Parameters)
+void USpatialInterop::InvokeRPC(UObject* TargetObject, UFunction* Function, void* Parameters)
 {
-	// !!! DTB Here
-
 	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetObject->GetClass());
 	if (!Binding)
 	{

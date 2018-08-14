@@ -13,6 +13,32 @@
 
 class USpatialActorChannel;
 
+enum EAlsoRPCType
+{
+	ARPC_Client = 0,
+	ARPC_Server,
+	ARPC_CrossServer,
+	ARPC_NetMulticast,
+	ARPC_Count
+};
+
+struct RPCInfo
+{
+	EAlsoRPCType Type;
+	uint32 Index;
+};
+
+struct ClassInfo
+{
+	TMap<EAlsoRPCType, TArray<UFunction*>> RPCs;
+	TMap<UFunction*, RPCInfo> RPCInfoMap;
+
+	Worker_ComponentId SingleClientComponent;
+	Worker_ComponentId MultiClientComponent;
+	Worker_ComponentId HandoverComponent;
+	Worker_ComponentId RPCComponents[ARPC_Count];
+};
+
 UCLASS()
 class SPATIALGDK_API UDTBManager : public UObject
 {
@@ -21,6 +47,9 @@ class SPATIALGDK_API UDTBManager : public UObject
 public:
 	UDTBManager();
 
+	ClassInfo* FindClassInfoByClass(UClass* Class);
+	void CreateTypebindings();
+
 	void InitClient();
 	void InitServer();
 
@@ -28,6 +57,8 @@ public:
 
 	void OnCommandRequest(Worker_CommandRequestOp& Op);
 	void OnCommandResponse(Worker_CommandResponseOp& Op);
+
+	void OnDynamicData(Worker_ComponentData& Data, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap);
 
 	void OnComponentUpdate(Worker_ComponentUpdateOp& Op);
 
@@ -49,6 +80,9 @@ public:
 	void SendComponentUpdates(const struct FPropertyChangeState& Changes, USpatialActorChannel* Channel);
 
 	void Tick();
+
+	TMap<UClass*, ClassInfo> ClassInfoMap;
+	TMap<Worker_ComponentId, UClass*> ComponentToClassMap;
 
 	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> ComponentAuthorityMap;
 

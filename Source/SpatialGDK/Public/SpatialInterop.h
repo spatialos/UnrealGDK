@@ -170,7 +170,7 @@ public:
 	void SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location, const AActor* Actor);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
 	void SendSpatialUpdateSubobject(USpatialActorChannel* Channel, UObject* Subobject, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
-	void InvokeRPC(UObject* TargetObject, const UFunction* const Function, void* Parameters);
+	void InvokeRPC(UObject* TargetObject, UFunction* Function, void* Parameters);
 	void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp);
 
 	// Called by USpatialPackageMapClient when a UObject is "resolved" i.e. has a unreal object ref.

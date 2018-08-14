@@ -120,7 +120,7 @@ UnrealObjectRef Schema_GetObjectRef(Schema_Object* Object, Schema_FieldId Id)
 	return Schema_IndexObjectRef(Object, Id, 0);
 }
 
-void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Property, const uint8* Data, USpatialPackageMapClient* PackageMap)
+void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Property, const uint8* Data, USpatialPackageMapClient* PackageMap, std::vector<Schema_FieldId>* ClearedIds)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
@@ -232,7 +232,12 @@ void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Pro
 		FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 		for (int i = 0; i < ArrayHelper.Num(); i++)
 		{
-			Schema_AddProperty(Object, Id, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), PackageMap);
+			Schema_AddProperty(Object, Id, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), PackageMap, ClearedIds);
+		}
+
+		if (ArrayHelper.Num() == 0 && ClearedIds)
+		{
+			ClearedIds->push_back(Id);
 		}
 	}
 	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
@@ -243,7 +248,7 @@ void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Pro
 		}
 		else
 		{
-			Schema_AddProperty(Object, Id, EnumProperty->GetUnderlyingProperty(), Data, PackageMap);
+			Schema_AddProperty(Object, Id, EnumProperty->GetUnderlyingProperty(), Data, PackageMap, ClearedIds);
 		}
 	}
 	else
@@ -472,7 +477,19 @@ void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t 
 	}
 }
 
-void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, bool IsUpdate = false, const std::set<Schema_FieldId>& ClearedIds = std::set<Schema_FieldId>())
+EAlsoReplicatedPropertyGroup GetAlsoGroupFromCondition(ELifetimeCondition Condition)
+{
+	switch (Condition)
+	{
+	case COND_AutonomousOnly:
+	case COND_OwnerOnly:
+		return AGROUP_SingleClient;
+	default:
+		return AGROUP_MultiClient;
+	}
+}
+
+void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup, bool IsUpdate = false, const std::set<Schema_FieldId>& ClearedIds = std::set<Schema_FieldId>())
 {
 	Channel->PreReceiveSpatialUpdate(Channel->Actor);
 
@@ -492,14 +509,17 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 			const FRepLayoutCmd& Cmd = Cmds[HandleIterator.CmdIndex];
 			const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 
-			// This swaps Role/RemoteRole as we write it
-			const FRepLayoutCmd& SwappedCmd = Parent.RoleSwapIndex != -1 ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
-
-			uint8* Data = (uint8*)Channel->Actor + HandleIterator.ArrayOffset + SwappedCmd.Offset;
-
-			if (!IsUpdate || Schema_GetPropertyCount(ComponentObject, HandleIterator.Handle, SwappedCmd.Property) > 0 || ClearedIds.find(HandleIterator.Handle) != ClearedIds.end())
+			if (GetAlsoGroupFromCondition(Parent.Condition) == PropertyGroup)
 			{
-				Schema_GetProperty(ComponentObject, HandleIterator.Handle, 0, SwappedCmd.Property, Data, PackageMap);
+				// This swaps Role/RemoteRole as we write it
+				const FRepLayoutCmd& SwappedCmd = Parent.RoleSwapIndex != -1 ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
+
+				uint8* Data = (uint8*)Channel->Actor + HandleIterator.ArrayOffset + SwappedCmd.Offset;
+
+				if (!IsUpdate || Schema_GetPropertyCount(ComponentObject, HandleIterator.Handle, SwappedCmd.Property) > 0 || ClearedIds.find(HandleIterator.Handle) != ClearedIds.end())
+				{
+					Schema_GetProperty(ComponentObject, HandleIterator.Handle, 0, SwappedCmd.Property, Data, PackageMap);
+				}
 			}
 
 			if (Cmd.Type == REPCMD_DynamicArray)
@@ -515,19 +535,15 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 	Channel->PostReceiveSpatialUpdate(Channel->Actor, TArray<UProperty*>());
 }
 
-void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap)
+void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup)
 {
-	if (ComponentData.component_id != MULTI_REP_COMPONENT_ID) return;
-
 	auto ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap);
+	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, PropertyGroup);
 }
 
-void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap)
+void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup)
 {
-	if (ComponentUpdate.component_id != MULTI_REP_COMPONENT_ID) return;
-
 	auto ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 	std::vector<Schema_FieldId> ClearedIdsList(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate.schema_type));
@@ -540,11 +556,13 @@ void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatia
 		ClearedIds.insert(FieldId);
 	}
 
-	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, true, ClearedIds);
+	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, PropertyGroup, true, ClearedIds);
 }
 
-void Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap)
+bool Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup, std::vector<Schema_FieldId>* ClearedIds = nullptr)
 {
+	bool bWroteSomething = false;
+
 	// Populate the replicated data component updates from the replicated property changelist.
 	if (Changes.RepChanged.Num() > 0)
 	{
@@ -553,9 +571,16 @@ void Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyCha
 		while (HandleIterator.NextHandle())
 		{
 			const FRepLayoutCmd& Cmd = Changes.RepCmds[HandleIterator.CmdIndex];
-			const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
+			const FRepParentCmd& Parent = Changes.Parents[Cmd.ParentIndex];
 
-			Schema_AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, PackageMap);
+			if (GetAlsoGroupFromCondition(Parent.Condition) == PropertyGroup)
+			{
+				const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
+
+				Schema_AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, PackageMap, ClearedIds);
+
+				bWroteSomething = true;
+			}
 
 			if (Cmd.Type == REPCMD_DynamicArray)
 			{
@@ -567,32 +592,48 @@ void Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyCha
 		}
 	}
 
+	// TODO: Handover
 	// Populate the handover data component update from the handover property changelist.
 	//for (uint16 ChangedHandle : Changes.HandoverChanged)
 	//{
 	//}
+
+	return bWroteSomething;
 }
 
-Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap)
+Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup)
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
 	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
 	auto ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	Schema_FillDynamicObject(ComponentObject, Changes, PackageMap);
+	Schema_FillDynamicObject(ComponentObject, Changes, PackageMap, PropertyGroup);
 
 	return ComponentData;
 }
 
-Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap)
+Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
+
 	ComponentUpdate.component_id = ComponentId;
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
 	auto ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
-	Schema_FillDynamicObject(ComponentObject, Changes, PackageMap);
+	std::vector<Schema_FieldId> ClearedIds;
+
+	bWroteSomething = Schema_FillDynamicObject(ComponentObject, Changes, PackageMap, PropertyGroup, &ClearedIds);
+
+	for (auto Id : ClearedIds)
+	{
+		Schema_AddComponentUpdateClearedField(ComponentUpdate.schema_type, Id);
+	}
+
+	if (!bWroteSomething)
+	{
+		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
+	}
 
 	return ComponentUpdate;
 }

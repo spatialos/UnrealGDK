@@ -71,6 +71,7 @@ public:
 			RepChanged,
 			ActorReplicator->RepLayout->Cmds,
 			ActorReplicator->RepLayout->BaseHandleToCmdIndex,
+			ActorReplicator->RepLayout->Parents,
 			HandoverChanged
 		};
 	}
@@ -82,6 +83,7 @@ public:
 			RepChanged,
 			Replicator->RepLayout->Cmds,
 			Replicator->RepLayout->BaseHandleToCmdIndex,
+			Replicator->RepLayout->Parents,
 			HandoverChanged
 		};
 	}

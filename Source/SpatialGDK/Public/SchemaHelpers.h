@@ -342,13 +342,14 @@ struct DynamicData : ComponentData
 	Worker_ComponentData* Data;
 };
 
-// TEMP
-const Worker_ComponentId MULTI_REP_COMPONENT_ID = 100039;
-const Worker_ComponentId CLIENT_RPCS_COMPONENT_ID = 100041;
-// TEMP
+enum EAlsoReplicatedPropertyGroup
+{
+	AGROUP_SingleClient,
+	AGROUP_MultiClient
+};
 
-void ReadDynamicData(const Worker_ComponentData& ComponentData, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap);
-void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap);
+void ReadDynamicData(const Worker_ComponentData& ComponentData, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup);
+void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup);
 
-Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap);
-Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap);
+Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup);
+Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething);

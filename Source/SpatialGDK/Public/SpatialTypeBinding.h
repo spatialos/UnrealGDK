@@ -59,6 +59,7 @@ struct FPropertyChangeState
 	const TArray<uint16> RepChanged; // changed replicated properties
 	TArray<FRepLayoutCmd>& RepCmds;
 	TArray<FHandleToCmdIndex>& RepBaseHandleToCmdIndex;
+	TArray<FRepParentCmd>& Parents;
 	const TArray<uint16> HandoverChanged; // changed handover properties
 };
 
