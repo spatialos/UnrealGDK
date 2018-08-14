@@ -9,6 +9,7 @@
 #include "Utils/CodeWriter.h"
 #include "Utils/DataTypeUtilities.h"
 #include "Engine/UserDefinedStruct.h"
+#include "Engine/UserDefinedEnum.h"
 
 // Needed for Algo::Transform
 #include "Algo/Transform.h"
@@ -150,50 +151,85 @@ FString PropertyToWorkerSDKType(UProperty* Property, bool bIsRPCProperty)
 	return DataType;
 }
 
-// Generate definition in header file for Blueprint-defined Structs
-void GenerateBlueprintStructDefinition(FCodeWriter& Writer, UProperty* Property, TSet<FString>& GeneratedStructTypes)
+// Generate definition in header file for Blueprint-defined Structs & Enums
+void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Property, TSet<FString>& GeneratedTypes)
 {
-	if (GeneratedStructTypes.Contains(Property->GetCPPType()))
+	if (GeneratedTypes.Contains(Property->GetCPPType()))
 	{
 		return;
 	}
 
 	if (UArrayProperty *ArrProp = Cast<UArrayProperty>(Property))
 	{
-		GenerateBlueprintStructDefinition(Writer, ArrProp->Inner, GeneratedStructTypes);
+		GenerateBlueprintStructEnumDefinition(Writer, ArrProp->Inner, GeneratedTypes);
 	}
 
-	if (!Property->IsA<UStructProperty>())
+	if (Property->IsA<UStructProperty>())
 	{
-		return;
-	}
+		UStruct* Struct = Cast<UStructProperty>(Property)->Struct;
+		if (!Struct->IsA<UUserDefinedStruct>())
+		{
+			return;
+		}
 
-	UStruct* Struct = Cast<UStructProperty>(Property)->Struct;
-	if (!Struct->IsA<UUserDefinedStruct>())
+		GeneratedTypes.Add(Property->GetCPPType());
+
+		// Recurse children post-order
+		for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
+		{
+			UProperty* Prop = *PropIt;
+			GenerateBlueprintStructEnumDefinition(Writer, Prop, GeneratedTypes);
+		}
+
+		Writer.PrintNewLine();
+		Writer.Printf("struct %s", *Property->GetCPPType());
+		Writer.Printf("{").Indent();
+		for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
+		{
+			UProperty* Prop = *PropIt;
+			FStringOutputDevice PropertyText;
+			Prop->ExportCppDeclaration(PropertyText, EExportedDeclaration::Local, nullptr);
+			Writer.Printf("%s;", *PropertyText);
+		}
+		Writer.Outdent().Printf("};");
+	}
+	else
 	{
-		return;
-	}
+		// Enums could be represented as either UByteProperty or UEnumProperty
+		UEnum* Enum = nullptr;
+		if (Property->IsA<UByteProperty>())
+		{
+			Enum = Cast<UByteProperty>(Property)->Enum;
+		}
+		else if (Property->IsA<UEnumProperty>())
+		{
+			Enum = Cast<UEnumProperty>(Property)->GetEnum();
+		}
 
-	GeneratedStructTypes.Add(Property->GetCPPType());
+		if (Enum == nullptr)
+		{
+			return;
+		}
 
-	// Recurse children post-order
-	for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
-	{
-		UProperty* Prop = *PropIt;
-		GenerateBlueprintStructDefinition(Writer, Prop, GeneratedStructTypes);
-	}
+		if (!Enum->IsA<UUserDefinedEnum>())
+		{
+			return;
+		}
 
-	Writer.PrintNewLine();
-	Writer.Printf("struct %s", *Property->GetCPPType());
-	Writer.Printf("{").Indent();
-	for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
-	{
-		UProperty* Prop = *PropIt;
-		FStringOutputDevice PropertyText;
-		Prop->ExportCppDeclaration(PropertyText, EExportedDeclaration::Local, nullptr);
-		Writer.Printf("%s;", *PropertyText);
+		GeneratedTypes.Add(Property->GetCPPType());
+
+		Writer.PrintNewLine();
+		Writer.Printf("enum %s", *Enum->GetName());
+		Writer.Printf("{").Indent();
+
+		int ind = 0;
+		for (; ind < Enum->NumEnums() - 1; ind++)
+		{
+			Writer.Printf("%s,", *Enum->GetNameStringByIndex(ind));
+		}
+		Writer.Printf("%s", *Enum->GetNameStringByIndex(ind));  // Last enum has no comma
+		Writer.Outdent().Printf("};");
 	}
-	Writer.Outdent().Printf("};");
 }
 
 void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator, bool bIsRPCProperty, bool bUnresolvedObjectsHandledOutside)
@@ -229,11 +265,8 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 			TArray<uint8> ValueData;
 			FSpatialMemoryWriter ValueDataWriter(ValueData, PackageMap, UnresolvedObjects);)""");
 
-		bool bCPPDefinedStruct = !Struct->IsA<UUserDefinedStruct>(); // Special case for array of blueprint-defined structs
-
 		if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
-			checkf(bCPPDefinedStruct, TEXT("NetSerialize is not supported for blueprint-defined structs."));
 			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
 			Writer.Printf(R"""(
 				bool bSuccess = true;
@@ -243,7 +276,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		else
 		{
 			// We do a basic binary serialization for the generic struct.
-			Writer.Printf("%s%s->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&%s)));", *Property->GetCPPType(), bCPPDefinedStruct ? TEXT("::StaticStruct()") : TEXT("_Struct"), *Property->GetCPPType(), *PropertyValue);
+			Writer.Printf("%s%s->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&%s)));", *Property->GetCPPType(), (Struct->IsA<UUserDefinedStruct>() ? TEXT("_Struct") : TEXT("::StaticStruct()")), *Property->GetCPPType(), *PropertyValue);
 		}
 
 		Writer.Printf("%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));", *Update);
@@ -383,11 +416,9 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	{
 		const UStructProperty * StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct * Struct = StructProp->Struct;
-		bool bCPPDefinedStruct = !Struct->IsA<UUserDefinedStruct>();  // Special case for array of blueprint-defined structs
 
 		if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
-			checkf(bCPPDefinedStruct, TEXT("NetSerialize is not supported for blueprint-defined structs."));
 			// If user has implemented NetSerialize for custom serialization, we use that. Core structs like RepMovement or UniqueNetIdRepl also go through this path.
 			Writer.Printf(R"""(
 				auto& ValueDataStr = %s;
@@ -405,7 +436,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 				TArray<uint8> ValueData;
 				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 				FSpatialMemoryReader ValueDataReader(ValueData, PackageMap);
-				%s%s->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&%s));)""", *Update, *PropertyType, (bCPPDefinedStruct ? TEXT("::StaticStruct()") : TEXT("_Struct")), *PropertyValue);
+				%s%s->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&%s));)""", *Update, *PropertyType, (Struct->IsA<UUserDefinedStruct>() ? TEXT("_Struct") : TEXT("::StaticStruct()")), *PropertyValue);
 		}
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
@@ -721,7 +752,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		}
 	}
 
-	// Generate blueprint-defined struct structures
+	// Generate blueprint-defined structures
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
@@ -729,7 +760,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		TSet<FString> GeneratedStructTypes;
 		for (auto& RepProp : RepData[Group])
 		{
-			GenerateBlueprintStructDefinition(HeaderWriter, RepProp.Value->Property, GeneratedStructTypes);
+			GenerateBlueprintStructEnumDefinition(HeaderWriter, RepProp.Value->Property, GeneratedStructTypes);
 		}
 	}
 
