@@ -480,8 +480,8 @@ void FSpatialGDKEditorToolbarModule::CacheSpatialObjects(uint32 SpatialFlags)
 			if (SpatialClassFlags & SpatialFlags)
 			{
 				FString ObjectPath = It.ObjectPath.ToString() + TEXT("_C");
-				bool bSuccess = LoadObject<UClass>(nullptr, *ObjectPath, nullptr, LOAD_EditorOnly, nullptr);
-				checkf(bSuccess, TEXT("Failed to load blueprint class %s"), *ObjectPath);
+				UClass* LoadedClass = LoadObject<UClass>(nullptr, *ObjectPath, nullptr, LOAD_EditorOnly, nullptr);
+				checkf(LoadedClass, TEXT("Failed to load blueprint class %s"), *ObjectPath);
 			}
 		}
 	}
