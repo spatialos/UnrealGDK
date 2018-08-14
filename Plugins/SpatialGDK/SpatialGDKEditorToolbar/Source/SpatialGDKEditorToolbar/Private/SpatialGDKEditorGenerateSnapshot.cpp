@@ -128,8 +128,7 @@ FString SetupSnapshotGenerationPath()
 	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
 	FString SavePath = Settings->GetSpatialOSSnapshotPath();
 	FString SnapshotFileName = Settings->GetSpatialOSSnapshotFile();
-	SavePath = FPaths::Combine(*SavePath, SnapshotFileName);
-	return SavePath;
+	return FPaths::Combine(SavePath, SnapshotFileName);
 }
 
 bool SpatialGDKGenerateSnapshot(UWorld* World)

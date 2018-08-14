@@ -91,7 +91,7 @@ public:
 	FORCEINLINE FString GetSpatialOSSnapshotPath() const
 	{
 		return SpatialOSSnapshotPath.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetProjectRoot(), TEXT("snapshots/")))
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetProjectRoot(), FString(TEXT("../spatial/snapshots/"))))
 			: FPaths::ConvertRelativePathToFull(SpatialOSSnapshotPath.Path);
 	}
 
@@ -99,7 +99,7 @@ public:
 	FORCEINLINE FString GetSpatialOSSnapshotFile() const
 	{
 		return SpatialOSSnapshotFile.IsEmpty()
-			? TEXT("default.snapshot")
+			? FString(TEXT("default.snapshot"))
 			: SpatialOSSnapshotFile;
 	}
 
