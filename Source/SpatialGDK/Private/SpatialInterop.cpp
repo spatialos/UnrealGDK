@@ -1048,6 +1048,8 @@ void USpatialInterop::DeleteIrrelevantReplicatedStablyNamedActors(const StringTo
 				{
 					UE_LOG(LogSpatialGDKInterop, Log, TEXT("Timed out (deleted) replicated stably named actor: %s"), *Actor->GetName());
 
+					UnreserveReplicatedStablyNamedActor(Actor);
+
 					LocallyDeleteActor(Actor);
 				}
 			});
