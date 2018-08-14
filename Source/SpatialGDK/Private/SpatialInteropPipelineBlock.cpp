@@ -249,7 +249,17 @@ void USpatialInteropPipelineBlock::DisableComponentImpl(const FComponentIdentifi
 
 	if (!ComponentClass)
 	{
-		// The interop system does not register USpatialOSComponents. The code below is for the UnrealSDK flow.
+		// When receiving the UnrealMetadata remove component, we can assume that a remove entity will follow
+		// Thus we need to unregister subobject bindings while we still have information about them
+		if (ComponentIdentifier.ComponentId == improbable::unreal::UnrealMetadata::ComponentId)
+		{
+			TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
+			TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
+			USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
+
+			improbable::unreal::UnrealMetadataData* Data = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, ComponentIdentifier.EntityId);
+			PackageMap->RemoveEntitySubobjects(ComponentIdentifier.EntityId, Data->subobject_name_to_offset());
+		}
 		return;
 	}
 

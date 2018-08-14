@@ -67,6 +67,15 @@ void USpatialPackageMapClient::RemoveEntityActor(const FEntityId& EntityId)
 	}
 }
 
+void USpatialPackageMapClient::RemoveEntitySubobjects(const FEntityId& EntityId, const SubobjectToOffsetMap& SubobjectToOffset)
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	if (SpatialGuidCache->GetNetGUIDFromEntityId(EntityId.ToSpatialEntityId()).IsValid())
+	{
+		SpatialGuidCache->RemoveEntitySubobjectsNetGUIDs(EntityId.ToSpatialEntityId(), SubobjectToOffset);
+	}
+}
+
 FNetworkGUID USpatialPackageMapClient::ResolveStablyNamedObject(const UObject* Object)
 {
 	check(Object->IsFullNameStableForNetworking());
@@ -192,25 +201,18 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(worker::EntityId EntityId)
 	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
 	AActor* Actor = Cast<AActor>(GetObjectFromNetGUID(EntityNetGUID, false));
 	RemoveNetGUID(EntityNetGUID);
+}
 
-	// Remove references to the actor's subobjects 
-	// Slightly hacky as this relies on offsets starting from 1 and being consecutive
-	uint32 Offset = 1;
-
-	while(true)
+void FSpatialNetGUIDCache::RemoveEntitySubobjectsNetGUIDs(worker::EntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset)
+{
+	for (const auto& Pair : SubobjectToOffset)
 	{
 		improbable::unreal::UnrealObjectRef ObjectRef{ EntityId,
-			Offset,
+			Pair.second,
 			worker::Option<std::string>{},
 			worker::Option<improbable::unreal::UnrealObjectRef>{} };
 
 		FNetworkGUID SubobjectNetGUID = GetNetGUIDFromUnrealObjectRef(ObjectRef);
-
-		if (!SubobjectNetGUID.IsValid())
-		{
-			break;
-		}
-
 		RemoveNetGUID(SubobjectNetGUID);
 	}
 }

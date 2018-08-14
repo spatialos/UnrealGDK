@@ -29,6 +29,7 @@ public:
 	FNetworkGUID ResolveEntityActor(AActor* Actor, FEntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityActor(const FEntityId& EntityId);
 
+	void RemoveEntitySubobjects(const FEntityId& EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
 	FNetworkGUID ResolveStablyNamedObject(const UObject* Object);
 	
 	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
@@ -49,6 +50,7 @@ public:
 		
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityNetGUID(worker::EntityId EntityId);
+	void RemoveEntitySubobjectsNetGUIDs(worker::EntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveNetGUID(const FNetworkGUID& NetGUID);
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(const UObject* Object);

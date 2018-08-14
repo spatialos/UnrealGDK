@@ -905,7 +905,7 @@ void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& Ou
 	NetDriver->SingletonActorChannels.Add(SingletonActorClass, TPair<AActor*, USpatialActorChannel*>(OutActor, OutChannel));
 }
 
-void USpatialInterop::AddSingletonToGSM(const FString& ClassName, const FEntityId& SingletonEntityId)
+void USpatialInterop::UpdateSingletonId(const FString& ClassName, const FEntityId& SingletonEntityId)
 {
 	std::string SingletonName(TCHAR_TO_UTF8(*ClassName));
 	StringToEntityIdMap& SingletonNameToEntityId = *GetSingletonNameToEntityId();

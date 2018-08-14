@@ -217,7 +217,7 @@ public:
 	void QueueOutgoingArrayRepUpdate_Internal(const TSet<const UObject*>& UnresolvedObjects, USpatialActorChannel* DependentChannel, uint16 Handle);
 
 	// Update GlobalStateManager when EntityId is reserved
-	void AddSingletonToGSM(const FString& ClassName, const FEntityId& SingletonEntityId);
+	void UpdateSingletonId(const FString& ClassName, const FEntityId& SingletonEntityId);
 	// Handle GSM checkout
 	void LinkExistingSingletonActors(const StringToEntityIdMap& SingletonNameToEntityId);
 	// Handle GSM Authority received
