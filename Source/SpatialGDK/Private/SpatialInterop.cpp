@@ -1034,24 +1034,27 @@ void USpatialInterop::DeleteIrrelevantReplicatedStablyNamedActors(const PathName
 	for (const auto& Pair : StablyNamedPathToEntityId)
 	{
 		FString FullPath = UTF8_TO_TCHAR(Pair.first.c_str());
-		AActor* Actor = FindObject<AActor>(GetWorld(), *FullPath);
+		AActor* StableActor = FindObject<AActor>(GetWorld(), *FullPath);
 		worker::EntityId EntityId = Pair.second;
 
-		if (Actor != nullptr && ReplicatedStablyNamedActorTimeoutMap.Find(EntityId) == nullptr)
+		if (StableActor != nullptr && ReplicatedStablyNamedActorTimeoutMap.Find(EntityId) == nullptr)
 		{
-			TWeakObjectPtr<AActor> ActorPtr = Actor;
+			TWeakObjectPtr<AActor> ActorPtr = StableActor;
 			FTimerHandle TimerHandle;
 			FTimerDelegate TimerCallback;
 			TimerCallback.BindLambda([ActorPtr, EntityId, this] {
 				ReplicatedStablyNamedActorTimeoutMap.Remove(EntityId);
 
-				if (ActorPtr.IsValid() && !ActorPtr->IsPendingKill() && !PackageMap->GetNetGUIDFromEntityId(EntityId).IsValid())
+				if (AActor* Actor = ActorPtr.Get())
 				{
-					UE_LOG(LogSpatialGDKInterop, Log, TEXT("Timed out (deleted) replicated stably named actor: %s"), *ActorPtr->GetName());
+					if (!PackageMap->GetNetGUIDFromEntityId(EntityId).IsValid())
+					{
+						UE_LOG(LogSpatialGDKInterop, Log, TEXT("Timed out (deleted) replicated stably named actor: %s"), *Actor->GetName());
 
-					UnreserveReplicatedStablyNamedActor(ActorPtr.Get());
+						UnreserveReplicatedStablyNamedActor(Actor);
 
-					LocallyDeleteActor(ActorPtr.Get());
+						LocallyDeleteActor(Actor);
+					}
 				}
 			});
 			TimerManager->SetTimer(TimerHandle, TimerCallback, SpatialConstants::REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS, false);
