@@ -19,8 +19,8 @@
 #include "HAL/FileManager.h"
 #include "Sound/SoundBase.h"
 
-#include "LevelEditor.h"
 #include "AssetRegistryModule.h"
+#include "LevelEditor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
@@ -238,7 +238,7 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 	ShowTaskStartNotification("Started snapshot generation");
 
 	// Ensure all our singletons are loaded into memory before running
-	CacheSpatialObjects(SPATIALCLASS_PrivateSingleton | SPATIALCLASS_PublicSingleton);
+	CacheSpatialObjects(SPATIALCLASS_Singleton);
 
 	const bool bSuccess = SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World());
 
@@ -258,7 +258,7 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 	bInteropCodeGenRunning = true;
 
 	// Ensure all our spatial classes are loaded into memory before running
-	CacheSpatialObjects(SPATIALCLASS_GenerateTypebindings);
+	CacheSpatialObjects(SPATIALCLASS_GenerateTypeBindings);
 
 	InteropCodegenResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateInteropCode, [this]()
 	{
@@ -481,7 +481,10 @@ void FSpatialGDKEditorToolbarModule::CacheSpatialObjects(uint32 SpatialFlags)
 			{
 				FString ObjectPath = It.ObjectPath.ToString() + TEXT("_C");
 				UClass* LoadedClass = LoadObject<UClass>(nullptr, *ObjectPath, nullptr, LOAD_EditorOnly, nullptr);
-				checkf(LoadedClass, TEXT("Failed to load blueprint class %s"), *ObjectPath);
+				if (LoadedClass == nullptr)
+				{
+					FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Error: Failed to load blueprint %s."), *ObjectPath)));
+				}
 			}
 		}
 	}

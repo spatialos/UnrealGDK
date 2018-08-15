@@ -606,7 +606,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 
 void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass)
 {
-	if (ComponentClass->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypebindings))
+	if (ComponentClass->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings))
 	{
 		if (ComponentClasses.Find(ComponentClass) == nullptr)
 		{

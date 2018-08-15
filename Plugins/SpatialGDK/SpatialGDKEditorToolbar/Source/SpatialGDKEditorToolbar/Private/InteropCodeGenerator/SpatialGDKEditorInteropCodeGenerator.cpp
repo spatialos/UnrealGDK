@@ -2,21 +2,20 @@
 
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 
-#include "GenericPlatform/GenericPlatformFile.h"
-#include "GenericPlatform/GenericPlatformProcess.h"
 #include "SchemaGenerator.h"
 #include "TypeBindingGenerator.h"
 #include "TypeStructure.h"
 #include "SpatialGDKEditorToolbarSettings.h"
+
+#include "AssetRegistryModule.h"
+#include "GenericPlatform/GenericPlatformFile.h"
+#include "GenericPlatform/GenericPlatformProcess.h"
+#include "Misc/MonitoredProcess.h"
+#include "Misc/FileHelper.h"
+#include "SharedPointer.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
-
-#include "Misc/MonitoredProcess.h"
-#include "SharedPointer.h"
-
-#include "Misc/FileHelper.h"
-#include "AssetRegistryModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 
@@ -129,7 +128,7 @@ bool SpatialGDKGenerateInteropCode()
 			continue;
 		}
 
-		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypebindings))
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings))
 		{
 			InteropGeneratedClasses.Add(*It);
 		}

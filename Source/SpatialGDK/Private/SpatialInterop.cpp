@@ -921,7 +921,7 @@ void USpatialInterop::UpdateSingletonId(const FString& ClassName, const FEntityI
 
 bool USpatialInterop::IsSingletonClass(UClass* Class)
 {
-	return Class->HasAnySpatialClassFlags(SPATIALCLASS_PrivateSingleton | SPATIALCLASS_PublicSingleton);
+	return Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton);
 }
 
 improbable::unreal::GlobalStateManagerData* USpatialInterop::GetGlobalStateManagerData() const

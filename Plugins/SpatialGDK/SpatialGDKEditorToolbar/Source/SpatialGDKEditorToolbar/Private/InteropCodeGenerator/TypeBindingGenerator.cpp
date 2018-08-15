@@ -808,7 +808,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	SourceWriter.Printf("#include \"%s\"", *GetFirstNativeClass(Class)->GetMetaData("IncludePath"));
 
 	// Find all rpc parameter objects and retrieve their path
-	TSet<FString> RPCIncludes;
+	TArray<FString> RPCIncludes;
 	for (auto Group : GetRPCTypes())
 	{
 		for (auto& RPC : RPCsByType[Group])
@@ -835,12 +835,13 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 				// TODO: validate this against blueprint structs UNR-499
 				if (UStruct* const Struct = FindObject<UStruct>(ANY_PACKAGE, *ParamTypeName))
 				{
-					RPCIncludes.Add(Struct->GetMetaData("IncludePath"));
+					RPCIncludes.AddUnique(Struct->GetMetaData("IncludePath"));
 				}
 			}
 		}		
 	}
 
+	RPCIncludes.Sort();
 	for (auto& RPCIncludePath : RPCIncludes)
 	{
 		if (RPCIncludePath.IsEmpty() == false)
@@ -1268,7 +1269,7 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 	// If this is a APlayerController entity, ensure that only the owning client and workers have read ACL permissions.
 	// This ensures that only one APlayerController object is created per client.
 	FString ReadACL;
-	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_PrivateSingleton))
+	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
 		ReadACL = TEXT("WorkersOnly");
 	}
