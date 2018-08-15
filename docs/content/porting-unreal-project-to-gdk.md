@@ -152,8 +152,19 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
 1. In the Interop Codegen section:
     1. Modify the output path for the Interop code generation to: `<ProjectRoot>/spatial/schema/improbable/generated/`.
     1. Modify the output path for the generated schemas to: `<GameRoot>/Source/<GameName>/Generated/`.
-    1. Add your game's `GameState` class to the singleton classes list.
-    1. Add your game's replicated classes to the `Classes to generate typebindings for` list, along with the headers they may need (refer to the [Interop documentation](./interop.md)).
+
+1. Tag all replicated classes with the UCLASS tag `SpatialType`:
+    ``` 
+    UCLASS(SpatialType) 
+    ```
+1. Locate your game's `GameState`, and make it a public singleton:
+    ```
+    UCLASS(SpatialType=Singleton)
+    ```
+1. Locate your game's `GameMode`, and make it a private singleton:
+    ```
+    UCLASS(SpatialType=Singleton,ServerOnly)
+    ```
     
 1. Open your UnrealWorker worker config located in `<ProjectRoot>\spatial\workers\unreal\spatialos.UnrealWorker.worker.json`. Add your new Singleton generated component(s) to the streaming queries.
     
@@ -168,6 +179,11 @@ For example:
           {
             "global_component_streaming_query": {
               "component_name": "improbable.unreal.generated.yourprojectgamestate.YourProjectGameStateMultiClientRepData"
+            }
+          },
+          {
+            "global_component_streaming_query": {
+              "component_name": "improbable.unreal.generated.yourprojectgamemode.YourProjectGameModeMultiClientRepData"
             }
           }
         ],
@@ -190,10 +206,6 @@ This initializes the project. It should succeed quickly and silently.
 1. Go to **Edit** > **Project Settings** > **Maps & Modes** and change the Game Default Map to match what's set for the Editor Startup Map. (This is a temporary requirement.)
 1. Close the Unreal Editor.
 1. Compile and run again with the same build configuration (new source files that require compilation will have been generated when you ran the Interop Code Generator).
-
-    > You may now have compilation errors in your *TypeBinding generated files from missing `#include`s. Identify what header file each class is missing, and add it to the DefaultEditorSpatialGDK.ini config file.
-    >
-    > For example, if you get the error `No reference to CameraAnim`, you need to add `StarterProjectPlayerController=Camera/CameraAnim.h` to `DefaultEditorSpatialGDK.ini`.
 
 ## Running your game
 1. In the Unreal Editor, on the toolbar, open the **Play** drop-down menu and check the box next to **Run Dedicated Server**.
