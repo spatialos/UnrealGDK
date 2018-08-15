@@ -225,12 +225,10 @@ void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Prope
 		Writer.Printf("enum %s", *Enum->GetName());
 		Writer.Printf("{").Indent();
 
-		int ind = 0;
-		for (; ind < Enum->NumEnums() - 1; ind++)
+		for (int ind = 0; ind < Enum->NumEnums(); ind++)
 		{
-			Writer.Printf("%s,", *Enum->GetNameStringByIndex(ind));
+			Writer.Printf("%s,", *Enum->GetNameStringByIndex(ind));  // This will put a trailing comma on the last Enum but this is deemed okay in Unreal
 		}
-		Writer.Printf("%s", *Enum->GetNameStringByIndex(ind));  // Last enum has no comma
 		Writer.Outdent().Printf("};");
 	}
 }
