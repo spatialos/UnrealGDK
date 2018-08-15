@@ -152,7 +152,7 @@ FString PropertyToWorkerSDKType(UProperty* Property, bool bIsRPCProperty)
 }
 
 // Generate definition in header file for Blueprint-defined Structs & Enums
-void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Property, TSet<FString>& GeneratedTypes, TMap<FString, FString>& GeneratedStructInfo)
+void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Property, TSet<FString>& GeneratedTypes, BPStructTypesAndPaths& GeneratedStructInfo)
 {
 	if (GeneratedTypes.Contains(Property->GetCPPType()))
 	{
@@ -209,12 +209,7 @@ void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Prope
 			Enum = Cast<UEnumProperty>(Property)->GetEnum();
 		}
 
-		if (Enum == nullptr)
-		{
-			return;
-		}
-
-		if (!Enum->IsA<UUserDefinedEnum>())
+		if (Enum == nullptr || !Enum->IsA<UUserDefinedEnum>())
 		{
 			return;
 		}
@@ -225,9 +220,9 @@ void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Prope
 		Writer.Printf("enum %s", *Enum->GetName());
 		Writer.Printf("{").Indent();
 
-		for (int ind = 0; ind < Enum->NumEnums(); ind++)
+		for (int i=0; i<Enum->NumEnums(); i++)
 		{
-			Writer.Printf("%s,", *Enum->GetNameStringByIndex(ind));  // This will put a trailing comma on the last Enum but this is deemed okay in Unreal
+			Writer.Printf("%s,", *Enum->GetNameStringByIndex(i));  // This will put a trailing comma on the last Enum but this is deemed okay in Unreal
 		}
 		Writer.Outdent().Printf("};");
 	}
@@ -603,7 +598,7 @@ void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC
 	}
 }
 
-void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo, TMap<FString, FString>& GeneratedStructInfo)
+void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo, BPStructTypesAndPaths& GeneratedStructInfo)
 {
 	HeaderWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -770,7 +765,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename,
 	UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo, const TArray<FString>& TypeBindingHeaders,
-	bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses, TMap<FString, FString>& GeneratedStructInfo)
+	bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses, BPStructTypesAndPaths& GeneratedStructInfo)
 {
 	SourceWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -949,7 +944,7 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData, bool bIsSingleton, TMap<FString, FString>& GeneratedStructInfo)
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData, bool bIsSingleton, BPStructTypesAndPaths& GeneratedStructInfo)
 {
 	SourceWriter.BeginFunction({"void", "Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)"}, TypeBindingName(Class));
 

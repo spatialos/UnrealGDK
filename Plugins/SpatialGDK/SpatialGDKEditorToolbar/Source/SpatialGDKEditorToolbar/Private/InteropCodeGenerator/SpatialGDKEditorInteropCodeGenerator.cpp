@@ -44,7 +44,7 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	OutputSchema.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFilename));
 
 	// Generate forwarding code.
-	TMap<FString, FString> GeneratedStructInfo;
+	BPStructTypesAndPaths GeneratedStructInfo;
 	GenerateTypeBindingHeader(OutputHeader, SchemaFilename, TypeBindingFilename, Class, TypeInfo, GeneratedStructInfo);
 	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, TypeBindingHeaders, bIsSingleton, InteropGeneratedClasses, GeneratedStructInfo);
 	OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *TypeBindingFilename));
