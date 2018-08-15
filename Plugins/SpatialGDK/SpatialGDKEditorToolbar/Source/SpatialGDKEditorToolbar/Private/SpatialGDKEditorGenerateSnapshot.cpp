@@ -143,32 +143,10 @@ bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 	return true;
 }
 
-FString SetupSnapshotGenerationPath()
-{
-	// Default path and file names.
-	const FString& ProjectFilePath = FPaths::ConvertRelativePathToFull(*FPaths::GetPath(FPaths::GetProjectFilePath()));
-	FString SavePath = FPaths::Combine(*ProjectFilePath, TEXT("../spatial/snapshots"));
-	FString SnapshotFileName = TEXT("default.snapshot");
-
-	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
-	
-	if (!Settings->SpatialOSSnapshotPath.Path.IsEmpty())
-	{
-		SavePath = Settings->SpatialOSSnapshotPath.Path;
-	}
-
-	if (!Settings->SpatialOSSnapshotFile.IsEmpty())
-	{
-		SnapshotFileName = Settings->SpatialOSSnapshotFile;
-	}
-	
-	SavePath = FPaths::Combine(*SavePath, SnapshotFileName);
-	return SavePath;
-}
-
 bool SpatialGDKGenerateSnapshot(UWorld* World)
 {
-	FString SavePath = SetupSnapshotGenerationPath();
+	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotPath(), Settings->GetSpatialOSSnapshotFile());
 	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
 	{
 		return false;

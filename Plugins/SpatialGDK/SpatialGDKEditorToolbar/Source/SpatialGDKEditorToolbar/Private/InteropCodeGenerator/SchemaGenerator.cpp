@@ -284,6 +284,8 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		}
 	}
 
+	TArray<FString> ReliableMulticasts;
+
 	for (auto Group : GetRPCTypes())
 	{
 		Writer.Printf("component %s {", *SchemaRPCComponentName(Group, Class));
@@ -295,9 +297,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			{
 				if (RPC->bReliable)
 				{
-					FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("%s::%s: Unreal GDK currently does not support Reliable Multicast RPCs. This RPC will be treated as Unreliable."),
-						*GetFullCPPName(Class),
-						*RPC->Function->GetName())));
+					ReliableMulticasts.Add(FString::Printf(TEXT("%s::%s"), *GetFullCPPName(Class), *RPC->Function->GetName()));
 				}
 
 				Writer.Printf("event %s.%s %s;",
@@ -322,6 +322,17 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			}
 		}
 		Writer.Outdent().Print("}");
+	}
+
+	if(ReliableMulticasts.Num() > 0)
+	{
+		FString AllReliableMulticasts;
+		for(const FString& FunctionName : ReliableMulticasts)
+		{
+			AllReliableMulticasts += FunctionName + TEXT("\n");					
+		}
+
+		FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unreal GDK currently does not support Reliable Multicast RPCs. These RPC will be treated as unreliable:\n%s"), *AllReliableMulticasts)));
 	}
 
 	return IdGenerator.GetNumUsedIds();

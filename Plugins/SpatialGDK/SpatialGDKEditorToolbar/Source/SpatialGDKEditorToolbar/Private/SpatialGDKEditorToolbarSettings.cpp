@@ -5,10 +5,10 @@ USpatialGDKEditorToolbarSettings::USpatialGDKEditorToolbarSettings(const FObject
 	: Super(ObjectInitializer),
 	SpatialOSLaunchConfig(TEXT("default_launch.json")),
 	bStopSpatialOnExit(false),
-	SpatialOSSnapshotFile(FString(TEXT("default.snapshot")))
+	SpatialOSSnapshotFile(GetSpatialOSSnapshotFile())
 {
 	ProjectRootFolder.Path = TEXT("");
-	SpatialOSSnapshotPath.Path = FPaths::Combine(*ProjectRootFolder.Path, TEXT("snapshots/"));
+	SpatialOSSnapshotPath.Path = GetSpatialOSSnapshotPath();
 	InteropCodegenOutputFolder.Path = TEXT("");
 	GeneratedSchemaOutputFolder.Path = TEXT("");
 }
