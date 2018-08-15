@@ -152,7 +152,7 @@ FString PropertyToWorkerSDKType(UProperty* Property, bool bIsRPCProperty)
 }
 
 // Generate definition in header file for Blueprint-defined Structs & Enums
-void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Property, TSet<FString>& GeneratedTypes)
+void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Property, TSet<FString>& GeneratedTypes, TMap<FString, FString>& GeneratedStructInfo)
 {
 	if (GeneratedTypes.Contains(Property->GetCPPType()))
 	{
@@ -161,7 +161,7 @@ void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Prope
 
 	if (UArrayProperty *ArrProp = Cast<UArrayProperty>(Property))
 	{
-		GenerateBlueprintStructEnumDefinition(Writer, ArrProp->Inner, GeneratedTypes);
+		GenerateBlueprintStructEnumDefinition(Writer, ArrProp->Inner, GeneratedTypes, GeneratedStructInfo);
 	}
 
 	if (Property->IsA<UStructProperty>())
@@ -173,12 +173,13 @@ void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Prope
 		}
 
 		GeneratedTypes.Add(Property->GetCPPType());
+		GeneratedStructInfo.Add(Property->GetCPPType(), Struct->GetPathName());
 
 		// Recurse children post-order
 		for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
 		{
 			UProperty* Prop = *PropIt;
-			GenerateBlueprintStructEnumDefinition(Writer, Prop, GeneratedTypes);
+			GenerateBlueprintStructEnumDefinition(Writer, Prop, GeneratedTypes, GeneratedStructInfo);
 		}
 
 		Writer.PrintNewLine();
@@ -192,6 +193,8 @@ void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Prope
 			Writer.Printf("%s;", *PropertyText);
 		}
 		Writer.Outdent().Printf("};");
+		Writer.Printf("UPROPERTY()");  // To-do: remove this line once the UHT bugfix goes in: case sensitive matching USTRUCT
+		Writer.Printf("UStruct* %s_Struct;", *Property->GetCPPType());
 	}
 	else
 	{
@@ -602,7 +605,7 @@ void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC
 	}
 }
 
-void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo)
+void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo, TMap<FString, FString>& GeneratedStructInfo)
 {
 	HeaderWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -754,13 +757,12 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 	// Generate blueprint-defined structures
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
-
+	TSet<FString> GeneratedBPTypes;
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
-		TSet<FString> GeneratedStructTypes;
 		for (auto& RepProp : RepData[Group])
 		{
-			GenerateBlueprintStructEnumDefinition(HeaderWriter, RepProp.Value->Property, GeneratedStructTypes);
+			GenerateBlueprintStructEnumDefinition(HeaderWriter, RepProp.Value->Property, GeneratedBPTypes, GeneratedStructInfo);
 		}
 	}
 
@@ -770,7 +772,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename,
 	UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo, const TArray<FString>& TypeBindingHeaders,
-	bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses)
+	bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses, TMap<FString, FString>& GeneratedStructInfo)
 {
 	SourceWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -840,7 +842,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	GenerateFunction_GetBoundClass(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_Init(SourceWriter, Class, RPCsByType, RepData, HandoverData, bIsSingleton);
+	GenerateFunction_Init(SourceWriter, Class, RPCsByType, RepData, HandoverData, bIsSingleton, GeneratedStructInfo);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_BindToView(SourceWriter, Class, RPCsByType);
@@ -949,7 +951,7 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData, bool bIsSingleton)
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData, bool bIsSingleton, TMap<FString, FString>& GeneratedStructInfo)
 {
 	SourceWriter.BeginFunction({"void", "Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)"}, TypeBindingName(Class));
 
@@ -1034,6 +1036,11 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 		SourceWriter.Printf("bIsSingleton = false;");
 	}
 
+	// Since BP structs don't exist in C++ compile time, we will load the blueprint struct at runtime and call SerializeBin() from it.
+	for (auto& Prop : GeneratedStructInfo)
+	{
+		SourceWriter.Printf("%s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *Prop.Key, *Prop.Value);
+	}
 	SourceWriter.End();
 }
 
@@ -1589,14 +1596,6 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 		UProperty* InnerProperty = ArrayProperty->Inner;
 
-		// Special case for array of blueprint-defined structs
-		// Since those structs don't exist in C++ compile time, we will load the blueprint struct at runtime and call SerializeBin() from it.
-		UStructProperty* InnerStructProperty = Cast<UStructProperty>(InnerProperty);
-		if (InnerStructProperty != nullptr && InnerStructProperty->Struct->IsA<UUserDefinedStruct>())
-		{
-			SourceWriter.Printf("UStruct* %s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *InnerProperty->GetCPPType(), *InnerStructProperty->Struct->GetPathName());
-		}
-
 		SourceWriter.Printf("const TArray<%s>& %s = *(reinterpret_cast<TArray<%s> const*>(Data));", *InnerProperty->GetCPPType(), *PropertyValueName, *InnerProperty->GetCPPType());
 
 		if (InnerProperty->IsA<UObjectPropertyBase>() || InnerProperty->IsA<UStructProperty>())
@@ -1832,13 +1831,6 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 		UProperty* InnerProperty = ArrayProperty->Inner;
-
-		// Special case for array of blueprint-defined structs
-		UStructProperty* InnerStructProperty = Cast<UStructProperty>(InnerProperty);
-		if (InnerStructProperty != nullptr && InnerStructProperty->Struct->IsA<UUserDefinedStruct>())
-		{
-			SourceWriter.Printf("UStruct* %s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *InnerProperty->GetCPPType(), *InnerStructProperty->Struct->GetPathName());
-		}
 
 		SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));", *(InnerProperty->GetCPPType()), *PropertyValueName, *(InnerProperty->GetCPPType()));
 		if (InnerProperty->IsA<UObjectPropertyBase>())
