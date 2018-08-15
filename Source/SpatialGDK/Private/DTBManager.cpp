@@ -181,7 +181,45 @@ void UDTBManager::OnCommandRequest(Worker_CommandRequestOp& Op)
 	auto CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
 	UE_LOG(LogTemp, Log, TEXT("!!! Received command request (entity: %lld, component: %d, command: %d)"), Op.entity_id, Op.request.component_id, CommandIndex);
 
-	if (Op.request.component_id == SPECIAL_SPAWNER_COMPONENT_ID && CommandIndex == 1)
+	Worker_CommandResponse Response = {};
+	Response.component_id = Op.request.component_id;
+	Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, CommandIndex);
+
+	if (auto ClassPtr = ComponentToClassMap.Find(Op.request.component_id))
+	{
+		auto Class = *ClassPtr;
+		auto Info = FindClassInfoByClass(Class);
+		check(Info);
+
+		EAlsoRPCType RPCType = ARPC_Count;
+		for (int i = ARPC_Client; i <= ARPC_CrossServer; i++)
+		{
+			if (Info->RPCComponents[i] == Op.request.component_id)
+			{
+				RPCType = (EAlsoRPCType)i;
+				break;
+			}
+		}
+		check(RPCType <= ARPC_CrossServer);
+
+		auto RPCArray = Info->RPCs.Find(RPCType);
+		check(RPCArray);
+		check((int)CommandIndex - 1 < RPCArray->Num());
+
+		auto Function = (*RPCArray)[CommandIndex - 1];
+
+		uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
+		FMemory::Memzero(Parms, Function->ParmsSize);
+
+		UObject* TargetObject = nullptr;
+		ReadRPCCommandRequest(Op.request, Op.entity_id, Function, PackageMap, Interop->GetNetDriver(), TargetObject, Parms);
+
+		if (TargetObject)
+		{
+			TargetObject->ProcessEvent(Function, Parms);
+		}
+	}
+	else if (Op.request.component_id == SPECIAL_SPAWNER_COMPONENT_ID && CommandIndex == 1)
 	{
 		auto* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
 		std::string Url((char*)Schema_GetBytes(Payload, 1), Schema_GetBytesLength(Payload, 1));
@@ -193,21 +231,21 @@ void UDTBManager::OnCommandRequest(Worker_CommandRequestOp& Op)
 			OnSpawnRequest();
 		}
 
-		Worker_CommandResponse Response = {};
-		Response.component_id = Op.request.component_id;
-		Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, CommandIndex);
 		auto* ResponseObject = Schema_GetCommandResponseObject(Response.schema_type);
 		Schema_AddBool(ResponseObject, 1, 1);
 		Schema_AddBytes(ResponseObject, 2, (const std::uint8_t*)"", 0);
 		Schema_AddEntityId(ResponseObject, 3, 0);
-		Worker_Connection_SendCommandResponse(Connection, Op.request_id, &Response);
 	}
+
+	Worker_Connection_SendCommandResponse(Connection, Op.request_id, &Response);
 }
 
 void UDTBManager::OnCommandResponse(Worker_CommandResponseOp& Op)
 {
 	auto CommandIndex = Schema_GetCommandResponseCommandIndex(Op.response.schema_type);
 	UE_LOG(LogTemp, Log, TEXT("!!! Received command response (entity: %lld, component: %d, command: %d)"), Op.entity_id, Op.response.component_id, CommandIndex);
+
+	// TODO: Re-send reliable RPCs on timeout
 }
 
 void UDTBManager::OnDynamicData(Worker_ComponentData& Data, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap)
@@ -221,11 +259,11 @@ void UDTBManager::OnDynamicData(Worker_ComponentData& Data, USpatialActorChannel
 
 	if (Data.component_id == Info->SingleClientComponent)
 	{
-		ReadDynamicData(Data, Channel, PackageMap, AGROUP_SingleClient);
+		ReadDynamicData(Data, Channel, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient);
 	}
 	else if (Data.component_id == Info->MultiClientComponent)
 	{
-		ReadDynamicData(Data, Channel, PackageMap, AGROUP_MultiClient);
+		ReadDynamicData(Data, Channel, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient);
 	}
 	else if (Data.component_id == Info->HandoverComponent)
 	{
@@ -277,7 +315,7 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 			return;
 		}
 		check(ActorChannel);
-		ReceiveDynamicUpdate(Op.update, ActorChannel, PackageMap, AGROUP_SingleClient);
+		ReceiveDynamicUpdate(Op.update, ActorChannel, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient);
 	}
 	else if (Op.update.component_id == Info->MultiClientComponent)
 	{
@@ -287,7 +325,7 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 			return;
 		}
 		check(ActorChannel);
-		ReceiveDynamicUpdate(Op.update, ActorChannel, PackageMap, AGROUP_MultiClient);
+		ReceiveDynamicUpdate(Op.update, ActorChannel, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient);
 	}
 	else if (Op.update.component_id == Info->HandoverComponent)
 	{
@@ -420,8 +458,8 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 	ComponentDatas.push_back(CreatePersistenceData(PersistenceData()));
 	ComponentDatas.push_back(CreateUnrealMetadataData(UnrealMetadataData(StaticPath, ClientWorkerIdString, SubobjectNameToOffset)));
 
-	ComponentDatas.push_back(CreateDynamicData(Info->SingleClientComponent, InitialChanges, PackageMap, AGROUP_SingleClient));
-	ComponentDatas.push_back(CreateDynamicData(Info->MultiClientComponent, InitialChanges, PackageMap, AGROUP_MultiClient));
+	ComponentDatas.push_back(CreateDynamicData(Info->SingleClientComponent, InitialChanges, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient));
+	ComponentDatas.push_back(CreateDynamicData(Info->MultiClientComponent, InitialChanges, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient));
 
 	// TODO: Handover
 	Worker_ComponentData HandoverData = {};
@@ -457,10 +495,10 @@ void UDTBManager::SendComponentUpdates(const FPropertyChangeState& Changes, USpa
 	check(Info);
 
 	bool bWroteSingleClient = false;
-	auto SingleClientRepDataUpdate = CreateDynamicUpdate(Info->SingleClientComponent, Changes, PackageMap, AGROUP_SingleClient, bWroteSingleClient);
+	auto SingleClientRepDataUpdate = CreateDynamicUpdate(Info->SingleClientComponent, Changes, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient, bWroteSingleClient);
 
 	bool bWroteMultiClient = false;
-	auto MultiClientRepDataUpdate = CreateDynamicUpdate(Info->MultiClientComponent, Changes, PackageMap, AGROUP_MultiClient, bWroteMultiClient);
+	auto MultiClientRepDataUpdate = CreateDynamicUpdate(Info->MultiClientComponent, Changes, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient, bWroteMultiClient);
 
 	if (bWroteSingleClient)
 	{
@@ -471,6 +509,31 @@ void UDTBManager::SendComponentUpdates(const FPropertyChangeState& Changes, USpa
 		Worker_Connection_SendComponentUpdate(Connection, EntityId, &MultiClientRepDataUpdate);
 	}
 	// TODO: Handover
+}
+
+void UDTBManager::SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters)
+{
+	auto Info = FindClassInfoByClass(TargetObject->GetClass());
+	check(Info);
+
+	auto RPCInfo = Info->RPCInfoMap.Find(Function);
+	check(RPCInfo);
+
+	switch (RPCInfo->Type)
+	{
+	case ARPC_Client:
+	case ARPC_Server:
+	case ARPC_CrossServer:
+	{
+		Worker_EntityId EntityId;
+		auto CommandRequest = CreateRPCCommandRequest(TargetObject, Function, Parameters, PackageMap, Interop->GetNetDriver(), Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId);
+		Worker_CommandParameters CommandParams = {};
+		Worker_Connection_SendCommandRequest(Connection, EntityId, &CommandRequest, RPCInfo->Index + 1, nullptr, &CommandParams);
+		break;
+	}
+	case ARPC_NetMulticast:
+		break;
+	}
 }
 
 void UDTBManager::Tick()

@@ -120,29 +120,170 @@ UnrealObjectRef Schema_GetObjectRef(Schema_Object* Object, Schema_FieldId Id)
 	return Schema_IndexObjectRef(Object, Id, 0);
 }
 
-void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Property, const uint8* Data, USpatialPackageMapClient* PackageMap, std::vector<Schema_FieldId>* ClearedIds)
+void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdStart, const int32 CmdEnd, void* Data, bool& bHasUnmapped);
+
+void RepLayout_SerializeProperties_DynamicArray(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdIndex, uint8* Data, bool& bHasUnmapped)
+{
+	const FRepLayoutCmd& Cmd = RepLayout.Cmds[CmdIndex];
+
+	FScriptArray* Array = (FScriptArray*)Data;
+
+	uint16 OutArrayNum = Array->Num();
+	Ar << OutArrayNum;
+
+	// If loading from the archive, OutArrayNum will contain the number of elements.
+	// Otherwise, use the input number of elements.
+	const int32 ArrayNum = Ar.IsLoading() ? (int32)OutArrayNum : Array->Num();
+
+	// When loading, we may need to resize the array to properly fit the number of elements.
+	if (Ar.IsLoading() && OutArrayNum != Array->Num())
+	{
+		FScriptArrayHelper ArrayHelper((UArrayProperty*)Cmd.Property, Data);
+		ArrayHelper.Resize(OutArrayNum);
+	}
+
+	Data = (uint8*)Array->GetData();
+
+	for (int32 i = 0; i < Array->Num() && !Ar.IsError(); i++)
+	{
+		RepLayout_SerializeProperties(RepLayout, Ar, Map, CmdIndex + 1, Cmd.EndCmd - 1, Data + i * Cmd.ElementSize, bHasUnmapped);
+	}
+}
+
+void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdStart, const int32 CmdEnd, void* Data, bool& bHasUnmapped)
+{
+	for (int32 CmdIndex = CmdStart; CmdIndex < CmdEnd && !Ar.IsError(); CmdIndex++)
+	{
+		const FRepLayoutCmd& Cmd = RepLayout.Cmds[CmdIndex];
+
+		check(Cmd.Type != REPCMD_Return);
+
+		if (Cmd.Type == REPCMD_DynamicArray)
+		{
+			RepLayout_SerializeProperties_DynamicArray(RepLayout, Ar, Map, CmdIndex, (uint8*)Data + Cmd.Offset, bHasUnmapped);
+			CmdIndex = Cmd.EndCmd - 1;		// The -1 to handle the ++ in the for loop
+			continue;
+		}
+
+		if (!Cmd.Property->NetSerializeItem(Ar, Map, (void*)((uint8*)Data + Cmd.Offset)))
+		{
+			bHasUnmapped = true;
+		}
+	}
+}
+
+void RepLayout_SerializePropertiesForStruct(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, void* Data, bool& bHasUnmapped)
+{
+	auto& Parents = RepLayout.Parents;
+	for (int32 i = 0; i < Parents.Num(); i++)
+	{
+		RepLayout_SerializeProperties(RepLayout, Ar, Map, Parents[i].CmdStart, Parents[i].CmdEnd, Data, bHasUnmapped);
+
+		if (Ar.IsError())
+		{
+			return;
+		}
+	}
+}
+
+void RepLayout_SendPropertiesForRPC(FRepLayout& RepLayout, FNetBitWriter& Writer, void* Data)
+{
+	auto& Parents = RepLayout.Parents;
+
+	for (int32 i = 0; i < Parents.Num(); i++)
+	{
+		bool Send = true;
+
+		if (!Cast<UBoolProperty>(Parents[i].Property))
+		{
+			// check for a complete match, including arrays
+			// (we're comparing against zero data here, since 
+			// that's the default.)
+			Send = !Parents[i].Property->Identical_InContainer(Data, NULL, Parents[i].ArrayIndex);
+
+			Writer.WriteBit(Send ? 1 : 0);
+		}
+
+		if (Send)
+		{
+			bool bHasUnmapped = false;
+			RepLayout_SerializeProperties(RepLayout, Writer, Writer.PackageMap, Parents[i].CmdStart, Parents[i].CmdEnd, Data, bHasUnmapped);
+		}
+	}
+}
+
+void RepLayout_ReceivePropertiesForRPC(FRepLayout& RepLayout, FNetBitReader& Reader, void* Data)
+{
+	auto& Parents = RepLayout.Parents;
+
+	for (int32 i = 0; i < Parents.Num(); i++)
+	{
+		if (Parents[i].ArrayIndex == 0 && (Parents[i].Property->PropertyFlags & CPF_ZeroConstructor) == 0)
+		{
+			// If this property needs to be constructed, make sure we do that
+			Parents[i].Property->InitializeValue((uint8*)Data + Parents[i].Property->GetOffset_ForUFunction());
+		}
+	}
+
+	//Reader.PackageMap->ResetTrackedGuids(true);
+
+	for (int32 i = 0; i < Parents.Num(); i++)
+	{
+		if (Cast<UBoolProperty>(Parents[i].Property) || Reader.ReadBit())
+		{
+			bool bHasUnmapped = false;
+
+			RepLayout_SerializeProperties(RepLayout, Reader, Reader.PackageMap, Parents[i].CmdStart, Parents[i].CmdEnd, Data, bHasUnmapped);
+
+			if (Reader.IsError())
+			{
+				return;
+			}
+
+			if (bHasUnmapped)
+			{
+				//UE_LOG(LogTemp, Log, TEXT("Unable to resolve RPC parameter. Object[%d] %s. Function %s. Parameter %s."),
+				//	Channel->ChIndex, *Object->GetName(), *Function->GetName(), *Parents[i].Property->GetName());
+			}
+		}
+	}
+
+	//if (Reader.PackageMap->GetTrackedUnmappedGuids().Num() > 0)
+	//{
+	//	UnmappedGuids = Reader.PackageMap->GetTrackedUnmappedGuids();
+	//}
+
+	//Reader.PackageMap->ResetTrackedGuids(false);
+}
+
+void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Property, const uint8* Data, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, std::vector<Schema_FieldId>* ClearedIds)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
 		UScriptStruct* Struct = StructProperty->Struct;
 		TSet<const UObject*> UnresolvedObjects;
-		TArray<uint8> ValueData;
-		FSpatialMemoryWriter ValueDataWriter(ValueData, PackageMap, UnresolvedObjects);
+		FSpatialNetBitWriter ValueDataWriter(PackageMap, UnresolvedObjects);
+		bool bHasUnmapped = false;
 
 		if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
 			UScriptStruct::ICppStructOps* CppStructOps = Struct->GetCppStructOps();
 			check(CppStructOps); // else should not have STRUCT_NetSerializeNative
 			bool bSuccess = true;
-			CppStructOps->NetSerialize(ValueDataWriter, PackageMap, bSuccess, const_cast<uint8*>(Data));
+			if (!CppStructOps->NetSerialize(ValueDataWriter, PackageMap, bSuccess, const_cast<uint8*>(Data)))
+			{
+				bHasUnmapped = true;
+			}
 			checkf(bSuccess, TEXT("NetSerialize on %s failed."), *Struct->GetStructCPPName());
 		}
 		else
 		{
-			Struct->SerializeBin(ValueDataWriter, const_cast<uint8*>(Data));
+			TSharedPtr<FRepLayout> RepLayout = Driver->GetStructRepLayout(Struct);
+
+			RepLayout_SerializePropertiesForStruct(*RepLayout, ValueDataWriter, PackageMap, const_cast<uint8*>(Data), bHasUnmapped);
 		}
 
-		Schema_AddString(Object, Id, std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));
+		Schema_AddString(Object, Id, std::string(reinterpret_cast<char*>(ValueDataWriter.GetData()), ValueDataWriter.GetNumBytes()));
 	}
 	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
 	{
@@ -232,7 +373,7 @@ void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Pro
 		FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 		for (int i = 0; i < ArrayHelper.Num(); i++)
 		{
-			Schema_AddProperty(Object, Id, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), PackageMap, ClearedIds);
+			Schema_AddProperty(Object, Id, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), PackageMap, Driver, ClearedIds);
 		}
 
 		if (ArrayHelper.Num() == 0 && ClearedIds)
@@ -248,7 +389,7 @@ void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Pro
 		}
 		else
 		{
-			Schema_AddProperty(Object, Id, EnumProperty->GetUnderlyingProperty(), Data, PackageMap, ClearedIds);
+			Schema_AddProperty(Object, Id, EnumProperty->GetUnderlyingProperty(), Data, PackageMap, Driver, ClearedIds);
 		}
 	}
 	else
@@ -345,26 +486,33 @@ std::uint32_t Schema_GetPropertyCount(const Schema_Object* Object, Schema_FieldI
 	}
 }
 
-void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index, UProperty* Property, uint8* Data, USpatialPackageMapClient* PackageMap)
+void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index, UProperty* Property, uint8* Data, USpatialPackageMapClient* PackageMap, UNetDriver* Driver)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
 		UScriptStruct* Struct = StructProperty->Struct;
-		auto ValueDataStr = Schema_IndexString(Object, Id, Index);
-		TArray<uint8> ValueData;
-		ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
-		FSpatialMemoryReader ValueDataReader(ValueData, PackageMap);
+		auto ValueData = Schema_IndexString(Object, Id, Index);
+		// A bit hacky, we should probably include the number of bits with the data instead.
+		int64 CountBits = ValueData.size() * 8;
+		FSpatialNetBitReader ValueDataReader(PackageMap, (uint8*)ValueData.data(), CountBits);
+		bool bHasUnmapped = false;
+
 		if (Struct->StructFlags & STRUCT_NetSerializeNative)
 		{
 			UScriptStruct::ICppStructOps* CppStructOps = Struct->GetCppStructOps();
 			check(CppStructOps); // else should not have STRUCT_NetSerializeNative
 			bool bSuccess = true;
-			CppStructOps->NetSerialize(ValueDataReader, PackageMap, bSuccess, Data);
+			if (!CppStructOps->NetSerialize(ValueDataReader, PackageMap, bSuccess, Data))
+			{
+				bHasUnmapped = true;
+			}
 			checkf(bSuccess, TEXT("NetSerialize on %s failed."), *Struct->GetStructCPPName());
 		}
 		else
 		{
-			Struct->SerializeBin(ValueDataReader, Data);
+			TSharedPtr<FRepLayout> RepLayout = Driver->GetStructRepLayout(Struct);
+
+			RepLayout_SerializePropertiesForStruct(*RepLayout, ValueDataReader, PackageMap, Data, bHasUnmapped);
 		}
 	}
 	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
@@ -457,7 +605,7 @@ void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t 
 
 		for (int i = 0; i < Count; i++)
 		{
-			Schema_GetProperty(Object, Id, i, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), PackageMap);
+			Schema_GetProperty(Object, Id, i, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), PackageMap, Driver);
 		}
 	}
 	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
@@ -468,7 +616,7 @@ void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t 
 		}
 		else
 		{
-			Schema_GetProperty(Object, Id, Index, EnumProperty->GetUnderlyingProperty(), Data, PackageMap);
+			Schema_GetProperty(Object, Id, Index, EnumProperty->GetUnderlyingProperty(), Data, PackageMap, Driver);
 		}
 	}
 	else
@@ -489,7 +637,7 @@ EAlsoReplicatedPropertyGroup GetAlsoGroupFromCondition(ELifetimeCondition Condit
 	}
 }
 
-void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup, bool IsUpdate = false, const std::set<Schema_FieldId>& ClearedIds = std::set<Schema_FieldId>())
+void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool IsUpdate = false, const std::set<Schema_FieldId>& ClearedIds = std::set<Schema_FieldId>())
 {
 	Channel->PreReceiveSpatialUpdate(Channel->Actor);
 
@@ -518,7 +666,7 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 
 				if (!IsUpdate || Schema_GetPropertyCount(ComponentObject, HandleIterator.Handle, SwappedCmd.Property) > 0 || ClearedIds.find(HandleIterator.Handle) != ClearedIds.end())
 				{
-					Schema_GetProperty(ComponentObject, HandleIterator.Handle, 0, SwappedCmd.Property, Data, PackageMap);
+					Schema_GetProperty(ComponentObject, HandleIterator.Handle, 0, SwappedCmd.Property, Data, PackageMap, Driver);
 				}
 			}
 
@@ -535,14 +683,14 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 	Channel->PostReceiveSpatialUpdate(Channel->Actor, TArray<UProperty*>());
 }
 
-void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup)
+void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup)
 {
 	auto ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, PropertyGroup);
+	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, Driver, PropertyGroup);
 }
 
-void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup)
+void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup)
 {
 	auto ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
@@ -556,10 +704,10 @@ void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatia
 		ClearedIds.insert(FieldId);
 	}
 
-	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, PropertyGroup, true, ClearedIds);
+	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, Driver, PropertyGroup, true, ClearedIds);
 }
 
-bool Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup, std::vector<Schema_FieldId>* ClearedIds = nullptr)
+bool Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, std::vector<Schema_FieldId>* ClearedIds = nullptr)
 {
 	bool bWroteSomething = false;
 
@@ -577,7 +725,7 @@ bool Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyCha
 			{
 				const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 
-				Schema_AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, PackageMap, ClearedIds);
+				Schema_AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, PackageMap, Driver, ClearedIds);
 
 				bWroteSomething = true;
 			}
@@ -601,19 +749,19 @@ bool Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyCha
 	return bWroteSomething;
 }
 
-Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup)
+Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup)
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
 	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
 	auto ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	Schema_FillDynamicObject(ComponentObject, Changes, PackageMap, PropertyGroup);
+	Schema_FillDynamicObject(ComponentObject, Changes, PackageMap, Driver, PropertyGroup);
 
 	return ComponentData;
 }
 
-Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething)
+Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -623,7 +771,7 @@ Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const
 
 	std::vector<Schema_FieldId> ClearedIds;
 
-	bWroteSomething = Schema_FillDynamicObject(ComponentObject, Changes, PackageMap, PropertyGroup, &ClearedIds);
+	bWroteSomething = Schema_FillDynamicObject(ComponentObject, Changes, PackageMap, Driver, PropertyGroup, &ClearedIds);
 
 	for (auto Id : ClearedIds)
 	{
@@ -636,4 +784,64 @@ Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const
 	}
 
 	return ComponentUpdate;
+}
+
+Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId)
+{
+	Worker_CommandRequest CommandRequest = {};
+
+	CommandRequest.component_id = ComponentId;
+	CommandRequest.schema_type = Schema_CreateCommandRequest(ComponentId, CommandIndex);
+	auto RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
+
+	auto TargetObjectRef = UnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
+	if (TargetObjectRef == UNRESOLVED_OBJECT_REF)
+	{
+		// TODO: Handle RPC to unresolved object
+		checkNoEntry();
+	}
+
+	Schema_AddUint32(RequestObject, 1, TargetObjectRef.Offset);
+	OutEntityId = TargetObjectRef.Entity;
+
+	TSet<const UObject*> UnresolvedObjects;
+	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
+
+	TSharedPtr<FRepLayout> RepLayout = Driver->GetFunctionRepLayout(Function);
+	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
+
+	// TODO: Check for unresolved objects in the payload
+
+	Schema_AddString(RequestObject, 2, std::string(reinterpret_cast<char*>(PayloadWriter.GetData()), PayloadWriter.GetNumBytes()));
+
+	return CommandRequest;
+}
+
+void ReadRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worker_EntityId& EntityId, UFunction* Function, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, UObject*& OutTargetObject, void* Data)
+{
+	auto RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
+
+	UnrealObjectRef TargetObjectRef;
+	TargetObjectRef.Entity = EntityId;
+	TargetObjectRef.Offset = Schema_GetUint32(RequestObject, 1);
+
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef.ToCppAPI());
+	if (!TargetNetGUID.IsValid())
+	{
+		// TODO: Handle RPC to unresolved object
+		checkNoEntry();
+	}
+
+	OutTargetObject = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+	checkf(OutTargetObject, TEXT("Object Ref %s (NetGUID %s) does not correspond to a UObject."), *TargetObjectRef.ToString(), *TargetNetGUID.ToString());
+
+	auto PayloadData = Schema_GetString(RequestObject, 2);
+	// A bit hacky, we should probably include the number of bits with the data instead.
+	int64 CountBits = PayloadData.size() * 8;
+	FSpatialNetBitReader PayloadReader(PackageMap, (uint8*)PayloadData.data(), CountBits);
+
+	TSharedPtr<FRepLayout> RepLayout = Driver->GetFunctionRepLayout(Function);
+	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Data);
+
+	// TODO: Check for unresolved objects in the payload
 }

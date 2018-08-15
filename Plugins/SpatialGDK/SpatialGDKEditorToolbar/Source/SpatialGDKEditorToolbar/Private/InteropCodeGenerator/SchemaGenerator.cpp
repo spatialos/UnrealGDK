@@ -226,59 +226,62 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 	TMap<FString, TSharedPtr<FCodeWriter>> RPCTypeCodeWriterMap;
 
-	for (auto& RPCTypeOwner : RPCTypeOwners)
+	if (Class->GetName() != TEXT("DTBActor"))
 	{
-		Writer.Printf("import \"improbable/unreal/generated/Unreal%sTypes.schema\";", *RPCTypeOwner);
-		TSharedPtr<FCodeWriter> RPCTypeOwnerSchemaWriter = MakeShared<FCodeWriter>();
-		RPCTypeCodeWriterMap.Add(*RPCTypeOwner, RPCTypeOwnerSchemaWriter);
-		RPCTypeOwnerSchemaWriter->Printf(R"""(
-			// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-			// Note that this file has been generated automatically
-			package improbable.unreal.generated.%s;
-
-			import "improbable/unreal/gdk/core_types.schema";)""", *RPCTypeOwner.ToLower());
-		RPCTypeOwnerSchemaWriter->PrintNewLine();
-	}
-	Writer.PrintNewLine();
-
-	for (auto Group : GetRPCTypes())
-	{
-		// Generate schema RPC command types
-		for (auto& RPC : RPCsByType[Group])
+		for (auto& RPCTypeOwner : RPCTypeOwners)
 		{
-			FString TypeStr = SchemaRPCRequestType(RPC->Function);
+			Writer.Printf("import \"improbable/unreal/generated/Unreal%sTypes.schema\";", *RPCTypeOwner);
+			TSharedPtr<FCodeWriter> RPCTypeOwnerSchemaWriter = MakeShared<FCodeWriter>();
+			RPCTypeCodeWriterMap.Add(*RPCTypeOwner, RPCTypeOwnerSchemaWriter);
+			RPCTypeOwnerSchemaWriter->Printf(R"""(
+				// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+				// Note that this file has been generated automatically
+				package improbable.unreal.generated.%s;
 
-			// Get the correct code writer for this RPC.
-			FString RPCOwnerName = UnrealNameToSchemaTypeName(*RPC->Function->GetOuter()->GetName());
-			TSharedPtr<FCodeWriter> RPCTypeOwnerSchemaWriter = RPCTypeCodeWriterMap[*RPCOwnerName];
-
-			RPCTypeOwnerSchemaWriter->Printf("type %s {", *TypeStr);
-			RPCTypeOwnerSchemaWriter->Indent();
-
-			// Recurse into functions properties and build a complete transitive property list.
-			TArray<TSharedPtr<FUnrealProperty>> ParamList = GetFlatRPCParameters(RPC);
-
-			// RPC target sub-object offset.
-			RPCTypeOwnerSchemaWriter->Printf("uint32 target_subobject_offset = 1;");
-			FieldCounter = 1;
-
-			for (auto& Param : ParamList)
-			{
-				FieldCounter++;
-				WriteSchemaRPCField(RPCTypeOwnerSchemaWriter,
-					Param,
-					FieldCounter);
-			}
-			RPCTypeOwnerSchemaWriter->Outdent().Print("}");
+				import "improbable/unreal/gdk/core_types.schema";)""", *RPCTypeOwner.ToLower());
+			RPCTypeOwnerSchemaWriter->PrintNewLine();
 		}
-	}
+		Writer.PrintNewLine();
 
-	// Save RPC type owner schema files to disk.
-	for (auto& RPCTypeOwner : RPCTypeOwners)
-	{
-		TSharedPtr<FCodeWriter> RPCTypeOwnerSchemaWriter = RPCTypeCodeWriterMap[*RPCTypeOwner];
-		FString RPCTypeOwnerSchemaFilename = FString::Printf(TEXT("Unreal%sTypes"), *RPCTypeOwner);
-		RPCTypeOwnerSchemaWriter->WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *RPCTypeOwnerSchemaFilename));
+		for (auto Group : GetRPCTypes())
+		{
+			// Generate schema RPC command types
+			for (auto& RPC : RPCsByType[Group])
+			{
+				FString TypeStr = SchemaRPCRequestType(RPC->Function);
+
+				// Get the correct code writer for this RPC.
+				FString RPCOwnerName = UnrealNameToSchemaTypeName(*RPC->Function->GetOuter()->GetName());
+				TSharedPtr<FCodeWriter> RPCTypeOwnerSchemaWriter = RPCTypeCodeWriterMap[*RPCOwnerName];
+
+				RPCTypeOwnerSchemaWriter->Printf("type %s {", *TypeStr);
+				RPCTypeOwnerSchemaWriter->Indent();
+
+				// Recurse into functions properties and build a complete transitive property list.
+				TArray<TSharedPtr<FUnrealProperty>> ParamList = GetFlatRPCParameters(RPC);
+
+				// RPC target sub-object offset.
+				RPCTypeOwnerSchemaWriter->Printf("uint32 target_subobject_offset = 1;");
+				FieldCounter = 1;
+
+				for (auto& Param : ParamList)
+				{
+					FieldCounter++;
+					WriteSchemaRPCField(RPCTypeOwnerSchemaWriter,
+						Param,
+						FieldCounter);
+				}
+				RPCTypeOwnerSchemaWriter->Outdent().Print("}");
+			}
+		}
+
+		// Save RPC type owner schema files to disk.
+		for (auto& RPCTypeOwner : RPCTypeOwners)
+		{
+			TSharedPtr<FCodeWriter> RPCTypeOwnerSchemaWriter = RPCTypeCodeWriterMap[*RPCTypeOwner];
+			FString RPCTypeOwnerSchemaFilename = FString::Printf(TEXT("Unreal%sTypes"), *RPCTypeOwner);
+			RPCTypeOwnerSchemaWriter->WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *RPCTypeOwnerSchemaFilename));
+		}
 	}
 
 	for (auto Group : GetRPCTypes())
@@ -304,10 +307,18 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			}
 			else
 			{
-				Writer.Printf("command UnrealRPCCommandResponse %s(%s.%s);",
-					*SchemaRPCName(Class, RPC->Function),
-					*UnrealNameToSchemaTypeName(*RPC->Function->GetOuter()->GetName()).ToLower(),
-					*SchemaRPCRequestType(RPC->Function));
+				if (Class->GetName() == TEXT("DTBActor"))
+				{
+					Writer.Printf("command UnrealRPCCommandResponse %s(UnrealRPCCommandRequest);",
+						*SchemaRPCName(Class, RPC->Function));
+				}
+				else
+				{
+					Writer.Printf("command UnrealRPCCommandResponse %s(%s.%s);",
+						*SchemaRPCName(Class, RPC->Function),
+						*UnrealNameToSchemaTypeName(*RPC->Function->GetOuter()->GetName()).ToLower(),
+						*SchemaRPCRequestType(RPC->Function));
+				}
 			}
 		}
 		Writer.Outdent().Print("}");

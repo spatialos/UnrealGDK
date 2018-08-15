@@ -276,6 +276,12 @@ void USpatialInterop::SendSpatialUpdateSubobject(USpatialActorChannel* Channel, 
 
 void USpatialInterop::InvokeRPC(UObject* TargetObject, UFunction* Function, void* Parameters)
 {
+	if (TargetObject->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
+	{
+		DTBManager->SendRPC(TargetObject, Function, Parameters);
+		return;
+	}
+
 	USpatialTypeBinding* Binding = GetTypeBindingByClass(TargetObject->GetClass());
 	if (!Binding)
 	{

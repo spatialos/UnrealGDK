@@ -79,6 +79,10 @@ public:
 
 	void SendComponentUpdates(const struct FPropertyChangeState& Changes, USpatialActorChannel* Channel);
 
+	void SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters);
+
+	void SendRPCCommand(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandId);
+
 	void Tick();
 
 	TMap<UClass*, ClassInfo> ClassInfoMap;

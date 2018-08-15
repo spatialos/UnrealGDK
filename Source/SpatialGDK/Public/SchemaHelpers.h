@@ -348,8 +348,11 @@ enum EAlsoReplicatedPropertyGroup
 	AGROUP_MultiClient
 };
 
-void ReadDynamicData(const Worker_ComponentData& ComponentData, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup);
-void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup);
+void ReadDynamicData(const Worker_ComponentData& ComponentData, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup);
+void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup);
 
-Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup);
-Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap, EAlsoReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething);
+Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup);
+Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething);
+
+Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId);
+void ReadRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worker_EntityId& EntityId, UFunction* Function, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, UObject*& OutTargetObject, void* Data);

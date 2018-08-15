@@ -8,5 +8,10 @@ type UnrealObjectRef {
     option<UnrealObjectRef> outer = 4;
 }
 
+type UnrealRPCCommandRequest {
+	uint32 target_subobject_offset = 1;
+	bytes rpc_payload = 2;
+}
+
 type UnrealRPCCommandResponse {
 }

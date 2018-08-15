@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Serialization/MemoryReader.h"
+#include "UObject/CoreNet.h"
 
 #include <improbable/unreal/gdk/core_types.h>
 
@@ -27,4 +28,20 @@ protected:
 	void DeserializeObjectRef(improbable::unreal::UnrealObjectRef& ObjectRef);
 
 	USpatialPackageMapClient* PackageMap;
+};
+
+class SPATIALGDK_API FSpatialNetBitReader : public FNetBitReader
+{
+public:
+	FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits)
+		: FNetBitReader(InPackageMap, Source, CountBits) {}
+
+	using FArchive::operator<<; // For visibility of the overloads we don't override
+
+	virtual FArchive& operator<<(UObject*& Value) override;
+
+	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
+
+protected:
+	void DeserializeObjectRef(improbable::unreal::UnrealObjectRef& ObjectRef);
 };
