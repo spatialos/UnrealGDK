@@ -47,8 +47,9 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	if (Class->GetName() == TEXT("DTBActor")) return NumComponents;
 
 	// Generate forwarding code.
-	GenerateTypeBindingHeader(OutputHeader, SchemaFilename, TypeBindingFilename, Class, TypeInfo);
-	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, TypeBindingHeaders, bIsSingleton, InteropGeneratedClasses);
+	BPStructTypesAndPaths GeneratedStructInfo;
+	GenerateTypeBindingHeader(OutputHeader, SchemaFilename, TypeBindingFilename, Class, TypeInfo, GeneratedStructInfo);
+	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, TypeBindingHeaders, bIsSingleton, InteropGeneratedClasses, GeneratedStructInfo);
 	OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *TypeBindingFilename));
 	OutputSource.WriteToFile(FString::Printf(TEXT("%s%s.cpp"), *ForwardingCodePath, *TypeBindingFilename));
 
