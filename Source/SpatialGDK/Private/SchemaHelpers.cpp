@@ -646,6 +646,8 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 	auto& BaseHandleToCmdIndex = Channel->ActorReplicator->RepLayout->BaseHandleToCmdIndex;
 	auto& Parents = Channel->ActorReplicator->RepLayout->Parents;
 
+	TArray<UProperty*> RepNotifies;
+
 	auto Handles = Channel->GetAllPropertyHandles(*Channel->ActorReplicator);
 
 	if (Handles.Num() > 0)
@@ -662,11 +664,20 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 				// This swaps Role/RemoteRole as we write it
 				const FRepLayoutCmd& SwappedCmd = Parent.RoleSwapIndex != -1 ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
 
-				uint8* Data = (uint8*)Channel->Actor + HandleIterator.ArrayOffset + SwappedCmd.Offset;
+				uint8* Data = (uint8*)Channel->Actor + SwappedCmd.Offset;
 
-				if (!IsUpdate || Schema_GetPropertyCount(ComponentObject, HandleIterator.Handle, SwappedCmd.Property) > 0 || ClearedIds.find(HandleIterator.Handle) != ClearedIds.end())
+				if (!IsUpdate || Schema_GetPropertyCount(ComponentObject, HandleIterator.Handle, Cmd.Property) > 0 || ClearedIds.find(HandleIterator.Handle) != ClearedIds.end())
 				{
-					Schema_GetProperty(ComponentObject, HandleIterator.Handle, 0, SwappedCmd.Property, Data, PackageMap, Driver);
+					Schema_GetProperty(ComponentObject, HandleIterator.Handle, 0, Cmd.Property, Data, PackageMap, Driver);
+
+					// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
+					if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
+					{
+						if (Parent.RepNotifyCondition == REPNOTIFY_Always || !Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.Offset, Data))
+						{
+							RepNotifies.AddUnique(Parent.Property);
+						}
+					}
 				}
 			}
 
@@ -680,7 +691,7 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 		}
 	}
 
-	Channel->PostReceiveSpatialUpdate(Channel->Actor, TArray<UProperty*>());
+	Channel->PostReceiveSpatialUpdate(Channel->Actor, RepNotifies);
 }
 
 void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup)
