@@ -100,7 +100,7 @@ bool USpatialActorChannel::IsCriticalEntity()
 	}
 
 	// Don't delete if the actor is a Singleton
-	NameToEntityIdMap* SingletonNameToEntityId = SpatialNetDriver->GetSpatialInterop()->GetSingletonNameToEntityId();
+	PathNameToEntityIdMap* SingletonNameToEntityId = SpatialNetDriver->GetSpatialInterop()->GetSingletonNameToEntityId();
 
 	if (SingletonNameToEntityId == nullptr)
 	{
@@ -321,6 +321,8 @@ bool USpatialActorChannel::ReplicateActor()
 	{		
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
+			check(!Actor->IsFullNameStableForNetworking() || Interop->CanSpawnReplicatedStablyNamedActors());
+
 			// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
 			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
 			// player controller, get the player state.
@@ -328,8 +330,7 @@ bool USpatialActorChannel::ReplicateActor()
 			APlayerState* PlayerState = Cast<APlayerState>(Actor);
 			if (!PlayerState)
 			{
-				APawn* Pawn = Cast<APawn>(Actor);
-				if (Pawn)
+				if (APawn* Pawn = Cast<APawn>(Actor))
 				{
 					PlayerState = Pawn->PlayerState;
 				}
@@ -496,13 +497,16 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	// If the entity registry has no entry for this actor, this means we need to create it.
 	if (ActorEntityId == 0)
 	{
-		USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
-		check(SpatialConnection);
-
-		// Mark this channel as being responsible for creating this entity once we have an entity ID.
-		bCreatingNewEntity = true;
-
-		Interop->SendReserveEntityIdRequest(this);
+		// If the actor is stably named, we only want to start the creation process on one server (the one that is authoritative
+		// over the Global State Manager) to avoid having multiple copies of replicated stably named actors in SpatialOS
+		if (InActor->IsFullNameStableForNetworking())
+		{
+			SpatialNetDriver->GetSpatialInterop()->ReserveReplicatedStablyNamedActorChannel(this);
+		}
+		else
+		{
+			SendReserveEntityIdRequest();
+		}
 	}
 	else
 	{
@@ -511,6 +515,17 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		// Inform USpatialInterop of this new actor channel/entity pairing
 		SpatialNetDriver->GetSpatialInterop()->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
 	}
+}
+
+void USpatialActorChannel::SendReserveEntityIdRequest()
+{
+	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
+	check(SpatialConnection);
+
+	// Mark this channel as being responsible for creating this entity once we have an entity ID.
+	bCreatingNewEntity = true;
+
+	SpatialNetDriver->GetSpatialInterop()->SendReserveEntityIdRequest(this);
 }
 
 void USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
@@ -546,7 +561,11 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	}
 	UE_LOG(LogSpatialGDKActorChannel, Verbose, TEXT("Received entity id (%d) for: %s."), Op.EntityId.value_or(0), *Actor->GetName());
 	ActorEntityId = *Op.EntityId;
+	RegisterEntityId(ActorEntityId);
+}
 
+void USpatialActorChannel::RegisterEntityId(const FEntityId& ActorEntityId)
+{
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
 
 	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
@@ -557,7 +576,26 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	// If a Singleton was created, update the GSM with the proper Id.
 	if (Interop->IsSingletonClass(Actor->GetClass()))
 	{
-		Interop->UpdateGlobalStateManager(Actor->GetClass()->GetPathName(), ActorEntityId);
+		Interop->UpdateSingletonId(Actor->GetClass()->GetPathName(), ActorEntityId);
+	}
+
+	if (Actor->IsFullNameStableForNetworking())
+	{
+		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
+
+		uint32 CurrentOffset = 1;
+		worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
+		ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+		{
+			// Objects can only be allocated NetGUIDs if this is true.
+			if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+			{
+				SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+				CurrentOffset++;
+			}
+		});
+
+		PackageMap->ResolveEntityActor(Actor, ActorEntityId, SubobjectNameToOffset);
 	}
 }
 
@@ -572,6 +610,13 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 		return;
 	}
 	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Created entity (%lld) for: %s."), ActorEntityId.ToSpatialEntityId(), *Actor->GetName());
+
+	// If a replicated stably named actor was created, update the GSM with the proper path and entity id
+	// This ensures each stably named actor is only created once
+	if (Actor->IsFullNameStableForNetworking())
+	{
+		SpatialNetDriver->GetSpatialInterop()->AddReplicatedStablyNamedActorToGSM(ActorEntityId, Actor);
+	}
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()
