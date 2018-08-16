@@ -19,9 +19,15 @@ component PlayerSpawner
     command SpawnPlayerResponse spawn_player(SpawnPlayerRequest);
 }
 
+type SpecialSpawnPlayerRequest
+{
+    string url = 1;
+    EntityId owner_entity = 2;
+}
+
 component SpecialSpawner
 {
     id = 100003;
-    command SpawnPlayerResponse special_spawn_player(SpawnPlayerRequest);
+    command SpawnPlayerResponse special_spawn_player(SpecialSpawnPlayerRequest);
 }
 

@@ -70,6 +70,8 @@ public:
 	// Returns the "100% reliable" connection to SpatialOS.
 	// On the server, it is designated to be the first client connection.
 	// On the client, this function is not meaningful (as we use ServerConnection)
+	// Note: you should only call this after we have connected to Spatial.
+	// You can check if we connected by calling GetSpatialOS()->IsConnected()
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
 	UPROPERTY()

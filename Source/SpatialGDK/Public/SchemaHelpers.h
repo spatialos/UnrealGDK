@@ -6,6 +6,7 @@
 #include "improbable/c_worker.h"
 
 #include <map>
+#include <vector>
 
 FORCEINLINE void Schema_AddString(Schema_Object* Object, Schema_FieldId Id, const std::string& Value)
 {

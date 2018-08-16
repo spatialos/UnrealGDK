@@ -92,7 +92,9 @@ public:
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 
-	TFunction<void()> OnSpawnRequest;
+	TMap<AActor*, FString> ActorToWorkerId;
+
+	TFunction<AActor*()> OnSpawnRequest;
 
 	Worker_Connection* Connection;
 

@@ -118,7 +118,8 @@ void UDTBManager::InitClient()
 	Worker_ComponentVtable DefaultVtable = {};
 	Params.default_component_vtable = &DefaultVtable;
 
-	auto* ConnectionFuture = Worker_ConnectAsync("localhost", 7777, "CAPIClient42", &Params);
+	std::string WorkerId = "CAPIClient" + std::string(TCHAR_TO_UTF8(*FGuid::NewGuid().ToString()));
+	auto* ConnectionFuture = Worker_ConnectAsync("localhost", 7777, WorkerId.c_str(), &Params);
 	Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 	Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
@@ -132,6 +133,18 @@ void UDTBManager::InitClient()
 		CommandRequest.schema_type = Schema_CreateCommandRequest(SPECIAL_SPAWNER_COMPONENT_ID, 1);
 		auto* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 		Schema_AddString(RequestObject, 1, "Yo dawg");
+
+		// TODO: Remove this
+		Worker_EntityId ControllerEntity = 0;
+		{
+			auto NetGUID = PackageMap->GetNetGUIDFromObject(PipelineBlock.World->GetFirstPlayerController());
+			check(NetGUID.IsValid());
+			auto ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+			ControllerEntity = ObjectRef.entity();
+		}
+		check(ControllerEntity > 0);
+		Schema_AddEntityId(RequestObject, 2, ControllerEntity);
 		Worker_CommandParameters CommandParams = {};
 		Worker_Connection_SendCommandRequest(Connection, SPECIAL_SPAWNER_ENTITY_ID, &CommandRequest, 1, nullptr, &CommandParams);
 	}
@@ -228,13 +241,19 @@ void UDTBManager::OnCommandRequest(Worker_CommandRequestOp& Op)
 	else if (Op.request.component_id == SPECIAL_SPAWNER_COMPONENT_ID && CommandIndex == 1)
 	{
 		auto* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
-		std::string Url((char*)Schema_GetBytes(Payload, 1), Schema_GetBytesLength(Payload, 1));
-
+		std::string Url = Schema_GetString(Payload, 1);
 		UE_LOG(LogTemp, Log, TEXT("!!! Url: %s"), UTF8_TO_TCHAR(Url.c_str()));
+
+		Worker_EntityId OwnerEntity = Schema_GetEntityId(Payload, 2);
+		improbable::unreal::UnrealObjectRef OwnerEntityRef = { OwnerEntity, 0, {}, {} };
+		auto OwnerController = Cast<APlayerController>(PackageMap->GetObjectFromNetGUID(PackageMap->GetNetGUIDFromUnrealObjectRef(OwnerEntityRef), false));
+		check(OwnerController);
 
 		if (OnSpawnRequest)
 		{
-			OnSpawnRequest();
+			AActor* SpawnedActor = OnSpawnRequest();
+			ActorToWorkerId.Add(SpawnedActor, UTF8_TO_TCHAR(Op.caller_worker_id));
+			SpawnedActor->SetOwner(OwnerController);
 		}
 
 		auto* ResponseObject = Schema_GetCommandResponseObject(Response.schema_type);
@@ -405,7 +424,9 @@ Worker_RequestId UDTBManager::SendCreateEntityRequest(USpatialActorChannel* Chan
 	FStringAssetReference ActorClassRef(Actor->GetClass());
 	FString PathStr = ActorClassRef.ToString();
 
-	auto CreateEntityRequestId = CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
+	auto WorkerIdPtr = ActorToWorkerId.Find(Actor);
+
+	auto CreateEntityRequestId = CreateActorEntity(WorkerIdPtr ? *WorkerIdPtr : PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
 
 	UE_LOG(LogTemp, Log, TEXT("!!! Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
 		*Actor->GetName(), Channel->GetEntityId().ToSpatialEntityId(), CreateEntityRequestId);
@@ -415,7 +436,7 @@ Worker_RequestId UDTBManager::SendCreateEntityRequest(USpatialActorChannel* Chan
 
 Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel)
 {
-	std::string ClientWorkerIdString = "CAPIClient42";//TCHAR_TO_UTF8(*ClientWorkerId);
+	std::string ClientWorkerIdString = TCHAR_TO_UTF8(*ClientWorkerId);
 
 	WorkerAttributeSet WorkerAttribute = {"CAPIWorker"};
 	WorkerAttributeSet ClientAttribute = {"CAPIClient"};
@@ -424,10 +445,14 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 	WorkerRequirementSet WorkersOnly = {WorkerAttribute};
 	WorkerRequirementSet ClientsOnly = {ClientAttribute};
 	WorkerRequirementSet OwningClientOnly = {OwningClientAttribute};
+
+	auto Actor = Channel->Actor;
+
 	WorkerRequirementSet AnyUnrealWorkerOrClient = {WorkerAttribute, ClientAttribute};
 	WorkerRequirementSet AnyUnrealWorkerOrOwningClient = {WorkerAttribute, OwningClientAttribute};
+	WorkerRequirementSet ReadAcl = Actor->IsA<APlayerController>() ? AnyUnrealWorkerOrOwningClient : AnyUnrealWorkerOrClient;
 
-	auto Info = FindClassInfoByClass(Channel->Actor->GetClass());
+	auto Info = FindClassInfoByClass(Actor->GetClass());
 	check(Info);
 
 	std::map<Worker_ComponentId, WorkerRequirementSet> ComponentWriteAcl;
@@ -443,14 +468,14 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 
 	std::string StaticPath;
 
-	if (Channel->Actor->IsFullNameStableForNetworking())
+	if (Actor->IsFullNameStableForNetworking())
 	{
-		StaticPath = TCHAR_TO_UTF8(*Channel->Actor->GetPathName(Channel->Actor->GetWorld()));
+		StaticPath = TCHAR_TO_UTF8(*Actor->GetPathName(Actor->GetWorld()));
 	}
 
 	uint32 CurrentOffset = 1;
 	std::map<std::string, std::uint32_t> SubobjectNameToOffset;
-	ForEachObjectWithOuter(Channel->Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+	ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
 	{
 		// Objects can only be allocated NetGUIDs if this is true.
 		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
@@ -463,7 +488,7 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 	std::vector<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.push_back(CreatePositionData(PositionData(LocationToCAPIPosition(Position))));
 	ComponentDatas.push_back(CreateMetadataData(MetadataData(TCHAR_TO_UTF8(*Metadata))));
-	ComponentDatas.push_back(CreateEntityAclData(EntityAclData(AnyUnrealWorkerOrOwningClient, ComponentWriteAcl)));
+	ComponentDatas.push_back(CreateEntityAclData(EntityAclData(ReadAcl, ComponentWriteAcl)));
 	ComponentDatas.push_back(CreatePersistenceData(PersistenceData()));
 	ComponentDatas.push_back(CreateUnrealMetadataData(UnrealMetadataData(StaticPath, ClientWorkerIdString, SubobjectNameToOffset)));
 
