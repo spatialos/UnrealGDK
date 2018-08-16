@@ -80,7 +80,8 @@ bool CreateSingletonToIdMap(PathNameToEntityIdMap& SingletonNameToEntityId)
 {
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
-		if (It->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+		// Find all singleton, non-skeleton classes
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive) == false)
 		{
 			// Id is initially 0 to indicate that this Singleton entity has not been created yet.
 			// When the worker authoritative over the GSM sees 0, it knows it is safe to create it.

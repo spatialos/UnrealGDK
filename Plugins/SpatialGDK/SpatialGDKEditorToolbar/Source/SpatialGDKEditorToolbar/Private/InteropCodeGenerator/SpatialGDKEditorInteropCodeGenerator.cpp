@@ -73,6 +73,18 @@ bool CheckClassNameListValidity(const TArray<UClass*>& Classes)
 			}
 		}
 	}
+
+	// Ensure class conforms to schema uppercase letter check
+	for (auto& Class : Classes)
+	{
+		FString ClassName = Class->GetName();
+		TCHAR& FirstChar = ClassName[0];
+		if (FirstChar < 'A' || FirstChar > 'Z')
+		{
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("SpatialType class begins with lowercase letter: %s. Schema not generated"), *ClassName);
+			return false;
+		}
+	}
 	return true;
 }
 }// ::
@@ -130,7 +142,11 @@ bool SpatialGDKGenerateInteropCode()
 
 		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings))
 		{
-			InteropGeneratedClasses.Add(*It);
+			// Ensure we don't process skeleton classes
+			if (It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive) == false)
+			{
+				InteropGeneratedClasses.Add(*It);
+			}
 		}
 	}
 
