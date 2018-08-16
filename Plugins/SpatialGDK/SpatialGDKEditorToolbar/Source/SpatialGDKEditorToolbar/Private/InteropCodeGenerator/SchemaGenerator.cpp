@@ -300,10 +300,18 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 					ReliableMulticasts.Add(FString::Printf(TEXT("%s::%s"), *GetFullCPPName(Class), *RPC->Function->GetName()));
 				}
 
-				Writer.Printf("event %s.%s %s;",
-					*UnrealNameToSchemaTypeName(*RPC->Function->GetOuter()->GetName()).ToLower(),
-					*SchemaRPCRequestType(RPC->Function),
-					*SchemaRPCName(Class, RPC->Function));
+				if (Class->GetName() == TEXT("DTBActor"))
+				{
+					Writer.Printf("event UnrealRPCCommandRequest %s;",
+						*SchemaRPCName(Class, RPC->Function));
+				}
+				else
+				{
+					Writer.Printf("event %s.%s %s;",
+						*UnrealNameToSchemaTypeName(*RPC->Function->GetOuter()->GetName()).ToLower(),
+						*SchemaRPCRequestType(RPC->Function),
+						*SchemaRPCName(Class, RPC->Function));
+				}
 			}
 			else
 			{

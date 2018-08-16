@@ -212,11 +212,17 @@ void UDTBManager::OnCommandRequest(Worker_CommandRequestOp& Op)
 		FMemory::Memzero(Parms, Function->ParmsSize);
 
 		UObject* TargetObject = nullptr;
-		ReadRPCCommandRequest(Op.request, Op.entity_id, Function, PackageMap, Interop->GetNetDriver(), TargetObject, Parms);
+		ReceiveRPCCommandRequest(Op.request, Op.entity_id, Function, PackageMap, Interop->GetNetDriver(), TargetObject, Parms);
 
 		if (TargetObject)
 		{
 			TargetObject->ProcessEvent(Function, Parms);
+		}
+
+		// Destroy the parameters.
+		for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+		{
+			It->DestroyValue_InContainer(Parms);
 		}
 	}
 	else if (Op.request.component_id == SPECIAL_SPAWNER_COMPONENT_ID && CommandIndex == 1)
@@ -343,6 +349,9 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 			UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping MulticastRPC component because we're a server."));
 			return;
 		}
+		check(ActorChannel);
+		auto& RPCArray = Info->RPCs.FindChecked(ARPC_NetMulticast);
+		ReceiveMulticastUpdate(Op.update, Op.entity_id, RPCArray, PackageMap, Interop->GetNetDriver());
 	}
 	else
 	{
@@ -525,13 +534,22 @@ void UDTBManager::SendRPC(UObject* TargetObject, UFunction* Function, void* Para
 	case ARPC_Server:
 	case ARPC_CrossServer:
 	{
-		Worker_EntityId EntityId;
+		Worker_EntityId EntityId = 0;
 		auto CommandRequest = CreateRPCCommandRequest(TargetObject, Function, Parameters, PackageMap, Interop->GetNetDriver(), Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId);
+		check(EntityId > 0);
 		Worker_CommandParameters CommandParams = {};
 		Worker_Connection_SendCommandRequest(Connection, EntityId, &CommandRequest, RPCInfo->Index + 1, nullptr, &CommandParams);
 		break;
 	}
 	case ARPC_NetMulticast:
+	{
+		Worker_EntityId EntityId = 0;
+		auto ComponentUpdate = CreateMulticastUpdate(TargetObject, Function, Parameters, PackageMap, Interop->GetNetDriver(), Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId);
+		check(EntityId > 0);
+		Worker_Connection_SendComponentUpdate(Connection, EntityId, &ComponentUpdate);
+		break;
+	}
+	default:
 		break;
 	}
 }

@@ -817,7 +817,7 @@ Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* 
 	return CommandRequest;
 }
 
-void ReadRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worker_EntityId& EntityId, UFunction* Function, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, UObject*& OutTargetObject, void* Data)
+void ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worker_EntityId EntityId, UFunction* Function, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, UObject*& OutTargetObject, void* Data)
 {
 	auto RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
@@ -844,4 +844,86 @@ void ReadRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worker_E
 	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Data);
 
 	// TODO: Check for unresolved objects in the payload
+}
+
+Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId)
+{
+	Worker_ComponentUpdate ComponentUpdate = {};
+
+	ComponentUpdate.component_id = ComponentId;
+	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+	auto EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
+	auto EventData = Schema_AddObject(EventsObject, EventIndex);
+
+	auto TargetObjectRef = UnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
+	if (TargetObjectRef == UNRESOLVED_OBJECT_REF)
+	{
+		// TODO: Handle RPC to unresolved object
+		checkNoEntry();
+	}
+
+	Schema_AddUint32(EventData, 1, TargetObjectRef.Offset);
+	OutEntityId = TargetObjectRef.Entity;
+
+	TSet<const UObject*> UnresolvedObjects;
+	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
+
+	TSharedPtr<FRepLayout> RepLayout = Driver->GetFunctionRepLayout(Function);
+	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
+
+	// TODO: Check for unresolved objects in the payload
+
+	Schema_AddString(EventData, 2, std::string(reinterpret_cast<char*>(PayloadWriter.GetData()), PayloadWriter.GetNumBytes()));
+
+	return ComponentUpdate;
+}
+
+void ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, Worker_EntityId EntityId, const TArray<UFunction*>& RPCArray, USpatialPackageMapClient* PackageMap, UNetDriver* Driver)
+{
+	auto EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
+
+	for (Schema_FieldId EventIndex = 1; (int)EventIndex <= RPCArray.Num(); EventIndex++)
+	{
+		auto Function = RPCArray[EventIndex - 1];
+		for (uint32 i = 0; i < Schema_GetObjectCount(EventsObject, EventIndex); i++)
+		{
+			uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
+			FMemory::Memzero(Parms, Function->ParmsSize);
+
+			auto EventData = Schema_IndexObject(EventsObject, EventIndex, i);
+
+			UnrealObjectRef TargetObjectRef;
+			TargetObjectRef.Entity = EntityId;
+			TargetObjectRef.Offset = Schema_GetUint32(EventData, 1);
+
+			FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef.ToCppAPI());
+			if (!TargetNetGUID.IsValid())
+			{
+				// TODO: Handle RPC to unresolved object
+				checkNoEntry();
+			}
+
+			auto TargetObject = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+			checkf(TargetObject, TEXT("Object Ref %s (NetGUID %s) does not correspond to a UObject."), *TargetObjectRef.ToString(), *TargetNetGUID.ToString());
+
+			auto PayloadData = Schema_GetString(EventData, 2);
+			// A bit hacky, we should probably include the number of bits with the data instead.
+			int64 CountBits = PayloadData.size() * 8;
+			FSpatialNetBitReader PayloadReader(PackageMap, (uint8*)PayloadData.data(), CountBits);
+
+			TSharedPtr<FRepLayout> RepLayout = Driver->GetFunctionRepLayout(Function);
+			RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
+
+			// TODO: Check for unresolved objects in the payload
+
+			TargetObject->ProcessEvent(Function, Parms);
+
+			// Destroy the parameters.
+			// warning: highly dependent on UObject::ProcessEvent freeing of parms!
+			for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+			{
+				It->DestroyValue_InContainer(Parms);
+			}
+		}
+	}
 }
