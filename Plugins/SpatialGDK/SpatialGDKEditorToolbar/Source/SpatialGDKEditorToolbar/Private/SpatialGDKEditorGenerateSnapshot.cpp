@@ -80,13 +80,22 @@ bool CreateSingletonToIdMap(PathNameToEntityIdMap& SingletonNameToEntityId)
 {
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
-		// Find all singleton, non-skeleton classes
-		if (It->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive) == false)
+		// Find all singleton classes
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) == false)
 		{
-			// Id is initially 0 to indicate that this Singleton entity has not been created yet.
-			// When the worker authoritative over the GSM sees 0, it knows it is safe to create it.
-			SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*It->GetPathName())), 0);
+			continue;
 		}
+
+		// Ensure we don't process skeleton or reinitialised classes
+		if (	It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
+			||	It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
+		{
+			continue;
+		}
+
+		// Id is initially 0 to indicate that this Singleton entity has not been created yet.
+		// When the worker authoritative over the GSM sees 0, it knows it is safe to create it.
+		SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*It->GetPathName())), 0);
 	}
 
 	return true;
