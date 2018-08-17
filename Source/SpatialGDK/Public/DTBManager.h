@@ -79,14 +79,14 @@ public:
 
 	void SendSpatialPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 
-	void SendComponentUpdates(const struct FPropertyChangeState& Changes, USpatialActorChannel* Channel);
+	void SendComponentUpdates(UObject* Object, const struct FPropertyChangeState& Changes, USpatialActorChannel* Channel);
 
 	void SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters);
 
 	void Tick();
 
-	void ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, int16 Handle);
-	void QueueOutgoingRepUpdate(USpatialActorChannel* DependentChannel, int16 Handle, const TSet<const UObject*>& UnresolvedObjects);
+	void ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle);
+	void QueueOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<const UObject*>& UnresolvedObjects);
 
 	void ResolvePendingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
 	void ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef);
@@ -94,9 +94,11 @@ public:
 	void ResolveOutgoingOperations(UObject* Object);
 
 	// There's gotta be a better way to do this
-	using UnresolvedEntry = TSharedPtr<TSet<const UObject*>>;
-	using FHandleToUnresolved = TMap<uint16, UnresolvedEntry>;
-	using FChannelToHandleToUnresolved = TMap<USpatialActorChannel*, FHandleToUnresolved>;
+	using FChannelObjectPair = TPair<USpatialActorChannel*, UObject*>;
+
+	using FUnresolvedEntry = TSharedPtr<TSet<const UObject*>>;
+	using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;
+	using FChannelToHandleToUnresolved = TMap<FChannelObjectPair, FHandleToUnresolved>;
 	using FOutgoingRepUpdates = TMap<const UObject*, FChannelToHandleToUnresolved>;
 
 	FChannelToHandleToUnresolved PropertyToUnresolved;

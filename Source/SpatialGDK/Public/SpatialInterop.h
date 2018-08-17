@@ -169,7 +169,7 @@ public:
 	worker::RequestId<worker::DeleteEntityRequest> SendDeleteEntityRequest(const FEntityId& EntityId);
 	void SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location, const AActor* Actor);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
-	void SendSpatialUpdateSubobject(USpatialActorChannel* Channel, UObject* Subobject, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
+	void SendSpatialUpdateForObject(USpatialActorChannel* Channel, UObject* Object, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged, FObjectReplicator* Replicator = nullptr);
 	void InvokeRPC(UObject* TargetObject, UFunction* Function, void* Parameters);
 	void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp);
 

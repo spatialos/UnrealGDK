@@ -248,30 +248,23 @@ void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const
 
 void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
-	if (Channel->Actor->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
-	{
-		DTBManager->SendComponentUpdates(Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
-		return;
-	}
-
-	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Channel->Actor->GetClass());
-	if (!Binding)
-	{
-		//UE_LOG(LogSpatialGDKInterop, Warning, TEXT("SpatialUpdateInterop: Trying to send Spatial update on unsupported class %s."),
-		//	*Channel->Actor->GetClass()->GetName());
-		return;
-	}
-	Binding->SendComponentUpdates(Channel->GetChangeState(RepChanged, HandoverChanged), Channel, Channel->GetEntityId());
+	SendSpatialUpdateForObject(Channel, Channel->Actor, RepChanged, HandoverChanged, Channel->ActorReplicator);
 }
 
-void USpatialInterop::SendSpatialUpdateSubobject(USpatialActorChannel* Channel, UObject* Subobject, FObjectReplicator* replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
+void USpatialInterop::SendSpatialUpdateForObject(USpatialActorChannel* Channel, UObject* Object, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged, FObjectReplicator* Replicator)
 {
-	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Subobject->GetClass());
+	if (Object->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
+	{
+		DTBManager->SendComponentUpdates(Object, Channel->GetChangeStateForObject(Object, Replicator, RepChanged, HandoverChanged), Channel);
+		return;
+	}
+
+	const USpatialTypeBinding* Binding = GetTypeBindingByClass(Object->GetClass());
 	if (!Binding)
 	{
 		return;
 	}
-	Binding->SendComponentUpdates(Channel->GetChangeStateSubobject(Subobject, replicator, RepChanged, HandoverChanged), Channel, Channel->GetEntityId());
+	Binding->SendComponentUpdates(Channel->GetChangeStateForObject(Object, Replicator, RepChanged, HandoverChanged), Channel, Channel->GetEntityId());
 }
 
 void USpatialInterop::InvokeRPC(UObject* TargetObject, UFunction* Function, void* Parameters)

@@ -76,8 +76,15 @@ public:
 		};
 	}
 
-	FORCEINLINE FPropertyChangeState GetChangeStateSubobject(UObject* Obj, FObjectReplicator* Replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged) const
+	FORCEINLINE FPropertyChangeState GetChangeStateForObject(UObject* Obj, FObjectReplicator* Replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 	{
+		if (!Replicator)
+		{
+			auto WeakObjectPtr = TWeakObjectPtr<UObject>(Obj);
+			check(ObjectHasReplicator(WeakObjectPtr));
+			Replicator = &FindOrCreateReplicator(WeakObjectPtr).Get();
+		}
+
 		return {
 			(uint8*)Obj,
 			RepChanged,
@@ -98,6 +105,9 @@ public:
 	bool ReplicateSubobject(UObject *Obj, const FReplicationFlags &RepFlags);
 	FPropertyChangeState CreateSubobjectChangeState(UActorComponent* Component);
 	TArray<uint16> GetAllPropertyHandles(FObjectReplicator& Replicator);
+
+	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an array.
+	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
 
 	// Called by SpatialInterop when receiving an update.
 	void PreReceiveSpatialUpdate(UObject* TargetObject);

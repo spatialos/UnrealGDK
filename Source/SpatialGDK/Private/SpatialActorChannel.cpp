@@ -178,13 +178,23 @@ TArray<uint16> USpatialActorChannel::GetAllPropertyHandles(FObjectReplicator& Re
 	return InitialRepChanged;
 }
 
+bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
+{
+	auto WeakObjectPtr = TWeakObjectPtr<UObject>(Object);
+	check(ObjectHasReplicator(WeakObjectPtr));
+	auto& Replicator = FindOrCreateReplicator(WeakObjectPtr).Get();
+	auto& RepLayout = Replicator.RepLayout;
+	check(Handle - 1 < RepLayout->BaseHandleToCmdIndex.Num());
+	return RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == REPCMD_DynamicArray;
+}
+
 FPropertyChangeState USpatialActorChannel::CreateSubobjectChangeState(UActorComponent* Component)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Component)).Get();
 
 	TArray<uint16> InitialRepChanged = GetAllPropertyHandles(Replicator);
 
-	return GetChangeStateSubobject(Component, &Replicator, InitialRepChanged, TArray<uint16>());
+	return GetChangeStateForObject(Component, &Replicator, InitialRepChanged, TArray<uint16>());
 }
 
 bool USpatialActorChannel::ReplicateActor()
@@ -449,7 +459,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, const FReplicationFl
 	{
 		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 		check(Interop);
-		Interop->SendSpatialUpdateSubobject(this, Obj, &Replicator, RepChanged, TArray<uint16>());
+		Interop->SendSpatialUpdateForObject(this, Obj, RepChanged, TArray<uint16>(), &Replicator);
 		Replicator.RepState->HistoryEnd++;
 	}
 

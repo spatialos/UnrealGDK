@@ -519,12 +519,12 @@ void UDTBManager::SendSpatialPositionUpdate(Worker_EntityId EntityId, const FVec
 	Worker_Connection_SendComponentUpdate(Connection, EntityId, &ComponentUpdate);
 }
 
-void UDTBManager::SendComponentUpdates(const FPropertyChangeState& Changes, USpatialActorChannel* Channel)
+void UDTBManager::SendComponentUpdates(UObject* Object, const FPropertyChangeState& Changes, USpatialActorChannel* Channel)
 {
 	Worker_EntityId EntityId = Channel->GetEntityId().ToSpatialEntityId();
-	UE_LOG(LogTemp, Verbose, TEXT("!!! Sending component update (actor: %s, entity: %lld)"), *Channel->Actor->GetName(), EntityId);
+	UE_LOG(LogTemp, Verbose, TEXT("!!! Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
-	auto Info = FindClassInfoByClass(Channel->Actor->GetClass());
+	auto Info = FindClassInfoByClass(Object->GetClass());
 	check(Info);
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
@@ -537,11 +537,11 @@ void UDTBManager::SendComponentUpdates(const FPropertyChangeState& Changes, USpa
 
 	for (auto Handle : Changes.RepChanged)
 	{
-		ResetOutgoingRepUpdate(Channel, Handle);
+		ResetOutgoingRepUpdate(Channel, Object, Handle);
 
 		if (auto UnresolvedObjects = UnresolvedObjectsMap.Find(Handle))
 		{
-			QueueOutgoingRepUpdate(Channel, Handle, *UnresolvedObjects);
+			QueueOutgoingRepUpdate(Channel, Object, Handle, *UnresolvedObjects);
 		}
 	}
 
@@ -668,31 +668,34 @@ void UDTBManager::Tick()
 	Worker_OpList_Destroy(OpList);
 }
 
-void UDTBManager::ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, int16 Handle)
+void UDTBManager::ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle)
 {
 	check(DependentChannel);
+	check(ReplicatedObject);
+	auto ChannelObjectPair = FChannelObjectPair(DependentChannel, ReplicatedObject);
 
-	auto HandleToUnresolved = PropertyToUnresolved.Find(DependentChannel);
+	auto HandleToUnresolved = PropertyToUnresolved.Find(ChannelObjectPair);
 	if (!HandleToUnresolved) return;
 
 	auto UnresolvedPtr = HandleToUnresolved->Find(Handle);
 	if (!UnresolvedPtr) return;
 
-	UnresolvedEntry& Unresolved = *UnresolvedPtr;
+	FUnresolvedEntry& Unresolved = *UnresolvedPtr;
 
 	check(Unresolved.IsValid());
 
-	UE_LOG(LogTemp, Log, TEXT("!!! Resetting pending outgoing array depending on channel: %s, handle: %d."), *DependentChannel->GetName(), Handle);
+	UE_LOG(LogTemp, Log, TEXT("!!! Resetting pending outgoing array depending on channel: %s, object: %s, handle: %d."),
+		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
 
 	for (auto UnresolvedObject : *Unresolved)
 	{
 		auto& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
-		auto& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(DependentChannel);
+		auto& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
 
 		OtherHandleToUnresolved.Remove(Handle);
 		if (OtherHandleToUnresolved.Num() == 0)
 		{
-			ChannelToUnresolved.Remove(DependentChannel);
+			ChannelToUnresolved.Remove(ChannelObjectPair);
 			if (ChannelToUnresolved.Num() == 0)
 			{
 				ObjectToUnresolved.Remove(UnresolvedObject);
@@ -703,27 +706,29 @@ void UDTBManager::ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel,
 	HandleToUnresolved->Remove(Handle);
 	if (HandleToUnresolved->Num() == 0)
 	{
-		PropertyToUnresolved.Remove(DependentChannel);
+		PropertyToUnresolved.Remove(ChannelObjectPair);
 	}
 }
 
-void UDTBManager::QueueOutgoingRepUpdate(USpatialActorChannel* DependentChannel, int16 Handle, const TSet<const UObject*>& UnresolvedObjects)
+void UDTBManager::QueueOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<const UObject*>& UnresolvedObjects)
 {
 	check(DependentChannel);
+	check(ReplicatedObject);
+	auto ChannelObjectPair = FChannelObjectPair(DependentChannel, ReplicatedObject);
 
-	UE_LOG(LogTemp, Log, TEXT("!!! Added pending outgoing property: channel: %s, handle: %d. Depending on objects:"),
-		*DependentChannel->GetName(), Handle);
+	UE_LOG(LogTemp, Log, TEXT("!!! Added pending outgoing property: channel: %s, object: %s, handle: %d. Depending on objects:"),
+		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
 
 	auto Unresolved = MakeShared<TSet<const UObject*>>();
 	*Unresolved = UnresolvedObjects;
 
-	auto& HandleToUnresolved = PropertyToUnresolved.FindOrAdd(DependentChannel);
+	auto& HandleToUnresolved = PropertyToUnresolved.FindOrAdd(ChannelObjectPair);
 	check(!HandleToUnresolved.Find(Handle));
 	HandleToUnresolved.Add(Handle, Unresolved);
 
 	for (auto UnresolvedObject : UnresolvedObjects)
 	{
-		auto& AnotherHandleToUnresolved = ObjectToUnresolved.FindOrAdd(UnresolvedObject).FindOrAdd(DependentChannel);
+		auto& AnotherHandleToUnresolved = ObjectToUnresolved.FindOrAdd(UnresolvedObject).FindOrAdd(ChannelObjectPair);
 		check(!AnotherHandleToUnresolved.Find(Handle));
 		AnotherHandleToUnresolved.Add(Handle, Unresolved);
 
@@ -757,7 +762,9 @@ void UDTBManager::ResolveOutgoingOperations(UObject* Object)
 
 	for (auto& ChannelProperties : *ChannelToUnresolved)
 	{
-		auto DependentChannel = ChannelProperties.Key;
+		auto& ChannelObjectPair = ChannelProperties.Key;
+		auto DependentChannel = ChannelObjectPair.Key;
+		auto ReplicatingObject = ChannelObjectPair.Value;
 		auto& HandleToUnresolved = ChannelProperties.Value;
 
 		TArray<uint16> PropertyHandles;
@@ -773,18 +780,17 @@ void UDTBManager::ResolveOutgoingOperations(UObject* Object)
 				PropertyHandles.Add(Handle);
 
 				// Hack to figure out if this property is an array to add extra handles
-				auto& RepLayout = DependentChannel->ActorReplicator->RepLayout;
-				if (RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == REPCMD_DynamicArray)
+				if (DependentChannel->IsDynamicArrayHandle(ReplicatingObject, Handle))
 				{
 					PropertyHandles.Add(0);
 					PropertyHandles.Add(0);
 				}
 
-				auto& AnotherHandleToUnresolved = PropertyToUnresolved.FindChecked(DependentChannel);
+				auto& AnotherHandleToUnresolved = PropertyToUnresolved.FindChecked(ChannelObjectPair);
 				AnotherHandleToUnresolved.Remove(Handle);
 				if (AnotherHandleToUnresolved.Num() == 0)
 				{
-					PropertyToUnresolved.Remove(DependentChannel);
+					PropertyToUnresolved.Remove(ChannelObjectPair);
 				}
 			}
 		}
@@ -794,7 +800,7 @@ void UDTBManager::ResolveOutgoingOperations(UObject* Object)
 			// End with zero to indicate the end of the list of handles.
 			PropertyHandles.Add(0);
 
-			SendComponentUpdates(DependentChannel->GetChangeState(PropertyHandles, TArray<uint16>()), DependentChannel);
+			Interop->SendSpatialUpdateForObject(DependentChannel, ReplicatingObject, PropertyHandles, TArray<uint16>());
 		}
 	}
 
