@@ -481,6 +481,7 @@ void FSpatialGDKEditorToolbarModule::CacheSpatialObjects(uint32 SpatialFlags)
 			{
 				FString ObjectPath = It.ObjectPath.ToString() + TEXT("_C");
 				UClass* LoadedClass = LoadObject<UClass>(nullptr, *ObjectPath, nullptr, LOAD_EditorOnly, nullptr);
+				UE_LOG(LogSpatialGDKEditor, Log, TEXT("Found spatial blueprint class `%s`."), *ObjectPath);
 				if (LoadedClass == nullptr)
 				{
 					FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Error: Failed to load blueprint %s."), *ObjectPath)));

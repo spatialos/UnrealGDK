@@ -78,8 +78,7 @@ bool CheckClassNameListValidity(const TArray<UClass*>& Classes)
 	for (auto& Class : Classes)
 	{
 		FString ClassName = Class->GetName();
-		TCHAR& FirstChar = ClassName[0];
-		if (FirstChar < 'A' || FirstChar > 'Z')
+		if (FChar::IsLower(ClassName[0]))
 		{
 			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("SpatialType class begins with lowercase letter: %s. Schema not generated"), *ClassName);
 			return false;
@@ -135,19 +134,19 @@ bool SpatialGDKGenerateInteropCode()
 	TArray<UClass*> InteropGeneratedClasses;
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
-		if (*It == UObject::StaticClass())
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings) == false)
 		{
 			continue;
 		}
 
-		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings))
+		// Ensure we don't process skeleton or reinitialised classes
+		if (	It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
+			||	It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive)))
 		{
-			// Ensure we don't process skeleton classes
-			if (It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive) == false)
-			{
-				InteropGeneratedClasses.Add(*It);
-			}
+			continue;
 		}
+
+		InteropGeneratedClasses.Add(*It);
 	}
 
 	if (!CheckClassNameListValidity(InteropGeneratedClasses))

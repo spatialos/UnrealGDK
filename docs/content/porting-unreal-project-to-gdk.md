@@ -163,7 +163,7 @@ For more information on helper scripts, see [Helper scripts](https://github.com/
     ```
 1. Locate your game's `GameMode`, and make it a private singleton:
     ```
-    UCLASS(SpatialType=Singleton,ServerOnly)
+    UCLASS(SpatialType=(Singleton,ServerOnly))
     ```
     
 1. Open your UnrealWorker worker config located in `<ProjectRoot>\spatial\workers\unreal\spatialos.UnrealWorker.worker.json`. Add your new Singleton generated component(s) to the streaming queries.
