@@ -141,7 +141,7 @@ bool SpatialGDKGenerateInteropCode()
 
 		// Ensure we don't process skeleton or reinitialised classes
 		if (	It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
-			||	It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive)))
+			||	It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
 		{
 			continue;
 		}
