@@ -52,6 +52,8 @@ public:
 	void Remove<#= unrealComponent.CapitalisedName #>ComponentOp(const worker::RemoveComponentOp& Op);
 <# } #>
 
+	FORCEINLINE bool IsInitialized() { return bInitialised; }
+
 private:
 	UPROPERTY()
 	UEntityPipelineBlock* FirstBlock;
