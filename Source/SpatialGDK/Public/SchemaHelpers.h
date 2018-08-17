@@ -8,6 +8,8 @@
 #include <map>
 #include <vector>
 
+#include "SpatialConstants.h"
+
 FORCEINLINE void Schema_AddString(Schema_Object* Object, Schema_FieldId Id, const std::string& Value)
 {
 	std::uint32_t StringLength = Value.size();
@@ -349,11 +351,82 @@ enum EAlsoReplicatedPropertyGroup
 	AGROUP_MultiClient
 };
 
+struct UnrealObjectRef
+{
+	UnrealObjectRef() = default;
+	UnrealObjectRef(const UnrealObjectRef& In)
+		: Entity(In.Entity)
+		, Offset(In.Offset)
+		, Path(In.Path ? new std::string(*In.Path) : nullptr)
+		, Outer(In.Outer ? new UnrealObjectRef(*In.Outer) : nullptr)
+	{}
+
+	UnrealObjectRef(const improbable::unreal::UnrealObjectRef& In)
+		: Entity(In.entity())
+		, Offset(In.offset())
+		, Path(In.path() ? new std::string(*In.path()) : nullptr)
+		, Outer(In.outer() ? new UnrealObjectRef(*In.outer()) : nullptr)
+	{}
+
+	FORCEINLINE UnrealObjectRef& operator=(const UnrealObjectRef& In)
+	{
+		Entity = In.Entity;
+		Offset = In.Offset;
+		Path.reset(In.Path ? new std::string(*In.Path) : nullptr);
+		Outer.reset(In.Outer ? new UnrealObjectRef(*In.Outer) : nullptr);
+		return *this;
+	}
+
+	FORCEINLINE improbable::unreal::UnrealObjectRef ToCppAPI() const
+	{
+		improbable::unreal::UnrealObjectRef CppAPIRef;
+		CppAPIRef.set_entity(Entity);
+		CppAPIRef.set_offset(Offset);
+		if (Path)
+		{
+			CppAPIRef.set_path(*Path);
+		}
+		if (Outer)
+		{
+			CppAPIRef.set_outer(Outer->ToCppAPI());
+		}
+		return CppAPIRef;
+	}
+
+	FORCEINLINE FString ToString() const
+	{
+		return FString::Printf(TEXT("(entity ID: %lld, offset: %u)"), Entity, Offset);
+	}
+
+	FORCEINLINE bool operator==(const UnrealObjectRef& Other) const
+	{
+		return Entity == Other.Entity &&
+			   Offset == Other.Offset &&
+			   ((!Path && !Other.Path) || (Path && Other.Path && *Path == *Other.Path)) &&
+			   ((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer));
+	}
+
+	FORCEINLINE bool operator!=(const UnrealObjectRef& Other) const
+	{
+		return !operator==(Other);
+	}
+
+	Worker_EntityId Entity;
+	std::uint32_t Offset;
+	std::unique_ptr<std::string> Path;
+	std::unique_ptr<UnrealObjectRef> Outer;
+};
+
+const UnrealObjectRef NULL_OBJECT_REF = UnrealObjectRef(SpatialConstants::NULL_OBJECT_REF);
+const UnrealObjectRef UNRESOLVED_OBJECT_REF = UnrealObjectRef(SpatialConstants::UNRESOLVED_OBJECT_REF);
+
+using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
+
 void ReadDynamicData(const Worker_ComponentData& ComponentData, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup);
 void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup);
 
 Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup);
-Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething);
+Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FUnresolvedObjectsMap& UnresolvedObjectsMap, bool& bWroteSomething);
 
 Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId);
 void ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worker_EntityId EntityId, UFunction* Function, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, UObject*& OutTargetObject, void* Data);

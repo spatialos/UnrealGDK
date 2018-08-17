@@ -8,75 +8,6 @@
 
 #include <set>
 
-struct UnrealObjectRef
-{
-	UnrealObjectRef() = default;
-	UnrealObjectRef(const UnrealObjectRef& In)
-		: Entity(In.Entity)
-		, Offset(In.Offset)
-		, Path(In.Path ? new std::string(*In.Path) : nullptr)
-		, Outer(In.Outer ? new UnrealObjectRef(*In.Outer) : nullptr)
-	{}
-
-	UnrealObjectRef(const improbable::unreal::UnrealObjectRef& In)
-		: Entity(In.entity())
-		, Offset(In.offset())
-		, Path(In.path() ? new std::string(*In.path()) : nullptr)
-		, Outer(In.outer() ? new UnrealObjectRef(*In.outer()) : nullptr)
-	{}
-
-	UnrealObjectRef& operator=(const UnrealObjectRef& In)
-	{
-		Entity = In.Entity;
-		Offset = In.Offset;
-		Path.reset(In.Path ? new std::string(*In.Path) : nullptr);
-		Outer.reset(In.Outer ? new UnrealObjectRef(*In.Outer) : nullptr);
-		return *this;
-	}
-
-	improbable::unreal::UnrealObjectRef ToCppAPI() const
-	{
-		improbable::unreal::UnrealObjectRef CppAPIRef;
-		CppAPIRef.set_entity(Entity);
-		CppAPIRef.set_offset(Offset);
-		if (Path)
-		{
-			CppAPIRef.set_path(*Path);
-		}
-		if (Outer)
-		{
-			CppAPIRef.set_outer(Outer->ToCppAPI());
-		}
-		return CppAPIRef;
-	}
-
-	FString ToString() const
-	{
-		return FString::Printf(TEXT("(entity ID: %lld, offset: %u)"), Entity, Offset);
-	}
-
-	bool operator==(const UnrealObjectRef& Other) const
-	{
-		return Entity == Other.Entity &&
-			   Offset == Other.Offset &&
-			   ((!Path && !Other.Path) || (Path && Other.Path && *Path == *Other.Path)) &&
-			   ((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer));
-	}
-
-	bool operator!=(const UnrealObjectRef& Other) const
-	{
-		return !operator==(Other);
-	}
-
-	Worker_EntityId Entity;
-	std::uint32_t Offset;
-	std::unique_ptr<std::string> Path;
-	std::unique_ptr<UnrealObjectRef> Outer;
-};
-
-const UnrealObjectRef NULL_OBJECT_REF = UnrealObjectRef(SpatialConstants::NULL_OBJECT_REF);
-const UnrealObjectRef UNRESOLVED_OBJECT_REF = UnrealObjectRef(SpatialConstants::UNRESOLVED_OBJECT_REF);
-
 void Schema_AddObjectRef(Schema_Object* Object, Schema_FieldId Id, const UnrealObjectRef& ObjectRef)
 {
 	auto ObjectRefObject = Schema_AddObject(Object, Id);
@@ -256,12 +187,11 @@ void RepLayout_ReceivePropertiesForRPC(FRepLayout& RepLayout, FNetBitReader& Rea
 	//Reader.PackageMap->ResetTrackedGuids(false);
 }
 
-void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Property, const uint8* Data, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, std::vector<Schema_FieldId>* ClearedIds)
+void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Property, const uint8* Data, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, TSet<const UObject*>& UnresolvedObjects, std::vector<Schema_FieldId>* ClearedIds)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
 		UScriptStruct* Struct = StructProperty->Struct;
-		TSet<const UObject*> UnresolvedObjects;
 		FSpatialNetBitWriter ValueDataWriter(PackageMap, UnresolvedObjects);
 		bool bHasUnmapped = false;
 
@@ -349,7 +279,7 @@ void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Pro
 			{
 				// A legal static object reference should never be unresolved.
 				check(!ObjectValue->IsFullNameStableForNetworking());
-				// TODO: Queue up unresolved object
+				UnresolvedObjects.Add(ObjectValue);
 				ObjectRef = NULL_OBJECT_REF;
 			}
 		}
@@ -373,7 +303,7 @@ void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Pro
 		FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 		for (int i = 0; i < ArrayHelper.Num(); i++)
 		{
-			Schema_AddProperty(Object, Id, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), PackageMap, Driver, ClearedIds);
+			Schema_AddProperty(Object, Id, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), PackageMap, Driver, UnresolvedObjects, ClearedIds);
 		}
 
 		if (ArrayHelper.Num() == 0 && ClearedIds)
@@ -389,7 +319,7 @@ void Schema_AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Pro
 		}
 		else
 		{
-			Schema_AddProperty(Object, Id, EnumProperty->GetUnderlyingProperty(), Data, PackageMap, Driver, ClearedIds);
+			Schema_AddProperty(Object, Id, EnumProperty->GetUnderlyingProperty(), Data, PackageMap, Driver, UnresolvedObjects, ClearedIds);
 		}
 	}
 	else
@@ -718,7 +648,7 @@ void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatia
 	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, Driver, PropertyGroup, true, ClearedIds);
 }
 
-bool Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, std::vector<Schema_FieldId>* ClearedIds = nullptr)
+bool Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FUnresolvedObjectsMap* UnresolvedObjectsMap = nullptr, std::vector<Schema_FieldId>* ClearedIds = nullptr)
 {
 	bool bWroteSomething = false;
 
@@ -735,10 +665,20 @@ bool Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyCha
 			if (GetAlsoGroupFromCondition(Parent.Condition) == PropertyGroup)
 			{
 				const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
+				TSet<const UObject*> UnresolvedObjects;
 
-				Schema_AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, PackageMap, Driver, ClearedIds);
+				Schema_AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, PackageMap, Driver, UnresolvedObjects, ClearedIds);
 
-				bWroteSomething = true;
+				if (UnresolvedObjects.Num() == 0)
+				{
+					bWroteSomething = true;
+				}
+				else if (UnresolvedObjectsMap)
+				{
+					Schema_ClearField(ComponentObject, HandleIterator.Handle);
+
+					UnresolvedObjectsMap->Add(HandleIterator.Handle, UnresolvedObjects);
+				}
 			}
 
 			if (Cmd.Type == REPCMD_DynamicArray)
@@ -772,7 +712,7 @@ Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const FPr
 	return ComponentData;
 }
 
-Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething)
+Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FUnresolvedObjectsMap& UnresolvedObjectsMap, bool& bWroteSomething)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -782,7 +722,7 @@ Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const
 
 	std::vector<Schema_FieldId> ClearedIds;
 
-	bWroteSomething = Schema_FillDynamicObject(ComponentObject, Changes, PackageMap, Driver, PropertyGroup, &ClearedIds);
+	bWroteSomething = Schema_FillDynamicObject(ComponentObject, Changes, PackageMap, Driver, PropertyGroup, &UnresolvedObjectsMap, &ClearedIds);
 
 	for (auto Id : ClearedIds)
 	{

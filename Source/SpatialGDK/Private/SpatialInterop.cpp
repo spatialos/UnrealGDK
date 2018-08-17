@@ -305,6 +305,8 @@ void USpatialInterop::ReceiveAddComponent(USpatialActorChannel* Channel, UAddCom
 
 void USpatialInterop::ResolvePendingOperations(UObject* Object, const improbable::unreal::UnrealObjectRef& ObjectRef)
 {
+	if (DTBManager) DTBManager->ResolvePendingOperations(Object, UnrealObjectRef(ObjectRef));
+
 	if (NetDriver->InteropPipelineBlock->IsInCriticalSection())
 	{
 		ResolvedObjectQueue.Add(TPair<UObject*, const improbable::unreal::UnrealObjectRef>{ Object, ObjectRef });

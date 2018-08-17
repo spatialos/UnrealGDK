@@ -9,6 +9,8 @@
 #include "improbable/c_worker.h"
 #include "improbable/c_schema.h"
 
+#include "SchemaHelpers.h"
+
 #include "DTBManager.generated.h"
 
 class USpatialActorChannel;
@@ -81,9 +83,26 @@ public:
 
 	void SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters);
 
-	void SendRPCCommand(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandId);
-
 	void Tick();
+
+	void ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, int16 Handle);
+	void QueueOutgoingRepUpdate(USpatialActorChannel* DependentChannel, int16 Handle, const TSet<const UObject*>& UnresolvedObjects);
+
+	void ResolvePendingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
+	void ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef);
+
+	void ResolveOutgoingOperations(UObject* Object);
+
+	// There's gotta be a better way to do this
+	using UnresolvedEntry = TSharedPtr<TSet<const UObject*>>;
+	using FHandleToUnresolved = TMap<uint16, UnresolvedEntry>;
+	using FChannelToHandleToUnresolved = TMap<USpatialActorChannel*, FHandleToUnresolved>;
+	using FOutgoingRepUpdates = TMap<const UObject*, FChannelToHandleToUnresolved>;
+
+	FChannelToHandleToUnresolved PropertyToUnresolved;
+	FOutgoingRepUpdates ObjectToUnresolved;
+
+	TArray<TPair<UObject*, UnrealObjectRef>> ResolvedObjectQueue;
 
 	TMap<UClass*, ClassInfo> ClassInfoMap;
 	TMap<Worker_ComponentId, UClass*> ComponentToClassMap;
