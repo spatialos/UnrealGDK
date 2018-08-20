@@ -4,8 +4,12 @@
 #include "SchemaGenerator.h"
 #include "TypeStructure.h"
 
+#include "SpatialGDKEditorToolbarSettings.h"
+
 #include "Utils/CodeWriter.h"
 #include "Utils/DataTypeUtilities.h"
+#include "Engine/UserDefinedStruct.h"
+#include "Engine/UserDefinedEnum.h"
 
 // Needed for Algo::Transform
 #include "Algo/Transform.h"
@@ -147,6 +151,83 @@ FString PropertyToWorkerSDKType(UProperty* Property, bool bIsRPCProperty)
 	return DataType;
 }
 
+// Generate definition in header file for Blueprint-defined Structs & Enums
+void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Property, TSet<FString>& GeneratedTypes, BPStructTypesAndPaths& GeneratedStructInfo)
+{
+	if (GeneratedTypes.Contains(Property->GetCPPType()))
+	{
+		return;
+	}
+
+	if (UArrayProperty *ArrProp = Cast<UArrayProperty>(Property))
+	{
+		GenerateBlueprintStructEnumDefinition(Writer, ArrProp->Inner, GeneratedTypes, GeneratedStructInfo);
+	}
+
+	if (Property->IsA<UStructProperty>())
+	{
+		UStruct* Struct = Cast<UStructProperty>(Property)->Struct;
+		if (!Struct->IsA<UUserDefinedStruct>())
+		{
+			return;
+		}
+
+		GeneratedTypes.Add(Property->GetCPPType());
+		GeneratedStructInfo.Add(Property->GetCPPType(), Struct->GetPathName());
+
+		// Recurse children post-order
+		for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
+		{
+			UProperty* Prop = *PropIt;
+			GenerateBlueprintStructEnumDefinition(Writer, Prop, GeneratedTypes, GeneratedStructInfo);
+		}
+
+		Writer.PrintNewLine();
+		Writer.Printf("struct %s", *Property->GetCPPType());
+		Writer.Printf("{").Indent();
+		for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
+		{
+			UProperty* Prop = *PropIt;
+			FStringOutputDevice PropertyText;
+			Prop->ExportCppDeclaration(PropertyText, EExportedDeclaration::Local, nullptr);
+			Writer.Printf("%s;", *PropertyText);
+		}
+		Writer.Outdent().Printf("};");
+		Writer.Printf("UPROPERTY()");  // To-do: remove this line once the UHT bugfix goes in: case sensitive matching USTRUCT
+		Writer.Printf("UStruct* %s_Struct;", *Property->GetCPPType());
+	}
+	else
+	{
+		// Enums could be represented as either UByteProperty or UEnumProperty
+		UEnum* Enum = nullptr;
+		if (Property->IsA<UByteProperty>())
+		{
+			Enum = Cast<UByteProperty>(Property)->Enum;
+		}
+		else if (Property->IsA<UEnumProperty>())
+		{
+			Enum = Cast<UEnumProperty>(Property)->GetEnum();
+		}
+
+		if (Enum == nullptr || !Enum->IsA<UUserDefinedEnum>())
+		{
+			return;
+		}
+
+		GeneratedTypes.Add(Property->GetCPPType());
+
+		Writer.PrintNewLine();
+		Writer.Printf("enum %s", *Enum->GetName());
+		Writer.Printf("{").Indent();
+
+		for (int i=0; i<Enum->NumEnums(); i++)
+		{
+			Writer.Printf("%s,", *Enum->GetNameStringByIndex(i));  // This will put a trailing comma on the last Enum but this is deemed okay in Unreal
+		}
+		Writer.Outdent().Printf("};");
+	}
+}
+
 void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator, bool bIsRPCProperty, bool bUnresolvedObjectsHandledOutside)
 {
 	// For RPC arguments we may wish to handle them differently.
@@ -186,12 +267,12 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 			Writer.Printf(R"""(
 				bool bSuccess = true;
 				(const_cast<%s&>(%s)).NetSerialize(ValueDataWriter, PackageMap, bSuccess);
-				checkf(bSuccess, TEXT("NetSerialize on %s failed."));)""", *Struct->GetStructCPPName(), *PropertyValue, *Struct->GetStructCPPName());
+				checkf(bSuccess, TEXT("NetSerialize on %s failed."));)""", *Property->GetCPPType(), *PropertyValue, *Property->GetCPPType());
 		}
 		else
 		{
 			// We do a basic binary serialization for the generic struct.
-			Writer.Printf("%s::StaticStruct()->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&%s)));", *Property->GetCPPType(), *Property->GetCPPType(), *PropertyValue);
+			Writer.Printf("%s%s->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&%s)));", *Property->GetCPPType(), (Struct->IsA<UUserDefinedStruct>() ? TEXT("_Struct") : TEXT("::StaticStruct()")), *Property->GetCPPType(), *PropertyValue);
 		}
 
 		Writer.Printf("%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));", *Update);
@@ -351,7 +432,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 				TArray<uint8> ValueData;
 				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 				FSpatialMemoryReader ValueDataReader(ValueData, PackageMap);
-				%s::StaticStruct()->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&%s));)""", *Update, *PropertyType, *PropertyValue);
+				%s%s->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&%s));)""", *Update, *PropertyType, (Struct->IsA<UUserDefinedStruct>() ? TEXT("_Struct") : TEXT("::StaticStruct()")), *PropertyValue);
 		}
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
@@ -517,7 +598,7 @@ void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC
 	}
 }
 
-void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo)
+void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo, BPStructTypesAndPaths& GeneratedStructInfo)
 {
 	HeaderWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -666,13 +747,25 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 				*CPPCommandClassName(Class, RPC->Function));
 		}
 	}
+
+	// Generate blueprint-defined structures
+	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
+	TSet<FString> GeneratedBPTypes;
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		for (auto& RepProp : RepData[Group])
+		{
+			GenerateBlueprintStructEnumDefinition(HeaderWriter, RepProp.Value->Property, GeneratedBPTypes, GeneratedStructInfo);
+		}
+	}
+
 	HeaderWriter.Outdent();
 	HeaderWriter.Print("};");
 }
 
 void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename,
 	UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo, const TArray<FString>& TypeBindingHeaders,
-	bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses)
+	bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses, BPStructTypesAndPaths& GeneratedStructInfo)
 {
 	SourceWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -742,7 +835,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	GenerateFunction_GetBoundClass(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_Init(SourceWriter, Class, RPCsByType, RepData, HandoverData, bIsSingleton);
+	GenerateFunction_Init(SourceWriter, Class, RPCsByType, RepData, HandoverData, bIsSingleton, GeneratedStructInfo);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_BindToView(SourceWriter, Class, RPCsByType);
@@ -851,7 +944,7 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData, bool bIsSingleton)
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData, bool bIsSingleton, BPStructTypesAndPaths& GeneratedStructInfo)
 {
 	SourceWriter.BeginFunction({"void", "Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)"}, TypeBindingName(Class));
 
@@ -891,19 +984,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
 			FString PropertyChainIndicesInitList;
-			TArray<FString> PropertyChainNames;
-			TArray<FString> PropertyChainIndices;
-			Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
-			{
-				return TEXT("\"") + PropertyInfo->Property->GetFName().ToString() + TEXT("\"");
-			});
-			PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
-
-			Algo::Transform(GetPropertyChain(RepProp.Value), PropertyChainIndices, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
-			{
-				return FString::FromInt(PropertyInfo->StaticArrayIndex);
-			});
-			PropertyChainIndicesInitList = FString::Join(PropertyChainIndices, TEXT(", "));
+			GetPropertyChainListsAsStrings(RepProp.Value, PropertyChainInitList, PropertyChainIndicesInitList);
 
 			SourceWriter.Printf("RepHandleToPropertyMap.Add(%d, FRepHandleData(Class, {%s}, {%s}, %s, %s));",
 				RepProp.Value->ReplicationData->Handle,
@@ -926,17 +1007,14 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
-			TArray<FString> PropertyChainNames;
-			Algo::Transform(GetPropertyChain(HandoverProp.Value), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
-			{
-				return TEXT("\"") + Property->Property->GetFName().ToString() + TEXT("\"");
-			});
-			PropertyChainInitList = FString::Join(PropertyChainNames, TEXT(", "));
+			FString PropertyChainIndicesInitList;
+			GetPropertyChainListsAsStrings(HandoverProp.Value, PropertyChainInitList, PropertyChainIndicesInitList);
 
 			// Add the handle data to the map.
-			SourceWriter.Printf("HandoverHandleToPropertyMap.Add(%d, FHandoverHandleData(Class, {%s}));",
+			SourceWriter.Printf("HandoverHandleToPropertyMap.Add(%d, FHandoverHandleData(Class, {%s}, {%s}));",
 				Handle,
-				*PropertyChainInitList);
+				*PropertyChainInitList,
+				*PropertyChainIndicesInitList);
 		}
 	}
 
@@ -951,6 +1029,11 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 		SourceWriter.Printf("bIsSingleton = false;");
 	}
 
+	// Since BP structs don't exist in C++ compile time, we will load the blueprint struct at runtime and call SerializeBin() from it.
+	for (auto& Prop : GeneratedStructInfo)
+	{
+		SourceWriter.Printf("%s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *Prop.Key, *Prop.Value);
+	}
 	SourceWriter.End();
 }
 
@@ -1225,6 +1308,8 @@ void GenerateBody_SpatialComponents(FCodeWriter& SourceWriter, UClass* Class, TA
 		*SchemaRPCComponentName(ERPCType::RPC_Client, Class, true), *SchemaRPCComponentName(ERPCType::RPC_Client, Class, true)));
 	SpatialComponents.Add(FString::Printf(TEXT(".AddComponent<%s>(%s::Data{}, WorkersOnly)"),
 		*SchemaRPCComponentName(ERPCType::RPC_Server, Class, true), *SchemaRPCComponentName(ERPCType::RPC_Server, Class, true)));
+	SpatialComponents.Add(FString::Printf(TEXT(".AddComponent<%s>(%s::Data{}, WorkersOnly)"),
+		*SchemaRPCComponentName(ERPCType::RPC_CrossServer, Class, true), *SchemaRPCComponentName(ERPCType::RPC_CrossServer, Class, true)));
 	SpatialComponents.Add(FString::Printf(TEXT(".AddComponent<%s>(%s::Data{}, WorkersOnly)"),
 		*SchemaRPCComponentName(ERPCType::RPC_NetMulticast, Class, true), *SchemaRPCComponentName(ERPCType::RPC_NetMulticast, Class, true)));
 }
@@ -1503,6 +1588,7 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 		UProperty* InnerProperty = ArrayProperty->Inner;
+
 		SourceWriter.Printf("const TArray<%s>& %s = *(reinterpret_cast<TArray<%s> const*>(Data));", *InnerProperty->GetCPPType(), *PropertyValueName, *InnerProperty->GetCPPType());
 
 		if (InnerProperty->IsA<UObjectPropertyBase>() || InnerProperty->IsA<UStructProperty>())
@@ -1738,6 +1824,7 @@ void GenerateBody_ReceiveUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint1
 	{
 		UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
 		UProperty* InnerProperty = ArrayProperty->Inner;
+
 		SourceWriter.Printf("TArray<%s> %s = *(reinterpret_cast<TArray<%s> *>(PropertyData));", *(InnerProperty->GetCPPType()), *PropertyValueName, *(InnerProperty->GetCPPType()));
 		if (InnerProperty->IsA<UObjectPropertyBase>())
 		{
@@ -2231,4 +2318,22 @@ void GenerateFunction_RPCOnCommandResponse(FCodeWriter& SourceWriter, UClass* Cl
 	SourceWriter.Printf("Interop->HandleCommandResponse_Internal(TEXT(\"%s\"), Op.RequestId.Id, Op.EntityId, Op.StatusCode, FString(UTF8_TO_TCHAR(Op.Message.c_str())));",
 		*RPC->Function->GetName());
 	SourceWriter.End();
+}
+
+void GetPropertyChainListsAsStrings(const TSharedPtr<FUnrealProperty>& Prop, FString& OutNames, FString& OutIndicies)
+{
+	// Create property chain initialiser list.
+	TArray<FString> PropertyChainNames;
+	TArray<FString> PropertyChainIndices;
+	Algo::Transform(GetPropertyChain(Prop), PropertyChainNames, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
+	{
+		return TEXT("\"") + PropertyInfo->Property->GetFName().ToString() + TEXT("\"");
+	});
+	OutNames = FString::Join(PropertyChainNames, TEXT(", "));
+
+	Algo::Transform(GetPropertyChain(Prop), PropertyChainIndices, [](const TSharedPtr<FUnrealProperty>& PropertyInfo) -> FString
+	{
+		return FString::FromInt(PropertyInfo->StaticArrayIndex);
+	});
+	OutIndicies = FString::Join(PropertyChainIndices, TEXT(", "));
 }

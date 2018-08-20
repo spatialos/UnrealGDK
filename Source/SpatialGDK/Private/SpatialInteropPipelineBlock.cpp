@@ -259,7 +259,17 @@ void USpatialInteropPipelineBlock::DisableComponentImpl(const FComponentIdentifi
 
 	if (!ComponentClass)
 	{
-		// The interop system does not register USpatialOSComponents. The code below is for the UnrealSDK flow.
+		// When receiving the UnrealMetadata remove component, we can assume that a remove entity will follow
+		// Thus we need to unregister subobject bindings while we still have information about them
+		if (ComponentIdentifier.ComponentId == improbable::unreal::UnrealMetadata::ComponentId)
+		{
+			TSharedPtr<worker::Connection> LockedConnection = NetDriver->GetSpatialOS()->GetConnection().Pin();
+			TSharedPtr<worker::View> LockedView = NetDriver->GetSpatialOS()->GetView().Pin();
+			USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
+
+			improbable::unreal::UnrealMetadataData* Data = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, ComponentIdentifier.EntityId);
+			PackageMap->RemoveEntitySubobjects(ComponentIdentifier.EntityId, Data->subobject_name_to_offset());
+		}
 		return;
 	}
 
@@ -317,12 +327,7 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 	// 2. The Actor was deleted on another server
 	// In neither situation do we want to delete associated entities, so prevent them from being issued.
 	// TODO: fix this with working sets (UNR-411)
-	NetDriver->GetSpatialInterop()->StartIgnoringAuthoritativeDestruction();
-	if (World->DestroyActor(Actor, true) == false)
-	{
-		UE_LOG(LogSpatialGDKInteropPipelineBlock, Error, TEXT("World->DestroyActor failed on RemoveEntity %s %d"), *Actor->GetName(), EntityId.ToSpatialEntityId());
-	}
-	NetDriver->GetSpatialInterop()->StopIgnoringAuthoritativeDestruction();
+	NetDriver->GetSpatialInterop()->LocallyDeleteActor(Actor);
 
 	CleanupDeletedEntity(EntityId);
 }
@@ -367,6 +372,12 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
 	UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Checked out entity with entity ID %lld"), EntityId.ToSpatialEntityId());
 
+	USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
+	check(PackageMap);
+
+	USpatialInterop* Interop = NetDriver->GetSpatialInterop();
+	check(Interop);
+
 	// There are 3 main options when we get here with regards to how this entity was created:
 	// 1) A SpawnActor() call (through interop) on this worker, which means it already has an actor associated with it.
 	//	  This usually happens on the Unreal server only (as servers are the only workers which can spawn actors).
@@ -374,12 +385,8 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 	// 3) A SpawnActor() call that was initiated from a different worker, which means we need to find and spawn the corresponding "native" actor that corresponds to it.
 	//	  This can happen on either the client (for all actors) or server (for actors which were spawned by a different server worker, or are transitioning).
 
-	if (EntityActor)
+	if (EntityActor && !EntityActor->IsPendingKill())
 	{
-		UClass* ActorClass = GetNativeEntityClass(MetadataComponent);
-		USpatialInterop* Interop = NetDriver->GetSpatialInterop();
-		check(Interop);
-
 		// Option 1
 		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 		SetupComponentInterests(EntityActor, EntityId, LockedConnection);
@@ -387,14 +394,11 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 		improbable::unreal::UnrealMetadataData* UnrealMetadataComponent = GetComponentDataFromView<improbable::unreal::UnrealMetadata>(LockedView, EntityId);
 		check(UnrealMetadataComponent);
 
-		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
-		check(PackageMap);
-
 		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->subobject_name_to_offset());
 		UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Received create entity response op for %d"), EntityId.ToSpatialEntityId());
 		
 		// actor channel/entity mapping should be registered by this point
-		check(NetDriver->GetSpatialInterop()->GetActorChannelByEntityId(EntityId.ToSpatialEntityId()));
+		check(Interop->GetActorChannelByEntityId(EntityId.ToSpatialEntityId()));
 	}
 	else
 	{
@@ -409,8 +413,6 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 		else if ((ActorClass = GetNativeEntityClass(MetadataComponent)) != nullptr)
 		{
 			// Option 3
-			USpatialInterop* Interop = NetDriver->GetSpatialInterop();
-			check(Interop);
 
 			// Initial Singleton Actor replication is handled with USpatialInterop::LinkExistingSingletonActors
 			if (NetDriver->IsServer() && Interop->IsSingletonClass(ActorClass))
@@ -436,19 +438,36 @@ void USpatialInteropPipelineBlock::CreateActor(TSharedPtr<worker::Connection> Lo
 			}
 			else
 			{
-				// Either spawn the actor or get it from the level if it has a persistent name.
-				if (UnrealMetadataComponent->static_path().empty())
+				// If the actor has a persistent name, link it if possible
+				// TODO: References by path to the stably named actor are still broken on migration (UNR-473), possible fix by retroactively assigning the stable path from the UnrealMetadata
+				if (!UnrealMetadataComponent->static_path().empty())
+				{
+					FString FullPath = UTF8_TO_TCHAR(UnrealMetadataComponent->static_path().data()->c_str());
+					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
+					EntityActor = FindObject<AActor>(World, *FullPath);
+
+					if (EntityActor != nullptr)
+					{
+						// If the actor is pending kill (probably from timeout or going out and in the view), pretend we did not find it in the level
+						if (EntityActor->IsPendingKill())
+						{
+							EntityActor = nullptr;
+						}
+						// Server will naturally enqueue reservations for the replicated stably named actors, so remove the reservation
+						else if (NetDriver->IsServer())
+						{
+							Interop->UnreserveReplicatedStablyNamedActor(EntityActor);
+						}
+					}
+				}
+
+				if (EntityActor == nullptr)
 				{
 					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
 					EntityActor = SpawnNewEntity(PositionComponent, ActorClass, true);
 					bDoingDeferredSpawn = true;
 				}
-				else
-				{
-					FString FullPath = UTF8_TO_TCHAR(UnrealMetadataComponent->static_path().data()->c_str());
-					UE_LOG(LogSpatialGDKInteropPipelineBlock, Log, TEXT("Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
-					EntityActor = FindObject<AActor>(World, *FullPath);
-				}
+
 				check(EntityActor);
 
 				// Get the net connection for this actor.

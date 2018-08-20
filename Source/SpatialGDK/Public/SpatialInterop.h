@@ -10,6 +10,14 @@
 #include "SpatialUnrealObjectRef.h"
 #include "SpatialInterop.generated.h"
 
+namespace improbable
+{
+	namespace unreal
+	{
+		class GlobalStateManagerData;
+	}
+}
+
 class USpatialOS;
 class USpatialActorChannel;
 class USpatialPackageMapClient;
@@ -20,7 +28,7 @@ SPATIALGDK_API DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKInterop, Log, All);
 // An general version of worker::RequestId.
 using FUntypedRequestId = decltype(worker::RequestId<void>::Id);
 
-using NameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
+using PathNameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
 
 // Stores the result of an attempt to call an RPC sender function. Either we have an unresolved object which needs
 // to be resolved before we can send this RPC, or we successfully sent a command request.
@@ -165,6 +173,7 @@ public:
 
 	// Sending component updates and RPCs.
 	worker::RequestId<worker::CreateEntityRequest> SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
+	worker::RequestId<worker::ReserveEntityIdRequest> SendReserveEntityIdRequest(USpatialActorChannel* Channel);
 	worker::RequestId<worker::DeleteEntityRequest> SendDeleteEntityRequest(const FEntityId& EntityId);
 	void SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location);
 	void SendSpatialUpdate(USpatialActorChannel* Channel, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
@@ -181,6 +190,10 @@ public:
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
+
+	// Delete a replicated actor, but only locally - i.e. do not send remove entity ops to SpatialOS
+	// Also applies to the destruction of associated actors like Character > Controller
+	void LocallyDeleteActor(AActor* Actor);
 
 	// Called by USpatialInteropPipelineBlock when an actor channel is opened on the client.
 	void AddActorChannel(const FEntityId& EntityId, USpatialActorChannel* Channel);
@@ -211,13 +224,19 @@ public:
 	void QueueOutgoingArrayRepUpdate_Internal(const TSet<const UObject*>& UnresolvedObjects, USpatialActorChannel* DependentChannel, uint16 Handle);
 
 	// Update GlobalStateManager when EntityId is reserved
-	void UpdateGlobalStateManager(const FString& ClassName, const FEntityId& SingletonEntityId);
+	void UpdateSingletonId(const FString& ClassName, const FEntityId& SingletonEntityId);
 	// Handle GSM checkout
-	void LinkExistingSingletonActors(const NameToEntityIdMap& SingletonNameToEntityId);
+	void LinkExistingSingletonActors(const PathNameToEntityIdMap& SingletonNameToEntityId);
 	// Handle GSM Authority received
-	void ExecuteInitialSingletonActorReplication(const NameToEntityIdMap& SingletonNameToEntityId);
+	void ExecuteInitialSingletonActorReplication(const PathNameToEntityIdMap& SingletonNameToEntityId);
 	bool IsSingletonClass(UClass* Class);
-	NameToEntityIdMap* GetSingletonNameToEntityId() const;
+	improbable::unreal::GlobalStateManagerData* GetGlobalStateManagerData() const;
+	PathNameToEntityIdMap* GetSingletonNameToEntityId() const;
+	PathNameToEntityIdMap* GetStablyNamedPathToEntityId() const;
+
+	void ReserveReplicatedStablyNamedActorChannel(USpatialActorChannel* Channel);
+	void UnreserveReplicatedStablyNamedActor(AActor* Actor);
+	void AddReplicatedStablyNamedActorToGSM(const FEntityId& EntityId, AActor* Actor);
 
 	// Accessors.
 	USpatialOS* GetSpatialOS() const
@@ -228,6 +247,11 @@ public:
 	USpatialNetDriver* GetNetDriver() const
 	{
 		return NetDriver;
+	}
+
+	bool CanSpawnReplicatedStablyNamedActors() const
+	{
+		return bCanSpawnReplicatedStablyNamedActors;
 	}
 
 private:
@@ -253,6 +277,9 @@ private:
 	// Outgoing RPCs (for retry logic).
 	TMap<FUntypedRequestId, TSharedPtr<FOutgoingReliableRPC>> OutgoingReliableRPCs;
 
+	// Pending ReserveEntity and CreateEntity requests.
+	TMap<FUntypedRequestId, USpatialActorChannel*> PendingActorRequests;
+
 	// Pending outgoing object ref property updates.
 	FPendingOutgoingObjectUpdateMap PendingOutgoingObjectUpdates;
 
@@ -267,6 +294,10 @@ private:
 
 	FChannelToHandleToOPARMap PropertyToOPAR;
 	FOutgoingPendingArrayUpdateMap ObjectToOPAR;
+
+	bool bCanSpawnReplicatedStablyNamedActors;
+	TMap<AActor*, USpatialActorChannel*> ReplicatedStablyNamedActorQueue;
+	TMap<int64, FTimerDelegate> ReplicatedStablyNamedActorTimeoutMap;
 
 	// Used to queue resolved objects when added during a critical section. These objects then have
 	// any pending operations resolved on them once the critical section has ended.
@@ -283,8 +314,13 @@ private:
 	void ResolvePendingOutgoingRPCs(UObject* Object);
 	void ResolvePendingIncomingObjectUpdates(UObject* IncomingObject, const improbable::unreal::UnrealObjectRef& ObjectRef);
 	void ResolvePendingIncomingRPCs(const improbable::unreal::UnrealObjectRef& ObjectRef);
-
 	void ResolvePendingOutgoingArrayUpdates(UObject* Object);
 
 	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
+
+	void RegisterReplicatedStablyNamedActors();
+	void DeleteIrrelevantReplicatedStablyNamedActors(const PathNameToEntityIdMap& EntityIdToReplicatedStablyNamedPath);
+
+	USpatialActorChannel* RemovePendingActorRequest(FUntypedRequestId RequestId);
+	void AddPendingActorRequest(FUntypedRequestId RequestId, USpatialActorChannel* Channel);
 };

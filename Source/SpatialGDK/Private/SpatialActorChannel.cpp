@@ -54,8 +54,6 @@ void UpdateChangelistHistory(FRepState * RepState)
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
 	, ActorEntityId(0)
-	, ReserveEntityIdRequestId(-1)
-	, CreateEntityRequestId(-1)
 	, SpatialNetDriver(nullptr)
 {
 	bCoreActor = true;
@@ -70,47 +68,6 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	check(SpatialNetDriver);
 
 	WorkerView = SpatialNetDriver->GetSpatialOS()->GetView();
-	WorkerConnection = SpatialNetDriver->GetSpatialOS()->GetConnection();
-
-	BindToSpatialView();
-}
-
-void USpatialActorChannel::BindToSpatialView()
-{
-	if (SpatialNetDriver->ServerConnection)
-	{
-		// Don't need to bind to reserve/create entity responses on the client.
-		return;
-	}
-
-	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
-	if (PinnedView.IsValid())
-	{
-		ReserveEntityCallback = PinnedView->OnReserveEntityIdResponse([this](const worker::ReserveEntityIdResponseOp& Op)
-		{
-			if (Op.RequestId == ReserveEntityIdRequestId)
-			{
-				OnReserveEntityIdResponse(Op);
-			}			
-		});
-		CreateEntityCallback = PinnedView->OnCreateEntityResponse([this](const worker::CreateEntityResponseOp& Op)
-		{
-			if (Op.RequestId == CreateEntityRequestId)
-			{
-				OnCreateEntityResponse(Op);
-			}
-		});
-	}
-}
-
-void USpatialActorChannel::UnbindFromSpatialView() const
-{
-	//todo-giray: Uncomment the rest when worker sdk finishes the FR that gracefully handles removing unbound callback keys.
-	return;
-	/*
-	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
-	PinnedView->Remove(ReserveEntityCallback);
-	PinnedView->Remove(CreateEntityCallback);*/
 }
 
 void USpatialActorChannel::DeleteEntityIfAuthoritative()
@@ -143,7 +100,7 @@ bool USpatialActorChannel::IsCriticalEntity()
 	}
 
 	// Don't delete if the actor is a Singleton
-	NameToEntityIdMap* SingletonNameToEntityId = SpatialNetDriver->GetSpatialInterop()->GetSingletonNameToEntityId();
+	PathNameToEntityIdMap* SingletonNameToEntityId = SpatialNetDriver->GetSpatialInterop()->GetSingletonNameToEntityId();
 
 	if (SingletonNameToEntityId == nullptr)
 	{
@@ -163,8 +120,6 @@ bool USpatialActorChannel::IsCriticalEntity()
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
-	UnbindFromSpatialView();
-
 #if WITH_EDITOR
 	if (SpatialNetDriver->IsServer() &&
 		SpatialNetDriver->GetWorld()->WorldType == EWorldType::PIE &&
@@ -366,6 +321,8 @@ bool USpatialActorChannel::ReplicateActor()
 	{		
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
+			check(!Actor->IsFullNameStableForNetworking() || Interop->CanSpawnReplicatedStablyNamedActors());
+
 			// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
 			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
 			// player controller, get the player state.
@@ -373,8 +330,7 @@ bool USpatialActorChannel::ReplicateActor()
 			APlayerState* PlayerState = Cast<APlayerState>(Actor);
 			if (!PlayerState)
 			{
-				APawn* Pawn = Cast<APawn>(Actor);
-				if (Pawn)
+				if (APawn* Pawn = Cast<APawn>(Actor))
 				{
 					PlayerState = Pawn->PlayerState;
 				}
@@ -401,7 +357,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 			// Calculate initial spatial position (but don't send component update) and create the entity.
 			LastSpatialPosition = GetActorSpatialPosition(Actor);
-			CreateEntityRequestId = Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialRepChanged, HandoverChanged);
+			Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialRepChanged, HandoverChanged);
 		}
 		else
 		{
@@ -541,20 +497,16 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	// If the entity registry has no entry for this actor, this means we need to create it.
 	if (ActorEntityId == 0)
 	{
-		USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
-		check(SpatialConnection);
-
-		// Mark this channel as being responsible for creating this entity once we have an entity ID.
-		bCreatingNewEntity = true;
-
-		// Reserve an entity ID for this channel.
-		TSharedPtr<worker::Connection> PinnedConnection = WorkerConnection.Pin();
-		if (PinnedConnection.IsValid())
+		// If the actor is stably named, we only want to start the creation process on one server (the one that is authoritative
+		// over the Global State Manager) to avoid having multiple copies of replicated stably named actors in SpatialOS
+		if (InActor->IsFullNameStableForNetworking())
 		{
-			ReserveEntityIdRequestId = PinnedConnection->SendReserveEntityIdRequest(0);
+			SpatialNetDriver->GetSpatialInterop()->ReserveReplicatedStablyNamedActorChannel(this);
 		}
-		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with no entity ID. Initiated reserve entity ID. Request id: %d"),
-			*InActor->GetName(), ReserveEntityIdRequestId.Id);
+		else
+		{
+			SendReserveEntityIdRequest();
+		}
 	}
 	else
 	{
@@ -563,6 +515,17 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		// Inform USpatialInterop of this new actor channel/entity pairing
 		SpatialNetDriver->GetSpatialInterop()->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
 	}
+}
+
+void USpatialActorChannel::SendReserveEntityIdRequest()
+{
+	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection);
+	check(SpatialConnection);
+
+	// Mark this channel as being responsible for creating this entity once we have an entity ID.
+	bCreatingNewEntity = true;
+
+	SpatialNetDriver->GetSpatialInterop()->SendReserveEntityIdRequest(this);
 }
 
 void USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
@@ -594,19 +557,15 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	{
 		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.Message.c_str()));
 		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
-		UnbindFromSpatialView();
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received entity id (%d) for: %s. Request id: %d"), Op.EntityId.value_or(0), *Actor->GetName(), ReserveEntityIdRequestId.Id);
-
-	auto PinnedView = WorkerView.Pin();
-	if (PinnedView.IsValid())
-	{
-		PinnedView->Remove(ReserveEntityCallback);
-	}
-
+	UE_LOG(LogSpatialGDKActorChannel, Verbose, TEXT("Received entity id (%d) for: %s."), Op.EntityId.value_or(0), *Actor->GetName());
 	ActorEntityId = *Op.EntityId;
+	RegisterEntityId(ActorEntityId);
+}
 
+void USpatialActorChannel::RegisterEntityId(const FEntityId& ActorEntityId)
+{
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
 
 	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
@@ -617,7 +576,26 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntity
 	// If a Singleton was created, update the GSM with the proper Id.
 	if (Interop->IsSingletonClass(Actor->GetClass()))
 	{
-		Interop->UpdateGlobalStateManager(Actor->GetClass()->GetName(), ActorEntityId);
+		Interop->UpdateSingletonId(Actor->GetClass()->GetPathName(), ActorEntityId);
+	}
+
+	if (Actor->IsFullNameStableForNetworking())
+	{
+		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
+
+		uint32 CurrentOffset = 1;
+		worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
+		ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+		{
+			// Objects can only be allocated NetGUIDs if this is true.
+			if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+			{
+				SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+				CurrentOffset++;
+			}
+		});
+
+		PackageMap->ResolveEntityActor(Actor, ActorEntityId, SubobjectNameToOffset);
 	}
 }
 
@@ -629,18 +607,16 @@ void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResp
 	{
 		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
 		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
-		UnbindFromSpatialView();
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Created entity (%lld) for: %s. Request id: %d"), ActorEntityId.ToSpatialEntityId(), *Actor->GetName(), ReserveEntityIdRequestId.Id);
+	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Created entity (%lld) for: %s."), ActorEntityId.ToSpatialEntityId(), *Actor->GetName());
 
-	auto PinnedView = WorkerView.Pin();
-	if (PinnedView.IsValid())
+	// If a replicated stably named actor was created, update the GSM with the proper path and entity id
+	// This ensures each stably named actor is only created once
+	if (Actor->IsFullNameStableForNetworking())
 	{
-		PinnedView->Remove(CreateEntityCallback);
+		SpatialNetDriver->GetSpatialInterop()->AddReplicatedStablyNamedActorToGSM(ActorEntityId, Actor);
 	}
-
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received create entity response op for %lld"), ActorEntityId.ToSpatialEntityId());
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()

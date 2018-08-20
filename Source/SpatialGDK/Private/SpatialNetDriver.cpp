@@ -752,6 +752,12 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame* Stack,
 	UObject* SubObject)
 {
+	if(!SpatialOSInstance->IsConnected())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
+		return;
+	}
+
 	USpatialNetConnection* Connection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
 	if (!Connection)
 	{
@@ -763,7 +769,8 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	// The function GetNetConnection() goes up the AActor ownership chain until it reaches an AActor that is possesed by an AController and
 	// hence a UNetConnection. Server RPCs should only be sent by AActor instances that either are possessed by a UNetConnection or are owned by
 	// other AActor instances possessed by a UNetConnection. For native Unreal reference see ProcessRemoteFunction() of IpNetDriver.cpp.
-	if (!Actor->GetNetConnection())
+	// However if we are on the server, and the RPC is a CrossServer or NetMulticast RPC, this can be invoked without an owner.
+	if (!Actor->GetNetConnection() && !(Function->FunctionFlags & (FUNC_NetCrossServer | FUNC_NetMulticast) && IsServer()))
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("No owning connection for actor %s. Function %s will not be processed."), *Actor->GetName(), *Function->GetName());
 		return;
@@ -935,6 +942,101 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 	return bOk ? Connection : nullptr;
 }
 
+bool USpatialNetDriver::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
+{
+#if !UE_BUILD_SHIPPING
+	if (FParse::Command(&Cmd, TEXT("DUMPCROSSSERVERRPC")))
+	{
+		return HandleNetDumpCrossServerRPCCommand(Cmd, Ar);
+	}
+#endif // !UE_BUILD_SHIPPING
+	return UNetDriver::Exec(InWorld, Cmd, Ar);
+}
+
+// This function is literally a copy paste of UNetDriver::HandleNetDumpServerRPCCommand. Didn't want to refactor to avoid divergence from engine.
+#if !UE_BUILD_SHIPPING
+bool USpatialNetDriver::HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar)
+{
+#if WITH_SERVER_CODE
+	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
+	{
+		bool bHasNetFields = false;
+
+		ensureMsgf(!ClassIt->HasAnyFlags(RF_NeedLoad | RF_NeedPostLoad), TEXT("UNetDriver::HandleNetDumpCrossServerRPCCommand: %s has flag RF_NeedPostLoad. NetFields and ClassReps will be incorrect!"), *GetFullNameSafe(*ClassIt));
+
+		for (int32 i = 0; i < ClassIt->NetFields.Num(); i++)
+		{
+			UFunction * Function = Cast<UFunction>(ClassIt->NetFields[i]);
+
+			if (Function != NULL && Function->FunctionFlags & FUNC_NetCrossServer)
+			{
+				bHasNetFields = true;
+				break;
+			}
+		}
+
+		if (!bHasNetFields)
+		{
+			continue;
+		}
+
+		Ar.Logf(TEXT("Class: %s"), *ClassIt->GetName());
+
+		for (int32 i = 0; i < ClassIt->NetFields.Num(); i++)
+		{
+			UFunction * Function = Cast<UFunction>(ClassIt->NetFields[i]);
+
+			if (Function != NULL && Function->FunctionFlags & FUNC_NetCrossServer)
+			{
+				const FClassNetCache * ClassCache = NetCache->GetClassNetCache(*ClassIt);
+
+				const FFieldNetCache * FieldCache = ClassCache->GetFromField(Function);
+
+				TArray< UProperty * > Parms;
+
+				for (TFieldIterator<UProperty> It(Function); It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
+				{
+					Parms.Add(*It);
+				}
+
+				if (Parms.Num() == 0)
+				{
+					Ar.Logf(TEXT("    [0x%03x] %s();"), FieldCache->FieldNetIndex, *Function->GetName());
+					continue;
+				}
+
+				FString ParmString;
+
+				for (int32 j = 0; j < Parms.Num(); j++)
+				{
+					if (Cast<UStructProperty>(Parms[j]))
+					{
+						ParmString += Cast<UStructProperty>(Parms[j])->Struct->GetName();
+					}
+					else
+					{
+						ParmString += Parms[j]->GetClass()->GetName();
+					}
+
+					ParmString += TEXT(" ");
+
+					ParmString += Parms[j]->GetName();
+
+					if (j < Parms.Num() - 1)
+					{
+						ParmString += TEXT(", ");
+					}
+				}
+
+				Ar.Logf(TEXT("    [0x%03x] %s( %s );"), FieldCache->FieldNetIndex, *Function->GetName(), *ParmString);
+			}
+		}
+	}
+#endif
+	return true;
+}
+#endif // !UE_BUILD_SHIPPING
+
 USpatialPendingNetGame::USpatialPendingNetGame(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -979,3 +1081,4 @@ void USpatialPendingNetGame::SendJoin()
 {
 	bSentJoinRequest = true;
 }
+

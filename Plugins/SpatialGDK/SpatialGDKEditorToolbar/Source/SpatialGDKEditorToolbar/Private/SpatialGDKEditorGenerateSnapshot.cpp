@@ -4,9 +4,8 @@
 #include "EntityBuilder.h"
 #include "SpatialConstants.h"
 #include "SpatialOSCommon.h"
-#include "SpatialGDKEditorUtils.h"
+#include "SpatialGDKEditorToolbarSettings.h"
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
-
 #include <improbable/standard_library.h>
 #include <improbable/unreal/gdk/level_data.h>
 #include <improbable/unreal/gdk/spawner.h>
@@ -20,7 +19,7 @@ using namespace improbable;
 namespace
 {
 
-using NameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
+using PathNameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
 
 const WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
 const WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
@@ -76,73 +75,65 @@ worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
 	return LevelEntities;
 }
 
-bool CreateSingletonToIdMap(NameToEntityIdMap& SingletonNameToEntityId)
+bool CreateSingletonToIdMap(PathNameToEntityIdMap& SingletonNameToEntityId)
 {
-	const FString FileName = "DefaultEditorSpatialGDK.ini";
-	const FString ConfigFilePath = FPaths::SourceConfigDir().Append(FileName);
-
-	// Load the SpatialGDK config file
-	const FConfigFile* ConfigFile = LoadConfigFile(ConfigFilePath);
-	if (!ConfigFile)
-	{
-		return false;
-	}
-
-	const FString SectionName = "SnapshotGenerator.SingletonActorClasses";
-	const FConfigSection* SingletonActorClassesSection = GetConfigSection(ConfigFilePath, SectionName);
-	if (SingletonActorClassesSection == nullptr)
-	{
-		return false;
-	}
-
-	TArray<FName> SingletonActorClasses;
-	SingletonActorClassesSection->GetKeys(SingletonActorClasses);
-
-	for (FName ClassName : SingletonActorClasses)
+	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	for (UClass* Class : SpatialGDKToolbarSettings->SingletonClasses)
 	{
 		// Id is initially 0 to indicate that this Singleton entity has not been created yet.
 		// When the worker authoritative over the GSM sees 0, it knows it is safe to create it.
-		SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*(ClassName.ToString()))), 0);
+		SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*(Class->GetPathName()))), 0);
 	}
 
 	return true;
 }
 
-worker::Entity CreateGlobalStateManagerEntity(const NameToEntityIdMap& SingletonNameToEntityId)
+worker::Entity CreateGlobalStateManagerEntity(const PathNameToEntityIdMap& SingletonNameToEntityId)
 {
 	return improbable::unreal::FEntityBuilder::Begin()
 		.AddPositionComponent(Position::Data{Origin}, UnrealWorkerWritePermission)
 		.AddMetadataComponent(Metadata::Data("GlobalStateManager"))
 		.SetPersistence(true)
 		.SetReadAcl(AnyWorkerReadPermission)
-		.AddComponent<unreal::GlobalStateManager>(unreal::GlobalStateManager::Data{SingletonNameToEntityId}, UnrealWorkerWritePermission)
+		.AddComponent<unreal::GlobalStateManager>(unreal::GlobalStateManager::Data{ SingletonNameToEntityId, {} }, UnrealWorkerWritePermission)
 		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{}, UnrealWorkerWritePermission)
 		.Build();
 }
 
 } // ::
 
-bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
+bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 {
-	if (!FPaths::CollapseRelativeDirectories(SavePath))
+	FString DirectoryPath = FPaths::GetPath(SavePath);
+	if (!FPaths::CollapseRelativeDirectories(DirectoryPath))
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Invalid path: %s - snapshot not generated"), *SavePath);
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Invalid path: %s - snapshot not generated"), *DirectoryPath);
 		return false;
 	}
 
-	if (!FPaths::DirectoryExists(SavePath))
+	if (!FPaths::DirectoryExists(DirectoryPath))
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot directory does not exist - creating directory: %s"), *SavePath);
-		if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*SavePath))
+		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot directory does not exist - creating directory: %s"), *DirectoryPath);
+		if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*DirectoryPath))
 		{
-			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Unable to create directory: %s - snapshot not generated"), *SavePath);
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Unable to create directory: %s - snapshot not generated"), *DirectoryPath);
 			return false;
 		}
 	}
+	return true;
+}
 
-	const FString FullPath = FPaths::Combine(*SavePath, TEXT("default.snapshot"));
-	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Saving snapshot to: %s"), *FullPath);
-	worker::SnapshotOutputStream OutputStream = worker::SnapshotOutputStream(improbable::unreal::Components{}, TCHAR_TO_UTF8(*FullPath));
+bool SpatialGDKGenerateSnapshot(UWorld* World)
+{
+	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotPath(), Settings->GetSpatialOSSnapshotFile());
+	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
+	{
+		return false;
+	}
+
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Saving snapshot to: %s"), *SavePath);
+	worker::SnapshotOutputStream OutputStream = worker::SnapshotOutputStream(improbable::unreal::Components{}, TCHAR_TO_UTF8(*SavePath));
 
 	// Create spawner entity.
 	worker::Option<std::string> Result = OutputStream.WriteEntity(SpatialConstants::SPAWNER_ENTITY_ID, CreateSpawnerEntity());
@@ -154,7 +145,7 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 	}
 
 	// Create Global State Manager
-	NameToEntityIdMap SingletonNameToEntityId;
+	PathNameToEntityIdMap SingletonNameToEntityId;
 	if(!CreateSingletonToIdMap(SingletonNameToEntityId))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: Couldn't create Singleton Name to EntityId map"));
@@ -179,6 +170,6 @@ bool SpatialGDKGenerateSnapshot(FString SavePath, UWorld* World)
 		}
 	}
 
-	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path: %s"), *FullPath);
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot exported to the path: %s"), *SavePath);
 	return true;
 }

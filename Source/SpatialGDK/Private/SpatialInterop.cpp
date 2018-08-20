@@ -31,6 +31,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	TimerManager = InTimerManager;
 	PackageMap = Cast<USpatialPackageMapClient>(Driver->GetSpatialOSNetConnection()->PackageMap);
 	bAuthoritativeDestruction = true;
+	bCanSpawnReplicatedStablyNamedActors = false;
 
 	// Collect all type binding classes.
 	TArray<UClass*> TypeBindingClasses;
@@ -62,6 +63,7 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 	View->OnAddComponent<improbable::unreal::GlobalStateManager>([this](const worker::AddComponentOp<improbable::unreal::GlobalStateManager>& op)
 	{
 		LinkExistingSingletonActors(op.Data.singleton_name_to_entity_id());
+		DeleteIrrelevantReplicatedStablyNamedActors(op.Data.stably_named_path_to_entity_id());
 	});
 
 	View->OnComponentUpdate<improbable::unreal::GlobalStateManager>([this](const worker::ComponentUpdateOp<improbable::unreal::GlobalStateManager>& op)
@@ -70,6 +72,10 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 		{
 			LinkExistingSingletonActors(*op.Update.singleton_name_to_entity_id().data());
 		}
+		if (op.Update.stably_named_path_to_entity_id().data())
+		{
+			DeleteIrrelevantReplicatedStablyNamedActors(*op.Update.stably_named_path_to_entity_id().data());
+		}
 	});
 
 	View->OnAuthorityChange<improbable::unreal::GlobalStateManager>([this](const worker::AuthorityChangeOp& op)
@@ -77,6 +83,23 @@ void USpatialInterop::Init(USpatialOS* Instance, USpatialNetDriver* Driver, FTim
 		if (op.Authority == worker::Authority::kAuthoritative)
 		{
 			ExecuteInitialSingletonActorReplication(*GetSingletonNameToEntityId());
+			RegisterReplicatedStablyNamedActors();
+		}
+	});
+
+	View->OnReserveEntityIdResponse([this](const worker::ReserveEntityIdResponseOp& Op)
+	{
+		if (USpatialActorChannel* Channel = RemovePendingActorRequest(Op.RequestId.Id))
+		{
+			Channel->OnReserveEntityIdResponse(Op);
+		}
+	});
+
+	View->OnCreateEntityResponse([this](const worker::CreateEntityResponseOp& Op)
+	{
+		if (USpatialActorChannel* Channel = RemovePendingActorRequest(Op.RequestId.Id))
+		{
+			Channel->OnCreateEntityResponse(Op);
 		}
 	});
 }
@@ -106,10 +129,11 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 		FStringAssetReference ActorClassRef(Actor->GetClass());
 		FString PathStr = ActorClassRef.ToString();
 
+		worker::Entity Entity;
+
 		if (TypeBinding)
 		{
-			auto Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
+			Entity = TypeBinding->CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
 		}
 		else
 		{
@@ -151,7 +175,7 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 			// Build entity.
 			const improbable::Coordinates SpatialPosition = SpatialConstants::LocationToSpatialOSCoordinates(Location);
 
-			auto Entity = improbable::unreal::FEntityBuilder::Begin()
+			Entity = improbable::unreal::FEntityBuilder::Begin()
 				.AddPositionComponent(SpatialPosition, WorkersOnly)
 				.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*PathStr)})
 				.SetPersistence(true)
@@ -161,9 +185,11 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 				// todo-giray: Remove once we're using proper (generated) entity templates here.
 				.AddComponent<improbable::unreal::PlayerControlClient>(improbable::unreal::PlayerControlClient::Data{}, OwnClientOnly)
 				.Build();
-
-			CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
 		}
+
+		CreateEntityRequestId = PinnedConnection->SendCreateEntityRequest(Entity, Channel->GetEntityId().ToSpatialEntityId(), 0);
+		AddPendingActorRequest(CreateEntityRequestId.Id, Channel);
+
 		UE_LOG(LogSpatialGDKInterop, Log, TEXT("%s: Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
 			*SpatialOSInstance->GetWorkerId(), *Actor->GetName(), Channel->GetEntityId().ToSpatialEntityId(), CreateEntityRequestId.Id);
 	}
@@ -171,7 +197,25 @@ worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntity
 	{
 		UE_LOG(LogSpatialGDKInterop, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
 	}
+
 	return CreateEntityRequestId;
+}
+
+worker::RequestId<worker::ReserveEntityIdRequest> USpatialInterop::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
+{
+	worker::RequestId<worker::ReserveEntityIdRequest> ReserveEntityIdRequest;
+	TSharedPtr<worker::Connection> PinnedConnection = SpatialOSInstance->GetConnection().Pin();
+	if (PinnedConnection.IsValid())
+	{
+		ReserveEntityIdRequest = PinnedConnection->SendReserveEntityIdRequest(0);
+		AddPendingActorRequest(ReserveEntityIdRequest.Id, Channel);
+		UE_LOG(LogSpatialGDKInterop, Log, TEXT("Opened channel for actor with no entity ID. Initiated reserve entity ID. Request id: %d"), ReserveEntityIdRequest.Id);
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKInterop, Warning, TEXT("Failed to obtain reference to SpatialOS connection!"));
+	}
+	return ReserveEntityIdRequest;
 }
 
 worker::RequestId<worker::DeleteEntityRequest> USpatialInterop::SendDeleteEntityRequest(const FEntityId& EntityId)
@@ -666,6 +710,22 @@ void USpatialInterop::ResolvePendingIncomingRPCs(const improbable::unreal::Unrea
 	}
 }
 
+void USpatialInterop::AddPendingActorRequest(FUntypedRequestId RequestId, USpatialActorChannel* Channel)
+{
+	PendingActorRequests.Emplace(RequestId, Channel);
+}
+
+USpatialActorChannel* USpatialInterop::RemovePendingActorRequest(FUntypedRequestId RequestId)
+{
+	USpatialActorChannel** Channel = PendingActorRequests.Find(RequestId);
+	if (Channel == nullptr)
+	{
+		return nullptr;
+	}
+	PendingActorRequests.Remove(RequestId);
+	return *Channel;
+}
+
 void USpatialInterop::ResolvePendingOutgoingArrayUpdates(UObject* Object)
 {
 	FChannelToHandleToOPARMap* ChannelToHandleToOPARMap = ObjectToOPAR.Find(Object);
@@ -719,7 +779,7 @@ void USpatialInterop::ResolvePendingOutgoingArrayUpdates(UObject* Object)
 	ObjectToOPAR.Remove(Object);
 }
 
-void USpatialInterop::LinkExistingSingletonActors(const NameToEntityIdMap& SingletonNameToEntityId)
+void USpatialInterop::LinkExistingSingletonActors(const PathNameToEntityIdMap& SingletonNameToEntityId)
 {
 	if (!NetDriver->IsServer())
 	{
@@ -776,7 +836,7 @@ void USpatialInterop::LinkExistingSingletonActors(const NameToEntityIdMap& Singl
 	}
 }
 
-void USpatialInterop::ExecuteInitialSingletonActorReplication(const NameToEntityIdMap& SingletonNameToEntityId)
+void USpatialInterop::ExecuteInitialSingletonActorReplication(const PathNameToEntityIdMap& SingletonNameToEntityId)
 {
 	for (const auto& pair : SingletonNameToEntityId)
 	{
@@ -846,10 +906,10 @@ void USpatialInterop::GetSingletonActorAndChannel(FString ClassName, AActor*& Ou
 	NetDriver->SingletonActorChannels.Add(SingletonActorClass, TPair<AActor*, USpatialActorChannel*>(OutActor, OutChannel));
 }
 
-void USpatialInterop::UpdateGlobalStateManager(const FString& ClassName, const FEntityId& SingletonEntityId)
+void USpatialInterop::UpdateSingletonId(const FString& ClassName, const FEntityId& SingletonEntityId)
 {
 	std::string SingletonName(TCHAR_TO_UTF8(*ClassName));
-	NameToEntityIdMap& SingletonNameToEntityId = *GetSingletonNameToEntityId();
+	PathNameToEntityIdMap& SingletonNameToEntityId = *GetSingletonNameToEntityId();
 	SingletonNameToEntityId[SingletonName] = SingletonEntityId.ToSpatialEntityId();
 
 	improbable::unreal::GlobalStateManager::Update Update;
@@ -869,7 +929,7 @@ bool USpatialInterop::IsSingletonClass(UClass* Class)
 	return false;
 }
 
-NameToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
+improbable::unreal::GlobalStateManagerData* USpatialInterop::GetGlobalStateManagerData() const
 {
 	TSharedPtr<worker::View> View = SpatialOSInstance->GetView().Pin();
 	auto It = View->Entities.find(SpatialConstants::GLOBAL_STATE_MANAGER);
@@ -877,8 +937,138 @@ NameToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
 	if (It != View->Entities.end())
 	{
 		improbable::unreal::GlobalStateManagerData* GSM = It->second.Get<improbable::unreal::GlobalStateManager>().data();
-		return &(GSM->singleton_name_to_entity_id());
+		return GSM;
 	}
 
 	return nullptr;
+}
+
+PathNameToEntityIdMap* USpatialInterop::GetSingletonNameToEntityId() const
+{
+	if (improbable::unreal::GlobalStateManagerData* GSMD = GetGlobalStateManagerData())
+	{
+		return &(GSMD->singleton_name_to_entity_id());
+	}
+
+	return nullptr;
+}
+
+PathNameToEntityIdMap* USpatialInterop::GetStablyNamedPathToEntityId() const
+{
+	if (improbable::unreal::GlobalStateManagerData* GSMD = GetGlobalStateManagerData())
+	{
+		return &(GSMD->stably_named_path_to_entity_id());
+	}
+
+	return nullptr;
+}
+
+void USpatialInterop::ReserveReplicatedStablyNamedActorChannel(USpatialActorChannel* Channel)
+{
+	ReplicatedStablyNamedActorQueue.Emplace(Channel->Actor, Channel);
+
+	if (CanSpawnReplicatedStablyNamedActors())
+	{
+		RegisterReplicatedStablyNamedActors();
+	}
+}
+
+void USpatialInterop::UnreserveReplicatedStablyNamedActor(AActor* Actor)
+{
+	ReplicatedStablyNamedActorQueue.Remove(Actor);
+}
+
+void USpatialInterop::AddReplicatedStablyNamedActorToGSM(const FEntityId& EntityId, AActor* Actor)
+{
+	PathNameToEntityIdMap* StablyNamedPathToEntityId = GetStablyNamedPathToEntityId();
+
+	if (StablyNamedPathToEntityId == nullptr)
+	{
+		return;
+	}
+
+	std::string Path = TCHAR_TO_UTF8(*Actor->GetPathName(Actor->GetWorld()));
+
+	// If the map already has the entity id, meaning the actor was already spawned, return early
+	if (StablyNamedPathToEntityId->count(Path))
+	{
+		return;
+	}
+
+	StablyNamedPathToEntityId->emplace(Path, EntityId.ToSpatialEntityId());
+
+	improbable::unreal::GlobalStateManager::Update Update;
+	Update.set_stably_named_path_to_entity_id(*StablyNamedPathToEntityId);
+
+	TSharedPtr<worker::Connection> Connection = SpatialOSInstance->GetConnection().Pin();
+	Connection->SendComponentUpdate<improbable::unreal::GlobalStateManager>(worker::EntityId((long)SpatialConstants::GLOBAL_STATE_MANAGER), Update);
+}
+
+void USpatialInterop::RegisterReplicatedStablyNamedActors()
+{
+	bCanSpawnReplicatedStablyNamedActors = true;
+	PathNameToEntityIdMap& StablyNamedPathToEntityId = *GetStablyNamedPathToEntityId();
+
+	for (const auto& Pair : ReplicatedStablyNamedActorQueue)
+	{
+		USpatialActorChannel* Channel = Pair.Value;
+		AActor* Actor = Pair.Key;
+		std::string Path = TCHAR_TO_UTF8(*Actor->GetPathName(Actor->GetWorld()));
+
+		// If the Actor was already spawned, just register the EntityId
+		if (StablyNamedPathToEntityId.count(Path))
+		{
+			Channel->RegisterEntityId(StablyNamedPathToEntityId[Path]);
+			continue;
+		}
+
+		// Otherwise, initiate the reservation (and thus creation) process
+		Channel->SendReserveEntityIdRequest();
+	}
+
+	ReplicatedStablyNamedActorQueue.Empty();
+}
+
+void USpatialInterop::DeleteIrrelevantReplicatedStablyNamedActors(const PathNameToEntityIdMap& StablyNamedPathToEntityId)
+{
+	for (const auto& Pair : StablyNamedPathToEntityId)
+	{
+		FString FullPath = UTF8_TO_TCHAR(Pair.first.c_str());
+		AActor* StableActor = FindObject<AActor>(GetWorld(), *FullPath);
+		worker::EntityId EntityId = Pair.second;
+
+		if (StableActor != nullptr && ReplicatedStablyNamedActorTimeoutMap.Find(EntityId) == nullptr)
+		{
+			TWeakObjectPtr<AActor> ActorPtr = StableActor;
+			FTimerHandle TimerHandle;
+			FTimerDelegate TimerCallback;
+			TimerCallback.BindLambda([ActorPtr, EntityId, this] {
+				ReplicatedStablyNamedActorTimeoutMap.Remove(EntityId);
+
+				if (AActor* Actor = ActorPtr.Get())
+				{
+					if (!PackageMap->GetNetGUIDFromEntityId(EntityId).IsValid())
+					{
+						UE_LOG(LogSpatialGDKInterop, Log, TEXT("Timed out (deleted) replicated stably named actor: %s"), *Actor->GetName());
+
+						UnreserveReplicatedStablyNamedActor(Actor);
+
+						LocallyDeleteActor(Actor);
+					}
+				}
+			});
+			TimerManager->SetTimer(TimerHandle, TimerCallback, SpatialConstants::REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS, false);
+			ReplicatedStablyNamedActorTimeoutMap.Add(EntityId, TimerCallback);
+		}
+	}
+}
+
+void USpatialInterop::LocallyDeleteActor(AActor* Actor)
+{
+	StartIgnoringAuthoritativeDestruction();
+	if (Actor->GetWorld()->DestroyActor(Actor, true) == false)
+	{
+		UE_LOG(LogSpatialGDKInterop, Error, TEXT("World->DestroyActor locally failed on %s"), *Actor->GetName());
+	}
+	StopIgnoringAuthoritativeDestruction();
 }
