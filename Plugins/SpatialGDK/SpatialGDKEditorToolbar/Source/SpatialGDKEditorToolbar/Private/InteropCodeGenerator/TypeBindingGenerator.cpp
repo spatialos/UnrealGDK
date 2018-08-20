@@ -782,73 +782,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
 
-	SourceWriter.Printf(R"""(
-		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-		// Note that this file has been generated automatically
-
-		#include "%s.h"
-
-		#include "NetworkGuid.h"
-
-		#include "SpatialOS.h"
-		#include "EntityBuilder.h"
-
-		#include "SpatialConstants.h"
-		#include "SpatialConditionMapFilter.h"
-		#include "SpatialUnrealObjectRef.h"
-		#include "SpatialActorChannel.h"
-		#include "SpatialPackageMapClient.h"
-		#include "SpatialMemoryReader.h"
-		#include "SpatialMemoryWriter.h"
-		#include "SpatialNetDriver.h"
-		#include "SpatialInterop.h")""", *InteropFilename);
-
-	// Include this class' header file
-	SourceWriter.PrintNewLine();
-	SourceWriter.Printf("#include \"%s\"", *GetFirstNativeClass(Class)->GetMetaData("IncludePath"));
-
-	// Find all rpc parameter objects and retrieve their path
-	TArray<FString> RPCIncludes;
-	for (auto Group : GetRPCTypes())
-	{
-		for (auto& RPC : RPCsByType[Group])
-		{
-			for (auto& RPCParam : RPC->Parameters)
-			{
-				FString ParamTypeName;
-				if (RPCParam.Key->IsA<UObjectPropertyBase>())
-				{
-					UClass* PropClass = Cast<UObjectPropertyBase>(RPCParam.Key)->PropertyClass;
-					if (RPCParam.Key->IsA<UClassProperty>())
-					{
-						PropClass = Cast<UClassProperty>(RPCParam.Key)->MetaClass;
-					}
-
-					ParamTypeName = GetNativeClassName(PropClass, false);
-				}
-				else if (RPCParam.Key->IsA<UStructProperty>())
-				{
-					const UStructProperty* StructProp = Cast<UStructProperty>(RPCParam.Key);
-					ParamTypeName = StructProp->Struct->GetName();
-				}
-
-				// TODO: validate this against blueprint structs UNR-499
-				if (UStruct* const Struct = FindObject<UStruct>(ANY_PACKAGE, *ParamTypeName))
-				{
-					RPCIncludes.AddUnique(Struct->GetMetaData("IncludePath"));
-				}
-			}
-		}		
-	}
-
-	RPCIncludes.Sort();
-	for (auto& RPCIncludePath : RPCIncludes)
-	{
-		if (RPCIncludePath.IsEmpty() == false)
-		{
-			SourceWriter.Printf("#include \"%s\"", *RPCIncludePath);
-		}
-	}
+	GenerateHeaderIncludes_Source(SourceWriter, InteropFilename, Class, RPCsByType, RepData);
 
 	SourceWriter.PrintNewLine();
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
@@ -958,6 +892,99 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 		{
 			SourceWriter.PrintNewLine();
 			GenerateFunction_RPCOnCommandResponse(SourceWriter, Class, RPC);
+		}
+	}
+}
+
+void AddIncludePath(const UProperty* UnrealProperty, TArray<FString>& HeaderIncludes)
+{
+	const UStruct* IncludeStruct = nullptr;
+
+	if (UnrealProperty->IsA<UObjectPropertyBase>())
+	{
+		UClass* PropClass = Cast<UObjectPropertyBase>(UnrealProperty)->PropertyClass;
+		if (UnrealProperty->IsA<UClassProperty>())
+		{
+			PropClass = Cast<UClassProperty>(UnrealProperty)->MetaClass;
+		}
+
+		IncludeStruct = GetFirstNativeClass(PropClass);
+	}
+	else if (UnrealProperty->IsA<UStructProperty>())
+	{
+		const UStructProperty* StructProp = Cast<UStructProperty>(UnrealProperty);
+		IncludeStruct = StructProp->Struct;
+	}
+
+	if (IncludeStruct)
+	{
+		HeaderIncludes.AddUnique(IncludeStruct->GetMetaData("IncludePath"));
+	}
+}
+
+void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& InteropFilename, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData)
+{
+	SourceWriter.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+
+		#include "%s.h"
+
+		#include "NetworkGuid.h"
+
+		#include "SpatialOS.h"
+		#include "EntityBuilder.h"
+
+		#include "SpatialConstants.h"
+		#include "SpatialConditionMapFilter.h"
+		#include "SpatialUnrealObjectRef.h"
+		#include "SpatialActorChannel.h"
+		#include "SpatialPackageMapClient.h"
+		#include "SpatialMemoryReader.h"
+		#include "SpatialMemoryWriter.h"
+		#include "SpatialNetDriver.h"
+		#include "SpatialInterop.h")""", *InteropFilename);
+
+	// Include this class' header file
+	TArray<FString> HeaderIncludes;
+	HeaderIncludes.AddUnique(GetFirstNativeClass(Class)->GetMetaData("IncludePath"));
+
+	// Find all rpc parameter objects and retrieve their path
+	for (auto Group : GetRPCTypes())
+	{
+		for (auto& RPC : RPCsByType[Group])
+		{
+			for (auto& RPCParam : RPC->Parameters)
+			{
+				AddIncludePath(RPCParam.Key, HeaderIncludes);
+			}
+		}
+	}
+
+	// Find all replicated objects within blueprints classes, and retrieve their path
+	for (auto Group : GetAllReplicatedPropertyGroups())
+	{
+		for (auto& RepProp : RepData[Group])
+		{
+			UProperty* UnrealProperty = RepProp.Value->Property;
+			if (UClass* RepClass = UnrealProperty->GetOwnerClass())
+			{
+				if (!RepClass->HasAnyClassFlags(CLASS_Native))
+				{
+					AddIncludePath(UnrealProperty, HeaderIncludes);
+				}
+			}
+		}
+	}
+
+	// Write out all the includes to source
+	SourceWriter.PrintNewLine();
+	HeaderIncludes.Sort();
+	for (auto& IncludePath : HeaderIncludes)
+	{
+		if (IncludePath.IsEmpty() == false)
+		{
+			SourceWriter.Printf("#include \"%s\"", *IncludePath);
 		}
 	}
 }

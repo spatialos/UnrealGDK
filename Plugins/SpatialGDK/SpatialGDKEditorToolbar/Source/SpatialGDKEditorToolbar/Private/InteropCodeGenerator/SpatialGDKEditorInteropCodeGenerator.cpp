@@ -75,7 +75,7 @@ bool CheckClassNameListValidity(const TArray<UClass*>& Classes)
 	}
 
 	// Ensure class conforms to schema uppercase letter check
-	for (auto& Class : Classes)
+	for (const auto& Class : Classes)
 	{
 		FString ClassName = Class->GetName();
 		if (FChar::IsLower(ClassName[0]))
@@ -92,7 +92,7 @@ void GenerateInteropFromClasses(const TArray<UClass*>& Classes, const FString& C
 {
 	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 	int ComponentId = 100010;
-	for (auto& Class : Classes)
+	for (const auto& Class : Classes)
 	{
 		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class);
 	}

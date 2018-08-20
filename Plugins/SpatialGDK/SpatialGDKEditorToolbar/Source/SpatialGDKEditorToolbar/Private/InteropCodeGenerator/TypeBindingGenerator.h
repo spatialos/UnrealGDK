@@ -53,6 +53,7 @@ void GenerateTypeBindingSource(
 	BPStructTypesAndPaths& GeneratedStructInfo);
 
 // Helper functions used when generating the source file.
+void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& InteropFilename, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData);
 void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_GetHandoverHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class);
