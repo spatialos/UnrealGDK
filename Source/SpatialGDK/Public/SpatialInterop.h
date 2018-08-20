@@ -297,7 +297,7 @@ private:
 
 	bool bCanSpawnReplicatedStablyNamedActors;
 	TMap<AActor*, USpatialActorChannel*> ReplicatedStablyNamedActorQueue;
-	TMap<worker::EntityId, FTimerDelegate> ReplicatedStablyNamedActorTimeoutMap;
+	TMap<int64, FTimerDelegate> ReplicatedStablyNamedActorTimeoutMap;
 
 	// Used to queue resolved objects when added during a critical section. These objects then have
 	// any pending operations resolved on them once the critical section has ended.
