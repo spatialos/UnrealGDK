@@ -777,32 +777,13 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename,
 	UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo, BPStructTypesAndPaths& GeneratedStructInfo)
 {
-	// Get replicated data and RPCs.
+	// Get replicated data, RPCs and component.
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
-
-	GenerateHeaderIncludes_Source(SourceWriter, InteropFilename, Class, RPCsByType, RepData);
-
-	SourceWriter.PrintNewLine();
-	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
-	{
-		SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaReplicatedDataName(Group, Class));
-	}
-	SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaHandoverDataName(Class));
-
 	TArray<UClass*> Components = GetAllSupportedComponents(Class);
 
-	for (UClass* ComponentClass : Components)
-	{
-		SourceWriter.PrintNewLine();
-		SourceWriter.Printf("#include \"SpatialTypeBinding_%s.h\"", *ComponentClass->GetName());
-		for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
-		{
-			SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaReplicatedDataName(Group, ComponentClass));
-		}
-		SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaHandoverDataName(ComponentClass));
-	}
+	GenerateHeaderIncludes_Source(SourceWriter, InteropFilename, Class, RPCsByType, RepData, Components);
 
 	// Generate methods implementations
 
@@ -922,7 +903,7 @@ void AddIncludePath(const UProperty* UnrealProperty, TArray<FString>& HeaderIncl
 	}
 }
 
-void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& InteropFilename, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData)
+void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& InteropFilename, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const TArray<UClass*>& Components)
 {
 	SourceWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -974,6 +955,13 @@ void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& Int
 					AddIncludePath(UnrealProperty, HeaderIncludes);
 				}
 			}
+			else if (UScriptStruct* RepStruct = Cast<UScriptStruct>(UnrealProperty->GetOwnerStruct()))
+			{
+				if (!(RepStruct->StructFlags & STRUCT_Native))
+				{
+					AddIncludePath(UnrealProperty, HeaderIncludes);
+				}
+			}
 		}
 	}
 
@@ -986,6 +974,24 @@ void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& Int
 		{
 			SourceWriter.Printf("#include \"%s\"", *IncludePath);
 		}
+	}
+
+	SourceWriter.PrintNewLine();
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaReplicatedDataName(Group, Class));
+	}
+	SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaHandoverDataName(Class));
+
+	for (UClass* ComponentClass : Components)
+	{
+		SourceWriter.PrintNewLine();
+		SourceWriter.Printf("#include \"SpatialTypeBinding_%s.h\"", *ComponentClass->GetName());
+		for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+		{
+			SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaReplicatedDataName(Group, ComponentClass));
+		}
+		SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaHandoverDataName(ComponentClass));
 	}
 }
 
@@ -1222,7 +1228,7 @@ void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, TArray<UClass*> Components)
+void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, const TArray<UClass*>& Components)
 {
 	SourceWriter.BeginFunction(
 		{"worker::Entity", "CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const"},
@@ -1459,7 +1465,7 @@ void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class, TArray<UClass*> Components)
+void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class, const TArray<UClass*>& Components)
 {
 	SourceWriter.BeginFunction(
 		{"void", "ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const"},

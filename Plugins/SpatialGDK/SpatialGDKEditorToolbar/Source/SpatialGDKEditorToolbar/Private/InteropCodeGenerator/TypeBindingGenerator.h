@@ -53,18 +53,18 @@ void GenerateTypeBindingSource(
 	BPStructTypesAndPaths& GeneratedStructInfo);
 
 // Helper functions used when generating the source file.
-void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& InteropFilename, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData);
+void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& InteropFilename, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const TArray<UClass*>& Components);
 void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_GetHandoverHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData, BPStructTypesAndPaths& GeneratedStructInfo);
 void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType);
 void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class);
-void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, TArray<UClass*> Components);
+void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, const TArray<UClass*>& Components);
 void GenerateBody_SpatialComponents(FCodeWriter& SourceWriter, UClass* Class, TArray<FString>& SpatialComponents);
 void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class);
-void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class, TArray<UClass*> Components);
+void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class, const TArray<UClass*>& Components);
 void GenerateFunction_GetInterestOverrideMap(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData, EReplicatedPropertyGroup Group);
