@@ -199,7 +199,6 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(const UObje
 void FSpatialNetGUIDCache::RemoveEntityNetGUID(worker::EntityId EntityId)
 {
 	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
-	AActor* Actor = Cast<AActor>(GetObjectFromNetGUID(EntityNetGUID, false));
 	RemoveNetGUID(EntityNetGUID);
 }
 
