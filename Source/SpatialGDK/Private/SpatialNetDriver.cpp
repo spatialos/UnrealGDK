@@ -737,7 +737,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	// Not calling Super:: on purpose.
 	UNetDriver::TickDispatch(DeltaTime);
 
-	if (SpatialOSInstance != nullptr && SpatialOSInstance->GetEntityPipeline() != nullptr)
+	if (SpatialOSInstance != nullptr && InteropPipelineBlock != nullptr)
 	{
 		SpatialOSInstance->ProcessOps();
 		SpatialOSInstance->GetEntityPipeline()->ProcessOps(SpatialOSInstance->GetView(), SpatialOSInstance->GetConnection(), GetWorld());
