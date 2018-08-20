@@ -93,6 +93,8 @@ public:
 	virtual bool ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
 
+	void SendReserveEntityIdRequest();
+	void RegisterEntityId(const FEntityId& ActorEntityId);
 	bool ReplicateSubobject(UObject *Obj, const FReplicationFlags &RepFlags);
 	FPropertyChangeState CreateSubobjectChangeState(UActorComponent* Component);
 	TArray<uint16> SkipOverChangelistArrays(FObjectReplicator& Replicator);
