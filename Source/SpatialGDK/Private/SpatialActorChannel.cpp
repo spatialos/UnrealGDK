@@ -518,7 +518,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 
 		if (InActor->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
 		{
-			Interop->DTBManager->SendReserveEntityIdRequest(this);
+			if (Interop->DTBManager) Interop->DTBManager->SendReserveEntityIdRequest(this);
 		}
 		else
 		{

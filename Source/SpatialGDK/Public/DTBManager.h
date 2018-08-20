@@ -41,6 +41,8 @@ struct ClassInfo
 	Worker_ComponentId RPCComponents[ARPC_Count];
 };
 
+using FChannelObjectPair = TPair<USpatialActorChannel*, UObject*>;
+
 UCLASS()
 class SPATIALGDK_API UDTBManager : public UObject
 {
@@ -66,6 +68,8 @@ public:
 
 	void OnAuthorityChange(Worker_AuthorityChangeOp& Op);
 
+	void HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, EAlsoReplicatedPropertyGroup PropertyGroup);
+
 	void SendReserveEntityIdRequest(USpatialActorChannel* Channel);
 
 	void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel);
@@ -88,13 +92,13 @@ public:
 	void ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle);
 	void QueueOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<const UObject*>& UnresolvedObjects);
 
+	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<UnrealObjectRef>& UnresolvedRefs);
+
 	void ResolvePendingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
 	void ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef);
 
 	void ResolveOutgoingOperations(UObject* Object);
-
-	// There's gotta be a better way to do this
-	using FChannelObjectPair = TPair<USpatialActorChannel*, UObject*>;
+	void ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
 
 	using FUnresolvedEntry = TSharedPtr<TSet<const UObject*>>;
 	using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;
@@ -103,6 +107,11 @@ public:
 
 	FChannelToHandleToUnresolved PropertyToUnresolved;
 	FOutgoingRepUpdates ObjectToUnresolved;
+
+
+	TMap<UnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
+	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
+
 
 	TArray<TPair<UObject*, UnrealObjectRef>> ResolvedObjectQueue;
 

@@ -232,7 +232,7 @@ void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const
 {
 	if (Actor->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
 	{
-		DTBManager->SendSpatialPositionUpdate(EntityId.ToSpatialEntityId(), Location);
+		if (DTBManager) DTBManager->SendSpatialPositionUpdate(EntityId.ToSpatialEntityId(), Location);
 		return;
 	}
 
@@ -255,7 +255,7 @@ void USpatialInterop::SendSpatialUpdateForObject(USpatialActorChannel* Channel, 
 {
 	if (Object->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
 	{
-		DTBManager->SendComponentUpdates(Object, Channel->GetChangeStateForObject(Object, Replicator, RepChanged, HandoverChanged), Channel);
+		if (DTBManager) DTBManager->SendComponentUpdates(Object, Channel->GetChangeStateForObject(Object, Replicator, RepChanged, HandoverChanged), Channel);
 		return;
 	}
 
@@ -271,7 +271,7 @@ void USpatialInterop::InvokeRPC(UObject* TargetObject, UFunction* Function, void
 {
 	if (TargetObject->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
 	{
-		DTBManager->SendRPC(TargetObject, Function, Parameters);
+		if (DTBManager) DTBManager->SendRPC(TargetObject, Function, Parameters);
 		return;
 	}
 

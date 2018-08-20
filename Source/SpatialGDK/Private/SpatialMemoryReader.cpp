@@ -4,6 +4,7 @@
 
 #include "SpatialPackageMapClient.h"
 #include "WeakObjectPtr.h"
+#include "SchemaHelpers.h"
 
 void FSpatialMemoryReader::DeserializeObjectRef(improbable::unreal::UnrealObjectRef& ObjectRef)
 {
@@ -70,10 +71,10 @@ FArchive& FSpatialMemoryReader::operator<<(FWeakObjectPtr& Value)
 	return *this;
 }
 
-void FSpatialNetBitReader::DeserializeObjectRef(improbable::unreal::UnrealObjectRef& ObjectRef)
+void FSpatialNetBitReader::DeserializeObjectRef(UnrealObjectRef& ObjectRef)
 {
-	*this << ObjectRef.entity();
-	*this << ObjectRef.offset();
+	*this << ObjectRef.Entity;
+	*this << ObjectRef.Offset;
 
 	uint8 HasPath;
 	SerializeBits(&HasPath, 1);
@@ -82,43 +83,44 @@ void FSpatialNetBitReader::DeserializeObjectRef(improbable::unreal::UnrealObject
 		FString Path;
 		*this << Path;
 
-		ObjectRef.path() = std::string(TCHAR_TO_UTF8(*Path));
+		ObjectRef.Path.reset(new std::string(TCHAR_TO_UTF8(*Path)));
 	}
 
 	uint8 HasOuter;
 	SerializeBits(&HasOuter, 1);
 	if (HasOuter)
 	{
-		improbable::unreal::UnrealObjectRef Outer;
-		DeserializeObjectRef(Outer);
-
-		ObjectRef.outer() = Outer;
+		ObjectRef.Outer.reset(new UnrealObjectRef());
+		DeserializeObjectRef(*ObjectRef.Outer);
 	}
 }
 
 FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
 {
-	improbable::unreal::UnrealObjectRef ObjectRef;
+	UnrealObjectRef ObjectRef;
 
 	DeserializeObjectRef(ObjectRef);
 
-	check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-	if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
+	check(ObjectRef != UNRESOLVED_OBJECT_REF);
+	if (ObjectRef == NULL_OBJECT_REF)
 	{
 		Value = nullptr;
 	}
 	else
 	{
 		auto PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
-		FNetworkGUID NetGUID = PackageMapClient->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+		FNetworkGUID NetGUID = PackageMapClient->GetNetGUIDFromUnrealObjectRef(ObjectRef.ToCppAPI());
 		if (NetGUID.IsValid())
 		{
 			Value = PackageMapClient->GetObjectFromNetGUID(NetGUID, true);
-			checkf(Value, TEXT("An object ref %s should map to a valid object."), *ObjectRefToString(ObjectRef));
+			checkf(Value, TEXT("An object ref %s should map to a valid object."), *ObjectRef.ToString());
 		}
 		else
 		{
-			// TODO: Handle unresolved object refs on the receiving end
+			if (PackageMapClient->bShouldTrackUnresolvedRefs)
+			{
+				PackageMapClient->TrackedUnresolvedRefs.Add(ObjectRef);
+			}
 			Value = nullptr;
 		}
 	}

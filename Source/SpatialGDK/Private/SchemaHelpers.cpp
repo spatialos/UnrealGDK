@@ -8,6 +8,16 @@
 
 #include <set>
 
+uint32 GetTypeHash(const UnrealObjectRef& ObjectRef)
+{
+	uint32 Result = 1327u;
+	Result = (Result * 977u) + std::hash<Worker_EntityId>{}(ObjectRef.Entity);
+	Result = (Result * 977u) + std::hash<std::uint32_t>{}(ObjectRef.Offset);
+	Result = (Result * 977u) + (ObjectRef.Path ? 1327u * (std::hash<std::string>{}(*ObjectRef.Path) + 977u) : 977u);
+	Result = (Result * 977u) + (ObjectRef.Outer ? 1327u * (GetTypeHash(*ObjectRef.Outer) + 977u) : 977u);
+	return Result;
+}
+
 void Schema_AddObjectRef(Schema_Object* Object, Schema_FieldId Id, const UnrealObjectRef& ObjectRef)
 {
 	auto ObjectRefObject = Schema_AddObject(Object, Id);
@@ -416,33 +426,51 @@ std::uint32_t Schema_GetPropertyCount(const Schema_Object* Object, Schema_FieldI
 	}
 }
 
-void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index, UProperty* Property, uint8* Data, USpatialPackageMapClient* PackageMap, UNetDriver* Driver)
+void ReadStructProperty(FSpatialNetBitReader& Reader, USpatialPackageMapClient* PackageMap, UStructProperty* Property, uint8* Data, UNetDriver* Driver, bool& bOutHasUnmapped)
+{
+	UScriptStruct* Struct = Property->Struct;
+
+	if (Struct->StructFlags & STRUCT_NetSerializeNative)
+	{
+		UScriptStruct::ICppStructOps* CppStructOps = Struct->GetCppStructOps();
+		check(CppStructOps); // else should not have STRUCT_NetSerializeNative
+		bool bSuccess = true;
+		if (!CppStructOps->NetSerialize(Reader, PackageMap, bSuccess, Data))
+		{
+			bOutHasUnmapped = true;
+		}
+		checkf(bSuccess, TEXT("NetSerialize on %s failed."), *Struct->GetStructCPPName());
+	}
+	else
+	{
+		TSharedPtr<FRepLayout> RepLayout = Driver->GetStructRepLayout(Struct);
+
+		RepLayout_SerializePropertiesForStruct(*RepLayout, Reader, PackageMap, Data, bOutHasUnmapped);
+	}
+}
+
+void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index, UProperty* Property, uint8* Data, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs, int32 Offset, uint16 ParentIndex)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
-		UScriptStruct* Struct = StructProperty->Struct;
 		auto ValueData = Schema_IndexString(Object, Id, Index);
 		// A bit hacky, we should probably include the number of bits with the data instead.
 		int64 CountBits = ValueData.size() * 8;
 		FSpatialNetBitReader ValueDataReader(PackageMap, (uint8*)ValueData.data(), CountBits);
 		bool bHasUnmapped = false;
 
-		if (Struct->StructFlags & STRUCT_NetSerializeNative)
-		{
-			UScriptStruct::ICppStructOps* CppStructOps = Struct->GetCppStructOps();
-			check(CppStructOps); // else should not have STRUCT_NetSerializeNative
-			bool bSuccess = true;
-			if (!CppStructOps->NetSerialize(ValueDataReader, PackageMap, bSuccess, Data))
-			{
-				bHasUnmapped = true;
-			}
-			checkf(bSuccess, TEXT("NetSerialize on %s failed."), *Struct->GetStructCPPName());
-		}
-		else
-		{
-			TSharedPtr<FRepLayout> RepLayout = Driver->GetStructRepLayout(Struct);
+		PackageMap->ResetTrackedObjectRefs(true);
 
-			RepLayout_SerializePropertiesForStruct(*RepLayout, ValueDataReader, PackageMap, Data, bHasUnmapped);
+		ReadStructProperty(ValueDataReader, PackageMap, StructProperty, Data, Driver, bHasUnmapped);
+
+		if (bHasUnmapped)
+		{
+			ObjectReferencesMap.Add(Offset, FObjectReferences(TArray<uint8>((uint8*)ValueData.data(), ValueData.size()), CountBits, PackageMap->GetTrackedUnresolvedRefs(), ParentIndex, Property));
+			UnresolvedRefs.Append(PackageMap->GetTrackedUnresolvedRefs());
+		}
+		else if (ObjectReferencesMap.Find(Offset))
+		{
+			ObjectReferencesMap.Remove(Offset);
 		}
 	}
 	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
@@ -493,6 +521,8 @@ void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t 
 	{
 		UnrealObjectRef ObjectRef = Schema_IndexObjectRef(Object, Id, Index);
 		check(ObjectRef != UNRESOLVED_OBJECT_REF);
+		bool bUnresolved = false;
+
 		if (ObjectRef == NULL_OBJECT_REF)
 		{
 			ObjectProperty->SetObjectPropertyValue(Data, nullptr);
@@ -509,8 +539,15 @@ void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t 
 			}
 			else
 			{
-				// TODO: Queue up unresolved object ref
+				ObjectReferencesMap.Add(Offset, FObjectReferences(ObjectRef, ParentIndex, Property));
+				UnresolvedRefs.Add(ObjectRef);
+				bUnresolved = true;
 			}
+		}
+
+		if (!bUnresolved && ObjectReferencesMap.Find(Offset))
+		{
+			ObjectReferencesMap.Remove(Offset);
 		}
 	}
 	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
@@ -525,19 +562,6 @@ void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t 
 	{
 		TextProperty->SetPropertyValue(Data, FText::FromString(FString(UTF8_TO_TCHAR(Schema_IndexString(Object, Id, Index).c_str()))));
 	}
-	else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property))
-	{
-		// TODO: This is potentionally very very jank
-		FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
-
-		int Count = Schema_GetPropertyCount(Object, Id, ArrayProperty->Inner);
-		ArrayHelper.Resize(Count);
-
-		for (int i = 0; i < Count; i++)
-		{
-			Schema_GetProperty(Object, Id, i, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), PackageMap, Driver);
-		}
-	}
 	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
 	{
 		if (EnumProperty->ElementSize < 4)
@@ -546,12 +570,59 @@ void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t 
 		}
 		else
 		{
-			Schema_GetProperty(Object, Id, Index, EnumProperty->GetUnderlyingProperty(), Data, PackageMap, Driver);
+			Schema_GetProperty(Object, Id, Index, EnumProperty->GetUnderlyingProperty(), Data, PackageMap, Driver, ObjectReferencesMap, UnresolvedRefs, Offset, ParentIndex);
 		}
 	}
 	else
 	{
 		checkf(false, TEXT("What is this"));
+	}
+}
+
+void Schema_GetArrayProperty(Schema_Object* Object, Schema_FieldId Id, UArrayProperty* Property, uint8* Data, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs, int32 Offset, uint16 ParentIndex)
+{
+	FObjectReferencesMap* ArrayObjectReferences;
+	bool bNewArrayMap = false;
+	if (auto ExistingEntry = ObjectReferencesMap.Find(Offset))
+	{
+		check(ExistingEntry->Array);
+		ArrayObjectReferences = ExistingEntry->Array.Get();
+	}
+	else
+	{
+		bNewArrayMap = true;
+		ArrayObjectReferences = new FObjectReferencesMap();
+	}
+
+	FScriptArrayHelper ArrayHelper(Property, Data);
+
+	int Count = Schema_GetPropertyCount(Object, Id, Property->Inner);
+	ArrayHelper.Resize(Count);
+
+	for (int i = 0; i < Count; i++)
+	{
+		int32 ElementOffset = i * Property->Inner->ElementSize;
+		Schema_GetProperty(Object, Id, i, Property->Inner, ArrayHelper.GetRawPtr(i), PackageMap, Driver, *ArrayObjectReferences, UnresolvedRefs, ElementOffset, ParentIndex);
+	}
+
+	if (ArrayObjectReferences->Num() > 0)
+	{
+		if (bNewArrayMap)
+		{
+			// FObjectReferences takes ownership over ArrayObjectReferences
+			ObjectReferencesMap.Add(Offset, FObjectReferences(ArrayObjectReferences, ParentIndex, Property));
+		}
+	}
+	else
+	{
+		if (bNewArrayMap)
+		{
+			delete ArrayObjectReferences;
+		}
+		else
+		{
+			ObjectReferencesMap.Remove(Offset);
+		}
 	}
 }
 
@@ -567,7 +638,7 @@ EAlsoReplicatedPropertyGroup GetAlsoGroupFromCondition(ELifetimeCondition Condit
 	}
 }
 
-void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool IsUpdate = false, const std::set<Schema_FieldId>& ClearedIds = std::set<Schema_FieldId>())
+void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs, bool bIsInitialData, const std::set<Schema_FieldId>& ClearedIds = std::set<Schema_FieldId>())
 {
 	Channel->PreReceiveSpatialUpdate(Channel->Actor);
 
@@ -596,9 +667,16 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 
 				uint8* Data = (uint8*)Channel->Actor + SwappedCmd.Offset;
 
-				if (!IsUpdate || Schema_GetPropertyCount(ComponentObject, HandleIterator.Handle, Cmd.Property) > 0 || ClearedIds.find(HandleIterator.Handle) != ClearedIds.end())
+				if (bIsInitialData || Schema_GetPropertyCount(ComponentObject, HandleIterator.Handle, Cmd.Property) > 0 || ClearedIds.find(HandleIterator.Handle) != ClearedIds.end())
 				{
-					Schema_GetProperty(ComponentObject, HandleIterator.Handle, 0, Cmd.Property, Data, PackageMap, Driver);
+					if (Cmd.Type == REPCMD_DynamicArray)
+					{
+						Schema_GetArrayProperty(ComponentObject, HandleIterator.Handle, Cast<UArrayProperty>(Cmd.Property), Data, PackageMap, Driver, ObjectReferencesMap, UnresolvedRefs, SwappedCmd.Offset, Cmd.ParentIndex);
+					}
+					else
+					{
+						Schema_GetProperty(ComponentObject, HandleIterator.Handle, 0, Cmd.Property, Data, PackageMap, Driver, ObjectReferencesMap, UnresolvedRefs, SwappedCmd.Offset, Cmd.ParentIndex);
+					}
 
 					// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
 					if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
@@ -624,14 +702,14 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 	Channel->PostReceiveSpatialUpdate(Channel->Actor, RepNotifies);
 }
 
-void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup)
+void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs)
 {
 	auto ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, Driver, PropertyGroup);
+	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, Driver, PropertyGroup, ObjectReferencesMap, UnresolvedRefs, true);
 }
 
-void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup)
+void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs)
 {
 	auto ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
@@ -645,10 +723,10 @@ void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatia
 		ClearedIds.insert(FieldId);
 	}
 
-	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, Driver, PropertyGroup, true, ClearedIds);
+	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, Driver, PropertyGroup, ObjectReferencesMap, UnresolvedRefs, false, ClearedIds);
 }
 
-bool Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FUnresolvedObjectsMap* UnresolvedObjectsMap = nullptr, std::vector<Schema_FieldId>* ClearedIds = nullptr)
+bool Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FUnresolvedObjectsMap& UnresolvedObjectsMap, bool bIsInitialData, std::vector<Schema_FieldId>* ClearedIds = nullptr)
 {
 	bool bWroteSomething = false;
 
@@ -673,11 +751,15 @@ bool Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyCha
 				{
 					bWroteSomething = true;
 				}
-				else if (UnresolvedObjectsMap)
+				else
 				{
-					Schema_ClearField(ComponentObject, HandleIterator.Handle);
+					if (!bIsInitialData)
+					{
+						// We have to write something if it's initial data. ...I think.
+						Schema_ClearField(ComponentObject, HandleIterator.Handle);
+					}
 
-					UnresolvedObjectsMap->Add(HandleIterator.Handle, UnresolvedObjects);
+					UnresolvedObjectsMap.Add(HandleIterator.Handle, UnresolvedObjects);
 				}
 			}
 
@@ -700,14 +782,14 @@ bool Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyCha
 	return bWroteSomething;
 }
 
-Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup)
+Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FUnresolvedObjectsMap& UnresolvedObjectsMap)
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
 	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
 	auto ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	Schema_FillDynamicObject(ComponentObject, Changes, PackageMap, Driver, PropertyGroup);
+	Schema_FillDynamicObject(ComponentObject, Changes, PackageMap, Driver, PropertyGroup, UnresolvedObjectsMap, true);
 
 	return ComponentData;
 }
@@ -722,7 +804,7 @@ Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const
 
 	std::vector<Schema_FieldId> ClearedIds;
 
-	bWroteSomething = Schema_FillDynamicObject(ComponentObject, Changes, PackageMap, Driver, PropertyGroup, &UnresolvedObjectsMap, &ClearedIds);
+	bWroteSomething = Schema_FillDynamicObject(ComponentObject, Changes, PackageMap, Driver, PropertyGroup, UnresolvedObjectsMap, false, &ClearedIds);
 
 	for (auto Id : ClearedIds)
 	{
@@ -875,6 +957,117 @@ void ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, Worke
 			{
 				It->DestroyValue_InContainer(Parms);
 			}
+		}
+	}
+}
+
+void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved)
+{
+	for (auto It = ObjectReferencesMap.CreateIterator(); It; ++It)
+	{
+		int32 AbsOffset = It.Key();
+
+		if (AbsOffset >= MaxAbsOffset)
+		{
+			UE_LOG(LogTemp, Log, TEXT("!!! ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset: %d"), AbsOffset);
+			It.RemoveCurrent();
+			continue;
+		}
+
+		auto& ObjectReferences = It.Value();
+		auto Property = ObjectReferences.Property;
+		auto& Parent = RepLayout.Parents[ObjectReferences.ParentIndex];
+
+		if (ObjectReferences.Array)
+		{
+			check(Property->IsA<UArrayProperty>());
+
+			auto* StoredArray = (FScriptArray*)(StoredData + AbsOffset);
+			auto* Array = (FScriptArray*)(Data + AbsOffset);
+
+			int32 NewMaxOffset = FMath::Min(StoredArray->Num(), Array->Num()) * Property->ElementSize;
+
+			bool bArrayHasUnresolved = false;
+			ResolveObjectReferences(RepLayout, ReplicatedObject, *ObjectReferences.Array, PackageMap, Driver, (uint8*)StoredArray->GetData(), (uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped, bArrayHasUnresolved);
+			if (!bArrayHasUnresolved)
+			{
+				It.RemoveCurrent();
+			}
+			else
+			{
+				bOutStillHasUnresolved = true;
+			}
+			continue;
+		}
+
+		bool bResolvedSomeRefs = false;
+		UObject* SinglePropObject = nullptr;
+
+		for (auto UnresolvedIt = ObjectReferences.UnresolvedRefs.CreateIterator(); UnresolvedIt; ++UnresolvedIt)
+		{
+			auto& ObjectRef = *UnresolvedIt;
+
+			auto NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef.ToCppAPI());
+			if (NetGUID.IsValid())
+			{
+				UObject* Object = PackageMap->GetObjectFromNetGUID(NetGUID, true);
+				check(Object);
+
+				UE_LOG(LogTemp, Log, TEXT("!!! ResolveObjectReferences: Resolved object ref: Offset: %d, Object ref: %s, PropName: %s, ObjName: %s"), AbsOffset, *ObjectRef.ToString(), *Property->GetNameCPP(), *Object->GetName());
+
+				UnresolvedIt.RemoveCurrent();
+				bResolvedSomeRefs = true;
+
+				if (ObjectReferences.bSingleProp)
+				{
+					SinglePropObject = Object;
+				}
+			}
+		}
+
+		if (bResolvedSomeRefs)
+		{
+			if (!bOutSomeObjectsWereMapped)
+			{
+				ReplicatedObject->PreNetReceive();
+				bOutSomeObjectsWereMapped = true;
+			}
+
+			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
+			{
+				Property->CopySingleValue(StoredData + AbsOffset, Data + AbsOffset);
+			}
+
+			if (ObjectReferences.bSingleProp)
+			{
+				auto ObjectProperty = Cast<UObjectPropertyBase>(Property);
+				check(ObjectProperty);
+
+				ObjectProperty->SetObjectPropertyValue(Data + AbsOffset, SinglePropObject);
+			}
+			else
+			{
+				FSpatialNetBitReader Reader(PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits);
+				check(Property->IsA<UStructProperty>());
+				ReadStructProperty(Reader, PackageMap, Cast<UStructProperty>(Property), Data + AbsOffset, Driver, bOutStillHasUnresolved);
+			}
+
+			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
+			{
+				if (Parent.RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + AbsOffset, Data + AbsOffset))
+				{
+					RepNotifies.AddUnique(Parent.Property);
+				}
+			}
+		}
+
+		if (ObjectReferences.UnresolvedRefs.Num() > 0)
+		{
+			bOutStillHasUnresolved = true;
+		}
+		else
+		{
+			It.RemoveCurrent();
 		}
 	}
 }

@@ -281,13 +281,20 @@ void UDTBManager::OnDynamicData(Worker_ComponentData& Data, USpatialActorChannel
 	auto Info = FindClassInfoByClass(Class);
 	check(Info);
 
+	// TODO: Make this work with subobjects
+	UObject* TargetObject = Channel->Actor;
+	auto ChannelObjectPair = FChannelObjectPair(Channel, TargetObject);
+
+	auto& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
+	TSet<UnrealObjectRef> UnresolvedRefs;
+
 	if (Data.component_id == Info->SingleClientComponent)
 	{
-		ReadDynamicData(Data, Channel, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient);
+		ReadDynamicData(Data, Channel, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient, ObjectReferencesMap, UnresolvedRefs);
 	}
 	else if (Data.component_id == Info->MultiClientComponent)
 	{
-		ReadDynamicData(Data, Channel, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient);
+		ReadDynamicData(Data, Channel, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient, ObjectReferencesMap, UnresolvedRefs);
 	}
 	else if (Data.component_id == Info->HandoverComponent)
 	{
@@ -297,6 +304,8 @@ void UDTBManager::OnDynamicData(Worker_ComponentData& Data, USpatialActorChannel
 	{
 		UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping because RPC components don't have actual data."));
 	}
+
+	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
 
 void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
@@ -339,7 +348,8 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 			return;
 		}
 		check(ActorChannel);
-		ReceiveDynamicUpdate(Op.update, ActorChannel, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient);
+
+		HandleComponentUpdate(Op.update, ActorChannel, AGROUP_SingleClient);
 	}
 	else if (Op.update.component_id == Info->MultiClientComponent)
 	{
@@ -349,7 +359,8 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 			return;
 		}
 		check(ActorChannel);
-		ReceiveDynamicUpdate(Op.update, ActorChannel, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient);
+
+		HandleComponentUpdate(Op.update, ActorChannel, AGROUP_MultiClient);
 	}
 	else if (Op.update.component_id == Info->HandoverComponent)
 	{
@@ -374,6 +385,32 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	else
 	{
 		UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping because it's an empty component update from an RPC component. (most likely as a result of gaining authority)"));
+	}
+}
+
+void UDTBManager::HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, EAlsoReplicatedPropertyGroup PropertyGroup)
+{
+	// TODO: Make this work with subobjects
+	UObject* TargetObject = Channel->Actor;
+	auto ChannelObjectPair = FChannelObjectPair(Channel, TargetObject);
+
+	auto& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
+	TSet<UnrealObjectRef> UnresolvedRefs;
+	ReceiveDynamicUpdate(ComponentUpdate, Channel, PackageMap, Interop->GetNetDriver(), PropertyGroup, ObjectReferencesMap, UnresolvedRefs);
+
+	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
+}
+
+void UDTBManager::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<UnrealObjectRef>& UnresolvedRefs)
+{
+	for (auto& UnresolvedRef : UnresolvedRefs)
+	{
+		IncomingRefsMap.FindOrAdd(UnresolvedRef).Add(ChannelObjectPair);
+	}
+
+	if (ObjectReferencesMap.Num() == 0)
+	{
+		UnresolvedRefsMap.Remove(ChannelObjectPair);
 	}
 }
 
@@ -491,8 +528,15 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 	ComponentDatas.push_back(CreatePersistenceData(PersistenceData()));
 	ComponentDatas.push_back(CreateUnrealMetadataData(UnrealMetadataData(StaticPath, ClientWorkerIdString, SubobjectNameToOffset)));
 
-	ComponentDatas.push_back(CreateDynamicData(Info->SingleClientComponent, InitialChanges, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient));
-	ComponentDatas.push_back(CreateDynamicData(Info->MultiClientComponent, InitialChanges, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient));
+	FUnresolvedObjectsMap UnresolvedObjectsMap;
+
+	ComponentDatas.push_back(CreateDynamicData(Info->SingleClientComponent, InitialChanges, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient, UnresolvedObjectsMap));
+	ComponentDatas.push_back(CreateDynamicData(Info->MultiClientComponent, InitialChanges, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient, UnresolvedObjectsMap));
+
+	for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
+	{
+		QueueOutgoingRepUpdate(Channel, Actor, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value);
+	}
 
 	// TODO: Handover
 	Worker_ComponentData HandoverData = {};
@@ -753,6 +797,7 @@ void UDTBManager::ResolvePendingOperations_Internal(UObject* Object, const Unrea
 {
 	UE_LOG(LogTemp, Log, TEXT("!!! Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 	ResolveOutgoingOperations(Object);
+	ResolveIncomingOperations(Object, ObjectRef);
 }
 
 void UDTBManager::ResolveOutgoingOperations(UObject* Object)
@@ -805,4 +850,44 @@ void UDTBManager::ResolveOutgoingOperations(UObject* Object)
 	}
 
 	ObjectToUnresolved.Remove(Object);
+}
+
+void UDTBManager::ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef)
+{
+	auto TargetObjectSet = IncomingRefsMap.Find(ObjectRef);
+	if (!TargetObjectSet) return;
+
+	for (auto& ChannelObjectPair : *TargetObjectSet)
+	{
+		auto UnresolvedRefs = UnresolvedRefsMap.Find(ChannelObjectPair);
+
+		if (!UnresolvedRefs)
+		{
+			continue;
+		}
+
+		auto DependentChannel = ChannelObjectPair.Key;
+		auto ReplicatingObject = ChannelObjectPair.Value;
+
+		bool bStillHasUnresolved = false;
+		bool bSomeObjectsWereMapped = false;
+		TArray<UProperty*> RepNotifies;
+
+		auto& RepLayout = DependentChannel->GetObjectRepLayout(ReplicatingObject);
+		auto& ShadowData = DependentChannel->GetObjectStaticBuffer(ReplicatingObject);
+
+		ResolveObjectReferences(RepLayout, ReplicatingObject, *UnresolvedRefs, PackageMap, Interop->GetNetDriver(), ShadowData.GetData(), (uint8*)ReplicatingObject, ShadowData.Num(), RepNotifies, bSomeObjectsWereMapped, bStillHasUnresolved);
+
+		if (bSomeObjectsWereMapped)
+		{
+			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies);
+		}
+
+		if (!bStillHasUnresolved)
+		{
+			UnresolvedRefsMap.Remove(ChannelObjectPair);
+		}
+	}
+
+	IncomingRefsMap.Remove(ObjectRef);
 }

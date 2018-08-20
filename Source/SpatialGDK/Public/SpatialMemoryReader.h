@@ -43,5 +43,5 @@ public:
 	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
 
 protected:
-	void DeserializeObjectRef(improbable::unreal::UnrealObjectRef& ObjectRef);
+	void DeserializeObjectRef(struct UnrealObjectRef& ObjectRef);
 };

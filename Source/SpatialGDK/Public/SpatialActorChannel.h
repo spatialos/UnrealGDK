@@ -95,6 +95,20 @@ public:
 		};
 	}
 
+	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)
+	{
+		auto WeakObjectPtr = TWeakObjectPtr<UObject>(Object);
+		check(ObjectHasReplicator(WeakObjectPtr));
+		return *FindOrCreateReplicator(WeakObjectPtr)->RepLayout;
+	}
+
+	FORCEINLINE FRepStateStaticBuffer& GetObjectStaticBuffer(UObject* Object)
+	{
+		auto WeakObjectPtr = TWeakObjectPtr<UObject>(Object);
+		check(ObjectHasReplicator(WeakObjectPtr));
+		return FindOrCreateReplicator(WeakObjectPtr)->RepState->StaticBuffer;
+	}
+
 	// UChannel interface
 	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, bool bOpenedLocally) override;
 	virtual void Close() override;

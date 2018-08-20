@@ -7,6 +7,7 @@
 #include "EntityId.h"
 #include "SpatialInterop.h"
 #include "SpatialUnrealObjectRef.h"
+#include "SchemaHelpers.h"
 
 #include <improbable/unreal/gdk/level_data.h>
 
@@ -37,8 +38,22 @@ public:
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
-private:
+	void ResetTrackedObjectRefs(bool bShouldTrack)
+	{
+		TrackedUnresolvedRefs.Empty();
+		bShouldTrackUnresolvedRefs = bShouldTrack;
+	}
 
+	const TSet<UnrealObjectRef>& GetTrackedUnresolvedRefs() const
+	{
+		return TrackedUnresolvedRefs;
+	}
+
+private:
+	friend class FSpatialNetBitReader;
+
+	bool					bShouldTrackUnresolvedRefs;
+	TSet<UnrealObjectRef>	TrackedUnresolvedRefs;
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
