@@ -136,6 +136,10 @@ void USpatialInteropPipelineBlock::ChangeAuthority(const worker::ComponentId Com
 	{
 		PendingAuthorityChanges.Emplace(FComponentIdentifier{AuthChangeOp.EntityId, ComponentId}, AuthChangeOp);
 	}
+	else
+	{
+		AuthorityChangeImpl(FComponentIdentifier{AuthChangeOp.EntityId, ComponentId}, AuthChangeOp);
+	}
 
 	if (NextBlock)
 	{
@@ -185,6 +189,12 @@ void USpatialInteropPipelineBlock::LeaveCriticalSection()
 	for (auto& PendingRemoveEntity : PendingRemoveEntities)
 	{
 		RemoveEntityImpl(PendingRemoveEntity);
+	}
+
+	// Notify authority changes
+	for (auto& PendingAuthorityChange : PendingAuthorityChanges)
+	{
+		AuthorityChangeImpl(PendingAuthorityChange.Key, PendingAuthorityChange.Value);
 	}
 
 	NetDriver->GetSpatialInterop()->OnLeaveCriticalSection();
@@ -320,6 +330,19 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 	NetDriver->GetSpatialInterop()->LocallyDeleteActor(Actor);
 
 	CleanupDeletedEntity(EntityId);
+}
+
+void USpatialInteropPipelineBlock::AuthorityChangeImpl(const FComponentIdentifier& ComponentIdentifier, const worker::AuthorityChangeOp& AuthChangeOp)
+{
+	// Use position component as a proxy for overall actor authority
+	if (ComponentIdentifier.ComponentId == UPositionComponent::ComponentId)
+	{
+		if (AActor* EntityActor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId))
+		{
+			EntityActor->OnSpatialAuthorityChange();
+			UE_LOG(LogTemp, Log, TEXT("Authority change processed: entityID: %d, componentID: %d, authorityChangeOp: %d"), ComponentIdentifier.EntityId, ComponentIdentifier.ComponentId, (int)AuthChangeOp.Authority);
+		}
+	}
 }
 
 void USpatialInteropPipelineBlock::CleanupDeletedEntity(const FEntityId& EntityId)
