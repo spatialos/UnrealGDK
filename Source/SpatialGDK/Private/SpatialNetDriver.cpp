@@ -20,6 +20,9 @@
 #include "SpatialPackageMapClient.h"
 #include "SpatialPendingNetGame.h"
 
+#include "DTBManager.h"
+#include "DTBUtil.h"
+
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
@@ -42,6 +45,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	SpatialOSInstance->OnConnectionFailedDelegate.AddDynamic(this, &USpatialNetDriver::OnSpatialOSConnectFailed);
 	SpatialOSInstance->OnDisconnectedDelegate.AddDynamic(this, &USpatialNetDriver::OnSpatialOSDisconnected);
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(SpatialOSInstance, TEXT("Unreal"));
+
+	DTBManager = NewObject<UDTBManager>(this);
 
 	// Set up the worker config.
 	// todo-giray: Give this the correct value
@@ -151,6 +156,22 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	}
 
 	Interop->Init(SpatialOSInstance, this, TimerManager);
+
+	DTBManager->Interop = Interop;
+	Interop->DTBManager = DTBManager;
+	DTBManager->PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+	DTBManager->PipelineBlock.DTBManager = DTBManager;
+	DTBManager->PipelineBlock.World = GetWorld();
+	DTBManager->PipelineBlock.NetDriver = this;
+
+	if (IsServer())
+	{
+		DTBManager->InitServer();
+	}
+	else
+	{
+		DTBManager->InitClient();
+	}
 }
 
 void USpatialNetDriver::OnSpatialOSDisconnected(const FString& Reason)
@@ -467,7 +488,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
 					if (Channel)
 					{
-						if (Interop->GetTypeBindingByClass(Actor->GetClass()) == nullptr && !Actor->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
+						if (Interop->GetTypeBindingByClass(Actor->GetClass()) == nullptr && !ShouldUseDTB(Actor->GetClass()))
 						{
 							Channel->bCoreActor = false;
 						}
@@ -741,6 +762,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		SpatialOSInstance->ProcessOps();
 		SpatialOSInstance->GetEntityPipeline()->ProcessOps(SpatialOSInstance->GetView(), SpatialOSInstance->GetConnection(), GetWorld());
+	}
+
+	if (DTBManager != nullptr)
+	{
+		DTBManager->Tick();
 	}
 }
 

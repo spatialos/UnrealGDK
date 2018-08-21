@@ -253,7 +253,7 @@ void CAPIPipelineBlock::CreateActor(Worker_EntityId EntityId)
 			{
 				if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data && PendingAddComponent.Data->bIsDynamic)
 				{
-					DTBManager->OnDynamicData(*static_cast<DynamicData*>(PendingAddComponent.Data.get())->Data, Channel, PackageMap);
+					DTBManager->OnDynamicData(EntityId, *static_cast<DynamicData*>(PendingAddComponent.Data.get())->Data, Channel, PackageMap);
 				}
 			}
 

@@ -86,6 +86,13 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 	{
 		auto PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
 		FNetworkGUID NetGUID = PackageMapClient->GetNetGUIDFromObject(Value);
+		if (!NetGUID.IsValid())
+		{
+			if (Value->IsFullNameStableForNetworking())
+			{
+				NetGUID = PackageMapClient->ResolveStablyNamedObject(Value);
+			}
+		}
 		ObjectRef = UnrealObjectRef(PackageMapClient->GetUnrealObjectRefFromNetGUID(NetGUID));
 		if (ObjectRef == UNRESOLVED_OBJECT_REF)
 		{

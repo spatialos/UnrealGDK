@@ -467,16 +467,16 @@ struct FObjectReferences
 	UProperty*							Property;
 };
 
-void ReadDynamicData(const Worker_ComponentData& ComponentData, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs);
-void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs);
+void ReadDynamicData(const Worker_ComponentData& ComponentData, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs);
+void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs);
 
 Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FUnresolvedObjectsMap& UnresolvedObjectsMap);
 Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FUnresolvedObjectsMap& UnresolvedObjectsMap, bool& bWroteSomething);
 
-Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId);
+Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
 void ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worker_EntityId EntityId, UFunction* Function, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, UObject*& OutTargetObject, void* Data);
 
-Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId);
+Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
 void ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, Worker_EntityId EntityId, const TArray<UFunction*>& RPCArray, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver);
 
 void ResolveObjectReferences(class FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);

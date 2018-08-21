@@ -62,13 +62,13 @@ public:
 	void OnCommandRequest(Worker_CommandRequestOp& Op);
 	void OnCommandResponse(Worker_CommandResponseOp& Op);
 
-	void OnDynamicData(Worker_ComponentData& Data, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap);
+	void OnDynamicData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap);
 
 	void OnComponentUpdate(Worker_ComponentUpdateOp& Op);
 
 	void OnAuthorityChange(Worker_AuthorityChangeOp& Op);
 
-	void HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, EAlsoReplicatedPropertyGroup PropertyGroup);
+	void HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy);
 
 	void SendReserveEntityIdRequest(USpatialActorChannel* Channel);
 
@@ -85,7 +85,7 @@ public:
 
 	void SendComponentUpdates(UObject* Object, const struct FPropertyChangeState& Changes, USpatialActorChannel* Channel);
 
-	void SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters);
+	void SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters = false);
 
 	void Tick();
 
@@ -94,11 +94,15 @@ public:
 
 	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<UnrealObjectRef>& UnresolvedRefs);
 
+	void QueueOutgoingRPC(const UObject* UnresolvedObject, UObject* TargetObject, UFunction* Function, void* Parameters);
+
 	void ResolvePendingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
 	void ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef);
 
 	void ResolveOutgoingOperations(UObject* Object);
 	void ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
+
+	void ResolveOutgoingRPCs(UObject* Object);
 
 	using FUnresolvedEntry = TSharedPtr<TSet<const UObject*>>;
 	using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;
@@ -112,6 +116,18 @@ public:
 	TMap<UnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
 
+	struct FPendingRPCParams
+	{
+		FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters)
+			: TargetObject(InTargetObject), Function(InFunction), Parameters(InParameters) {}
+
+		UObject* TargetObject;
+		UFunction* Function;
+		void* Parameters;
+	};
+	using FOutgoingRPCMap = TMap<const UObject*, TArray<FPendingRPCParams>>;
+
+	FOutgoingRPCMap OutgoingRPCs;
 
 	TArray<TPair<UObject*, UnrealObjectRef>> ResolvedObjectQueue;
 

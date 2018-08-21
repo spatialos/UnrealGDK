@@ -5,6 +5,7 @@
 #include "Net/RepLayout.h"
 #include "SpatialMemoryReader.h"
 #include "SpatialMemoryWriter.h"
+#include "SpatialConditionMapFilter.h"
 
 #include <set>
 
@@ -503,11 +504,11 @@ void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t 
 	}
 	else if (UByteProperty* ByteProperty = Cast<UByteProperty>(Property))
 	{
-		ByteProperty->SetPropertyValue(Data, (uint32)Schema_IndexUint32(Object, Id, Index));
+		ByteProperty->SetPropertyValue(Data, (uint8)Schema_IndexUint32(Object, Id, Index));
 	}
 	else if (UUInt16Property* UInt16Property = Cast<UUInt16Property>(Property))
 	{
-		UInt16Property->SetPropertyValue(Data, (uint32)Schema_IndexUint32(Object, Id, Index));
+		UInt16Property->SetPropertyValue(Data, (uint16)Schema_IndexUint32(Object, Id, Index));
 	}
 	else if (UUInt32Property* UInt32Property = Cast<UUInt32Property>(Property))
 	{
@@ -638,7 +639,7 @@ EAlsoReplicatedPropertyGroup GetAlsoGroupFromCondition(ELifetimeCondition Condit
 	}
 }
 
-void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs, bool bIsInitialData, const std::set<Schema_FieldId>& ClearedIds = std::set<Schema_FieldId>())
+void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs, bool bAutonomousProxy, bool bIsInitialData, const std::set<Schema_FieldId>& ClearedIds = std::set<Schema_FieldId>())
 {
 	Channel->PreReceiveSpatialUpdate(Channel->Actor);
 
@@ -646,6 +647,9 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 	auto& Cmds = Channel->ActorReplicator->RepLayout->Cmds;
 	auto& BaseHandleToCmdIndex = Channel->ActorReplicator->RepLayout->BaseHandleToCmdIndex;
 	auto& Parents = Channel->ActorReplicator->RepLayout->Parents;
+
+	bool bIsServer = Driver->IsServer();
+	FSpatialConditionMapFilter ConditionMap(Channel, bAutonomousProxy);
 
 	TArray<UProperty*> RepNotifies;
 
@@ -660,7 +664,7 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 			const FRepLayoutCmd& Cmd = Cmds[HandleIterator.CmdIndex];
 			const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 
-			if (GetAlsoGroupFromCondition(Parent.Condition) == PropertyGroup)
+			if (GetAlsoGroupFromCondition(Parent.Condition) == PropertyGroup && (bIsServer || ConditionMap.IsRelevant(Parent.Condition)))
 			{
 				// This swaps Role/RemoteRole as we write it
 				const FRepLayoutCmd& SwappedCmd = Parent.RoleSwapIndex != -1 ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
@@ -676,6 +680,17 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 					else
 					{
 						Schema_GetProperty(ComponentObject, HandleIterator.Handle, 0, Cmd.Property, Data, PackageMap, Driver, ObjectReferencesMap, UnresolvedRefs, SwappedCmd.Offset, Cmd.ParentIndex);
+					}
+
+					if (Cmd.Property->GetFName() == NAME_RemoteRole)
+					{
+						// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
+						// the client RPCs component.
+						auto ByteProperty = Cast<UByteProperty>(Cmd.Property);
+						if (!bIsServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
+						{
+							ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
+						}
 					}
 
 					// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
@@ -702,14 +717,14 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 	Channel->PostReceiveSpatialUpdate(Channel->Actor, RepNotifies);
 }
 
-void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs)
+void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs)
 {
 	auto ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, Driver, PropertyGroup, ObjectReferencesMap, UnresolvedRefs, true);
+	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, Driver, PropertyGroup, ObjectReferencesMap, UnresolvedRefs, bAutonomousProxy, true);
 }
 
-void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs)
+void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs)
 {
 	auto ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
@@ -723,7 +738,7 @@ void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatia
 		ClearedIds.insert(FieldId);
 	}
 
-	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, Driver, PropertyGroup, ObjectReferencesMap, UnresolvedRefs, false, ClearedIds);
+	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, Driver, PropertyGroup, ObjectReferencesMap, UnresolvedRefs, bAutonomousProxy, false, ClearedIds);
 }
 
 bool Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FUnresolvedObjectsMap& UnresolvedObjectsMap, bool bIsInitialData, std::vector<Schema_FieldId>* ClearedIds = nullptr)
@@ -819,7 +834,7 @@ Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const
 	return ComponentUpdate;
 }
 
-Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId)
+Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject)
 {
 	Worker_CommandRequest CommandRequest = {};
 
@@ -830,8 +845,9 @@ Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* 
 	auto TargetObjectRef = UnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 	if (TargetObjectRef == UNRESOLVED_OBJECT_REF)
 	{
-		// TODO: Handle RPC to unresolved object
-		checkNoEntry();
+		OutUnresolvedObject = TargetObject;
+		Schema_DestroyCommandRequest(CommandRequest.schema_type);
+		return CommandRequest;
 	}
 
 	Schema_AddUint32(RequestObject, 1, TargetObjectRef.Offset);
@@ -843,7 +859,13 @@ Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* 
 	TSharedPtr<FRepLayout> RepLayout = Driver->GetFunctionRepLayout(Function);
 	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
 
-	// TODO: Check for unresolved objects in the payload
+	for (auto Object : UnresolvedObjects)
+	{
+		// Take the first unresolved object
+		OutUnresolvedObject = Object;
+		Schema_DestroyCommandRequest(CommandRequest.schema_type);
+		return CommandRequest;
+	}
 
 	Schema_AddString(RequestObject, 2, std::string(reinterpret_cast<char*>(PayloadWriter.GetData()), PayloadWriter.GetNumBytes()));
 
@@ -879,7 +901,7 @@ void ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worke
 	// TODO: Check for unresolved objects in the payload
 }
 
-Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId)
+Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -891,8 +913,9 @@ Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* F
 	auto TargetObjectRef = UnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 	if (TargetObjectRef == UNRESOLVED_OBJECT_REF)
 	{
-		// TODO: Handle RPC to unresolved object
-		checkNoEntry();
+		OutUnresolvedObject = TargetObject;
+		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
+		return ComponentUpdate;
 	}
 
 	Schema_AddUint32(EventData, 1, TargetObjectRef.Offset);
@@ -904,7 +927,13 @@ Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* F
 	TSharedPtr<FRepLayout> RepLayout = Driver->GetFunctionRepLayout(Function);
 	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
 
-	// TODO: Check for unresolved objects in the payload
+	for (auto& Object : UnresolvedObjects)
+	{
+		// Take the first unresolved object
+		OutUnresolvedObject = Object;
+		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
+		return ComponentUpdate;
+	}
 
 	Schema_AddString(EventData, 2, std::string(reinterpret_cast<char*>(PayloadWriter.GetData()), PayloadWriter.GetNumBytes()));
 

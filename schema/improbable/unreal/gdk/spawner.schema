@@ -1,6 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package improbable.unreal;
 
+import "improbable/unreal/gdk/core_types.schema";
+
 type SpawnPlayerRequest
 {
     string url = 1;
@@ -21,13 +23,12 @@ component PlayerSpawner
 
 type SpecialSpawnPlayerRequest
 {
-    string url = 1;
-    EntityId owner_entity = 2;
+    string message = 1;
 }
 
 component SpecialSpawner
 {
     id = 100003;
-    command SpawnPlayerResponse special_spawn_player(SpecialSpawnPlayerRequest);
+    command UnrealRPCCommandResponse special_spawn_player(SpecialSpawnPlayerRequest);
 }
 

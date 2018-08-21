@@ -8,6 +8,8 @@
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
 
+#include "DTBUtil.h"
+
 // Given a RepLayout cmd type (a data type supported by the replication system). Generates the corresponding
 // type used in schema.
 FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
@@ -226,7 +228,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 	TMap<FString, TSharedPtr<FCodeWriter>> RPCTypeCodeWriterMap;
 
-	if (Class->GetName() != TEXT("DTBActor"))
+	if (!ShouldUseDTB(Class))
 	{
 		for (auto& RPCTypeOwner : RPCTypeOwners)
 		{
@@ -300,7 +302,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 					ReliableMulticasts.Add(FString::Printf(TEXT("%s::%s"), *GetFullCPPName(Class), *RPC->Function->GetName()));
 				}
 
-				if (Class->GetName() == TEXT("DTBActor"))
+				if (ShouldUseDTB(Class))
 				{
 					Writer.Printf("event UnrealRPCCommandRequest %s;",
 						*SchemaRPCName(Class, RPC->Function));
@@ -315,7 +317,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			}
 			else
 			{
-				if (Class->GetName() == TEXT("DTBActor"))
+				if (ShouldUseDTB(Class))
 				{
 					Writer.Printf("command UnrealRPCCommandResponse %s(UnrealRPCCommandRequest);",
 						*SchemaRPCName(Class, RPC->Function));

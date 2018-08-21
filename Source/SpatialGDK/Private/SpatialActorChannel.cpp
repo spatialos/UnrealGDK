@@ -15,6 +15,7 @@
 #include "SpatialTypeBinding.h"
 
 #include "DTBManager.h"
+#include "DTBUtil.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
 
@@ -516,7 +517,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		// Mark this channel as being responsible for creating this entity once we have an entity ID.
 		bCreatingNewEntity = true;
 
-		if (InActor->IsA(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor"))))
+		if (ShouldUseDTB(InActor->GetClass()))
 		{
 			if (Interop->DTBManager) Interop->DTBManager->SendReserveEntityIdRequest(this);
 		}

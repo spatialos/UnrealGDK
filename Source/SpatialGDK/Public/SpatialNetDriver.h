@@ -97,6 +97,9 @@ protected:
 	UPROPERTY()
 	USpatialOS* SpatialOSInstance;
 
+	UPROPERTY()
+	class UDTBManager* DTBManager;
+
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	UPROPERTY()
