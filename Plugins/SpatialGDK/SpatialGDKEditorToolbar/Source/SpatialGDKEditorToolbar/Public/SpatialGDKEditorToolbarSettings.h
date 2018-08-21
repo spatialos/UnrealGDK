@@ -57,12 +57,6 @@ private:
 
 public:
 
-	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Singleton classes"))
-	TArray<UClass*> SingletonClasses;
-
-	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Classes to generate typebindings for"))
-	TArray<FInteropTypebindingInfo> InteropCodegenClasses;
-
 	UFUNCTION()
 	FORCEINLINE FString GetProjectRoot() const
 	{

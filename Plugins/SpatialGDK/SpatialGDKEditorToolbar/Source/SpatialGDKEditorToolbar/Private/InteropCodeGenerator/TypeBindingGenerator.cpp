@@ -27,15 +27,26 @@ FString TypeBindingName(UClass* Class)
 	return FString::Printf(TEXT("USpatialTypeBinding_%s"), *Class->GetName());
 }
 
-// Given an UObjectProperty, return the string of the first native class in the inheritance hierarchy.
-FString GetNativeClassName(const UObjectPropertyBase* Property)
+// Returns the first native class in a class' hierarchy
+const UClass* GetFirstNativeClass(const UClass* Class)
 {
-	const UClass* Class = Property->PropertyClass;
 	while (!Class->HasAnyClassFlags(CLASS_Native))
 	{
 		Class = Class->GetSuperClass();
 	}
-	return FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName());
+	return Class;
+}
+
+FString GetNativeClassName(const UClass* Class, bool bIncludePrefix = true)
+{
+	Class = GetFirstNativeClass(Class);
+	return FString::Printf(TEXT("%s%s"), (bIncludePrefix) ? Class->GetPrefixCPP() : TEXT(""), *Class->GetName());
+}
+
+// Given an UObjectProperty, return the string of the first native class in the inheritance hierarchy.
+FString GetNativeClassName(const UObjectPropertyBase* Property, bool bIncludePrefix = true)
+{
+	return GetNativeClassName(Property->PropertyClass, bIncludePrefix);
 }
 
 FString CPPFieldName(TSharedPtr<FUnrealProperty> Property)
@@ -764,64 +775,15 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 }
 
 void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename,
-	UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo, const TArray<FString>& TypeBindingHeaders,
-	bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses, BPStructTypesAndPaths& GeneratedStructInfo)
+	UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo, BPStructTypesAndPaths& GeneratedStructInfo)
 {
-	SourceWriter.Printf(R"""(
-		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-		// Note that this file has been generated automatically
-
-		#include "%s.h"
-
-		#include "GameFramework/PlayerState.h"
-		#include "NetworkGuid.h"
-
-		#include "SpatialOS.h"
-		#include "EntityBuilder.h"
-
-		#include "SpatialConstants.h"
-		#include "SpatialConditionMapFilter.h"
-		#include "SpatialUnrealObjectRef.h"
-		#include "SpatialActorChannel.h"
-		#include "SpatialPackageMapClient.h"
-		#include "SpatialMemoryReader.h"
-		#include "SpatialMemoryWriter.h"
-		#include "SpatialNetDriver.h"
-		#include "SpatialInterop.h")""", *InteropFilename);
-
-	// Add the header files specified in DefaultEditorSpatialGDK.ini.
-	for (const FString& Header : TypeBindingHeaders)
-	{
-		if (!Header.IsEmpty())
-		{
-			SourceWriter.Printf("#include \"%s\"", *Header);
-		}
-	}
-
-	SourceWriter.PrintNewLine();
-	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
-	{
-		SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaReplicatedDataName(Group, Class));
-	}
-	SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaHandoverDataName(Class));
-
-	TArray<UClass*> Components = GetAllSupportedComponents(Class, InteropGeneratedClasses);
-
-	for (UClass* ComponentClass : Components)
-	{
-		SourceWriter.PrintNewLine();
-		SourceWriter.Printf("#include \"SpatialTypeBinding_%s.h\"", *ComponentClass->GetName());
-		for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
-		{
-			SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaReplicatedDataName(Group, ComponentClass));
-		}
-		SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaHandoverDataName(ComponentClass));
-	}
-
-	// Get replicated data and RPCs.
+	// Get replicated data, RPCs and component.
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
+	TArray<UClass*> Components = GetAllSupportedComponents(Class);
+
+	GenerateHeaderIncludes_Source(SourceWriter, InteropFilename, Class, RPCsByType, RepData, Components);
 
 	// Generate methods implementations
 
@@ -835,7 +797,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	GenerateFunction_GetBoundClass(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_Init(SourceWriter, Class, RPCsByType, RepData, HandoverData, bIsSingleton, GeneratedStructInfo);
+	GenerateFunction_Init(SourceWriter, Class, RPCsByType, RepData, HandoverData, GeneratedStructInfo);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_BindToView(SourceWriter, Class, RPCsByType);
@@ -915,6 +877,124 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	}
 }
 
+void AddIncludePath(const UProperty* UnrealProperty, TArray<FString>& HeaderIncludes)
+{
+	const UStruct* IncludeStruct = nullptr;
+
+	if (UnrealProperty->IsA<UObjectPropertyBase>())
+	{
+		UClass* PropClass = Cast<UObjectPropertyBase>(UnrealProperty)->PropertyClass;
+		if (UnrealProperty->IsA<UClassProperty>())
+		{
+			PropClass = Cast<UClassProperty>(UnrealProperty)->MetaClass;
+		}
+
+		IncludeStruct = GetFirstNativeClass(PropClass);
+	}
+	else if (UnrealProperty->IsA<UStructProperty>())
+	{
+		const UStructProperty* StructProp = Cast<UStructProperty>(UnrealProperty);
+		IncludeStruct = StructProp->Struct;
+	}
+
+	if (IncludeStruct)
+	{
+		HeaderIncludes.AddUnique(IncludeStruct->GetMetaData("IncludePath"));
+	}
+}
+
+void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& InteropFilename, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const TArray<UClass*>& Components)
+{
+	SourceWriter.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+
+		#include "%s.h"
+
+		#include "NetworkGuid.h"
+
+		#include "SpatialOS.h"
+		#include "EntityBuilder.h"
+
+		#include "SpatialConstants.h"
+		#include "SpatialConditionMapFilter.h"
+		#include "SpatialUnrealObjectRef.h"
+		#include "SpatialActorChannel.h"
+		#include "SpatialPackageMapClient.h"
+		#include "SpatialMemoryReader.h"
+		#include "SpatialMemoryWriter.h"
+		#include "SpatialNetDriver.h"
+		#include "SpatialInterop.h")""", *InteropFilename);
+
+	// Include this class' header file
+	TArray<FString> HeaderIncludes;
+	HeaderIncludes.AddUnique(GetFirstNativeClass(Class)->GetMetaData("IncludePath"));
+
+	// Find all rpc parameter objects and retrieve their path
+	for (auto Group : GetRPCTypes())
+	{
+		for (auto& RPC : RPCsByType[Group])
+		{
+			for (auto& RPCParam : RPC->Parameters)
+			{
+				AddIncludePath(RPCParam.Key, HeaderIncludes);
+			}
+		}
+	}
+
+	// Find all replicated objects within blueprints classes, and retrieve their path
+	for (auto Group : GetAllReplicatedPropertyGroups())
+	{
+		for (auto& RepProp : RepData[Group])
+		{
+			UProperty* UnrealProperty = RepProp.Value->Property;
+			if (UClass* RepClass = UnrealProperty->GetOwnerClass())
+			{
+				if (!RepClass->HasAnyClassFlags(CLASS_Native))
+				{
+					AddIncludePath(UnrealProperty, HeaderIncludes);
+				}
+			}
+			else if (UScriptStruct* RepStruct = Cast<UScriptStruct>(UnrealProperty->GetOwnerStruct()))
+			{
+				if (!(RepStruct->StructFlags & STRUCT_Native))
+				{
+					AddIncludePath(UnrealProperty, HeaderIncludes);
+				}
+			}
+		}
+	}
+
+	// Write out all the includes to source
+	SourceWriter.PrintNewLine();
+	HeaderIncludes.Sort();
+	for (auto& IncludePath : HeaderIncludes)
+	{
+		if (IncludePath.IsEmpty() == false)
+		{
+			SourceWriter.Printf("#include \"%s\"", *IncludePath);
+		}
+	}
+
+	SourceWriter.PrintNewLine();
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaReplicatedDataName(Group, Class));
+	}
+	SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaHandoverDataName(Class));
+
+	for (UClass* ComponentClass : Components)
+	{
+		SourceWriter.PrintNewLine();
+		SourceWriter.Printf("#include \"SpatialTypeBinding_%s.h\"", *ComponentClass->GetName());
+		for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+		{
+			SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaReplicatedDataName(Group, ComponentClass));
+		}
+		SourceWriter.Printf("#include \"%sAddComponentOp.h\"", *SchemaHandoverDataName(ComponentClass));
+	}
+}
+
 void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class)
 {
 	SourceWriter.BeginFunction({"const FRepHandlePropertyMap&", "GetRepHandlePropertyMap() const"}, TypeBindingName(Class));
@@ -944,7 +1024,7 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData, bool bIsSingleton, BPStructTypesAndPaths& GeneratedStructInfo)
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData, BPStructTypesAndPaths& GeneratedStructInfo)
 {
 	SourceWriter.BeginFunction({"void", "Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)"}, TypeBindingName(Class));
 
@@ -1019,15 +1099,6 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 	}
 
 	SourceWriter.PrintNewLine();
-
-	if (bIsSingleton)
-	{
-		SourceWriter.Printf("bIsSingleton = true;");
-	}
-	else
-	{
-		SourceWriter.Printf("bIsSingleton = false;");
-	}
 
 	// Since BP structs don't exist in C++ compile time, we will load the blueprint struct at runtime and call SerializeBin() from it.
 	for (auto& Prop : GeneratedStructInfo)
@@ -1157,7 +1228,7 @@ void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, TArray<UClass*> Components)
+void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, const TArray<UClass*>& Components)
 {
 	SourceWriter.BeginFunction(
 		{"worker::Entity", "CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel) const"},
@@ -1230,13 +1301,27 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 	SourceWriter.Indent();
 	// If this is a APlayerController entity, ensure that only the owning client and workers have read ACL permissions.
 	// This ensures that only one APlayerController object is created per client.
+	FString ReadACL;
+	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+	{
+		ReadACL = TEXT("WorkersOnly");
+	}
+	else if (Class->IsChildOf(APlayerController::StaticClass()))
+	{
+		ReadACL = TEXT("AnyUnrealWorkerOrOwningClient");
+	}
+	else
+	{
+		ReadACL = TEXT("AnyUnrealWorkerOrClient");
+	}
+
 	SourceWriter.Printf(R"""(
 		.AddPositionComponent(improbable::Position::Data{SpatialPosition}, WorkersOnly)
 		.AddMetadataComponent(improbable::Metadata::Data{TCHAR_TO_UTF8(*Metadata)})
 		.SetPersistence(true)
 		.SetReadAcl(%s)
 		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, WorkersOnly))""",
-		Class->IsChildOf(APlayerController::StaticClass()) ? TEXT("AnyUnrealWorkerOrOwningClient") : TEXT("AnyUnrealWorkerOrClient"));
+		*ReadACL);
 	SourceWriter.Printf("%s", *FString::Join(SpatialComponents, TEXT("\n")));
 
 	SourceWriter.Print(".Build();");
@@ -1380,7 +1465,7 @@ void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class, TArray<UClass*> Components)
+void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class, const TArray<UClass*>& Components)
 {
 	SourceWriter.BeginFunction(
 		{"void", "ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const"},

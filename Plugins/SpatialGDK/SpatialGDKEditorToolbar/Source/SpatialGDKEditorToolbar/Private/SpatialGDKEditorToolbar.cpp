@@ -19,6 +19,7 @@
 #include "HAL/FileManager.h"
 #include "Sound/SoundBase.h"
 
+#include "AssetRegistryModule.h"
 #include "LevelEditor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
@@ -236,6 +237,9 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 {
 	ShowTaskStartNotification("Started snapshot generation");
 
+	// Ensure all our singletons are loaded into memory before running
+	CacheSpatialObjects(SPATIALCLASS_Singleton);
+
 	const bool bSuccess = SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World());
 
 	if(bSuccess)
@@ -252,6 +256,9 @@ void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
 {
 	ShowTaskStartNotification("Generating Interop Code");
 	bInteropCodeGenRunning = true;
+
+	// Ensure all our spatial classes are loaded into memory before running
+	CacheSpatialObjects(SPATIALCLASS_GenerateTypeBindings);
 
 	InteropCodegenResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateInteropCode, [this]()
 	{
@@ -452,6 +459,34 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		if (PropertyName.ToString() == TEXT("bStopSpatialOnExit"))
 		{
 			bStopSpatialOnExit = ToolbarSettings->bStopSpatialOnExit;
+		}
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::CacheSpatialObjects(uint32 SpatialFlags)
+{
+	// Load the asset registry module
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(FName("AssetRegistry"));
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	// Before running the interop generator, ensure all blueprint classes that have been tagged with 'spatial' are loaded
+	TArray<FAssetData> AssetData;
+	uint32 SpatialClassFlags = 0;
+	AssetRegistry.GetAssetsByClass(UBlueprint::StaticClass()->GetFName(), AssetData, true);
+	for (auto& It : AssetData)
+	{
+		if (It.GetTagValue("SpatialClassFlags", SpatialClassFlags))
+		{
+			if (SpatialClassFlags & SpatialFlags)
+			{
+				FString ObjectPath = It.ObjectPath.ToString() + TEXT("_C");
+				UClass* LoadedClass = LoadObject<UClass>(nullptr, *ObjectPath, nullptr, LOAD_EditorOnly, nullptr);
+				UE_LOG(LogSpatialGDKEditor, Log, TEXT("Found spatial blueprint class `%s`."), *ObjectPath);
+				if (LoadedClass == nullptr)
+				{
+					FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Error: Failed to load blueprint %s."), *ObjectPath)));
+				}
+			}
 		}
 	}
 }

@@ -83,9 +83,3 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
 
     * **Output path for the generated schemas**</br>
     Use this to specify the filepath of ICG-generated schema file.  If you leave this empty, it defaults to `<ProjectFileLocation>/../spatial/schema/improbable/unreal/generated/`.
-
-    * **Singleton classes**</br>
-    Use this to specify the classes which the [ICG](./interop.md) should generate as singleton classes.
-
-    * **Classes to generate typebindings for**</br>
-    Use this to specify the classes which the [ICG](./interop.md) should generate [type bindings](./glossary.md#type-bindings) for.

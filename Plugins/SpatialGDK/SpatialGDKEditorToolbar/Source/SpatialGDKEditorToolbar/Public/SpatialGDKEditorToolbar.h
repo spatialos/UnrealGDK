@@ -53,6 +53,8 @@ private:
 	void GenerateInteropCodeButtonClicked();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
+	void CacheSpatialObjects(uint32 SpatialFlags);
+
 private:
 	bool CanExecuteInteropCodeGen();
 	void StopRunningStack();
