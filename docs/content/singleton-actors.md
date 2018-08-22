@@ -18,43 +18,22 @@ Due to Unreal server-workers spawning their own instances of each Singleton Acto
 ## Setting up Singleton Actors
 
 To properly set up Singleton Actors for your project, you need to:
-1. Register Singleton Actors with the `DefaultEditorSpatialGDK.ini` file
+1. Register Singleton Actors by tagging them with the `SpatialType=Singleton` class attribute.
 1. Add the generated components to the UnrealWorker worker configuration file
 
 ### Registering Singleton Actors
 
-You need to specify Singleton Actors in `DefaultEditorSpatialGDK.ini` before creating the snapshot and running SpatialOS.
+### Example code snippet
 
-Using the [Unreal GDK Starter Project](https://github.com/spatialos/UnrealGDKStarterProject) as an example, to do this:
-1. Locate the `DefaultEditorSpatialGDK.ini` file in the Starter Project repository which you cloned during installation and setup - it's located at `Game/Config/DefaultEditorSpatialGDK.ini`.
-2. Open the file in your editor and add your Singleton Actors as shown in the file snippet below.
-
-### Example file snippet
-
-In the snippet below, your game is `ExampleGame` and the Singleton Actor class you want to add is `ExampleGameGameState`
+The snippet below shows how to tag a class with the appropriate identifiers.
 
 ```
-[SnapshotGenerator.SingletonActorClasses]
-ExampleGameGameState=
-
-[InteropCodeGen.ClassesToGenerate]
-;ClassName=include_path.h
-;Leave empty if no includes required.
-
-;ExampleGameGameState
-ExampleGameGameState=ExampleGameGameState.h
-ExampleGameGameState=IncludePath/MyClassDependency.h
+UCLASS(SpatialType=Singleton)
+class TESTSUITE_API AExampleGameGameState : public AGameStateBase
+{
+  GENERATED_BODY()
+  ...
 ```
-
-### Example file description
-
-For an explanation of the `InteropCodeGen.ClassesToGenerate` section, see the [Interop Code Generator](./interop.md) documentation.
-
-`SnapshotGenerator.SingletonActorClasses`
-
-This section is for specifying the Singleton Actor classes the GSM will manage. In this case we specified one class, `ExampleGameGameState` which is the `GameState` class for `ExampleGame`.
-
-For each Singleton Actor class, you also need to generate type bindings, so you have to add the class to the `InteropCodeGen.ClassesToGenerate` section.
 
 ### Streaming queries
 
