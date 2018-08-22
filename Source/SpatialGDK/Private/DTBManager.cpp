@@ -15,11 +15,11 @@ UDTBManager::UDTBManager()
 {
 }
 
-ClassInfo* UDTBManager::FindClassInfoByClass(UClass* Class)
+FClassInfo* UDTBManager::FindClassInfoByClass(UClass* Class)
 {
 	for (UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
 	{
-		auto Info = ClassInfoMap.Find(CurrentClass);
+		FClassInfo* Info = ClassInfoMap.Find(CurrentClass);
 		if (Info)
 		{
 			return Info;
@@ -40,7 +40,7 @@ void UDTBManager::CreateTypebindings()
 	int ComponentId = 100010;
 	for (auto& ClassHeaderList : InteropGeneratedClasses)
 	{
-		auto Class = ClassHeaderList.Key;
+		UClass* Class = ClassHeaderList.Key;
 
 		auto AddComponentId = [Class, &ComponentId, this]()
 		{
@@ -48,7 +48,7 @@ void UDTBManager::CreateTypebindings()
 			return ComponentId++;
 		};
 
-		ClassInfo Info;
+		FClassInfo Info;
 
 		for (TFieldIterator<UFunction> RemoteFunction(Class); RemoteFunction; ++RemoteFunction)
 		{
@@ -79,9 +79,9 @@ void UDTBManager::CreateTypebindings()
 					checkNoEntry();
 				}
 
-				auto& RPCArray = Info.RPCs.FindOrAdd(RPCType);
+				TArray<UFunction*>& RPCArray = Info.RPCs.FindOrAdd(RPCType);
 
-				RPCInfo RPCInfo;
+				FRPCInfo RPCInfo;
 				RPCInfo.Type = RPCType;
 				RPCInfo.Index = RPCArray.Num();
 
@@ -150,10 +150,10 @@ UObject* UDTBManager::GetTargetObjectFromChannelAndClass(USpatialActorChannel* C
 	}
 	else if (Class->IsChildOf<UActorComponent>())
 	{
-		auto ActorInfo = FindClassInfoByClass(Channel->Actor->GetClass());
+		FClassInfo* ActorInfo = FindClassInfoByClass(Channel->Actor->GetClass());
 		check(ActorInfo);
 		check(ActorInfo->ComponentClasses.Find(Class));
-		auto Components = Channel->Actor->GetComponentsByClass(Class);
+		TArray<UActorComponent*> Components = Channel->Actor->GetComponentsByClass(Class);
 		checkf(Components.Num() == 1, TEXT("Multiple replicated components of the same type are currently not supported by Unreal GDK"));
 		TargetObject = Components[0];
 	}
@@ -183,7 +183,7 @@ void UDTBManager::InitClient()
 	Params.default_component_vtable = &DefaultVtable;
 
 	std::string WorkerId = "CAPIClient" + std::string(TCHAR_TO_UTF8(*FGuid::NewGuid().ToString()));
-	auto* ConnectionFuture = Worker_ConnectAsync("localhost", 7777, WorkerId.c_str(), &Params);
+	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync("localhost", 7777, WorkerId.c_str(), &Params);
 	Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 	Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
@@ -198,7 +198,7 @@ void UDTBManager::InitClient()
 			Worker_CommandRequest CommandRequest = {};
 			CommandRequest.component_id = SPECIAL_SPAWNER_COMPONENT_ID;
 			CommandRequest.schema_type = Schema_CreateCommandRequest(SPECIAL_SPAWNER_COMPONENT_ID, 1);
-			auto* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
+			Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 			Schema_AddString(RequestObject, 1, "Yo dawg");
 
 			Worker_CommandParameters CommandParams = {};
@@ -221,7 +221,7 @@ void UDTBManager::InitServer()
 	Worker_ComponentVtable DefaultVtable = {};
 	Params.default_component_vtable = &DefaultVtable;
 
-	auto* ConnectionFuture = Worker_ConnectAsync("localhost", 7777, "CAPIWorker42", &Params);
+	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync("localhost", 7777, "CAPIWorker42", &Params);
 	Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 	Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
@@ -234,10 +234,10 @@ void UDTBManager::InitServer()
 
 bool UDTBManager::DTBHasComponentAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
-	auto EntityAuthority = ComponentAuthorityMap.Find(EntityId);
+	TMap<Worker_ComponentId, Worker_Authority>* EntityAuthority = ComponentAuthorityMap.Find(EntityId);
 	if (EntityAuthority)
 	{
-		auto ComponentAuthority = EntityAuthority->Find(ComponentId);
+		Worker_Authority* ComponentAuthority = EntityAuthority->Find(ComponentId);
 		if (ComponentAuthority)
 		{
 			return *ComponentAuthority == WORKER_AUTHORITY_AUTHORITATIVE;
@@ -248,17 +248,17 @@ bool UDTBManager::DTBHasComponentAuthority(Worker_EntityId EntityId, Worker_Comp
 
 void UDTBManager::OnCommandRequest(Worker_CommandRequestOp& Op)
 {
-	auto CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
+	Schema_FieldId CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
 	UE_LOG(LogTemp, Verbose, TEXT("!!! Received command request (entity: %lld, component: %d, command: %d)"), Op.entity_id, Op.request.component_id, CommandIndex);
 
 	Worker_CommandResponse Response = {};
 	Response.component_id = Op.request.component_id;
 	Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, CommandIndex);
 
-	if (auto ClassPtr = ComponentToClassMap.Find(Op.request.component_id))
+	if (UClass** ClassPtr = ComponentToClassMap.Find(Op.request.component_id))
 	{
-		auto Class = *ClassPtr;
-		auto Info = FindClassInfoByClass(Class);
+		UClass* Class = *ClassPtr;
+		FClassInfo* Info = FindClassInfoByClass(Class);
 		check(Info);
 
 		EAlsoRPCType RPCType = ARPC_Count;
@@ -272,11 +272,11 @@ void UDTBManager::OnCommandRequest(Worker_CommandRequestOp& Op)
 		}
 		check(RPCType <= ARPC_CrossServer);
 
-		auto RPCArray = Info->RPCs.Find(RPCType);
+		const TArray<UFunction*>* RPCArray = Info->RPCs.Find(RPCType);
 		check(RPCArray);
 		check((int)CommandIndex - 1 < RPCArray->Num());
 
-		auto Function = (*RPCArray)[CommandIndex - 1];
+		UFunction* Function = (*RPCArray)[CommandIndex - 1];
 
 		uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 		FMemory::Memzero(Parms, Function->ParmsSize);
@@ -297,11 +297,11 @@ void UDTBManager::OnCommandRequest(Worker_CommandRequestOp& Op)
 	}
 	else if (Op.request.component_id == SPECIAL_SPAWNER_COMPONENT_ID && CommandIndex == 1)
 	{
-		auto* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
+		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
 		std::string Message = Schema_GetString(Payload, 1);
 		UE_LOG(LogTemp, Log, TEXT("!!! Message: %s"), UTF8_TO_TCHAR(Message.c_str()));
 
-		auto URLString = FString(TEXT("?workerId=")) + UTF8_TO_TCHAR(Op.caller_worker_id);
+		FString URLString = FString(TEXT("?workerId=")) + UTF8_TO_TCHAR(Op.caller_worker_id);
 		Interop->GetNetDriver()->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), false);
 	}
 
@@ -316,7 +316,7 @@ void UDTBManager::OnCommandResponse(Worker_CommandResponseOp& Op)
 		return;
 	}
 
-	auto CommandIndex = Schema_GetCommandResponseCommandIndex(Op.response.schema_type);
+	Schema_FieldId CommandIndex = Schema_GetCommandResponseCommandIndex(Op.response.schema_type);
 	UE_LOG(LogTemp, Verbose, TEXT("!!! Received command response (entity: %lld, component: %d, command: %d)"), Op.entity_id, Op.response.component_id, CommandIndex);
 
 	// TODO: Re-send reliable RPCs on timeout
@@ -324,21 +324,21 @@ void UDTBManager::OnCommandResponse(Worker_CommandResponseOp& Op)
 
 void UDTBManager::OnDynamicData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap)
 {
-	auto ClassPtr = ComponentToClassMap.Find(Data.component_id);
+	UClass** ClassPtr = ComponentToClassMap.Find(Data.component_id);
 	checkf(ClassPtr, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
-	auto Class = *ClassPtr;
+	UClass* Class = *ClassPtr;
 
 	UObject* TargetObject = GetTargetObjectFromChannelAndClass(Channel, Class);
-	auto ChannelObjectPair = FChannelObjectPair(Channel, TargetObject);
+	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
 
-	auto Info = FindClassInfoByClass(Class);
+	FClassInfo* Info = FindClassInfoByClass(Class);
 	check(Info);
 
 	bool bAutonomousProxy = Interop->GetNetDriver()->GetNetMode() == NM_Client && DTBHasComponentAuthority(EntityId, Info->RPCComponents[ARPC_Client]);
 
 	if (Data.component_id == Info->SingleClientComponent)
 	{
-		auto& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
+		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<UnrealObjectRef> UnresolvedRefs;
 
 		ReadDynamicData(Data, TargetObject, Channel, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
@@ -347,7 +347,7 @@ void UDTBManager::OnDynamicData(Worker_EntityId EntityId, Worker_ComponentData& 
 	}
 	else if (Data.component_id == Info->MultiClientComponent)
 	{
-		auto& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
+		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<UnrealObjectRef> UnresolvedRefs;
 
 		ReadDynamicData(Data, TargetObject, Channel, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
@@ -387,10 +387,10 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	auto ClassPtr = ComponentToClassMap.Find(Op.update.component_id);
+	UClass** ClassPtr = ComponentToClassMap.Find(Op.update.component_id);
 	checkf(ClassPtr, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
-	auto Class = *ClassPtr;
-	auto Info = FindClassInfoByClass(Class);
+	UClass* Class = *ClassPtr;
+	FClassInfo* Info = FindClassInfoByClass(Class);
 	check(Info);
 
 	bool bAutonomousProxy = Interop->GetNetDriver()->GetNetMode() == NM_Client && DTBHasComponentAuthority(Op.entity_id, Info->RPCComponents[ARPC_Client]);
@@ -407,7 +407,7 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		}
 		check(ActorChannel);
 
-		auto TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
+		UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
 		HandleComponentUpdate(Op.update, TargetObject, ActorChannel, AGROUP_SingleClient, bAutonomousProxy);
 	}
 	else if (Op.update.component_id == Info->MultiClientComponent)
@@ -419,7 +419,7 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		}
 		check(ActorChannel);
 
-		auto TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
+		UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
 		HandleComponentUpdate(Op.update, TargetObject, ActorChannel, AGROUP_MultiClient, bAutonomousProxy);
 	}
 	else if (Op.update.component_id == Info->HandoverComponent)
@@ -439,7 +439,7 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 			return;
 		}
 		check(ActorChannel);
-		auto& RPCArray = Info->RPCs.FindChecked(ARPC_NetMulticast);
+		const TArray<UFunction*>& RPCArray = Info->RPCs.FindChecked(ARPC_NetMulticast);
 		ReceiveMulticastUpdate(Op.update, Op.entity_id, RPCArray, PackageMap, Interop->GetNetDriver());
 	}
 	else
@@ -450,9 +450,9 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 
 void UDTBManager::HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy)
 {
-	auto ChannelObjectPair = FChannelObjectPair(Channel, TargetObject);
+	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
 
-	auto& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
+	FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 	TSet<UnrealObjectRef> UnresolvedRefs;
 	ReceiveDynamicUpdate(ComponentUpdate, TargetObject, Channel, PackageMap, Interop->GetNetDriver(), PropertyGroup, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
 
@@ -461,7 +461,7 @@ void UDTBManager::HandleComponentUpdate(const Worker_ComponentUpdate& ComponentU
 
 void UDTBManager::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<UnrealObjectRef>& UnresolvedRefs)
 {
-	for (auto& UnresolvedRef : UnresolvedRefs)
+	for (const UnrealObjectRef& UnresolvedRef : UnresolvedRefs)
 	{
 		UE_LOG(LogTemp, Log, TEXT("!!! Added pending incoming property for object ref: %s, target object: %s"), *UnresolvedRef.ToString(), *ChannelObjectPair.Value->GetName());
 		IncomingRefsMap.FindOrAdd(UnresolvedRef).Add(ChannelObjectPair);
@@ -488,7 +488,7 @@ void UDTBManager::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 
 void UDTBManager::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
 {
-	auto RequestId = Worker_Connection_SendReserveEntityIdRequest(Connection, nullptr);
+	Worker_RequestId RequestId = Worker_Connection_SendReserveEntityIdRequest(Connection, nullptr);
 	AddPendingActorRequest(RequestId, Channel);
 	UE_LOG(LogTemp, Log, TEXT("!!! Opened channel for actor with no entity ID. Initiated reserve entity ID. Request id: %d"), RequestId);
 }
@@ -511,7 +511,7 @@ USpatialActorChannel* UDTBManager::RemovePendingActorRequest(Worker_RequestId Re
 
 void UDTBManager::OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op)
 {
-	if (auto* Channel = RemovePendingActorRequest(Op.request_id))
+	if (USpatialActorChannel* Channel = RemovePendingActorRequest(Op.request_id))
 	{
 		Channel->OnReserveEntityIdResponseCAPI(Op);
 	}
@@ -526,7 +526,7 @@ Worker_RequestId UDTBManager::SendCreateEntityRequest(USpatialActorChannel* Chan
 	FSoftClassPath ActorClassPath(Actor->GetClass());
 	FString PathStr = ActorClassPath.ToString();
 
-	auto CreateEntityRequestId = CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
+	Worker_RequestId CreateEntityRequestId = CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
 
 	UE_LOG(LogTemp, Log, TEXT("!!! Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
 		*Actor->GetName(), Channel->GetEntityId().ToSpatialEntityId(), CreateEntityRequestId);
@@ -546,13 +546,13 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 	WorkerRequirementSet ClientsOnly = {ClientAttribute};
 	WorkerRequirementSet OwningClientOnly = {OwningClientAttribute};
 
-	auto Actor = Channel->Actor;
+	AActor* Actor = Channel->Actor;
 
 	WorkerRequirementSet AnyUnrealWorkerOrClient = {WorkerAttribute, ClientAttribute};
 	WorkerRequirementSet AnyUnrealWorkerOrOwningClient = {WorkerAttribute, OwningClientAttribute};
 	WorkerRequirementSet ReadAcl = Actor->IsA<APlayerController>() ? AnyUnrealWorkerOrOwningClient : AnyUnrealWorkerOrClient;
 
-	auto Info = FindClassInfoByClass(Actor->GetClass());
+	FClassInfo* Info = FindClassInfoByClass(Actor->GetClass());
 	check(Info);
 
 	std::map<Worker_ComponentId, WorkerRequirementSet> ComponentWriteAcl;
@@ -566,9 +566,9 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 	ComponentWriteAcl.emplace(Info->RPCComponents[ARPC_CrossServer], WorkersOnly);
 	ComponentWriteAcl.emplace(Info->RPCComponents[ARPC_NetMulticast], WorkersOnly);
 
-	for (auto ComponentClass : Info->ComponentClasses)
+	for (TSubclassOf<UActorComponent> ComponentClass : Info->ComponentClasses)
 	{
-		auto ComponentInfo = FindClassInfoByClass(ComponentClass);
+		FClassInfo* ComponentInfo = FindClassInfoByClass(ComponentClass);
 		check(ComponentInfo);
 
 		ComponentWriteAcl.emplace(ComponentInfo->SingleClientComponent, WorkersOnly);
@@ -630,16 +630,16 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 		ComponentDatas.push_back(RPCData);
 	}
 
-	for (auto ComponentClass : Info->ComponentClasses)
+	for (TSubclassOf<UActorComponent> ComponentClass : Info->ComponentClasses)
 	{
-		auto ComponentInfo = FindClassInfoByClass(ComponentClass);
+		FClassInfo* ComponentInfo = FindClassInfoByClass(ComponentClass);
 		check(ComponentInfo);
 
-		auto Components = Actor->GetComponentsByClass(ComponentClass);
+		TArray<UActorComponent*> Components = Actor->GetComponentsByClass(ComponentClass);
 		checkf(Components.Num() == 1, TEXT("Multiple replicated components of the same type are currently not supported by Unreal GDK"));
-		auto Component = Components[0];
+		UActorComponent* Component = Components[0];
 
-		auto ComponentChanges = Channel->CreateSubobjectChangeState(Component);
+		FPropertyChangeState ComponentChanges = Channel->CreateSubobjectChangeState(Component);
 		FUnresolvedObjectsMap ComponentUnresolvedObjectsMap;
 
 		ComponentDatas.push_back(CreateDynamicData(ComponentInfo->SingleClientComponent, ComponentChanges, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient, ComponentUnresolvedObjectsMap));
@@ -667,7 +667,7 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 
 void UDTBManager::SendSpatialPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
 {
-	auto ComponentUpdate = CreatePositionUpdate(LocationToCAPIPosition(Location));
+	Worker_ComponentUpdate ComponentUpdate = CreatePositionUpdate(LocationToCAPIPosition(Location));
 
 	Worker_Connection_SendComponentUpdate(Connection, EntityId, &ComponentUpdate);
 }
@@ -677,22 +677,22 @@ void UDTBManager::SendComponentUpdates(UObject* Object, const FPropertyChangeSta
 	Worker_EntityId EntityId = Channel->GetEntityId().ToSpatialEntityId();
 	UE_LOG(LogTemp, Verbose, TEXT("!!! Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
-	auto Info = FindClassInfoByClass(Object->GetClass());
+	FClassInfo* Info = FindClassInfoByClass(Object->GetClass());
 	check(Info);
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 
 	bool bWroteSingleClient = false;
-	auto SingleClientRepDataUpdate = CreateDynamicUpdate(Info->SingleClientComponent, Changes, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient, UnresolvedObjectsMap, bWroteSingleClient);
+	Worker_ComponentUpdate SingleClientRepDataUpdate = CreateDynamicUpdate(Info->SingleClientComponent, Changes, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient, UnresolvedObjectsMap, bWroteSingleClient);
 
 	bool bWroteMultiClient = false;
-	auto MultiClientRepDataUpdate = CreateDynamicUpdate(Info->MultiClientComponent, Changes, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient, UnresolvedObjectsMap, bWroteMultiClient);
+	Worker_ComponentUpdate MultiClientRepDataUpdate = CreateDynamicUpdate(Info->MultiClientComponent, Changes, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient, UnresolvedObjectsMap, bWroteMultiClient);
 
-	for (auto Handle : Changes.RepChanged)
+	for (uint16 Handle : Changes.RepChanged)
 	{
 		ResetOutgoingRepUpdate(Channel, Object, Handle);
 
-		if (auto UnresolvedObjects = UnresolvedObjectsMap.Find(Handle))
+		if (TSet<const UObject*>* UnresolvedObjects = UnresolvedObjectsMap.Find(Handle))
 		{
 			QueueOutgoingRepUpdate(Channel, Object, Handle, *UnresolvedObjects);
 		}
@@ -711,10 +711,10 @@ void UDTBManager::SendComponentUpdates(UObject* Object, const FPropertyChangeSta
 
 void UDTBManager::SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters)
 {
-	auto Info = FindClassInfoByClass(TargetObject->GetClass());
+	FClassInfo* Info = FindClassInfoByClass(TargetObject->GetClass());
 	check(Info);
 
-	auto RPCInfo = Info->RPCInfoMap.Find(Function);
+	FRPCInfo* RPCInfo = Info->RPCInfoMap.Find(Function);
 	check(RPCInfo);
 
 	Worker_EntityId EntityId = 0;
@@ -726,7 +726,7 @@ void UDTBManager::SendRPC(UObject* TargetObject, UFunction* Function, void* Para
 	case ARPC_Server:
 	case ARPC_CrossServer:
 	{
-		auto CommandRequest = CreateRPCCommandRequest(TargetObject, Function, Parameters, PackageMap, Interop->GetNetDriver(), Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Function, Parameters, PackageMap, Interop->GetNetDriver(), Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
@@ -738,7 +738,7 @@ void UDTBManager::SendRPC(UObject* TargetObject, UFunction* Function, void* Para
 	}
 	case ARPC_NetMulticast:
 	{
-		auto ComponentUpdate = CreateMulticastUpdate(TargetObject, Function, Parameters, PackageMap, Interop->GetNetDriver(), Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
+		Worker_ComponentUpdate ComponentUpdate = CreateMulticastUpdate(TargetObject, Function, Parameters, PackageMap, Interop->GetNetDriver(), Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
@@ -808,7 +808,7 @@ void UDTBManager::Tick()
 			else
 			{
 				PipelineBlock.LeaveCriticalSection();
-				for (auto& It : ResolvedObjectQueue)
+				for (TPair<UObject*, UnrealObjectRef>& It : ResolvedObjectQueue)
 				{
 					ResolvePendingOperations_Internal(It.Key, It.Value);
 				}
@@ -862,12 +862,12 @@ void UDTBManager::ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel,
 {
 	check(DependentChannel);
 	check(ReplicatedObject);
-	auto ChannelObjectPair = FChannelObjectPair(DependentChannel, ReplicatedObject);
+	FChannelObjectPair ChannelObjectPair(DependentChannel, ReplicatedObject);
 
-	auto HandleToUnresolved = PropertyToUnresolved.Find(ChannelObjectPair);
+	FHandleToUnresolved* HandleToUnresolved = PropertyToUnresolved.Find(ChannelObjectPair);
 	if (!HandleToUnresolved) return;
 
-	auto UnresolvedPtr = HandleToUnresolved->Find(Handle);
+	FUnresolvedEntry* UnresolvedPtr = HandleToUnresolved->Find(Handle);
 	if (!UnresolvedPtr) return;
 
 	FUnresolvedEntry& Unresolved = *UnresolvedPtr;
@@ -877,10 +877,10 @@ void UDTBManager::ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel,
 	UE_LOG(LogTemp, Log, TEXT("!!! Resetting pending outgoing array depending on channel: %s, object: %s, handle: %d."),
 		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
 
-	for (auto UnresolvedObject : *Unresolved)
+	for (const UObject* UnresolvedObject : *Unresolved)
 	{
-		auto& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
-		auto& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
+		FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
+		FHandleToUnresolved& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
 
 		OtherHandleToUnresolved.Remove(Handle);
 		if (OtherHandleToUnresolved.Num() == 0)
@@ -904,21 +904,21 @@ void UDTBManager::QueueOutgoingRepUpdate(USpatialActorChannel* DependentChannel,
 {
 	check(DependentChannel);
 	check(ReplicatedObject);
-	auto ChannelObjectPair = FChannelObjectPair(DependentChannel, ReplicatedObject);
+	FChannelObjectPair ChannelObjectPair(DependentChannel, ReplicatedObject);
 
 	UE_LOG(LogTemp, Log, TEXT("!!! Added pending outgoing property: channel: %s, object: %s, handle: %d. Depending on objects:"),
 		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
 
-	auto Unresolved = MakeShared<TSet<const UObject*>>();
+	FUnresolvedEntry Unresolved = MakeShared<TSet<const UObject*>>();
 	*Unresolved = UnresolvedObjects;
 
-	auto& HandleToUnresolved = PropertyToUnresolved.FindOrAdd(ChannelObjectPair);
+	FHandleToUnresolved& HandleToUnresolved = PropertyToUnresolved.FindOrAdd(ChannelObjectPair);
 	check(!HandleToUnresolved.Find(Handle));
 	HandleToUnresolved.Add(Handle, Unresolved);
 
-	for (auto UnresolvedObject : UnresolvedObjects)
+	for (const UObject* UnresolvedObject : UnresolvedObjects)
 	{
-		auto& AnotherHandleToUnresolved = ObjectToUnresolved.FindOrAdd(UnresolvedObject).FindOrAdd(ChannelObjectPair);
+		FHandleToUnresolved& AnotherHandleToUnresolved = ObjectToUnresolved.FindOrAdd(UnresolvedObject).FindOrAdd(ChannelObjectPair);
 		check(!AnotherHandleToUnresolved.Find(Handle));
 		AnotherHandleToUnresolved.Add(Handle, Unresolved);
 
@@ -949,22 +949,22 @@ void UDTBManager::ResolvePendingOperations_Internal(UObject* Object, const Unrea
 
 void UDTBManager::ResolveOutgoingOperations(UObject* Object)
 {
-	auto ChannelToUnresolved = ObjectToUnresolved.Find(Object);
+	FChannelToHandleToUnresolved* ChannelToUnresolved = ObjectToUnresolved.Find(Object);
 	if (!ChannelToUnresolved) return;
 
 	for (auto& ChannelProperties : *ChannelToUnresolved)
 	{
-		auto& ChannelObjectPair = ChannelProperties.Key;
-		auto DependentChannel = ChannelObjectPair.Key;
-		auto ReplicatingObject = ChannelObjectPair.Value;
-		auto& HandleToUnresolved = ChannelProperties.Value;
+		FChannelObjectPair& ChannelObjectPair = ChannelProperties.Key;
+		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key;
+		UObject* ReplicatingObject = ChannelObjectPair.Value;
+		FHandleToUnresolved& HandleToUnresolved = ChannelProperties.Value;
 
 		TArray<uint16> PropertyHandles;
 
 		for (auto& HandleUnresolvedPair : HandleToUnresolved)
 		{
 			uint16 Handle = HandleUnresolvedPair.Key;
-			auto& Unresolved = HandleUnresolvedPair.Value;
+			FUnresolvedEntry& Unresolved = HandleUnresolvedPair.Value;
 
 			Unresolved->Remove(Object);
 			if (Unresolved->Num() == 0)
@@ -978,7 +978,7 @@ void UDTBManager::ResolveOutgoingOperations(UObject* Object)
 					PropertyHandles.Add(0);
 				}
 
-				auto& AnotherHandleToUnresolved = PropertyToUnresolved.FindChecked(ChannelObjectPair);
+				FHandleToUnresolved& AnotherHandleToUnresolved = PropertyToUnresolved.FindChecked(ChannelObjectPair);
 				AnotherHandleToUnresolved.Remove(Handle);
 				if (AnotherHandleToUnresolved.Num() == 0)
 				{
@@ -1001,29 +1001,29 @@ void UDTBManager::ResolveOutgoingOperations(UObject* Object)
 
 void UDTBManager::ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef)
 {
-	auto TargetObjectSet = IncomingRefsMap.Find(ObjectRef);
+	TSet<FChannelObjectPair>* TargetObjectSet = IncomingRefsMap.Find(ObjectRef);
 	if (!TargetObjectSet) return;
 
 	UE_LOG(LogTemp, Log, TEXT("!!! Resolving incoming operations depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
 
-	for (auto& ChannelObjectPair : *TargetObjectSet)
+	for (FChannelObjectPair& ChannelObjectPair : *TargetObjectSet)
 	{
-		auto UnresolvedRefs = UnresolvedRefsMap.Find(ChannelObjectPair);
+		FObjectReferencesMap* UnresolvedRefs = UnresolvedRefsMap.Find(ChannelObjectPair);
 
 		if (!UnresolvedRefs)
 		{
 			continue;
 		}
 
-		auto DependentChannel = ChannelObjectPair.Key;
-		auto ReplicatingObject = ChannelObjectPair.Value;
+		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key;
+		UObject* ReplicatingObject = ChannelObjectPair.Value;
 
 		bool bStillHasUnresolved = false;
 		bool bSomeObjectsWereMapped = false;
 		TArray<UProperty*> RepNotifies;
 
-		auto& RepLayout = DependentChannel->GetObjectRepLayout(ReplicatingObject);
-		auto& ShadowData = DependentChannel->GetObjectStaticBuffer(ReplicatingObject);
+		FRepLayout& RepLayout = DependentChannel->GetObjectRepLayout(ReplicatingObject);
+		FRepStateStaticBuffer& ShadowData = DependentChannel->GetObjectStaticBuffer(ReplicatingObject);
 
 		ResolveObjectReferences(RepLayout, ReplicatingObject, *UnresolvedRefs, PackageMap, Interop->GetNetDriver(), ShadowData.GetData(), (uint8*)ReplicatingObject, ShadowData.Num(), RepNotifies, bSomeObjectsWereMapped, bStillHasUnresolved);
 
@@ -1044,10 +1044,10 @@ void UDTBManager::ResolveIncomingOperations(UObject* Object, const UnrealObjectR
 
 void UDTBManager::ResolveOutgoingRPCs(UObject* Object)
 {
-	auto RPCList = OutgoingRPCs.Find(Object);
+	TArray<FPendingRPCParams>* RPCList = OutgoingRPCs.Find(Object);
 	if (RPCList)
 	{
-		for (auto& RPCParams : *RPCList)
+		for (FPendingRPCParams& RPCParams : *RPCList)
 		{
 			// We can guarantee that SendRPC won't populate OutgoingRPCs[Object] whilst we're iterating through it,
 			// because Object has been resolved when we call ResolveOutgoingRPCs.

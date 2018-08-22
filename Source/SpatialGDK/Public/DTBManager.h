@@ -24,16 +24,16 @@ enum EAlsoRPCType
 	ARPC_Count
 };
 
-struct RPCInfo
+struct FRPCInfo
 {
 	EAlsoRPCType Type;
 	uint32 Index;
 };
 
-struct ClassInfo
+struct FClassInfo
 {
 	TMap<EAlsoRPCType, TArray<UFunction*>> RPCs;
-	TMap<UFunction*, RPCInfo> RPCInfoMap;
+	TMap<UFunction*, FRPCInfo> RPCInfoMap;
 
 	Worker_ComponentId SingleClientComponent;
 	Worker_ComponentId MultiClientComponent;
@@ -53,7 +53,7 @@ class SPATIALGDK_API UDTBManager : public UObject
 public:
 	UDTBManager();
 
-	ClassInfo* FindClassInfoByClass(UClass* Class);
+	FClassInfo* FindClassInfoByClass(UClass* Class);
 	void CreateTypebindings();
 
 	UObject* GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class);
@@ -135,7 +135,7 @@ public:
 
 	TArray<TPair<UObject*, UnrealObjectRef>> ResolvedObjectQueue;
 
-	TMap<UClass*, ClassInfo> ClassInfoMap;
+	TMap<UClass*, FClassInfo> ClassInfoMap;
 	TMap<Worker_ComponentId, UClass*> ComponentToClassMap;
 
 	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> ComponentAuthorityMap;
