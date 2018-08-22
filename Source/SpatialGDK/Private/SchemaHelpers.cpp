@@ -587,6 +587,7 @@ void Schema_GetArrayProperty(Schema_Object* Object, Schema_FieldId Id, UArrayPro
 	if (auto ExistingEntry = ObjectReferencesMap.Find(Offset))
 	{
 		check(ExistingEntry->Array);
+		check(ExistingEntry->ParentIndex == ParentIndex && ExistingEntry->Property == Property);
 		ArrayObjectReferences = ExistingEntry->Array.Get();
 	}
 	else
@@ -639,21 +640,21 @@ EAlsoReplicatedPropertyGroup GetAlsoGroupFromCondition(ELifetimeCondition Condit
 	}
 }
 
-void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs, bool bAutonomousProxy, bool bIsInitialData, const std::set<Schema_FieldId>& ClearedIds = std::set<Schema_FieldId>())
+void Schema_ReadDynamicObject(Schema_Object* ComponentObject, UObject* TargetObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs, bool bAutonomousProxy, bool bIsInitialData, const std::set<Schema_FieldId>& ClearedIds = std::set<Schema_FieldId>())
 {
-	Channel->PreReceiveSpatialUpdate(Channel->Actor);
+	auto& Replicator = Channel->PreReceiveSpatialUpdate(TargetObject);
 
-	auto RepState = Channel->ActorReplicator->RepState;
-	auto& Cmds = Channel->ActorReplicator->RepLayout->Cmds;
-	auto& BaseHandleToCmdIndex = Channel->ActorReplicator->RepLayout->BaseHandleToCmdIndex;
-	auto& Parents = Channel->ActorReplicator->RepLayout->Parents;
+	auto RepState = Replicator.RepState;
+	auto& Cmds = Replicator.RepLayout->Cmds;
+	auto& BaseHandleToCmdIndex = Replicator.RepLayout->BaseHandleToCmdIndex;
+	auto& Parents = Replicator.RepLayout->Parents;
 
 	bool bIsServer = Driver->IsServer();
 	FSpatialConditionMapFilter ConditionMap(Channel, bAutonomousProxy);
 
 	TArray<UProperty*> RepNotifies;
 
-	auto Handles = Channel->GetAllPropertyHandles(*Channel->ActorReplicator);
+	auto Handles = Channel->GetAllPropertyHandles(Replicator);
 
 	if (Handles.Num() > 0)
 	{
@@ -669,7 +670,7 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 				// This swaps Role/RemoteRole as we write it
 				const FRepLayoutCmd& SwappedCmd = Parent.RoleSwapIndex != -1 ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
 
-				uint8* Data = (uint8*)Channel->Actor + SwappedCmd.Offset;
+				uint8* Data = (uint8*)TargetObject + SwappedCmd.Offset;
 
 				if (bIsInitialData || Schema_GetPropertyCount(ComponentObject, HandleIterator.Handle, Cmd.Property) > 0 || ClearedIds.find(HandleIterator.Handle) != ClearedIds.end())
 				{
@@ -714,17 +715,17 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, USpatialActorChann
 		}
 	}
 
-	Channel->PostReceiveSpatialUpdate(Channel->Actor, RepNotifies);
+	Channel->PostReceiveSpatialUpdate(TargetObject, RepNotifies);
 }
 
-void ReadDynamicData(const Worker_ComponentData& ComponentData, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs)
+void ReadDynamicData(const Worker_ComponentData& ComponentData, UObject* TargetObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs)
 {
 	auto ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, Driver, PropertyGroup, ObjectReferencesMap, UnresolvedRefs, bAutonomousProxy, true);
+	Schema_ReadDynamicObject(ComponentObject, TargetObject, Channel, PackageMap, Driver, PropertyGroup, ObjectReferencesMap, UnresolvedRefs, bAutonomousProxy, true);
 }
 
-void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs)
+void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs)
 {
 	auto ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
@@ -738,7 +739,7 @@ void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatia
 		ClearedIds.insert(FieldId);
 	}
 
-	Schema_ReadDynamicObject(ComponentObject, Channel, PackageMap, Driver, PropertyGroup, ObjectReferencesMap, UnresolvedRefs, bAutonomousProxy, false, ClearedIds);
+	Schema_ReadDynamicObject(ComponentObject, TargetObject, Channel, PackageMap, Driver, PropertyGroup, ObjectReferencesMap, UnresolvedRefs, bAutonomousProxy, false, ClearedIds);
 }
 
 bool Schema_FillDynamicObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FUnresolvedObjectsMap& UnresolvedObjectsMap, bool bIsInitialData, std::vector<Schema_FieldId>* ClearedIds = nullptr)

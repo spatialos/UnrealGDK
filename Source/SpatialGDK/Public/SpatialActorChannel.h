@@ -124,7 +124,7 @@ public:
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
 
 	// Called by SpatialInterop when receiving an update.
-	void PreReceiveSpatialUpdate(UObject* TargetObject);
+	FObjectReplicator& PreReceiveSpatialUpdate(UObject* TargetObject);
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies);
 
 	// Distinguishes between channels created for actors that went through the "old" pipeline vs actors that are triggered through SpawnActor() calls.

@@ -398,7 +398,7 @@ bool USpatialActorChannel::ReplicateActor()
 		{
 			if (ActorComp && ActorComp->GetIsReplicated()) // Only replicated subobjects with type bindings
 			{
-				if(Interop->GetTypeBindingByClass(ActorComp->GetClass()))
+				if(Interop->GetTypeBindingByClass(ActorComp->GetClass()) || ShouldUseDTB(ActorComp->GetClass()))
 				{
 					bWroteSomethingImportant |= ReplicateSubobject(ActorComp, RepFlags);
 				}
@@ -535,27 +535,27 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 }
 
-void USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
+FObjectReplicator& USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
 {
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
-	if (!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
-	{
-		TargetObject->PreNetReceive();
-		FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(TargetObject)).Get();
-		Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
-	}
+	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid());
+
+	TargetObject->PreNetReceive();
+	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(TargetObject)).Get();
+	Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
+
+	return Replicator;
 }
 
 void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies)
 {
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
-	if (!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
-	{
-		FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(TargetObject)).Get();
-		TargetObject->PostNetReceive();
-		Replicator.RepNotifies = RepNotifies;
-		Replicator.CallRepNotifies(false);
-	}
+	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
+
+	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(TargetObject)).Get();
+	TargetObject->PostNetReceive();
+	Replicator.RepNotifies = RepNotifies;
+	Replicator.CallRepNotifies(false);
 }
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op)

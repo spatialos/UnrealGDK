@@ -39,6 +39,8 @@ struct ClassInfo
 	Worker_ComponentId MultiClientComponent;
 	Worker_ComponentId HandoverComponent;
 	Worker_ComponentId RPCComponents[ARPC_Count];
+
+	TSet<TSubclassOf<UActorComponent>> ComponentClasses;
 };
 
 using FChannelObjectPair = TPair<USpatialActorChannel*, UObject*>;
@@ -54,6 +56,8 @@ public:
 	ClassInfo* FindClassInfoByClass(UClass* Class);
 	void CreateTypebindings();
 
+	UObject* GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class);
+
 	void InitClient();
 	void InitServer();
 
@@ -68,7 +72,7 @@ public:
 
 	void OnAuthorityChange(Worker_AuthorityChangeOp& Op);
 
-	void HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy);
+	void HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy);
 
 	void SendReserveEntityIdRequest(USpatialActorChannel* Channel);
 
@@ -137,8 +141,6 @@ public:
 	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> ComponentAuthorityMap;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
-
-	TMap<AActor*, FString> ActorToWorkerId;
 
 	TFunction<AActor*()> OnSpawnRequest;
 

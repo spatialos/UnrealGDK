@@ -4,6 +4,7 @@
 
 #include "SpatialActorChannel.h"
 #include "SpatialInterop.h"
+#include "DTBUtil.h"
 
 #include "SpatialGDKEditorToolbarSettings.h"
 
@@ -97,8 +98,72 @@ void UDTBManager::CreateTypebindings()
 			Info.RPCComponents[RPCType] = AddComponentId();
 		}
 
+		if (Class->IsChildOf<AActor>())
+		{
+			if (AActor* ContainerCDO = Cast<AActor>(Class->GetDefaultObject()))
+			{
+				TInlineComponentArray<UActorComponent*> NativeComponents;
+				ContainerCDO->GetComponents(NativeComponents);
+
+				for (UActorComponent* Component : NativeComponents)
+				{
+					if (ShouldUseDTB(Component->GetClass()))
+					{
+						Info.ComponentClasses.Add(Component->GetClass());
+					}
+				}
+
+				// Components that are added in a blueprint won't appear in the CDO.
+				if (UBlueprintGeneratedClass* BGC = Cast<UBlueprintGeneratedClass>(Class))
+				{
+					if (USimpleConstructionScript* SCS = BGC->SimpleConstructionScript)
+					{
+						for (USCS_Node* Node : SCS->GetAllNodes())
+						{
+							if (Node->ComponentTemplate == nullptr)
+							{
+								continue;
+							}
+
+							if (ShouldUseDTB(Node->ComponentTemplate->GetClass()))
+							{
+								Info.ComponentClasses.Add(Node->ComponentTemplate->GetClass());
+							}
+						}
+					}
+				}
+			}
+		}
+
 		ClassInfoMap.Add(Class, Info);
 	}
+}
+
+UObject* UDTBManager::GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class)
+{
+	UObject* TargetObject = nullptr;
+
+	if (Class->IsChildOf<AActor>())
+	{
+		check(Channel->Actor->IsA(Class));
+		TargetObject = Channel->Actor;
+	}
+	else if (Class->IsChildOf<UActorComponent>())
+	{
+		auto ActorInfo = FindClassInfoByClass(Channel->Actor->GetClass());
+		check(ActorInfo);
+		check(ActorInfo->ComponentClasses.Find(Class));
+		auto Components = Channel->Actor->GetComponentsByClass(Class);
+		checkf(Components.Num() == 1, TEXT("Multiple replicated components of the same type are currently not supported by Unreal GDK"));
+		TargetObject = Components[0];
+	}
+	else
+	{
+		checkNoEntry();
+	}
+
+	check(TargetObject);
+	return TargetObject;
 }
 
 void UDTBManager::InitClient()
@@ -262,13 +327,12 @@ void UDTBManager::OnDynamicData(Worker_EntityId EntityId, Worker_ComponentData& 
 	auto ClassPtr = ComponentToClassMap.Find(Data.component_id);
 	checkf(ClassPtr, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
 	auto Class = *ClassPtr;
-	check(Channel->Actor->IsA(Class));
+
+	UObject* TargetObject = GetTargetObjectFromChannelAndClass(Channel, Class);
+	auto ChannelObjectPair = FChannelObjectPair(Channel, TargetObject);
+
 	auto Info = FindClassInfoByClass(Class);
 	check(Info);
-
-	// TODO: Make this work with subobjects
-	UObject* TargetObject = Channel->Actor;
-	auto ChannelObjectPair = FChannelObjectPair(Channel, TargetObject);
 
 	bool bAutonomousProxy = Interop->GetNetDriver()->GetNetMode() == NM_Client && DTBHasComponentAuthority(EntityId, Info->RPCComponents[ARPC_Client]);
 
@@ -277,7 +341,7 @@ void UDTBManager::OnDynamicData(Worker_EntityId EntityId, Worker_ComponentData& 
 		auto& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<UnrealObjectRef> UnresolvedRefs;
 
-		ReadDynamicData(Data, Channel, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
+		ReadDynamicData(Data, TargetObject, Channel, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
 
 		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 	}
@@ -286,7 +350,7 @@ void UDTBManager::OnDynamicData(Worker_EntityId EntityId, Worker_ComponentData& 
 		auto& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<UnrealObjectRef> UnresolvedRefs;
 
-		ReadDynamicData(Data, Channel, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
+		ReadDynamicData(Data, TargetObject, Channel, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
 
 		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 	}
@@ -343,7 +407,8 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		}
 		check(ActorChannel);
 
-		HandleComponentUpdate(Op.update, ActorChannel, AGROUP_SingleClient, bAutonomousProxy);
+		auto TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
+		HandleComponentUpdate(Op.update, TargetObject, ActorChannel, AGROUP_SingleClient, bAutonomousProxy);
 	}
 	else if (Op.update.component_id == Info->MultiClientComponent)
 	{
@@ -354,7 +419,8 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		}
 		check(ActorChannel);
 
-		HandleComponentUpdate(Op.update, ActorChannel, AGROUP_MultiClient, bAutonomousProxy);
+		auto TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
+		HandleComponentUpdate(Op.update, TargetObject, ActorChannel, AGROUP_MultiClient, bAutonomousProxy);
 	}
 	else if (Op.update.component_id == Info->HandoverComponent)
 	{
@@ -382,15 +448,13 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	}
 }
 
-void UDTBManager::HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, USpatialActorChannel* Channel, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy)
+void UDTBManager::HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy)
 {
-	// TODO: Make this work with subobjects
-	UObject* TargetObject = Channel->Actor;
 	auto ChannelObjectPair = FChannelObjectPair(Channel, TargetObject);
 
 	auto& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 	TSet<UnrealObjectRef> UnresolvedRefs;
-	ReceiveDynamicUpdate(ComponentUpdate, Channel, PackageMap, Interop->GetNetDriver(), PropertyGroup, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
+	ReceiveDynamicUpdate(ComponentUpdate, TargetObject, Channel, PackageMap, Interop->GetNetDriver(), PropertyGroup, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
 
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
@@ -459,12 +523,10 @@ Worker_RequestId UDTBManager::SendCreateEntityRequest(USpatialActorChannel* Chan
 
 	AActor* Actor = Channel->Actor;
 
-	FStringAssetReference ActorClassRef(Actor->GetClass());
-	FString PathStr = ActorClassRef.ToString();
+	FSoftClassPath ActorClassPath(Actor->GetClass());
+	FString PathStr = ActorClassPath.ToString();
 
-	auto WorkerIdPtr = ActorToWorkerId.Find(Actor);
-
-	auto CreateEntityRequestId = CreateActorEntity(WorkerIdPtr ? *WorkerIdPtr : PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
+	auto CreateEntityRequestId = CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
 
 	UE_LOG(LogTemp, Log, TEXT("!!! Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
 		*Actor->GetName(), Channel->GetEntityId().ToSpatialEntityId(), CreateEntityRequestId);
@@ -503,6 +565,20 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 	ComponentWriteAcl.emplace(Info->RPCComponents[ARPC_Server], WorkersOnly);
 	ComponentWriteAcl.emplace(Info->RPCComponents[ARPC_CrossServer], WorkersOnly);
 	ComponentWriteAcl.emplace(Info->RPCComponents[ARPC_NetMulticast], WorkersOnly);
+
+	for (auto ComponentClass : Info->ComponentClasses)
+	{
+		auto ComponentInfo = FindClassInfoByClass(ComponentClass);
+		check(ComponentInfo);
+
+		ComponentWriteAcl.emplace(ComponentInfo->SingleClientComponent, WorkersOnly);
+		ComponentWriteAcl.emplace(ComponentInfo->MultiClientComponent, WorkersOnly);
+		// Not adding handover since component's handover properties will be handled by the actor anyway
+		ComponentWriteAcl.emplace(ComponentInfo->RPCComponents[ARPC_Client], OwningClientOnly);
+		ComponentWriteAcl.emplace(ComponentInfo->RPCComponents[ARPC_Server], WorkersOnly);
+		ComponentWriteAcl.emplace(ComponentInfo->RPCComponents[ARPC_CrossServer], WorkersOnly);
+		ComponentWriteAcl.emplace(ComponentInfo->RPCComponents[ARPC_NetMulticast], WorkersOnly);
+	}
 
 	std::string StaticPath;
 
@@ -552,6 +628,37 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 		RPCData.component_id = Info->RPCComponents[RPCType];
 		RPCData.schema_type = Schema_CreateComponentData(Info->RPCComponents[RPCType]);
 		ComponentDatas.push_back(RPCData);
+	}
+
+	for (auto ComponentClass : Info->ComponentClasses)
+	{
+		auto ComponentInfo = FindClassInfoByClass(ComponentClass);
+		check(ComponentInfo);
+
+		auto Components = Actor->GetComponentsByClass(ComponentClass);
+		checkf(Components.Num() == 1, TEXT("Multiple replicated components of the same type are currently not supported by Unreal GDK"));
+		auto Component = Components[0];
+
+		auto ComponentChanges = Channel->CreateSubobjectChangeState(Component);
+		FUnresolvedObjectsMap ComponentUnresolvedObjectsMap;
+
+		ComponentDatas.push_back(CreateDynamicData(ComponentInfo->SingleClientComponent, ComponentChanges, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient, ComponentUnresolvedObjectsMap));
+		ComponentDatas.push_back(CreateDynamicData(ComponentInfo->MultiClientComponent, ComponentChanges, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient, ComponentUnresolvedObjectsMap));
+
+		for (auto& HandleUnresolvedObjectsPair : ComponentUnresolvedObjectsMap)
+		{
+			QueueOutgoingRepUpdate(Channel, Component, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value);
+		}
+
+		// Not adding handover since component's handover properties will be handled by the actor anyway
+
+		for (int RPCType = 0; RPCType < ARPC_Count; RPCType++)
+		{
+			Worker_ComponentData RPCData = {};
+			RPCData.component_id = ComponentInfo->RPCComponents[RPCType];
+			RPCData.schema_type = Schema_CreateComponentData(ComponentInfo->RPCComponents[RPCType]);
+			ComponentDatas.push_back(RPCData);
+		}
 	}
 
 	Worker_EntityId EntityId = Channel->GetEntityId().ToSpatialEntityId();
