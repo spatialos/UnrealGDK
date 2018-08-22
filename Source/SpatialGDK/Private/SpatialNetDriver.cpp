@@ -172,11 +172,14 @@ bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const 
 
 void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessTravel /*= false*/)
 {
+	// Intentionally does not call Super::NotifyActorDestroyed, but most of the functionality is copied here 
+	// The native UNetDriver would normally store destruction info here for "StartupActors" - replicated actors
+	// placed in the level, but we handle this flow differently in the GDK
+
 	// Remove the actor from the property tracker map
 	RepChangedPropertyTrackerMap.Remove(ThisActor);
 
-	FActorDestructionInfo* DestructionInfo = NULL;
-	const bool bIsServer = ServerConnection == NULL;
+	const bool bIsServer = ServerConnection == nullptr;
 
 	if (bIsServer)
 	{
@@ -184,7 +187,10 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 		{
 			UNetConnection* Connection = ClientConnections[i];
 			if (ThisActor->bNetTemporary)
+			{
 				Connection->SentTemporaries.Remove(ThisActor);
+			}
+
 			UActorChannel* Channel = Connection->ActorChannels.FindRef(ThisActor);
 			if (Channel)
 			{
@@ -192,8 +198,6 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 				Channel->bClearRecentActorRefs = false;
 				Channel->Close();
 			}
-			// The native Unreal driver would normally store destruction info here for "StartupActors" - replicated actors
-			// placed in the level, but we handle this flow differently
 
 			// Remove it from any dormancy lists
 			Connection->DormantReplicatorMap.Remove(ThisActor);
