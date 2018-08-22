@@ -21,7 +21,7 @@ uint32 GetTypeHash(const UnrealObjectRef& ObjectRef)
 
 void Schema_AddObjectRef(Schema_Object* Object, Schema_FieldId Id, const UnrealObjectRef& ObjectRef)
 {
-	auto ObjectRefObject = Schema_AddObject(Object, Id);
+	Schema_Object* ObjectRefObject = Schema_AddObject(Object, Id);
 
 	Schema_AddEntityId(ObjectRefObject, 1, ObjectRef.Entity);
 	Schema_AddUint32(ObjectRefObject, 2, ObjectRef.Offset);
@@ -41,7 +41,7 @@ UnrealObjectRef Schema_IndexObjectRef(Schema_Object* Object, Schema_FieldId Id, 
 {
 	UnrealObjectRef ObjectRef;
 
-	auto ObjectRefObject = Schema_IndexObject(Object, Id, Index);
+	Schema_Object* ObjectRefObject = Schema_IndexObject(Object, Id, Index);
 
 	ObjectRef.Entity = Schema_GetEntityId(ObjectRefObject, 1);
 	ObjectRef.Offset = Schema_GetUint32(ObjectRefObject, 2);
@@ -116,7 +116,7 @@ void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, UPackage
 
 void RepLayout_SerializePropertiesForStruct(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, void* Data, bool& bHasUnmapped)
 {
-	auto& Parents = RepLayout.Parents;
+	TArray<FRepParentCmd>& Parents = RepLayout.Parents;
 	for (int32 i = 0; i < Parents.Num(); i++)
 	{
 		RepLayout_SerializeProperties(RepLayout, Ar, Map, Parents[i].CmdStart, Parents[i].CmdEnd, Data, bHasUnmapped);
@@ -130,7 +130,7 @@ void RepLayout_SerializePropertiesForStruct(FRepLayout& RepLayout, FArchive& Ar,
 
 void RepLayout_SendPropertiesForRPC(FRepLayout& RepLayout, FNetBitWriter& Writer, void* Data)
 {
-	auto& Parents = RepLayout.Parents;
+	TArray<FRepParentCmd>& Parents = RepLayout.Parents;
 
 	for (int32 i = 0; i < Parents.Num(); i++)
 	{
@@ -156,7 +156,7 @@ void RepLayout_SendPropertiesForRPC(FRepLayout& RepLayout, FNetBitWriter& Writer
 
 void RepLayout_ReceivePropertiesForRPC(FRepLayout& RepLayout, FNetBitReader& Reader, void* Data)
 {
-	auto& Parents = RepLayout.Parents;
+	TArray<FRepParentCmd>& Parents = RepLayout.Parents;
 
 	for (int32 i = 0; i < Parents.Num(); i++)
 	{
@@ -454,7 +454,7 @@ void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t 
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
-		auto ValueData = Schema_IndexString(Object, Id, Index);
+		std::string ValueData = Schema_IndexString(Object, Id, Index);
 		// A bit hacky, we should probably include the number of bits with the data instead.
 		int64 CountBits = ValueData.size() * 8;
 		FSpatialNetBitReader ValueDataReader(PackageMap, (uint8*)ValueData.data(), CountBits);
@@ -584,7 +584,7 @@ void Schema_GetArrayProperty(Schema_Object* Object, Schema_FieldId Id, UArrayPro
 {
 	FObjectReferencesMap* ArrayObjectReferences;
 	bool bNewArrayMap = false;
-	if (auto ExistingEntry = ObjectReferencesMap.Find(Offset))
+	if (FObjectReferences* ExistingEntry = ObjectReferencesMap.Find(Offset))
 	{
 		check(ExistingEntry->Array);
 		check(ExistingEntry->ParentIndex == ParentIndex && ExistingEntry->Property == Property);
@@ -642,19 +642,19 @@ EAlsoReplicatedPropertyGroup GetAlsoGroupFromCondition(ELifetimeCondition Condit
 
 void Schema_ReadDynamicObject(Schema_Object* ComponentObject, UObject* TargetObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs, bool bAutonomousProxy, bool bIsInitialData, const std::set<Schema_FieldId>& ClearedIds = std::set<Schema_FieldId>())
 {
-	auto& Replicator = Channel->PreReceiveSpatialUpdate(TargetObject);
+	FObjectReplicator& Replicator = Channel->PreReceiveSpatialUpdate(TargetObject);
 
-	auto RepState = Replicator.RepState;
-	auto& Cmds = Replicator.RepLayout->Cmds;
-	auto& BaseHandleToCmdIndex = Replicator.RepLayout->BaseHandleToCmdIndex;
-	auto& Parents = Replicator.RepLayout->Parents;
+	FRepState* RepState = Replicator.RepState;
+	TArray<FRepLayoutCmd>& Cmds = Replicator.RepLayout->Cmds;
+	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex = Replicator.RepLayout->BaseHandleToCmdIndex;
+	TArray<FRepParentCmd>& Parents = Replicator.RepLayout->Parents;
 
 	bool bIsServer = Driver->IsServer();
 	FSpatialConditionMapFilter ConditionMap(Channel, bAutonomousProxy);
 
 	TArray<UProperty*> RepNotifies;
 
-	auto Handles = Channel->GetAllPropertyHandles(Replicator);
+	TArray<uint16> Handles = Channel->GetAllPropertyHandles(Replicator);
 
 	if (Handles.Num() > 0)
 	{
@@ -687,7 +687,7 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, UObject* TargetObj
 					{
 						// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
 						// the client RPCs component.
-						auto ByteProperty = Cast<UByteProperty>(Cmd.Property);
+						UByteProperty* ByteProperty = Cast<UByteProperty>(Cmd.Property);
 						if (!bIsServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
 						{
 							ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
@@ -720,21 +720,21 @@ void Schema_ReadDynamicObject(Schema_Object* ComponentObject, UObject* TargetObj
 
 void ReadDynamicData(const Worker_ComponentData& ComponentData, UObject* TargetObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs)
 {
-	auto ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
 	Schema_ReadDynamicObject(ComponentObject, TargetObject, Channel, PackageMap, Driver, PropertyGroup, ObjectReferencesMap, UnresolvedRefs, bAutonomousProxy, true);
 }
 
 void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs)
 {
-	auto ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 	std::vector<Schema_FieldId> ClearedIdsList(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate.schema_type));
 	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate.schema_type, ClearedIdsList.data());
 
 	std::set<Schema_FieldId> ClearedIds;
 
-	for (auto FieldId : ClearedIdsList)
+	for (Schema_FieldId FieldId : ClearedIdsList)
 	{
 		ClearedIds.insert(FieldId);
 	}
@@ -803,7 +803,7 @@ Worker_ComponentData CreateDynamicData(Worker_ComponentId ComponentId, const FPr
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
 	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
-	auto ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
 	Schema_FillDynamicObject(ComponentObject, Changes, PackageMap, Driver, PropertyGroup, UnresolvedObjectsMap, true);
 
@@ -816,13 +816,13 @@ Worker_ComponentUpdate CreateDynamicUpdate(Worker_ComponentId ComponentId, const
 
 	ComponentUpdate.component_id = ComponentId;
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
-	auto ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 	std::vector<Schema_FieldId> ClearedIds;
 
 	bWroteSomething = Schema_FillDynamicObject(ComponentObject, Changes, PackageMap, Driver, PropertyGroup, UnresolvedObjectsMap, false, &ClearedIds);
 
-	for (auto Id : ClearedIds)
+	for (Schema_FieldId Id : ClearedIds)
 	{
 		Schema_AddComponentUpdateClearedField(ComponentUpdate.schema_type, Id);
 	}
@@ -841,9 +841,9 @@ Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* 
 
 	CommandRequest.component_id = ComponentId;
 	CommandRequest.schema_type = Schema_CreateCommandRequest(ComponentId, CommandIndex);
-	auto RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
+	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
-	auto TargetObjectRef = UnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
+	UnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 	if (TargetObjectRef == UNRESOLVED_OBJECT_REF)
 	{
 		OutUnresolvedObject = TargetObject;
@@ -860,7 +860,7 @@ Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* 
 	TSharedPtr<FRepLayout> RepLayout = Driver->GetFunctionRepLayout(Function);
 	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
 
-	for (auto Object : UnresolvedObjects)
+	for (const UObject* Object : UnresolvedObjects)
 	{
 		// Take the first unresolved object
 		OutUnresolvedObject = Object;
@@ -875,7 +875,7 @@ Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* 
 
 void ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worker_EntityId EntityId, UFunction* Function, USpatialPackageMapClient* PackageMap, UNetDriver* Driver, UObject*& OutTargetObject, void* Data)
 {
-	auto RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
+	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
 	UnrealObjectRef TargetObjectRef;
 	TargetObjectRef.Entity = EntityId;
@@ -891,7 +891,7 @@ void ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worke
 	OutTargetObject = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 	checkf(OutTargetObject, TEXT("Object Ref %s (NetGUID %s) does not correspond to a UObject."), *TargetObjectRef.ToString(), *TargetNetGUID.ToString());
 
-	auto PayloadData = Schema_GetString(RequestObject, 2);
+	std::string PayloadData = Schema_GetString(RequestObject, 2);
 	// A bit hacky, we should probably include the number of bits with the data instead.
 	int64 CountBits = PayloadData.size() * 8;
 	FSpatialNetBitReader PayloadReader(PackageMap, (uint8*)PayloadData.data(), CountBits);
@@ -908,10 +908,10 @@ Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* F
 
 	ComponentUpdate.component_id = ComponentId;
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
-	auto EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
-	auto EventData = Schema_AddObject(EventsObject, EventIndex);
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
+	Schema_Object* EventData = Schema_AddObject(EventsObject, EventIndex);
 
-	auto TargetObjectRef = UnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
+	UnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 	if (TargetObjectRef == UNRESOLVED_OBJECT_REF)
 	{
 		OutUnresolvedObject = TargetObject;
@@ -928,7 +928,7 @@ Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* F
 	TSharedPtr<FRepLayout> RepLayout = Driver->GetFunctionRepLayout(Function);
 	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
 
-	for (auto& Object : UnresolvedObjects)
+	for (const UObject* Object : UnresolvedObjects)
 	{
 		// Take the first unresolved object
 		OutUnresolvedObject = Object;
@@ -943,17 +943,17 @@ Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* F
 
 void ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, Worker_EntityId EntityId, const TArray<UFunction*>& RPCArray, USpatialPackageMapClient* PackageMap, UNetDriver* Driver)
 {
-	auto EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
 
 	for (Schema_FieldId EventIndex = 1; (int)EventIndex <= RPCArray.Num(); EventIndex++)
 	{
-		auto Function = RPCArray[EventIndex - 1];
+		UFunction* Function = RPCArray[EventIndex - 1];
 		for (uint32 i = 0; i < Schema_GetObjectCount(EventsObject, EventIndex); i++)
 		{
 			uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 			FMemory::Memzero(Parms, Function->ParmsSize);
 
-			auto EventData = Schema_IndexObject(EventsObject, EventIndex, i);
+			Schema_Object* EventData = Schema_IndexObject(EventsObject, EventIndex, i);
 
 			UnrealObjectRef TargetObjectRef;
 			TargetObjectRef.Entity = EntityId;
@@ -966,10 +966,10 @@ void ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, Worke
 				checkNoEntry();
 			}
 
-			auto TargetObject = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+			UObject* TargetObject = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
 			checkf(TargetObject, TEXT("Object Ref %s (NetGUID %s) does not correspond to a UObject."), *TargetObjectRef.ToString(), *TargetNetGUID.ToString());
 
-			auto PayloadData = Schema_GetString(EventData, 2);
+			std::string PayloadData = Schema_GetString(EventData, 2);
 			// A bit hacky, we should probably include the number of bits with the data instead.
 			int64 CountBits = PayloadData.size() * 8;
 			FSpatialNetBitReader PayloadReader(PackageMap, (uint8*)PayloadData.data(), CountBits);
@@ -1004,16 +1004,16 @@ void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, F
 			continue;
 		}
 
-		auto& ObjectReferences = It.Value();
-		auto Property = ObjectReferences.Property;
-		auto& Parent = RepLayout.Parents[ObjectReferences.ParentIndex];
+		FObjectReferences& ObjectReferences = It.Value();
+		UProperty* Property = ObjectReferences.Property;
+		FRepParentCmd& Parent = RepLayout.Parents[ObjectReferences.ParentIndex];
 
 		if (ObjectReferences.Array)
 		{
 			check(Property->IsA<UArrayProperty>());
 
-			auto* StoredArray = (FScriptArray*)(StoredData + AbsOffset);
-			auto* Array = (FScriptArray*)(Data + AbsOffset);
+			FScriptArray* StoredArray = (FScriptArray*)(StoredData + AbsOffset);
+			FScriptArray* Array = (FScriptArray*)(Data + AbsOffset);
 
 			int32 NewMaxOffset = FMath::Min(StoredArray->Num(), Array->Num()) * Property->ElementSize;
 
@@ -1035,9 +1035,9 @@ void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, F
 
 		for (auto UnresolvedIt = ObjectReferences.UnresolvedRefs.CreateIterator(); UnresolvedIt; ++UnresolvedIt)
 		{
-			auto& ObjectRef = *UnresolvedIt;
+			UnrealObjectRef& ObjectRef = *UnresolvedIt;
 
-			auto NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef.ToCppAPI());
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef.ToCppAPI());
 			if (NetGUID.IsValid())
 			{
 				UObject* Object = PackageMap->GetObjectFromNetGUID(NetGUID, true);
@@ -1070,7 +1070,7 @@ void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, F
 
 			if (ObjectReferences.bSingleProp)
 			{
-				auto ObjectProperty = Cast<UObjectPropertyBase>(Property);
+				UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property);
 				check(ObjectProperty);
 
 				ObjectProperty->SetObjectPropertyValue(Data + AbsOffset, SinglePropObject);

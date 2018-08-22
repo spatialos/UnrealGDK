@@ -34,12 +34,12 @@ using WorkerRequirementSet = std::vector<WorkerAttributeSet>;
 
 FORCEINLINE void Schema_AddWorkerRequirementSet(Schema_Object* Object, Schema_FieldId Id, const WorkerRequirementSet& Value)
 {
-	auto RequirementSetObject = Schema_AddObject(Object, Id);
-	for (auto& AttributeSet : Value)
+	Schema_Object* RequirementSetObject = Schema_AddObject(Object, Id);
+	for (const WorkerAttributeSet& AttributeSet : Value)
 	{
-		auto AttributeSetObject = Schema_AddObject(RequirementSetObject, 1);
+		Schema_Object* AttributeSetObject = Schema_AddObject(RequirementSetObject, 1);
 
-		for (auto& Attribute : AttributeSet)
+		for (const std::string& Attribute : AttributeSet)
 		{
 			Schema_AddString(AttributeSetObject, 1, Attribute);
 		}
@@ -48,7 +48,7 @@ FORCEINLINE void Schema_AddWorkerRequirementSet(Schema_Object* Object, Schema_Fi
 
 FORCEINLINE WorkerRequirementSet Schema_GetWorkerRequirementSet(Schema_Object* Object, Schema_FieldId Id)
 {
-	auto RequirementSetObject = Schema_GetObject(Object, Id);
+	Schema_Object* RequirementSetObject = Schema_GetObject(Object, Id);
 
 	uint32 AttributeSetCount = Schema_GetObjectCount(RequirementSetObject, 1);
 	WorkerRequirementSet RequirementSet;
@@ -56,7 +56,7 @@ FORCEINLINE WorkerRequirementSet Schema_GetWorkerRequirementSet(Schema_Object* O
 
 	for (uint32 i = 0; i < AttributeSetCount; i++)
 	{
-		auto AttributeSetObject = Schema_IndexObject(RequirementSetObject, 1, i);
+		Schema_Object* AttributeSetObject = Schema_IndexObject(RequirementSetObject, 1, i);
 
 		uint32 AttributeCount = Schema_GetBytesCount(AttributeSetObject, 1);
 		WorkerAttributeSet AttributeSet;
@@ -110,14 +110,14 @@ struct EntityAclData : ComponentData
 		: ReadAcl(InReadAcl), ComponentWriteAcl(InComponentWriteAcl) {}
 	EntityAclData(const Worker_ComponentData& Data)
 	{
-		auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		ReadAcl = Schema_GetWorkerRequirementSet(ComponentObject, 1);
 
 		uint32 KVPairCount = Schema_GetObjectCount(ComponentObject, 2);
 		for (uint32 i = 0; i < KVPairCount; i++)
 		{
-			auto KVPairObject = Schema_IndexObject(ComponentObject, 2, i);
+			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 2, i);
 			std::uint32_t Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
 			WorkerRequirementSet Value = Schema_GetWorkerRequirementSet(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
@@ -134,13 +134,13 @@ FORCEINLINE Worker_ComponentData CreateEntityAclData(const EntityAclData& Entity
 	Worker_ComponentData Data = {};
 	Data.component_id = ENTITY_ACL_COMPONENT_ID;
 	Data.schema_type = Schema_CreateComponentData(ENTITY_ACL_COMPONENT_ID);
-	auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 	Schema_AddWorkerRequirementSet(ComponentObject, 1, EntityAcl.ReadAcl);
 
-	for (auto& KVPair : EntityAcl.ComponentWriteAcl)
+	for (const auto& KVPair : EntityAcl.ComponentWriteAcl)
 	{
-		auto KVPairObject = Schema_AddObject(ComponentObject, 2);
+		Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 2);
 		Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.first);
 		Schema_AddWorkerRequirementSet(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.second);
 	}
@@ -160,7 +160,7 @@ struct MetadataData : ComponentData
 		: EntityType(InEntityType) {}
 	MetadataData(const Worker_ComponentData& Data)
 	{
-		auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		EntityType = Schema_GetString(ComponentObject, 1);
 	}
@@ -173,7 +173,7 @@ FORCEINLINE Worker_ComponentData CreateMetadataData(const MetadataData& Metadata
 	Worker_ComponentData Data = {};
 	Data.component_id = METADATA_COMPONENT_ID;
 	Data.schema_type = Schema_CreateComponentData(METADATA_COMPONENT_ID);
-	auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 	Schema_AddString(ComponentObject, 1, Metadata.EntityType);
 
@@ -192,9 +192,9 @@ struct PositionData : ComponentData
 		: Coords(InCoords) {}
 	PositionData(const Worker_ComponentData& Data)
 	{
-		auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		auto CoordsObject = Schema_GetObject(ComponentObject, 1);
+		Schema_Object* CoordsObject = Schema_GetObject(ComponentObject, 1);
 
 		Coords.X = Schema_GetDouble(CoordsObject, 1);
 		Coords.Y = Schema_GetDouble(CoordsObject, 2);
@@ -209,9 +209,9 @@ FORCEINLINE Worker_ComponentData CreatePositionData(const PositionData& Position
 	Worker_ComponentData Data = {};
 	Data.component_id = POSITION_COMPONENT_ID;
 	Data.schema_type = Schema_CreateComponentData(POSITION_COMPONENT_ID);
-	auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-	auto CoordsObject = Schema_AddObject(ComponentObject, 1);
+	Schema_Object* CoordsObject = Schema_AddObject(ComponentObject, 1);
 
 	Schema_AddDouble(CoordsObject, 1, Position.Coords.X);
 	Schema_AddDouble(CoordsObject, 2, Position.Coords.Y);
@@ -225,9 +225,9 @@ FORCEINLINE Worker_ComponentUpdate CreatePositionUpdate(const Position& Coords)
 	Worker_ComponentUpdate ComponentUpdate = {};
 	ComponentUpdate.component_id = POSITION_COMPONENT_ID;
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(POSITION_COMPONENT_ID);
-	auto ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
-	auto CoordsObject = Schema_AddObject(ComponentObject, 1);
+	Schema_Object* CoordsObject = Schema_AddObject(ComponentObject, 1);
 
 	Schema_AddDouble(CoordsObject, 1, Coords.X);
 	Schema_AddDouble(CoordsObject, 2, Coords.Y);
@@ -270,7 +270,7 @@ struct UnrealMetadataData : ComponentData
 		: StaticPath(InStaticPath), OwnerWorkerId(InOwnerWorkerId), SubobjectNameToOffset(InSubobjectNameToOffset) {}
 	UnrealMetadataData(const Worker_ComponentData& Data)
 	{
-		auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		if (Schema_GetBytesCount(ComponentObject, 1) > 0)
 		{
@@ -285,7 +285,7 @@ struct UnrealMetadataData : ComponentData
 		uint32 KVPairCount = Schema_GetObjectCount(ComponentObject, 3);
 		for (uint32 i = 0; i < KVPairCount; i++)
 		{
-			auto KVPairObject = Schema_IndexObject(ComponentObject, 3, i);
+			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 3, i);
 			std::string Key = Schema_GetString(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
 			std::uint32_t Value = Schema_GetUint32(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
@@ -303,7 +303,7 @@ FORCEINLINE Worker_ComponentData CreateUnrealMetadataData(const UnrealMetadataDa
 	Worker_ComponentData Data = {};
 	Data.component_id = UNREAL_METADATA_COMPONENT_ID;
 	Data.schema_type = Schema_CreateComponentData(UNREAL_METADATA_COMPONENT_ID);
-	auto ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 	if (!UnrealMetadata.StaticPath.empty())
 	{
@@ -314,9 +314,9 @@ FORCEINLINE Worker_ComponentData CreateUnrealMetadataData(const UnrealMetadataDa
 		Schema_AddString(ComponentObject, 2, UnrealMetadata.OwnerWorkerId);
 	}
 
-	for (auto& KVPair : UnrealMetadata.SubobjectNameToOffset)
+	for (const auto& KVPair : UnrealMetadata.SubobjectNameToOffset)
 	{
-		auto KVPairObject = Schema_AddObject(ComponentObject, 3);
+		Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 3);
 		Schema_AddString(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.first);
 		Schema_AddUint32(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.second);
 	}
