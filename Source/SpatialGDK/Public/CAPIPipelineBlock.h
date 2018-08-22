@@ -28,7 +28,13 @@ struct CAPIPipelineBlock
 	void AddEntity(Worker_AddEntityOp& Op);
 	void AddComponent(Worker_AddComponentOp& Op);
 
+	void RemoveEntity(Worker_RemoveEntityOp& Op);
+	void RemoveComponent(Worker_RemoveComponentOp& Op);
+
 	void CreateActor(Worker_EntityId EntityId);
+	void RemoveActor(Worker_EntityId EntityId);
+
+	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
 	UClass* GetNativeEntityClass(MetadataData* MetadataComponent);
 
@@ -42,4 +48,6 @@ struct CAPIPipelineBlock
 	bool bInCriticalSection;
 	TArray<Worker_EntityId> PendingAddEntities;
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
+
+	TArray<Worker_EntityId> PendingRemoveEntities;
 };

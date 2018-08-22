@@ -15,6 +15,17 @@ UDTBManager::UDTBManager()
 {
 }
 
+void UDTBManager::BeginDestroy()
+{
+	Super::BeginDestroy();
+
+	if (Connection)
+	{
+		Worker_Connection_Destroy(Connection);
+		Connection = nullptr;
+	}
+}
+
 FClassInfo* UDTBManager::FindClassInfoByClass(UClass* Class)
 {
 	for (UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
@@ -221,7 +232,8 @@ void UDTBManager::InitServer()
 	Worker_ComponentVtable DefaultVtable = {};
 	Params.default_component_vtable = &DefaultVtable;
 
-	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync("localhost", 7777, "CAPIWorker42", &Params);
+	std::string WorkerId = "CAPIWorker" + std::string(TCHAR_TO_UTF8(*FGuid::NewGuid().ToString()));
+	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync("localhost", 7777, WorkerId.c_str(), &Params);
 	Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 	Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
@@ -517,6 +529,14 @@ void UDTBManager::OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op
 	}
 }
 
+void UDTBManager::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
+{
+	if (USpatialActorChannel* Channel = RemovePendingActorRequest(Op.request_id))
+	{
+		Channel->OnCreateEntityResponseCAPI(Op);
+	}
+}
+
 Worker_RequestId UDTBManager::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
 	if (!Connection) return 0;
@@ -662,7 +682,37 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 	}
 
 	Worker_EntityId EntityId = Channel->GetEntityId().ToSpatialEntityId();
-	return Worker_Connection_SendCreateEntityRequest(Connection, ComponentDatas.size(), ComponentDatas.data(), &EntityId, nullptr);
+	Worker_RequestId CreateEntityRequestId = Worker_Connection_SendCreateEntityRequest(Connection, ComponentDatas.size(), ComponentDatas.data(), &EntityId, nullptr);
+	AddPendingActorRequest(CreateEntityRequestId, Channel);
+
+	return CreateEntityRequestId;
+}
+
+void UDTBManager::DeleteEntityIfAuthoritative(Worker_EntityId EntityId)
+{
+	bool bHasAuthority = Interop->IsAuthoritativeDestructionAllowed() && DTBHasComponentAuthority(EntityId, POSITION_COMPONENT_ID);
+
+	UE_LOG(LogTemp, Log, TEXT("!!! Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
+
+	// If we have authority and aren't trying to delete a critical entity, delete it
+	if (bHasAuthority && !IsCriticalEntity(EntityId))
+	{
+		Worker_Connection_SendDeleteEntityRequest(Connection, EntityId, nullptr);
+		PipelineBlock.CleanupDeletedEntity(EntityId);
+	}
+}
+
+bool UDTBManager::IsCriticalEntity(Worker_EntityId EntityId)
+{
+	// Don't delete if the actor is the spawner
+	if (EntityId == SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
+	{
+		return true;
+	}
+
+	// TODO: Singletons
+
+	return false;
 }
 
 void UDTBManager::SendSpatialPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
@@ -819,7 +869,7 @@ void UDTBManager::Tick()
 			PipelineBlock.AddEntity(Op->add_entity);
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			//PipelineBlock.RemoveEntity(Op->remove_entity);
+			PipelineBlock.RemoveEntity(Op->remove_entity);
 			break;
 		case WORKER_OP_TYPE_RESERVE_ENTITY_ID_RESPONSE:
 			OnReserveEntityIdResponse(Op->reserve_entity_id_response);
@@ -827,9 +877,10 @@ void UDTBManager::Tick()
 		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
 			break;
 		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			UE_LOG(LogTemp, Log, TEXT("!!! Create entity response"), UTF8_TO_TCHAR(Op->create_entity_response.message));
+			OnCreateEntityResponse(Op->create_entity_response);
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
+			UE_LOG(LogTemp, Log, TEXT("!!! Delete entity response: %s"), UTF8_TO_TCHAR(Op->delete_entity_response.message));
 			break;
 		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
 			break;
@@ -837,7 +888,7 @@ void UDTBManager::Tick()
 			PipelineBlock.AddComponent(Op->add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			//PipelineBlock.RemoveComponent(Op->remove_component);
+			PipelineBlock.RemoveComponent(Op->remove_component);
 			break;
 		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
 			OnAuthorityChange(Op->authority_change);

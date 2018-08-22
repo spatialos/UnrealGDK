@@ -14,7 +14,7 @@
 template <typename T>
 T* GetComponentData(CAPIPipelineBlock& PipelineBlock, Worker_EntityId EntityId)
 {
-	for (auto& PendingAddComponent : PipelineBlock.PendingAddComponents)
+	for (PendingAddComponentWrapper& PendingAddComponent : PipelineBlock.PendingAddComponents)
 	{
 		if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.ComponentId == T::ComponentId)
 		{
@@ -38,16 +38,16 @@ void CAPIPipelineBlock::LeaveCriticalSection()
 	check(bInCriticalSection);
 
 	// Add entities.
-	for (auto& PendingAddEntity : PendingAddEntities)
+	for (Worker_EntityId& PendingAddEntity : PendingAddEntities)
 	{
 		CreateActor(PendingAddEntity);
 	}
 
 	// Remove entities.
-	//for (auto& PendingRemoveEntity : PendingRemoveEntities)
-	//{
-	//	RemoveEntityImpl(PendingRemoveEntity);
-	//}
+	for (Worker_EntityId& PendingRemoveEntity : PendingRemoveEntities)
+	{
+		RemoveActor(PendingRemoveEntity);
+	}
 
 	//NetDriver->GetSpatialInterop()->OnLeaveCriticalSection();
 
@@ -55,9 +55,7 @@ void CAPIPipelineBlock::LeaveCriticalSection()
 	bInCriticalSection = false;
 	PendingAddEntities.Empty();
 	PendingAddComponents.Empty();
-	//PendingAuthorityChanges.Empty();
-	//PendingRemoveComponents.Empty();
-	//PendingRemoveEntities.Empty();
+	PendingRemoveEntities.Empty();
 }
 
 void CAPIPipelineBlock::AddEntity(Worker_AddEntityOp& Op)
@@ -100,12 +98,32 @@ void CAPIPipelineBlock::AddComponent(Worker_AddComponentOp& Op)
 	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, std::move(Data));
 }
 
+void CAPIPipelineBlock::RemoveEntity(Worker_RemoveEntityOp& Op)
+{
+	UE_LOG(LogTemp, Log, TEXT("!!! CAPIPipelineBlock: RemoveEntity: %lld"), Op.entity_id);
+
+	if (bInCriticalSection)
+	{
+		PendingRemoveEntities.Emplace(Op.entity_id);
+	}
+	else
+	{
+		RemoveActor(Op.entity_id);
+	}
+}
+
+void CAPIPipelineBlock::RemoveComponent(Worker_RemoveComponentOp& Op)
+{
+	UE_LOG(LogTemp, Verbose, TEXT("!!! CAPIPipelineBlock: RemoveComponent component ID: %u entity ID: %lld inCriticalSection: %d"), Op.component_id, Op.entity_id, (int)bInCriticalSection);
+	// No need to do anything here
+}
+
 void CAPIPipelineBlock::CreateActor(Worker_EntityId EntityId)
 {
 	checkf(World, TEXT("We should have a world whilst processing ops."));
 	check(NetDriver);
-	auto Interop = NetDriver->GetSpatialInterop();
-	auto EntityRegistry = NetDriver->GetEntityRegistry();
+	USpatialInterop* Interop = NetDriver->GetSpatialInterop();
+	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
 	check(Interop);
 	check(EntityRegistry);
 
@@ -151,7 +169,7 @@ void CAPIPipelineBlock::CreateActor(Worker_EntityId EntityId)
 		UE_LOG(LogTemp, Log, TEXT("!!! Received create entity response op for %lld"), EntityId);
 
 		// actor channel/entity mapping should be registered by this point
-		check(NetDriver->GetSpatialInterop()->GetActorChannelByEntityId(FEntityId(EntityId)));
+		check(Interop->GetActorChannelByEntityId(FEntityId(EntityId)));
 	}
 	else
 	{
@@ -225,13 +243,13 @@ void CAPIPipelineBlock::CreateActor(Worker_EntityId EntityId)
 			EntityRegistry->AddToRegistry(FEntityId(EntityId), EntityActor);
 
 			// Set up actor channel.
-			auto PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-			auto Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
+			USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
+			USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
 			check(Channel);
 
 			if (bDoingDeferredSpawn)
 			{
-				auto InitialLocation = CAPIPositionToLocation(PositionComponent->Coords);
+				FVector InitialLocation = CAPIPositionToLocation(PositionComponent->Coords);
 				FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 				EntityActor->FinishSpawning(FTransform(FRotator::ZeroRotator, SpawnLocation));
 			}
@@ -282,6 +300,66 @@ void CAPIPipelineBlock::CreateActor(Worker_EntityId EntityId)
 			}
 		}
 	}
+}
+
+void CAPIPipelineBlock::RemoveActor(Worker_EntityId EntityId)
+{
+	AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(FEntityId(EntityId));
+
+	UE_LOG(LogTemp, Log, TEXT("CAPIPipelineBlock: Remove Actor: %s %lld"), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId);
+
+	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
+	if (!Actor || Actor->IsPendingKill())
+	{
+		CleanupDeletedEntity(EntityId);
+		return;
+	}
+
+	if (APlayerController* PC = Cast<APlayerController>(Actor))
+	{
+		// Force APlayerController::DestroyNetworkActorHandled to return false
+		PC->Player = nullptr;
+	}
+
+	// Workaround for camera loss on handover: prevent UnPossess() (non-authoritative destruction of pawn, while being authoritative over the controller)
+	// TODO: Check how AI controllers are affected by this (UNR-430)
+	// TODO: This should be solved properly by working sets (UNR-411)
+	if (APawn* Pawn = Cast<APawn>(Actor))
+	{
+		AController* Controller = Pawn->Controller;
+
+		if (Controller && Controller->HasAuthority())
+		{
+			Pawn->Controller = nullptr;
+		}
+	}
+
+	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
+	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
+	// is currently owned by this worker before issuing an entity delete request. If the associated entity is still authoritative 
+	// on this server, we need to make sure this worker doesn't issue an entity delete request, as this entity is really 
+	// transitioning to the same server as the actor we're currently operating on, and is just a few frames behind. 
+	// We make the assumption that if we're destroying actors here (due to a remove entity op), then this is only due to two
+	// situations;
+	// 1. Actor's entity has been transitioned to another server
+	// 2. The Actor was deleted on another server
+	// In neither situation do we want to delete associated entities, so prevent them from being issued.
+	// TODO: fix this with working sets (UNR-411)
+	NetDriver->GetSpatialInterop()->StartIgnoringAuthoritativeDestruction();
+	if (!World->DestroyActor(Actor, true))
+	{
+		UE_LOG(LogTemp, Error, TEXT("World->DestroyActor failed on RemoveActor %s %lld"), *Actor->GetName(), EntityId);
+	}
+	NetDriver->GetSpatialInterop()->StopIgnoringAuthoritativeDestruction();
+
+	CleanupDeletedEntity(EntityId);
+}
+
+void CAPIPipelineBlock::CleanupDeletedEntity(Worker_EntityId EntityId)
+{
+	NetDriver->GetEntityRegistry()->RemoveFromRegistry(FEntityId(EntityId));
+	NetDriver->GetSpatialInterop()->RemoveActorChannel(FEntityId(EntityId));
+	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(FEntityId(EntityId));
 }
 
 UClass* CAPIPipelineBlock::GetNativeEntityClass(MetadataData* MetadataComponent)

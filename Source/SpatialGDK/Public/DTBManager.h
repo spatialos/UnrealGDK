@@ -53,6 +53,8 @@ class SPATIALGDK_API UDTBManager : public UObject
 public:
 	UDTBManager();
 
+	virtual void BeginDestroy() override;
+
 	FClassInfo* FindClassInfoByClass(UClass* Class);
 	void CreateTypebindings();
 
@@ -81,9 +83,15 @@ public:
 
 	void OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op);
 
+	void OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op);
+
 	Worker_RequestId SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
 
 	Worker_RequestId CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const struct FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel);
+
+	bool IsCriticalEntity(Worker_EntityId EntityId);
+
+	void DeleteEntityIfAuthoritative(Worker_EntityId EntityId);
 
 	void SendSpatialPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 

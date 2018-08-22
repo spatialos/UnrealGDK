@@ -75,10 +75,14 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 
 void USpatialActorChannel::DeleteEntityIfAuthoritative()
 {
-	// !!! DTB Here
-
 	bool bHasAuthority = false;
 	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+
+	if (Interop->DTBManager)
+	{
+		Interop->DTBManager->DeleteEntityIfAuthoritative(ActorEntityId.ToSpatialEntityId());
+		return;
+	}
 
 	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
 	if (PinnedView.IsValid())
@@ -181,10 +185,10 @@ TArray<uint16> USpatialActorChannel::GetAllPropertyHandles(FObjectReplicator& Re
 
 bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
 {
-	auto WeakObjectPtr = TWeakObjectPtr<UObject>(Object);
+	TWeakObjectPtr<UObject> WeakObjectPtr(Object);
 	check(ObjectHasReplicator(WeakObjectPtr));
-	auto& Replicator = FindOrCreateReplicator(WeakObjectPtr).Get();
-	auto& RepLayout = Replicator.RepLayout;
+	FObjectReplicator& Replicator = FindOrCreateReplicator(WeakObjectPtr).Get();
+	TSharedPtr<FRepLayout>& RepLayout = Replicator.RepLayout;
 	check(Handle - 1 < RepLayout->BaseHandleToCmdIndex.Num());
 	return RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == REPCMD_DynamicArray;
 }
@@ -295,6 +299,7 @@ bool USpatialActorChannel::ReplicateActor()
 	const bool bCompareIndexSame = ActorReplicator->RepState->LastCompareIndex == ChangelistState->CompareIndex;
 	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
+	// !!! DTB Here
 	// Update the handover property change list.
 	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(Actor->GetClass());
 	TArray<uint16> HandoverChanged;
@@ -435,7 +440,6 @@ bool USpatialActorChannel::ReplicateActor()
 
 bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, const FReplicationFlags &RepFlags)
 {
-
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Obj)).Get();
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
 	Replicator.ChangelistMgr->Update(Obj, Replicator.Connection->Driver->ReplicationFrame, Replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
@@ -482,6 +486,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
 	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 	check(Interop);
+	// !!! DTB Here
 	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(InActor->GetClass());
 	if (Binding)
 	{
