@@ -2,20 +2,20 @@
 
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 
-#include "GenericPlatform/GenericPlatformFile.h"
-#include "GenericPlatform/GenericPlatformProcess.h"
 #include "SchemaGenerator.h"
 #include "TypeBindingGenerator.h"
 #include "TypeStructure.h"
 #include "SpatialGDKEditorToolbarSettings.h"
+
+#include "AssetRegistryModule.h"
+#include "GenericPlatform/GenericPlatformFile.h"
+#include "GenericPlatform/GenericPlatformProcess.h"
+#include "Misc/MonitoredProcess.h"
+#include "Misc/FileHelper.h"
+#include "SharedPointer.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
-
-#include "Misc/MonitoredProcess.h"
-#include "SharedPointer.h"
-
-#include "Misc/FileHelper.h"
 
 #include "DTBUtil.h"
 
@@ -29,7 +29,7 @@ void OnStatusOutput(FString Message)
 	UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("%s"), *Message);
 }
 
-int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class, const TArray<FString>& TypeBindingHeaders, bool bIsSingleton, const ClassHeaderMap& InteropGeneratedClasses)
+int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class)
 {
 	FCodeWriter OutputSchema;
 	FCodeWriter OutputHeader;
@@ -51,19 +51,15 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	// Generate forwarding code.
 	BPStructTypesAndPaths GeneratedStructInfo;
 	GenerateTypeBindingHeader(OutputHeader, SchemaFilename, TypeBindingFilename, Class, TypeInfo, GeneratedStructInfo);
-	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, TypeBindingHeaders, bIsSingleton, InteropGeneratedClasses, GeneratedStructInfo);
+	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, GeneratedStructInfo);
 	OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *TypeBindingFilename));
 	OutputSource.WriteToFile(FString::Printf(TEXT("%s%s.cpp"), *ForwardingCodePath, *TypeBindingFilename));
 
 	return NumComponents;
 }
 
-bool CheckClassNameListValidity(const ClassHeaderMap& ClassMap)
+bool CheckClassNameListValidity(const TArray<UClass*>& Classes)
 {
-	// Pull out all the class names from the map. (These might contain underscores like "One_TwoThree" and "OneTwo_Three").
-	TArray<UClass*> Classes;
-	ClassMap.GetKeys(Classes);
-
 	// Remove all underscores from the class names, check for duplicates.
 	for (int i = 0; i < Classes.Num() - 1; ++i)
 	{
@@ -82,21 +78,28 @@ bool CheckClassNameListValidity(const ClassHeaderMap& ClassMap)
 			}
 		}
 	}
+
+	// Ensure class conforms to schema uppercase letter check
+	for (const auto& Class : Classes)
+	{
+		FString ClassName = Class->GetName();
+		if (FChar::IsLower(ClassName[0]))
+		{
+			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("SpatialType class begins with lowercase letter: %s. Schema not generated"), *ClassName);
+			return false;
+		}
+	}
 	return true;
 }
 }// ::
 
-void GenerateInteropFromClasses(const ClassHeaderMap& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
+void GenerateInteropFromClasses(const TArray<UClass*>& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
 {
-	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 	int ComponentId = 100010;
-	for (auto& ClassHeaderList : Classes)
+	for (const auto& Class : Classes)
 	{
-		const TArray<FString>& TypeBindingHeaders = ClassHeaderList.Value;
-		bool bIsSingleton = GetDefault<USpatialGDKEditorToolbarSettings>()->SingletonClasses.Find(ClassHeaderList.Key) != INDEX_NONE;
-
-		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, ClassHeaderList.Key, TypeBindingHeaders, bIsSingleton, Classes);
+		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class);
 	}
 }
 
@@ -133,10 +136,22 @@ FString GenerateIntermediateDirectory()
 bool SpatialGDKGenerateInteropCode()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
-	ClassHeaderMap InteropGeneratedClasses;
-	for (auto& Element : SpatialGDKToolbarSettings->InteropCodegenClasses)
+	TArray<UClass*> InteropGeneratedClasses;
+	for (TObjectIterator<UClass> It; It; ++It)
 	{
-		InteropGeneratedClasses.Add(Element.ReplicatedClass, Element.IncludeList);
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings) == false)
+		{
+			continue;
+		}
+
+		// Ensure we don't process skeleton or reinitialised classes
+		if (	It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
+			||	It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
+		{
+			continue;
+		}
+
+		InteropGeneratedClasses.Add(*It);
 	}
 
 	if (!CheckClassNameListValidity(InteropGeneratedClasses))

@@ -25,7 +25,7 @@ You need to use the ICG to generate `.schema` files and type bindings for any ne
 ### How to use the ICG
 As the Interop Code Generator is a plugin for the Unreal toolbar, to use it you must first:
 *  build your game project to access the SpatialOS fork of Unreal Engine as well as the Unreal GDK. (You do this as part of the [installation and setup](../setup-and-installing.md), swapping the “Starter Project” and its file location for your game’s name and file location.)
-* list the classes that you want to create typebindings for in the in the **SpatialOS Unreal GDK** settings in the Unreal Engine 4 Editor. For instructions on how to do this, see the guidance on [Setting up the Interop Code Generator](#Setting-up-the-Interop-Code-Generator), below.
+* tag the classes that you want to create typebindings for. For instructions on how to do this, see the guidance on [Setting up the Interop Code Generator](#setting-up-the-interop-code-generator), below.
 
 The SpatialOS build of Unreal has an **Interop Codegen** button; on the SpatialOS Unreal GDK toolbar, select **Interop Codegen** to trigger the ICG process:
 
@@ -43,17 +43,22 @@ For further information on the settings available through the Unreal GDK toolbar
 
 ### Example
 
-The image below demonstrates how we set up the class `StarterProjectPlayerController` in the [Unreal GDK Starter Project](https://github.com/spatialos/UnrealGDKStarterProject). The `StarterProjectPlayerController` depends on the following include files:`StarterProjectPlayerController.h`,`Camera/CameraAnim.h`,`Camera/CameraShake.h`,`GameFramework/HUD.h`,`GameFramework/LocalMessage.h`, and `Particles/EmitterCameraLensEffectBase.h`.
-
-![Interop Code Generator Settings](../assets/screen_grabs/toolbar/ICGSettings.png)
-_Set up of the `StarterProjectPlayerController` class in the Starter Project_
+Identify the classes you want to replicate across SpatialOS, and tag each UClass with the `Spatial` keyword. The code snippet below demonstrates how we set up the class `StarterProjectPlayerController` in the Unreal GDK Starter Project. 
+```
+UCLASS(Spatial)
+class STARTERPROJECT_API AStarterProjectPlayerController : public APlayerController
+{
+    GENERATED_BODY()
+    ...
+}
+```
 
 This generates the appropriate `.schema` files and type bindings as `SpatialTypeBinding` files. Using the Starter Project example:
 
 * The generated `.schema` files are in the Starter Project repository. They are at `<project root>/spatial /schema/improbable/generated/`.
 The `.schema` files have names relevant to the class name you give them. From the Starter Project example above: `StarterProjectPlayerController.Schema` and `PlayerCharacter.schema`.
 
-    Some `.schema` files have a `Types` tag;  in this situation `PlayerCharacter.schema` files have the filename `PlayerCharacterTypes.schema`.  This indicates this is a schema containing RPC types which child or sibling classes can reuse.
+    Some `.schema` files have a `Types` tag;  in this situation `PlayerCharacter.schema` files have the filename `PlayerCharacterTypes.schema`.  This indicates this is a schema containing RPC types which child classes can reuse.
 
 * The generated `SpatialTypeBinding` files are in the [Unreal GDK repository](https://github.com/spatialos/UnrealGDK) at `<Project Root>/workers/unreal/Game/source/GameName/Generated/`.
 

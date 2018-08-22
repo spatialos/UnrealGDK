@@ -352,8 +352,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				RPCNode->Parameters.Add(Parameter, PropertyNode);
 
 				// If this RPC parameter is a struct, recurse into it.
-				UStructProperty* StructParameter = Cast<UStructProperty>(Parameter);
-				if (StructParameter)
+				if (UStructProperty* StructParameter = Cast<UStructProperty>(Parameter))
 				{
 					uint32 StructChecksum = GenerateChecksum(Parameter, ParentChecksum, 0);
 					PropertyNode->CompatibleChecksum = StructChecksum;
@@ -570,7 +569,7 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 	return RPCsByType;
 }
 
-TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& InteropGeneratedClasses)
+TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 {
 	TSet<UClass*> ComponentClasses;
 
@@ -581,7 +580,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& I
 
 		for (UActorComponent* Component : NativeComponents)
 		{
-			AddComponentClassToSet(Component->GetClass(), ComponentClasses, Class, InteropGeneratedClasses);
+			AddComponentClassToSet(Component->GetClass(), ComponentClasses, Class);
 		}
 
 		// Components that are added in a blueprint won't appear in the CDO.
@@ -596,7 +595,7 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& I
 						continue;
 					}
 
-					AddComponentClassToSet(Node->ComponentTemplate->GetClass(), ComponentClasses, Class, InteropGeneratedClasses);
+					AddComponentClassToSet(Node->ComponentTemplate->GetClass(), ComponentClasses, Class);
 				}
 			}
 		}
@@ -605,9 +604,9 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class, const ClassHeaderMap& I
 	return ComponentClasses.Array();
 }
 
-void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass, const ClassHeaderMap& InteropGeneratedClasses)
+void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass)
 {
-	if (InteropGeneratedClasses.Find(ComponentClass))
+	if (ComponentClass->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings))
 	{
 		if (ComponentClasses.Find(ComponentClass) == nullptr)
 		{
