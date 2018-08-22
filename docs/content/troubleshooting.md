@@ -86,3 +86,9 @@ check(!Value->IsFullNameStableForNetworking())
 **Q:** My replicated properties in my game state aren't updating in the Inspector or on my client-worker.
 
 **A:** This is a known issue due to a bug in SpatialOS where a server-worker will sometimes not get authority over an entity (in this case the GameState). The workaround at the moment is to try reconnecting to the deployment until it works. The fix for this bug is currently being worked on.
+
+------
+
+**Q:** I’m getting the error `"Unknown class specifier 'SpatialType'"` when building my project.
+
+**A:** `Spatial Type` is a new class specifier added for tagging of classes relevant to spatial replication. Rebuild the `Unreal Header Tool` using the `Development` configuration.
