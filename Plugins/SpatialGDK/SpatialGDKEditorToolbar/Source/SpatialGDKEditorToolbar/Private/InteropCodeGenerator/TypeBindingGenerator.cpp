@@ -162,17 +162,17 @@ FString PropertyToWorkerSDKType(UProperty* Property, bool bIsRPCProperty)
 	return DataType;
 }
 
-// Generate definition in header file for Blueprint-defined Structs & Enums
-void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Property, TSet<FString>& GeneratedTypes, BPStructTypesAndPaths& GeneratedStructInfo)
+// Visit property if it is blueprint defined
+void VisitBlueprintDefinedProperty_Recursive(UProperty* Property, TSet<FString>& VisitedTypes, BPStructTypesAndPaths& VisitedStructInfo, TFunction<void(const UProperty*, const UField*)> WriterCallback)
 {
-	if (GeneratedTypes.Contains(Property->GetCPPType()))
+	if (VisitedTypes.Contains(Property->GetCPPType()))
 	{
 		return;
 	}
 
 	if (UArrayProperty *ArrProp = Cast<UArrayProperty>(Property))
 	{
-		GenerateBlueprintStructEnumDefinition(Writer, ArrProp->Inner, GeneratedTypes, GeneratedStructInfo);
+		VisitBlueprintDefinedProperty_Recursive(ArrProp->Inner, VisitedTypes, VisitedStructInfo, WriterCallback);
 	}
 
 	if (Property->IsA<UStructProperty>())
@@ -183,29 +183,17 @@ void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Prope
 			return;
 		}
 
-		GeneratedTypes.Add(Property->GetCPPType());
-		GeneratedStructInfo.Add(Property->GetCPPType(), Struct->GetPathName());
+		VisitedTypes.Add(Property->GetCPPType());
+		VisitedStructInfo.Add(Property->GetCPPType(), Struct->GetPathName());
 
 		// Recurse children post-order
 		for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
 		{
 			UProperty* Prop = *PropIt;
-			GenerateBlueprintStructEnumDefinition(Writer, Prop, GeneratedTypes, GeneratedStructInfo);
+			VisitBlueprintDefinedProperty_Recursive(Prop, VisitedTypes, VisitedStructInfo, WriterCallback);
 		}
 
-		Writer.PrintNewLine();
-		Writer.Printf("struct %s", *Property->GetCPPType());
-		Writer.Printf("{").Indent();
-		for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
-		{
-			UProperty* Prop = *PropIt;
-			FStringOutputDevice PropertyText;
-			Prop->ExportCppDeclaration(PropertyText, EExportedDeclaration::Local, nullptr);
-			Writer.Printf("%s;", *PropertyText);
-		}
-		Writer.Outdent().Printf("};");
-		Writer.Printf("UPROPERTY()");  // To-do: remove this line once the UHT bugfix goes in: case sensitive matching USTRUCT
-		Writer.Printf("UStruct* %s_Struct;", *Property->GetCPPType());
+		WriterCallback(Property, Struct);
 	}
 	else
 	{
@@ -225,17 +213,34 @@ void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Prope
 			return;
 		}
 
-		GeneratedTypes.Add(Property->GetCPPType());
+		VisitedTypes.Add(Property->GetCPPType());
 
-		Writer.PrintNewLine();
-		Writer.Printf("enum %s", *Enum->GetName());
-		Writer.Printf("{").Indent();
+		WriterCallback(Property, Enum);
+	}
+}
 
-		for (int i=0; i<Enum->NumEnums(); i++)
+void VisitAllBlueprintDefinedStructures(const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, BPStructTypesAndPaths& VisitedStructInfo, TFunction<void(const UProperty*, const UField*)> WriterCallback)
+{
+	// Visit all replicated properties
+	TSet<FString> VisitedBPTypes;
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		for (auto& RepProp : RepData[Group])
 		{
-			Writer.Printf("%s,", *Enum->GetNameStringByIndex(i));  // This will put a trailing comma on the last Enum but this is deemed okay in Unreal
+			VisitBlueprintDefinedProperty_Recursive(RepProp.Value->Property, VisitedBPTypes, VisitedStructInfo, WriterCallback);
 		}
-		Writer.Outdent().Printf("};");
+	}
+
+	// Visit all RPC parameters
+	for (auto Group : GetRPCTypes())
+	{
+		for (auto& RPC : RPCsByType[Group])
+		{
+			for (auto& RPCParam : RPC->Parameters)
+			{
+				VisitBlueprintDefinedProperty_Recursive(RPCParam.Key, VisitedBPTypes, VisitedStructInfo, WriterCallback);
+			}
+		}
 	}
 }
 
@@ -551,6 +556,20 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	}
 }
 
+void GetPropertyText(FStringOutputDevice& PropertyText, UProperty* Prop)
+{
+	FString* ActualCppType = nullptr;
+	FString ObjectCppType;
+	if (UObjectPropertyBase* Base = Cast<UObjectPropertyBase>(Prop))
+	{
+		// Ensure we're using a native class name, as this text needs to be compilable
+		ObjectCppType = GetNativeClassName(Base->PropertyClass);
+		ObjectCppType = Base->GetCPPTypeCustom(nullptr, 0, ObjectCppType);
+		ActualCppType = &ObjectCppType;
+	}
+	Prop->ExportCppDeclaration(PropertyText, EExportedDeclaration::Local, nullptr, 0, false, ActualCppType);
+}
+
 void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC>& RPC, FString& StructName)
 {
 	UClass* RPCOwnerClass = RPC->Function->GetOwnerClass();
@@ -592,8 +611,7 @@ void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC
 			}
 			// COPY-PASTE END
 
-			Prop->ExportCppDeclaration(PropertyText, EExportedDeclaration::Local, nullptr);
-
+			GetPropertyText(PropertyText, Prop);
 			Writer.Printf("%s;", *PropertyText);
 		}
 
@@ -609,7 +627,7 @@ void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC
 	}
 }
 
-void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo, BPStructTypesAndPaths& GeneratedStructInfo)
+void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo)
 {
 	HeaderWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -759,23 +777,25 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		}
 	}
 
-	// Generate blueprint-defined structures
+	// Iterate over blueprint-defined structures and write out header file details
+	BPStructTypesAndPaths VisitedStructInfo;
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
-	TSet<FString> GeneratedBPTypes;
-	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	VisitAllBlueprintDefinedStructures(RPCsByType, RepData, VisitedStructInfo,
+		[&HeaderWriter](const UProperty* Property, const UField* ContextField)
 	{
-		for (auto& RepProp : RepData[Group])
+		if (Property->IsA<UStructProperty>())
 		{
-			GenerateBlueprintStructEnumDefinition(HeaderWriter, RepProp.Value->Property, GeneratedBPTypes, GeneratedStructInfo);
+			HeaderWriter.PrintNewLine();
+			HeaderWriter.Printf("UPROPERTY()");  // To-do: remove this line once the UHT bugfix goes in: case sensitive matching USTRUCT
+			HeaderWriter.Printf("UStruct* %s_Struct;", *Property->GetCPPType());
 		}
-	}
+	});
 
 	HeaderWriter.Outdent();
 	HeaderWriter.Print("};");
 }
 
-void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename,
-	UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo, BPStructTypesAndPaths& GeneratedStructInfo)
+void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo)
 {
 	// Get replicated data, RPCs and component.
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
@@ -785,8 +805,41 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 
 	GenerateHeaderIncludes_Source(SourceWriter, InteropFilename, Class, RPCsByType, RepData, Components);
 
-	// Generate methods implementations
+	// Iterate over blueprint-defined structures and write out source file details
+	BPStructTypesAndPaths GeneratedStructInfo;
+	VisitAllBlueprintDefinedStructures(RPCsByType, RepData, GeneratedStructInfo,
+		[&SourceWriter](const UProperty* Property, const UField* ContextField)
+	{
+		if (auto Struct = Cast<UStruct>(ContextField))
+		{
+			SourceWriter.PrintNewLine();
+			SourceWriter.Printf("struct %s", *Property->GetCPPType());
+			SourceWriter.Printf("{").Indent();
+			for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
+			{
+				UProperty* Prop = *PropIt;
+				FStringOutputDevice PropertyText;
+				GetPropertyText(PropertyText, Prop);
+				SourceWriter.Printf("%s;", *PropertyText);
 
+			}
+			SourceWriter.Outdent().Printf("};");
+		}
+		else if (auto Enum = Cast<UEnum>(ContextField))
+		{
+			SourceWriter.PrintNewLine();
+			SourceWriter.Printf("enum %s", *Enum->GetName());
+			SourceWriter.Printf("{").Indent();
+
+			for (int i = 0; i < Enum->NumEnums(); i++)
+			{
+				SourceWriter.Printf("%s,", *Enum->GetNameStringByIndex(i));  // This will put a trailing comma on the last Enum but this is deemed okay in Unreal
+			}
+			SourceWriter.Outdent().Printf("};");
+		}
+	});
+
+	// Generate methods implementations
 	SourceWriter.PrintNewLine();
 	GenerateFunction_GetRepHandlePropertyMap(SourceWriter, Class);
 
@@ -895,6 +948,16 @@ void AddIncludePath(const UProperty* UnrealProperty, TArray<FString>& HeaderIncl
 	{
 		const UStructProperty* StructProp = Cast<UStructProperty>(UnrealProperty);
 		IncludeStruct = StructProp->Struct;
+
+		for (TFieldIterator<UProperty> PropIt(IncludeStruct); PropIt; ++PropIt)
+		{
+			AddIncludePath(*PropIt, HeaderIncludes);
+		}
+	}
+	else if (UnrealProperty->IsA<UArrayProperty>())
+	{
+		const UArrayProperty* ArrayProp = Cast<UArrayProperty>(UnrealProperty);
+		AddIncludePath(ArrayProp->Inner, HeaderIncludes);
 	}
 
 	if (IncludeStruct)
