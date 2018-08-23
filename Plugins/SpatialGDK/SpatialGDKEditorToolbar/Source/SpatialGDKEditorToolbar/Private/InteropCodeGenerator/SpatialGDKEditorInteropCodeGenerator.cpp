@@ -17,8 +17,6 @@
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
 
-#include "DTBUtil.h"
-
 DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 
 namespace
@@ -44,16 +42,6 @@ int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& Fo
 	// Generate schema.
 	int NumComponents = GenerateTypeBindingSchema(OutputSchema, ComponentId, Class, TypeInfo, SchemaPath);
 	OutputSchema.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFilename));
-
-	// Don't generate TypeBindings for DTB
-	if (ShouldUseDTB(Class)) return NumComponents;
-
-	// Generate forwarding code.
-	BPStructTypesAndPaths GeneratedStructInfo;
-	GenerateTypeBindingHeader(OutputHeader, SchemaFilename, TypeBindingFilename, Class, TypeInfo, GeneratedStructInfo);
-	GenerateTypeBindingSource(OutputSource, SchemaFilename, TypeBindingFilename, Class, TypeInfo, GeneratedStructInfo);
-	OutputHeader.WriteToFile(FString::Printf(TEXT("%s%s.h"), *ForwardingCodePath, *TypeBindingFilename));
-	OutputSource.WriteToFile(FString::Printf(TEXT("%s%s.cpp"), *ForwardingCodePath, *TypeBindingFilename));
 
 	return NumComponents;
 }

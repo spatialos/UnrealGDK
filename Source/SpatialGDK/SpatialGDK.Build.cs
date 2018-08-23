@@ -22,8 +22,7 @@ public class SpatialGDK : ModuleRules
                 "SpatialGDK/Generated/Cpp",
                 "SpatialGDK/Generated/UClasses",
                 "SpatialGDK/Legacy",
-                "SpatialGDK/Legacy/Deprecated",
-                "SpatialGDKEditorToolbar/Public"
+                "SpatialGDK/Legacy/Deprecated"
             });
 
         PrivateIncludePaths.Add("SpatialGDK/Private");
@@ -38,7 +37,6 @@ public class SpatialGDK : ModuleRules
                 "PhysXVehicles",
                 "InputCore",
                 "Sockets",
-                "SpatialGDKEditorToolbar",
             });
 
 		// Check if we're building in the editor.

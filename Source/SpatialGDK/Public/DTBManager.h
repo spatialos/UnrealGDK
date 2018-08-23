@@ -143,6 +143,7 @@ public:
 
 	TArray<TPair<UObject*, UnrealObjectRef>> ResolvedObjectQueue;
 
+	TArray<UClass*> DTBClasses;
 	TMap<UClass*, FClassInfo> ClassInfoMap;
 	TMap<Worker_ComponentId, UClass*> ComponentToClassMap;
 

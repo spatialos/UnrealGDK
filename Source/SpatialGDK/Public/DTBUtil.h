@@ -4,15 +4,15 @@
 
 #include "CoreMinimal.h"
 
-#include "SpatialGDKEditorToolbarSettings.h"
+#include "DTBManager.h"
 
-bool FORCEINLINE ShouldUseDTB(UClass* Class)
+bool FORCEINLINE ShouldUseDTB(UDTBManager* DTBManager, UClass* Class)
 {
 	//return Class->IsChildOf(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor")));
-	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
-	for (auto& Item : SpatialGDKToolbarSettings->InteropCodegenClasses)
+	if (!DTBManager) return false;
+	for (UClass* DTBClass : DTBManager->DTBClasses)
 	{
-		if (Class->IsChildOf(Item.ReplicatedClass)) return true;
+		if (Class->IsChildOf(DTBClass)) return true;
 	}
 	return false;
 }

@@ -18,7 +18,7 @@ struct FInteropTypebindingInfo
 };
 
 UCLASS(config = EditorPerProjectUserSettings, defaultconfig)
-class SPATIALGDKEDITORTOOLBAR_API USpatialGDKEditorToolbarSettings : public UObject
+class USpatialGDKEditorToolbarSettings : public UObject
 {
 	GENERATED_BODY()
 

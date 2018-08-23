@@ -5,8 +5,7 @@
 #include "SpatialActorChannel.h"
 #include "SpatialInterop.h"
 #include "DTBUtil.h"
-
-#include "SpatialGDKEditorToolbarSettings.h"
+#include "AssetRegistryModule.h"
 
 const Worker_ComponentId SPECIAL_SPAWNER_COMPONENT_ID = 100003;
 const Worker_EntityId SPECIAL_SPAWNER_ENTITY_ID = 3;
@@ -41,18 +40,51 @@ FClassInfo* UDTBManager::FindClassInfoByClass(UClass* Class)
 
 void UDTBManager::CreateTypebindings()
 {
-	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
-	TMap<UClass*, TArray<FString>> InteropGeneratedClasses;
-	for (auto& Element : SpatialGDKToolbarSettings->InteropCodegenClasses)
+	// Load the asset registry module
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(FName("AssetRegistry"));
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	// Before running the interop generator, ensure all blueprint classes that have been tagged with 'spatial' are loaded
+	TArray<FAssetData> AssetData;
+	uint32 SpatialClassFlags = 0;
+	AssetRegistry.GetAssetsByClass(UBlueprint::StaticClass()->GetFName(), AssetData, true);
+	for (FAssetData& It : AssetData)
 	{
-		InteropGeneratedClasses.Add(Element.ReplicatedClass, Element.IncludeList);
+		if (It.GetTagValue("SpatialClassFlags", SpatialClassFlags))
+		{
+			if (SpatialClassFlags & SPATIALCLASS_GenerateTypeBindings)
+			{
+				FString ObjectPath = It.ObjectPath.ToString() + TEXT("_C");
+				UClass* LoadedClass = LoadObject<UClass>(nullptr, *ObjectPath, nullptr, LOAD_EditorOnly, nullptr);
+				UE_LOG(LogTemp, Log, TEXT("Found spatial blueprint class `%s`."), *ObjectPath);
+				if (LoadedClass == nullptr)
+				{
+					FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Error: Failed to load blueprint %s."), *ObjectPath)));
+				}
+			}
+		}
+	}
+
+	for (TObjectIterator<UClass> It; It; ++It)
+	{
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings) == false)
+		{
+			continue;
+		}
+
+		// Ensure we don't process skeleton or reinitialised classes
+		if (It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
+			|| It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
+		{
+			continue;
+		}
+
+		DTBClasses.Add(*It);
 	}
 
 	int ComponentId = 100010;
-	for (auto& ClassHeaderList : InteropGeneratedClasses)
+	for (UClass* Class : DTBClasses)
 	{
-		UClass* Class = ClassHeaderList.Key;
-
 		auto AddComponentId = [Class, &ComponentId, this]()
 		{
 			ComponentToClassMap.Add(ComponentId, Class);
@@ -118,7 +150,7 @@ void UDTBManager::CreateTypebindings()
 
 				for (UActorComponent* Component : NativeComponents)
 				{
-					if (ShouldUseDTB(Component->GetClass()))
+					if (ShouldUseDTB(this, Component->GetClass()))
 					{
 						Info.ComponentClasses.Add(Component->GetClass());
 					}
@@ -136,7 +168,7 @@ void UDTBManager::CreateTypebindings()
 								continue;
 							}
 
-							if (ShouldUseDTB(Node->ComponentTemplate->GetClass()))
+							if (ShouldUseDTB(this, Node->ComponentTemplate->GetClass()))
 							{
 								Info.ComponentClasses.Add(Node->ComponentTemplate->GetClass());
 							}

@@ -122,7 +122,7 @@ USpatialTypeBinding* USpatialInterop::GetTypeBindingByClass(UClass* Class) const
 
 worker::RequestId<worker::CreateEntityRequest> USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
-	if (ShouldUseDTB(Channel->Actor->GetClass()))
+	if (ShouldUseDTB(DTBManager, Channel->Actor->GetClass()))
 	{
 		return worker::RequestId<worker::CreateEntityRequest>(DTBManager->SendCreateEntityRequest(Channel, Location, PlayerWorkerId, RepChanged, HandoverChanged));
 	}
@@ -240,9 +240,9 @@ worker::RequestId<worker::DeleteEntityRequest> USpatialInterop::SendDeleteEntity
 
 void USpatialInterop::SendSpatialPositionUpdate(const FEntityId& EntityId, const FVector& Location, const AActor* Actor)
 {
-	if (ShouldUseDTB(Actor->GetClass()))
+	if (ShouldUseDTB(DTBManager, Actor->GetClass()))
 	{
-		if (DTBManager) DTBManager->SendSpatialPositionUpdate(EntityId.ToSpatialEntityId(), Location);
+		DTBManager->SendSpatialPositionUpdate(EntityId.ToSpatialEntityId(), Location);
 		return;
 	}
 
@@ -263,9 +263,9 @@ void USpatialInterop::SendSpatialUpdate(USpatialActorChannel* Channel, const TAr
 
 void USpatialInterop::SendSpatialUpdateForObject(USpatialActorChannel* Channel, UObject* Object, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged, FObjectReplicator* Replicator)
 {
-	if (ShouldUseDTB(Object->GetClass()))
+	if (ShouldUseDTB(DTBManager, Object->GetClass()))
 	{
-		if (DTBManager) DTBManager->SendComponentUpdates(Object, Channel->GetChangeStateForObject(Object, Replicator, RepChanged, HandoverChanged), Channel);
+		DTBManager->SendComponentUpdates(Object, Channel->GetChangeStateForObject(Object, Replicator, RepChanged, HandoverChanged), Channel);
 		return;
 	}
 
@@ -279,9 +279,9 @@ void USpatialInterop::SendSpatialUpdateForObject(USpatialActorChannel* Channel, 
 
 void USpatialInterop::InvokeRPC(UObject* TargetObject, UFunction* Function, void* Parameters)
 {
-	if (ShouldUseDTB(TargetObject->GetClass()))
+	if (ShouldUseDTB(DTBManager, TargetObject->GetClass()))
 	{
-		if (DTBManager) DTBManager->SendRPC(TargetObject, Function, Parameters);
+		DTBManager->SendRPC(TargetObject, Function, Parameters);
 		return;
 	}
 

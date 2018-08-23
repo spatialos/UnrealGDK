@@ -404,7 +404,7 @@ bool USpatialActorChannel::ReplicateActor()
 		{
 			if (ActorComp && ActorComp->GetIsReplicated()) // Only replicated subobjects with type bindings
 			{
-				if(Interop->GetTypeBindingByClass(ActorComp->GetClass()) || ShouldUseDTB(ActorComp->GetClass()))
+				if(Interop->GetTypeBindingByClass(ActorComp->GetClass()) || ShouldUseDTB(Interop->DTBManager, ActorComp->GetClass()))
 				{
 					bWroteSomethingImportant |= ReplicateSubobject(ActorComp, RepFlags);
 				}
@@ -545,9 +545,10 @@ void USpatialActorChannel::SendReserveEntityIdRequest()
 	// Mark this channel as being responsible for creating this entity once we have an entity ID.
 	bCreatingNewEntity = true;
 
-	if (ShouldUseDTB(InActor->GetClass()))
+	UDTBManager* DTBManager = SpatialNetDriver->GetSpatialInterop()->DTBManager;
+	if (ShouldUseDTB(DTBManager, Actor->GetClass()))
 	{
-		if (Interop->DTBManager) Interop->DTBManager->SendReserveEntityIdRequest(this);
+		DTBManager->SendReserveEntityIdRequest(this);
 	}
 	else
 	{
