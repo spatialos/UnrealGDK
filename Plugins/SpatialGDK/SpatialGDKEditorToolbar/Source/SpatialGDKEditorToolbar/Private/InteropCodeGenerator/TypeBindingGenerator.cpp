@@ -782,11 +782,23 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	VisitAllBlueprintDefinedStructures(RPCsByType, RepData, VisitedStructInfo,
 		[&HeaderWriter](const UProperty* Property, const UField* ContextField)
 	{
-		if (Property->IsA<UStructProperty>())
+		if (const auto Struct = Cast<UStruct>(ContextField))
 		{
 			HeaderWriter.PrintNewLine();
 			HeaderWriter.Printf("UPROPERTY()");  // To-do: remove this line once the UHT bugfix goes in: case sensitive matching USTRUCT
 			HeaderWriter.Printf("UStruct* %s_Struct;", *Property->GetCPPType());
+		}
+		else if (const auto Enum = Cast<UEnum>(ContextField))
+		{
+			HeaderWriter.PrintNewLine();
+			HeaderWriter.Printf("enum %s", *Enum->GetName());
+			HeaderWriter.Printf("{").Indent();
+
+			for (int i = 0; i < Enum->NumEnums(); i++)
+			{
+				HeaderWriter.Printf("%s,", *Enum->GetNameStringByIndex(i));  // This will put a trailing comma on the last Enum but this is deemed okay in Unreal
+			}
+			HeaderWriter.Outdent().Printf("};");
 		}
 	});
 
@@ -821,18 +833,6 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 				GetPropertyText(PropertyText, Prop);
 				SourceWriter.Printf("%s;", *PropertyText);
 
-			}
-			SourceWriter.Outdent().Printf("};");
-		}
-		else if (const auto Enum = Cast<UEnum>(ContextField))
-		{
-			SourceWriter.PrintNewLine();
-			SourceWriter.Printf("enum %s", *Enum->GetName());
-			SourceWriter.Printf("{").Indent();
-
-			for (int i = 0; i < Enum->NumEnums(); i++)
-			{
-				SourceWriter.Printf("%s,", *Enum->GetNameStringByIndex(i));  // This will put a trailing comma on the last Enum but this is deemed okay in Unreal
 			}
 			SourceWriter.Outdent().Printf("};");
 		}
