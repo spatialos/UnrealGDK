@@ -626,6 +626,42 @@ void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC
 	}
 }
 
+void AddIncludePath(const UProperty* UnrealProperty, TArray<FString>& HeaderIncludes)
+{
+	const UStruct* IncludeStruct = nullptr;
+
+	if (UnrealProperty->IsA<UObjectPropertyBase>())
+	{
+		UClass* PropClass = Cast<UObjectPropertyBase>(UnrealProperty)->PropertyClass;
+		if (UnrealProperty->IsA<UClassProperty>())
+		{
+			PropClass = Cast<UClassProperty>(UnrealProperty)->MetaClass;
+		}
+
+		IncludeStruct = GetFirstNativeClass(PropClass);
+	}
+	else if (UnrealProperty->IsA<UStructProperty>())
+	{
+		const UStructProperty* StructProp = Cast<UStructProperty>(UnrealProperty);
+		IncludeStruct = StructProp->Struct;
+
+		for (TFieldIterator<UProperty> PropIt(IncludeStruct); PropIt; ++PropIt)
+		{
+			AddIncludePath(*PropIt, HeaderIncludes);
+		}
+	}
+	else if (UnrealProperty->IsA<UArrayProperty>())
+	{
+		const UArrayProperty* ArrayProp = Cast<UArrayProperty>(UnrealProperty);
+		AddIncludePath(ArrayProp->Inner, HeaderIncludes);
+	}
+
+	if (IncludeStruct)
+	{
+		HeaderIncludes.AddUnique(IncludeStruct->GetMetaData("IncludePath"));
+	}
+}
+
 void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo)
 {
 	HeaderWriter.Printf(R"""(
@@ -638,10 +674,66 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		#include <improbable/view.h>
 		#include <improbable/unreal/gdk/core_types.h>
 		#include <improbable/unreal/gdk/unreal_metadata.h>
-		#include <improbable/unreal/generated/%s.h>
+		#include <improbable/unreal/generated/%s.h>)""", *SchemaFilename);
+
+	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
+	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
+
+	// Include this class' header file
+	TArray<FString> HeaderIncludes;
+	HeaderIncludes.AddUnique(GetFirstNativeClass(Class)->GetMetaData("IncludePath"));
+
+	// Find all RPC parameter objects and retrieve their path
+	for (ERPCType Group : GetRPCTypes())
+	{
+		for (const auto& RPC : RPCsByType[Group])
+		{
+			for (const auto& RPCParam : RPC->Parameters)
+			{
+				AddIncludePath(RPCParam.Key, HeaderIncludes);
+			}
+		}
+	}
+
+	// Find all replicated objects within blueprints classes, and retrieve their path
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		for (const auto& RepProp : RepData[Group])
+		{
+			UProperty* UnrealProperty = RepProp.Value->Property;
+			if (UClass* RepClass = UnrealProperty->GetOwnerClass())
+			{
+				if (!RepClass->HasAnyClassFlags(CLASS_Native))
+				{
+					AddIncludePath(UnrealProperty, HeaderIncludes);
+				}
+			}
+			else if (UScriptStruct* RepStruct = Cast<UScriptStruct>(UnrealProperty->GetOwnerStruct()))
+			{
+				if (!(RepStruct->StructFlags & STRUCT_Native))
+				{
+					AddIncludePath(UnrealProperty, HeaderIncludes);
+				}
+			}
+		}
+	}
+
+	// Write out all the includes to source
+	HeaderWriter.PrintNewLine();
+	HeaderIncludes.Sort();
+	for (const auto& IncludePath : HeaderIncludes)
+	{
+		if (IncludePath.IsEmpty() == false)
+		{
+			HeaderWriter.Printf("#include \"%s\"", *IncludePath);
+		}
+	}
+	HeaderWriter.PrintNewLine();
+
+	HeaderWriter.Printf(R"""(
 		#include "ScopedViewCallbacks.h"
 		#include "SpatialTypeBinding.h"
-		#include "SpatialTypeBinding_%s.generated.h")""", *SchemaFilename, *Class->GetName());
+		#include "SpatialTypeBinding_%s.generated.h")""", *Class->GetName());
 	HeaderWriter.PrintNewLine();
 
 	// Type binding class.
@@ -716,9 +808,6 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	HeaderWriter.Printf("void ReceiveUpdate_Handover(USpatialActorChannel* ActorChannel, const %s::Update& Update) const;",
 		*SchemaHandoverDataName(Class, true));
 
-	// RPCs.
-	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
-
 	HeaderWriter.Printf("void ReceiveUpdate_NetMulticastRPCs(worker::EntityId EntityId, const %s::Update& Update);",
 		*SchemaRPCComponentName(RPC_NetMulticast, Class, true));
 
@@ -778,12 +867,24 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 	// Iterate over blueprint-defined structures and write out header file details
 	BPStructTypesAndPaths VisitedStructInfo;
-	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 	VisitAllBlueprintDefinedStructures(RPCsByType, RepData, VisitedStructInfo,
 		[&HeaderWriter](const UProperty* Property, const UField* ContextField)
 	{
 		if (const auto Struct = Cast<UStruct>(ContextField))
 		{
+			HeaderWriter.PrintNewLine();
+			HeaderWriter.Printf("struct %s", *Property->GetCPPType());
+			HeaderWriter.Printf("{").Indent();
+			for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
+			{
+				UProperty* Prop = *PropIt;
+				FStringOutputDevice PropertyText;
+				GetPropertyText(PropertyText, Prop);
+				HeaderWriter.Printf("%s;", *PropertyText);
+
+			}
+			HeaderWriter.Outdent().Printf("};");
+
 			HeaderWriter.PrintNewLine();
 			HeaderWriter.Printf("UPROPERTY()");  // To-do: remove this line once the UHT bugfix goes in: case sensitive matching USTRUCT
 			HeaderWriter.Printf("UStruct* %s_Struct;", *Property->GetCPPType());
@@ -818,25 +919,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 
 	// Iterate over blueprint-defined structures and write out source file details
 	BPStructTypesAndPaths GeneratedStructInfo;
-	VisitAllBlueprintDefinedStructures(RPCsByType, RepData, GeneratedStructInfo,
-		[&SourceWriter](const UProperty* Property, const UField* ContextField)
-	{
-		if (const auto Struct = Cast<UStruct>(ContextField))
-		{
-			SourceWriter.PrintNewLine();
-			SourceWriter.Printf("struct %s", *Property->GetCPPType());
-			SourceWriter.Printf("{").Indent();
-			for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
-			{
-				UProperty* Prop = *PropIt;
-				FStringOutputDevice PropertyText;
-				GetPropertyText(PropertyText, Prop);
-				SourceWriter.Printf("%s;", *PropertyText);
-
-			}
-			SourceWriter.Outdent().Printf("};");
-		}
-	});
+	VisitAllBlueprintDefinedStructures(RPCsByType, RepData, GeneratedStructInfo, [](const UProperty* Property, const UField* ContextField) {});
 
 	// Generate methods implementations
 	SourceWriter.PrintNewLine();
@@ -929,42 +1012,6 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	}
 }
 
-void AddIncludePath(const UProperty* UnrealProperty, TArray<FString>& HeaderIncludes)
-{
-	const UStruct* IncludeStruct = nullptr;
-
-	if (UnrealProperty->IsA<UObjectPropertyBase>())
-	{
-		UClass* PropClass = Cast<UObjectPropertyBase>(UnrealProperty)->PropertyClass;
-		if (UnrealProperty->IsA<UClassProperty>())
-		{
-			PropClass = Cast<UClassProperty>(UnrealProperty)->MetaClass;
-		}
-
-		IncludeStruct = GetFirstNativeClass(PropClass);
-	}
-	else if (UnrealProperty->IsA<UStructProperty>())
-	{
-		const UStructProperty* StructProp = Cast<UStructProperty>(UnrealProperty);
-		IncludeStruct = StructProp->Struct;
-
-		for (TFieldIterator<UProperty> PropIt(IncludeStruct); PropIt; ++PropIt)
-		{
-			AddIncludePath(*PropIt, HeaderIncludes);
-		}
-	}
-	else if (UnrealProperty->IsA<UArrayProperty>())
-	{
-		const UArrayProperty* ArrayProp = Cast<UArrayProperty>(UnrealProperty);
-		AddIncludePath(ArrayProp->Inner, HeaderIncludes);
-	}
-
-	if (IncludeStruct)
-	{
-		HeaderIncludes.AddUnique(IncludeStruct->GetMetaData("IncludePath"));
-	}
-}
-
 void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& InteropFilename, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const TArray<UClass*>& Components)
 {
 	SourceWriter.Printf(R"""(
@@ -987,56 +1034,6 @@ void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& Int
 		#include "SpatialMemoryWriter.h"
 		#include "SpatialNetDriver.h"
 		#include "SpatialInterop.h")""", *InteropFilename);
-
-	// Include this class' header file
-	TArray<FString> HeaderIncludes;
-	HeaderIncludes.AddUnique(GetFirstNativeClass(Class)->GetMetaData("IncludePath"));
-
-	// Find all rpc parameter objects and retrieve their path
-	for (ERPCType Group : GetRPCTypes())
-	{
-		for (const auto& RPC : RPCsByType[Group])
-		{
-			for (const auto& RPCParam : RPC->Parameters)
-			{
-				AddIncludePath(RPCParam.Key, HeaderIncludes);
-			}
-		}
-	}
-
-	// Find all replicated objects within blueprints classes, and retrieve their path
-	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
-	{
-		for (const auto& RepProp : RepData[Group])
-		{
-			UProperty* UnrealProperty = RepProp.Value->Property;
-			if (UClass* RepClass = UnrealProperty->GetOwnerClass())
-			{
-				if (!RepClass->HasAnyClassFlags(CLASS_Native))
-				{
-					AddIncludePath(UnrealProperty, HeaderIncludes);
-				}
-			}
-			else if (UScriptStruct* RepStruct = Cast<UScriptStruct>(UnrealProperty->GetOwnerStruct()))
-			{
-				if (!(RepStruct->StructFlags & STRUCT_Native))
-				{
-					AddIncludePath(UnrealProperty, HeaderIncludes);
-				}
-			}
-		}
-	}
-
-	// Write out all the includes to source
-	SourceWriter.PrintNewLine();
-	HeaderIncludes.Sort();
-	for (const auto& IncludePath : HeaderIncludes)
-	{
-		if (IncludePath.IsEmpty() == false)
-		{
-			SourceWriter.Printf("#include \"%s\"", *IncludePath);
-		}
-	}
 
 	SourceWriter.PrintNewLine();
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
