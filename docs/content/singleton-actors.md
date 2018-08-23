@@ -21,11 +21,9 @@ To set up Singleton Actors for your project, you need to:
 1. Register Singleton Actors by tagging them with the `SpatialType=Singleton` class attribute.
 1. Add the generated components to the UnrealWorker worker configuration file.
 
-### Registering Singleton Actors
+## How to tag classes with Singleton Actor identifiers
 
-### Example code snippet
-
-The snippet below shows how to tag a class with the appropriate identifiers.
+The code snippet below shows how to tag a class with the appropriate identifiers.
 
 ```
 UCLASS(SpatialType=Singleton)
