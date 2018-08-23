@@ -91,4 +91,4 @@ check(!Value->IsFullNameStableForNetworking())
 
 **Q:** I’m getting the error `"Unknown class specifier 'SpatialType'"` when building my project.
 
-**A:** `Spatial Type` is a new class specifier added for tagging of classes relevant to spatial replication. Rebuild the `Unreal Header Tool` using the `Development` configuration.
+**A:** `SpatialType` is a new class specifier added for tagging of classes relevant to spatial replication. Rebuild the `Unreal Header Tool` using the `Development` configuration.
