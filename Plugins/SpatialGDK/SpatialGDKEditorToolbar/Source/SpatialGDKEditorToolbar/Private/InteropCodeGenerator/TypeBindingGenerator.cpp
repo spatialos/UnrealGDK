@@ -225,18 +225,18 @@ void VisitAllBlueprintDefinedStructures(const FUnrealRPCsByType& RPCsByType, con
 	TSet<FString> VisitedBPTypes;
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
-		for (auto& RepProp : RepData[Group])
+		for (const auto& RepProp : RepData[Group])
 		{
 			VisitBlueprintDefinedProperty_Recursive(RepProp.Value->Property, VisitedBPTypes, VisitedStructInfo, WriterCallback);
 		}
 	}
 
 	// Visit all RPC parameters
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
-			for (auto& RPCParam : RPC->Parameters)
+			for (const auto& RPCParam : RPC->Parameters)
 			{
 				VisitBlueprintDefinedProperty_Recursive(RPCParam.Key, VisitedBPTypes, VisitedStructInfo, WriterCallback);
 			}
@@ -562,7 +562,6 @@ void GetPropertyText(FStringOutputDevice& PropertyText, UProperty* Prop)
 	FString ObjectCppType;
 	if (UObjectPropertyBase* Base = Cast<UObjectPropertyBase>(Prop))
 	{
-		// Ensure we're using a native class name, as this text needs to be compilable
 		ObjectCppType = GetNativeClassName(Base->PropertyClass);
 		ObjectCppType = Base->GetCPPTypeCustom(nullptr, 0, ObjectCppType);
 		ActualCppType = &ObjectCppType;
@@ -725,9 +724,9 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 	HeaderWriter.PrintNewLine();
 	HeaderWriter.Print("// RPC command sender functions.");
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
 			HeaderWriter.Printf("void %s_SendRPC(worker::Connection* const Connection, void* Parameters, UObject* TargetObject);",
 				*UnrealNameToCppName(RPC->Function->GetName()));
@@ -736,9 +735,9 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 	HeaderWriter.PrintNewLine();
 	HeaderWriter.Print("// RPC command request handler functions.");
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
 			if (Group == RPC_NetMulticast)
 			{
@@ -758,7 +757,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 	HeaderWriter.PrintNewLine();
 	HeaderWriter.Print("// RPC command response handler functions.");
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
 		// Multicast RPCs are skipped since they use events rather than commands, and events
 		// don't support responses
@@ -768,7 +767,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		}
 
 		// Command response receiver function signatures
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
 			HeaderWriter.Printf("void %s_OnCommandResponse(const worker::CommandResponseOp<%s::Commands::%s>& Op);",
 				*UnrealNameToCppName(RPC->Function->GetName()),
@@ -810,7 +809,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	VisitAllBlueprintDefinedStructures(RPCsByType, RepData, GeneratedStructInfo,
 		[&SourceWriter](const UProperty* Property, const UField* ContextField)
 	{
-		if (auto Struct = Cast<UStruct>(ContextField))
+		if (const auto Struct = Cast<UStruct>(ContextField))
 		{
 			SourceWriter.PrintNewLine();
 			SourceWriter.Printf("struct %s", *Property->GetCPPType());
@@ -825,7 +824,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 			}
 			SourceWriter.Outdent().Printf("};");
 		}
-		else if (auto Enum = Cast<UEnum>(ContextField))
+		else if (const auto Enum = Cast<UEnum>(ContextField))
 		{
 			SourceWriter.PrintNewLine();
 			SourceWriter.Printf("enum %s", *Enum->GetName());
@@ -897,23 +896,23 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	SourceWriter.PrintNewLine();
 	GenerateFunction_ReceiveUpdate_MulticastRPCs(SourceWriter, Class, RPCsByType[RPC_NetMulticast]);
 
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
 			GenerateFunction_SendRPC(SourceWriter, Class, RPC);
 		}
 	}
 
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
 			GenerateFunction_OnRPCPayload(SourceWriter, Class, RPC);
 		}
 	}
 
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
 		// Multicast RPCs are skipped since they use events rather than commands, and events
 		// don't support responses
@@ -922,7 +921,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 			continue;
 		}
 
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
 			SourceWriter.PrintNewLine();
 			GenerateFunction_RPCOnCommandResponse(SourceWriter, Class, RPC);
@@ -994,11 +993,11 @@ void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& Int
 	HeaderIncludes.AddUnique(GetFirstNativeClass(Class)->GetMetaData("IncludePath"));
 
 	// Find all rpc parameter objects and retrieve their path
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
-			for (auto& RPCParam : RPC->Parameters)
+			for (const auto& RPCParam : RPC->Parameters)
 			{
 				AddIncludePath(RPCParam.Key, HeaderIncludes);
 			}
@@ -1006,9 +1005,9 @@ void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& Int
 	}
 
 	// Find all replicated objects within blueprints classes, and retrieve their path
-	for (auto Group : GetAllReplicatedPropertyGroups())
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
-		for (auto& RepProp : RepData[Group])
+		for (const auto& RepProp : RepData[Group])
 		{
 			UProperty* UnrealProperty = RepProp.Value->Property;
 			if (UClass* RepClass = UnrealProperty->GetOwnerClass())
@@ -1031,7 +1030,7 @@ void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& Int
 	// Write out all the includes to source
 	SourceWriter.PrintNewLine();
 	HeaderIncludes.Sort();
-	for (auto& IncludePath : HeaderIncludes)
+	for (const auto& IncludePath : HeaderIncludes)
 	{
 		if (IncludePath.IsEmpty() == false)
 		{
@@ -1093,9 +1092,9 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 
 	SourceWriter.Print("Super::Init(InInterop, InPackageMap);");
 	SourceWriter.PrintNewLine();
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
 			SourceWriter.Printf("RPCToSenderMap.Emplace(\"%s\", &%s::%s_SendRPC);", *RPC->Function->GetName(), *TypeBindingName(Class), *UnrealNameToCppName(RPC->Function->GetName()));
 		}
@@ -1122,7 +1121,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 		SourceWriter.PrintNewLine();
 		SourceWriter.Print("// Populate RepHandleToPropertyMap.");
 
-		for (auto& RepProp : ReplicatedProperties)
+		for (const auto& RepProp : ReplicatedProperties)
 		{
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
@@ -1144,9 +1143,9 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 		SourceWriter.PrintNewLine();
 		SourceWriter.Print("// Populate HandoverHandleToPropertyMap.");
 
-		for (auto& HandoverProp : HandoverData)
+		for (const auto& HandoverProp : HandoverData)
 		{
-			auto Handle = HandoverProp.Key;
+			uint16 Handle = HandoverProp.Key;
 
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
@@ -1164,7 +1163,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 	SourceWriter.PrintNewLine();
 
 	// Since BP structs don't exist in C++ compile time, we will load the blueprint struct at runtime and call SerializeBin() from it.
-	for (auto& Prop : GeneratedStructInfo)
+	for (const auto& Prop : GeneratedStructInfo)
 	{
 		SourceWriter.Printf("%s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *Prop.Key, *Prop.Value);
 	}
@@ -1247,7 +1246,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 	SourceWriter.Outdent();
 	SourceWriter.Print("}));");
 
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
 		if (Group == RPC_NetMulticast)
 		{
@@ -1262,7 +1261,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 			SourceWriter.Printf("using %sRPCCommandTypes = %s::Commands;",
 				*GetRPCTypeName(Group),
 				*SchemaRPCComponentName(Group, Class, true));
-			for (auto& RPC : RPCsByType[Group])
+			for (const auto& RPC : RPCsByType[Group])
 			{
 				SourceWriter.Printf("ViewCallbacks.Add(View->OnCommandRequest<%sRPCCommandTypes::%s>(std::bind(&%s::%s_OnRPCPayload, this, std::placeholders::_1)));",
 					*GetRPCTypeName(Group),
@@ -1270,7 +1269,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 					*TypeBindingName(Class),
 					*UnrealNameToCppName(RPC->Function->GetName()));
 			}
-			for (auto& RPC : RPCsByType[Group])
+			for (const auto& RPC : RPCsByType[Group])
 			{
 				SourceWriter.Printf("ViewCallbacks.Add(View->OnCommandResponse<%sRPCCommandTypes::%s>(std::bind(&%s::%s_OnCommandResponse, this, std::placeholders::_1)));",
 					*GetRPCTypeName(Group),
@@ -1694,7 +1693,7 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 		SourceWriter.Print("switch (Handle)");
 		SourceWriter.BeginScope();
 
-		for (auto& RepProp : RepData[Group])
+		for (const auto& RepProp : RepData[Group])
 		{
 			check(RepProp.Value->ReplicationData->Handle > 0);
 
@@ -1819,9 +1818,9 @@ void GenerateFunction_ServerSendUpdate_HandoverData(FCodeWriter& SourceWriter, U
 		SourceWriter.Print("switch (Handle)");
 		SourceWriter.BeginScope();
 
-		for (auto& HandoverProp : HandoverData)
+		for (const auto& HandoverProp : HandoverData)
 		{
-			auto Handle = HandoverProp.Key;
+			uint64 Handle = HandoverProp.Key;
 			UProperty* Property = HandoverProp.Value->Property;
 
 			SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(HandoverProp.Value));
@@ -1900,7 +1899,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 				FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);)""",
 			*SchemaRPCComponentName(ERPCType::RPC_Client, Class, true));
 		SourceWriter.PrintNewLine();
-		for (auto& RepProp : RepData[Group])
+		for (const auto& RepProp : RepData[Group])
 		{
 			check(RepProp.Value->ReplicationData->Handle > 0);
 
@@ -2089,9 +2088,9 @@ void GenerateFunction_ReceiveUpdate_HandoverData(FCodeWriter& SourceWriter, UCla
 	{
 		SourceWriter.Print("const FHandoverHandlePropertyMap& HandleToPropertyMap = GetHandoverHandlePropertyMap();");
 		SourceWriter.PrintNewLine();
-		for (auto& HandoverProp : HandoverData)
+		for (const auto& HandoverProp : HandoverData)
 		{
-			auto Handle = HandoverProp.Key;
+			uint64 Handle = HandoverProp.Key;
 			UProperty* Property = HandoverProp.Value->Property;
 
 			// Check if this property is in the update.
@@ -2180,7 +2179,7 @@ void GenerateFunction_ReceiveUpdate_MulticastRPCs(FCodeWriter& SourceWriter, UCl
 			*SchemaRPCComponentName(RPC_NetMulticast, Class, true))};
 	SourceWriter.BeginFunction(ReceiveUpdateSignature, TypeBindingName(Class));
 
-	for (auto RPC : RPCs)
+	for (const auto& RPC : RPCs)
 	{
 		SourceWriter.Printf(R"""(
 			for (auto& event : Update.%s())
@@ -2239,8 +2238,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 	SourceWriter.Print("// Build RPC Payload.");
 	SourceWriter.Printf("%s RPCPayload;", *SchemaRPCRequestType(RPC->Function, true));
 
-	TArray<TSharedPtr<FUnrealProperty>> RPCParameters = GetFlatRPCParameters(RPC);
-	for (auto Param : RPCParameters)
+	for (const auto& Param : GetFlatRPCParameters(RPC))
 	{
 		FString SpatialValueSetter = TEXT("RPCPayload.set_") + SchemaFieldName(Param);
 
@@ -2392,7 +2390,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 		SourceWriter.PrintNewLine();
 		SourceWriter.Print("// Extract from request data.");
 
-		for (auto Param : GetFlatRPCParameters(RPC))
+		for (const auto& Param : GetFlatRPCParameters(RPC))
 		{
 			FString SpatialValue = FString::Printf(TEXT("%s.%s()"), *RPCPayload, *SchemaFieldName(Param));
 
