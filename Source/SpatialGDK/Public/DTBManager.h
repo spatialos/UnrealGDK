@@ -53,7 +53,7 @@ class SPATIALGDK_API UDTBManager : public UObject
 public:
 	UDTBManager();
 
-	virtual void BeginDestroy() override;
+	virtual void FinishDestroy() override;
 
 	FClassInfo* FindClassInfoByClass(UClass* Class);
 	void CreateTypebindings();

@@ -14,15 +14,15 @@ UDTBManager::UDTBManager()
 {
 }
 
-void UDTBManager::BeginDestroy()
+void UDTBManager::FinishDestroy()
 {
-	Super::BeginDestroy();
-
 	if (Connection)
 	{
 		Worker_Connection_Destroy(Connection);
 		Connection = nullptr;
 	}
+
+	Super::FinishDestroy();
 }
 
 FClassInfo* UDTBManager::FindClassInfoByClass(UClass* Class)
@@ -722,6 +722,8 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 
 void UDTBManager::DeleteEntityIfAuthoritative(Worker_EntityId EntityId)
 {
+	if (!Connection) return;
+
 	bool bHasAuthority = Interop->IsAuthoritativeDestructionAllowed() && DTBHasComponentAuthority(EntityId, POSITION_COMPONENT_ID);
 
 	UE_LOG(LogTemp, Log, TEXT("!!! Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
