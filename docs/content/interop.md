@@ -43,9 +43,9 @@ For further information on the settings available through the Unreal GDK toolbar
 
 ### Example
 
-Identify the classes you want to replicate across SpatialOS, and tag each UClass with the `Spatial` keyword. The code snippet below demonstrates how we set up the class `StarterProjectPlayerController` in the Unreal GDK Starter Project. 
+Identify the classes you want to replicate across SpatialOS, and tag each UClass with the `SpatialType` keyword. The code snippet below demonstrates how we set up the class `StarterProjectPlayerController` in the Unreal GDK Starter Project. 
 ```
-UCLASS(Spatial)
+UCLASS(SpatialType)
 class STARTERPROJECT_API AStarterProjectPlayerController : public APlayerController
 {
     GENERATED_BODY()
