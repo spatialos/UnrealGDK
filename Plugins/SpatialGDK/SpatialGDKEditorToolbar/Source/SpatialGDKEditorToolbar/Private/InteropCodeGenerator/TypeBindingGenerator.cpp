@@ -163,7 +163,7 @@ FString PropertyToWorkerSDKType(UProperty* Property, bool bIsRPCProperty)
 }
 
 // Visit property if it is blueprint defined
-void VisitBlueprintDefinedProperty_Recursive(UProperty* Property, TSet<FString>& VisitedTypes, BPStructTypesAndPaths& VisitedStructInfo, TFunction<void(const UProperty*, const UField*)> WriterCallback)
+void VisitBlueprintDefinedProperty_Recursive(UProperty* Property, TSet<FString>& VisitedTypes, TFunction<void(const UProperty*, const UField*)> WriterCallback)
 {
 	if (VisitedTypes.Contains(Property->GetCPPType()))
 	{
@@ -172,7 +172,7 @@ void VisitBlueprintDefinedProperty_Recursive(UProperty* Property, TSet<FString>&
 
 	if (UArrayProperty *ArrProp = Cast<UArrayProperty>(Property))
 	{
-		VisitBlueprintDefinedProperty_Recursive(ArrProp->Inner, VisitedTypes, VisitedStructInfo, WriterCallback);
+		VisitBlueprintDefinedProperty_Recursive(ArrProp->Inner, VisitedTypes, WriterCallback);
 	}
 
 	if (Property->IsA<UStructProperty>())
@@ -184,13 +184,12 @@ void VisitBlueprintDefinedProperty_Recursive(UProperty* Property, TSet<FString>&
 		}
 
 		VisitedTypes.Add(Property->GetCPPType());
-		VisitedStructInfo.Add(Property->GetCPPType(), Struct->GetPathName());
 
 		// Recurse children post-order
 		for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
 		{
 			UProperty* Prop = *PropIt;
-			VisitBlueprintDefinedProperty_Recursive(Prop, VisitedTypes, VisitedStructInfo, WriterCallback);
+			VisitBlueprintDefinedProperty_Recursive(Prop, VisitedTypes, WriterCallback);
 		}
 
 		WriterCallback(Property, Struct);
@@ -219,7 +218,7 @@ void VisitBlueprintDefinedProperty_Recursive(UProperty* Property, TSet<FString>&
 	}
 }
 
-void VisitAllBlueprintDefinedStructures(const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, BPStructTypesAndPaths& VisitedStructInfo, TFunction<void(const UProperty*, const UField*)> WriterCallback)
+void VisitAllBlueprintDefinedStructures(const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, TFunction<void(const UProperty*, const UField*)> WriterCallback)
 {
 	// Visit all replicated properties
 	TSet<FString> VisitedBPTypes;
@@ -227,7 +226,7 @@ void VisitAllBlueprintDefinedStructures(const FUnrealRPCsByType& RPCsByType, con
 	{
 		for (const auto& RepProp : RepData[Group])
 		{
-			VisitBlueprintDefinedProperty_Recursive(RepProp.Value->Property, VisitedBPTypes, VisitedStructInfo, WriterCallback);
+			VisitBlueprintDefinedProperty_Recursive(RepProp.Value->Property, VisitedBPTypes, WriterCallback);
 		}
 	}
 
@@ -238,7 +237,7 @@ void VisitAllBlueprintDefinedStructures(const FUnrealRPCsByType& RPCsByType, con
 		{
 			for (const auto& RPCParam : RPC->Parameters)
 			{
-				VisitBlueprintDefinedProperty_Recursive(RPCParam.Key, VisitedBPTypes, VisitedStructInfo, WriterCallback);
+				VisitBlueprintDefinedProperty_Recursive(RPCParam.Key, VisitedBPTypes, WriterCallback);
 			}
 		}
 	}
@@ -866,8 +865,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	}
 
 	// Iterate over blueprint-defined structures and write out header file details
-	BPStructTypesAndPaths VisitedStructInfo;
-	VisitAllBlueprintDefinedStructures(RPCsByType, RepData, VisitedStructInfo,
+	VisitAllBlueprintDefinedStructures(RPCsByType, RepData,
 		[&HeaderWriter](const UProperty* Property, const UField* ContextField)
 	{
 		if (const auto Struct = Cast<UStruct>(ContextField))
@@ -917,10 +915,6 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 
 	GenerateHeaderIncludes_Source(SourceWriter, InteropFilename, Class, RPCsByType, RepData, Components);
 
-	// Iterate over blueprint-defined structures and write out source file details
-	BPStructTypesAndPaths GeneratedStructInfo;
-	VisitAllBlueprintDefinedStructures(RPCsByType, RepData, GeneratedStructInfo, [](const UProperty* Property, const UField* ContextField) {});
-
 	// Generate methods implementations
 	SourceWriter.PrintNewLine();
 	GenerateFunction_GetRepHandlePropertyMap(SourceWriter, Class);
@@ -932,7 +926,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	GenerateFunction_GetBoundClass(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_Init(SourceWriter, Class, RPCsByType, RepData, HandoverData, GeneratedStructInfo);
+	GenerateFunction_Init(SourceWriter, Class, RPCsByType, RepData, HandoverData);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_BindToView(SourceWriter, Class, RPCsByType);
@@ -1083,7 +1077,7 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData, BPStructTypesAndPaths& GeneratedStructInfo)
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData)
 {
 	SourceWriter.BeginFunction({"void", "Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)"}, TypeBindingName(Class));
 
@@ -1160,10 +1154,14 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 	SourceWriter.PrintNewLine();
 
 	// Since BP structs don't exist in C++ compile time, we will load the blueprint struct at runtime and call SerializeBin() from it.
-	for (const auto& Prop : GeneratedStructInfo)
+	// Iterate over blueprint-defined structures and write out source file details
+	VisitAllBlueprintDefinedStructures(RPCsByType, RepData, [&SourceWriter](const UProperty* Property, const UField* ContextField)
 	{
-		SourceWriter.Printf("%s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *Prop.Key, *Prop.Value);
-	}
+		if (const auto Struct = Cast<UStruct>(ContextField))
+		{
+			SourceWriter.Printf("%s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *Property->GetCPPType(), *Struct->GetPathName());
+		}
+	});
 	SourceWriter.End();
 }
 
