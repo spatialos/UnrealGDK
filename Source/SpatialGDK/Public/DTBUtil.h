@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 
-#include "DTBManager.h"
+#include "SpatialInterop.h"
 
 bool FORCEINLINE ShouldUseDTB(USpatialInterop* DTBManager, UClass* Class)
 {

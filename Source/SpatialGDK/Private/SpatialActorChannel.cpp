@@ -12,8 +12,7 @@
 #include "SpatialPackageMapClient.h"
 #include "SpatialTypeBinding.h"
 
-#include "DTBManager.h"
-#include "DTBUtil.h"
+#include "SpatialInterop.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
 

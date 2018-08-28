@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "DTBManager.h"
+#include "SpatialInterop.h"
 
 #include "SpatialActorChannel.h"
 #include "DTBUtil.h"

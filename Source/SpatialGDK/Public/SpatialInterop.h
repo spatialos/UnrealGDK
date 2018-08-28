@@ -13,7 +13,7 @@
 #include "SchemaHelpers.h"
 #include "SpatialEntityPipeline.h"
 
-#include "DTBManager.generated.h"
+#include "SpatialInterop.generated.h"
 
 class USpatialActorChannel;
 

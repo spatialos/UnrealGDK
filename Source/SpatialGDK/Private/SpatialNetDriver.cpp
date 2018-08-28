@@ -18,8 +18,7 @@
 #include "SpatialPendingNetGame.h"
 #include "SpatialPlayerSpawner.h"
 
-#include "DTBManager.h"
-#include "DTBUtil.h"
+#include "SpatialInterop.h"
 
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
 
