@@ -547,7 +547,7 @@ TArray<FString> GetRPCTypeOwners(TSharedPtr<FUnrealType> TypeInfo)
 			UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("RPC Type Owner Found - %s ::  %s"), *RPCOwnerName, *RPC.Value->Function->GetName());
 		}
 		return true;
-	}, true);
+	}, false);
 	return RPCTypeOwners;
 }
 
