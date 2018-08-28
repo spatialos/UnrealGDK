@@ -162,17 +162,17 @@ FString PropertyToWorkerSDKType(UProperty* Property, bool bIsRPCProperty)
 	return DataType;
 }
 
-// Generate definition in header file for Blueprint-defined Structs & Enums
-void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Property, TSet<FString>& GeneratedTypes, BPStructTypesAndPaths& GeneratedStructInfo)
+// Visit property if it is blueprint defined
+void VisitBlueprintDefinedProperty_Recursive(UProperty* Property, TSet<FString>& VisitedTypes, TFunction<void(const UProperty*, const UField*)> WriterCallback)
 {
-	if (GeneratedTypes.Contains(Property->GetCPPType()))
+	if (VisitedTypes.Contains(Property->GetCPPType()))
 	{
 		return;
 	}
 
 	if (UArrayProperty *ArrProp = Cast<UArrayProperty>(Property))
 	{
-		GenerateBlueprintStructEnumDefinition(Writer, ArrProp->Inner, GeneratedTypes, GeneratedStructInfo);
+		VisitBlueprintDefinedProperty_Recursive(ArrProp->Inner, VisitedTypes, WriterCallback);
 	}
 
 	if (Property->IsA<UStructProperty>())
@@ -183,29 +183,16 @@ void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Prope
 			return;
 		}
 
-		GeneratedTypes.Add(Property->GetCPPType());
-		GeneratedStructInfo.Add(Property->GetCPPType(), Struct->GetPathName());
+		VisitedTypes.Add(Property->GetCPPType());
 
 		// Recurse children post-order
 		for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
 		{
 			UProperty* Prop = *PropIt;
-			GenerateBlueprintStructEnumDefinition(Writer, Prop, GeneratedTypes, GeneratedStructInfo);
+			VisitBlueprintDefinedProperty_Recursive(Prop, VisitedTypes, WriterCallback);
 		}
 
-		Writer.PrintNewLine();
-		Writer.Printf("struct %s", *Property->GetCPPType());
-		Writer.Printf("{").Indent();
-		for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
-		{
-			UProperty* Prop = *PropIt;
-			FStringOutputDevice PropertyText;
-			Prop->ExportCppDeclaration(PropertyText, EExportedDeclaration::Local, nullptr);
-			Writer.Printf("%s;", *PropertyText);
-		}
-		Writer.Outdent().Printf("};");
-		Writer.Printf("UPROPERTY()");  // To-do: remove this line once the UHT bugfix goes in: case sensitive matching USTRUCT
-		Writer.Printf("UStruct* %s_Struct;", *Property->GetCPPType());
+		WriterCallback(Property, Struct);
 	}
 	else
 	{
@@ -225,17 +212,34 @@ void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Prope
 			return;
 		}
 
-		GeneratedTypes.Add(Property->GetCPPType());
+		VisitedTypes.Add(Property->GetCPPType());
 
-		Writer.PrintNewLine();
-		Writer.Printf("enum %s", *Enum->GetName());
-		Writer.Printf("{").Indent();
+		WriterCallback(Property, Enum);
+	}
+}
 
-		for (int i=0; i<Enum->NumEnums(); i++)
+void VisitAllBlueprintDefinedStructures(const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, TFunction<void(const UProperty*, const UField*)> WriterCallback)
+{
+	// Visit all replicated properties
+	TSet<FString> VisitedBPTypes;
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		for (const auto& RepProp : RepData[Group])
 		{
-			Writer.Printf("%s,", *Enum->GetNameStringByIndex(i));  // This will put a trailing comma on the last Enum but this is deemed okay in Unreal
+			VisitBlueprintDefinedProperty_Recursive(RepProp.Value->Property, VisitedBPTypes, WriterCallback);
 		}
-		Writer.Outdent().Printf("};");
+	}
+
+	// Visit all RPC parameters
+	for (ERPCType Group : GetRPCTypes())
+	{
+		for (const auto& RPC : RPCsByType[Group])
+		{
+			for (const auto& RPCParam : RPC->Parameters)
+			{
+				VisitBlueprintDefinedProperty_Recursive(RPCParam.Key, VisitedBPTypes, WriterCallback);
+			}
+		}
 	}
 }
 
@@ -551,6 +555,19 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 	}
 }
 
+void GetPropertyText(FStringOutputDevice& PropertyText, UProperty* Prop)
+{
+	FString* ActualCppType = nullptr;
+	FString ObjectCppType;
+	if (UObjectPropertyBase* Base = Cast<UObjectPropertyBase>(Prop))
+	{
+		ObjectCppType = GetNativeClassName(Base->PropertyClass);
+		ObjectCppType = Base->GetCPPTypeCustom(nullptr, 0, ObjectCppType);
+		ActualCppType = &ObjectCppType;
+	}
+	Prop->ExportCppDeclaration(PropertyText, EExportedDeclaration::Local, nullptr, 0, false, ActualCppType);
+}
+
 void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC>& RPC, FString& StructName)
 {
 	UClass* RPCOwnerClass = RPC->Function->GetOwnerClass();
@@ -592,8 +609,7 @@ void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC
 			}
 			// COPY-PASTE END
 
-			Prop->ExportCppDeclaration(PropertyText, EExportedDeclaration::Local, nullptr);
-
+			GetPropertyText(PropertyText, Prop);
 			Writer.Printf("%s;", *PropertyText);
 		}
 
@@ -609,7 +625,43 @@ void GenerateRPCArgumentsStruct(FCodeWriter& Writer, const TSharedPtr<FUnrealRPC
 	}
 }
 
-void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo, BPStructTypesAndPaths& GeneratedStructInfo)
+void AddIncludePath(const UProperty* UnrealProperty, TArray<FString>& HeaderIncludes)
+{
+	const UStruct* IncludeStruct = nullptr;
+
+	if (UnrealProperty->IsA<UObjectPropertyBase>())
+	{
+		UClass* PropClass = Cast<UObjectPropertyBase>(UnrealProperty)->PropertyClass;
+		if (UnrealProperty->IsA<UClassProperty>())
+		{
+			PropClass = Cast<UClassProperty>(UnrealProperty)->MetaClass;
+		}
+
+		IncludeStruct = GetFirstNativeClass(PropClass);
+	}
+	else if (UnrealProperty->IsA<UStructProperty>())
+	{
+		const UStructProperty* StructProp = Cast<UStructProperty>(UnrealProperty);
+		IncludeStruct = StructProp->Struct;
+
+		for (TFieldIterator<UProperty> PropIt(IncludeStruct); PropIt; ++PropIt)
+		{
+			AddIncludePath(*PropIt, HeaderIncludes);
+		}
+	}
+	else if (UnrealProperty->IsA<UArrayProperty>())
+	{
+		const UArrayProperty* ArrayProp = Cast<UArrayProperty>(UnrealProperty);
+		AddIncludePath(ArrayProp->Inner, HeaderIncludes);
+	}
+
+	if (IncludeStruct)
+	{
+		HeaderIncludes.AddUnique(IncludeStruct->GetMetaData("IncludePath"));
+	}
+}
+
+void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo)
 {
 	HeaderWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -621,10 +673,66 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		#include <improbable/view.h>
 		#include <improbable/unreal/gdk/core_types.h>
 		#include <improbable/unreal/gdk/unreal_metadata.h>
-		#include <improbable/unreal/generated/%s.h>
+		#include <improbable/unreal/generated/%s.h>)""", *SchemaFilename);
+
+	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
+	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
+
+	// Include this class' header file
+	TArray<FString> HeaderIncludes;
+	HeaderIncludes.AddUnique(GetFirstNativeClass(Class)->GetMetaData("IncludePath"));
+
+	// Find all RPC parameter objects and retrieve their path
+	for (ERPCType Group : GetRPCTypes())
+	{
+		for (const auto& RPC : RPCsByType[Group])
+		{
+			for (const auto& RPCParam : RPC->Parameters)
+			{
+				AddIncludePath(RPCParam.Key, HeaderIncludes);
+			}
+		}
+	}
+
+	// Find all replicated objects within blueprints classes, and retrieve their path
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		for (const auto& RepProp : RepData[Group])
+		{
+			UProperty* UnrealProperty = RepProp.Value->Property;
+			if (UClass* RepClass = UnrealProperty->GetOwnerClass())
+			{
+				if (!RepClass->HasAnyClassFlags(CLASS_Native))
+				{
+					AddIncludePath(UnrealProperty, HeaderIncludes);
+				}
+			}
+			else if (UScriptStruct* RepStruct = Cast<UScriptStruct>(UnrealProperty->GetOwnerStruct()))
+			{
+				if (!(RepStruct->StructFlags & STRUCT_Native))
+				{
+					AddIncludePath(UnrealProperty, HeaderIncludes);
+				}
+			}
+		}
+	}
+
+	// Write out all the includes to source
+	HeaderWriter.PrintNewLine();
+	HeaderIncludes.Sort();
+	for (const auto& IncludePath : HeaderIncludes)
+	{
+		if (IncludePath.IsEmpty() == false)
+		{
+			HeaderWriter.Printf("#include \"%s\"", *IncludePath);
+		}
+	}
+	HeaderWriter.PrintNewLine();
+
+	HeaderWriter.Printf(R"""(
 		#include "ScopedViewCallbacks.h"
 		#include "SpatialTypeBinding.h"
-		#include "SpatialTypeBinding_%s.generated.h")""", *SchemaFilename, *Class->GetName());
+		#include "SpatialTypeBinding_%s.generated.h")""", *Class->GetName());
 	HeaderWriter.PrintNewLine();
 
 	// Type binding class.
@@ -699,17 +807,14 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	HeaderWriter.Printf("void ReceiveUpdate_Handover(USpatialActorChannel* ActorChannel, const %s::Update& Update) const;",
 		*SchemaHandoverDataName(Class, true));
 
-	// RPCs.
-	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
-
 	HeaderWriter.Printf("void ReceiveUpdate_NetMulticastRPCs(worker::EntityId EntityId, const %s::Update& Update);",
 		*SchemaRPCComponentName(RPC_NetMulticast, Class, true));
 
 	HeaderWriter.PrintNewLine();
 	HeaderWriter.Print("// RPC command sender functions.");
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
 			HeaderWriter.Printf("void %s_SendRPC(worker::Connection* const Connection, void* Parameters, UObject* TargetObject);",
 				*UnrealNameToCppName(RPC->Function->GetName()));
@@ -718,9 +823,9 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 	HeaderWriter.PrintNewLine();
 	HeaderWriter.Print("// RPC command request handler functions.");
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
 			if (Group == RPC_NetMulticast)
 			{
@@ -740,7 +845,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 	HeaderWriter.PrintNewLine();
 	HeaderWriter.Print("// RPC command response handler functions.");
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
 		// Multicast RPCs are skipped since they use events rather than commands, and events
 		// don't support responses
@@ -750,7 +855,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		}
 
 		// Command response receiver function signatures
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
 			HeaderWriter.Printf("void %s_OnCommandResponse(const worker::CommandResponseOp<%s::Commands::%s>& Op);",
 				*UnrealNameToCppName(RPC->Function->GetName()),
@@ -759,23 +864,48 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		}
 	}
 
-	// Generate blueprint-defined structures
-	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
-	TSet<FString> GeneratedBPTypes;
-	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	// Iterate over blueprint-defined structures and write out header file details
+	VisitAllBlueprintDefinedStructures(RPCsByType, RepData,
+		[&HeaderWriter](const UProperty* Property, const UField* ContextField)
 	{
-		for (auto& RepProp : RepData[Group])
+		if (const auto Struct = Cast<UStruct>(ContextField))
 		{
-			GenerateBlueprintStructEnumDefinition(HeaderWriter, RepProp.Value->Property, GeneratedBPTypes, GeneratedStructInfo);
+			HeaderWriter.PrintNewLine();
+			HeaderWriter.Printf("struct %s", *Property->GetCPPType());
+			HeaderWriter.Printf("{").Indent();
+			for (TFieldIterator<UProperty> PropIt(Struct); PropIt; ++PropIt)
+			{
+				UProperty* Prop = *PropIt;
+				FStringOutputDevice PropertyText;
+				GetPropertyText(PropertyText, Prop);
+				HeaderWriter.Printf("%s;", *PropertyText);
+
+			}
+			HeaderWriter.Outdent().Printf("};");
+
+			HeaderWriter.PrintNewLine();
+			HeaderWriter.Printf("UPROPERTY()");  // To-do: remove this line once the UHT bugfix goes in: case sensitive matching USTRUCT
+			HeaderWriter.Printf("UStruct* %s_Struct;", *Property->GetCPPType());
 		}
-	}
+		else if (const auto Enum = Cast<UEnum>(ContextField))
+		{
+			HeaderWriter.PrintNewLine();
+			HeaderWriter.Printf("enum %s", *Enum->GetName());
+			HeaderWriter.Printf("{").Indent();
+
+			for (int i = 0; i < Enum->NumEnums(); i++)
+			{
+				HeaderWriter.Printf("%s,", *Enum->GetNameStringByIndex(i));  // This will put a trailing comma on the last Enum but this is deemed okay in Unreal
+			}
+			HeaderWriter.Outdent().Printf("};");
+		}
+	});
 
 	HeaderWriter.Outdent();
 	HeaderWriter.Print("};");
 }
 
-void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename,
-	UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo, BPStructTypesAndPaths& GeneratedStructInfo)
+void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo)
 {
 	// Get replicated data, RPCs and component.
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
@@ -786,7 +916,6 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	GenerateHeaderIncludes_Source(SourceWriter, InteropFilename, Class, RPCsByType, RepData, Components);
 
 	// Generate methods implementations
-
 	SourceWriter.PrintNewLine();
 	GenerateFunction_GetRepHandlePropertyMap(SourceWriter, Class);
 
@@ -797,7 +926,7 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	GenerateFunction_GetBoundClass(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
-	GenerateFunction_Init(SourceWriter, Class, RPCsByType, RepData, HandoverData, GeneratedStructInfo);
+	GenerateFunction_Init(SourceWriter, Class, RPCsByType, RepData, HandoverData);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_BindToView(SourceWriter, Class, RPCsByType);
@@ -844,23 +973,23 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 	SourceWriter.PrintNewLine();
 	GenerateFunction_ReceiveUpdate_MulticastRPCs(SourceWriter, Class, RPCsByType[RPC_NetMulticast]);
 
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
 			GenerateFunction_SendRPC(SourceWriter, Class, RPC);
 		}
 	}
 
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
 			GenerateFunction_OnRPCPayload(SourceWriter, Class, RPC);
 		}
 	}
 
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
 		// Multicast RPCs are skipped since they use events rather than commands, and events
 		// don't support responses
@@ -869,37 +998,11 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 			continue;
 		}
 
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
 			SourceWriter.PrintNewLine();
 			GenerateFunction_RPCOnCommandResponse(SourceWriter, Class, RPC);
 		}
-	}
-}
-
-void AddIncludePath(const UProperty* UnrealProperty, TArray<FString>& HeaderIncludes)
-{
-	const UStruct* IncludeStruct = nullptr;
-
-	if (UnrealProperty->IsA<UObjectPropertyBase>())
-	{
-		UClass* PropClass = Cast<UObjectPropertyBase>(UnrealProperty)->PropertyClass;
-		if (UnrealProperty->IsA<UClassProperty>())
-		{
-			PropClass = Cast<UClassProperty>(UnrealProperty)->MetaClass;
-		}
-
-		IncludeStruct = GetFirstNativeClass(PropClass);
-	}
-	else if (UnrealProperty->IsA<UStructProperty>())
-	{
-		const UStructProperty* StructProp = Cast<UStructProperty>(UnrealProperty);
-		IncludeStruct = StructProp->Struct;
-	}
-
-	if (IncludeStruct)
-	{
-		HeaderIncludes.AddUnique(IncludeStruct->GetMetaData("IncludePath"));
 	}
 }
 
@@ -925,56 +1028,6 @@ void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& Int
 		#include "SpatialMemoryWriter.h"
 		#include "SpatialNetDriver.h"
 		#include "SpatialInterop.h")""", *InteropFilename);
-
-	// Include this class' header file
-	TArray<FString> HeaderIncludes;
-	HeaderIncludes.AddUnique(GetFirstNativeClass(Class)->GetMetaData("IncludePath"));
-
-	// Find all rpc parameter objects and retrieve their path
-	for (auto Group : GetRPCTypes())
-	{
-		for (auto& RPC : RPCsByType[Group])
-		{
-			for (auto& RPCParam : RPC->Parameters)
-			{
-				AddIncludePath(RPCParam.Key, HeaderIncludes);
-			}
-		}
-	}
-
-	// Find all replicated objects within blueprints classes, and retrieve their path
-	for (auto Group : GetAllReplicatedPropertyGroups())
-	{
-		for (auto& RepProp : RepData[Group])
-		{
-			UProperty* UnrealProperty = RepProp.Value->Property;
-			if (UClass* RepClass = UnrealProperty->GetOwnerClass())
-			{
-				if (!RepClass->HasAnyClassFlags(CLASS_Native))
-				{
-					AddIncludePath(UnrealProperty, HeaderIncludes);
-				}
-			}
-			else if (UScriptStruct* RepStruct = Cast<UScriptStruct>(UnrealProperty->GetOwnerStruct()))
-			{
-				if (!(RepStruct->StructFlags & STRUCT_Native))
-				{
-					AddIncludePath(UnrealProperty, HeaderIncludes);
-				}
-			}
-		}
-	}
-
-	// Write out all the includes to source
-	SourceWriter.PrintNewLine();
-	HeaderIncludes.Sort();
-	for (auto& IncludePath : HeaderIncludes)
-	{
-		if (IncludePath.IsEmpty() == false)
-		{
-			SourceWriter.Printf("#include \"%s\"", *IncludePath);
-		}
-	}
 
 	SourceWriter.PrintNewLine();
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
@@ -1024,15 +1077,15 @@ void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class)
 	SourceWriter.End();
 }
 
-void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData, BPStructTypesAndPaths& GeneratedStructInfo)
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData)
 {
 	SourceWriter.BeginFunction({"void", "Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)"}, TypeBindingName(Class));
 
 	SourceWriter.Print("Super::Init(InInterop, InPackageMap);");
 	SourceWriter.PrintNewLine();
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
-		for (auto& RPC : RPCsByType[Group])
+		for (const auto& RPC : RPCsByType[Group])
 		{
 			SourceWriter.Printf("RPCToSenderMap.Emplace(\"%s\", &%s::%s_SendRPC);", *RPC->Function->GetName(), *TypeBindingName(Class), *UnrealNameToCppName(RPC->Function->GetName()));
 		}
@@ -1059,7 +1112,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 		SourceWriter.PrintNewLine();
 		SourceWriter.Print("// Populate RepHandleToPropertyMap.");
 
-		for (auto& RepProp : ReplicatedProperties)
+		for (const auto& RepProp : ReplicatedProperties)
 		{
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
@@ -1081,9 +1134,9 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 		SourceWriter.PrintNewLine();
 		SourceWriter.Print("// Populate HandoverHandleToPropertyMap.");
 
-		for (auto& HandoverProp : HandoverData)
+		for (const auto& HandoverProp : HandoverData)
 		{
-			auto Handle = HandoverProp.Key;
+			uint16 Handle = HandoverProp.Key;
 
 			// Create property chain initialiser list.
 			FString PropertyChainInitList;
@@ -1101,10 +1154,14 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 	SourceWriter.PrintNewLine();
 
 	// Since BP structs don't exist in C++ compile time, we will load the blueprint struct at runtime and call SerializeBin() from it.
-	for (auto& Prop : GeneratedStructInfo)
+	// Iterate over blueprint-defined structures and write out source file details
+	VisitAllBlueprintDefinedStructures(RPCsByType, RepData, [&SourceWriter](const UProperty* Property, const UField* ContextField)
 	{
-		SourceWriter.Printf("%s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *Prop.Key, *Prop.Value);
-	}
+		if (const auto Struct = Cast<UStruct>(ContextField))
+		{
+			SourceWriter.Printf("%s_Struct = LoadObject<UStruct>(NULL, TEXT(\"%s\"), NULL, LOAD_None, NULL);", *Property->GetCPPType(), *Struct->GetPathName());
+		}
+	});
 	SourceWriter.End();
 }
 
@@ -1184,7 +1241,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 	SourceWriter.Outdent();
 	SourceWriter.Print("}));");
 
-	for (auto Group : GetRPCTypes())
+	for (ERPCType Group : GetRPCTypes())
 	{
 		if (Group == RPC_NetMulticast)
 		{
@@ -1199,7 +1256,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 			SourceWriter.Printf("using %sRPCCommandTypes = %s::Commands;",
 				*GetRPCTypeName(Group),
 				*SchemaRPCComponentName(Group, Class, true));
-			for (auto& RPC : RPCsByType[Group])
+			for (const auto& RPC : RPCsByType[Group])
 			{
 				SourceWriter.Printf("ViewCallbacks.Add(View->OnCommandRequest<%sRPCCommandTypes::%s>(std::bind(&%s::%s_OnRPCPayload, this, std::placeholders::_1)));",
 					*GetRPCTypeName(Group),
@@ -1207,7 +1264,7 @@ void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const
 					*TypeBindingName(Class),
 					*UnrealNameToCppName(RPC->Function->GetName()));
 			}
-			for (auto& RPC : RPCsByType[Group])
+			for (const auto& RPC : RPCsByType[Group])
 			{
 				SourceWriter.Printf("ViewCallbacks.Add(View->OnCommandResponse<%sRPCCommandTypes::%s>(std::bind(&%s::%s_OnCommandResponse, this, std::placeholders::_1)));",
 					*GetRPCTypeName(Group),
@@ -1631,7 +1688,7 @@ void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass
 		SourceWriter.Print("switch (Handle)");
 		SourceWriter.BeginScope();
 
-		for (auto& RepProp : RepData[Group])
+		for (const auto& RepProp : RepData[Group])
 		{
 			check(RepProp.Value->ReplicationData->Handle > 0);
 
@@ -1756,9 +1813,9 @@ void GenerateFunction_ServerSendUpdate_HandoverData(FCodeWriter& SourceWriter, U
 		SourceWriter.Print("switch (Handle)");
 		SourceWriter.BeginScope();
 
-		for (auto& HandoverProp : HandoverData)
+		for (const auto& HandoverProp : HandoverData)
 		{
-			auto Handle = HandoverProp.Key;
+			uint16 Handle = HandoverProp.Key;
 			UProperty* Property = HandoverProp.Value->Property;
 
 			SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(HandoverProp.Value));
@@ -1837,7 +1894,7 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 				FSpatialConditionMapFilter ConditionMap(ActorChannel, bAutonomousProxy);)""",
 			*SchemaRPCComponentName(ERPCType::RPC_Client, Class, true));
 		SourceWriter.PrintNewLine();
-		for (auto& RepProp : RepData[Group])
+		for (const auto& RepProp : RepData[Group])
 		{
 			check(RepProp.Value->ReplicationData->Handle > 0);
 
@@ -2026,9 +2083,9 @@ void GenerateFunction_ReceiveUpdate_HandoverData(FCodeWriter& SourceWriter, UCla
 	{
 		SourceWriter.Print("const FHandoverHandlePropertyMap& HandleToPropertyMap = GetHandoverHandlePropertyMap();");
 		SourceWriter.PrintNewLine();
-		for (auto& HandoverProp : HandoverData)
+		for (const auto& HandoverProp : HandoverData)
 		{
-			auto Handle = HandoverProp.Key;
+			uint16 Handle = HandoverProp.Key;
 			UProperty* Property = HandoverProp.Value->Property;
 
 			// Check if this property is in the update.
@@ -2117,7 +2174,7 @@ void GenerateFunction_ReceiveUpdate_MulticastRPCs(FCodeWriter& SourceWriter, UCl
 			*SchemaRPCComponentName(RPC_NetMulticast, Class, true))};
 	SourceWriter.BeginFunction(ReceiveUpdateSignature, TypeBindingName(Class));
 
-	for (auto RPC : RPCs)
+	for (const auto& RPC : RPCs)
 	{
 		SourceWriter.Printf(R"""(
 			for (auto& event : Update.%s())
@@ -2176,8 +2233,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 	SourceWriter.Print("// Build RPC Payload.");
 	SourceWriter.Printf("%s RPCPayload;", *SchemaRPCRequestType(RPC->Function, true));
 
-	TArray<TSharedPtr<FUnrealProperty>> RPCParameters = GetFlatRPCParameters(RPC);
-	for (auto Param : RPCParameters)
+	for (const auto& Param : GetFlatRPCParameters(RPC))
 	{
 		FString SpatialValueSetter = TEXT("RPCPayload.set_") + SchemaFieldName(Param);
 
@@ -2329,7 +2385,7 @@ void GenerateFunction_OnRPCPayload(FCodeWriter& SourceWriter, UClass* Class, con
 		SourceWriter.PrintNewLine();
 		SourceWriter.Print("// Extract from request data.");
 
-		for (auto Param : GetFlatRPCParameters(RPC))
+		for (const auto& Param : GetFlatRPCParameters(RPC))
 		{
 			FString SpatialValue = FString::Printf(TEXT("%s.%s()"), *RPCPayload, *SchemaFieldName(Param));
 

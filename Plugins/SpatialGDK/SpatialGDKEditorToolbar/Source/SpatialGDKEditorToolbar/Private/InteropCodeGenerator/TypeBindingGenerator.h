@@ -40,8 +40,7 @@ void GenerateTypeBindingHeader(
 	FString SchemaFilename,
 	FString InteropFilename,
 	UClass* Class,
-	const TSharedPtr<FUnrealType> TypeInfo,
-	BPStructTypesAndPaths& GeneratedStructInfo);
+	const TSharedPtr<FUnrealType>& TypeInfo);
 
 // Generates the source file of a type binding.
 void GenerateTypeBindingSource(
@@ -49,15 +48,14 @@ void GenerateTypeBindingSource(
 	FString SchemaFilename,
 	FString InteropFilename,
 	UClass* Class,
-	const TSharedPtr<FUnrealType>& TypeInfo,
-	BPStructTypesAndPaths& GeneratedStructInfo);
+	const TSharedPtr<FUnrealType>& TypeInfo);
 
 // Helper functions used when generating the source file.
 void GenerateHeaderIncludes_Source(FCodeWriter& SourceWriter, const FString& InteropFilename, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const TArray<UClass*>& Components);
 void GenerateFunction_GetRepHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_GetHandoverHandlePropertyMap(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_GetBoundClass(FCodeWriter& SourceWriter, UClass* Class);
-void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData, BPStructTypesAndPaths& GeneratedStructInfo);
+void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType, const FUnrealFlatRepData& RepData, const FCmdHandlePropertyMap& HandoverData);
 void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType);
 void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, const TArray<UClass*>& Components);

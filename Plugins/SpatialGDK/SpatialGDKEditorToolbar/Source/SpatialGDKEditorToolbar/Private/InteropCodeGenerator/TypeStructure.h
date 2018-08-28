@@ -232,5 +232,3 @@ TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> 
 // Given a property, traverse up to the root property and create a list of properties needed to reach the leaf property.
 // For example: foo->bar->baz becomes {"foo", "bar", "baz"}.
 TArray<TSharedPtr<FUnrealProperty>> GetPropertyChain(TSharedPtr<FUnrealProperty> LeafProperty);
-
-using BPStructTypesAndPaths = TMap<FString, FString>;  // Storing the blueprint struct's CPPType and Asset Path
