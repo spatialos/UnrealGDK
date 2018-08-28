@@ -661,7 +661,7 @@ void AddIncludePath(const UProperty* UnrealProperty, TArray<FString>& HeaderIncl
 	}
 }
 
-void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType> TypeInfo)
+void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename, FString InteropFilename, UClass* Class, const TSharedPtr<FUnrealType>& TypeInfo)
 {
 	HeaderWriter.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -1815,7 +1815,7 @@ void GenerateFunction_ServerSendUpdate_HandoverData(FCodeWriter& SourceWriter, U
 
 		for (const auto& HandoverProp : HandoverData)
 		{
-			uint64 Handle = HandoverProp.Key;
+			uint16 Handle = HandoverProp.Key;
 			UProperty* Property = HandoverProp.Value->Property;
 
 			SourceWriter.Printf("case %d: // %s", Handle, *SchemaFieldName(HandoverProp.Value));
@@ -2085,7 +2085,7 @@ void GenerateFunction_ReceiveUpdate_HandoverData(FCodeWriter& SourceWriter, UCla
 		SourceWriter.PrintNewLine();
 		for (const auto& HandoverProp : HandoverData)
 		{
-			uint64 Handle = HandoverProp.Key;
+			uint16 Handle = HandoverProp.Key;
 			UProperty* Property = HandoverProp.Value->Property;
 
 			// Check if this property is in the update.

@@ -40,7 +40,7 @@ void GenerateTypeBindingHeader(
 	FString SchemaFilename,
 	FString InteropFilename,
 	UClass* Class,
-	const TSharedPtr<FUnrealType> TypeInfo);
+	const TSharedPtr<FUnrealType>& TypeInfo);
 
 // Generates the source file of a type binding.
 void GenerateTypeBindingSource(
