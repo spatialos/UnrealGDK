@@ -47,11 +47,11 @@ UnrealObjectRef Schema_IndexObjectRef(Schema_Object* Object, Schema_FieldId Id, 
 	ObjectRef.Offset = Schema_GetUint32(ObjectRefObject, 2);
 	if (Schema_GetBytesCount(ObjectRefObject, 3) > 0)
 	{
-		ObjectRef.Path.reset(new std::string(Schema_GetString(ObjectRefObject, 3)));
+		ObjectRef.Path = Schema_GetString(ObjectRefObject, 3);
 	}
 	if (Schema_GetObjectCount(ObjectRefObject, 4) > 0)
 	{
-		ObjectRef.Outer.reset(new UnrealObjectRef(Schema_GetObjectRef(ObjectRefObject, 4)));
+		ObjectRef.Outer = UnrealObjectRef(Schema_GetObjectRef(ObjectRefObject, 4));
 	}
 
 	return ObjectRef;
@@ -476,7 +476,7 @@ void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t 
 	}
 	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
 	{
-		BoolProperty->SetPropertyValue(Data, Schema_IndexBool(Object, Id, Index));
+		//BoolProperty->SetPropertyValue(Data, Schema_IndexBool(Object, Id, Index));
 	}
 	else if (UFloatProperty* FloatProperty = Cast<UFloatProperty>(Property))
 	{
@@ -530,7 +530,7 @@ void Schema_GetProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t 
 		}
 		else
 		{
-			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef.ToCppAPI());
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 			if (NetGUID.IsValid())
 			{
 				UObject* ObjectValue = PackageMap->GetObjectFromNetGUID(NetGUID, true);
@@ -881,7 +881,7 @@ void ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worke
 	TargetObjectRef.Entity = EntityId;
 	TargetObjectRef.Offset = Schema_GetUint32(RequestObject, 1);
 
-	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef.ToCppAPI());
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetNetGUID.IsValid())
 	{
 		// TODO: Handle RPC to unresolved object
@@ -959,7 +959,7 @@ void ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, Worke
 			TargetObjectRef.Entity = EntityId;
 			TargetObjectRef.Offset = Schema_GetUint32(EventData, 1);
 
-			FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef.ToCppAPI());
+			FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
 			if (!TargetNetGUID.IsValid())
 			{
 				// TODO: Handle RPC to unresolved object
@@ -1037,7 +1037,7 @@ void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, F
 		{
 			UnrealObjectRef& ObjectRef = *UnresolvedIt;
 
-			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef.ToCppAPI());
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 			if (NetGUID.IsValid())
 			{
 				UObject* Object = PackageMap->GetObjectFromNetGUID(NetGUID, true);

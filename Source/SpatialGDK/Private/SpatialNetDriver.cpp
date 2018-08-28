@@ -6,7 +6,6 @@
 #include "Engine/ChildConnection.h"
 #include "Engine/NetworkObjectList.h"
 #include "EngineGlobals.h"
-#include "EntityPipeline.h"
 #include "EntityRegistry.h"
 #include "GameFramework/GameNetworkManager.h"
 #include "Net/DataReplication.h"
@@ -14,11 +13,10 @@
 #include "SocketSubsystem.h"
 #include "SpatialActorChannel.h"
 #include "SpatialConstants.h"
-#include "SpatialInteropPipelineBlock.h"
 #include "SpatialNetConnection.h"
-#include "SpatialOS.h"
 #include "SpatialPackageMapClient.h"
 #include "SpatialPendingNetGame.h"
+#include "SpatialPlayerSpawner.h"
 
 #include "DTBManager.h"
 #include "DTBUtil.h"
@@ -39,14 +37,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
-	// Create SpatialOS instance and setup callbacks.
-	SpatialOSInstance = NewObject<USpatialOS>(this);
-	SpatialOSInstance->OnConnectedDelegate.AddDynamic(this, &USpatialNetDriver::OnSpatialOSConnected);
-	SpatialOSInstance->OnConnectionFailedDelegate.AddDynamic(this, &USpatialNetDriver::OnSpatialOSConnectFailed);
-	SpatialOSInstance->OnDisconnectedDelegate.AddDynamic(this, &USpatialNetDriver::OnSpatialOSDisconnected);
-	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(SpatialOSInstance, TEXT("Unreal"));
-
-	DTBManager = NewObject<UDTBManager>(this);
+	//SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(SpatialOSInstance, TEXT("Unreal"));
 
 	// Set up the worker config.
 	// todo-giray: Give this the correct value
@@ -98,32 +89,62 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
 
-	checkf(!SpatialOSInstance->IsConnected(), TEXT("SpatialOS should not be connected already. This is probably because we attempted to travel to a different level, which current isn't supported."));
+	//checkf(!SpatialOSInstance->IsConnected(), TEXT("SpatialOS should not be connected already. This is probably because we attempted to travel to a different level, which current isn't supported."));
 
 	// Set the timer manager.
 	TimerManager = &LoadedWorld->GetTimerManager();
 
 	// Connect to SpatialOS.
-	SpatialOSInstance->ApplyConfiguration(WorkerConfig);
-	SpatialOSInstance->Connect();
+	Connect();
 
 	// Set up manager objects.
 	EntityRegistry = NewObject<UEntityRegistry>(this);
-	Interop = NewObject<USpatialInterop>(this);
+}
+
+void USpatialNetDriver::Connect()
+{
+	if (Connection != nullptr)
+	{
+		return;
+	}
+
+	Worker_ConnectionParameters Params = Worker_DefaultConnectionParameters();
+	Params.worker_type = TCHAR_TO_UTF8(*WorkerConfig.SpatialGDKApplication.WorkerPlatform);
+	Params.network.tcp.multiplex_level = 4;
+
+	Worker_ComponentVtable DefaultVtable = {};
+	Params.default_component_vtable = &DefaultVtable;
+
+	std::string Hostname = "127.0.0.1";
+	std::uint16_t Port = 7777;
+	std::string WorkerId = std::string(TCHAR_TO_UTF8(*WorkerConfig.SpatialGDKApplication.WorkerPlatform)) + std::string(TCHAR_TO_UTF8(*FGuid::NewGuid().ToString()));
+
+	// Start connecting
+	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(Hostname.c_str(), Port, WorkerId.c_str(), &Params);
+
+	// Wait for connection
+	Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
+	Worker_ConnectionFuture_Destroy(ConnectionFuture);
+
+	if (Worker_Connection_IsConnected(Connection))
+	{
+		OnSpatialOSConnected();
+	}
+	else
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to connect to SpatialOS"));
+	}
 }
 
 void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS."));
 
-	InteropPipelineBlock = NewObject<USpatialInteropPipelineBlock>();
-	InteropPipelineBlock->Init(EntityRegistry, this, GetWorld());
-	SpatialOSInstance->GetEntityPipeline()->AddBlock(InteropPipelineBlock);
+	Interop = NewObject<USpatialInterop>();
+	Interop->Init(this);
 
-	TArray<FString> BlueprintPaths;
-	BlueprintPaths.Add(TEXT(ENTITY_BLUEPRINTS_FOLDER));
-
-	EntityRegistry->RegisterEntityBlueprints(BlueprintPaths);
+	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
+	PlayerSpawner->Init(this, TimerManager);
 
 	// Each connection stores a URL with various optional settings (host, port, map, netspeed...)
 	// We currently don't make use of any of these as some are meaningless in a SpatialOS world, and some are less of a priority.
@@ -137,7 +158,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	if (ServerConnection)
 	{
 		// Send the player spawn commands with retries
-		PlayerSpawner.RequestPlayer(SpatialOSInstance, TimerManager, DummyURL);
+		PlayerSpawner->SendPlayerSpawnRequest();
 	}
 	else
 	{
@@ -155,23 +176,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		Connection->SetClientLoginState(EClientLoginState::Welcomed);
 	}
 
-	Interop->Init(SpatialOSInstance, this, TimerManager);
-
-	DTBManager->Interop = Interop;
-	Interop->DTBManager = DTBManager;
-	DTBManager->PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
-	DTBManager->PipelineBlock.DTBManager = DTBManager;
-	DTBManager->PipelineBlock.World = GetWorld();
-	DTBManager->PipelineBlock.NetDriver = this;
-
-	if (IsServer())
-	{
-		DTBManager->InitServer();
-	}
-	else
-	{
-		DTBManager->InitClient();
-	}
+	Interop->PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 }
 
 void USpatialNetDriver::OnSpatialOSDisconnected(const FString& Reason)
@@ -488,20 +493,21 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
 					if (Channel)
 					{
-						if (Interop->GetTypeBindingByClass(Actor->GetClass()) == nullptr && !ShouldUseDTB(Interop->DTBManager, Actor->GetClass()))
+						if(Interop->FindClassInfoByClass(Actor->GetClass()))
 						{
 							Channel->bCoreActor = false;
 						}
 
 						// If Singleton, add to map and don't set up channel. Entity might already exist
-						if (Interop->IsSingletonClass(Actor->GetClass()))
-						{
-							SingletonActorChannels.Add(Actor->GetClass(), TPair<AActor*, USpatialActorChannel*>(Actor, Channel));
-						}
-						else
-						{
-							Channel->SetChannelActor(Actor);
-						}
+						//if (Interop->IsSingletonClass(Actor->GetClass()))
+						//{
+						//	SingletonActorChannels.Add(Actor->GetClass(), TPair<AActor*, USpatialActorChannel*>(Actor, Channel));
+						//}
+						//else
+						//{
+						//}
+
+						Channel->SetChannelActor(Actor);
 					}
 					// if we couldn't replicate it for a reason that should be temporary, and this Actor is updated very infrequently, make sure we update it again soon
 					else if (Actor->NetUpdateFrequency < 1.0f)
@@ -758,15 +764,14 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	// Not calling Super:: on purpose.
 	UNetDriver::TickDispatch(DeltaTime);
 
-	if (SpatialOSInstance != nullptr && SpatialOSInstance->GetEntityPipeline() != nullptr && SpatialOSInstance->GetEntityPipeline()->IsInitialized())
+	if (Worker_Connection_IsConnected(Connection))
 	{
-		SpatialOSInstance->ProcessOps();
-		SpatialOSInstance->GetEntityPipeline()->ProcessOps(SpatialOSInstance->GetView(), SpatialOSInstance->GetConnection(), GetWorld());
-	}
+		Worker_OpList* OpList = Worker_Connection_GetOpList(Connection, 0);
 
-	if (DTBManager != nullptr)
-	{
-		DTBManager->Tick();
+		Interop->ProcessOps(OpList);
+
+		Worker_OpList_Destroy(OpList);
+
 	}
 }
 
@@ -778,7 +783,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame* Stack,
 	UObject* SubObject)
 {
-	if(!SpatialOSInstance->IsConnected())
+	if(!Worker_Connection_IsConnected(Connection))
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
 		return;
@@ -807,7 +812,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		Interop->InvokeRPC(CallingObject, Function, Parameters);
+		Interop->SendRPC(CallingObject, Function, Parameters, false);
 	}
 
 	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver

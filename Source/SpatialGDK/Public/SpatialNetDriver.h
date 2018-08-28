@@ -6,9 +6,11 @@
 #include "CoreOnline.h"
 #include "Engine.h"
 #include "IpNetDriver.h"
-#include "PlayerSpawnRequestSender.h"
 #include "SpatialGDKWorkerConfigurationData.h"
 #include "SpatialOutputDevice.h"
+
+#include <improbable/c_worker.h>
+
 #include "SpatialNetDriver.generated.h"
 
 class UEntityPipeline;
@@ -16,10 +18,11 @@ class UEntityRegistry;
 class UCallbackDispatcher;
 class USpatialOS;
 class USpatialActorChannel;
+class USpatialPlayerSpawner;
 class USpatialNetConnection;
-class USpatialInterop;
 class USpatialInteropPipelineBlock;
 class USpatialPackageMapClient;
+class USpatialPlayerSpawner;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -62,11 +65,6 @@ public:
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
 #endif
 
-	USpatialOS* GetSpatialOS() const
-	{
-		return SpatialOSInstance;
-	}
-
 	// Returns the "100% reliable" connection to SpatialOS.
 	// On the server, it is designated to be the first client connection.
 	// On the client, this function is not meaningful (as we use ServerConnection)
@@ -74,33 +72,23 @@ public:
 	// You can check if we connected by calling GetSpatialOS()->IsConnected()
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
-	UPROPERTY()
-	USpatialInteropPipelineBlock* InteropPipelineBlock;
-
 	UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
 
-	USpatialOS* GetSpatialOS() { return SpatialOSInstance; }
-	
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer);
 
-	USpatialInterop* GetSpatialInterop() const
-	{
-		return Interop;
-	}
-
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
+
+	USpatialPlayerSpawner* PlayerSpawner;
+	Worker_Connection* Connection;
+
+	UPROPERTY()
+	class USpatialInterop* Interop;
 
 protected:
 	FSpatialGDKWorkerConfigurationData WorkerConfig;
 
-	UPROPERTY()
-	USpatialOS* SpatialOSInstance;
-
-	UPROPERTY()
-	class UDTBManager* DTBManager;
-
-	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
+	//TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
@@ -108,16 +96,14 @@ protected:
 	// Timer manager.
 	FTimerManager* TimerManager;
 
-	// Update/RPC interop with SpatialOS.
-	UPROPERTY()
-	USpatialInterop* Interop;
-
 	// Package map shared by all connections.
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
+
+	void Connect();
 
 	UFUNCTION()
 	void OnSpatialOSConnected();
@@ -137,7 +123,5 @@ protected:
 #endif
 
 private:
-	FPlayerSpawnRequestSender PlayerSpawner;
-
 	friend class USpatialNetConnection;
 };

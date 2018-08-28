@@ -5,31 +5,32 @@
 #include "SpatialPackageMapClient.h"
 #include "WeakObjectPtr.h"
 #include "SchemaHelpers.h"
+#include "CoreTypes/UnrealObjectRef.h"
 
-void FSpatialMemoryWriter::SerializeObjectRef(improbable::unreal::UnrealObjectRef& ObjectRef)
+void FSpatialMemoryWriter::SerializeObjectRef(UnrealObjectRef& ObjectRef)
 {
-	*this << ObjectRef.entity();
-	*this << ObjectRef.offset();
+	*this << ObjectRef.Entity;
+	*this << ObjectRef.Offset;
 
-	uint8 HasPath = !ObjectRef.path().empty();
+	uint8 HasPath = !ObjectRef.Path.empty();
 	SerializeBits(&HasPath, 1);
 	if (HasPath)
 	{
-		FString Path = FString(UTF8_TO_TCHAR(ObjectRef.path()->c_str()));
+		FString Path = FString(UTF8_TO_TCHAR(ObjectRef.Path->c_str()));
 		*this << Path;
 	}
 
-	uint8 HasOuter = !ObjectRef.outer().empty();
+	uint8 HasOuter = !ObjectRef.Outer.empty();
 	SerializeBits(&HasOuter, 1);
 	if (HasOuter)
 	{
-		SerializeObjectRef(*ObjectRef.outer());
+		SerializeObjectRef(*ObjectRef.Outer);
 	}
 }
 
 FArchive& FSpatialMemoryWriter::operator<<(UObject*& Value)
 {
-	improbable::unreal::UnrealObjectRef ObjectRef;
+	UnrealObjectRef ObjectRef;
 	if (Value != nullptr)
 	{
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
@@ -63,7 +64,7 @@ void FSpatialNetBitWriter::SerializeObjectRef(UnrealObjectRef& ObjectRef)
 	*this << ObjectRef.Entity;
 	*this << ObjectRef.Offset;
 
-	uint8 HasPath = !!ObjectRef.Path;
+	uint8 HasPath = ObjectRef.Path.empty();
 	SerializeBits(&HasPath, 1);
 	if (HasPath)
 	{
@@ -71,7 +72,7 @@ void FSpatialNetBitWriter::SerializeObjectRef(UnrealObjectRef& ObjectRef)
 		*this << Path;
 	}
 
-	uint8 HasOuter = !!ObjectRef.Outer;
+	uint8 HasOuter = !!ObjectRef.Outer.empty();
 	SerializeBits(&HasOuter, 1);
 	if (HasOuter)
 	{

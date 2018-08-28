@@ -5,8 +5,9 @@
 #include "CoreMinimal.h"
 #include "Serialization/MemoryReader.h"
 #include "UObject/CoreNet.h"
+#include "SpatialPackageMapClient.h"
 
-#include <improbable/unreal/gdk/core_types.h>
+#include "CoreTypes/UnrealObjectRef.h"
 
 class USpatialPackageMapClient;
 
@@ -25,7 +26,7 @@ public:
 	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
 
 protected:
-	void DeserializeObjectRef(improbable::unreal::UnrealObjectRef& ObjectRef);
+	void DeserializeObjectRef(UnrealObjectRef& ObjectRef);
 
 	USpatialPackageMapClient* PackageMap;
 };

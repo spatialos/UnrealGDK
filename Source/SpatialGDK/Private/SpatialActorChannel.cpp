@@ -7,10 +7,8 @@
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
 #include "SpatialConstants.h"
-#include "SpatialInterop.h"
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
-#include "SpatialOS.h"
 #include "SpatialPackageMapClient.h"
 #include "SpatialTypeBinding.h"
 
@@ -69,60 +67,57 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 
 	SpatialNetDriver = Cast<USpatialNetDriver>(Connection->Driver);
 	check(SpatialNetDriver);
-
-	WorkerView = SpatialNetDriver->GetSpatialOS()->GetView();
 }
 
 void USpatialActorChannel::DeleteEntityIfAuthoritative()
 {
-	bool bHasAuthority = false;
-	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+	SpatialNetDriver->Interop->DeleteEntityIfAuthoritative(ActorEntityId);
 
-	if (Interop->DTBManager)
-	{
-		Interop->DTBManager->DeleteEntityIfAuthoritative(ActorEntityId.ToSpatialEntityId());
-		return;
-	}
+	//if (Interop->DTBManager)
+	//{
+	//	Interop->DTBManager->DeleteEntityIfAuthoritative(ActorEntityId.ToSpatialEntityId());
+	//	return;
+	//}
 
-	TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
-	if (PinnedView.IsValid())
-	{
-		bHasAuthority = Interop->IsAuthoritativeDestructionAllowed()
-			&& PinnedView->GetAuthority<improbable::Position>(ActorEntityId.ToSpatialEntityId()) == worker::Authority::kAuthoritative;
-	}
+	//TSharedPtr<worker::View> PinnedView = WorkerView.Pin();
+	//if (PinnedView.IsValid())
+	//{
+	//	bHasAuthority = Interop->IsAuthoritativeDestructionAllowed()
+	//		&& PinnedView->GetAuthority<improbable::Position>(ActorEntityId.ToSpatialEntityId()) == worker::Authority::kAuthoritative;
+	//}
 
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Delete Entity request on %d. Has authority: %d "), ActorEntityId.ToSpatialEntityId(), bHasAuthority);
+	//UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Delete Entity request on %d. Has authority: %d "), ActorEntityId.ToSpatialEntityId(), bHasAuthority);
 
-	// If we have authority and aren't trying to delete a critical entity, delete it
-	if (bHasAuthority && !IsCriticalEntity())
-	{
-		Interop->DeleteEntity(ActorEntityId);
-	}
+	//// If we have authority and aren't trying to delete a critical entity, delete it
+	//if (bHasAuthority && !IsCriticalEntity())
+	//{
+	//	Interop->DeleteEntity(ActorEntityId);
+	//}
 }
 
 bool USpatialActorChannel::IsCriticalEntity()
 {
 	// Don't delete if the actor is the spawner
-	if (ActorEntityId.ToSpatialEntityId() == SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
-	{
-		return true;
-	}
+	//if (ActorEntityId.ToSpatialEntityId() == SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
+	//{
+	//	return true;
+	//}
 
-	// Don't delete if the actor is a Singleton
-	PathNameToEntityIdMap* SingletonNameToEntityId = SpatialNetDriver->GetSpatialInterop()->GetSingletonNameToEntityId();
+	//// Don't delete if the actor is a Singleton
+	//PathNameToEntityIdMap* SingletonNameToEntityId = SpatialNetDriver->GetSpatialInterop()->GetSingletonNameToEntityId();
 
-	if (SingletonNameToEntityId == nullptr)
-	{
-		return false;
-	}
+	//if (SingletonNameToEntityId == nullptr)
+	//{
+	//	return false;
+	//}
 
-	for(const auto& Pair : *SingletonNameToEntityId)
-	{
-		if (Pair.second == ActorEntityId.ToSpatialEntityId())
-		{
-			return true;
-		}
-	}
+	//for(const auto& Pair : *SingletonNameToEntityId)
+	//{
+	//	if (Pair.second == ActorEntityId.ToSpatialEntityId())
+	//	{
+	//		return true;
+	//	}
+	//}
 
 	return false;
 }
@@ -132,7 +127,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 #if WITH_EDITOR
 	if (SpatialNetDriver->IsServer() &&
 		SpatialNetDriver->GetWorld()->WorldType == EWorldType::PIE &&
-		SpatialNetDriver->GetEntityRegistry()->GetActorFromEntityId(ActorEntityId.ToSpatialEntityId()))
+		SpatialNetDriver->GetEntityRegistry()->GetActorFromEntityId(ActorEntityId))
 	{
 		// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
 		DeleteEntityIfAuthoritative();
@@ -216,8 +211,8 @@ bool USpatialActorChannel::ReplicateActor()
 	
 	const UWorld* const ActorWorld = Actor->GetWorld();
 
-	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
-	check(Interop);
+	//USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+	//check(Interop);
 
 	// Time how long it takes to replicate this particular actor
 	STAT(FScopeCycleCounterUObject FunctionScope(Actor));
@@ -301,30 +296,30 @@ bool USpatialActorChannel::ReplicateActor()
 
 	// !!! DTB Here
 	// Update the handover property change list.
-	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(Actor->GetClass());
+	//USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(Actor->GetClass());
 	TArray<uint16> HandoverChanged;
-	if (Binding)
-	{
-		uint32 ShadowDataOffset = 0;
-		for (auto& PropertyInfo : Binding->GetHandoverHandlePropertyMap())
-		{
-			ShadowDataOffset = Align(ShadowDataOffset, PropertyInfo.Value.Property->GetMinAlignment());
+	//if (Binding)
+	//{
+	//	uint32 ShadowDataOffset = 0;
+	//	for (auto& PropertyInfo : Binding->GetHandoverHandlePropertyMap())
+	//	{
+	//		ShadowDataOffset = Align(ShadowDataOffset, PropertyInfo.Value.Property->GetMinAlignment());
 
-			const uint8* Data = PropertyInfo.Value.GetPropertyData((uint8*)Actor);
+	//		const uint8* Data = PropertyInfo.Value.GetPropertyData((uint8*)Actor);
 
-			// Compare and assign.
-			if (RepFlags.bNetInitial || !PropertyInfo.Value.Property->Identical(HandoverPropertyShadowData.GetData() + ShadowDataOffset, Data))
-			{
-				HandoverChanged.Add(PropertyInfo.Key);
-				PropertyInfo.Value.Property->CopyCompleteValue(HandoverPropertyShadowData.GetData() + ShadowDataOffset, Data);
-			}
-			ShadowDataOffset += PropertyInfo.Value.Property->GetSize();
-		}
-	}
+	//		// Compare and assign.
+	//		if (RepFlags.bNetInitial || !PropertyInfo.Value.Property->Identical(HandoverPropertyShadowData.GetData() + ShadowDataOffset, Data))
+	//		{
+	//			HandoverChanged.Add(PropertyInfo.Key);
+	//			PropertyInfo.Value.Property->CopyCompleteValue(HandoverPropertyShadowData.GetData() + ShadowDataOffset, Data);
+	//		}
+	//		ShadowDataOffset += PropertyInfo.Value.Property->GetSize();
+	//	}
+	//}
 
 	// We can skip the core actor if there are no new changelists to send, and we are not creating a new entity.
 	bool bReplicateCoreActor = true;
-	if (!bCreatingNewEntity && HandoverChanged.Num() == 0)
+	if (!bCreatingNewEntity)// && HandoverChanged.Num() == 0)
 	{
 		if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
 		{
@@ -337,11 +332,12 @@ bool USpatialActorChannel::ReplicateActor()
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
 	// If any properties have changed, send a component update.
-	if (bReplicateCoreActor && (RepFlags.bNetInitial || RepChanged.Num() > 0 || HandoverChanged.Num() > 0))
+	if (bReplicateCoreActor && (RepFlags.bNetInitial || RepChanged.Num() > 0/* || HandoverChanged.Num() > 0*/))
 	{		
 		if (RepFlags.bNetInitial && bCreatingNewEntity)
 		{
-			check(!Actor->IsFullNameStableForNetworking() || Interop->CanSpawnReplicatedStablyNamedActors());
+			// SAHIL: CHECK IF YOU PROPERLY FIX THIS
+			//check(!Actor->IsFullNameStableForNetworking() || Interop->CanSpawnReplicatedStablyNamedActors());
 
 			// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
 			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
@@ -377,11 +373,11 @@ bool USpatialActorChannel::ReplicateActor()
 
 			// Calculate initial spatial position (but don't send component update) and create the entity.
 			LastSpatialPosition = GetActorSpatialPosition(Actor);
-			Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialRepChanged, HandoverChanged);
+			SpatialNetDriver->Interop->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialRepChanged, HandoverChanged);
 		}
 		else
 		{
-			Interop->SendSpatialUpdate(this, RepChanged, HandoverChanged);
+			SpatialNetDriver->Interop->SendComponentUpdates(Actor, GetChangeStateForObject(Actor, ActorReplicator, RepChanged, HandoverChanged), this);
 		}
 
 		bWroteSomethingImportant = true;
@@ -400,16 +396,16 @@ bool USpatialActorChannel::ReplicateActor()
 	}
 	else
 	{
-		for (UActorComponent* ActorComp : Actor->GetReplicatedComponents())
-		{
-			if (ActorComp && ActorComp->GetIsReplicated()) // Only replicated subobjects with type bindings
-			{
-				if(Interop->GetTypeBindingByClass(ActorComp->GetClass()) || ShouldUseDTB(Interop->DTBManager, ActorComp->GetClass()))
-				{
-					bWroteSomethingImportant |= ReplicateSubobject(ActorComp, RepFlags);
-				}
-			}
-		}
+		//for (UActorComponent* ActorComp : Actor->GetReplicatedComponents())
+		//{
+		//	if (ActorComp && ActorComp->GetIsReplicated()) // Only replicated subobjects with type bindings
+		//	{
+		//		if(ShouldUseDTB(Interop->DTBManager, ActorComp->GetClass()))
+		//		{
+		//			bWroteSomethingImportant |= ReplicateSubobject(ActorComp, RepFlags);
+		//		}
+		//	}
+		//}
 	}
 
 	/*
@@ -461,13 +457,13 @@ bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, const FReplicationFl
 	const bool bCompareIndexSame = Replicator.RepState->LastCompareIndex == ChangelistState->CompareIndex;
 	Replicator.RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
-	if (RepChanged.Num() > 0)
-	{
-		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
-		check(Interop);
-		Interop->SendSpatialUpdateForObject(this, Obj, RepChanged, TArray<uint16>(), &Replicator);
-		Replicator.RepState->HistoryEnd++;
-	}
+	//if (RepChanged.Num() > 0)
+	//{
+	//	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+	//	check(Interop);
+	//	Interop->SendSpatialUpdateForObject(this, Obj, RepChanged, TArray<uint16>(), &Replicator);
+	//	Replicator.RepState->HistoryEnd++;
+	//}
 
 	UpdateChangelistHistory(Replicator.RepState);
 	Replicator.RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
@@ -485,34 +481,34 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 
 	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
-	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
-	check(Interop);
-	// !!! DTB Here
-	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(InActor->GetClass());
-	if (Binding)
-	{
-		const FHandoverHandlePropertyMap& HandoverProperties = Binding->GetHandoverHandlePropertyMap();
-		uint32 Size = 0;
-		for (auto& Property : HandoverProperties)
-		{
-			// Make sure we conform to Unreal's alignment requirements; this is matched below and in ReplicateActor()
-			Size = Align(Size, Property.Value.Property->GetMinAlignment());
-			Size += Property.Value.Property->GetSize();
-		}
-		HandoverPropertyShadowData.Empty();
-		HandoverPropertyShadowData.AddZeroed(Size);
-		uint32 Offset = 0;
-		for (auto& Property : HandoverProperties)
-		{
-			Offset = Align(Offset, Property.Value.Property->GetMinAlignment());
-			Property.Value.Property->InitializeValue(HandoverPropertyShadowData.GetData() + Offset);
-			Offset += Property.Value.Property->GetSize();
-		}
-	}
+	//USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+	//check(Interop);
+	//// !!! DTB Here
+	//USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(InActor->GetClass());
+	//if (Binding)
+	//{
+	//	const FHandoverHandlePropertyMap& HandoverProperties = Binding->GetHandoverHandlePropertyMap();
+	//	uint32 Size = 0;
+	//	for (auto& Property : HandoverProperties)
+	//	{
+	//		// Make sure we conform to Unreal's alignment requirements; this is matched below and in ReplicateActor()
+	//		Size = Align(Size, Property.Value.Property->GetMinAlignment());
+	//		Size += Property.Value.Property->GetSize();
+	//	}
+	//	HandoverPropertyShadowData.Empty();
+	//	HandoverPropertyShadowData.AddZeroed(Size);
+	//	uint32 Offset = 0;
+	//	for (auto& Property : HandoverProperties)
+	//	{
+	//		Offset = Align(Offset, Property.Value.Property->GetMinAlignment());
+	//		Property.Value.Property->InitializeValue(HandoverPropertyShadowData.GetData() + Offset);
+	//		Offset += Property.Value.Property->GetSize();
+	//	}
+	//}
 
 	// Get the entity ID from the entity registry (or return 0 if it doesn't exist).
 	check(SpatialNetDriver->GetEntityRegistry());
-	ActorEntityId = SpatialNetDriver->GetEntityRegistry()->GetEntityIdFromActor(InActor).ToSpatialEntityId();
+	ActorEntityId = SpatialNetDriver->GetEntityRegistry()->GetEntityIdFromActor(InActor);
 
 	// If the entity registry has no entry for this actor, this means we need to create it.
 	if (ActorEntityId == 0)
@@ -521,7 +517,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		// over the Global State Manager) to avoid having multiple copies of replicated stably named actors in SpatialOS
 		if (InActor->IsFullNameStableForNetworking())
 		{
-			SpatialNetDriver->GetSpatialInterop()->ReserveReplicatedStablyNamedActorChannel(this);
+			//SpatialNetDriver->GetSpatialInterop()->ReserveReplicatedStablyNamedActorChannel(this);
 		}
 		else
 		{
@@ -530,10 +526,10 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), ActorEntityId.ToSpatialEntityId());
+		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), ActorEntityId);
 
 		// Inform USpatialInterop of this new actor channel/entity pairing
-		SpatialNetDriver->GetSpatialInterop()->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
+		SpatialNetDriver->Interop->AddActorChannel(ActorEntityId, this);
 	}
 }
 
@@ -545,14 +541,10 @@ void USpatialActorChannel::SendReserveEntityIdRequest()
 	// Mark this channel as being responsible for creating this entity once we have an entity ID.
 	bCreatingNewEntity = true;
 
-	UDTBManager* DTBManager = SpatialNetDriver->GetSpatialInterop()->DTBManager;
-	if (ShouldUseDTB(DTBManager, Actor->GetClass()))
+	USpatialInterop* DTBManager = SpatialNetDriver->Interop;
+	if (DTBManager->FindClassInfoByClass(Actor->GetClass()))
 	{
 		DTBManager->SendReserveEntityIdRequest(this);
-	}
-	else
-	{
-		SpatialNetDriver->GetSpatialInterop()->SendReserveEntityIdRequest(this);
 	}
 }
 
@@ -579,46 +571,31 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	Replicator.CallRepNotifies(false);
 }
 
-void USpatialActorChannel::OnReserveEntityIdResponse(const worker::ReserveEntityIdResponseOp& Op)
-{
-	if (Op.StatusCode != worker::StatusCode::kSuccess)
-	{
-		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.Message.c_str()));
-		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
-		return;
-	}
-	UE_LOG(LogSpatialGDKActorChannel, Verbose, TEXT("Received entity id (%d) for: %s."), Op.EntityId.value_or(0), *Actor->GetName());
-	ActorEntityId = *Op.EntityId;
-	RegisterEntityId(ActorEntityId);
-}
-
-void USpatialActorChannel::RegisterEntityId(const FEntityId& ActorEntityId)
+void USpatialActorChannel::RegisterEntityId(const worker::EntityId& ActorEntityId)
 {
 	SpatialNetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
 
-	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
-
 	// Inform USpatialInterop of this new actor channel/entity pairing
-	Interop->AddActorChannel(ActorEntityId.ToSpatialEntityId(), this);
+	SpatialNetDriver->Interop->AddActorChannel(ActorEntityId, this);
 
 	// If a Singleton was created, update the GSM with the proper Id.
-	if (Interop->IsSingletonClass(Actor->GetClass()))
-	{
-		Interop->UpdateSingletonId(Actor->GetClass()->GetPathName(), ActorEntityId);
-	}
+	//if (Interop->IsSingletonClass(Actor->GetClass()))
+	//{
+	//	Interop->UpdateSingletonId(Actor->GetClass()->GetPathName(), ActorEntityId);
+	//}
 
 	if (Actor->IsFullNameStableForNetworking())
 	{
 		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(SpatialNetDriver->GetSpatialOSNetConnection()->PackageMap);
 
 		uint32 CurrentOffset = 1;
-		worker::Map<std::string, std::uint32_t> SubobjectNameToOffset;
+		TMap<FString, std::uint32_t> SubobjectNameToOffset;
 		ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
 		{
 			// Objects can only be allocated NetGUIDs if this is true.
 			if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
 			{
-				SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+				SubobjectNameToOffset.Add(*Object->GetName(), CurrentOffset);
 				CurrentOffset++;
 			}
 		});
@@ -627,27 +604,7 @@ void USpatialActorChannel::RegisterEntityId(const FEntityId& ActorEntityId)
 	}
 }
 
-void USpatialActorChannel::OnCreateEntityResponse(const worker::CreateEntityResponseOp& Op)
-{
-	check(SpatialNetDriver->GetNetMode() < NM_Client);
-
-	if (Op.StatusCode != worker::StatusCode::kSuccess)
-	{
-		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.Message.c_str()));
-		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
-		return;
-	}
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Created entity (%lld) for: %s."), ActorEntityId.ToSpatialEntityId(), *Actor->GetName());
-
-	// If a replicated stably named actor was created, update the GSM with the proper path and entity id
-	// This ensures each stably named actor is only created once
-	if (Actor->IsFullNameStableForNetworking())
-	{
-		SpatialNetDriver->GetSpatialInterop()->AddReplicatedStablyNamedActorToGSM(ActorEntityId, Actor);
-	}
-}
-
-void USpatialActorChannel::OnReserveEntityIdResponseCAPI(const Worker_ReserveEntityIdResponseOp& Op)
+void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityIdResponseOp& Op)
 {
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
@@ -657,10 +614,10 @@ void USpatialActorChannel::OnReserveEntityIdResponseCAPI(const Worker_ReserveEnt
 	}
 	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("!!! Received entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
 	ActorEntityId = (worker::EntityId)Op.entity_id;
-	RegisterEntityId(FEntityId(ActorEntityId));
+	RegisterEntityId(ActorEntityId);
 }
 
-void USpatialActorChannel::OnCreateEntityResponseCAPI(const Worker_CreateEntityResponseOp& Op)
+void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)
 {
 	check(SpatialNetDriver->GetNetMode() < NM_Client);
 
@@ -670,13 +627,13 @@ void USpatialActorChannel::OnCreateEntityResponseCAPI(const Worker_CreateEntityR
 		//todo: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("!!! Created entity (%lld) for: %s."), ActorEntityId.ToSpatialEntityId(), *Actor->GetName());
+	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("!!! Created entity (%lld) for: %s."), ActorEntityId, *Actor->GetName());
 
 	// If a replicated stably named actor was created, update the GSM with the proper path and entity id
 	// This ensures each stably named actor is only created once
 	if (Actor->IsFullNameStableForNetworking())
 	{
-		SpatialNetDriver->GetSpatialInterop()->AddReplicatedStablyNamedActorToGSM(FEntityId(ActorEntityId), Actor);
+		//SpatialNetDriver->GetSpatialInterop()->AddReplicatedStablyNamedActorToGSM(FEntityId(ActorEntityId), Actor);
 	}
 }
 
@@ -694,10 +651,10 @@ void USpatialActorChannel::UpdateSpatialPosition()
 		return;
 	}
 
-	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+	//USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 
 	LastSpatialPosition = ActorSpatialPosition;
-	Interop->SendSpatialPositionUpdate(GetEntityId(), LastSpatialPosition, Actor);
+	SpatialNetDriver->Interop->SendSpatialPositionUpdate(GetEntityId(), LastSpatialPosition);
 
 	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
 	if (APawn* Pawn = Cast<APawn>(Actor))
@@ -707,12 +664,12 @@ void USpatialActorChannel::UpdateSpatialPosition()
 			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController));
 			if (ControllerActorChannel)
 			{
-				Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition, PlayerController);
+				SpatialNetDriver->Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
 			}
 			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController->PlayerState));
 			if (PlayerStateActorChannel)
 			{
-				Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition, PlayerController->PlayerState);
+				SpatialNetDriver->Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
 			}
 		}
 	}

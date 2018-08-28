@@ -3,7 +3,7 @@
 #pragma once
 
 #include "EngineMinimal.h"
-#include "SpatialGDKWorkerTypes.h"
+#include <improbable/worker.h>
 #include "ComponentIdentifier.generated.h"
 
 USTRUCT(BlueprintType)

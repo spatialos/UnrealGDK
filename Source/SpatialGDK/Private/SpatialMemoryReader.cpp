@@ -6,10 +6,10 @@
 #include "WeakObjectPtr.h"
 #include "SchemaHelpers.h"
 
-void FSpatialMemoryReader::DeserializeObjectRef(improbable::unreal::UnrealObjectRef& ObjectRef)
+void FSpatialMemoryReader::DeserializeObjectRef(UnrealObjectRef& ObjectRef)
 {
-	*this << ObjectRef.entity();
-	*this << ObjectRef.offset();
+	*this << ObjectRef.Entity;
+	*this << ObjectRef.Offset;
 
 	uint8 HasPath;
 	SerializeBits(&HasPath, 1);
@@ -18,23 +18,25 @@ void FSpatialMemoryReader::DeserializeObjectRef(improbable::unreal::UnrealObject
 		FString Path;
 		*this << Path;
 
-		ObjectRef.path() = std::string(TCHAR_TO_UTF8(*Path));
+		ObjectRef.Path = std::string(TCHAR_TO_UTF8(*Path));
 	}
 
 	uint8 HasOuter;
 	SerializeBits(&HasOuter, 1);
 	if (HasOuter)
 	{
-		improbable::unreal::UnrealObjectRef Outer;
+		UnrealObjectRef Outer;
 		DeserializeObjectRef(Outer);
 
-		ObjectRef.outer() = Outer;
+		ObjectRef.Outer = Outer;
 	}
 }
 
+
+
 FArchive& FSpatialMemoryReader::operator<<(UObject*& Value)
 {
-	improbable::unreal::UnrealObjectRef ObjectRef;
+	UnrealObjectRef ObjectRef;
 
 	DeserializeObjectRef(ObjectRef);
 
@@ -49,7 +51,7 @@ FArchive& FSpatialMemoryReader::operator<<(UObject*& Value)
 		if (NetGUID.IsValid())
 		{
 			Value = PackageMap->GetObjectFromNetGUID(NetGUID, true);
-			checkf(Value, TEXT("An object ref %s should map to a valid object."), *ObjectRefToString(ObjectRef));
+			checkf(Value, TEXT("An object ref %s should map to a valid object."), *ObjectRef.ToString());
 		}
 		else
 		{
@@ -83,14 +85,14 @@ void FSpatialNetBitReader::DeserializeObjectRef(UnrealObjectRef& ObjectRef)
 		FString Path;
 		*this << Path;
 
-		ObjectRef.Path.reset(new std::string(TCHAR_TO_UTF8(*Path)));
+		ObjectRef.Path = std::string(TCHAR_TO_UTF8(*Path));
 	}
 
 	uint8 HasOuter;
 	SerializeBits(&HasOuter, 1);
 	if (HasOuter)
 	{
-		ObjectRef.Outer.reset(new UnrealObjectRef());
+		ObjectRef.Outer = UnrealObjectRef();
 		DeserializeObjectRef(*ObjectRef.Outer);
 	}
 }
@@ -109,7 +111,7 @@ FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
 	else
 	{
 		auto PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
-		FNetworkGUID NetGUID = PackageMapClient->GetNetGUIDFromUnrealObjectRef(ObjectRef.ToCppAPI());
+		FNetworkGUID NetGUID = PackageMapClient->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 		if (NetGUID.IsValid())
 		{
 			Value = PackageMapClient->GetObjectFromNetGUID(NetGUID, true);

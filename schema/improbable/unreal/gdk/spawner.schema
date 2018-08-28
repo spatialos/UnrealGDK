@@ -20,15 +20,3 @@ component PlayerSpawner
     id = 100002;
     command SpawnPlayerResponse spawn_player(SpawnPlayerRequest);
 }
-
-type SpecialSpawnPlayerRequest
-{
-    string message = 1;
-}
-
-component SpecialSpawner
-{
-    id = 100003;
-    command UnrealRPCCommandResponse special_spawn_player(SpecialSpawnPlayerRequest);
-}
-

@@ -3,18 +3,26 @@
 #include "DTBManager.h"
 
 #include "SpatialActorChannel.h"
-#include "SpatialInterop.h"
 #include "DTBUtil.h"
 #include "AssetRegistryModule.h"
+#include "SpatialNetDriver.h"
+#include "SpatialPlayerSpawner.h"
 
-const Worker_ComponentId SPECIAL_SPAWNER_COMPONENT_ID = 100003;
-const Worker_EntityId SPECIAL_SPAWNER_ENTITY_ID = 3;
-
-UDTBManager::UDTBManager()
+USpatialInterop::USpatialInterop()
 {
 }
 
-void UDTBManager::FinishDestroy()
+void USpatialInterop::Init(USpatialNetDriver* NetDriver)
+{
+	this->NetDriver = NetDriver;
+	Connection = NetDriver->Connection;
+
+	EntityPipeline.Init(this);
+
+	CreateTypebindings();
+}
+
+void USpatialInterop::FinishDestroy()
 {
 	if (Connection)
 	{
@@ -25,7 +33,7 @@ void UDTBManager::FinishDestroy()
 	Super::FinishDestroy();
 }
 
-FClassInfo* UDTBManager::FindClassInfoByClass(UClass* Class)
+FClassInfo* USpatialInterop::FindClassInfoByClass(UClass* Class)
 {
 	for (UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
 	{
@@ -38,7 +46,7 @@ FClassInfo* UDTBManager::FindClassInfoByClass(UClass* Class)
 	return nullptr;
 }
 
-void UDTBManager::CreateTypebindings()
+void USpatialInterop::CreateTypebindings()
 {
 	// Load the asset registry module
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(FName("AssetRegistry"));
@@ -182,7 +190,7 @@ void UDTBManager::CreateTypebindings()
 	}
 }
 
-UObject* UDTBManager::GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class)
+UObject* USpatialInterop::GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class)
 {
 	UObject* TargetObject = nullptr;
 
@@ -209,74 +217,74 @@ UObject* UDTBManager::GetTargetObjectFromChannelAndClass(USpatialActorChannel* C
 	return TargetObject;
 }
 
-void UDTBManager::InitClient()
-{
-	if (Connection) return;
+//void UDTBManager::InitClient()
+//{
+//	if (Connection) return;
+//
+//	CreateTypebindings();
+//
+//	Worker_ConnectionParameters Params = Worker_DefaultConnectionParameters();
+//	Params.worker_type = "CAPIClient";
+//	Params.network.tcp.multiplex_level = 4;
+//	//Params.component_vtable_count = 0;
+//	//Params.component_vtables = Vtables.Vtables;
+//	//Params.enable_protocol_logging_at_startup = true;
+//	//Params.protocol_logging.log_prefix = "C:\\workspace\\UnrealGDK\\UnrealGDKStarterProject\\spatial\\logs\\whyyy";
+//	Worker_ComponentVtable DefaultVtable = {};
+//	Params.default_component_vtable = &DefaultVtable;
+//
+//	std::string WorkerId = "CAPIClient" + std::string(TCHAR_TO_UTF8(*FGuid::NewGuid().ToString()));
+//	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync("localhost", 7777, WorkerId.c_str(), &Params);
+//	Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
+//	Worker_ConnectionFuture_Destroy(ConnectionFuture);
+//
+//	if (Worker_Connection_IsConnected(Connection))
+//	{
+//		Worker_LogMessage Message = { WORKER_LOG_LEVEL_WARN, "Client", "Whaduuuup", nullptr };
+//		Worker_Connection_SendLogMessage(Connection, &Message);
+//
+//		FTimerHandle SpawnRequestTimer;
+//		PipelineBlock.World->GetTimerManager().SetTimer(SpawnRequestTimer, [this]()
+//		{
+//			Worker_CommandRequest CommandRequest = {};
+//			CommandRequest.component_id = SPECIAL_SPAWNER_COMPONENT_ID;
+//			CommandRequest.schema_type = Schema_CreateCommandRequest(SPECIAL_SPAWNER_COMPONENT_ID, 1);
+//			Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
+//			Schema_AddString(RequestObject, 1, "Yo dawg");
+//
+//			Worker_CommandParameters CommandParams = {};
+//			Worker_Connection_SendCommandRequest(Connection, SPECIAL_SPAWNER_ENTITY_ID, &CommandRequest, 1, nullptr, &CommandParams);
+//		}, 2.0, false);
+//	}
+//}
+//
+//void UDTBManager::InitServer()
+//{
+//	if (Connection) return;
+//
+//	CreateTypebindings();
+//
+//	Worker_ConnectionParameters Params = Worker_DefaultConnectionParameters();
+//	Params.worker_type = "CAPIWorker";
+//	Params.network.tcp.multiplex_level = 4;
+//	//Params.component_vtable_count = 0;
+//	//Params.component_vtables = Vtables.Vtables;
+//	Worker_ComponentVtable DefaultVtable = {};
+//	Params.default_component_vtable = &DefaultVtable;
+//
+//	std::string WorkerId = "CAPIWorker" + std::string(TCHAR_TO_UTF8(*FGuid::NewGuid().ToString()));
+//	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync("localhost", 7777, WorkerId.c_str(), &Params);
+//	Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
+//	Worker_ConnectionFuture_Destroy(ConnectionFuture);
+//
+//	if (Worker_Connection_IsConnected(Connection))
+//	{
+//		Worker_LogMessage Message = { WORKER_LOG_LEVEL_WARN, "Server", "Whaduuuup", nullptr };
+//		Worker_Connection_SendLogMessage(Connection, &Message);
+//	}
+//}
 
-	CreateTypebindings();
-
-	Worker_ConnectionParameters Params = Worker_DefaultConnectionParameters();
-	Params.worker_type = "CAPIClient";
-	Params.network.tcp.multiplex_level = 4;
-	//Params.component_vtable_count = 0;
-	//Params.component_vtables = Vtables.Vtables;
-	//Params.enable_protocol_logging_at_startup = true;
-	//Params.protocol_logging.log_prefix = "C:\\workspace\\UnrealGDK\\UnrealGDKStarterProject\\spatial\\logs\\whyyy";
-	Worker_ComponentVtable DefaultVtable = {};
-	Params.default_component_vtable = &DefaultVtable;
-
-	std::string WorkerId = "CAPIClient" + std::string(TCHAR_TO_UTF8(*FGuid::NewGuid().ToString()));
-	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync("localhost", 7777, WorkerId.c_str(), &Params);
-	Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
-	Worker_ConnectionFuture_Destroy(ConnectionFuture);
-
-	if (Worker_Connection_IsConnected(Connection))
-	{
-		Worker_LogMessage Message = { WORKER_LOG_LEVEL_WARN, "Client", "Whaduuuup", nullptr };
-		Worker_Connection_SendLogMessage(Connection, &Message);
-
-		FTimerHandle SpawnRequestTimer;
-		PipelineBlock.World->GetTimerManager().SetTimer(SpawnRequestTimer, [this]()
-		{
-			Worker_CommandRequest CommandRequest = {};
-			CommandRequest.component_id = SPECIAL_SPAWNER_COMPONENT_ID;
-			CommandRequest.schema_type = Schema_CreateCommandRequest(SPECIAL_SPAWNER_COMPONENT_ID, 1);
-			Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
-			Schema_AddString(RequestObject, 1, "Yo dawg");
-
-			Worker_CommandParameters CommandParams = {};
-			Worker_Connection_SendCommandRequest(Connection, SPECIAL_SPAWNER_ENTITY_ID, &CommandRequest, 1, nullptr, &CommandParams);
-		}, 2.0, false);
-	}
-}
-
-void UDTBManager::InitServer()
-{
-	if (Connection) return;
-
-	CreateTypebindings();
-
-	Worker_ConnectionParameters Params = Worker_DefaultConnectionParameters();
-	Params.worker_type = "CAPIWorker";
-	Params.network.tcp.multiplex_level = 4;
-	//Params.component_vtable_count = 0;
-	//Params.component_vtables = Vtables.Vtables;
-	Worker_ComponentVtable DefaultVtable = {};
-	Params.default_component_vtable = &DefaultVtable;
-
-	std::string WorkerId = "CAPIWorker" + std::string(TCHAR_TO_UTF8(*FGuid::NewGuid().ToString()));
-	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync("localhost", 7777, WorkerId.c_str(), &Params);
-	Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
-	Worker_ConnectionFuture_Destroy(ConnectionFuture);
-
-	if (Worker_Connection_IsConnected(Connection))
-	{
-		Worker_LogMessage Message = { WORKER_LOG_LEVEL_WARN, "Server", "Whaduuuup", nullptr };
-		Worker_Connection_SendLogMessage(Connection, &Message);
-	}
-}
-
-bool UDTBManager::DTBHasComponentAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+bool USpatialInterop::HasComponentAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	TMap<Worker_ComponentId, Worker_Authority>* EntityAuthority = ComponentAuthorityMap.Find(EntityId);
 	if (EntityAuthority)
@@ -290,10 +298,20 @@ bool UDTBManager::DTBHasComponentAuthority(Worker_EntityId EntityId, Worker_Comp
 	return false;
 }
 
-void UDTBManager::OnCommandRequest(Worker_CommandRequestOp& Op)
+void USpatialInterop::OnCommandRequest(Worker_CommandRequestOp& Op)
 {
 	Schema_FieldId CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
-	UE_LOG(LogTemp, Verbose, TEXT("!!! Received command request (entity: %lld, component: %d, command: %d)"), Op.entity_id, Op.request.component_id, CommandIndex);
+	UE_LOG(LogTemp, Verbose, TEXT("Received command request (entity: %lld, component: %d, command: %d)"), Op.entity_id, Op.request.component_id, CommandIndex);
+
+	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == 1)
+	{
+		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
+		std::string Message = Schema_GetString(Payload, 1);
+
+		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Message, Op.request_id);
+
+		return;
+	}
 
 	Worker_CommandResponse Response = {};
 	Response.component_id = Op.request.component_id;
@@ -326,7 +344,7 @@ void UDTBManager::OnCommandRequest(Worker_CommandRequestOp& Op)
 		FMemory::Memzero(Parms, Function->ParmsSize);
 
 		UObject* TargetObject = nullptr;
-		ReceiveRPCCommandRequest(Op.request, Op.entity_id, Function, PackageMap, Interop->GetNetDriver(), TargetObject, Parms);
+		ReceiveRPCCommandRequest(Op.request, Op.entity_id, Function, PackageMap, NetDriver, TargetObject, Parms);
 
 		if (TargetObject)
 		{
@@ -339,20 +357,11 @@ void UDTBManager::OnCommandRequest(Worker_CommandRequestOp& Op)
 			It->DestroyValue_InContainer(Parms);
 		}
 	}
-	else if (Op.request.component_id == SPECIAL_SPAWNER_COMPONENT_ID && CommandIndex == 1)
-	{
-		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
-		std::string Message = Schema_GetString(Payload, 1);
-		UE_LOG(LogTemp, Log, TEXT("!!! Message: %s"), UTF8_TO_TCHAR(Message.c_str()));
-
-		FString URLString = FString(TEXT("?workerId=")) + UTF8_TO_TCHAR(Op.caller_worker_id);
-		Interop->GetNetDriver()->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), false);
-	}
 
 	Worker_Connection_SendCommandResponse(Connection, Op.request_id, &Response);
 }
 
-void UDTBManager::OnCommandResponse(Worker_CommandResponseOp& Op)
+void USpatialInterop::OnCommandResponse(Worker_CommandResponseOp& Op)
 {
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
@@ -366,7 +375,7 @@ void UDTBManager::OnCommandResponse(Worker_CommandResponseOp& Op)
 	// TODO: Re-send reliable RPCs on timeout
 }
 
-void UDTBManager::OnDynamicData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap)
+void USpatialInterop::OnDynamicData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap)
 {
 	UClass** ClassPtr = ComponentToClassMap.Find(Data.component_id);
 	checkf(ClassPtr, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
@@ -378,14 +387,14 @@ void UDTBManager::OnDynamicData(Worker_EntityId EntityId, Worker_ComponentData& 
 	FClassInfo* Info = FindClassInfoByClass(Class);
 	check(Info);
 
-	bool bAutonomousProxy = Interop->GetNetDriver()->GetNetMode() == NM_Client && DTBHasComponentAuthority(EntityId, Info->RPCComponents[ARPC_Client]);
+	bool bAutonomousProxy = NetDriver->GetNetMode() == NM_Client && HasComponentAuthority(EntityId, Info->RPCComponents[ARPC_Client]);
 
 	if (Data.component_id == Info->SingleClientComponent)
 	{
 		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<UnrealObjectRef> UnresolvedRefs;
 
-		ReadDynamicData(Data, TargetObject, Channel, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
+		ReadDynamicData(Data, TargetObject, Channel, PackageMap, NetDriver, AGROUP_SingleClient, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
 
 		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 	}
@@ -394,7 +403,7 @@ void UDTBManager::OnDynamicData(Worker_EntityId EntityId, Worker_ComponentData& 
 		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<UnrealObjectRef> UnresolvedRefs;
 
-		ReadDynamicData(Data, TargetObject, Channel, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
+		ReadDynamicData(Data, TargetObject, Channel, PackageMap, NetDriver, AGROUP_MultiClient, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
 
 		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 	}
@@ -408,12 +417,12 @@ void UDTBManager::OnDynamicData(Worker_EntityId EntityId, Worker_ComponentData& 
 	}
 }
 
-void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
+void USpatialInterop::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 {
 	UE_LOG(LogTemp, Verbose, TEXT("!!! Received component update (entity: %lld, component: %d)"), Op.entity_id, Op.update.component_id);
 
 	// TODO: Remove this check once we can disable component update short circuiting. This will be exposed in 14.0. See TIG-137.
-	if (DTBHasComponentAuthority(Op.entity_id, Op.update.component_id))
+	if (HasComponentAuthority(Op.entity_id, Op.update.component_id))
 	{
 		UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping because we sent this update"));
 		return;
@@ -425,7 +434,7 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case METADATA_COMPONENT_ID:
 	case POSITION_COMPONENT_ID:
 	case PERSISTENCE_COMPONENT_ID:
-	case SPECIAL_SPAWNER_COMPONENT_ID:
+	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case UNREAL_METADATA_COMPONENT_ID:
 		UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping because this is hand-written Spatial component"));
 		return;
@@ -437,10 +446,10 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	FClassInfo* Info = FindClassInfoByClass(Class);
 	check(Info);
 
-	bool bAutonomousProxy = Interop->GetNetDriver()->GetNetMode() == NM_Client && DTBHasComponentAuthority(Op.entity_id, Info->RPCComponents[ARPC_Client]);
+	bool bAutonomousProxy = NetDriver->GetNetMode() == NM_Client && HasComponentAuthority(Op.entity_id, Info->RPCComponents[ARPC_Client]);
 
-	USpatialActorChannel* ActorChannel = Interop->GetActorChannelByEntityId(Op.entity_id);
-	bool bIsServer = Interop->GetNetDriver()->IsServer();
+	USpatialActorChannel* ActorChannel = nullptr;// = GetActorChannelByEntityId(Op.entity_id);
+	bool bIsServer = NetDriver->IsServer();
 
 	if (Op.update.component_id == Info->SingleClientComponent)
 	{
@@ -484,7 +493,7 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		}
 		check(ActorChannel);
 		const TArray<UFunction*>& RPCArray = Info->RPCs.FindChecked(ARPC_NetMulticast);
-		ReceiveMulticastUpdate(Op.update, Op.entity_id, RPCArray, PackageMap, Interop->GetNetDriver());
+		ReceiveMulticastUpdate(Op.update, Op.entity_id, RPCArray, PackageMap, NetDriver);
 	}
 	else
 	{
@@ -492,18 +501,18 @@ void UDTBManager::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	}
 }
 
-void UDTBManager::HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy)
+void USpatialInterop::HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy)
 {
 	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
 
 	FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 	TSet<UnrealObjectRef> UnresolvedRefs;
-	ReceiveDynamicUpdate(ComponentUpdate, TargetObject, Channel, PackageMap, Interop->GetNetDriver(), PropertyGroup, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
+	ReceiveDynamicUpdate(ComponentUpdate, TargetObject, Channel, PackageMap, NetDriver, PropertyGroup, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
 
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
 
-void UDTBManager::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<UnrealObjectRef>& UnresolvedRefs)
+void USpatialInterop::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<UnrealObjectRef>& UnresolvedRefs)
 {
 	for (const UnrealObjectRef& UnresolvedRef : UnresolvedRefs)
 	{
@@ -517,32 +526,32 @@ void UDTBManager::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, 
 	}
 }
 
-void UDTBManager::QueueOutgoingRPC(const UObject* UnresolvedObject, UObject* TargetObject, UFunction* Function, void* Parameters)
+void USpatialInterop::QueueOutgoingRPC(const UObject* UnresolvedObject, UObject* TargetObject, UFunction* Function, void* Parameters)
 {
 	check(UnresolvedObject);
 	UE_LOG(LogTemp, Log, TEXT("!!! Added pending outgoing RPC depending on object: %s, target: %s, function: %s"), *UnresolvedObject->GetName(), *TargetObject->GetName(), *Function->GetName());
 	OutgoingRPCs.FindOrAdd(UnresolvedObject).Add(FPendingRPCParams(TargetObject, Function, Parameters));
 }
 
-void UDTBManager::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
+void USpatialInterop::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 {
 	ComponentAuthorityMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.component_id) = (Worker_Authority)Op.authority;
 	UE_LOG(LogTemp, Log, TEXT("!!! Received authority change (entity: %lld, component: %d, authority: %d)"), Op.entity_id, Op.component_id, (int)Op.authority);
 }
 
-void UDTBManager::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
+void USpatialInterop::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
 {
 	Worker_RequestId RequestId = Worker_Connection_SendReserveEntityIdRequest(Connection, nullptr);
 	AddPendingActorRequest(RequestId, Channel);
 	UE_LOG(LogTemp, Log, TEXT("!!! Opened channel for actor with no entity ID. Initiated reserve entity ID. Request id: %d"), RequestId);
 }
 
-void UDTBManager::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel)
+void USpatialInterop::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel)
 {
 	PendingActorRequests.Emplace(RequestId, Channel);
 }
 
-USpatialActorChannel* UDTBManager::RemovePendingActorRequest(Worker_RequestId RequestId)
+USpatialActorChannel* USpatialInterop::RemovePendingActorRequest(Worker_RequestId RequestId)
 {
 	USpatialActorChannel** Channel = PendingActorRequests.Find(RequestId);
 	if (Channel == nullptr)
@@ -553,23 +562,23 @@ USpatialActorChannel* UDTBManager::RemovePendingActorRequest(Worker_RequestId Re
 	return *Channel;
 }
 
-void UDTBManager::OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op)
+void USpatialInterop::OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op)
 {
 	if (USpatialActorChannel* Channel = RemovePendingActorRequest(Op.request_id))
 	{
-		Channel->OnReserveEntityIdResponseCAPI(Op);
+		Channel->OnReserveEntityIdResponse(Op);
 	}
 }
 
-void UDTBManager::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
+void USpatialInterop::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
 {
 	if (USpatialActorChannel* Channel = RemovePendingActorRequest(Op.request_id))
 	{
-		Channel->OnCreateEntityResponseCAPI(Op);
+		Channel->OnCreateEntityResponse(Op);
 	}
 }
 
-Worker_RequestId UDTBManager::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
+Worker_RequestId USpatialInterop::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
 	if (!Connection) return 0;
 
@@ -581,12 +590,12 @@ Worker_RequestId UDTBManager::SendCreateEntityRequest(USpatialActorChannel* Chan
 	Worker_RequestId CreateEntityRequestId = CreateActorEntity(PlayerWorkerId, Location, PathStr, Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
 
 	UE_LOG(LogTemp, Log, TEXT("!!! Creating entity for actor %s (%lld) using initial changelist. Request ID: %d"),
-		*Actor->GetName(), Channel->GetEntityId().ToSpatialEntityId(), CreateEntityRequestId);
+		*Actor->GetName(), Channel->GetEntityId(), CreateEntityRequestId);
 
 	return CreateEntityRequestId;
 }
 
-Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel)
+Worker_RequestId USpatialInterop::CreateActorEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel)
 {
 	std::string ClientWorkerIdString = TCHAR_TO_UTF8(*ClientWorkerId);
 
@@ -660,8 +669,8 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 
-	ComponentDatas.push_back(CreateDynamicData(Info->SingleClientComponent, InitialChanges, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient, UnresolvedObjectsMap));
-	ComponentDatas.push_back(CreateDynamicData(Info->MultiClientComponent, InitialChanges, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient, UnresolvedObjectsMap));
+	ComponentDatas.push_back(CreateDynamicData(Info->SingleClientComponent, InitialChanges, PackageMap, NetDriver, AGROUP_SingleClient, UnresolvedObjectsMap));
+	ComponentDatas.push_back(CreateDynamicData(Info->MultiClientComponent, InitialChanges, PackageMap, NetDriver, AGROUP_MultiClient, UnresolvedObjectsMap));
 
 	for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
 	{
@@ -694,8 +703,8 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 		FPropertyChangeState ComponentChanges = Channel->CreateSubobjectChangeState(Component);
 		FUnresolvedObjectsMap ComponentUnresolvedObjectsMap;
 
-		ComponentDatas.push_back(CreateDynamicData(ComponentInfo->SingleClientComponent, ComponentChanges, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient, ComponentUnresolvedObjectsMap));
-		ComponentDatas.push_back(CreateDynamicData(ComponentInfo->MultiClientComponent, ComponentChanges, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient, ComponentUnresolvedObjectsMap));
+		ComponentDatas.push_back(CreateDynamicData(ComponentInfo->SingleClientComponent, ComponentChanges, PackageMap, NetDriver, AGROUP_SingleClient, ComponentUnresolvedObjectsMap));
+		ComponentDatas.push_back(CreateDynamicData(ComponentInfo->MultiClientComponent, ComponentChanges, PackageMap, NetDriver, AGROUP_MultiClient, ComponentUnresolvedObjectsMap));
 
 		for (auto& HandleUnresolvedObjectsPair : ComponentUnresolvedObjectsMap)
 		{
@@ -713,18 +722,18 @@ Worker_RequestId UDTBManager::CreateActorEntity(const FString& ClientWorkerId, c
 		}
 	}
 
-	Worker_EntityId EntityId = Channel->GetEntityId().ToSpatialEntityId();
+	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Worker_Connection_SendCreateEntityRequest(Connection, ComponentDatas.size(), ComponentDatas.data(), &EntityId, nullptr);
 	AddPendingActorRequest(CreateEntityRequestId, Channel);
 
 	return CreateEntityRequestId;
 }
 
-void UDTBManager::DeleteEntityIfAuthoritative(Worker_EntityId EntityId)
+void USpatialInterop::DeleteEntityIfAuthoritative(Worker_EntityId EntityId)
 {
 	if (!Connection) return;
 
-	bool bHasAuthority = Interop->IsAuthoritativeDestructionAllowed() && DTBHasComponentAuthority(EntityId, POSITION_COMPONENT_ID);
+	bool bHasAuthority = /*Interop->IsAuthoritativeDestructionAllowed() && */ HasComponentAuthority(EntityId, POSITION_COMPONENT_ID);
 
 	UE_LOG(LogTemp, Log, TEXT("!!! Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
 
@@ -732,11 +741,11 @@ void UDTBManager::DeleteEntityIfAuthoritative(Worker_EntityId EntityId)
 	if (bHasAuthority && !IsCriticalEntity(EntityId))
 	{
 		Worker_Connection_SendDeleteEntityRequest(Connection, EntityId, nullptr);
-		PipelineBlock.CleanupDeletedEntity(EntityId);
+		EntityPipeline.CleanupDeletedEntity(EntityId);
 	}
 }
 
-bool UDTBManager::IsCriticalEntity(Worker_EntityId EntityId)
+bool USpatialInterop::IsCriticalEntity(Worker_EntityId EntityId)
 {
 	// Don't delete if the actor is the spawner
 	if (EntityId == SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
@@ -749,16 +758,16 @@ bool UDTBManager::IsCriticalEntity(Worker_EntityId EntityId)
 	return false;
 }
 
-void UDTBManager::SendSpatialPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
+void USpatialInterop::SendSpatialPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
 {
 	Worker_ComponentUpdate ComponentUpdate = CreatePositionUpdate(LocationToCAPIPosition(Location));
 
 	Worker_Connection_SendComponentUpdate(Connection, EntityId, &ComponentUpdate);
 }
 
-void UDTBManager::SendComponentUpdates(UObject* Object, const FPropertyChangeState& Changes, USpatialActorChannel* Channel)
+void USpatialInterop::SendComponentUpdates(UObject* Object, const FPropertyChangeState& Changes, USpatialActorChannel* Channel)
 {
-	Worker_EntityId EntityId = Channel->GetEntityId().ToSpatialEntityId();
+	Worker_EntityId EntityId = Channel->GetEntityId();
 	UE_LOG(LogTemp, Verbose, TEXT("!!! Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
 	FClassInfo* Info = FindClassInfoByClass(Object->GetClass());
@@ -767,10 +776,10 @@ void UDTBManager::SendComponentUpdates(UObject* Object, const FPropertyChangeSta
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 
 	bool bWroteSingleClient = false;
-	Worker_ComponentUpdate SingleClientRepDataUpdate = CreateDynamicUpdate(Info->SingleClientComponent, Changes, PackageMap, Interop->GetNetDriver(), AGROUP_SingleClient, UnresolvedObjectsMap, bWroteSingleClient);
+	Worker_ComponentUpdate SingleClientRepDataUpdate = CreateDynamicUpdate(Info->SingleClientComponent, Changes, PackageMap, NetDriver, AGROUP_SingleClient, UnresolvedObjectsMap, bWroteSingleClient);
 
 	bool bWroteMultiClient = false;
-	Worker_ComponentUpdate MultiClientRepDataUpdate = CreateDynamicUpdate(Info->MultiClientComponent, Changes, PackageMap, Interop->GetNetDriver(), AGROUP_MultiClient, UnresolvedObjectsMap, bWroteMultiClient);
+	Worker_ComponentUpdate MultiClientRepDataUpdate = CreateDynamicUpdate(Info->MultiClientComponent, Changes, PackageMap, NetDriver, AGROUP_MultiClient, UnresolvedObjectsMap, bWroteMultiClient);
 
 	for (uint16 Handle : Changes.RepChanged)
 	{
@@ -793,7 +802,7 @@ void UDTBManager::SendComponentUpdates(UObject* Object, const FPropertyChangeSta
 	// TODO: Handover
 }
 
-void UDTBManager::SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters)
+void USpatialInterop::SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters)
 {
 	FClassInfo* Info = FindClassInfoByClass(TargetObject->GetClass());
 	check(Info);
@@ -810,7 +819,7 @@ void UDTBManager::SendRPC(UObject* TargetObject, UFunction* Function, void* Para
 	case ARPC_Server:
 	case ARPC_CrossServer:
 	{
-		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Function, Parameters, PackageMap, Interop->GetNetDriver(), Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Function, Parameters, PackageMap, NetDriver, Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
@@ -822,7 +831,7 @@ void UDTBManager::SendRPC(UObject* TargetObject, UFunction* Function, void* Para
 	}
 	case ARPC_NetMulticast:
 	{
-		Worker_ComponentUpdate ComponentUpdate = CreateMulticastUpdate(TargetObject, Function, Parameters, PackageMap, Interop->GetNetDriver(), Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
+		Worker_ComponentUpdate ComponentUpdate = CreateMulticastUpdate(TargetObject, Function, Parameters, PackageMap, NetDriver, Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
@@ -864,34 +873,22 @@ void UDTBManager::SendRPC(UObject* TargetObject, UFunction* Function, void* Para
 	}
 }
 
-void UDTBManager::Tick()
+void USpatialInterop::ProcessOps(Worker_OpList* OpList)
 {
-	if (!Connection) return;
-
-	Worker_OpList* OpList = Worker_Connection_GetOpList(Connection, 0);
 	for (size_t i = 0; i < OpList->op_count; ++i)
 	{
 		Worker_Op* Op = &OpList->ops[i];
 		switch (Op->op_type)
 		{
-		case WORKER_OP_TYPE_DISCONNECT:
-			UE_LOG(LogTemp, Warning, TEXT("!!! Yo dawg y u disconnect me?! %s"), UTF8_TO_TCHAR(Op->disconnect.reason));
-			break;
-		case WORKER_OP_TYPE_FLAG_UPDATE:
-			break;
-		case WORKER_OP_TYPE_LOG_MESSAGE:
-			UE_LOG(LogTemp, Log, TEXT("!!! Log: %s"), UTF8_TO_TCHAR(Op->log_message.message));
-			break;
-		case WORKER_OP_TYPE_METRICS:
-			break;
+		// Critical Section
 		case WORKER_OP_TYPE_CRITICAL_SECTION:
 			if (Op->critical_section.in_critical_section)
 			{
-				PipelineBlock.EnterCriticalSection();
+				EntityPipeline.EnterCriticalSection();
 			}
 			else
 			{
-				PipelineBlock.LeaveCriticalSection();
+				EntityPipeline.LeaveCriticalSection();
 				for (TPair<UObject*, UnrealObjectRef>& It : ResolvedObjectQueue)
 				{
 					ResolvePendingOperations_Internal(It.Key, It.Value);
@@ -899,12 +896,16 @@ void UDTBManager::Tick()
 				ResolvedObjectQueue.Empty();
 			}
 			break;
+
+		// Entity Lifetime
 		case WORKER_OP_TYPE_ADD_ENTITY:
-			PipelineBlock.AddEntity(Op->add_entity);
+			EntityPipeline.AddEntity(Op->add_entity);
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			PipelineBlock.RemoveEntity(Op->remove_entity);
+			EntityPipeline.RemoveEntity(Op->remove_entity);
 			break;
+
+		// World Command Responses
 		case WORKER_OP_TYPE_RESERVE_ENTITY_ID_RESPONSE:
 			OnReserveEntityIdResponse(Op->reserve_entity_id_response);
 			break;
@@ -914,36 +915,53 @@ void UDTBManager::Tick()
 			OnCreateEntityResponse(Op->create_entity_response);
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
-			UE_LOG(LogTemp, Log, TEXT("!!! Delete entity response: %s"), UTF8_TO_TCHAR(Op->delete_entity_response.message));
+			UE_LOG(LogTemp, Log, TEXT("SpatialOS Delete Entity Response: %s"), UTF8_TO_TCHAR(Op->delete_entity_response.message));
 			break;
 		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
 			break;
+
+		// Components
 		case WORKER_OP_TYPE_ADD_COMPONENT:
-			PipelineBlock.AddComponent(Op->add_component);
+			EntityPipeline.AddComponent(Op->add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			PipelineBlock.RemoveComponent(Op->remove_component);
-			break;
-		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			OnAuthorityChange(Op->authority_change);
+			EntityPipeline.RemoveComponent(Op->remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			OnComponentUpdate(Op->component_update);
 			break;
+
+		// Commands
 		case WORKER_OP_TYPE_COMMAND_REQUEST:
 			OnCommandRequest(Op->command_request);
 			break;
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
 			OnCommandResponse(Op->command_response);
 			break;
+
+		// Authority Change
+		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
+			OnAuthorityChange(Op->authority_change);
+			break;
+
+		case WORKER_OP_TYPE_FLAG_UPDATE:
+			break;
+		case WORKER_OP_TYPE_LOG_MESSAGE:
+			UE_LOG(LogTemp, Log, TEXT("SpatialOS: %s"), UTF8_TO_TCHAR(Op->log_message.message));
+			break;
+		case WORKER_OP_TYPE_METRICS:
+			break;
+		case WORKER_OP_TYPE_DISCONNECT:
+			UE_LOG(LogTemp, Warning, TEXT("Disconnecting from SpatialOS"), UTF8_TO_TCHAR(Op->disconnect.reason));
+			break;
+
 		default:
 			break;
 		}
 	}
-	Worker_OpList_Destroy(OpList);
 }
 
-void UDTBManager::ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle)
+void USpatialInterop::ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle)
 {
 	check(DependentChannel);
 	check(ReplicatedObject);
@@ -985,7 +1003,7 @@ void UDTBManager::ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel,
 	}
 }
 
-void UDTBManager::QueueOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<const UObject*>& UnresolvedObjects)
+void USpatialInterop::QueueOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<const UObject*>& UnresolvedObjects)
 {
 	check(DependentChannel);
 	check(ReplicatedObject);
@@ -1012,9 +1030,9 @@ void UDTBManager::QueueOutgoingRepUpdate(USpatialActorChannel* DependentChannel,
 	}
 }
 
-void UDTBManager::ResolvePendingOperations(UObject* Object, const UnrealObjectRef& ObjectRef)
+void USpatialInterop::ResolvePendingOperations(UObject* Object, const UnrealObjectRef& ObjectRef)
 {
-	if (PipelineBlock.bInCriticalSection)
+	if (EntityPipeline.bInCriticalSection)
 	{
 		ResolvedObjectQueue.Add(TPair<UObject*, UnrealObjectRef>{ Object, ObjectRef });
 	}
@@ -1024,7 +1042,7 @@ void UDTBManager::ResolvePendingOperations(UObject* Object, const UnrealObjectRe
 	}
 }
 
-void UDTBManager::ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef)
+void USpatialInterop::ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef)
 {
 	UE_LOG(LogTemp, Log, TEXT("!!! Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 	ResolveOutgoingOperations(Object);
@@ -1032,7 +1050,7 @@ void UDTBManager::ResolvePendingOperations_Internal(UObject* Object, const Unrea
 	ResolveOutgoingRPCs(Object);
 }
 
-void UDTBManager::ResolveOutgoingOperations(UObject* Object)
+void USpatialInterop::ResolveOutgoingOperations(UObject* Object)
 {
 	FChannelToHandleToUnresolved* ChannelToUnresolved = ObjectToUnresolved.Find(Object);
 	if (!ChannelToUnresolved) return;
@@ -1077,14 +1095,14 @@ void UDTBManager::ResolveOutgoingOperations(UObject* Object)
 			// End with zero to indicate the end of the list of handles.
 			PropertyHandles.Add(0);
 
-			Interop->SendSpatialUpdateForObject(DependentChannel, ReplicatingObject, PropertyHandles, TArray<uint16>());
+			//Interop->SendSpatialUpdateForObject(DependentChannel, ReplicatingObject, PropertyHandles, TArray<uint16>());
 		}
 	}
 
 	ObjectToUnresolved.Remove(Object);
 }
 
-void UDTBManager::ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef)
+void USpatialInterop::ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef)
 {
 	TSet<FChannelObjectPair>* TargetObjectSet = IncomingRefsMap.Find(ObjectRef);
 	if (!TargetObjectSet) return;
@@ -1110,7 +1128,7 @@ void UDTBManager::ResolveIncomingOperations(UObject* Object, const UnrealObjectR
 		FRepLayout& RepLayout = DependentChannel->GetObjectRepLayout(ReplicatingObject);
 		FRepStateStaticBuffer& ShadowData = DependentChannel->GetObjectStaticBuffer(ReplicatingObject);
 
-		ResolveObjectReferences(RepLayout, ReplicatingObject, *UnresolvedRefs, PackageMap, Interop->GetNetDriver(), ShadowData.GetData(), (uint8*)ReplicatingObject, ShadowData.Num(), RepNotifies, bSomeObjectsWereMapped, bStillHasUnresolved);
+		ResolveObjectReferences(RepLayout, ReplicatingObject, *UnresolvedRefs, PackageMap, NetDriver, ShadowData.GetData(), (uint8*)ReplicatingObject, ShadowData.Num(), RepNotifies, bSomeObjectsWereMapped, bStillHasUnresolved);
 
 		if (bSomeObjectsWereMapped)
 		{
@@ -1127,7 +1145,7 @@ void UDTBManager::ResolveIncomingOperations(UObject* Object, const UnrealObjectR
 	IncomingRefsMap.Remove(ObjectRef);
 }
 
-void UDTBManager::ResolveOutgoingRPCs(UObject* Object)
+void USpatialInterop::ResolveOutgoingRPCs(UObject* Object)
 {
 	TArray<FPendingRPCParams>* RPCList = OutgoingRPCs.Find(Object);
 	if (RPCList)
@@ -1141,4 +1159,9 @@ void UDTBManager::ResolveOutgoingRPCs(UObject* Object)
 		}
 		OutgoingRPCs.Remove(Object);
 	}
+}
+
+void USpatialInterop::AddActorChannel(const Worker_EntityId& EntityId, USpatialActorChannel* Channel)
+{
+	EntityToActorChannel.Add(EntityId, Channel);
 }

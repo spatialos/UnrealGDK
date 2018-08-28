@@ -6,9 +6,8 @@
 
 #include "DTBManager.h"
 
-bool FORCEINLINE ShouldUseDTB(UDTBManager* DTBManager, UClass* Class)
+bool FORCEINLINE ShouldUseDTB(USpatialInterop* DTBManager, UClass* Class)
 {
-	//return Class->IsChildOf(FindObject<UClass>(ANY_PACKAGE, TEXT("DTBActor")));
 	if (!DTBManager) return false;
 	for (UClass* DTBClass : DTBManager->DTBClasses)
 	{

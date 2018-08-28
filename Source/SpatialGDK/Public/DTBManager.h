@@ -4,12 +4,14 @@
 
 #include "CoreMinimal.h"
 
-#include "CAPIPipelineBlock.h"
+#include "SpatialEntityPipeline.h"
+#include "SpatialNetDriver.h"
 
 #include "improbable/c_worker.h"
 #include "improbable/c_schema.h"
 
 #include "SchemaHelpers.h"
+#include "SpatialEntityPipeline.h"
 
 #include "DTBManager.generated.h"
 
@@ -46,12 +48,16 @@ struct FClassInfo
 using FChannelObjectPair = TPair<USpatialActorChannel*, UObject*>;
 
 UCLASS()
-class SPATIALGDK_API UDTBManager : public UObject
+class SPATIALGDK_API USpatialInterop : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	UDTBManager();
+	USpatialInterop();
+
+	void Init(USpatialNetDriver* NetDriver);
+
+	void ProcessOps(Worker_OpList* OpList);
 
 	virtual void FinishDestroy() override;
 
@@ -60,10 +66,7 @@ public:
 
 	UObject* GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class);
 
-	void InitClient();
-	void InitServer();
-
-	bool DTBHasComponentAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	bool HasComponentAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	void OnCommandRequest(Worker_CommandRequestOp& Op);
 	void OnCommandResponse(Worker_CommandResponseOp& Op);
@@ -99,8 +102,6 @@ public:
 
 	void SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters = false);
 
-	void Tick();
-
 	void ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle);
 	void QueueOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<const UObject*>& UnresolvedObjects);
 
@@ -116,6 +117,11 @@ public:
 
 	void ResolveOutgoingRPCs(UObject* Object);
 
+	void AddActorChannel(const Worker_EntityId& EntityId, USpatialActorChannel* Channel);
+
+	Worker_Connection* Connection;
+	USpatialNetDriver* NetDriver;
+
 	using FUnresolvedEntry = TSharedPtr<TSet<const UObject*>>;
 	using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;
 	using FChannelToHandleToUnresolved = TMap<FChannelObjectPair, FHandleToUnresolved>;
@@ -124,9 +130,10 @@ public:
 	FChannelToHandleToUnresolved PropertyToUnresolved;
 	FOutgoingRepUpdates ObjectToUnresolved;
 
-
 	TMap<UnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
+
+	TMap<Worker_EntityId, USpatialActorChannel*> EntityToActorChannel;
 
 	struct FPendingRPCParams
 	{
@@ -153,10 +160,7 @@ public:
 
 	TFunction<AActor*()> OnSpawnRequest;
 
-	Worker_Connection* Connection;
-
-	class USpatialInterop* Interop;
 	class USpatialPackageMapClient* PackageMap;
 
-	CAPIPipelineBlock PipelineBlock;
+	SpatialEntityPipeline EntityPipeline;
 };

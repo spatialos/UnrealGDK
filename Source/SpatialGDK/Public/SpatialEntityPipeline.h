@@ -9,6 +9,8 @@
 
 #include "SchemaHelpers.h"
 
+class USpatialInterop;
+
 struct PendingAddComponentWrapper
 {
 	PendingAddComponentWrapper() = default;
@@ -20,8 +22,10 @@ struct PendingAddComponentWrapper
 	std::unique_ptr<ComponentData> Data;
 };
 
-struct CAPIPipelineBlock
+struct SpatialEntityPipeline
 {
+	void Init(USpatialInterop* DTBManager);
+
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
 
@@ -43,7 +47,7 @@ struct CAPIPipelineBlock
 	class UWorld* World;
 	class USpatialNetDriver* NetDriver;
 
-	class UDTBManager* DTBManager;
+	class USpatialInterop* DTBManager;
 
 	bool bInCriticalSection;
 	TArray<Worker_EntityId> PendingAddEntities;

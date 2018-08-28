@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "CAPIPipelineBlock.h"
+#include "SpatialEntityPipeline.h"
 
 #include "EngineMinimal.h"
 #include "EntityRegistry.h"
@@ -12,7 +12,7 @@
 #include "DTBManager.h"
 
 template <typename T>
-T* GetComponentData(CAPIPipelineBlock& PipelineBlock, Worker_EntityId EntityId)
+T* GetComponentData(SpatialEntityPipeline& PipelineBlock, Worker_EntityId EntityId)
 {
 	for (PendingAddComponentWrapper& PendingAddComponent : PipelineBlock.PendingAddComponents)
 	{
@@ -25,14 +25,21 @@ T* GetComponentData(CAPIPipelineBlock& PipelineBlock, Worker_EntityId EntityId)
 	return nullptr;
 }
 
-void CAPIPipelineBlock::EnterCriticalSection()
+void SpatialEntityPipeline::Init(USpatialInterop* DTBManager)
+{
+	this->DTBManager = DTBManager;
+	this->NetDriver = DTBManager->NetDriver;
+	this->World = DTBManager->NetDriver->GetWorld();
+}
+
+void SpatialEntityPipeline::EnterCriticalSection()
 {
 	UE_LOG(LogTemp, Log, TEXT("!!! CAPIPipelineBlock: Entering critical section."));
 	check(!bInCriticalSection);
 	bInCriticalSection = true;
 }
 
-void CAPIPipelineBlock::LeaveCriticalSection()
+void SpatialEntityPipeline::LeaveCriticalSection()
 {
 	UE_LOG(LogTemp, Log, TEXT("!!! CAPIPipelineBlock: Leaving critical section."));
 	check(bInCriticalSection);
@@ -58,7 +65,7 @@ void CAPIPipelineBlock::LeaveCriticalSection()
 	PendingRemoveEntities.Empty();
 }
 
-void CAPIPipelineBlock::AddEntity(Worker_AddEntityOp& Op)
+void SpatialEntityPipeline::AddEntity(Worker_AddEntityOp& Op)
 {
 	UE_LOG(LogTemp, Log, TEXT("!!! CAPIPipelineBlock: AddEntity: %lld"), Op.entity_id);
 	check(bInCriticalSection);
@@ -66,7 +73,7 @@ void CAPIPipelineBlock::AddEntity(Worker_AddEntityOp& Op)
 	PendingAddEntities.Emplace(Op.entity_id);
 }
 
-void CAPIPipelineBlock::AddComponent(Worker_AddComponentOp& Op)
+void SpatialEntityPipeline::AddComponent(Worker_AddComponentOp& Op)
 {
 	UE_LOG(LogTemp, Log, TEXT("!!! CAPIPipelineBlock: AddComponent component ID: %u entity ID: %lld inCriticalSection: %d"),
 		Op.data.component_id, Op.entity_id, (int)bInCriticalSection);
@@ -98,7 +105,7 @@ void CAPIPipelineBlock::AddComponent(Worker_AddComponentOp& Op)
 	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, std::move(Data));
 }
 
-void CAPIPipelineBlock::RemoveEntity(Worker_RemoveEntityOp& Op)
+void SpatialEntityPipeline::RemoveEntity(Worker_RemoveEntityOp& Op)
 {
 	UE_LOG(LogTemp, Log, TEXT("!!! CAPIPipelineBlock: RemoveEntity: %lld"), Op.entity_id);
 
@@ -112,19 +119,19 @@ void CAPIPipelineBlock::RemoveEntity(Worker_RemoveEntityOp& Op)
 	}
 }
 
-void CAPIPipelineBlock::RemoveComponent(Worker_RemoveComponentOp& Op)
+void SpatialEntityPipeline::RemoveComponent(Worker_RemoveComponentOp& Op)
 {
 	UE_LOG(LogTemp, Verbose, TEXT("!!! CAPIPipelineBlock: RemoveComponent component ID: %u entity ID: %lld inCriticalSection: %d"), Op.component_id, Op.entity_id, (int)bInCriticalSection);
 	// No need to do anything here
 }
 
-void CAPIPipelineBlock::CreateActor(Worker_EntityId EntityId)
+void SpatialEntityPipeline::CreateActor(Worker_EntityId EntityId)
 {
 	checkf(World, TEXT("We should have a world whilst processing ops."));
 	check(NetDriver);
-	USpatialInterop* Interop = NetDriver->GetSpatialInterop();
+	//USpatialInterop* Interop = NetDriver->GetSpatialInterop();
 	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
-	check(Interop);
+	//check(Interop);
 	check(EntityRegistry);
 
 	PositionData* PositionComponent = GetComponentData<PositionData>(*this, EntityId);
@@ -135,7 +142,7 @@ void CAPIPipelineBlock::CreateActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(FEntityId(EntityId));
+	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
 	UE_LOG(LogTemp, Log, TEXT("!!! Checked out entity with entity ID %lld"), EntityId);
 
 	// There are 3 main options when we get here with regards to how this entity was created:
@@ -162,26 +169,18 @@ void CAPIPipelineBlock::CreateActor(Worker_EntityId EntityId)
 		SubobjectToOffsetMap SubobjectNameToOffset;
 		for (auto& KVPair : UnrealMetadataComponent->SubobjectNameToOffset)
 		{
-			SubobjectNameToOffset.emplace(KVPair.first, KVPair.second);
+			SubobjectNameToOffset.Add(UTF8_TO_TCHAR(KVPair.first.c_str()), KVPair.second);
 		}
 
-		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(EntityActor, FEntityId(EntityId), SubobjectNameToOffset);
+		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(EntityActor, EntityId, SubobjectNameToOffset);
 		UE_LOG(LogTemp, Log, TEXT("!!! Received create entity response op for %lld"), EntityId);
 
 		// actor channel/entity mapping should be registered by this point
-		check(Interop->GetActorChannelByEntityId(FEntityId(EntityId)));
+		//check(Interop->GetActorChannelByEntityId(FEntityId(EntityId)));
 	}
 	else
 	{
-		UClass* ActorClass = nullptr;
-		if (false)//(ActorClass = GetRegisteredEntityClass(MetadataComponent)) != nullptr)
-		{
-			// Option 2
-			UE_LOG(LogTemp, Log, TEXT("!!! Spawning a registered %s"), *ActorClass->GetName());
-			//EntityActor = SpawnNewEntity(PositionComponent, ActorClass, false);
-			EntityRegistry->AddToRegistry(FEntityId(EntityId), EntityActor);
-		}
-		else if ((ActorClass = GetNativeEntityClass(MetadataComponent)) != nullptr)
+		if (UClass* ActorClass = GetNativeEntityClass(MetadataComponent))
 		{
 			// Option 3
 
@@ -240,7 +239,7 @@ void CAPIPipelineBlock::CreateActor(Worker_EntityId EntityId)
 			}
 
 			// Add to entity registry. 
-			EntityRegistry->AddToRegistry(FEntityId(EntityId), EntityActor);
+			EntityRegistry->AddToRegistry(EntityId, EntityActor);
 
 			// Set up actor channel.
 			USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
@@ -258,10 +257,10 @@ void CAPIPipelineBlock::CreateActor(Worker_EntityId EntityId)
 			SubobjectToOffsetMap SubobjectNameToOffset;
 			for (auto& KVPair : UnrealMetadataComponent->SubobjectNameToOffset)
 			{
-				SubobjectNameToOffset.emplace(KVPair.first, KVPair.second);
+				SubobjectNameToOffset.Add(UTF8_TO_TCHAR(KVPair.first.c_str()), KVPair.second);
 			}
 
-			PackageMap->ResolveEntityActor(EntityActor, FEntityId(EntityId), SubobjectNameToOffset);
+			PackageMap->ResolveEntityActor(EntityActor, EntityId, SubobjectNameToOffset);
 			Channel->SetChannelActor(EntityActor);
 
 			// Apply initial replicated properties.
@@ -302,9 +301,9 @@ void CAPIPipelineBlock::CreateActor(Worker_EntityId EntityId)
 	}
 }
 
-void CAPIPipelineBlock::RemoveActor(Worker_EntityId EntityId)
+void SpatialEntityPipeline::RemoveActor(Worker_EntityId EntityId)
 {
-	AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(FEntityId(EntityId));
+	AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId);
 
 	UE_LOG(LogTemp, Log, TEXT("CAPIPipelineBlock: Remove Actor: %s %lld"), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
@@ -345,24 +344,23 @@ void CAPIPipelineBlock::RemoveActor(Worker_EntityId EntityId)
 	// 2. The Actor was deleted on another server
 	// In neither situation do we want to delete associated entities, so prevent them from being issued.
 	// TODO: fix this with working sets (UNR-411)
-	NetDriver->GetSpatialInterop()->StartIgnoringAuthoritativeDestruction();
+	//NetDriver->GetSpatialInterop()->StartIgnoringAuthoritativeDestruction();
 	if (!World->DestroyActor(Actor, true))
 	{
 		UE_LOG(LogTemp, Error, TEXT("World->DestroyActor failed on RemoveActor %s %lld"), *Actor->GetName(), EntityId);
 	}
-	NetDriver->GetSpatialInterop()->StopIgnoringAuthoritativeDestruction();
+	//NetDriver->GetSpatialInterop()->StopIgnoringAuthoritativeDestruction();
 
 	CleanupDeletedEntity(EntityId);
 }
 
-void CAPIPipelineBlock::CleanupDeletedEntity(Worker_EntityId EntityId)
+void SpatialEntityPipeline::CleanupDeletedEntity(Worker_EntityId EntityId)
 {
-	NetDriver->GetEntityRegistry()->RemoveFromRegistry(FEntityId(EntityId));
-	NetDriver->GetSpatialInterop()->RemoveActorChannel(FEntityId(EntityId));
-	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(FEntityId(EntityId));
+	NetDriver->GetEntityRegistry()->RemoveFromRegistry(EntityId);
+	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 }
 
-UClass* CAPIPipelineBlock::GetNativeEntityClass(MetadataData* MetadataComponent)
+UClass* SpatialEntityPipeline::GetNativeEntityClass(MetadataData* MetadataComponent)
 {
 	FString Metadata = UTF8_TO_TCHAR(MetadataComponent->EntityType.c_str());
 	return FindObject<UClass>(ANY_PACKAGE, *Metadata);
@@ -370,7 +368,7 @@ UClass* CAPIPipelineBlock::GetNativeEntityClass(MetadataData* MetadataComponent)
 
 // Note that in SpatialGDK, this function will not be called on the spawning worker.
 // It's only for client, and in the future, other workers.
-AActor* CAPIPipelineBlock::SpawnNewEntity(PositionData* PositionComponent, UClass* ActorClass, bool bDeferred)
+AActor* SpatialEntityPipeline::SpawnNewEntity(PositionData* PositionComponent, UClass* ActorClass, bool bDeferred)
 {
 	FVector InitialLocation = CAPIPositionToLocation(PositionComponent->Coords);
 	AActor* NewActor = nullptr;

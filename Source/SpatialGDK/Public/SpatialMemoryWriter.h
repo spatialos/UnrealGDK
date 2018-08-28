@@ -3,9 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SpatialPackageMapClient.h"
 #include "Serialization/MemoryWriter.h"
-
-#include <improbable/unreal/gdk/core_types.h>
 
 class USpatialPackageMapClient;
 
@@ -25,7 +24,7 @@ public:
 	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
 
 protected:
-	void SerializeObjectRef(improbable::unreal::UnrealObjectRef& ObjectRef);
+	void SerializeObjectRef(UnrealObjectRef& ObjectRef);
 
 	USpatialPackageMapClient* PackageMap;
 	TSet<const UObject*>& UnresolvedObjects;
