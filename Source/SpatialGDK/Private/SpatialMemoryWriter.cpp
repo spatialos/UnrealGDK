@@ -32,6 +32,13 @@ FArchive& FSpatialMemoryWriter::operator<<(UObject*& Value)
 	if (Value != nullptr)
 	{
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+		if (!NetGUID.IsValid())
+		{
+			if (Value->IsFullNameStableForNetworking())
+			{
+				NetGUID = PackageMap->ResolveStablyNamedObject(Value);
+			}
+		}
 		ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 		if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
