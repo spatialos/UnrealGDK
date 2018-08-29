@@ -1,4 +1,4 @@
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](../README.md#recommended-use).
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)
 
 # Unreal GDK known issues
 
@@ -14,7 +14,7 @@ Known issue = any major user-facing bug or lack of user-facing feature that:
 | Dynamic component replication. | 2018-07-03 | [UNR-366](https://improbableio.atlassian.net/browse/UNR-366) | Mimic behavior with static components. | No |
 | Components with replicated sub-objects fail. | 2018-07-03 |[UNR-417](https://improbableio.atlassian.net/browse/UNR-417) | Make all components top level. | No |
 | You can't have multiple replicated components of the same type on the same Actor. | 2018-07-03 | [UNR-416](https://improbableio.atlassian.net/browse/UNR-416) | | No |
-| The [Interop Code Generator](./content/interop.md) is not optimized. | 2018-07-13 | | None | No |
+| The [Interop Code Generator]({{urlRoot}}/content/interop.md) is not optimized. | 2018-07-13 | | None | No |
 | User code must be IWYU-compliant, meaning you must import all the headers you use.| 2018-07-13 |[UNR-380](https://improbableio.atlassian.net/browse/UNR-380) | No | No |
 | The SpatialOS Unreal GDK currently launches the `GameDefaultMap` instead of the `EditorDefaultMap` in PIE windows. | 2018-07-16 | [UNR-227](https://improbableio.atlassian.net/browse/UNR-227) | Duplicated EditorDefaultMap into GameDefaultMap. | No |
 | Compilation error for RPCs that take structs with private members. | 2018-07-16 | [UNR-144](https://improbableio.atlassian.net/browse/UNR-144) | Add the type binding as a friend class. | No |

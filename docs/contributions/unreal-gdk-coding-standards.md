@@ -1,4 +1,4 @@
-**Contributions**: We are not currently taking public contributions - see our [contributions](../../.github/CONTRIBUTING.md) policy. However, we are accepting issues and we do want your [feedback](../../README.md#give-us-feedback).
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)
 
 -------
 
@@ -12,14 +12,14 @@
 
         if (APawn* Pawn = Cast<APawn>(Actor))
         {
-        //do something with the Pawn variable
+            //do something with the Pawn variable
         }
 
     This is safe as the compiler will generate a C2143 compiler error if a comparison is accidently added:
 
         if (APawn* Pawn == Cast<APawn>(Actor))
         {
-        // will generate a C2143
+            // will generate a C2143
         }
 
     However, if the variable is declared earlier in the outside scope and cannot be contained within the scope of the statement, then we should avoid using assignments in the statement:
@@ -29,7 +29,7 @@
         APawn* Pawn = Cast<APawn>(Actor);
         if (Pawn != nullptr)
         {
-        //do something with the Pawn variable
+            //do something with the Pawn variable
         }
 
     to:

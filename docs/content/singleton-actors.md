@@ -1,4 +1,4 @@
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](../../README.md#recommended-use).
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)
 
 # Singleton Actors
 
@@ -31,6 +31,7 @@ class TESTSUITE_API AExampleGameGameState : public AGameStateBase
 {
   GENERATED_BODY()
   ...
+}
 ```
 
 ### Streaming queries
@@ -58,5 +59,5 @@ In the `bridge` field of the worker configuration file, there should be a sectio
 
 This creates two streaming queries, one for the `GlobalStateManager` and one for the `ExampleGameGameState` component. For each Singleton Actor you register, you need to add another streaming query for that Singleton Actor’s `MultiClientRepData` component. We understand this workflow is a little clumsy and will be improved in the future.
 
-And that's it! You have successfully specified a Singleton Actor. Make sure you generate a new snapshot and [type bindings](./interop.md) using the [SpatialOS Unreal GDK toolbar](./toolbar.md).
+And that's it! You have successfully specified a Singleton Actor. Make sure you generate a new snapshot and [type bindings]({{urlRoot}}/content/interop) using the [SpatialOS Unreal GDK toolbar]({{urlRoot}}/content/toolbar).
 

@@ -1,7 +1,9 @@
-> This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the "GDK Core" is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](../../README.md#recommended-use).
+> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)
 
 # Actor property handover between SpatialOS servers
 ## Overview
+
+<%(TOC)%>
 
 In Unreal’s native client-server architecture, your game server holds the canonical state of the whole game world. As there is a single game server, there are Actor properties that the server doesn’t need to share with any other server or clients. These properties only need to exist in the game server’s local process space.
 
@@ -19,14 +21,14 @@ Note that server-worker authority over properties is different to server-worker 
 To facilitate an Actor’s property handover between server-workers, follow the instructions below:
 1.  In the Actor’s class, mark the property field with a UPROPERTY `Handover` tag, as shown in the example below.
 
-    ```
-    UPROPERTY(Handover)
-    float MyServerSideVariable;
-    ```
+```
+UPROPERTY(Handover)
+float MyServerSideVariable;
+```
 
-2. Locate the `DefaultEditorSpatialGDK.ini` config file in the `<ProjectRoot>\<GameRoot>\Config\` directory and add the Actor’s class to its list, as shown in the [example](./interop.md#example-file-snippet) in the Interop Code Generator documentation.
+2. Locate the `DefaultEditorSpatialGDK.ini` config file in the `<ProjectRoot>\<GameRoot>\Config\` directory and add the Actor’s class to its list, as shown in the [example]({{urlRoot}}/content/interop#example) in the Interop Code Generator documentation.
 
-1. Run the [Interop Code Generator](./interop.md). This generates the [type bindings](./glossary.md#type-bindings) for your Actor’s class, including the `Handover` bindings.
+1. Run the [Interop Code Generator]({{urlRoot}}/content/interop). This generates the [type bindings]({{urlRoot}}/content/glossary#type-bindings) for your Actor’s class, including the `Handover` bindings.
 
 The GDK now ensures that server-workers transfer these tagged Actor’s properties between them.
 
@@ -34,6 +36,7 @@ The GDK now ensures that server-workers transfer these tagged Actor’s properti
 To ensure native Unreal classes work with the Unreal GDK, we are making handover-related changes on a class-by-class basis as we identify appropriate properties for `Handover` tags.
 
 **Classes with properties tagged with `Handover` status (2018-07-31):**
+
 * `UCharacterMovementComponent`
 * `APlayerController`
 
@@ -41,6 +44,7 @@ We will continue to extend our support to more built-in Actor and component type
 
 ## The difference between `Replicated` and `Handover` tags
 It’s important to understand that the native Unreal tag `Replicated` and Unreal GDK `Handover` tag have different uses:
+
 * `Replicated` tags identify Actor properties that any client-worker or server-worker needs to have interest in.
 * `Handover` tags identify Actor properties that only server-workers need to have interest in and allow server-workers to transfer authority between them.
 
