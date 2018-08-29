@@ -699,21 +699,12 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 	{
 		for (const auto& RepProp : RepData[Group])
 		{
+			// NB: Previously we were checking the owner of each property, and if it was a native object (ie. CLASS_Native or STRUCT_Native), we
+			// were ignoring it. This enables blueprints to include everything they need, without polluting include definitions of native classes.
+			// However this doesn't work if replicated property types are forward declared in the 'Class' definition, so now we just include
+			// all properties regardless of if they're native sourced or not. This will all go away when we have dynamic type bindings.
 			UProperty* UnrealProperty = RepProp.Value->Property;
-			if (UClass* RepClass = UnrealProperty->GetOwnerClass())
-			{
-				if (!RepClass->HasAnyClassFlags(CLASS_Native))
-				{
-					AddIncludePath(UnrealProperty, HeaderIncludes);
-				}
-			}
-			else if (UScriptStruct* RepStruct = Cast<UScriptStruct>(UnrealProperty->GetOwnerStruct()))
-			{
-				if (!(RepStruct->StructFlags & STRUCT_Native))
-				{
-					AddIncludePath(UnrealProperty, HeaderIncludes);
-				}
-			}
+ 			AddIncludePath(UnrealProperty, HeaderIncludes);
 		}
 	}
 
