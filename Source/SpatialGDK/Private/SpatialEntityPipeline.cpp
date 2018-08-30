@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialEntityPipeline.h"
+#include "SpatialReceiver.h"
 
 #include "EngineMinimal.h"
 #include "EntityRegistry.h"
@@ -9,10 +9,13 @@
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
 #include "SpatialPackageMapClient.h"
-#include "DTBManager.h"
+#include "SpatialInterop.h"
+
+#include "CoreTypes/UnrealMetadata.h"
+#include "CoreTypes/DynamicComponent.h"
 
 template <typename T>
-T* GetComponentData(SpatialEntityPipeline& PipelineBlock, Worker_EntityId EntityId)
+T* GetComponentData(USpatialEntityPipeline& PipelineBlock, Worker_EntityId EntityId)
 {
 	for (PendingAddComponentWrapper& PendingAddComponent : PipelineBlock.PendingAddComponents)
 	{
@@ -25,21 +28,32 @@ T* GetComponentData(SpatialEntityPipeline& PipelineBlock, Worker_EntityId Entity
 	return nullptr;
 }
 
-void SpatialEntityPipeline::Init(USpatialInterop* DTBManager)
+void USpatialEntityPipeline::Init(USpatialNetDriver* NetDriver)
 {
-	this->DTBManager = DTBManager;
-	this->NetDriver = DTBManager->NetDriver;
-	this->World = DTBManager->NetDriver->GetWorld();
+	this->NetDriver = NetDriver;
+	this->World = NetDriver->GetWorld();
 }
 
-void SpatialEntityPipeline::EnterCriticalSection()
+void USpatialEntityPipeline::OnCriticalSection(bool InCriticalSection)
+{
+	if (InCriticalSection)
+	{
+		EnterCriticalSection();
+	}
+	else
+	{
+		LeaveCriticalSection();
+	}
+}
+
+void USpatialEntityPipeline::EnterCriticalSection()
 {
 	UE_LOG(LogTemp, Log, TEXT("!!! CAPIPipelineBlock: Entering critical section."));
 	check(!bInCriticalSection);
 	bInCriticalSection = true;
 }
 
-void SpatialEntityPipeline::LeaveCriticalSection()
+void USpatialEntityPipeline::LeaveCriticalSection()
 {
 	UE_LOG(LogTemp, Log, TEXT("!!! CAPIPipelineBlock: Leaving critical section."));
 	check(bInCriticalSection);
@@ -56,58 +70,62 @@ void SpatialEntityPipeline::LeaveCriticalSection()
 		RemoveActor(PendingRemoveEntity);
 	}
 
-	//NetDriver->GetSpatialInterop()->OnLeaveCriticalSection();
-
 	// Mark that we've left the critical section.
 	bInCriticalSection = false;
 	PendingAddEntities.Empty();
 	PendingAddComponents.Empty();
 	PendingRemoveEntities.Empty();
+
+	for (TPair<UObject*, UnrealObjectRef>& It : ResolvedObjectQueue)
+	{
+		ResolvePendingOperations_Internal(It.Key, It.Value);
+	}
+	ResolvedObjectQueue.Empty();
 }
 
-void SpatialEntityPipeline::AddEntity(Worker_AddEntityOp& Op)
+void USpatialEntityPipeline::OnAddEntity(Worker_AddEntityOp& Op)
 {
-	UE_LOG(LogTemp, Log, TEXT("!!! CAPIPipelineBlock: AddEntity: %lld"), Op.entity_id);
+	UE_LOG(LogTemp, Log, TEXT("PipelineBlock: AddEntity: %lld"), Op.entity_id);
 	check(bInCriticalSection);
 
 	PendingAddEntities.Emplace(Op.entity_id);
 }
 
-void SpatialEntityPipeline::AddComponent(Worker_AddComponentOp& Op)
+void USpatialEntityPipeline::OnAddComponent(Worker_AddComponentOp& Op)
 {
 	UE_LOG(LogTemp, Log, TEXT("!!! CAPIPipelineBlock: AddComponent component ID: %u entity ID: %lld inCriticalSection: %d"),
 		Op.data.component_id, Op.entity_id, (int)bInCriticalSection);
 
-	std::unique_ptr<ComponentData> Data;
+	std::shared_ptr<Component> Data;
 
 	switch (Op.data.component_id)
 	{
 	case ENTITY_ACL_COMPONENT_ID:
-		Data.reset(new EntityAclData(Op.data));
+		Data = std::make_shared<Component>(EntityAcl(Op.data));
 		break;
 	case METADATA_COMPONENT_ID:
-		Data.reset(new MetadataData(Op.data));
+		Data = std::make_shared<Component>(Metadata(Op.data));
 		break;
 	case POSITION_COMPONENT_ID:
-		Data.reset(new PositionData(Op.data));
+		Data = std::make_shared<Component>(Position(Op.data));
 		break;
 	case PERSISTENCE_COMPONENT_ID:
-		Data.reset(new PersistenceData(Op.data));
+		Data = std::make_shared<Component>(Persistence(Op.data));
 		break;
 	case UNREAL_METADATA_COMPONENT_ID:
-		Data.reset(new UnrealMetadataData(Op.data));
+		Data = std::make_shared<Component>(UnrealMetadata(Op.data));
 		break;
 	default:
-		Data.reset(new DynamicData(Op.data));
+		Data = std::make_shared<Component>(DynamicComponent(Op.data));
 		break;
 	}
 
-	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, std::move(Data));
+	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, Data);
 }
 
-void SpatialEntityPipeline::RemoveEntity(Worker_RemoveEntityOp& Op)
+void USpatialEntityPipeline::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 {
-	UE_LOG(LogTemp, Log, TEXT("!!! CAPIPipelineBlock: RemoveEntity: %lld"), Op.entity_id);
+	UE_LOG(LogTemp, Log, TEXT("CAPIPipelineBlock: RemoveEntity: %lld"), Op.entity_id);
 
 	if (bInCriticalSection)
 	{
@@ -119,53 +137,109 @@ void SpatialEntityPipeline::RemoveEntity(Worker_RemoveEntityOp& Op)
 	}
 }
 
-void SpatialEntityPipeline::RemoveComponent(Worker_RemoveComponentOp& Op)
+void USpatialEntityPipeline::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 {
-	UE_LOG(LogTemp, Verbose, TEXT("!!! CAPIPipelineBlock: RemoveComponent component ID: %u entity ID: %lld inCriticalSection: %d"), Op.component_id, Op.entity_id, (int)bInCriticalSection);
-	// No need to do anything here
-}
-
-void SpatialEntityPipeline::CreateActor(Worker_EntityId EntityId)
-{
-	checkf(World, TEXT("We should have a world whilst processing ops."));
-	check(NetDriver);
-	//USpatialInterop* Interop = NetDriver->GetSpatialInterop();
-	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
-	//check(Interop);
-	check(EntityRegistry);
-
-	PositionData* PositionComponent = GetComponentData<PositionData>(*this, EntityId);
-	MetadataData* MetadataComponent = GetComponentData<MetadataData>(*this, EntityId);
-
-	if (!PositionComponent || !MetadataComponent)
+	if (HasComponentAuthority(Op.entity_id, Op.update.component_id))
 	{
+		UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping because we sent this update"));
 		return;
 	}
 
+	switch (Op.update.component_id)
+	{
+	case ENTITY_ACL_COMPONENT_ID:
+	case METADATA_COMPONENT_ID:
+	case POSITION_COMPONENT_ID:
+	case PERSISTENCE_COMPONENT_ID:
+	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
+	case UNREAL_METADATA_COMPONENT_ID:
+		UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping because this is hand-written Spatial component"));
+		return;
+	}
+
+	UClass* Class = TypebindingManager->FindClassByComponentId(Op.update.component_id);
+	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
+	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
+	check(Info);
+
+	bool bAutonomousProxy = NetDriver->GetNetMode() == NM_Client && HasComponentAuthority(Op.entity_id, Info->RPCComponents[RPC_Client]);
+
+	USpatialActorChannel* ActorChannel = GetActorChannelByEntityId(Op.entity_id);
+	bool bIsServer = NetDriver->IsServer();
+
+	if (Op.update.component_id == Info->SingleClientComponent)
+	{
+		check(ActorChannel);
+
+		UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
+		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, GROUP_SingleClient, bAutonomousProxy);
+	}
+	else if (Op.update.component_id == Info->MultiClientComponent)
+	{
+		check(ActorChannel);
+
+		UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
+		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, GROUP_MultiClient, bAutonomousProxy);
+	}
+	else if (Op.update.component_id == Info->HandoverComponent)
+	{
+		if (!bIsServer)
+		{
+			UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping Handover component because we're a client."));
+			return;
+		}
+		// TODO: Handover
+	}
+	else if (Op.update.component_id == Info->RPCComponents[RPC_NetMulticast])
+	{
+		check(ActorChannel);
+		const TArray<UFunction*>& RPCArray = Info->RPCs.FindChecked(RPC_NetMulticast);
+		ReceiveMulticastUpdate(Op.update, Op.entity_id, RPCArray, PackageMap, NetDriver);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Verbose, TEXT("Skipping because it's an empty component update from an RPC component. (most likely as a result of gaining authority)"));
+	}
+}
+
+void USpatialEntityPipeline::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, EReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy)
+{
+	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
+
+	FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
+	TSet<UnrealObjectRef> UnresolvedRefs;
+	ReceiveDynamicUpdate(ComponentUpdate, TargetObject, Channel, PackageMap, NetDriver, PropertyGroup, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
+
+	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
+}
+
+void USpatialEntityPipeline::CreateActor(Worker_EntityId EntityId)
+{
+	checkf(World, TEXT("We should have a world whilst processing ops."));
+	check(NetDriver);
+
+	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
+	check(EntityRegistry);
+
+	Position* PositionComponent = GetComponentData<Position>(*this, EntityId);
+	Metadata* MetadataComponent = GetComponentData<Metadata>(*this, EntityId);
+
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
 	UE_LOG(LogTemp, Log, TEXT("!!! Checked out entity with entity ID %lld"), EntityId);
-
-	// There are 3 main options when we get here with regards to how this entity was created:
-	// 1) A SpawnActor() call (through interop) on this worker, which means it already has an actor associated with it.
-	//	  This usually happens on the Unreal server only (as servers are the only workers which can spawn actors).
-	// 2) A "pure" Spatial create entity request, which means we need to spawn an actor that was manually registered to correspond to it.
-	// 3) A SpawnActor() call that was initiated from a different worker, which means we need to find and spawn the corresponding "native" actor that corresponds to it.
-	//	  This can happen on either the client (for all actors) or server (for actors which were spawned by a different server worker, or are transitioning).
 
 	if (EntityActor)
 	{
 		UClass* ActorClass = GetNativeEntityClass(MetadataComponent);
 
 		// Option 1
-		UE_LOG(LogTemp, Log, TEXT("!!! Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
+		UE_LOG(LogTemp, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 
-		UnrealMetadataData* UnrealMetadataComponent = GetComponentData<UnrealMetadataData>(*this, EntityId);
+		UnrealMetadata* UnrealMetadataComponent = GetComponentData<UnrealMetadata>(*this, EntityId);
 		check(UnrealMetadataComponent);
 
 		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
 		check(PackageMap);
 
-		// Cheat a bit by using ::worker::Map
 		SubobjectToOffsetMap SubobjectNameToOffset;
 		for (auto& KVPair : UnrealMetadataComponent->SubobjectNameToOffset)
 		{
@@ -173,135 +247,133 @@ void SpatialEntityPipeline::CreateActor(Worker_EntityId EntityId)
 		}
 
 		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(EntityActor, EntityId, SubobjectNameToOffset);
-		UE_LOG(LogTemp, Log, TEXT("!!! Received create entity response op for %lld"), EntityId);
-
-		// actor channel/entity mapping should be registered by this point
-		//check(Interop->GetActorChannelByEntityId(FEntityId(EntityId)));
+		UE_LOG(LogTemp, Log, TEXT("Received create entity response op for %lld"), EntityId);
 	}
 	else
 	{
-		if (UClass* ActorClass = GetNativeEntityClass(MetadataComponent))
+		UClass* ActorClass = GetNativeEntityClass(MetadataComponent);
+
+		if(ActorClass == nullptr)
 		{
-			// Option 3
+			return;
+		}
 
-			// Initial Singleton Actor replication is handled with USpatialInterop::LinkExistingSingletonActors
-			//if (NetDriver->IsServer() && Interop->IsSingletonClass(ActorClass))
-			//{
-			//	return;
-			//}
+		// Initial Singleton Actor replication is handled with USpatialInterop::LinkExistingSingletonActors
+		//if (NetDriver->IsServer() && Interop->IsSingletonClass(ActorClass))
+		//{
+		//	return;
+		//}
 
-			UNetConnection* Connection = nullptr;
-			UnrealMetadataData* UnrealMetadataComponent = GetComponentData<UnrealMetadataData>(*this, EntityId);
-			check(UnrealMetadataComponent);
-			bool bDoingDeferredSpawn = false;
+		UNetConnection* Connection = nullptr;
+		UnrealMetadata* UnrealMetadataComponent = GetComponentData<UnrealMetadata>(*this, EntityId);
+		check(UnrealMetadataComponent);
+		bool bDoingDeferredSpawn = false;
 
-			// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
-			if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
+		// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
+		if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
+		{
+			checkf(!UnrealMetadataComponent->OwnerWorkerId.empty(), TEXT("A player controller entity must have an owner worker ID."));
+			FString URLString = FURL().ToString();
+			FString OwnerWorkerId = UTF8_TO_TCHAR(UnrealMetadataComponent->OwnerWorkerId.c_str());
+			URLString += TEXT("?workerId=") + OwnerWorkerId;
+			Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), true);
+			check(Connection);
+			EntityActor = Connection->PlayerController;
+		}
+		else
+		{
+			// Either spawn the actor or get it from the level if it has a persistent name.
+			if (UnrealMetadataComponent->StaticPath.empty())
 			{
-				checkf(!UnrealMetadataComponent->OwnerWorkerId.empty(), TEXT("A player controller entity must have an owner worker ID."));
-				FString URLString = FURL().ToString();
-				FString OwnerWorkerId = UTF8_TO_TCHAR(UnrealMetadataComponent->OwnerWorkerId.c_str());
-				URLString += TEXT("?workerId=") + OwnerWorkerId;
-				Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), true);
-				check(Connection);
-				EntityActor = Connection->PlayerController;
+				UE_LOG(LogTemp, Log, TEXT("!!! Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
+				EntityActor = SpawnNewEntity(PositionComponent, ActorClass, true);
+				bDoingDeferredSpawn = true;
 			}
 			else
 			{
-				// Either spawn the actor or get it from the level if it has a persistent name.
-				if (UnrealMetadataComponent->StaticPath.empty())
-				{
-					UE_LOG(LogTemp, Log, TEXT("!!! Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
-					EntityActor = SpawnNewEntity(PositionComponent, ActorClass, true);
-					bDoingDeferredSpawn = true;
-				}
-				else
-				{
-					FString FullPath = UTF8_TO_TCHAR(UnrealMetadataComponent->StaticPath.c_str());
-					UE_LOG(LogTemp, Log, TEXT("!!! Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
-					EntityActor = FindObject<AActor>(World, *FullPath);
-				}
-				check(EntityActor);
-
-				// Get the net connection for this actor.
-				if (NetDriver->IsServer())
-				{
-					// TODO(David): Currently, we just create an actor channel on the "catch-all" connection, then create a new actor channel once we check out the player controller
-					// and create a new connection. This is fine due to lazy actor channel creation in USpatialNetDriver::ServerReplicateActors. However, the "right" thing to do
-					// would be to make sure to create anything which depends on the PlayerController _after_ the PlayerController's connection is set up so we can use the right
-					// one here.
-					Connection = NetDriver->GetSpatialOSNetConnection();
-				}
-				else
-				{
-					Connection = NetDriver->GetSpatialOSNetConnection();
-				}
+				FString FullPath = UTF8_TO_TCHAR(UnrealMetadataComponent->StaticPath.c_str());
+				UE_LOG(LogTemp, Log, TEXT("!!! Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
+				EntityActor = FindObject<AActor>(World, *FullPath);
 			}
+			check(EntityActor);
 
-			// Add to entity registry. 
-			EntityRegistry->AddToRegistry(EntityId, EntityActor);
-
-			// Set up actor channel.
-			USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
-			USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
-			check(Channel);
-
-			if (bDoingDeferredSpawn)
+			// Get the net connection for this actor.
+			if (NetDriver->IsServer())
 			{
-				FVector InitialLocation = CAPIPositionToLocation(PositionComponent->Coords);
-				FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
-				EntityActor->FinishSpawning(FTransform(FRotator::ZeroRotator, SpawnLocation));
+				// TODO(David): Currently, we just create an actor channel on the "catch-all" connection, then create a new actor channel once we check out the player controller
+				// and create a new connection. This is fine due to lazy actor channel creation in USpatialNetDriver::ServerReplicateActors. However, the "right" thing to do
+				// would be to make sure to create anything which depends on the PlayerController _after_ the PlayerController's connection is set up so we can use the right
+				// one here.
+				Connection = NetDriver->GetSpatialOSNetConnection();
 			}
-
-			// Cheat a bit by using ::worker::Map
-			SubobjectToOffsetMap SubobjectNameToOffset;
-			for (auto& KVPair : UnrealMetadataComponent->SubobjectNameToOffset)
+			else
 			{
-				SubobjectNameToOffset.Add(UTF8_TO_TCHAR(KVPair.first.c_str()), KVPair.second);
+				Connection = NetDriver->GetSpatialOSNetConnection();
 			}
+		}
 
-			PackageMap->ResolveEntityActor(EntityActor, EntityId, SubobjectNameToOffset);
-			Channel->SetChannelActor(EntityActor);
+		// Add to entity registry. 
+		EntityRegistry->AddToRegistry(EntityId, EntityActor);
 
-			// Apply initial replicated properties.
-			// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
-			// Potentially we could split out the initial actor state and the initial component state
-			for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+		// Set up actor channel.
+		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
+		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
+		check(Channel);
+
+		if (bDoingDeferredSpawn)
+		{
+			FVector InitialLocation = Coordinates::ToFVector(PositionComponent->Coords);
+			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
+			EntityActor->FinishSpawning(FTransform(FRotator::ZeroRotator, SpawnLocation));
+		}
+
+		SubobjectToOffsetMap SubobjectNameToOffset;
+		for (auto& KVPair : UnrealMetadataComponent->SubobjectNameToOffset)
+		{
+			SubobjectNameToOffset.Add(UTF8_TO_TCHAR(KVPair.first.c_str()), KVPair.second);
+		}
+
+		PackageMap->ResolveEntityActor(EntityActor, EntityId, SubobjectNameToOffset);
+		Channel->SetChannelActor(EntityActor);
+
+		// Apply initial replicated properties.
+		// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
+		// Potentially we could split out the initial actor state and the initial component state
+		for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+		{
+			if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data && PendingAddComponent.Data->bIsDynamic)
 			{
-				if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data && PendingAddComponent.Data->bIsDynamic)
-				{
-					DTBManager->OnDynamicData(EntityId, *static_cast<DynamicData*>(PendingAddComponent.Data.get())->Data, Channel, PackageMap);
-				}
+				ApplyComponentData(EntityId, *static_cast<DynamicComponent*>(PendingAddComponent.Data.get())->Data, Channel, PackageMap);
 			}
+		}
 
-			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
-			//NetDriver->GetSpatialInterop()->SendComponentInterests(Channel, EntityId.ToSpatialEntityId());
+		// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
+		//NetDriver->GetSpatialInterop()->SendComponentInterests(Channel, EntityId.ToSpatialEntityId());
 
-			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
-			// a player index. For now we don't support split screen, so the number is always 0.
-			if (NetDriver->ServerConnection)
+		// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
+		// a player index. For now we don't support split screen, so the number is always 0.
+		if (NetDriver->ServerConnection)
+		{
+			if (EntityActor->IsA(APlayerController::StaticClass()))
 			{
-				if (EntityActor->IsA(APlayerController::StaticClass()))
-				{
-					uint8 PlayerIndex = 0;
-					// FInBunch takes size in bits not bytes
-					FInBunch Bunch(NetDriver->ServerConnection, &PlayerIndex, sizeof(PlayerIndex) * 8);
-					EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
-				}
-				else
-				{
-					FInBunch Bunch(NetDriver->ServerConnection);
-					EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
-				}
-
-				// Call PostNetInit on client only.
-				EntityActor->PostNetInit();
+				uint8 PlayerIndex = 0;
+				// FInBunch takes size in bits not bytes
+				FInBunch Bunch(NetDriver->ServerConnection, &PlayerIndex, sizeof(PlayerIndex) * 8);
+				EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
 			}
+			else
+			{
+				FInBunch Bunch(NetDriver->ServerConnection);
+				EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
+			}
+
+			// Call PostNetInit on client only.
+			EntityActor->PostNetInit();
 		}
 	}
 }
 
-void SpatialEntityPipeline::RemoveActor(Worker_EntityId EntityId)
+void USpatialEntityPipeline::RemoveActor(Worker_EntityId EntityId)
 {
 	AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId);
 
@@ -354,13 +426,13 @@ void SpatialEntityPipeline::RemoveActor(Worker_EntityId EntityId)
 	CleanupDeletedEntity(EntityId);
 }
 
-void SpatialEntityPipeline::CleanupDeletedEntity(Worker_EntityId EntityId)
+void USpatialEntityPipeline::CleanupDeletedEntity(Worker_EntityId EntityId)
 {
 	NetDriver->GetEntityRegistry()->RemoveFromRegistry(EntityId);
 	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 }
 
-UClass* SpatialEntityPipeline::GetNativeEntityClass(MetadataData* MetadataComponent)
+UClass* USpatialEntityPipeline::GetNativeEntityClass(Metadata* MetadataComponent)
 {
 	FString Metadata = UTF8_TO_TCHAR(MetadataComponent->EntityType.c_str());
 	return FindObject<UClass>(ANY_PACKAGE, *Metadata);
@@ -368,9 +440,9 @@ UClass* SpatialEntityPipeline::GetNativeEntityClass(MetadataData* MetadataCompon
 
 // Note that in SpatialGDK, this function will not be called on the spawning worker.
 // It's only for client, and in the future, other workers.
-AActor* SpatialEntityPipeline::SpawnNewEntity(PositionData* PositionComponent, UClass* ActorClass, bool bDeferred)
+AActor* USpatialEntityPipeline::SpawnNewEntity(Position* PositionComponent, UClass* ActorClass, bool bDeferred)
 {
-	FVector InitialLocation = CAPIPositionToLocation(PositionComponent->Coords);
+	FVector InitialLocation = Coordinates::ToFVector(PositionComponent->Coords);
 	AActor* NewActor = nullptr;
 	if (ActorClass)
 	{
@@ -389,4 +461,72 @@ AActor* SpatialEntityPipeline::SpawnNewEntity(PositionData* PositionComponent, U
 	}
 
 	return NewActor;
+}
+
+void USpatialEntityPipeline::ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap)
+{
+	UClass* Class= TypebindingManager->FindClassByComponentId(Data.component_id);
+	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
+
+	UObject* TargetObject = GetTargetObjectFromChannelAndClass(Channel, Class);
+	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
+
+	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
+	check(Info);
+
+	bool bAutonomousProxy = NetDriver->GetNetMode() == NM_Client && HasComponentAuthority(EntityId, Info->RPCComponents[RPC_Client]);
+
+	if (Data.component_id == Info->SingleClientComponent)
+	{
+		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
+		TSet<UnrealObjectRef> UnresolvedRefs;
+
+		ReadDynamicData(Data, TargetObject, Channel, PackageMap, NetDriver, GROUP_SingleClient, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
+
+		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
+	}
+	else if (Data.component_id == Info->MultiClientComponent)
+	{
+		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
+		TSet<UnrealObjectRef> UnresolvedRefs;
+
+		ReadDynamicData(Data, TargetObject, Channel, PackageMap, NetDriver, GROUP_MultiClient, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
+
+		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
+	}
+	else if (Data.component_id == Info->HandoverComponent)
+	{
+		// TODO: Handover
+	}
+	else
+	{
+		UE_LOG(LogTemp, Verbose, TEXT("Skipping because RPC components don't have actual data."));
+	}
+}
+
+UObject* USpatialEntityPipeline::GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class)
+{
+	UObject* TargetObject = nullptr;
+
+	if (Class->IsChildOf<AActor>())
+	{
+		check(Channel->Actor->IsA(Class));
+		TargetObject = Channel->Actor;
+	}
+	else if (Class->IsChildOf<UActorComponent>())
+	{
+		FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Channel->Actor->GetClass());
+		check(ActorInfo);
+		check(ActorInfo->ComponentClasses.Find(Class));
+		TArray<UActorComponent*> Components = Channel->Actor->GetComponentsByClass(Class);
+		checkf(Components.Num() == 1, TEXT("Multiple replicated components of the same type are currently not supported by Unreal GDK"));
+		TargetObject = Components[0];
+	}
+	else
+	{
+		checkNoEntry();
+	}
+
+	check(TargetObject);
+	return TargetObject;
 }

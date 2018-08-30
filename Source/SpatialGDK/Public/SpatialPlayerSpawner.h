@@ -22,7 +22,7 @@ public:
 	void Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager);
 
 	// Server
-	void ReceivePlayerSpawnRequest(std::string& URL, Worker_RequestId RequestId );
+	void ReceivePlayerSpawnRequest(std::string& URL, const char* CallerWorkerId, Worker_RequestId RequestId);
 
 	// Client
 	void SendPlayerSpawnRequest();

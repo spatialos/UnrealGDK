@@ -1,21 +1,14 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKEditorGenerateSnapshot.h"
-//#include "EntityBuilder.h"
 #include "SpatialConstants.h"
-//#include "SpatialOSCommon.h"
 #include "SpatialGDKEditorToolbarSettings.h"
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
 #include "UObjectIterator.h"
-//#include <improbable/standard_library.h>
-//#include <improbable/unreal/gdk/level_data.h>
-//#include <improbable/unreal/gdk/spawner.h>
-//#include <improbable/unreal/gdk/global_state_manager.h>
-#include <improbable/worker.h>
+#include <improbable/c_worker.h>
+#include <improbable/c_schema.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
-
-//using namespace improbable;
 
 namespace
 {
@@ -37,18 +30,19 @@ namespace
 //
 //const Coordinates Origin{0, 0, 0};
 
-//worker::Entity CreateSpawnerEntity()
+//Worker_Entity CreateSpawnerEntity()
 //{
-//	improbable::unreal::UnrealMetadata::Data UnrealMetadata;
-//
-//	return improbable::unreal::FEntityBuilder::Begin()
-//		.AddPositionComponent(Position::Data{Origin}, UnrealWorkerWritePermission)
-//		.AddMetadataComponent(Metadata::Data("SpatialSpawner"))
-//		.SetPersistence(true)
-//		.SetReadAcl(AnyWorkerReadPermission)
-//		.AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{}, UnrealWorkerWritePermission)
-//		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, UnrealWorkerWritePermission)
-//		.Build();
+	//Worker_Entity SpawnerEntity;
+	//SpawnerEntity.entity_id = SpatialConstants::SPAWNER_ENTITY_ID;
+
+	//return improbable::unreal::FEntityBuilder::Begin()
+	//	.AddPositionComponent(Position::Data{Origin}, UnrealWorkerWritePermission)
+	//	.AddMetadataComponent(Metadata::Data("SpatialSpawner"))
+	//	.SetPersistence(true)
+	//	.SetReadAcl(AnyWorkerReadPermission)
+	//	.AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{}, UnrealWorkerWritePermission)
+	//	.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, UnrealWorkerWritePermission)
+	//	.Build();
 //}
 
 //worker::Entity CreateSpecialSpawner()

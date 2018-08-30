@@ -4,46 +4,18 @@
 
 #include "CoreMinimal.h"
 
-#include "SpatialEntityPipeline.h"
+#include "SpatialReceiver.h"
 #include "SpatialNetDriver.h"
 
 #include "improbable/c_worker.h"
 #include "improbable/c_schema.h"
 
 #include "SchemaHelpers.h"
-#include "SpatialEntityPipeline.h"
+#include "SpatialReceiver.h"
 
 #include "SpatialInterop.generated.h"
 
 class USpatialActorChannel;
-
-enum EAlsoRPCType
-{
-	ARPC_Client = 0,
-	ARPC_Server,
-	ARPC_CrossServer,
-	ARPC_NetMulticast,
-	ARPC_Count
-};
-
-struct FRPCInfo
-{
-	EAlsoRPCType Type;
-	uint32 Index;
-};
-
-struct FClassInfo
-{
-	TMap<EAlsoRPCType, TArray<UFunction*>> RPCs;
-	TMap<UFunction*, FRPCInfo> RPCInfoMap;
-
-	Worker_ComponentId SingleClientComponent;
-	Worker_ComponentId MultiClientComponent;
-	Worker_ComponentId HandoverComponent;
-	Worker_ComponentId RPCComponents[ARPC_Count];
-
-	TSet<TSubclassOf<UActorComponent>> ComponentClasses;
-};
 
 using FChannelObjectPair = TPair<USpatialActorChannel*, UObject*>;
 
@@ -77,7 +49,7 @@ public:
 
 	void OnAuthorityChange(Worker_AuthorityChangeOp& Op);
 
-	void HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy);
+	void HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, EReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy);
 
 	void SendReserveEntityIdRequest(USpatialActorChannel* Channel);
 
@@ -118,6 +90,7 @@ public:
 	void ResolveOutgoingRPCs(UObject* Object);
 
 	void AddActorChannel(const Worker_EntityId& EntityId, USpatialActorChannel* Channel);
+	USpatialActorChannel* GetActorChannelByEntityId(const Worker_EntityId& EntityId) const;
 
 	Worker_Connection* Connection;
 	USpatialNetDriver* NetDriver;
@@ -130,6 +103,7 @@ public:
 	FChannelToHandleToUnresolved PropertyToUnresolved;
 	FOutgoingRepUpdates ObjectToUnresolved;
 
+	// TODO: Figure out how to remove entries when Channel/Actor gets deleted
 	TMap<UnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
 
@@ -162,5 +136,5 @@ public:
 
 	class USpatialPackageMapClient* PackageMap;
 
-	SpatialEntityPipeline EntityPipeline;
+	USpatialReceiver* EntityPipeline;
 };

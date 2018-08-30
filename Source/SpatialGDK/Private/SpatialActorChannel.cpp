@@ -210,9 +210,6 @@ bool USpatialActorChannel::ReplicateActor()
 	
 	const UWorld* const ActorWorld = Actor->GetWorld();
 
-	//USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
-	//check(Interop);
-
 	// Time how long it takes to replicate this particular actor
 	STAT(FScopeCycleCounterUObject FunctionScope(Actor));
 
@@ -540,10 +537,10 @@ void USpatialActorChannel::SendReserveEntityIdRequest()
 	// Mark this channel as being responsible for creating this entity once we have an entity ID.
 	bCreatingNewEntity = true;
 
-	USpatialInterop* DTBManager = SpatialNetDriver->Interop;
-	if (DTBManager->FindClassInfoByClass(Actor->GetClass()))
+	USpatialInterop* Interop = SpatialNetDriver->Interop;
+	if (Interop->FindClassInfoByClass(Actor->GetClass()))
 	{
-		DTBManager->SendReserveEntityIdRequest(this);
+		Interop->SendReserveEntityIdRequest(this);
 	}
 }
 

@@ -7,6 +7,7 @@
 #include "SpatialActorChannel.h"
 #include "SpatialConstants.h"
 #include "SpatialNetDriver.h"
+#include "SpatialInterop.h"
 #include "SpatialTypeBinding.h"
 
 #include "CoreTypes/UnrealObjectRef.h"
@@ -112,8 +113,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 	check(EntityId > 0);
 
 	// Get interop.
-	//USpatialInterop* Interop = Cast<USpatialNetDriver>(Driver)->GetSpatialInterop();
-	//check(Interop);
+	USpatialInterop* Interop = Cast<USpatialNetDriver>(Driver)->Interop;
 
 	// Set up the NetGUID and ObjectRef for this actor.
 	FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
@@ -121,7 +121,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 	RegisterObjectRef(NetGUID, ObjectRef);
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"),
 		*Actor->GetName(), *NetGUID.ToString(), EntityId);
-	//Interop->ResolvePendingOperations(Actor, ObjectRef);
+
+	Interop->ResolvePendingOperations(Actor, ObjectRef);
 
 	// Allocate NetGUIDs for each subobject, sorting alphabetically to ensure stable references.
 	TArray<UObject*> ActorSubobjects;
@@ -137,7 +138,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 			RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
 			UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
 				*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *SubobjectRef.ToString());
-			//Interop->ResolvePendingOperations(Subobject, SubobjectRef);
+			Interop->ResolvePendingOperations(Subobject, SubobjectRef);
 		}
 	}
 

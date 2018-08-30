@@ -186,13 +186,13 @@ bool SpatialGDKGenerateInteropCode()
 		return false;
 	}
 
-	// Run Codegen
-	const FString CodegenPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/Codegen.bat")));
-	if (!RunProcess(CodegenPath, TEXT("")))
-	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Spatial C++ Worker Codegen failed. Path: '%s'."), *CodegenPath);
-		return false;
-	}
+	//// Run Codegen
+	//const FString CodegenPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/Codegen.bat")));
+	//if (!RunProcess(CodegenPath, TEXT("")))
+	//{
+	//	UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Spatial C++ Worker Codegen failed. Path: '%s'."), *CodegenPath);
+	//	return false;
+	//}
 
 	return true;
 }

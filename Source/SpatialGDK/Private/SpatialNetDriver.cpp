@@ -492,7 +492,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
 					if (Channel)
 					{
-						if(Interop->FindClassInfoByClass(Actor->GetClass()))
+						if(Interop->FindClassInfoByClass(Actor->GetClass()) == nullptr)
 						{
 							Channel->bCoreActor = false;
 						}
@@ -763,7 +763,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	// Not calling Super:: on purpose.
 	UNetDriver::TickDispatch(DeltaTime);
 
-	if (Worker_Connection_IsConnected(Connection))
+	if (Connection != nullptr && Worker_Connection_IsConnected(Connection))
 	{
 		Worker_OpList* OpList = Worker_Connection_GetOpList(Connection, 0);
 

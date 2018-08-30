@@ -64,7 +64,7 @@ void FSpatialNetBitWriter::SerializeObjectRef(UnrealObjectRef& ObjectRef)
 	*this << ObjectRef.Entity;
 	*this << ObjectRef.Offset;
 
-	uint8 HasPath = ObjectRef.Path.empty();
+	uint8 HasPath = !ObjectRef.Path.empty();
 	SerializeBits(&HasPath, 1);
 	if (HasPath)
 	{
@@ -72,7 +72,7 @@ void FSpatialNetBitWriter::SerializeObjectRef(UnrealObjectRef& ObjectRef)
 		*this << Path;
 	}
 
-	uint8 HasOuter = !!ObjectRef.Outer.empty();
+	uint8 HasOuter = !ObjectRef.Outer.empty();
 	SerializeBits(&HasOuter, 1);
 	if (HasOuter)
 	{

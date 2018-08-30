@@ -24,20 +24,20 @@ void USpatialPlayerSpawner::Init(USpatialNetDriver* NetDriver, FTimerManager* Ti
 	NumberOfAttempts = 0;
 }
 
-void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(std::string& URL, Worker_RequestId RequestId )
+void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(std::string& URL, const char* CallerWorkerId, Worker_RequestId RequestId )
 {
 	FString URLString = UTF8_TO_TCHAR(URL.c_str());
-	//URLString.Append(TEXT("?workerId=")).Append(UTF8_TO_TCHAR(op.CallerWorkerId.c_str()));
+	URLString.Append(TEXT("?workerId=")).Append(UTF8_TO_TCHAR(CallerWorkerId));
 
 	NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), false);
 
 	Worker_CommandResponse CommandResponse = {};
 	CommandResponse.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
-	//CommandResponse.schema_type = Schema_CreateCommandRequest(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
-	//Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
-	//Schema_AddBool(ResponseObject, 1, true);
+	CommandResponse.schema_type = Schema_CreateCommandResponse(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
+	Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
+	Schema_AddBool(ResponseObject, 1, true);
 
-	//Worker_Connection_SendCommandResponse(NetDriver->Connection, RequestId, &CommandResponse);
+	Worker_Connection_SendCommandResponse(NetDriver->Connection, RequestId, &CommandResponse);
 }
 
 void USpatialPlayerSpawner::SendPlayerSpawnRequest()
@@ -58,6 +58,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 
 void USpatialPlayerSpawner::ReceivePlayerSpawnResponse()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Got a response"));
 	//if(op.StatusCode == worker::StatusCode::kSuccess)
 	//{
 	//	UE_LOG(LogSpatialGDKPlayerSpawner, Display, TEXT("Player spawned sucessfully"));

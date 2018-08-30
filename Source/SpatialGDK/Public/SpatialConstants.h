@@ -8,6 +8,7 @@ namespace SpatialConstants
 {
 	enum EntityIds
 	{
+		INVALID_ENTITY_ID = 0,
 		SPAWNER_ENTITY_ID = 1,
 		GLOBAL_STATE_MANAGER = 2,
 		PLACEHOLDER_ENTITY_ID_FIRST = 3,

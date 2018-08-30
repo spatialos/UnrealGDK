@@ -8,6 +8,8 @@
 #include "SpatialNetDriver.h"
 #include "SpatialPlayerSpawner.h"
 
+#include "CoreTypes/StandardLibrary.h"
+
 USpatialInterop::USpatialInterop()
 {
 }
@@ -108,7 +110,7 @@ void USpatialInterop::CreateTypebindings()
 				RemoteFunction->FunctionFlags & FUNC_NetCrossServer ||
 				RemoteFunction->FunctionFlags & FUNC_NetMulticast)
 			{
-				EAlsoRPCType RPCType;
+				ERPCType RPCType;
 				if (RemoteFunction->FunctionFlags & FUNC_NetClient)
 				{
 					RPCType = ARPC_Client;
@@ -217,73 +219,6 @@ UObject* USpatialInterop::GetTargetObjectFromChannelAndClass(USpatialActorChanne
 	return TargetObject;
 }
 
-//void UDTBManager::InitClient()
-//{
-//	if (Connection) return;
-//
-//	CreateTypebindings();
-//
-//	Worker_ConnectionParameters Params = Worker_DefaultConnectionParameters();
-//	Params.worker_type = "CAPIClient";
-//	Params.network.tcp.multiplex_level = 4;
-//	//Params.component_vtable_count = 0;
-//	//Params.component_vtables = Vtables.Vtables;
-//	//Params.enable_protocol_logging_at_startup = true;
-//	//Params.protocol_logging.log_prefix = "C:\\workspace\\UnrealGDK\\UnrealGDKStarterProject\\spatial\\logs\\whyyy";
-//	Worker_ComponentVtable DefaultVtable = {};
-//	Params.default_component_vtable = &DefaultVtable;
-//
-//	std::string WorkerId = "CAPIClient" + std::string(TCHAR_TO_UTF8(*FGuid::NewGuid().ToString()));
-//	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync("localhost", 7777, WorkerId.c_str(), &Params);
-//	Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
-//	Worker_ConnectionFuture_Destroy(ConnectionFuture);
-//
-//	if (Worker_Connection_IsConnected(Connection))
-//	{
-//		Worker_LogMessage Message = { WORKER_LOG_LEVEL_WARN, "Client", "Whaduuuup", nullptr };
-//		Worker_Connection_SendLogMessage(Connection, &Message);
-//
-//		FTimerHandle SpawnRequestTimer;
-//		PipelineBlock.World->GetTimerManager().SetTimer(SpawnRequestTimer, [this]()
-//		{
-//			Worker_CommandRequest CommandRequest = {};
-//			CommandRequest.component_id = SPECIAL_SPAWNER_COMPONENT_ID;
-//			CommandRequest.schema_type = Schema_CreateCommandRequest(SPECIAL_SPAWNER_COMPONENT_ID, 1);
-//			Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
-//			Schema_AddString(RequestObject, 1, "Yo dawg");
-//
-//			Worker_CommandParameters CommandParams = {};
-//			Worker_Connection_SendCommandRequest(Connection, SPECIAL_SPAWNER_ENTITY_ID, &CommandRequest, 1, nullptr, &CommandParams);
-//		}, 2.0, false);
-//	}
-//}
-//
-//void UDTBManager::InitServer()
-//{
-//	if (Connection) return;
-//
-//	CreateTypebindings();
-//
-//	Worker_ConnectionParameters Params = Worker_DefaultConnectionParameters();
-//	Params.worker_type = "CAPIWorker";
-//	Params.network.tcp.multiplex_level = 4;
-//	//Params.component_vtable_count = 0;
-//	//Params.component_vtables = Vtables.Vtables;
-//	Worker_ComponentVtable DefaultVtable = {};
-//	Params.default_component_vtable = &DefaultVtable;
-//
-//	std::string WorkerId = "CAPIWorker" + std::string(TCHAR_TO_UTF8(*FGuid::NewGuid().ToString()));
-//	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync("localhost", 7777, WorkerId.c_str(), &Params);
-//	Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
-//	Worker_ConnectionFuture_Destroy(ConnectionFuture);
-//
-//	if (Worker_Connection_IsConnected(Connection))
-//	{
-//		Worker_LogMessage Message = { WORKER_LOG_LEVEL_WARN, "Server", "Whaduuuup", nullptr };
-//		Worker_Connection_SendLogMessage(Connection, &Message);
-//	}
-//}
-
 bool USpatialInterop::HasComponentAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	TMap<Worker_ComponentId, Worker_Authority>* EntityAuthority = ComponentAuthorityMap.Find(EntityId);
@@ -308,8 +243,20 @@ void USpatialInterop::OnCommandRequest(Worker_CommandRequestOp& Op)
 		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
 		std::string Message = Schema_GetString(Payload, 1);
 
-		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Message, Op.request_id);
+		FString URLString = UTF8_TO_TCHAR(Message.c_str());
+		URLString.Append(TEXT("?workerId=")).Append(UTF8_TO_TCHAR(Op.caller_worker_id));
 
+		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), false);
+
+		Worker_CommandResponse CommandResponse = {};
+		CommandResponse.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
+		CommandResponse.schema_type = Schema_CreateCommandResponse(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
+		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
+		Schema_AddBool(ResponseObject, 1, true);
+
+		Worker_Connection_SendCommandResponse(NetDriver->Connection, Op.request_id, &CommandResponse);
+
+		//NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Message, Op.caller_worker_id, Op.request_id);
 		return;
 	}
 
@@ -323,12 +270,12 @@ void USpatialInterop::OnCommandRequest(Worker_CommandRequestOp& Op)
 		FClassInfo* Info = FindClassInfoByClass(Class);
 		check(Info);
 
-		EAlsoRPCType RPCType = ARPC_Count;
+		ERPCType RPCType = ARPC_Count;
 		for (int i = ARPC_Client; i <= ARPC_CrossServer; i++)
 		{
 			if (Info->RPCComponents[i] == Op.request.component_id)
 			{
-				RPCType = (EAlsoRPCType)i;
+				RPCType = (ERPCType)i;
 				break;
 			}
 		}
@@ -448,7 +395,7 @@ void USpatialInterop::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 
 	bool bAutonomousProxy = NetDriver->GetNetMode() == NM_Client && HasComponentAuthority(Op.entity_id, Info->RPCComponents[ARPC_Client]);
 
-	USpatialActorChannel* ActorChannel = nullptr;// = GetActorChannelByEntityId(Op.entity_id);
+	USpatialActorChannel* ActorChannel = GetActorChannelByEntityId(Op.entity_id);
 	bool bIsServer = NetDriver->IsServer();
 
 	if (Op.update.component_id == Info->SingleClientComponent)
@@ -501,7 +448,7 @@ void USpatialInterop::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	}
 }
 
-void USpatialInterop::HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, EAlsoReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy)
+void USpatialInterop::HandleComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, EReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy)
 {
 	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
 
@@ -599,8 +546,8 @@ Worker_RequestId USpatialInterop::CreateActorEntity(const FString& ClientWorkerI
 {
 	std::string ClientWorkerIdString = TCHAR_TO_UTF8(*ClientWorkerId);
 
-	WorkerAttributeSet WorkerAttribute = {"CAPIWorker"};
-	WorkerAttributeSet ClientAttribute = {"CAPIClient"};
+	WorkerAttributeSet WorkerAttribute = {"UnrealWorker"};
+	WorkerAttributeSet ClientAttribute = {"UnrealClient"};
 	WorkerAttributeSet OwningClientAttribute = {"workerId:" + ClientWorkerIdString};
 
 	WorkerRequirementSet WorkersOnly = {WorkerAttribute};
@@ -661,11 +608,11 @@ Worker_RequestId USpatialInterop::CreateActorEntity(const FString& ClientWorkerI
 	});
 
 	std::vector<Worker_ComponentData> ComponentDatas;
-	ComponentDatas.push_back(CreatePositionData(PositionData(LocationToCAPIPosition(Position))));
-	ComponentDatas.push_back(CreateMetadataData(MetadataData(TCHAR_TO_UTF8(*Metadata))));
-	ComponentDatas.push_back(CreateEntityAclData(EntityAclData(ReadAcl, ComponentWriteAcl)));
-	ComponentDatas.push_back(CreatePersistenceData(PersistenceData()));
-	ComponentDatas.push_back(CreateUnrealMetadataData(UnrealMetadataData(StaticPath, ClientWorkerIdString, SubobjectNameToOffset)));
+	ComponentDatas.push_back(CreatePositionData(Position(LocationToCAPIPosition(Position))));
+	ComponentDatas.push_back(CreateMetadataData(Metadata(TCHAR_TO_UTF8(*Metadata))));
+	ComponentDatas.push_back(CreateEntityAclData(EntityAcl(ReadAcl, ComponentWriteAcl)));
+	ComponentDatas.push_back(CreatePersistenceData(Persistence()));
+	ComponentDatas.push_back(CreateUnrealMetadataData(UnrealMetadata(StaticPath, ClientWorkerIdString, SubobjectNameToOffset)));
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 
@@ -899,6 +846,7 @@ void USpatialInterop::ProcessOps(Worker_OpList* OpList)
 
 		// Entity Lifetime
 		case WORKER_OP_TYPE_ADD_ENTITY:
+			UE_LOG(LogTemp, Warning, TEXT("Mine: %d"), Op->add_entity.entity_id)
 			EntityPipeline.AddEntity(Op->add_entity);
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
@@ -1095,7 +1043,7 @@ void USpatialInterop::ResolveOutgoingOperations(UObject* Object)
 			// End with zero to indicate the end of the list of handles.
 			PropertyHandles.Add(0);
 
-			//Interop->SendSpatialUpdateForObject(DependentChannel, ReplicatingObject, PropertyHandles, TArray<uint16>());
+			//SendSpatialUpdateForObject(DependentChannel, ReplicatingObject, PropertyHandles, TArray<uint16>());
 		}
 	}
 
@@ -1104,6 +1052,9 @@ void USpatialInterop::ResolveOutgoingOperations(UObject* Object)
 
 void USpatialInterop::ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef)
 {
+	// TODO: queue up resolved objects since they were resolved during process ops
+	// and then resolve all of them at the end of process ops
+
 	TSet<FChannelObjectPair>* TargetObjectSet = IncomingRefsMap.Find(ObjectRef);
 	if (!TargetObjectSet) return;
 
@@ -1164,4 +1115,17 @@ void USpatialInterop::ResolveOutgoingRPCs(UObject* Object)
 void USpatialInterop::AddActorChannel(const Worker_EntityId& EntityId, USpatialActorChannel* Channel)
 {
 	EntityToActorChannel.Add(EntityId, Channel);
+}
+
+USpatialActorChannel* USpatialInterop::GetActorChannelByEntityId(const Worker_EntityId& EntityId) const
+{
+	USpatialActorChannel* const* ActorChannel = EntityToActorChannel.Find(EntityId);
+
+	if (ActorChannel == nullptr)
+	{
+		// Can't find actor channel for this entity, give up.
+		return nullptr;
+	}
+
+	return *ActorChannel;
 }
