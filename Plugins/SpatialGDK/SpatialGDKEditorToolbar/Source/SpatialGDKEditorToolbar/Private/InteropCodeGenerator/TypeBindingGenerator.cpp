@@ -1791,7 +1791,7 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 		GenerateUnrealToSchemaConversion(SourceWriter, SpatialValueSetter, PropertyInfo->Property, PropertyValueName, [&SourceWriter, Handle](const FString& PropertyValue)
 		{
 			SourceWriter.Printf("// A legal static object reference should never be unresolved.");
-			SourceWriter.Printf("check(!%s->IsFullNameStableForNetworking())", *PropertyValue);
+			//SourceWriter.Printf("check(!%s->IsFullNameStableForNetworking())", *PropertyValue);
 			SourceWriter.Printf("Interop->QueueOutgoingObjectRepUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
 		}, false, false);
 	}

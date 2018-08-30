@@ -638,20 +638,23 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	LastSpatialPosition = ActorSpatialPosition;
 	Interop->SendSpatialPositionUpdate(GetEntityId(), LastSpatialPosition);
 
-	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
+	// If we're a pawn and are controlled by an controller, update the controller and the player state positions too.
 	if (APawn* Pawn = Cast<APawn>(Actor))
 	{
-		if (APlayerController* PlayerController = Cast<APlayerController>(Pawn->GetController()))
+		if (AController* PawnController = Cast<AController>(Pawn->GetController()))
 		{
-			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController));
+			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PawnController));
 			if (ControllerActorChannel)
 			{
 				Interop->SendSpatialPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
 			}
-			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController->PlayerState));
-			if (PlayerStateActorChannel)
+			if (PawnController->PlayerState)
 			{
-				Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
+				USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PawnController->PlayerState));
+				if (PlayerStateActorChannel)
+				{
+					Interop->SendSpatialPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
+				}
 			}
 		}
 	}
@@ -675,6 +678,6 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* Actor)
 	}
 	else
 	{
-		return FVector::ZeroVector;
+		return FVector(500, 500, 500);
 	}
 }

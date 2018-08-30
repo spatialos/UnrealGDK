@@ -1061,6 +1061,7 @@ void USpatialInterop::DeleteIrrelevantReplicatedStablyNamedActors(const PathName
 void USpatialInterop::LocallyDeleteActor(AActor* Actor)
 {
 	StartIgnoringAuthoritativeDestruction();
+	UE_LOG(LogTemp, Log, TEXT("locally destroying %s"), *Actor->GetName());
 	if (Actor->GetWorld()->DestroyActor(Actor, true) == false)
 	{
 		UE_LOG(LogSpatialGDKInterop, Error, TEXT("World->DestroyActor locally failed on %s"), *Actor->GetName());

@@ -310,7 +310,7 @@ void USpatialInteropPipelineBlock::RemoveEntityImpl(const FEntityId& EntityId)
 	{
 		AController* Controller = Pawn->Controller;
 
-		if (Controller != nullptr && Controller->HasAuthority())
+		if (Controller != nullptr && Controller->HasAuthority() && Controller->IsPlayerController())
 		{
 			Pawn->Controller = nullptr;
 		}
@@ -339,7 +339,7 @@ void USpatialInteropPipelineBlock::AuthorityChangeImpl(const FComponentIdentifie
 	{
 		if (AActor* EntityActor = EntityRegistry->GetActorFromEntityId(ComponentIdentifier.EntityId))
 		{
-			EntityActor->OnSpatialAuthorityChange();
+			EntityActor->OnSpatialAuthorityChange((int)AuthChangeOp.Authority);
 			UE_LOG(LogTemp, Log, TEXT("Authority change processed: entityID: %d, componentID: %d, authorityChangeOp: %d"), ComponentIdentifier.EntityId, ComponentIdentifier.ComponentId, (int)AuthChangeOp.Authority);
 		}
 	}

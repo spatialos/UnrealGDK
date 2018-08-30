@@ -410,7 +410,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				FinalRelevantCount++;
 				UE_LOG(LogNetTraffic, Log, TEXT("Server replicate actor creating destroy channel for NetGUID <%s,%s> Priority: %d"), *PriorityActors[j]->DestructionInfo->NetGUID.ToString(), *PriorityActors[j]->DestructionInfo->PathName, PriorityActors[j]->Priority);
 
-				Channel->SetChannelActorForDestroy(PriorityActors[j]->DestructionInfo);						   // Send a close bunch on the new channel
+				//Channel->SetChannelActorForDestroy(PriorityActors[j]->DestructionInfo);						   // Send a close bunch on the new channel
 				Connection->DestroyedStartupOrDormantActors.Remove(PriorityActors[j]->DestructionInfo->NetGUID); // Remove from connections to-be-destroyed list (close bunch of reliable, so it will make it there)
 			}
 			continue;

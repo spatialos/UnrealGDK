@@ -29,7 +29,7 @@ const WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet
 const WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
 const WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
 
-const Coordinates Origin{0, 0, 0};
+const Coordinates Origin{5, 5, 5};
 
 worker::Entity CreateSpawnerEntity()
 {
