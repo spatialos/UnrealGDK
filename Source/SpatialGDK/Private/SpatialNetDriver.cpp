@@ -885,7 +885,6 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 	if (bOk)
 	{
 		FString LevelName = GetWorld()->GetCurrentLevel()->GetOutermost()->GetName();
-
 		Connection->SetClientWorldPackageName(GetWorld()->GetCurrentLevel()->GetOutermost()->GetFName());
 
 		FString GameName;
