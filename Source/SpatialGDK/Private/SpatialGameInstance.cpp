@@ -86,6 +86,7 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 	return bOk;
 }
 
+#if WITH_EDITOR
 FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
 	if (!HasSpatialNetDriver())
