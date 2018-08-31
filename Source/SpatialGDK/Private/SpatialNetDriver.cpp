@@ -884,10 +884,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 
 	if (bOk)
 	{
-		// Josh - I believe this is not the actual level that we are loading into, this is most likely the level currently selected in the editor.
 		FString LevelName = GetWorld()->GetCurrentLevel()->GetOutermost()->GetName();
-		UE_LOG(LogNet, Error, TEXT("LEVEL NAME IS: %s"), *LevelName);
-
 
 		Connection->SetClientWorldPackageName(GetWorld()->GetCurrentLevel()->GetOutermost()->GetFName());
 
