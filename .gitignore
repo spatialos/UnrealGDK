@@ -65,7 +65,6 @@ Build/*/**
 #*_BuiltData.uasset
 
 **/Binaries/
-**/Build
 **/DerivedDataCache/
 **/Intermediate/
 **/Saved/
@@ -81,8 +80,8 @@ logs/
 
 Scripts/spatialos.*.build.json
 
-!Source/Programs/Improbable.Unreal.CodeGeneration/UnrealCodeGeneration.sln
-!Source/Programs/Improbable.Unreal.Scripts/Improbable.Unreal.Scripts.sln
+!Plugins/SpatialGDK/SpatialGDK/Build/Programs/Improbable.Unreal.CodeGeneration/UnrealCodeGeneration.sln
+!Plugins/SpatialGDK/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Improbable.Unreal.Scripts.sln
 
 # Don't ignore the Build util
-!Source/Programs/Improbable.Unreal.Scripts/Build/
+!Plugins/SpatialGDK/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Build/
