@@ -62,8 +62,6 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 		GetEngine()->ShutdownWorldNetDriver(GetWorldContext()->World());
 	}
 
-	UEditorEngine* const EditorEngine = CastChecked<UEditorEngine>(GetEngine());
-
 	// This will use the URL / Map that was setup by the server worker (which is loaded first).
 	// By not specifying a hostname the connection defaults to local.
 	FURL URL = WorldContext->LastURL;
