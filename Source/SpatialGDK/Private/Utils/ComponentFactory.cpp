@@ -8,14 +8,14 @@
 #include "SpatialMemoryWriter.h"
 #include "SpatialConstants.h"
 
-ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& UnresolvedObjectsMap, USpatialNetDriver* NetDriver)
-	: NetDriver(NetDriver)
-	, PackageMap(NetDriver->PackageMap)
-	, TypebindingManager(NetDriver->TypebindingManager)
+ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& UnresolvedObjectsMap, USpatialNetDriver* InNetDriver)
+	: NetDriver(InNetDriver)
+	, PackageMap(InNetDriver->PackageMap)
+	, TypebindingManager(InNetDriver->TypebindingManager)
 	, PendingUnresolvedObjectsMap(UnresolvedObjectsMap)
 { }
 
-bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool bIsInitialData, std::vector<Schema_FieldId>* ClearedIds /*= nullptr*/)
+bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
 {
 	bool bWroteSomething = false;
 
@@ -71,7 +71,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, const FP
 	return bWroteSomething;
 }
 
-void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Property, const uint8* Data, TSet<const UObject*>& UnresolvedObjects, std::vector<Schema_FieldId>* ClearedIds)
+void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Property, const uint8* Data, TSet<const UObject*>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
@@ -192,7 +192,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 
 		if (ArrayHelper.Num() == 0 && ClearedIds)
 		{
-			ClearedIds->push_back(Id);
+			ClearedIds->Add(Id);
 		}
 	}
 	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
@@ -212,15 +212,15 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 	}
 }
 
-std::vector<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, const FPropertyChangeState& PropertyChangeState)
+TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, const FPropertyChangeState& PropertyChangeState)
 {
-	std::vector<Worker_ComponentData> ComponentData;
+	TArray<Worker_ComponentData> ComponentData;
 
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
 	check(Info);
 
-	ComponentData.push_back(CreateComponentData(Info->SingleClientComponent, PropertyChangeState, GROUP_SingleClient));
-	ComponentData.push_back(CreateComponentData(Info->MultiClientComponent, PropertyChangeState, GROUP_MultiClient));
+	ComponentData.Add(CreateComponentData(Info->SingleClientComponent, PropertyChangeState, GROUP_SingleClient));
+	ComponentData.Add(CreateComponentData(Info->MultiClientComponent, PropertyChangeState, GROUP_MultiClient));
 
 	return ComponentData;
 }
@@ -237,16 +237,16 @@ Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId Co
 	return ComponentData;
 }
 
-std::vector<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FPropertyChangeState& PropertyChangeState)
+TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FPropertyChangeState& PropertyChangeState)
 {
-	std::vector<Worker_ComponentUpdate> ComponentUpdates;
+	TArray<Worker_ComponentUpdate> ComponentUpdates;
 
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
 	check(Info);
 
 	bool wroteSomething = false;
-	ComponentUpdates.push_back(CreateComponentUpdate(Info->SingleClientComponent, PropertyChangeState, GROUP_SingleClient, wroteSomething));
-	ComponentUpdates.push_back(CreateComponentUpdate(Info->MultiClientComponent, PropertyChangeState, GROUP_MultiClient, wroteSomething));
+	ComponentUpdates.Add(CreateComponentUpdate(Info->SingleClientComponent, PropertyChangeState, GROUP_SingleClient, wroteSomething));
+	ComponentUpdates.Add(CreateComponentUpdate(Info->MultiClientComponent, PropertyChangeState, GROUP_MultiClient, wroteSomething));
 
 	return ComponentUpdates;
 }
@@ -259,7 +259,7 @@ Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
-	std::vector<Schema_FieldId> ClearedIds;
+	TArray<Schema_FieldId> ClearedIds;
 
 	FillSchemaObject(ComponentObject, Changes, PropertyGroup, false, &ClearedIds);
 

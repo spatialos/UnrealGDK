@@ -108,8 +108,6 @@ inline void RepLayout_ReceivePropertiesForRPC(FRepLayout& RepLayout, FNetBitRead
 		}
 	}
 
-	//Reader.PackageMap->ResetTrackedGuids(true);
-
 	for (int32 i = 0; i < Parents.Num(); i++)
 	{
 		if (Cast<UBoolProperty>(Parents[i].Property) || Reader.ReadBit())

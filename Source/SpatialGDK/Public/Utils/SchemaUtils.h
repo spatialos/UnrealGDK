@@ -33,6 +33,17 @@ inline void Schema_AddPayload(Schema_Object* Object, Schema_FieldId Id, const FS
 	Schema_AddBytes(Object, Id, PayloadBuffer, sizeof(char) * PayloadSize);
 }
 
+inline TArray<uint8> Schema_IndexPayload(const Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index)
+{
+	int32 PayloadSize = (int32)Schema_IndexBytesLength(Object, Id, Index);
+	return TArray<uint8>((const uint8*)Schema_IndexBytes(Object, Id, Index), PayloadSize);
+}
+
+inline TArray<uint8> Schema_GetPayload(const Schema_Object* Object, Schema_FieldId Id)
+{
+	return Schema_IndexPayload(Object, Id, 0);
+}
+
 using WorkerAttributeSet = TArray<FString>;
 using WorkerRequirementSet = TArray<WorkerAttributeSet>;
 

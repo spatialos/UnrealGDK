@@ -385,7 +385,7 @@ AActor* USpatialReceiver::SpawnNewEntity(Position* PositionComponent, UClass* Ac
 	return NewActor;
 }
 
-void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap)
+void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel)
 {
 	UClass* Class= TypebindingManager->FindClassByComponentId(Data.component_id);
 	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
@@ -398,21 +398,13 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 
 	bool bAutonomousProxy = NetDriver->GetNetMode() == NM_Client && HasComponentAuthority(EntityId, Info->RPCComponents[RPC_Client]);
 
-	if (Data.component_id == Info->SingleClientComponent)
+	if (Data.component_id == Info->SingleClientComponent || Data.component_id == Info->MultiClientComponent)
 	{
 		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<UnrealObjectRef> UnresolvedRefs;
 
-		ReadDynamicData(Data, TargetObject, Channel, PackageMap, NetDriver, GROUP_SingleClient, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
-
-		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
-	}
-	else if (Data.component_id == Info->MultiClientComponent)
-	{
-		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
-		TSet<UnrealObjectRef> UnresolvedRefs;
-
-		ReadDynamicData(Data, TargetObject, Channel, PackageMap, NetDriver, GROUP_MultiClient, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
+		ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
+		Reader.ApplyComponentData(Data, TargetObject, Channel);
 
 		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 	}
@@ -451,8 +443,6 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
 	check(Info);
 
-	bool bAutonomousProxy = NetDriver->GetNetMode() == NM_Client && HasComponentAuthority(Op.entity_id, Info->RPCComponents[RPC_Client]);
-
 	USpatialActorChannel* ActorChannel = GetActorChannelByEntityId(Op.entity_id);
 	bool bIsServer = NetDriver->IsServer();
 
@@ -461,14 +451,14 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		check(ActorChannel);
 
 		UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
-		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, GROUP_SingleClient, bAutonomousProxy);
+		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel);
 	}
 	else if (Op.update.component_id == Info->MultiClientComponent)
 	{
 		check(ActorChannel);
 
 		UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
-		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, GROUP_MultiClient, bAutonomousProxy);
+		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel);
 	}
 	else if (Op.update.component_id == Info->HandoverComponent)
 	{
@@ -496,13 +486,14 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 }
 
-void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, EReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy)
+void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel)
 {
 	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
 
 	FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 	TSet<UnrealObjectRef> UnresolvedRefs;
-	ReceiveDynamicUpdate(ComponentUpdate, TargetObject, Channel, PackageMap, NetDriver, PropertyGroup, bAutonomousProxy, ObjectReferencesMap, UnresolvedRefs);
+	ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
+	Reader.ApplyComponentUpdate(ComponentUpdate, TargetObject, Channel);
 
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }

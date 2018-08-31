@@ -104,8 +104,8 @@ private:
 	AActor* SpawnNewEntity(Position* PositionComponent, UClass* ActorClass, bool bDeferred);
 	UClass* GetNativeEntityClass(Metadata* MetadataComponent);
 
-	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap);
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, EReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy);
+	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel);
 
 	void ResolvePendingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
 	void ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef);

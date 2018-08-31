@@ -5,33 +5,48 @@
 #include "DataReplication.h"
 #include "RepLayout.h"
 #include "SpatialConditionMapFilter.h"
+#include "EngineClasses/SpatialNetBitReader.h"
+#include "Interop/SpatialConstants.h"
 
-ComponentReader::ComponentReader(UNetDriver* NetDriver, FObjectReferencesMap& ObjectReferenceMap, TSet<UnrealObjectRef>& UnresolvedRefs)
+ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<UnrealObjectRef>& InUnresolvedRefs)
+	: PackageMap(InNetDriver->PackageMap)
+	, NetDriver(InNetDriver)
+	, ObjectReferencesMap(InObjectReferencesMap)
+	, UnresolvedRefs(InUnresolvedRefs)
 {
-
 }
 
 void ComponentReader::ApplyComponentData(Worker_ComponentData& ComponentData, UObject* Object, USpatialActorChannel* Channel)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	ApplySchemaObject(ComponentObject, TargetObject, Channel);
+	ApplySchemaObject(ComponentObject, TargetObject, Channel, true);
 }
 
-void ComponentReader::ApplyComponentUpdate(Worker_ComponentUpdate& ComponentUpdate, UObject* Object, USpatialActorChannel* Channel, EReplicatedPropertyGroup PropertyGroup)
+void ComponentReader::ApplyComponentUpdate(Worker_ComponentUpdate& ComponentUpdate, UObject* Object, USpatialActorChannel* Channel)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
-	ApplySchemaObject(ComponentObject, TargetObject, Channel);
+	TArray<Schema_FieldId> ClearedIds;
+	ClearedIds.SetNum(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate.schema_type));
+	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate.schema_type, ClearedIds.GetData());
+
+	ApplySchemaObject(ComponentObject, TargetObject, Channel, false, &ClearedIds);
 }
 
-void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel)
+void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
 {
 	bool bAutonomousProxy = Channel->IsClientAutonomousProxy();
 
-	std::vector<std::uint32_t> UpdateFields;
-	UpdateFields.resize(Schema_GetUniqueFieldIdCount(ComponentObject));
-	Schema_GetUniqueFieldIds(ComponentObject, UpdateFields.data());
+	TArray<std::uint32_t> UpdateFields;
+	UpdateFields.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
+	Schema_GetUniqueFieldIds(ComponentObject, UpdateFields.GetData());
+
+	TArray<uint16> Handles;
+	for (std::uint32_t FieldId : UpdateFields)
+	{
+		Handles.Add((uint16)FieldId);
+	}
 
 	FObjectReplicator& Replicator = Channel->PreReceiveSpatialUpdate(Object);
 
@@ -45,8 +60,6 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 	TArray<UProperty*> RepNotifies;
 
-	TArray<uint16> Handles = Channel->GetAllPropertyHandles(Replicator);
-
 	if (Handles.Num() > 0)
 	{
 		FChangelistIterator ChangelistIterator(Handles, 0);
@@ -56,22 +69,22 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 			const FRepLayoutCmd& Cmd = Cmds[HandleIterator.CmdIndex];
 			const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 
-			if (GetGroupFromCondition(Parent.Condition) == PropertyGroup && (bIsServer || ConditionMap.IsRelevant(Parent.Condition)))
+			if (bIsServer || ConditionMap.IsRelevant(Parent.Condition))
 			{
 				// This swaps Role/RemoteRole as we write it
 				const FRepLayoutCmd& SwappedCmd = Parent.RoleSwapIndex != -1 ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
 
 				uint8* Data = (uint8*)TargetObject + SwappedCmd.Offset;
 
-				if (Schema_GetPropertyCount(ComponentObject, HandleIterator.Handle, Cmd.Property) > 0 || ClearedIds.find(HandleIterator.Handle) != ClearedIds.end())
+				if (bIsInitialData || Schema_GetPropertyCount(ComponentObject, HandleIterator.Handle, Cmd.Property) > 0 || ClearedIds.Find(HandleIterator.Handle) != INDEX_NONE)
 				{
 					if (Cmd.Type == REPCMD_DynamicArray)
 					{
-						Schema_GetArrayProperty(ComponentObject, HandleIterator.Handle, Cast<UArrayProperty>(Cmd.Property), Data, PackageMap, Driver, ObjectReferencesMap, UnresolvedRefs, SwappedCmd.Offset, Cmd.ParentIndex);
+						ApplyArray(ComponentObject, HandleIterator.Handle, Cast<UArrayProperty>(Cmd.Property), Data, SwappedCmd.Offset, Cmd.ParentIndex);
 					}
 					else
 					{
-						Schema_GetProperty(ComponentObject, HandleIterator.Handle, 0, Cmd.Property, Data, PackageMap, Driver, ObjectReferencesMap, UnresolvedRefs, SwappedCmd.Offset, Cmd.ParentIndex);
+						ApplyProperty(ComponentObject, HandleIterator.Handle, 0, Cmd.Property, Data, SwappedCmd.Offset, Cmd.ParentIndex);
 					}
 
 					if (Cmd.Property->GetFName() == NAME_RemoteRole)
@@ -113,21 +126,19 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, st
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
-		std::string ValueData = Schema_IndexString(Object, Id, Index);
+		TArray<uint8> ValueData = Schema_IndexPayload(Object, Id, Index);
 		// A bit hacky, we should probably include the number of bits with the data instead.
-		int64 CountBits = ValueData.size() * 8;
-		FSpatialNetBitReader ValueDataReader(PackageMap, (uint8*)ValueData.data(), CountBits);
+		int64 CountBits = ValueData.Num() * 8;
+		TSet<UnrealObjectRef> NewUnresolvedRefs;
+		FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewUnresolvedRefs);
 		bool bHasUnmapped = false;
-
-		// TODO: Pass unresolved refs set into reader instead of using package map for that
-		PackageMap->ResetTrackedObjectRefs(true);
 
 		ReadStructProperty(ValueDataReader, PackageMap, StructProperty, Data, Driver, bHasUnmapped);
 
 		if (bHasUnmapped)
 		{
-			ObjectReferencesMap.Add(Offset, FObjectReferences(TArray<uint8>((uint8*)ValueData.data(), ValueData.size()), CountBits, PackageMap->GetTrackedUnresolvedRefs(), ParentIndex, Property));
-			UnresolvedRefs.Append(PackageMap->GetTrackedUnresolvedRefs());
+			ObjectReferencesMap.Add(Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, ParentIndex, Property));
+			UnresolvedRefs.Append(NewUnresolvedRefs);
 		}
 		else if (ObjectReferencesMap.Find(Offset))
 		{
@@ -136,8 +147,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, st
 	}
 	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
 	{
-		bool what = Schema_IndexBool(Object, Id, Index) > 0 ? true : false;
-		BoolProperty->SetPropertyValue(Data, what);
+		BoolProperty->SetPropertyValue(Data, Schema_IndexBool(Object, Id, Index) != 0);
 	}
 	else if (UFloatProperty* FloatProperty = Cast<UFloatProperty>(Property))
 	{
@@ -182,10 +192,10 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, st
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
 		UnrealObjectRef ObjectRef = Schema_IndexObjectRef(Object, Id, Index);
-		check(ObjectRef != UNRESOLVED_OBJECT_REF);
+		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		bool bUnresolved = false;
 
-		if (ObjectRef == NULL_OBJECT_REF)
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 		{
 			ObjectProperty->SetObjectPropertyValue(Data, nullptr);
 		}
@@ -214,15 +224,15 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, st
 	}
 	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
 	{
-		NameProperty->SetPropertyValue(Data, FName(Schema_IndexString(Object, Id, Index).data()));
+		NameProperty->SetPropertyValue(Data, FName(*Schema_IndexString(Object, Id, Index)));
 	}
 	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
 	{
-		StrProperty->SetPropertyValue(Data, FString(UTF8_TO_TCHAR(Schema_IndexString(Object, Id, Index).c_str())));
+		StrProperty->SetPropertyValue(Data, Schema_IndexString(Object, Id, Index));
 	}
 	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
 	{
-		TextProperty->SetPropertyValue(Data, FText::FromString(FString(UTF8_TO_TCHAR(Schema_IndexString(Object, Id, Index).c_str()))));
+		TextProperty->SetPropertyValue(Data, FText::FromString(Schema_IndexString(Object, Id, Index)));
 	}
 	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
 	{
@@ -232,7 +242,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, st
 		}
 		else
 		{
-			Schema_GetProperty(Object, Id, Index, EnumProperty->GetUnderlyingProperty(), Data, PackageMap, Driver, ObjectReferencesMap, UnresolvedRefs, Offset, ParentIndex);
+			ApplyProperty(Object, Id, Index, EnumProperty->GetUnderlyingProperty(), Data, Offset, ParentIndex);
 		}
 	}
 	else
@@ -265,7 +275,7 @@ void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId Id, UArra
 	for (int i = 0; i < Count; i++)
 	{
 		int32 ElementOffset = i * Property->Inner->ElementSize;
-		Schema_GetProperty(Object, Id, i, Property->Inner, ArrayHelper.GetRawPtr(i), PackageMap, Driver, *ArrayObjectReferences, UnresolvedRefs, ElementOffset, ParentIndex);
+		ApplyProperty(Object, Id, i, Property->Inner, ArrayHelper.GetRawPtr(i), ElementOffset, ParentIndex);
 	}
 
 	if (ArrayObjectReferences->Num() > 0)
@@ -286,5 +296,28 @@ void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId Id, UArra
 		{
 			ObjectReferencesMap.Remove(Offset);
 		}
+	}
+}
+
+void ComponentReader::ReadStructProperty(FSpatialNetBitReader& Reader, UStructProperty* Property, uint8* Data, bool& bOutHasUnmapped)
+{
+	UScriptStruct* Struct = Property->Struct;
+
+	if (Struct->StructFlags & STRUCT_NetSerializeNative)
+	{
+		UScriptStruct::ICppStructOps* CppStructOps = Struct->GetCppStructOps();
+		check(CppStructOps); // else should not have STRUCT_NetSerializeNative
+		bool bSuccess = true;
+		if (!CppStructOps->NetSerialize(Reader, PackageMap, bSuccess, Data))
+		{
+			bOutHasUnmapped = true;
+		}
+		checkf(bSuccess, TEXT("NetSerialize on %s failed."), *Struct->GetStructCPPName());
+	}
+	else
+	{
+		TSharedPtr<FRepLayout> RepLayout = Driver->GetStructRepLayout(Struct);
+
+		RepLayout_SerializePropertiesForStruct(*RepLayout, Reader, PackageMap, Data, bOutHasUnmapped);
 	}
 }
