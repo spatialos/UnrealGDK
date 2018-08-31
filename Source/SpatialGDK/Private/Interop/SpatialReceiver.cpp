@@ -14,9 +14,9 @@
 #include "CoreTypes/DynamicComponent.h"
 
 template <typename T>
-T* GetComponentData(USpatialReceiver& PipelineBlock, Worker_EntityId EntityId)
+T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
 {
-	for (PendingAddComponentWrapper& PendingAddComponent : PipelineBlock.PendingAddComponents)
+	for (PendingAddComponentWrapper& PendingAddComponent : Receiver.PendingAddComponents)
 	{
 		if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.ComponentId == T::ComponentId)
 		{
@@ -74,12 +74,6 @@ void USpatialReceiver::LeaveCriticalSection()
 	PendingAddEntities.Empty();
 	PendingAddComponents.Empty();
 	PendingRemoveEntities.Empty();
-
-	for (TPair<UObject*, UnrealObjectRef>& It : ResolvedObjectQueue)
-	{
-		ResolvePendingOperations_Internal(It.Key, It.Value);
-	}
-	ResolvedObjectQueue.Empty();
 }
 
 void USpatialReceiver::OnAddEntity(Worker_AddEntityOp& Op)
@@ -150,6 +144,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 
 	Position* PositionComponent = GetComponentData<Position>(*this, EntityId);
 	Metadata* MetadataComponent = GetComponentData<Metadata>(*this, EntityId);
+	check(PositionComponent && MetadataComponent);
 
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
 	UE_LOG(LogTemp, Log, TEXT("!!! Checked out entity with entity ID %lld"), EntityId);
@@ -569,4 +564,13 @@ USpatialActorChannel* USpatialReceiver::PopPendingActorRequest(Worker_RequestId 
 	}
 	PendingActorRequests.Remove(RequestId);
 	return *Channel;
+}
+
+void USpatialReceiver::ProcessQueuedResolvedObjects()
+{
+	for (TPair<UObject*, UnrealObjectRef>& It : ResolvedObjectQueue)
+	{
+		ResolvePendingOperations_Internal(It.Key, It.Value);
+	}
+	ResolvedObjectQueue.Empty();
 }

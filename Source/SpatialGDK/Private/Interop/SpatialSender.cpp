@@ -25,11 +25,10 @@ void USpatialSender::Init(USpatialNetDriver* NetDriver)
 Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, const FVector& Location, const FString& EntityType, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel)
 {
 	AActor* Actor = Channel->Actor;
-	std::string ClientWorkerIdString = TCHAR_TO_UTF8(*ClientWorkerId);
 
-	WorkerAttributeSet WorkerAttribute = { "UnrealWorker" };
-	WorkerAttributeSet ClientAttribute = { "UnrealClient" };
-	WorkerAttributeSet OwningClientAttribute = { "workerId:" + ClientWorkerIdString };
+	WorkerAttributeSet WorkerAttribute = { TEXT("UnrealWorker") };
+	WorkerAttributeSet ClientAttribute = { TEXT("UnrealClient") };
+	WorkerAttributeSet OwningClientAttribute = { TEXT("workerId:") + ClientWorkerId };
 
 	WorkerRequirementSet WorkersOnly = { WorkerAttribute };
 	WorkerRequirementSet ClientsOnly = { ClientAttribute };
@@ -42,81 +41,79 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 	check(Info);
 
-	std::map<Worker_ComponentId, WorkerRequirementSet> ComponentWriteAcl;
-	ComponentWriteAcl.emplace(POSITION_COMPONENT_ID, WorkersOnly);
-	ComponentWriteAcl.emplace(Info->SingleClientComponent, WorkersOnly);
-	ComponentWriteAcl.emplace(Info->MultiClientComponent, WorkersOnly);
-	ComponentWriteAcl.emplace(Info->HandoverComponent, WorkersOnly);
-	ComponentWriteAcl.emplace(Info->RPCComponents[RPC_Client], OwningClientOnly);
-	ComponentWriteAcl.emplace(Info->RPCComponents[RPC_Server], WorkersOnly);
-	ComponentWriteAcl.emplace(Info->RPCComponents[RPC_CrossServer], WorkersOnly);
-	ComponentWriteAcl.emplace(Info->RPCComponents[RPC_NetMulticast], WorkersOnly);
+	WriteAclMap ComponentWriteAcl;
+	ComponentWriteAcl.Add(POSITION_COMPONENT_ID, WorkersOnly);
+	ComponentWriteAcl.Add(Info->SingleClientComponent, WorkersOnly);
+	ComponentWriteAcl.Add(Info->MultiClientComponent, WorkersOnly);
+	ComponentWriteAcl.Add(Info->HandoverComponent, WorkersOnly);
+	ComponentWriteAcl.Add(Info->RPCComponents[RPC_Client], OwningClientOnly);
+	ComponentWriteAcl.Add(Info->RPCComponents[RPC_Server], WorkersOnly);
+	ComponentWriteAcl.Add(Info->RPCComponents[RPC_CrossServer], WorkersOnly);
+	ComponentWriteAcl.Add(Info->RPCComponents[RPC_NetMulticast], WorkersOnly);
 
 	for (TSubclassOf<UActorComponent> ComponentClass : Info->ComponentClasses)
 	{
 		FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(ComponentClass);
 		check(ComponentInfo);
 
-		ComponentWriteAcl.emplace(ComponentInfo->SingleClientComponent, WorkersOnly);
-		ComponentWriteAcl.emplace(ComponentInfo->MultiClientComponent, WorkersOnly);
+		ComponentWriteAcl.Add(ComponentInfo->SingleClientComponent, WorkersOnly);
+		ComponentWriteAcl.Add(ComponentInfo->MultiClientComponent, WorkersOnly);
 		// Not adding handover since component's handover properties will be handled by the actor anyway
-		ComponentWriteAcl.emplace(ComponentInfo->RPCComponents[RPC_Client], OwningClientOnly);
-		ComponentWriteAcl.emplace(ComponentInfo->RPCComponents[RPC_Server], WorkersOnly);
-		ComponentWriteAcl.emplace(ComponentInfo->RPCComponents[RPC_CrossServer], WorkersOnly);
-		ComponentWriteAcl.emplace(ComponentInfo->RPCComponents[RPC_NetMulticast], WorkersOnly);
+		ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_Client], OwningClientOnly);
+		ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_Server], WorkersOnly);
+		ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_CrossServer], WorkersOnly);
+		ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_NetMulticast], WorkersOnly);
 	}
 
-	std::string StaticPath;
+	FString StaticPath;
 
 	if (Actor->IsFullNameStableForNetworking())
 	{
-		StaticPath = TCHAR_TO_UTF8(*Actor->GetPathName(Actor->GetWorld()));
+		StaticPath = Actor->GetPathName(Actor->GetWorld());
 	}
 
 	uint32 CurrentOffset = 1;
-	std::map<std::string, std::uint32_t> SubobjectNameToOffset;
+	SubobjectToOffsetMap SubobjectNameToOffset;
 	ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
 	{
 		// Objects can only be allocated NetGUIDs if this is true.
 		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
 		{
-			SubobjectNameToOffset.emplace(TCHAR_TO_UTF8(*(Object->GetName())), CurrentOffset);
+			SubobjectNameToOffset.Add(Object->GetName(), CurrentOffset);
 			CurrentOffset++;
 		}
 	});
 
-	std::vector<Worker_ComponentData> ComponentDatas;
-	ComponentDatas.push_back(Position(Coordinates::FromFVector(Location)).CreatePositionData());
-	ComponentDatas.push_back(Metadata(TCHAR_TO_UTF8(*EntityType)).CreateMetadataData());
-	ComponentDatas.push_back(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
-	ComponentDatas.push_back(Persistence().CreatePersistenceData());
-	ComponentDatas.push_back(UnrealMetadata(StaticPath, ClientWorkerIdString, SubobjectNameToOffset).CreateUnrealMetadataData());
+	TArray<Worker_ComponentData> ComponentDatas;
+	ComponentDatas.Add(Position(Coordinates::FromFVector(Location)).CreatePositionData());
+	ComponentDatas.Add(Metadata(EntityType).CreateMetadataData());
+	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
+	ComponentDatas.Add(Persistence().CreatePersistenceData());
+	ComponentDatas.Add(UnrealMetadata(StaticPath, ClientWorkerId, SubobjectNameToOffset).CreateUnrealMetadataData());
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	ComponentFactory DataFactory(UnresolvedObjectsMap, NetDriver);
 
-	std::vector<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, InitialChanges);
-	ComponentDatas.insert(ComponentDatas.end(), DynamicComponentDatas.begin(), DynamicComponentDatas.end());
+	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, InitialChanges);
+	ComponentDatas.Append(DynamicComponentDatas);
 
 	for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
 	{
 		QueueOutgoingRepUpdate(Channel, Actor, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value);
 	}
 
-	UnresolvedObjectsMap.Empty();
-
 	// TODO: Handover
 	Worker_ComponentData HandoverData = {};
 	HandoverData.component_id = Info->HandoverComponent;
 	HandoverData.schema_type = Schema_CreateComponentData(Info->HandoverComponent);
-	ComponentDatas.push_back(HandoverData);
+	ComponentDatas.Add(HandoverData);
 
 	for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
 	{
 		Worker_ComponentData RPCData = {};
 		RPCData.component_id = Info->RPCComponents[RPCType];
 		RPCData.schema_type = Schema_CreateComponentData(Info->RPCComponents[RPCType]);
-		ComponentDatas.push_back(RPCData);
+		ComponentDatas.Add(RPCData);
 	}
 
 	for (TSubclassOf<UActorComponent> ComponentClass : Info->ComponentClasses)
@@ -130,15 +127,16 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 
 		FPropertyChangeState ComponentChanges = Channel->CreateSubobjectChangeState(Component);
 
-		std::vector<Worker_ComponentData> ActorComponentDatas = DataFactory.CreateComponentDatas(Component, ComponentChanges);
-		ComponentDatas.insert(ComponentDatas.end(), DynamicComponentDatas.begin(), DynamicComponentDatas.end());
+		// Reset unresolved objects so they can be filled again by DataFactory
+		UnresolvedObjectsMap.Empty();
+
+		TArray<Worker_ComponentData> ActorComponentDatas = DataFactory.CreateComponentDatas(Component, ComponentChanges);
+		ComponentDatas.Append(DynamicComponentDatas);
 
 		for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
 		{
 			QueueOutgoingRepUpdate(Channel, Component, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value);
 		}
-
-		UnresolvedObjectsMap.Empty();
 
 		// Not adding handover since component's handover properties will be handled by the actor anyway
 
@@ -147,12 +145,12 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 			Worker_ComponentData RPCData = {};
 			RPCData.component_id = ComponentInfo->RPCComponents[RPCType];
 			RPCData.schema_type = Schema_CreateComponentData(ComponentInfo->RPCComponents[RPCType]);
-			ComponentDatas.push_back(RPCData);
+			ComponentDatas.Add(RPCData);
 		}
 	}
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
-	Worker_RequestId CreateEntityRequestId = Worker_Connection_SendCreateEntityRequest(Connection, ComponentDatas.size(), ComponentDatas.data(), &EntityId, nullptr);
+	Worker_RequestId CreateEntityRequestId = Worker_Connection_SendCreateEntityRequest(Connection, ComponentDatas.Num(), ComponentDatas.GetData(), &EntityId, nullptr);
 	PendingActorRequests.Add(CreateEntityRequestId, Channel);
 
 	return CreateEntityRequestId;
@@ -167,7 +165,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel*
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	ComponentFactory UpdateFactory(UnresolvedObjectsMap, NetDriver);
 
-	std::vector<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Changes);
+	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Changes);
 
 	for (uint16 Handle : Changes.RepChanged)
 	{
@@ -398,7 +396,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 		return CommandRequest;
 	}
 
-	Schema_AddString(RequestObject, 2, std::string(reinterpret_cast<char*>(PayloadWriter.GetData()), PayloadWriter.GetNumBytes()));
+	Schema_AddPayload(RequestObject, 2, PayloadWriter);
 
 	return CommandRequest;
 }
@@ -437,7 +435,7 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 		return ComponentUpdate;
 	}
 
-	Schema_AddString(EventData, 2, std::string(reinterpret_cast<char*>(PayloadWriter.GetData()), PayloadWriter.GetNumBytes()));
+	Schema_AddPayload(EventData, 2, PayloadWriter);
 
 	return ComponentUpdate;
 }

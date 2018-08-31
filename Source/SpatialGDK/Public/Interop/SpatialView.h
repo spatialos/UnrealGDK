@@ -20,9 +20,8 @@ public:
 	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 private:
-	void OnAuthority(const Worker_Authority& Op);
+	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
-	class USpatialReceiver* EntityPipeline;
 	class USpatialReceiver* Receiver;
 
 	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> ComponentAuthorityMap;

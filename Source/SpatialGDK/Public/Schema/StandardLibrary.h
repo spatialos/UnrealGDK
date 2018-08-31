@@ -1,15 +1,11 @@
 #pragma once
 
-#include "CoreTypes//Component.h"
+#include "CoreTypes/Component.h"
 #include "Utils/SchemaUtils.h"
 #include "Platform.h"
 
 #include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
-
-#include <map>
-#include <string>
-#include <vector>
 
 struct Coordinates
 {
@@ -95,6 +91,7 @@ struct Position : Component
 	Coordinates Coords;
 };
 
+using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
 
 const Worker_ComponentId ENTITY_ACL_COMPONENT_ID = 50;
 
@@ -104,7 +101,7 @@ struct EntityAcl : Component
 
 	EntityAcl() = default;
 
-	EntityAcl(const WorkerRequirementSet& InReadAcl, const std::map<Worker_ComponentId, WorkerRequirementSet>& InComponentWriteAcl)
+	EntityAcl(const WorkerRequirementSet& InReadAcl, const WriteAclMap& InComponentWriteAcl)
 		: ReadAcl(InReadAcl), ComponentWriteAcl(InComponentWriteAcl) {}
 
 	EntityAcl(const Worker_ComponentData& Data)
@@ -117,10 +114,10 @@ struct EntityAcl : Component
 		for (uint32 i = 0; i < KVPairCount; i++)
 		{
 			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 2, i);
-			std::uint32_t Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
+			uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
 			WorkerRequirementSet Value = Schema_GetWorkerRequirementSet(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
-			ComponentWriteAcl.emplace(Key, Value);
+			ComponentWriteAcl.Add(Key, Value);
 		}
 	}
 
@@ -136,15 +133,15 @@ struct EntityAcl : Component
 		for (const auto& KVPair : ComponentWriteAcl)
 		{
 			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 2);
-			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.first);
-			Schema_AddWorkerRequirementSet(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.second);
+			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
+			Schema_AddWorkerRequirementSet(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
 		}
 
 		return Data;
 	}
 
 	WorkerRequirementSet ReadAcl;
-	std::map<Worker_ComponentId, WorkerRequirementSet> ComponentWriteAcl;
+	WriteAclMap ComponentWriteAcl;
 };
 
 const Worker_ComponentId METADATA_COMPONENT_ID = 53;
@@ -155,7 +152,7 @@ struct Metadata : Component
 
 	Metadata() = default;
 
-	Metadata(const std::string& InEntityType)
+	Metadata(const FString& InEntityType)
 		: EntityType(InEntityType) {}
 
 	Metadata(const Worker_ComponentData& Data)
@@ -177,7 +174,7 @@ struct Metadata : Component
 		return Data;
 	}
 
-	std::string EntityType;
+	FString EntityType;
 };
 
 const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;

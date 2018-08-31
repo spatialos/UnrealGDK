@@ -21,32 +21,7 @@ uint32 GetTypeHash(const UnrealObjectRef& ObjectRef)
 
 
 
-UnrealObjectRef Schema_GetObjectRef(Schema_Object* Object, Schema_FieldId Id);
 
-UnrealObjectRef Schema_IndexObjectRef(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index)
-{
-	UnrealObjectRef ObjectRef;
-
-	Schema_Object* ObjectRefObject = Schema_IndexObject(Object, Id, Index);
-
-	ObjectRef.Entity = Schema_GetEntityId(ObjectRefObject, 1);
-	ObjectRef.Offset = Schema_GetUint32(ObjectRefObject, 2);
-	if (Schema_GetBytesCount(ObjectRefObject, 3) > 0)
-	{
-		ObjectRef.Path = Schema_GetString(ObjectRefObject, 3);
-	}
-	if (Schema_GetObjectCount(ObjectRefObject, 4) > 0)
-	{
-		ObjectRef.Outer = UnrealObjectRef(Schema_GetObjectRef(ObjectRefObject, 4));
-	}
-
-	return ObjectRef;
-}
-
-UnrealObjectRef Schema_GetObjectRef(Schema_Object* Object, Schema_FieldId Id)
-{
-	return Schema_IndexObjectRef(Object, Id, 0);
-}
 
 void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdStart, const int32 CmdEnd, void* Data, bool& bHasUnmapped);
 

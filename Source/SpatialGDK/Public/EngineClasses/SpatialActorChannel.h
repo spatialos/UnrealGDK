@@ -3,8 +3,6 @@
 #pragma once
 
 #include "Engine/ActorChannel.h"
-#include "SpatialSender.h"
-#include "SpatialReceiver.h"
 #include "SpatialNetDriver.h"
 #include "SpatialView.h"
 #include "SpatialTypebindingManager.h"
@@ -145,10 +143,10 @@ private:
 	USpatialNetDriver* NetDriver;
 
 	UPROPERTY(transient)
-	USpatialSender* Sender;
+	class USpatialSender* Sender;
 
 	UPROPERTY(transient)
-	USpatialReceiver* Receiver;
+	class USpatialReceiver* Receiver;
 
 	FVector LastSpatialPosition;
 

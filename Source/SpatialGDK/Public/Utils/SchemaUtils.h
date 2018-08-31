@@ -3,31 +3,38 @@
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
-#include <stdint.h>
-#include <string>
-#include <vector>
+#include "EngineClasses/SpatialMemoryWriter.h"
 
-inline void Schema_AddString(Schema_Object* Object, Schema_FieldId Id, const std::string& Value)
+inline void Schema_AddString(Schema_Object* Object, Schema_FieldId Id, const FString& Value)
 {
-	std::uint32_t StringLength = Value.size();
+	FTCHARToUTF8 CStrConvertion(*Value);
+	std::uint32_t StringLength = CStrConvertion.Length();
 	std::uint8_t* StringBuffer = Schema_AllocateBuffer(Object, sizeof(char) * StringLength);
-	memcpy(StringBuffer, Value.c_str(), sizeof(char) * StringLength);
+	FMemory::Memcpy(StringBuffer, CStrConvertion.Get(), sizeof(char) * StringLength);
 	Schema_AddBytes(Object, Id, StringBuffer, sizeof(char) * StringLength);
 }
 
-inline std::string Schema_IndexString(const Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index)
+inline FString Schema_IndexString(const Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index)
 {
-	std::uint32_t StringLength = Schema_IndexBytesLength(Object, Id, Index);
-	return std::string((const char*)Schema_IndexBytes(Object, Id, Index), StringLength);
+	int32 StringLength = (int32)Schema_IndexBytesLength(Object, Id, Index);
+	return FString(StringLength, UTF8_TO_TCHAR(Schema_IndexBytes(Object, Id, Index)));
 }
 
-inline std::string Schema_GetString(const Schema_Object* Object, Schema_FieldId Id)
+inline FString Schema_GetString(const Schema_Object* Object, Schema_FieldId Id)
 {
 	return Schema_IndexString(Object, Id, 0);
 }
 
-using WorkerAttributeSet = std::vector<std::string>;
-using WorkerRequirementSet = std::vector<WorkerAttributeSet>;
+inline void Schema_AddPayload(Schema_Object* Object, Schema_FieldId Id, const FSpatialNetBitWriter& Writer)
+{
+	std::uint32_t PayloadSize = Writer.GetNumBytes();
+	std::uint8_t* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(char) * PayloadSize);
+	FMemory::Memcpy(PayloadBuffer, Writer.GetData(), sizeof(char) * PayloadSize);
+	Schema_AddBytes(Object, Id, PayloadBuffer, sizeof(char) * PayloadSize);
+}
+
+using WorkerAttributeSet = TArray<FString>;
+using WorkerRequirementSet = TArray<WorkerAttributeSet>;
 
 inline void Schema_AddWorkerRequirementSet(Schema_Object* Object, Schema_FieldId Id, const WorkerRequirementSet& Value)
 {
@@ -36,7 +43,7 @@ inline void Schema_AddWorkerRequirementSet(Schema_Object* Object, Schema_FieldId
 	{
 		Schema_Object* AttributeSetObject = Schema_AddObject(RequirementSetObject, 1);
 
-		for (const std::string& Attribute : AttributeSet)
+		for (const FString& Attribute : AttributeSet)
 		{
 			Schema_AddString(AttributeSetObject, 1, Attribute);
 		}
@@ -47,25 +54,24 @@ inline WorkerRequirementSet Schema_GetWorkerRequirementSet(Schema_Object* Object
 {
 	Schema_Object* RequirementSetObject = Schema_GetObject(Object, Id);
 
-	std::uint32_t AttributeSetCount = Schema_GetObjectCount(RequirementSetObject, 1);
+	int32 AttributeSetCount = (int32)Schema_GetObjectCount(RequirementSetObject, 1);
 	WorkerRequirementSet RequirementSet;
-	RequirementSet.reserve(AttributeSetCount);
+	RequirementSet.Reserve(AttributeSetCount);
 
-	for (std::uint32_t i = 0; i < AttributeSetCount; i++)
+	for (int32 i = 0; i < AttributeSetCount; i++)
 	{
 		Schema_Object* AttributeSetObject = Schema_IndexObject(RequirementSetObject, 1, i);
 
-		std::uint32_t AttributeCount = Schema_GetBytesCount(AttributeSetObject, 1);
+		int32 AttributeCount = (int32)Schema_GetBytesCount(AttributeSetObject, 1);
 		WorkerAttributeSet AttributeSet;
-		AttributeSet.reserve(AttributeCount);
+		AttributeSet.Reserve(AttributeCount);
 
-		for (std::uint32_t j = 0; j < AttributeCount; j++)
+		for (int32 j = 0; j < AttributeCount; j++)
 		{
-			std::uint32_t AttributeLength = Schema_IndexBytesLength(AttributeSetObject, 1, j);
-			AttributeSet.emplace_back((const char*)Schema_IndexBytes(AttributeSetObject, 1, j), AttributeLength);
+			AttributeSet.Add(Schema_IndexString(AttributeSetObject, 1, j));
 		}
 
-		RequirementSet.push_back(AttributeSet);
+		RequirementSet.Add(AttributeSet);
 	}
 
 	return RequirementSet;
@@ -85,4 +91,31 @@ void Schema_AddObjectRef(Schema_Object* Object, Schema_FieldId Id, const UnrealO
 	{
 		Schema_AddObjectRef(ObjectRefObject, 4, *ObjectRef.Outer);
 	}
+}
+
+UnrealObjectRef Schema_GetObjectRef(Schema_Object* Object, Schema_FieldId Id);
+
+UnrealObjectRef Schema_IndexObjectRef(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index)
+{
+	UnrealObjectRef ObjectRef;
+
+	Schema_Object* ObjectRefObject = Schema_IndexObject(Object, Id, Index);
+
+	ObjectRef.Entity = Schema_GetEntityId(ObjectRefObject, 1);
+	ObjectRef.Offset = Schema_GetUint32(ObjectRefObject, 2);
+	if (Schema_GetBytesCount(ObjectRefObject, 3) > 0)
+	{
+		ObjectRef.Path = Schema_GetString(ObjectRefObject, 3);
+	}
+	if (Schema_GetObjectCount(ObjectRefObject, 4) > 0)
+	{
+		ObjectRef.Outer = UnrealObjectRef(Schema_GetObjectRef(ObjectRefObject, 4));
+	}
+
+	return ObjectRef;
+}
+
+UnrealObjectRef Schema_GetObjectRef(Schema_Object* Object, Schema_FieldId Id)
+{
+	return Schema_IndexObjectRef(Object, Id, 0);
 }

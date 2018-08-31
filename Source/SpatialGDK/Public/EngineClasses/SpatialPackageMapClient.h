@@ -5,16 +5,12 @@
 #include "CoreMinimal.h"
 #include "Engine/PackageMapClient.h"
 #include <improbable/c_worker.h>
-#include "SchemaHelpers.h"
+#include "CoreTypes/UnrealMetadata.h"
+#include "CoreTypes/UnrealObjectRef.h"
 
 #include "SpatialPackageMapClient.generated.h"
 
-class USpatialActorChannel;
-struct UnrealObjectRef;
-
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSPackageMap, Log, All);
-
-using SubobjectToOffsetMap = TMap<FString, std::uint32_t>;
 
 /**
  * 
@@ -36,23 +32,6 @@ public:
 	FNetworkGUID GetNetGUIDFromStablyNamedObject(const UObject* Object) const;
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
-
-	void ResetTrackedObjectRefs(bool bShouldTrack)
-	{
-		TrackedUnresolvedRefs.Empty();
-		bShouldTrackUnresolvedRefs = bShouldTrack;
-	}
-
-	const TSet<UnrealObjectRef>& GetTrackedUnresolvedRefs() const
-	{
-		return TrackedUnresolvedRefs;
-	}
-
-private:
-	friend class FSpatialNetBitReader;
-
-	bool					bShouldTrackUnresolvedRefs;
-	TSet<UnrealObjectRef>	TrackedUnresolvedRefs;
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache

@@ -3,20 +3,16 @@
 #include <improbable/c_worker.h>
 #include <improbable/collections.h>
 
-#include <memory>
-#include <string>
-#include <stdint.h>
-
 struct UnrealObjectRef
 {
 	UnrealObjectRef() = default;
 
-	UnrealObjectRef(Worker_EntityId Entity, std::uint32_t Offset)
+	UnrealObjectRef(Worker_EntityId Entity, uint32 Offset)
 		: Entity(Entity)
 		, Offset(Offset)
 	{}
 
-	UnrealObjectRef(Worker_EntityId Entity, std::uint32_t Offset, std::string Path, UnrealObjectRef Outer)
+	UnrealObjectRef(Worker_EntityId Entity, uint32 Offset, FString Path, UnrealObjectRef Outer)
 		: Entity(Entity)
 		, Offset(Offset)
 		, Path(Path)
@@ -48,7 +44,7 @@ struct UnrealObjectRef
 	{
 		return Entity == Other.Entity &&
 			Offset == Other.Offset &&
-			((!Path && !Other.Path) || (Path && Other.Path && *Path == *Other.Path)) &&
+			((!Path && !Other.Path) || (Path && Other.Path && Path->Equals(*Other.Path))) &&
 			((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer));
 	}
 
@@ -60,7 +56,7 @@ struct UnrealObjectRef
 	friend uint32 GetTypeHash(const UnrealObjectRef& ObjectRef);
 
 	Worker_EntityId Entity;
-	std::uint32_t Offset;
-	worker::Option<std::string> Path;
+	uint32 Offset;
+	worker::Option<FString> Path;
 	worker::Option<UnrealObjectRef> Outer;
 };

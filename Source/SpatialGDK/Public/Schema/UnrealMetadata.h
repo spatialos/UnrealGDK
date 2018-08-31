@@ -7,7 +7,7 @@
 #include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
 
-#include <map>
+using SubobjectToOffsetMap = TMap<FString, uint32>;
 
 const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID = 100004;
 
@@ -17,7 +17,7 @@ struct UnrealMetadata : Component
 
 	UnrealMetadata() = default;
 
-	UnrealMetadata(const std::string& InStaticPath, const std::string& InOwnerWorkerId, const std::map<std::string, std::uint32_t>& InSubobjectNameToOffset)
+	UnrealMetadata(const FString& InStaticPath, const FString& InOwnerWorkerId, const SubobjectToOffsetMap& InSubobjectNameToOffset)
 		: StaticPath(InStaticPath), OwnerWorkerId(InOwnerWorkerId), SubobjectNameToOffset(InSubobjectNameToOffset) {}
 
 	UnrealMetadata(const Worker_ComponentData& Data)
@@ -38,10 +38,10 @@ struct UnrealMetadata : Component
 		for (uint32 i = 0; i < KVPairCount; i++)
 		{
 			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 3, i);
-			std::string Key = Schema_GetString(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-			std::uint32_t Value = Schema_GetUint32(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+			FString Key = Schema_GetString(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
+			uint32 Value = Schema_GetUint32(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
-			SubobjectNameToOffset.emplace(Key, Value);
+			SubobjectNameToOffset.Add(Key, Value);
 		}
 	}
 
@@ -64,15 +64,15 @@ struct UnrealMetadata : Component
 		for (const auto& KVPair : SubobjectNameToOffset)
 		{
 			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 3);
-			Schema_AddString(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.first);
-			Schema_AddUint32(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.second);
+			Schema_AddString(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
+			Schema_AddUint32(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
 		}
 
 		return Data;
 	}
 
-	std::string StaticPath;
-	std::string OwnerWorkerId;
-	std::map<std::string, std::uint32_t> SubobjectNameToOffset;
+	FString StaticPath;
+	FString OwnerWorkerId;
+	SubobjectToOffsetMap SubobjectNameToOffset;
 };
 

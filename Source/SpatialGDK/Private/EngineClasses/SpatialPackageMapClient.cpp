@@ -130,7 +130,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 
 	for (UObject* Subobject : ActorSubobjects)
 	{
-		const std::uint32_t* Offset = SubobjectToOffset.Find(*Subobject->GetName());
+		const uint32* Offset = SubobjectToOffset.Find(*Subobject->GetName());
 		if (Offset != nullptr)
 		{
 			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);

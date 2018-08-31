@@ -21,7 +21,7 @@ enum EReplicatedPropertyGroup
 	GROUP_MultiClient
 };
 
-FORCEINLINE EReplicatedPropertyGroup GetAlsoGroupFromCondition(ELifetimeCondition Condition)
+FORCEINLINE EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Condition)
 {
 	switch (Condition)
 	{

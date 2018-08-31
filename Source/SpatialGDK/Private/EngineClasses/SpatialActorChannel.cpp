@@ -11,6 +11,8 @@
 #include "SpatialNetDriver.h"
 #include "SpatialPackageMapClient.h"
 #include "SpatialTypeBinding.h"
+#include "SpatialSender.h"
+#include "SpatialReceiver.h"
 
 #include "SpatialInterop.h"
 

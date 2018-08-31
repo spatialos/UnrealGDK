@@ -93,6 +93,8 @@ public:
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
+	void ProcessQueuedResolvedObjects();
+
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -113,6 +115,9 @@ private:
 	USpatialActorChannel* PopPendingActorRequest(Worker_RequestId RequestId);
 
 private:
+	template <typename T>
+	friend T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId);
+
 	USpatialNetDriver* NetDriver;
 	UWorld* World;
 	USpatialView* View;

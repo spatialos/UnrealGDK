@@ -12,23 +12,23 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 		{
 		// Critical Section
 		case WORKER_OP_TYPE_CRITICAL_SECTION:
-			EntityPipeline->OnCriticalSection(Op->critical_section.in_critical_section);
+			Receiver->OnCriticalSection(Op->critical_section.in_critical_section);
 			break;
 
 		// Entity Lifetime
 		case WORKER_OP_TYPE_ADD_ENTITY:
-			EntityPipeline->OnAddEntity(Op->add_entity);
+			Receiver->OnAddEntity(Op->add_entity);
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			EntityPipeline->OnRemoveEntity(Op->remove_entity);
+			Receiver->OnRemoveEntity(Op->remove_entity);
 			break;
 
 		// Components
 		case WORKER_OP_TYPE_ADD_COMPONENT:
-			EntityPipeline->OnAddComponent(Op->add_component);
+			Receiver->OnAddComponent(Op->add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			EntityPipeline->OnRemoveComponent(Op->remove_component);
+			Receiver->OnRemoveComponent(Op->remove_component);
 			break;
 
 
@@ -50,12 +50,12 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 
 		// World Command Responses
 		case WORKER_OP_TYPE_RESERVE_ENTITY_ID_RESPONSE:
-			EntityPipeline->OnReserveEntityIdResponse(Op->reserve_entity_id_response);
+			Receiver->OnReserveEntityIdResponse(Op->reserve_entity_id_response);
 			break;
 		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
 			break;
 		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			EntityPipeline->OnCreateEntityIdResponse(Op->create_entity_response);
+			Receiver->OnCreateEntityIdResponse(Op->create_entity_response);
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
 			break;
@@ -78,6 +78,8 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 			break;
 		}
 	}
+
+	Receiver->ProcessQueuedResolvedObjects();
 }
 
 Worker_Authority USpatialView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
@@ -85,7 +87,7 @@ Worker_Authority USpatialView::GetAuthority(Worker_EntityId EntityId, Worker_Com
 	return ComponentAuthorityMap[EntityId][ComponentId];
 }
 
-void USpatialView::OnAuthority(const Worker_Authority& Op)
+void USpatialView::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 {
 	ComponentAuthorityMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.component_id) = (Worker_Authority)Op.authority;
 }

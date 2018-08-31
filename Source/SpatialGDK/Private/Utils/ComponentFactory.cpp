@@ -29,7 +29,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, const FP
 			const FRepLayoutCmd& Cmd = Changes.RepCmds[HandleIterator.CmdIndex];
 			const FRepParentCmd& Parent = Changes.Parents[Cmd.ParentIndex];
 
-			if (GetAlsoGroupFromCondition(Parent.Condition) == PropertyGroup)
+			if (GetGroupFromCondition(Parent.Condition) == PropertyGroup)
 			{
 				const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 				TSet<const UObject*> UnresolvedObjects;
