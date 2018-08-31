@@ -6,11 +6,6 @@
 
 #include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
-#include "SpatialActorChannel.h"
-#include "SpatialPackageMapClient.h"
-#include "SpatialNetDriver.h"
-#include "SpatialReceiver.h"
-#include "ComponentFactory.h"
 
 #include "SpatialSender.generated.h"
 
@@ -41,18 +36,19 @@ class SPATIALGDK_API USpatialSender : public UObject
 public:
 	void Init(USpatialNetDriver* NetDriver);
 
-	// Actor Lifecycle
-	Worker_RequestId CreateEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel);
-
 	// Actor Updates
-	void SendComponentUpdate(UObject* Object, USpatialActorChannel* Channel, const FPropertyChangeState& Changes);
+	void SendComponentUpdates(UObject* Object, USpatialActorChannel* Channel, const FPropertyChangeState& Changes);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters);
 
 	void SendReserveEntityIdRequest(USpatialActorChannel* Channel);
-	void SendCreateEntityRequest(USpatialActorChannel* Channel);
+	void SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
+	void SendDeleteEntityRequest(Worker_EntityId EntityId);
 
 private:
+	// Actor Lifecycle
+	Worker_RequestId CreateEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel);
+
 	// Queuing
 	void ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle);
 	void QueueOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<const UObject*>& UnresolvedObjects);
@@ -63,18 +59,15 @@ private:
 	Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
 
 private:
-	USpatialNetDriver* NetDriver;
+	class USpatialNetDriver* NetDriver;
 	Worker_Connection* Connection;
-	USpatialReceiver Receiver;
-	USpatialPackageMapClient* PackageMap;
-	USpatialTypebindingManager* TypebindingManager;
+	class USpatialReceiver* Receiver;
+	class USpatialPackageMapClient* PackageMap;
+	class USpatialTypebindingManager* TypebindingManager;
 
 	FChannelToHandleToUnresolved PropertyToUnresolved;
 	FOutgoingRepUpdates ObjectToUnresolved;
 	FOutgoingRPCMap OutgoingRPCs;
-
-	ComponentDataFactory* DataFactory;
-	ComponentUpdateFactory* UpdateFactory;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 };

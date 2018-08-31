@@ -2,10 +2,18 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/RepLayoutUtils.h"
 
-FUnresolvedObjectsMap&& ComponentFactory::ConsumePendingUnresolvedObjectsMap()
-{
-	return std::move(PendingUnresolvedObjectsMap);
-}
+#include "SpatialActorChannel.h"
+#include "SpatialNetDriver.h"
+#include "SpatialPackageMapClient.h"
+#include "SpatialMemoryWriter.h"
+#include "SpatialConstants.h"
+
+ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& UnresolvedObjectsMap, USpatialNetDriver* NetDriver)
+	: NetDriver(NetDriver)
+	, PackageMap(NetDriver->PackageMap)
+	, TypebindingManager(NetDriver->TypebindingManager)
+	, PendingUnresolvedObjectsMap(UnresolvedObjectsMap)
+{ }
 
 bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool bIsInitialData, std::vector<Schema_FieldId>* ClearedIds /*= nullptr*/)
 {
@@ -26,7 +34,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, const FP
 				const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
 				TSet<const UObject*> UnresolvedObjects;
 
-				AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, PackageMap, UnresolvedObjects, ClearedIds);
+				AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, UnresolvedObjects, ClearedIds);
 
 				if (UnresolvedObjects.Num() == 0)
 				{
@@ -84,7 +92,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 		}
 		else
 		{
-			TSharedPtr<FRepLayout> RepLayout = Driver->GetStructRepLayout(Struct);
+			TSharedPtr<FRepLayout> RepLayout = NetDriver->GetStructRepLayout(Struct);
 
 			RepLayout_SerializePropertiesForStruct(*RepLayout, ValueDataWriter, PackageMap, const_cast<uint8*>(Data), bHasUnmapped);
 		}
@@ -137,7 +145,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
-		UnrealObjectRef ObjectRef = NULL_OBJECT_REF;
+		UnrealObjectRef ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
 		if (ObjectValue != nullptr)
@@ -151,12 +159,12 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 				}
 			}
 			ObjectRef = UnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID));
-			if (ObjectRef == UNRESOLVED_OBJECT_REF)
+			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				// A legal static object reference should never be unresolved.
 				check(!ObjectValue->IsFullNameStableForNetworking());
 				UnresolvedObjects.Add(ObjectValue);
-				ObjectRef = NULL_OBJECT_REF;
+				ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 			}
 		}
 
@@ -179,7 +187,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 		FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 		for (int i = 0; i < ArrayHelper.Num(); i++)
 		{
-			AddProperty(Object, Id, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), PackageMap, UnresolvedObjects, ClearedIds);
+			AddProperty(Object, Id, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), UnresolvedObjects, ClearedIds);
 		}
 
 		if (ArrayHelper.Num() == 0 && ClearedIds)
@@ -195,7 +203,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 		}
 		else
 		{
-			AddProperty(Object, Id, EnumProperty->GetUnderlyingProperty(), Data, PackageMap, UnresolvedObjects, ClearedIds);
+			AddProperty(Object, Id, EnumProperty->GetUnderlyingProperty(), Data, UnresolvedObjects, ClearedIds);
 		}
 	}
 	else
@@ -204,7 +212,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 	}
 }
 
-std::vector<Worker_ComponentData> ComponentDataFactory::CreateComponentDatas(UObject* Object, const FPropertyChangeState& PropertyChangeState)
+std::vector<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, const FPropertyChangeState& PropertyChangeState)
 {
 	std::vector<Worker_ComponentData> ComponentData;
 
@@ -217,7 +225,7 @@ std::vector<Worker_ComponentData> ComponentDataFactory::CreateComponentDatas(UOb
 	return ComponentData;
 }
 
-Worker_ComponentData ComponentDataFactory::CreateComponentData(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup)
+Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup)
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
@@ -229,7 +237,7 @@ Worker_ComponentData ComponentDataFactory::CreateComponentData(Worker_ComponentI
 	return ComponentData;
 }
 
-std::vector<Worker_ComponentUpdate> ComponentUpdateFactory::CreateComponentUpdates(UObject* Object, const FPropertyChangeState& PropertyChangeState)
+std::vector<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FPropertyChangeState& PropertyChangeState)
 {
 	std::vector<Worker_ComponentUpdate> ComponentUpdates;
 
@@ -243,7 +251,7 @@ std::vector<Worker_ComponentUpdate> ComponentUpdateFactory::CreateComponentUpdat
 	return ComponentUpdates;
 }
 
-Worker_ComponentUpdate ComponentUpdateFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething)
+Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 

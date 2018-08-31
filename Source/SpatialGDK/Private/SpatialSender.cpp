@@ -1,13 +1,18 @@
 
 #include "SpatialSender.h"
+
 #include "SpatialActorChannel.h"
+#include "SpatialPackageMapClient.h"
+#include "SpatialNetDriver.h"
+#include "SpatialReceiver.h"
+#include "SpatialMemoryWriter.h"
+#include "ComponentFactory.h"
 
 #include "CoreTypes/StandardLibrary.h"
 #include "CoreTypes/UnrealMetadata.h"
 #include "Utils/RepLayoutUtils.h"
 
 #include <vector>
-#include "SpatialMemoryWriter.h"
 
 void USpatialSender::Init(USpatialNetDriver* NetDriver)
 {
@@ -87,15 +92,18 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 	ComponentDatas.push_back(Persistence().CreatePersistenceData());
 	ComponentDatas.push_back(UnrealMetadata(StaticPath, ClientWorkerIdString, SubobjectNameToOffset).CreateUnrealMetadataData());
 
-	std::vector<Worker_ComponentData> DynamicComponentDatas = DataFactory->CreateComponentDatas(Actor, InitialChanges);
-	ComponentDatas.insert(ComponentDatas.end(), DynamicComponentDatas.begin(), DynamicComponentDatas.end());
+	FUnresolvedObjectsMap UnresolvedObjectsMap;
+	ComponentFactory DataFactory(UnresolvedObjectsMap, NetDriver);
 
-	FUnresolvedObjectsMap UnresolvedObjectsMap = DataFactory->ConsumePendingUnresolvedObjectsMap();
+	std::vector<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, InitialChanges);
+	ComponentDatas.insert(ComponentDatas.end(), DynamicComponentDatas.begin(), DynamicComponentDatas.end());
 
 	for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
 	{
 		QueueOutgoingRepUpdate(Channel, Actor, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value);
 	}
+
+	UnresolvedObjectsMap.Empty();
 
 	// TODO: Handover
 	Worker_ComponentData HandoverData = {};
@@ -122,15 +130,15 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 
 		FPropertyChangeState ComponentChanges = Channel->CreateSubobjectChangeState(Component);
 
-		std::vector<Worker_ComponentData> ActorComponentDatas = DataFactory->CreateComponentDatas(Component, ComponentChanges);
+		std::vector<Worker_ComponentData> ActorComponentDatas = DataFactory.CreateComponentDatas(Component, ComponentChanges);
 		ComponentDatas.insert(ComponentDatas.end(), DynamicComponentDatas.begin(), DynamicComponentDatas.end());
 
-		FUnresolvedObjectsMap ComponentUnresolvedObjectsMap = DataFactory->ConsumePendingUnresolvedObjectsMap();
-
-		for (auto& HandleUnresolvedObjectsPair : ComponentUnresolvedObjectsMap)
+		for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
 		{
 			QueueOutgoingRepUpdate(Channel, Component, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value);
 		}
+
+		UnresolvedObjectsMap.Empty();
 
 		// Not adding handover since component's handover properties will be handled by the actor anyway
 
@@ -150,14 +158,16 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 	return CreateEntityRequestId;
 }
 
-void USpatialSender::SendComponentUpdate(UObject* Object, USpatialActorChannel* Channel, const FPropertyChangeState& Changes)
+void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel* Channel, const FPropertyChangeState& Changes)
 {
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	UE_LOG(LogTemp, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
-	std::vector<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory->CreateComponentUpdates(Object, Changes);
-	FUnresolvedObjectsMap UnresolvedObjectsMap = UpdateFactory->ConsumePendingUnresolvedObjectsMap();
+	FUnresolvedObjectsMap UnresolvedObjectsMap;
+	ComponentFactory UpdateFactory(UnresolvedObjectsMap, NetDriver);
+
+	std::vector<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Changes);
 
 	for (uint16 Handle : Changes.RepChanged)
 	{
@@ -183,6 +193,12 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 
 void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters)
 {
+	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(TargetObject->GetClass());
+	if(Info == nullptr)
+	{
+		return;
+	}
+
 	FRPCInfo* RPCInfo = Info->RPCInfoMap.Find(Function);
 	check(RPCInfo);
 
@@ -195,7 +211,7 @@ void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* P
 	case RPC_Server:
 	case RPC_CrossServer:
 	{
-		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Function, Parameters, PackageMap, NetDriver, Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Function, Parameters, Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
@@ -207,7 +223,7 @@ void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* P
 	}
 	case RPC_NetMulticast:
 	{
-		Worker_ComponentUpdate ComponentUpdate = CreateMulticastUpdate(TargetObject, Function, Parameters, PackageMap, NetDriver, Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
+		Worker_ComponentUpdate ComponentUpdate = CreateMulticastUpdate(TargetObject, Function, Parameters, Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
@@ -245,7 +261,7 @@ void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* P
 		{
 			It->DestroyValue_InContainer(Parameters);
 		}
-		delete[] Parameters;
+		delete[] Parameters; // I'm continuously vomiting
 	}
 }
 
@@ -263,11 +279,16 @@ void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, cons
 	Receiver->AddPendingActorRequest(RequestId);
 }
 
+void USpatialSender::SendDeleteEntityRequest(Worker_EntityId EntityId)
+{
+	Worker_Connection_SendDeleteEntityRequest(Connection, EntityId);
+}
+
 void USpatialSender::ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle)
 {
 	check(DependentChannel);
 	check(ReplicatedObject);
-	FChannelObjectPair ChannelObjectPair(DependentChannel, ReplicatedObject);
+	const FChannelObjectPair ChannelObjectPair(DependentChannel, ReplicatedObject);
 
 	FHandleToUnresolved* HandleToUnresolved = PropertyToUnresolved.Find(ChannelObjectPair);
 	if (HandleToUnresolved == nullptr)
@@ -353,7 +374,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
 	UnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
-	if (TargetObjectRef == UNRESOLVED_OBJECT_REF)
+	if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 	{
 		OutUnresolvedObject = TargetObject;
 		Schema_DestroyCommandRequest(CommandRequest.schema_type);
@@ -392,7 +413,7 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 	Schema_Object* EventData = Schema_AddObject(EventsObject, EventIndex);
 
 	UnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
-	if (TargetObjectRef == UNRESOLVED_OBJECT_REF)
+	if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 	{
 		OutUnresolvedObject = TargetObject;
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);

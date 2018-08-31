@@ -79,19 +79,15 @@ public:
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer);
 
-
-	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
+	//TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
 	USpatialPlayerSpawner* PlayerSpawner;
 
 	Worker_Connection* Connection;
 
 	USpatialSender* Sender;
-	USpatialReceiver* EntityPipeline;
 	USpatialReceiver* Receiver;
-
 	USpatialTypebindingManager* TypebindingManager;
-
 	USpatialView* View;
 
 	UPROPERTY()

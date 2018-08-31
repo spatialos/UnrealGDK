@@ -366,7 +366,7 @@ bool USpatialActorChannel::ReplicateActor()
 		}
 		else
 		{
-			NetDriver->Interop->SendComponentUpdates(Actor, GetChangeStateForObject(Actor, ActorReplicator, RepChanged, HandoverChanged), this);
+			Sender->SendComponentUpdates(Actor, this, GetChangeStateForObject(Actor, ActorReplicator, RepChanged, HandoverChanged));
 		}
 
 		bWroteSomethingImportant = true;
@@ -424,11 +424,11 @@ bool USpatialActorChannel::ReplicateActor()
 	return bWroteSomethingImportant;
 }
 
-bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, const FReplicationFlags &RepFlags)
+bool USpatialActorChannel::ReplicateSubobject(UObject *Object, const FReplicationFlags &RepFlags)
 {
-	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Obj)).Get();
+	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Object)).Get();
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
-	Replicator.ChangelistMgr->Update(Obj, Replicator.Connection->Driver->ReplicationFrame, Replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
+	Replicator.ChangelistMgr->Update(Object, Replicator.Connection->Driver->ReplicationFrame, Replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
 
 	const int32 PossibleNewHistoryIndex = Replicator.RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
 	FRepChangedHistory& PossibleNewHistoryItem = Replicator.RepState->ChangeHistory[PossibleNewHistoryIndex];
@@ -440,16 +440,18 @@ bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, const FReplicationFl
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
 		TArray<uint16> Temp = RepChanged;
-		Replicator.RepLayout->MergeChangeConnectionList((uint8*)Obj, HistoryItem.Changed, Temp, RepChanged);
+		Replicator.RepLayout->MergeChangeConnectionList((uint8*)Object, HistoryItem.Changed, Temp, RepChanged);
 	}
 
 	const bool bCompareIndexSame = Replicator.RepState->LastCompareIndex == ChangelistState->CompareIndex;
 	Replicator.RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
+	// TODO: Handover
+	TArray<uint16> HandoverChanged;
+
 	if (RepChanged.Num() > 0)
 	{
-		Sender->SendComponentUpdate(Obj, this, RepChanged);
-		//Interop->SendSpatialUpdateForObject(this, Obj, RepChanged, TArray<uint16>(), &Replicator);
+		Sender->SendComponentUpdates(Object, this, GetChangeStateForObject(Object, &Replicator, RepChanged, HandoverChanged));
 		Replicator.RepState->HistoryEnd++;
 	}
 
@@ -624,8 +626,6 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	{
 		return;
 	}
-
-	//USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
 
 	LastSpatialPosition = ActorSpatialPosition;
 	Sender->SendPositionUpdate(GetEntityId(), LastSpatialPosition);

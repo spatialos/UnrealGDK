@@ -819,16 +819,13 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		return;
 	}
 
-	// The RPC might have been called by an actor directly, or by a subobject on that actor (e.g. UCharacterMovementComponent).
+	// The RPC might have been called by an actor directly, or by a subobject on that actor
 	UObject* CallingObject = SubObject ? SubObject : Actor;
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		Interop->SendRPC(CallingObject, Function, Parameters, false);
+		Sender->SendRPC(CallingObject, Function, Parameters, false);
 	}
-
-	// Shouldn't need to call Super here as we've replaced pretty much all the functionality in UIpNetDriver
-	//UIpNetDriver::ProcessRemoteFunction(Actor, Function, Parameters, OutParms, Stack, SubObject);
 }
 
 void USpatialNetDriver::TickFlush(float DeltaTime)

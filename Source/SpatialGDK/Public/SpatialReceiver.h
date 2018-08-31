@@ -91,6 +91,8 @@ public:
 	void OnCreateEntityIdResponse(Worker_CreateEntityResponseOp& Op);
 	void AddPendingActorRequest(Worker_RequestId RequestId);
 
+	void CleanupDeletedEntity(Worker_EntityId EntityId);
+
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -98,7 +100,6 @@ private:
 	void CreateActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
 	AActor* SpawnNewEntity(Position* PositionComponent, UClass* ActorClass, bool bDeferred);
-	void CleanupDeletedEntity(Worker_EntityId EntityId);
 	UClass* GetNativeEntityClass(Metadata* MetadataComponent);
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel, USpatialPackageMapClient* PackageMap);
