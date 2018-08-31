@@ -287,7 +287,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		else
 		{
 			// We do a basic binary serialization for the generic struct.
-			Writer.Printf("%s%s->SerializeBin(ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&%s)));", *Property->GetCPPType(), (Struct->IsA<UUserDefinedStruct>() ? TEXT("_Struct") : TEXT("::StaticStruct()")), *Property->GetCPPType(), *PropertyValue);
+			Writer.Printf("SerializeStruct(%s%s, ValueDataWriter, reinterpret_cast<void*>(const_cast<%s*>(&%s)));", *Property->GetCPPType(), (Struct->IsA<UUserDefinedStruct>() ? TEXT("_Struct") : TEXT("::StaticStruct()")), *Property->GetCPPType(), *PropertyValue);
 		}
 
 		Writer.Printf("%s(std::string(reinterpret_cast<char*>(ValueData.GetData()), ValueData.Num()));", *Update);
@@ -447,7 +447,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 				TArray<uint8> ValueData;
 				ValueData.Append(reinterpret_cast<const uint8*>(ValueDataStr.data()), ValueDataStr.size());
 				FSpatialMemoryReader ValueDataReader(ValueData, PackageMap);
-				%s%s->SerializeBin(ValueDataReader, reinterpret_cast<void*>(&%s));)""", *Update, *PropertyType, (Struct->IsA<UUserDefinedStruct>() ? TEXT("_Struct") : TEXT("::StaticStruct()")), *PropertyValue);
+				SerializeStruct(%s%s, ValueDataReader, reinterpret_cast<void*>(&%s));)""", *Update, *PropertyType, (Struct->IsA<UUserDefinedStruct>() ? TEXT("_Struct") : TEXT("::StaticStruct()")), *PropertyValue);
 		}
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
@@ -1144,7 +1144,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 
 	SourceWriter.PrintNewLine();
 
-	// Since BP structs don't exist in C++ compile time, we will load the blueprint struct at runtime and call SerializeBin() from it.
+	// Since BP structs don't exist in C++ compile time, we will load the blueprint struct at runtime and call SerializeStruct() for it.
 	// Iterate over blueprint-defined structures and write out source file details
 	VisitAllBlueprintDefinedStructures(RPCsByType, RepData, [&SourceWriter](const UProperty* Property, const UField* ContextField)
 	{
