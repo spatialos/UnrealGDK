@@ -83,7 +83,7 @@ FNetworkGUID USpatialPackageMapClient::ResolveStablyNamedObject(const UObject* O
 	return SpatialGuidCache->AssignNewStablyNamedObjectNetGUID(Object);
 }
 
-improbable::unreal::UnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromNetGUID(const FNetworkGUID & NetGUID) const
+const improbable::unreal::UnrealObjectRef* USpatialPackageMapClient::GetUnrealObjectRefFromNetGUID(const FNetworkGUID & NetGUID) const
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	return SpatialGuidCache->GetUnrealObjectRefFromNetGUID(NetGUID);
@@ -115,7 +115,7 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromStablyNamedObject(const UOb
 		FEntityId{}.ToSpatialEntityId(),
 		0,
 		worker::Option<std::string>{TCHAR_TO_UTF8(*Object->GetFName().ToString())},
-		(OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : worker::Option<improbable::unreal::UnrealObjectRef>{}
+		(OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? *GetUnrealObjectRefFromNetGUID(OuterGUID) : worker::Option<improbable::unreal::UnrealObjectRef>{}
 	};
 
 	return GetNetGUIDFromUnrealObjectRef(ObjectRef);
@@ -190,7 +190,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(const UObje
 	improbable::unreal::UnrealObjectRef StablyNamedObjRef{ FEntityId{}.ToSpatialEntityId(),
 		0,
 		worker::Option<std::string>(TCHAR_TO_UTF8(*Object->GetFName().ToString())),
-		(OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : worker::Option<improbable::unreal::UnrealObjectRef>{} };
+		(OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? *GetUnrealObjectRefFromNetGUID(OuterGUID) : worker::Option<improbable::unreal::UnrealObjectRef>{} };
 	RegisterObjectRef(NetGUID, StablyNamedObjRef);
 
 	return NetGUID;
@@ -240,10 +240,10 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbabl
 	return NetGUID;
 }
 
-improbable::unreal::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
+const improbable::unreal::UnrealObjectRef* FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
 {
 	const FHashableUnrealObjectRef* ObjRef = NetGUIDToUnrealObjectRef.Find(NetGUID);
-	return ObjRef ? (improbable::unreal::UnrealObjectRef)*ObjRef : SpatialConstants::UNRESOLVED_OBJECT_REF;
+	return ObjRef ? (const improbable::unreal::UnrealObjectRef*)ObjRef : &SpatialConstants::UNRESOLVED_OBJECT_REF;
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(worker::EntityId EntityId) const

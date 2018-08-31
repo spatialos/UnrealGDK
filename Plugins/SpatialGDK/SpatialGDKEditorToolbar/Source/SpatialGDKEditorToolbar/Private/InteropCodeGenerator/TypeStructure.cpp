@@ -163,13 +163,14 @@ uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 Static
 	return Checksum;
 }
 
-TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, UProperty* Property, uint32 ParentChecksum, uint32 StaticArrayIndex)
+TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, UProperty* Property, uint32 ParentChecksum, TSharedPtr<FUnrealProperty> ParentProperty, uint32 StaticArrayIndex)
 {
 	TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
 	PropertyNode->Property = Property;
 	PropertyNode->ContainerType = TypeNode;
 	PropertyNode->ParentChecksum = ParentChecksum;
 	PropertyNode->StaticArrayIndex = StaticArrayIndex;
+	PropertyNode->ParentProperty = ParentProperty;
 
 	// Generate a checksum for this PropertyNode to be used to match properties with the RepLayout Cmds later.
 	PropertyNode->CompatibleChecksum = GenerateChecksum(Property, ParentChecksum, StaticArrayIndex);
@@ -177,7 +178,7 @@ TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNod
 	return PropertyNode;
 }
 
-TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksum, int32 StaticArrayIndex, bool bIsRPC)
+TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksum, TSharedPtr<FUnrealProperty> ParentProperty, int32 StaticArrayIndex, bool bIsRPC)
 {
 	// Struct types will set this to nullptr.
 	UClass* Class = Cast<UClass>(Type);
@@ -192,7 +193,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		UProperty* Property = *It;
 
 		// Create property node and add it to the AST.
-		TSharedPtr<FUnrealProperty> PropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, StaticArrayIndex);
+		TSharedPtr<FUnrealProperty> PropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, ParentProperty, StaticArrayIndex);
 
 		// If this property not a struct or object (which can contain more properties), stop here.
 		if (!Property->IsA<UStructProperty>() && !Property->IsA<UObjectProperty>())
@@ -204,7 +205,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			{
 				for (int i = 1; i < Property->ArrayDim; i++)
 				{
-					CreateUnrealProperty(TypeNode, Property, ParentChecksum, i);
+					CreateUnrealProperty(TypeNode, Property, ParentChecksum, ParentProperty, i);
 				}
 			}
 			continue;
@@ -217,7 +218,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 
 			// This is the property for the 0th struct array member.
 			uint32 ParentPropertyNodeChecksum = PropertyNode->CompatibleChecksum;
-			PropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, ParentPropertyNodeChecksum, 0, bIsRPC);
+			PropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, ParentPropertyNodeChecksum, PropertyNode, 0, bIsRPC);
 			PropertyNode->Type->ParentProperty = PropertyNode;
 
 			if (!bIsRPC)
@@ -226,11 +227,11 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				for (int i = 1; i < Property->ArrayDim; i++)
 				{
 					// Create a new PropertyNode.
-					TSharedPtr<FUnrealProperty> StaticStructArrayPropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, i);
+					TSharedPtr<FUnrealProperty> StaticStructArrayPropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, ParentProperty, i);
 
 					// Generate Type information on the inner struct.
 					// Note: The parent checksum of the properties within a struct that is a member of a static struct array, is the checksum for the struct itself after index modification.
-					StaticStructArrayPropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, StaticStructArrayPropertyNode->CompatibleChecksum, 0, bIsRPC);
+					StaticStructArrayPropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, StaticStructArrayPropertyNode->CompatibleChecksum, PropertyNode, 0, bIsRPC);
 					StaticStructArrayPropertyNode->Type->ParentProperty = StaticStructArrayPropertyNode;
 				}
 			}
@@ -280,7 +281,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
 				// This property is definitely a strong reference, recurse into it.
-				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, ParentChecksum, 0, bIsRPC);
+				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, ParentChecksum, PropertyNode, 0, bIsRPC);
 				PropertyNode->Type->ParentProperty = PropertyNode;
 
 				if (!bIsRPC)
@@ -288,10 +289,10 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 					// For static arrays we need to make a new object array member node.
 					for (int i = 1; i < Property->ArrayDim; i++)
 					{
-						TSharedPtr<FUnrealProperty> StaticObjectArrayPropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, i);
+						TSharedPtr<FUnrealProperty> StaticObjectArrayPropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, PropertyNode, i);
 
 						// Note: The parent checksum of static arrays of strong object references will be the parent checksum of this class.
-						StaticObjectArrayPropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, ParentChecksum, 0, bIsRPC);
+						StaticObjectArrayPropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, ParentChecksum, PropertyNode, 0, bIsRPC);
 						StaticObjectArrayPropertyNode->Type->ParentProperty = StaticObjectArrayPropertyNode;
 					}
 				}
@@ -314,7 +315,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		{
 			for (int i = 1; i < Property->ArrayDim; i++)
 			{
-				CreateUnrealProperty(TypeNode, Property, ParentChecksum, i);
+				CreateUnrealProperty(TypeNode, Property, ParentChecksum, ParentProperty, i);
 			}
 		}
 	} // END TFieldIterator<UProperty>
@@ -356,7 +357,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				{
 					uint32 StructChecksum = GenerateChecksum(Parameter, ParentChecksum, 0);
 					PropertyNode->CompatibleChecksum = StructChecksum;
-					PropertyNode->Type = CreateUnrealTypeInfo(StructParameter->Struct, StructChecksum, 0 , true);
+					PropertyNode->Type = CreateUnrealTypeInfo(StructParameter->Struct, StructChecksum, nullptr, 0 , true);
 					PropertyNode->Type->ParentProperty = PropertyNode;
 				}
 			}

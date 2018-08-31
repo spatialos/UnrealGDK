@@ -31,8 +31,8 @@ public:
 
 	void RemoveEntitySubobjects(const FEntityId& EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
 	FNetworkGUID ResolveStablyNamedObject(const UObject* Object);
-	
-	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
+
+	const improbable::unreal::UnrealObjectRef* GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const worker::EntityId& EntityId) const;
 	FNetworkGUID GetNetGUIDFromStablyNamedObject(const UObject* Object) const;
@@ -56,7 +56,7 @@ public:
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(const UObject* Object);
 	
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef);
-	improbable::unreal::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
+	const improbable::unreal::UnrealObjectRef* GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(worker::EntityId EntityId) const;
 
 private:

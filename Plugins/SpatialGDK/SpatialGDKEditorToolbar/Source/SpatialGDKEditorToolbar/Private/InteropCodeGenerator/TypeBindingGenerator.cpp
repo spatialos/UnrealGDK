@@ -239,7 +239,65 @@ void GenerateBlueprintStructEnumDefinition(FCodeWriter& Writer, UProperty* Prope
 	}
 }
 
-void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator, bool bIsRPCProperty, bool bUnresolvedObjectsHandledOutside)
+void GenerateParentValueString(TSharedPtr<FUnrealProperty> PropertyInfo, FCodeWriter &SourceWriter)
+{
+	UStruct* ParentType = PropertyInfo->ContainerType.Pin()->Type;
+	bool bIsNative = true;
+	if (UClass* ParentUClass = Cast<UClass>(ParentType))
+	{
+		if (!(ParentUClass->GetClassFlags() & CLASS_Native))
+		{
+			bIsNative = false;
+		}
+	}
+
+	if (bIsNative)
+	{
+		if (PropertyInfo->ParentProperty.IsValid())
+		{
+			SourceWriter.Printf("const %s%s& %s = *(reinterpret_cast<%s%s const*>(SourceData + %d));", ParentType->GetPrefixCPP(), *ParentType->GetName(), TEXT("ParentValue"), ParentType->GetPrefixCPP(), *ParentType->GetName(), PropertyInfo->ParentProperty.Pin()->Property->GetOffset_ForInternal());
+		}
+		else
+		{
+			SourceWriter.Printf("const %s%s& %s = *(static_cast<%s%s const*>(Channel->Actor));", ParentType->GetPrefixCPP(), *ParentType->GetName(), TEXT("ParentValue"), ParentType->GetPrefixCPP(), *ParentType->GetName());
+		}
+	}
+}
+
+FString GenerateObjectRefAssignmentString(TSharedPtr<FUnrealProperty> ProperyInfo, UProperty* Property, const FString& Assignment)
+{
+	UStruct* ParentType = ProperyInfo->ContainerType.Pin()->Type;
+
+	if (UClass* ParentUClass = Cast<UClass>(ParentType))
+	{
+		if (!(ParentUClass->GetClassFlags() & CLASS_Native))
+		{
+			return FString();
+		}
+	}
+
+	FString ParentTypeName;
+	if (ProperyInfo->ParentProperty.IsValid())
+	{
+		ParentTypeName = ProperyInfo->ParentProperty.Pin()->Property->GetCPPType();
+	}
+	else
+	{
+		ParentTypeName.AppendChar(*ParentType->GetPrefixCPP());
+		ParentTypeName.Append(ParentType->GetName());
+	}
+
+	if (ProperyInfo->Property->ArrayDim > 1 || ProperyInfo->Property->IsA(UArrayProperty::StaticClass()))
+	{
+		return FString::Printf(TEXT("(const_cast<%s&>(ParentValue)).%s_Context.Add(%s);"), *ParentTypeName, *Property->GetName(), *Assignment);
+	}
+	else
+	{
+		return FString::Printf(TEXT("(const_cast<%s&>(ParentValue)).%s_Context = %s;"), *ParentTypeName, *Property->GetName(), *Assignment);
+	}
+}
+
+void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update, UProperty* Property, TSharedPtr<FUnrealProperty> ProperyInfo, const FString& PropertyValue, TFunction<void(const FString&)> ObjectResolveFailureGenerator, bool bIsRPCProperty, bool bUnresolvedObjectsHandledOutside)
 {
 	// For RPC arguments we may wish to handle them differently.
 	if (bIsRPCProperty)
@@ -249,7 +307,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 			Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(Property, false));
 			Writer.Printf("for(int i = 0; i < sizeof(%s) / sizeof(%s[0]); i++)", *PropertyValue, *PropertyValue);
 			Writer.BeginScope();
-			GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", Property, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator, false, bUnresolvedObjectsHandledOutside);
+			GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", Property, ProperyInfo, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator, false, bUnresolvedObjectsHandledOutside);
 			Writer.End();
 			Writer.Printf("%s(List);", *Update);
 			return;
@@ -345,22 +403,27 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 					NetGUID = PackageMap->ResolveStablyNamedObject(%s);
 				}
 			}
-			improbable::unreal::UnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF))""", *PropertyValue, *PropertyValue, *PropertyValue);
+			const improbable::unreal::UnrealObjectRef* ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if ((*ObjectRef) == SpatialConstants::UNRESOLVED_OBJECT_REF))""", *PropertyValue, *PropertyValue, *PropertyValue);
 		Writer.BeginScope();
 		ObjectResolveFailureGenerator(*PropertyValue);
 		Writer.End();
 		Writer.Printf(R"""(
 			else
 			{
-				%s(ObjectRef);
+				%s(*ObjectRef);
 			})""", *Update);
+		if (!bIsRPCProperty)
+		{
+			Writer.Printf(GenerateObjectRefAssignmentString(ProperyInfo, Property, TEXT("ObjectRef")));
+		}
 		Writer.End();
 		Writer.Printf(R"""(
 			else
 			{
 				%s(SpatialConstants::NULL_OBJECT_REF);
-			})""", *Update);
+				%s
+			})""", *Update, !bIsRPCProperty ? *GenerateObjectRefAssignmentString(ProperyInfo, Property, TEXT("&SpatialConstants::NULL_OBJECT_REF")) : TEXT(""));
 	}
 	else if (Property->IsA(UNameProperty::StaticClass()))
 	{
@@ -383,7 +446,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		Writer.Printf("for(int i = 0; i < %s.Num(); i++)", *PropertyValue);
 		Writer.BeginScope();
 
-		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator, bIsRPCProperty, bUnresolvedObjectsHandledOutside);
+		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, ProperyInfo, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator, bIsRPCProperty, bUnresolvedObjectsHandledOutside);
 
 		Writer.End();
 
@@ -684,11 +747,11 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
-		HeaderWriter.Printf("void ServerSendUpdate_%s(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, %s::Update& OutUpdate) const;",
+		HeaderWriter.Printf("void ServerSendUpdate_%s(const uint8* RESTRICT Data, const uint8* RESTRICT SourceData, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, %s::Update& OutUpdate) const;",
 			*GetReplicatedPropertyGroupName(Group),
 			*SchemaReplicatedDataName(Group, Class, true));
 	}
-	HeaderWriter.Printf("void ServerSendUpdate_Handover(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, %s::Update& OutUpdate) const;",
+	HeaderWriter.Printf("void ServerSendUpdate_Handover(const uint8* RESTRICT Data, const uint8* RESTRICT SourceData, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, %s::Update& OutUpdate) const;",
 		*SchemaHandoverDataName(Class, true));
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
@@ -1578,7 +1641,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 		SourceWriter.Outdent();
 		SourceWriter.Printf("case GROUP_%s:", *GetReplicatedPropertyGroupName(Group));
 		SourceWriter.Indent();
-		SourceWriter.Printf("ServerSendUpdate_%s(Data, HandleIterator.Handle, Cmd.Property, Channel, %sUpdate);",
+		SourceWriter.Printf("ServerSendUpdate_%s(Data, Changes.SourceData, HandleIterator.Handle, Cmd.Property, Channel, %sUpdate);",
 			*GetReplicatedPropertyGroupName(Group),
 			*GetReplicatedPropertyGroupName(Group));
 		SourceWriter.Printf("b%sUpdateChanged = true;",
@@ -1610,7 +1673,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 				Channel->GetEntityId().ToSpatialEntityId(),
 				*PropertyMapData.Property->GetName(),
 				ChangedHandle);
-			ServerSendUpdate_Handover(Data, ChangedHandle, PropertyMapData.Property, Channel, HandoverDataUpdate);
+			ServerSendUpdate_Handover(Data, Changes.SourceData, ChangedHandle, PropertyMapData.Property, Channel, HandoverDataUpdate);
 			bHandoverDataUpdateChanged = true;
 		})""");
 
@@ -1620,7 +1683,7 @@ void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UCl
 void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData, EReplicatedPropertyGroup Group)
 {
 	FFunctionSignature ServerSendUpdateSignature{"void",
-		FString::Printf(TEXT("ServerSendUpdate_%s(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, %s::Update& OutUpdate) const"),
+		FString::Printf(TEXT("ServerSendUpdate_%s(const uint8* RESTRICT Data, const uint8* RESTRICT SourceData, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, %s::Update& OutUpdate) const"),
 			*GetReplicatedPropertyGroupName(Group),
 			*SchemaReplicatedDataName(Group, Class, true))
 	};
@@ -1678,6 +1741,8 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 
 		if (InnerProperty->IsA<UObjectPropertyBase>() || InnerProperty->IsA<UStructProperty>())
 		{
+			GenerateParentValueString(PropertyInfo, SourceWriter);
+
 			// Special case because we need to handle unresolved objects
 			bHandleUnresolvedObjects = true;
 		}
@@ -1697,6 +1762,8 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	{
 		FString ClassName = GetNativeClassName(Cast<UObjectPropertyBase>(Property));
 		SourceWriter.Printf("%s* %s = *(reinterpret_cast<%s* const*>(Data));", *ClassName, *PropertyValueName, *ClassName);
+
+		GenerateParentValueString(PropertyInfo, SourceWriter);
 	}
 	else
 	{
@@ -1706,7 +1773,6 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(PropertyInfo);
 
 	SourceWriter.PrintNewLine();
-
 	if (bHandleUnresolvedObjects)
 	{
 		SourceWriter.Printf(R"""(
@@ -1714,7 +1780,7 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 			TSet<const UObject*> UnresolvedObjects;)""", Handle);
 
 		FString ResultSetter = FString::Printf(TEXT("const %s& Result = "), *PropertyToWorkerSDKType(Property, false));
-		GenerateUnrealToSchemaConversion(SourceWriter, ResultSetter, Property, PropertyValueName, [&SourceWriter](const FString& PropertyValue)
+		GenerateUnrealToSchemaConversion(SourceWriter, ResultSetter, Property, PropertyInfo, PropertyValueName, [&SourceWriter](const FString& PropertyValue)
 		{
 			SourceWriter.Printf("UnresolvedObjects.Add(%s);", *PropertyValue);
 		}, false, true);
@@ -1731,7 +1797,7 @@ void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 H
 	}
 	else
 	{
-		GenerateUnrealToSchemaConversion(SourceWriter, SpatialValueSetter, PropertyInfo->Property, PropertyValueName, [&SourceWriter, Handle](const FString& PropertyValue)
+		GenerateUnrealToSchemaConversion(SourceWriter, SpatialValueSetter, PropertyInfo->Property, PropertyInfo, PropertyValueName, [&SourceWriter, Handle](const FString& PropertyValue)
 		{
 			SourceWriter.Printf("// A legal static object reference should never be unresolved.");
 			SourceWriter.Printf("check(!%s->IsFullNameStableForNetworking())", *PropertyValue);
@@ -1746,7 +1812,7 @@ void GenerateFunction_ServerSendUpdate_HandoverData(FCodeWriter& SourceWriter, U
 {
 	// TODO: Support fixed size arrays for handover data. UNR-282.
 	FFunctionSignature ServerSendUpdateSignature{"void",
-		FString::Printf(TEXT("ServerSendUpdate_Handover(const uint8* RESTRICT Data, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, %s::Update& OutUpdate) const"),
+		FString::Printf(TEXT("ServerSendUpdate_Handover(const uint8* RESTRICT Data, const uint8* RESTRICT SourceData, int32 Handle, UProperty* Property, USpatialActorChannel* Channel, %s::Update& OutUpdate) const"),
 			*SchemaHandoverDataName(Class, true))
 	};
 	SourceWriter.BeginFunction(ServerSendUpdateSignature, TypeBindingName(Class));
@@ -1778,12 +1844,20 @@ void GenerateFunction_ServerSendUpdate_HandoverData(FCodeWriter& SourceWriter, U
 			{
 				SourceWriter.Printf("%s %s = *(reinterpret_cast<%s const*>(Data));", *PropertyValueCppType, *PropertyValueName, *PropertyValueCppType);
 			}
+
+			GenerateParentValueString(HandoverProp.Value, SourceWriter);
+
+			if (Property->IsA<UObjectPropertyBase>())
+			{
+				GenerateObjectRefAssignmentString(HandoverProp.Value, Property, TEXT("ObjectRef"));
+			}
+
 			SourceWriter.PrintNewLine();
 
 			FString SpatialValueSetter = TEXT("OutUpdate.set_") + SchemaFieldName(HandoverProp.Value);
 
 			GenerateUnrealToSchemaConversion(
-				SourceWriter, SpatialValueSetter, HandoverProp.Value->Property, PropertyValueName,
+				SourceWriter, SpatialValueSetter, HandoverProp.Value->Property, HandoverProp.Value, PropertyValueName,
 				[&SourceWriter, Handle](const FString& PropertyValue)
 			{
 				SourceWriter.Printf("Interop->QueueOutgoingObjectHandoverUpdate_Internal(%s, Channel, %d);", *PropertyValue, Handle);
@@ -2165,7 +2239,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 
 	SourceWriter.Printf(R"""(
 		// Resolve TargetObject.
-		improbable::unreal::UnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject));
+		improbable::unreal::UnrealObjectRef TargetObjectRef = *(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 		if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UE_LOG(LogSpatialGDKInterop, Log, TEXT("%%s: RPC %s queued. Target object is unresolved."), *Interop->GetSpatialOS()->GetWorkerId());
@@ -2190,7 +2264,7 @@ void GenerateFunction_SendRPC(FCodeWriter& SourceWriter, UClass* Class, const TS
 
 		SourceWriter.BeginScope();
 		GenerateUnrealToSchemaConversion(
-			SourceWriter, SpatialValueSetter, Param->Property, PropertyValue,
+			SourceWriter, SpatialValueSetter, Param->Property, Param, PropertyValue,
 			[&SourceWriter, &RPC](const FString& PropertyValue)
 		{
 			SourceWriter.Printf("UE_LOG(LogSpatialGDKInterop, Log, TEXT(\"%%s: RPC %s queued. %s is unresolved.\"), *Interop->GetSpatialOS()->GetWorkerId());",

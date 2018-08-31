@@ -118,6 +118,7 @@ struct FUnrealProperty
 	TSharedPtr<FUnrealRepData> ReplicationData; // Only set if property is replicated.
 	TSharedPtr<FUnrealHandoverData> HandoverData; // Only set if property is marked for handover (and not replicated).
 	TWeakPtr<FUnrealType> ContainerType; // Not set if this property is an RPC parameter.
+	TWeakPtr<FUnrealProperty> ParentProperty;
 
 	// These variables are used for unique variable checksum generation. We do this to accurately match properties at run-time.
 	// They are used in the function GenerateChecksum which will use all three variables and the UProperty itself to create a checksum for each FUnrealProperty.
@@ -196,10 +197,10 @@ void VisitAllProperties(TSharedPtr<FUnrealRPC> RPCNode, TFunction<bool(TSharedPt
 uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 StaticArrayIndex);
 
 // Creates a new FUnrealProperty for the included UProperty, generates a checksum for it and then adds it to the TypeNode included.
-TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, UProperty* Property, uint32 ParentChecksum, uint32 StaticArrayIndex);
+TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, UProperty* Property, uint32 ParentChecksum, TSharedPtr<FUnrealProperty> ParentProperty, uint32 StaticArrayIndex);
 
 // Generates an AST from an Unreal UStruct or UClass.
-TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksum, int32 StaticArrayIndex, bool bIsRPC);
+TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksum, TSharedPtr<FUnrealProperty> ParentProperty, int32 StaticArrayIndex, bool bIsRPC);
 
 // Traverses an AST, and generates a flattened list of replicated properties, which will match the Cmds array of FRepLayout.
 // The list of replicated properties will all have the ReplicatedData field set to a valid FUnrealRepData node which contains

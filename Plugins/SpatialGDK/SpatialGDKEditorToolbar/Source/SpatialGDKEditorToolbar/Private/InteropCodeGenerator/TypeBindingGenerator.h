@@ -12,6 +12,7 @@ void GenerateUnrealToSchemaConversion(
 	FCodeWriter& Writer,
 	const FString& Update,
 	UProperty* Property,
+	TSharedPtr<FUnrealProperty> ProperyInfo,
 	const FString& PropertyValue,
 	TFunction<void(const FString&)> ObjectResolveFailureGenerator,
 	bool bIsRPCProperty,
