@@ -17,7 +17,7 @@
 
 class USpatialActorChannel;
 
-using FChannelObjectPair = TPair<USpatialActorChannel*, UObject*>;
+
 
 UCLASS()
 class SPATIALGDK_API USpatialInterop : public UObject

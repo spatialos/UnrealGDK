@@ -18,44 +18,6 @@ struct FObjectReferences;
 
 using FObjectReferencesMap = TMap<int32, FObjectReferences>;
 
-struct FObjectReferences
-{
-	FObjectReferences() = default;
-	FObjectReferences(FObjectReferences&& Other)
-		: UnresolvedRefs(MoveTemp(Other.UnresolvedRefs))
-		, bSingleProp(Other.bSingleProp)
-		, Buffer(MoveTemp(Other.Buffer))
-		, NumBufferBits(Other.NumBufferBits)
-		, Array(MoveTemp(Other.Array))
-		, ParentIndex(Other.ParentIndex)
-		, Property(Other.Property) {}
-
-	// Single property constructor
-	FObjectReferences(const UnrealObjectRef& InUnresolvedRef, int32 InParentIndex, UProperty* InProperty)
-		: bSingleProp(true), ParentIndex(InParentIndex), Property(InProperty)
-	{
-		UnresolvedRefs.Add(InUnresolvedRef);
-	}
-
-	// Struct (memory stream) constructor
-	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, const TSet<UnrealObjectRef>& InUnresolvedRefs, int32 InParentIndex, UProperty* InProperty)
-		: UnresolvedRefs(InUnresolvedRefs), bSingleProp(false), Buffer(InBuffer), NumBufferBits(InNumBufferBits), ParentIndex(InParentIndex), Property(InProperty) {}
-
-	// Array constructor
-	FObjectReferences(FObjectReferencesMap* InArray, int32 InParentIndex, UProperty* InProperty)
-		: bSingleProp(false), Array(InArray), ParentIndex(InParentIndex), Property(InProperty) {}
-
-	TSet<UnrealObjectRef>				UnresolvedRefs;
-
-	bool								bSingleProp;
-	TArray<uint8>						Buffer;
-	int32								NumBufferBits;
-
-	TUniquePtr<FObjectReferencesMap>	Array;
-	int32								ParentIndex;
-	UProperty*							Property;
-};
-
 void ReadDynamicData(const Worker_ComponentData& ComponentData, UObject* TargetObject, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs);
 void ReceiveDynamicUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, class USpatialActorChannel* Channel, class USpatialPackageMapClient* PackageMap, class UNetDriver* Driver, EReplicatedPropertyGroup PropertyGroup, bool bAutonomousProxy, FObjectReferencesMap& ObjectReferencesMap, TSet<UnrealObjectRef>& UnresolvedRefs);
 

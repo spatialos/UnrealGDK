@@ -22,7 +22,7 @@ public:
 private:
 	void OnAuthority(const Worker_Authority& Op);
 
-	class USpatialEntityPipeline* EntityPipeline;
+	class USpatialReceiver* EntityPipeline;
 	class USpatialReceiver* Receiver;
 
 	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> ComponentAuthorityMap;

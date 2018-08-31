@@ -9,9 +9,12 @@
 #include <vector>
 #include "SpatialMemoryWriter.h"
 
-void USpatialSender::Init()
+void USpatialSender::Init(USpatialNetDriver* NetDriver)
 {
-
+	this->NetDriver = NetDriver;
+	Connection = NetDriver->Connection;
+	PackageMap = NetDriver->PackageMap;
+	TypebindingManager = NetDriver->TypebindingManager;
 }
 
 Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, const FVector& Location, const FString& EntityType, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel)
@@ -153,9 +156,6 @@ void USpatialSender::SendComponentUpdate(UObject* Object, USpatialActorChannel* 
 
 	UE_LOG(LogTemp, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
-	check(Info);
-
 	std::vector<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory->CreateComponentUpdates(Object, Changes);
 	FUnresolvedObjectsMap UnresolvedObjectsMap = UpdateFactory->ConsumePendingUnresolvedObjectsMap();
 
@@ -183,9 +183,6 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 
 void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters)
 {
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(TargetObject->GetClass());
-	check(Info);
-
 	FRPCInfo* RPCInfo = Info->RPCInfoMap.Find(Function);
 	check(RPCInfo);
 
@@ -250,6 +247,20 @@ void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* P
 		}
 		delete[] Parameters;
 	}
+}
+
+void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
+{
+	Worker_RequestId RequestId = Worker_Connection_SendReserveEntityIdRequest(Connection, nullptr);
+	Receiver->AddPendingActorRequest(RequestId);
+}
+
+void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
+{
+	FSoftClassPath ActorClassPath(Channel->Actor->GetClass());
+
+	Worker_RequestId RequestId = CreateEntity(PlayerWorkerId, Location, ActorClassPath.ToString(), Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
+	Receiver->AddPendingActorRequest(RequestId);
 }
 
 void USpatialSender::ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle)

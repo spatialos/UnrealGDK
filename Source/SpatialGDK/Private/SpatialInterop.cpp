@@ -678,18 +678,7 @@ Worker_RequestId USpatialInterop::CreateActorEntity(const FString& ClientWorkerI
 
 void USpatialInterop::DeleteEntityIfAuthoritative(Worker_EntityId EntityId)
 {
-	if (!Connection) return;
 
-	bool bHasAuthority = /*Interop->IsAuthoritativeDestructionAllowed() && */ HasComponentAuthority(EntityId, POSITION_COMPONENT_ID);
-
-	UE_LOG(LogTemp, Log, TEXT("!!! Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
-
-	// If we have authority and aren't trying to delete a critical entity, delete it
-	if (bHasAuthority && !IsCriticalEntity(EntityId))
-	{
-		Worker_Connection_SendDeleteEntityRequest(Connection, EntityId, nullptr);
-		EntityPipeline.CleanupDeletedEntity(EntityId);
-	}
 }
 
 bool USpatialInterop::IsCriticalEntity(Worker_EntityId EntityId)

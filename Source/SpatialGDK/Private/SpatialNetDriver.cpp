@@ -18,7 +18,11 @@
 #include "SpatialPendingNetGame.h"
 #include "SpatialPlayerSpawner.h"
 
-#include "SpatialInterop.h"
+#include "SpatialSender.h"
+#include "SpatialEntityPipeline.h"
+#include "SpatialReceiver.h"
+#include "SpatialTypebindingManager.h"
+#include "SpatialView.h"
 
 #define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
 
@@ -139,8 +143,17 @@ void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS."));
 
-	Interop = NewObject<USpatialInterop>();
-	Interop->Init(this);
+	Sender = NewObject<USpatialSender>();
+	Sender->Init(this);
+
+	EntityPipeline = NewObject<USpatialReceiver>();
+	EntityPipeline->Init(this);
+
+	Receiver = NewObject<USpatialReceiver>();
+	Receiver->Init(this);
+
+	View = NewObject<USpatialView>();
+	View->Init();
 
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	PlayerSpawner->Init(this, TimerManager);

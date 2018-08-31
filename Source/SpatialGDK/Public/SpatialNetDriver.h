@@ -13,16 +13,18 @@
 
 #include "SpatialNetDriver.generated.h"
 
-class UEntityPipeline;
-class UEntityRegistry;
-class UCallbackDispatcher;
-class USpatialOS;
 class USpatialActorChannel;
-class USpatialPlayerSpawner;
 class USpatialNetConnection;
-class USpatialInteropPipelineBlock;
 class USpatialPackageMapClient;
+
+class USpatialSender;
+class USpatialReceiver;
+class USpatialReceiver;
 class USpatialPlayerSpawner;
+class USpatialTypebindingManager;
+class USpatialView;
+
+class UEntityRegistry;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -77,13 +79,23 @@ public:
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer);
 
+
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
 	USpatialPlayerSpawner* PlayerSpawner;
+
 	Worker_Connection* Connection;
 
+	USpatialSender* Sender;
+	USpatialReceiver* EntityPipeline;
+	USpatialReceiver* Receiver;
+
+	USpatialTypebindingManager* TypebindingManager;
+
+	USpatialView* View;
+
 	UPROPERTY()
-	class USpatialInterop* Interop;
+	USpatialPackageMapClient* PackageMap;
 
 protected:
 	FSpatialGDKWorkerConfigurationData WorkerConfig;
@@ -97,8 +109,6 @@ protected:
 	FTimerManager* TimerManager;
 
 	// Package map shared by all connections.
-	UPROPERTY()
-	USpatialPackageMapClient* PackageMap;
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
