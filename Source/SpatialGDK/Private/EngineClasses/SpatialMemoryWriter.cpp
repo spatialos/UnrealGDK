@@ -4,8 +4,8 @@
 
 #include "SpatialPackageMapClient.h"
 #include "WeakObjectPtr.h"
-#include "SchemaHelpers.h"
 #include "Schema/UnrealObjectRef.h"
+#include "SpatialConstants.h"
 
 void FSpatialMemoryWriter::SerializeObjectRef(UnrealObjectRef& ObjectRef)
 {
@@ -95,15 +95,15 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 			}
 		}
 		ObjectRef = UnrealObjectRef(PackageMapClient->GetUnrealObjectRefFromNetGUID(NetGUID));
-		if (ObjectRef == UNRESOLVED_OBJECT_REF)
+		if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UnresolvedObjects.Add(Value);
-			ObjectRef = NULL_OBJECT_REF;
+			ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 		}
 	}
 	else
 	{
-		ObjectRef = NULL_OBJECT_REF;
+		ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 	}
 
 	SerializeObjectRef(ObjectRef);

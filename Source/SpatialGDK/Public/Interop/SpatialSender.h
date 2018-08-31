@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 
-#include "SpatialTypeBindingManager.h"
+#include "RepDataUtils.h"
 
 #include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
