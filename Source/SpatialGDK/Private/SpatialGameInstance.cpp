@@ -62,8 +62,16 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 		GetEngine()->ShutdownWorldNetDriver(GetWorldContext()->World());
 	}
 
-	FURL BaseURL = WorldContext->LastURL;
-	FURL URL(&BaseURL, TEXT("127.0.0.1"), ETravelType::TRAVEL_Absolute);
+	UEditorEngine* const EditorEngine = CastChecked<UEditorEngine>(GetEngine());
+
+	// Ok for some reason the BaseURL does not have the host.
+	// I can see that the attempt was to add the host. Let' 
+	//FURL BaseURL = WorldContext->LastURL;
+	//FURL URL(&BaseURL, TEXT("127.0.0.1"), ETravelType::TRAVEL_Absolute);
+
+	// Josh - Correctly build the URL
+	//FURL URL = FURL(&BaseURL, *EditorEngine->BuildPlayWorldURL(*PIEMapName), TRAVEL_Absolute);
+	FURL URL = WorldContext->LastURL; // TOMORROW JOSH - THIS WORKS. LOOK AT MANAGED WORKERS.
 
 	WorldContext->PendingNetGame = NewObject<USpatialPendingNetGame>();
 	WorldContext->PendingNetGame->Initialize(URL);
@@ -84,6 +92,90 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 }
 
 #if WITH_EDITOR
+FGameInstancePIEResult USpatialGameInstance::InitializeForPlayInEditor(int32 PIEInstanceIndex, const FGameInstancePIEParameters& Params)
+{
+	UEditorEngine* const EditorEngine = CastChecked<UEditorEngine>(GetEngine());
+
+	// Look for an existing pie world context, may have been created before
+	WorldContext = EditorEngine->GetWorldContextFromPIEInstance(PIEInstanceIndex);
+
+	if (!WorldContext)
+	{
+		// If not, create a new one
+		WorldContext = &EditorEngine->CreateNewWorldContext(EWorldType::PIE);
+		WorldContext->PIEInstance = PIEInstanceIndex;
+	}
+
+	WorldContext->RunAsDedicated = Params.bRunAsDedicated;
+
+	WorldContext->OwningGameInstance = this;
+
+	// Here we can change the name of the world that we boot into.
+	const FString WorldPackageName = EditorEngine->EditorWorld->GetOutermost()->GetName();
+
+	// Establish World Context for PIE World
+	WorldContext->LastURL.Map = WorldPackageName;
+	WorldContext->PIEPrefix = WorldContext->PIEInstance != INDEX_NONE ? UWorld::BuildPIEPackagePrefix(WorldContext->PIEInstance) : FString();
+
+	const ULevelEditorPlaySettings* PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
+
+	// We always need to create a new PIE world unless we're using the editor world for SIE
+	UWorld* NewWorld = nullptr;
+
+	bool bNeedsGarbageCollection = false;
+	const EPlayNetMode PlayNetMode = [&PlayInSettings] { EPlayNetMode NetMode(PIE_Standalone); return (PlayInSettings->GetPlayNetMode(NetMode) ? NetMode : PIE_Standalone); }();
+	const bool CanRunUnderOneProcess = [&PlayInSettings] { bool RunUnderOneProcess(false); return (PlayInSettings->GetRunUnderOneProcess(RunUnderOneProcess) && RunUnderOneProcess); }();
+	if (PlayNetMode == PIE_Client)
+	{
+		// We are going to connect, so just load an empty world
+		NewWorld = EditorEngine->CreatePIEWorldFromEntry(*WorldContext, EditorEngine->EditorWorld, PIEMapName);
+	}
+	else
+	{
+		// Standard PIE path: just duplicate the EditorWorld
+		NewWorld = EditorEngine->CreatePIEWorldByDuplication(*WorldContext, EditorEngine->EditorWorld, PIEMapName);
+
+		// Duplication can result in unreferenced objects, so indicate that we should do a GC pass after initializing the world context
+		bNeedsGarbageCollection = true;
+	}
+
+	// failed to create the world!
+	if (NewWorld == nullptr)
+	{
+		return FGameInstancePIEResult::Failure(NSLOCTEXT("UnrealEd", "Error_FailedCreateEditorPreviewWorld", "Failed to create editor preview world."));
+	}
+
+	NewWorld->SetGameInstance(this);
+	WorldContext->SetCurrentWorld(NewWorld);
+	WorldContext->AddRef(EditorEngine->PlayWorld);	// Tie this context to this UEngine::PlayWorld*		// @fixme, needed still?
+
+													// make sure we can clean up this world!
+	NewWorld->ClearFlags(RF_Standalone);
+	NewWorld->bKismetScriptError = Params.bAnyBlueprintErrors;
+
+	// Do a GC pass if necessary to remove any potentially unreferenced objects
+	if (bNeedsGarbageCollection)
+	{
+		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
+	}
+
+	Init();
+
+	// Give the deprecated method a chance to fail as well
+	FGameInstancePIEResult InitResult = FGameInstancePIEResult::Success();
+
+	if (InitResult.IsSuccess())
+	{
+		PRAGMA_DISABLE_DEPRECATION_WARNINGS
+			InitResult = InitializePIE(Params.bAnyBlueprintErrors, PIEInstanceIndex, Params.bRunAsDedicated) ?
+			FGameInstancePIEResult::Success() :
+			FGameInstancePIEResult::Failure(NSLOCTEXT("UnrealEd", "Error_CouldntInitInstance", "The game instance failed to Play/Simulate In Editor"));
+		PRAGMA_ENABLE_DEPRECATION_WARNINGS
+	}
+
+	return InitResult;
+}
+
 FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
 	if (!HasSpatialNetDriver())
