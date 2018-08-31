@@ -2,7 +2,7 @@
 
 pushd "%~dp0..\"
 
-call "Scripts\BuildWorkerConfig.bat"
+call "Build\Scripts\BuildWorkerConfig.bat"
 
 set BUILD_EXE_PATH="Binaries\ThirdParty\Improbable\Programs\Build.exe"
 
