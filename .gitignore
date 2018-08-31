@@ -58,8 +58,8 @@ Build/*/**
 !Build/**/*.ico
 
 # Build artifacts
-/build/
-/packages/
+Plugins/SpatialGDK/SpatialGDK/Build/build/
+Plugins/SpatialGDK/SpatialGDK/Build/packages/
 
 # Built data for maps
 #*_BuiltData.uasset

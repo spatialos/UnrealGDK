@@ -56,7 +56,7 @@
   <ItemGroup>
     <Reference Include="CodeGenerator">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\Improbable.CodeGeneration\CodeGenerator.dll</HintPath>
+      <HintPath>..\..\packages\Improbable.CodeGeneration\CodeGenerator.dll</HintPath>
     </Reference>
     <Reference Include="System" />
   </ItemGroup>
@@ -123,7 +123,7 @@
   <ItemGroup>
     <Reference Include="Improbable.TextTemplating">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\Improbable.CodeGeneration\Improbable.TextTemplating.dll</HintPath>
+      <HintPath>..\..\packages\Improbable.CodeGeneration\Improbable.TextTemplating.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -155,7 +155,7 @@
     <T4Files Include="Templates\UnrealCallbackDispatcherImplementationGenerator.tt" />
   </ItemGroup>
   <ItemGroup />
-  <UsingTask TaskName="Improbable.TextTemplating.TransformAllTask" AssemblyFile="..\..\..\packages\Improbable.CodeGeneration\Improbable.TextTemplating.dll" />
+  <UsingTask TaskName="Improbable.TextTemplating.TransformAllTask" AssemblyFile="..\..\packages\Improbable.CodeGeneration\Improbable.TextTemplating.dll" />
   <Target Name="BeforeBuild">
     <TransformAllTask InputFiles="@(T4Files)" ProjectDirectory="$(MSBuildProjectDirectory)" Imports="Improbable.CodeGeneration.Jobs" ClassNameSpace="Improbable.Unreal.CodeGeneration">
       <Output TaskParameter="OutputFiles" PropertyName="GeneratedFiles" />

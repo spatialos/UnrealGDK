@@ -40,10 +40,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="CodeGenerator">
-      <HintPath>..\..\..\packages\Improbable.CodeGeneration\CodeGenerator.dll</HintPath>
+      <HintPath>..\..\packages\Improbable.CodeGeneration\CodeGenerator.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework">
-      <HintPath>..\..\..\packages\NUnit.3.9.0\lib\net35\nunit.framework.dll</HintPath>
+      <HintPath>..\..\packages\NUnit.3.9.0\lib\net35\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
   </ItemGroup>
