@@ -5,7 +5,7 @@
 #include "SpatialPackageMapClient.h"
 #include "WeakObjectPtr.h"
 #include "SchemaHelpers.h"
-#include "CoreTypes/UnrealObjectRef.h"
+#include "Schema/UnrealObjectRef.h"
 
 void FSpatialMemoryWriter::SerializeObjectRef(UnrealObjectRef& ObjectRef)
 {

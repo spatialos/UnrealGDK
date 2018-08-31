@@ -19,12 +19,9 @@
 #include "SpatialPlayerSpawner.h"
 
 #include "SpatialSender.h"
-#include "SpatialEntityPipeline.h"
 #include "SpatialReceiver.h"
 #include "SpatialTypebindingManager.h"
 #include "SpatialView.h"
-
-#define ENTITY_BLUEPRINTS_FOLDER "/Game/EntityBlueprints"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -146,9 +143,6 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	Sender = NewObject<USpatialSender>();
 	Sender->Init(this);
 
-	EntityPipeline = NewObject<USpatialReceiver>();
-	EntityPipeline->Init(this);
-
 	Receiver = NewObject<USpatialReceiver>();
 	Receiver->Init(this);
 
@@ -188,7 +182,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 		Connection->SetClientLoginState(EClientLoginState::Welcomed);
 	}
 
-	Interop->PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 }
 
 void USpatialNetDriver::OnSpatialOSDisconnected(const FString& Reason)

@@ -1,7 +1,6 @@
 
 #include "SpatialView.h"
 
-#include "SpatialEntityPipeline.h"
 #include "SpatialReceiver.h"
 
 void USpatialView::ProcessOps(Worker_OpList* OpList)

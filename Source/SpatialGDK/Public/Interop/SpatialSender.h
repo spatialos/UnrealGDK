@@ -9,6 +9,12 @@
 
 #include "SpatialSender.generated.h"
 
+class USpatialNetDriver;
+class USpatialActorChannel;
+class USpatialPackageMapClient;
+class USpatialTypebindingManager;
+class USpatialReceiver;
+
 struct FPendingRPCParams
 {
 	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters)
@@ -59,11 +65,11 @@ private:
 	Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
 
 private:
-	class USpatialNetDriver* NetDriver;
+	USpatialNetDriver* NetDriver;
 	Worker_Connection* Connection;
-	class USpatialReceiver* Receiver;
-	class USpatialPackageMapClient* PackageMap;
-	class USpatialTypebindingManager* TypebindingManager;
+	USpatialReceiver* Receiver;
+	USpatialPackageMapClient* PackageMap;
+	USpatialTypebindingManager* TypebindingManager;
 
 	FChannelToHandleToUnresolved PropertyToUnresolved;
 	FOutgoingRepUpdates ObjectToUnresolved;

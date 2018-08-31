@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SpatialEntityPipeline.h"
+#include "SpatialReceiver.h"
 
 class ComponentReader
 {

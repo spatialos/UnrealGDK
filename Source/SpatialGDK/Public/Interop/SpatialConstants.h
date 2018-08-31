@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "CoreTypes/UnrealObjectRef.h"
+#include "Schema/UnrealObjectRef.h"
 
 namespace SpatialConstants
 {
