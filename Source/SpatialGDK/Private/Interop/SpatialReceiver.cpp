@@ -25,20 +25,21 @@ T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
 	{
 		if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.ComponentId == T::ComponentId)
 		{
-			return static_cast<T*>(PendingAddComponent.Data.get());
+			return static_cast<T*>(PendingAddComponent.Data.Get());
 		}
 	}
 
 	return nullptr;
 }
 
-void USpatialReceiver::Init(USpatialNetDriver* NetDriver)
+void USpatialReceiver::Init(USpatialNetDriver* InNetDriver)
 {
-	this->NetDriver = NetDriver;
-	this->PackageMap = NetDriver->PackageMap;
-	this->World = NetDriver->GetWorld();
-	this->View = NetDriver->View;
-	this->TypebindingManager = NetDriver->TypebindingManager;
+	NetDriver = InNetDriver;
+	PackageMap = InNetDriver->PackageMap;
+	World = InNetDriver->GetWorld();
+	View = InNetDriver->View;
+	TypebindingManager = InNetDriver->TypebindingManager;
+	Sender = InNetDriver->Sender;
 }
 
 void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
@@ -99,27 +100,27 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 
 	check(bInCriticalSection);
 
-	std::shared_ptr<Component> Data;
+	TSharedPtr<Component> Data;
 
 	switch (Op.data.component_id)
 	{
 	case ENTITY_ACL_COMPONENT_ID:
-		Data = std::make_shared<Component>(EntityAcl(Op.data));
+		Data = MakeShared<EntityAcl>(Op.data);
 		break;
 	case METADATA_COMPONENT_ID:
-		Data = std::make_shared<Component>(Metadata(Op.data));
+		Data = MakeShared<Metadata>(Op.data);
 		break;
 	case POSITION_COMPONENT_ID:
-		Data = std::make_shared<Component>(Position(Op.data));
+		Data = MakeShared<Position>(Op.data);
 		break;
 	case PERSISTENCE_COMPONENT_ID:
-		Data = std::make_shared<Component>(Persistence(Op.data));
+		Data = MakeShared<Persistence>(Op.data);
 		break;
 	case UNREAL_METADATA_COMPONENT_ID:
-		Data = std::make_shared<Component>(UnrealMetadata(Op.data));
+		Data = MakeShared<UnrealMetadata>(Op.data);
 		break;
 	default:
-		Data = std::make_shared<Component>(DynamicComponent(Op.data));
+		Data = MakeShared<DynamicComponent>(Op.data);
 		break;
 	}
 
@@ -271,9 +272,9 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		// Potentially we could split out the initial actor state and the initial component state
 		for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 		{
-			if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data && PendingAddComponent.Data->bIsDynamic)
+			if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data.IsValid() && PendingAddComponent.Data->bIsDynamic)
 			{
-				ApplyComponentData(EntityId, *static_cast<DynamicComponent*>(PendingAddComponent.Data.get())->Data, Channel);
+				ApplyComponentData(EntityId, *static_cast<DynamicComponent*>(PendingAddComponent.Data.Get())->Data, Channel);
 			}
 		}
 

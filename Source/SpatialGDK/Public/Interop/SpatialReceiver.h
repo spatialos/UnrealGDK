@@ -26,12 +26,12 @@ using FObjectReferencesMap = TMap<int32, FObjectReferences>;
 struct PendingAddComponentWrapper
 {
 	PendingAddComponentWrapper() = default;
-	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, std::shared_ptr<Component>& InData)
+	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, const TSharedPtr<Component>& InData)
 		: EntityId(InEntityId), ComponentId(InComponentId), Data(InData) {}
 
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
-	std::shared_ptr<Component> Data;
+	TSharedPtr<Component> Data;
 };
 
 struct FObjectReferences

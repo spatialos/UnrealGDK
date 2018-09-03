@@ -48,7 +48,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	CommandRequest.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 	CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
-	Schema_AddString(RequestObject, 1, TCHAR_TO_ANSI(*DummyURL.ToString(true)));
+	Schema_AddString(RequestObject, 1, DummyURL.ToString(true));
 
 	Worker_CommandParameters CommandParams = {};
 	Worker_Connection_SendCommandRequest(NetDriver->Connection, SpatialConstants::SPAWNER_ENTITY_ID, &CommandRequest, 1, nullptr, &CommandParams);
@@ -70,13 +70,10 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp&
 			UTF8_TO_TCHAR(Op.message));
 
 		FTimerHandle RetryTimer;
-		FTimerDelegate TimerCallback;
-		TimerCallback.BindLambda([this, RetryTimer]()
+		TimerManager->SetTimer(RetryTimer, [this]()
 		{
-			this->SendPlayerSpawnRequest();
-		});
-
-		TimerManager->SetTimer(RetryTimer, TimerCallback, SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts), false);
+			SendPlayerSpawnRequest();
+		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts), false);
 	}
 	else
 	{

@@ -97,7 +97,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 			RepLayout_SerializePropertiesForStruct(*RepLayout, ValueDataWriter, PackageMap, const_cast<uint8*>(Data), bHasUnmapped);
 		}
 
-		Schema_AddString(Object, Id, FString(reinterpret_cast<char*>(ValueDataWriter.GetData())));
+		Schema_AddPayload(Object, Id, ValueDataWriter);
 	}
 	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
 	{
@@ -172,15 +172,15 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 	}
 	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
 	{
-		Schema_AddString(Object, Id, TCHAR_TO_UTF8(*NameProperty->GetPropertyValue(Data).ToString()));
+		Schema_AddString(Object, Id, NameProperty->GetPropertyValue(Data).ToString());
 	}
 	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
 	{
-		Schema_AddString(Object, Id, TCHAR_TO_UTF8(*StrProperty->GetPropertyValue(Data)));
+		Schema_AddString(Object, Id, StrProperty->GetPropertyValue(Data));
 	}
 	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
 	{
-		Schema_AddString(Object, Id, TCHAR_TO_UTF8(*TextProperty->GetPropertyValue(Data).ToString()));
+		Schema_AddString(Object, Id, TextProperty->GetPropertyValue(Data).ToString());
 	}
 	else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property))
 	{
@@ -208,7 +208,8 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 	}
 	else
 	{
-		Schema_AddString(Object, Id, "Unknown Field");
+		checkNoEntry();
+		Schema_AddString(Object, Id, TEXT("Unknown Field"));
 	}
 }
 
@@ -270,7 +271,7 @@ Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	FillSchemaObject(ComponentObject, Changes, PropertyGroup, false, &ClearedIds);
+	bWroteSomething = FillSchemaObject(ComponentObject, Changes, PropertyGroup, false, &ClearedIds);
 
 	for (Schema_FieldId Id : ClearedIds)
 	{

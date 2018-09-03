@@ -566,7 +566,7 @@ void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId
 		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
 
 		uint32 CurrentOffset = 1;
-		TMap<FString, std::uint32_t> SubobjectNameToOffset;
+		SubobjectToOffsetMap SubobjectNameToOffset;
 		ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
 		{
 			// Objects can only be allocated NetGUIDs if this is true.
