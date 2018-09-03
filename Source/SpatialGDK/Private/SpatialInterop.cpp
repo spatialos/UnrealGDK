@@ -363,7 +363,8 @@ void USpatialInterop::SendComponentInterests(USpatialActorChannel* ActorChannel,
 	const USpatialTypeBinding* Binding = GetTypeBindingByClass(ActorClass);
 	if (Binding)
 	{
-		auto Interest = Binding->GetInterestOverrideMap(NetDriver->GetNetMode() == NM_Client, ActorChannel->Actor->Role == ROLE_AutonomousProxy);
+		auto Interest = Binding->GetInterestOverrideMap(NetDriver->GetNetMode() == NM_Client, ActorChannel->GetActor()->GetNetConnection() != nullptr);
+
 		SpatialOSInstance->GetConnection().Pin()->SendComponentInterest(EntityId.ToSpatialEntityId(), Interest);
 	}
 }

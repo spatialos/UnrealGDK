@@ -240,7 +240,8 @@ public:
 	virtual void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, void* Parameters) PURE_VIRTUAL(USpatialTypeBinding::SendRPCCommand, );
 
 	virtual void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const PURE_VIRTUAL(USpatialTypeBinding::ReceiveAddComponent, );
-	virtual worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const PURE_VIRTUAL(USpatialTypeBinding::GetInterestOverrideMap, return {}; );
+	virtual worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bNetOwned) const PURE_VIRTUAL(USpatialTypeBinding::GetInterestOverrideMap, return {}; );
+	virtual void UpdateEntityACL(USpatialActorChannel* Channel, bool bNetOwned) const PURE_VIRTUAL(USpatialTypeBinding::UpdateEntityACL, );
 
 	void SerializeStruct(UStruct* Struct, FArchive& Ar, void* Data) const;
 
