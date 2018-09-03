@@ -147,7 +147,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	Receiver->Init(this);
 
 	View = NewObject<USpatialView>();
-	View->Init();
+	View->Init(this);
 
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	PlayerSpawner->Init(this, TimerManager);

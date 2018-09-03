@@ -61,7 +61,7 @@ struct UnrealObjectRef
 	worker::Option<UnrealObjectRef> Outer;
 };
 
-uint32 GetTypeHash(const UnrealObjectRef& ObjectRef)
+inline uint32 GetTypeHash(const UnrealObjectRef& ObjectRef)
 {
 	uint32 Result = 1327u;
 	// TODO: Need to fix this for FString

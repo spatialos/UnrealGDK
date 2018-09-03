@@ -7,13 +7,15 @@
 
 #include "SpatialView.generated.h"
 
+class USpatialNetDriver;
+
 UCLASS()
 class SPATIALGDK_API USpatialView : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	void Init();
+	void Init(USpatialNetDriver* NetDriver);
 
 	void ProcessOps(Worker_OpList* OpList);
 

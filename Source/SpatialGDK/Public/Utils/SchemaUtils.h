@@ -89,7 +89,7 @@ inline WorkerRequirementSet Schema_GetWorkerRequirementSet(Schema_Object* Object
 	return RequirementSet;
 }
 
-void Schema_AddObjectRef(Schema_Object* Object, Schema_FieldId Id, const UnrealObjectRef& ObjectRef)
+inline void Schema_AddObjectRef(Schema_Object* Object, Schema_FieldId Id, const UnrealObjectRef& ObjectRef)
 {
 	Schema_Object* ObjectRefObject = Schema_AddObject(Object, Id);
 
@@ -107,7 +107,7 @@ void Schema_AddObjectRef(Schema_Object* Object, Schema_FieldId Id, const UnrealO
 
 UnrealObjectRef Schema_GetObjectRef(Schema_Object* Object, Schema_FieldId Id);
 
-UnrealObjectRef Schema_IndexObjectRef(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index)
+inline UnrealObjectRef Schema_IndexObjectRef(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index)
 {
 	UnrealObjectRef ObjectRef;
 
@@ -127,7 +127,7 @@ UnrealObjectRef Schema_IndexObjectRef(Schema_Object* Object, Schema_FieldId Id, 
 	return ObjectRef;
 }
 
-UnrealObjectRef Schema_GetObjectRef(Schema_Object* Object, Schema_FieldId Id)
+inline UnrealObjectRef Schema_GetObjectRef(Schema_Object* Object, Schema_FieldId Id)
 {
 	return Schema_IndexObjectRef(Object, Id, 0);
 }

@@ -1,7 +1,13 @@
 
 #include "SpatialView.h"
 
+#include "SpatialNetDriver.h"
 #include "SpatialReceiver.h"
+
+void USpatialView::Init(USpatialNetDriver* NetDriver)
+{
+	Receiver = NetDriver->Receiver;
+}
 
 void USpatialView::ProcessOps(Worker_OpList* OpList)
 {
