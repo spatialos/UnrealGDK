@@ -2,11 +2,12 @@
 #include "ComponentReader.h"
 
 #include "Utils/SchemaUtils.h"
+#include "Utils/RepLayoutUtils.h"
 #include "DataReplication.h"
 #include "RepLayout.h"
 #include "SpatialConditionMapFilter.h"
 #include "EngineClasses/SpatialNetBitReader.h"
-#include "Interop/SpatialConstants.h"
+#include "SpatialConstants.h"
 
 ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<UnrealObjectRef>& InUnresolvedRefs)
 	: PackageMap(InNetDriver->PackageMap)
@@ -16,14 +17,14 @@ ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferenc
 {
 }
 
-void ComponentReader::ApplyComponentData(Worker_ComponentData& ComponentData, UObject* Object, USpatialActorChannel* Channel)
+void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentData, UObject* Object, USpatialActorChannel* Channel)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	ApplySchemaObject(ComponentObject, TargetObject, Channel, true);
+	ApplySchemaObject(ComponentObject, Object, Channel, true);
 }
 
-void ComponentReader::ApplyComponentUpdate(Worker_ComponentUpdate& ComponentUpdate, UObject* Object, USpatialActorChannel* Channel)
+void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* Object, USpatialActorChannel* Channel)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
@@ -31,7 +32,7 @@ void ComponentReader::ApplyComponentUpdate(Worker_ComponentUpdate& ComponentUpda
 	ClearedIds.SetNum(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate.schema_type));
 	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate.schema_type, ClearedIds.GetData());
 
-	ApplySchemaObject(ComponentObject, TargetObject, Channel, false, &ClearedIds);
+	ApplySchemaObject(ComponentObject, Object, Channel, false, &ClearedIds);
 }
 
 void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
@@ -74,9 +75,9 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 				// This swaps Role/RemoteRole as we write it
 				const FRepLayoutCmd& SwappedCmd = Parent.RoleSwapIndex != -1 ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
 
-				uint8* Data = (uint8*)TargetObject + SwappedCmd.Offset;
+				uint8* Data = (uint8*)Object + SwappedCmd.Offset;
 
-				if (bIsInitialData || Schema_GetPropertyCount(ComponentObject, HandleIterator.Handle, Cmd.Property) > 0 || ClearedIds.Find(HandleIterator.Handle) != INDEX_NONE)
+				if (bIsInitialData || GetPropertyCount(ComponentObject, HandleIterator.Handle, Cmd.Property) > 0 || ClearedIds->Find(HandleIterator.Handle) != INDEX_NONE)
 				{
 					if (Cmd.Type == REPCMD_DynamicArray)
 					{
@@ -119,7 +120,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		}
 	}
 
-	Channel->PostReceiveSpatialUpdate(TargetObject, RepNotifies);
+	Channel->PostReceiveSpatialUpdate(Object, RepNotifies);
 }
 
 void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index, UProperty* Property, uint8* Data, int32 Offset, uint16 ParentIndex)
@@ -133,7 +134,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, st
 		FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewUnresolvedRefs);
 		bool bHasUnmapped = false;
 
-		ReadStructProperty(ValueDataReader, PackageMap, StructProperty, Data, Driver, bHasUnmapped);
+		ReadStructProperty(ValueDataReader, StructProperty, Data, bHasUnmapped);
 
 		if (bHasUnmapped)
 		{
@@ -269,7 +270,7 @@ void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId Id, UArra
 
 	FScriptArrayHelper ArrayHelper(Property, Data);
 
-	int Count = Schema_GetPropertyCount(Object, Id, Property->Inner);
+	int Count = GetPropertyCount(Object, Id, Property->Inner);
 	ArrayHelper.Resize(Count);
 
 	for (int i = 0; i < Count; i++)
@@ -316,8 +317,96 @@ void ComponentReader::ReadStructProperty(FSpatialNetBitReader& Reader, UStructPr
 	}
 	else
 	{
-		TSharedPtr<FRepLayout> RepLayout = Driver->GetStructRepLayout(Struct);
+		TSharedPtr<FRepLayout> RepLayout = NetDriver->GetStructRepLayout(Struct);
 
 		RepLayout_SerializePropertiesForStruct(*RepLayout, Reader, PackageMap, Data, bOutHasUnmapped);
+	}
+}
+
+std::uint32_t ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_FieldId Id, UProperty* Property)
+{
+	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
+	{
+		return Schema_GetBytesCount(Object, Id);
+	}
+	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
+	{
+		return Schema_GetBoolCount(Object, Id);
+	}
+	else if (UFloatProperty* FloatProperty = Cast<UFloatProperty>(Property))
+	{
+		return Schema_GetFloatCount(Object, Id);
+	}
+	else if (UDoubleProperty* DoubleProperty = Cast<UDoubleProperty>(Property))
+	{
+		return Schema_GetDoubleCount(Object, Id);
+	}
+	else if (UInt8Property* Int8Property = Cast<UInt8Property>(Property))
+	{
+		return Schema_GetInt32Count(Object, Id);
+	}
+	else if (UInt16Property* Int16Property = Cast<UInt16Property>(Property))
+	{
+		return Schema_GetInt32Count(Object, Id);
+	}
+	else if (UIntProperty* IntProperty = Cast<UIntProperty>(Property))
+	{
+		return Schema_GetInt32Count(Object, Id);
+	}
+	else if (UInt64Property* Int64Property = Cast<UInt64Property>(Property))
+	{
+		return Schema_GetInt64Count(Object, Id);
+	}
+	else if (UByteProperty* ByteProperty = Cast<UByteProperty>(Property))
+	{
+		return Schema_GetUint32Count(Object, Id);
+	}
+	else if (UUInt16Property* UInt16Property = Cast<UUInt16Property>(Property))
+	{
+		return Schema_GetUint32Count(Object, Id);
+	}
+	else if (UUInt32Property* UInt32Property = Cast<UUInt32Property>(Property))
+	{
+		return Schema_GetUint32Count(Object, Id);
+	}
+	else if (UUInt64Property* UInt64Property = Cast<UUInt64Property>(Property))
+	{
+		return Schema_GetUint64Count(Object, Id);
+	}
+	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
+	{
+		return Schema_GetObjectCount(Object, Id);
+	}
+	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
+	{
+		return Schema_GetBytesCount(Object, Id);
+	}
+	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
+	{
+		return Schema_GetBytesCount(Object, Id);
+	}
+	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
+	{
+		return Schema_GetBytesCount(Object, Id);
+	}
+	else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property))
+	{
+		return GetPropertyCount(Object, Id, ArrayProperty->Inner);
+	}
+	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
+	{
+		if (EnumProperty->ElementSize < 4)
+		{
+			return Schema_GetUint32Count(Object, Id);
+		}
+		else
+		{
+			return GetPropertyCount(Object, Id, EnumProperty->GetUnderlyingProperty());
+		}
+	}
+	else
+	{
+		checkf(false, TEXT("What is this"));
+		return 0;
 	}
 }

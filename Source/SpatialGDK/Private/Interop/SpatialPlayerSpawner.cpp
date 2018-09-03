@@ -7,7 +7,7 @@
 #include "SpatialNetDriver.h"
 #include "TimerManager.h"
 
-#include "SchemaHelpers.h"
+#include "Utils/SchemaUtils.h"
 
 #include <improbable/c_worker.h>
 #include <improbable/c_schema.h>

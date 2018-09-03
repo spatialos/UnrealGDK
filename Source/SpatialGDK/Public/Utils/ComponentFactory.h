@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Utils/RepDataUtils.h"
+#include "Interop/SpatialTypebindingManager.h"
+
 #include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
 
@@ -8,12 +11,14 @@
 class USpatialNetDriver;
 class USpatialPackageMap;
 class USpatialTypebindingManager;
-
-using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
+class USpatialPackageMapClient;
 
 class UNetDriver;
-class USpatialPackageMapClient;
 class UProperty;
+
+enum EReplicatedPropertyGroup : uint32;
+
+using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
 
 class ComponentFactory 
 {

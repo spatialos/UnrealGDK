@@ -5,11 +5,11 @@
 #include "SpatialPackageMapClient.h"
 #include "SpatialNetDriver.h"
 #include "SpatialReceiver.h"
-#include "SpatialMemoryWriter.h"
+#include "SpatialNetBitWriter.h"
+#include "SpatialConstants.h"
 #include "ComponentFactory.h"
-
-#include "CoreTypes/StandardLibrary.h"
-#include "CoreTypes/UnrealMetadata.h"
+#include "Schema/StandardLibrary.h"
+#include "Schema/UnrealMetadata.h"
 #include "Utils/RepLayoutUtils.h"
 
 #include <vector>
@@ -185,8 +185,8 @@ void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel*
 
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
 {
-	Coordinates Coords = Coordinates::FromFVector(Location);
-	Worker_Connection_SendComponentUpdate(Connection, EntityId, &Position::CreatePositionUpdate(Coords));
+	Worker_ComponentUpdate Update = Position::CreatePositionUpdate(Coordinates::FromFVector(Location));
+	Worker_Connection_SendComponentUpdate(Connection, EntityId, &Update);
 }
 
 void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters)
@@ -279,7 +279,7 @@ void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, cons
 
 void USpatialSender::SendDeleteEntityRequest(Worker_EntityId EntityId)
 {
-	Worker_Connection_SendDeleteEntityRequest(Connection, EntityId);
+	Worker_Connection_SendDeleteEntityRequest(Connection, EntityId, nullptr);
 }
 
 void USpatialSender::ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle)
@@ -438,4 +438,77 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 	Schema_AddPayload(EventData, 2, PayloadWriter);
 
 	return ComponentUpdate;
+}
+
+void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response)
+{
+	Worker_Connection_SendCommandResponse(Connection, request_id, &Response);
+}
+
+void USpatialSender::ResolveOutgoingOperations(UObject* Object)
+{
+	FChannelToHandleToUnresolved* ChannelToUnresolved = ObjectToUnresolved.Find(Object);
+	if (!ChannelToUnresolved) return;
+
+	for (auto& ChannelProperties : *ChannelToUnresolved)
+	{
+		FChannelObjectPair& ChannelObjectPair = ChannelProperties.Key;
+		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key;
+		UObject* ReplicatingObject = ChannelObjectPair.Value;
+		FHandleToUnresolved& HandleToUnresolved = ChannelProperties.Value;
+
+		TArray<uint16> PropertyHandles;
+
+		for (auto& HandleUnresolvedPair : HandleToUnresolved)
+		{
+			uint16 Handle = HandleUnresolvedPair.Key;
+			FUnresolvedEntry& Unresolved = HandleUnresolvedPair.Value;
+
+			Unresolved->Remove(Object);
+			if (Unresolved->Num() == 0)
+			{
+				PropertyHandles.Add(Handle);
+
+				// Hack to figure out if this property is an array to add extra handles
+				if (DependentChannel->IsDynamicArrayHandle(ReplicatingObject, Handle))
+				{
+					PropertyHandles.Add(0);
+					PropertyHandles.Add(0);
+				}
+
+				FHandleToUnresolved& AnotherHandleToUnresolved = PropertyToUnresolved.FindChecked(ChannelObjectPair);
+				AnotherHandleToUnresolved.Remove(Handle);
+				if (AnotherHandleToUnresolved.Num() == 0)
+				{
+					PropertyToUnresolved.Remove(ChannelObjectPair);
+				}
+			}
+		}
+
+		if (PropertyHandles.Num() > 0)
+		{
+			// End with zero to indicate the end of the list of handles.
+			PropertyHandles.Add(0);
+
+			//SendSpatialUpdateForObject(DependentChannel, ReplicatingObject, PropertyHandles, TArray<uint16>());
+		}
+	}
+
+	ObjectToUnresolved.Remove(Object);
+}
+
+void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
+{
+	TArray<FPendingRPCParams>* RPCList = OutgoingRPCs.Find(Object);
+	if (RPCList)
+	{
+		for (FPendingRPCParams& RPCParams : *RPCList)
+		{
+			// We can guarantee that SendRPC won't populate OutgoingRPCs[Object] whilst we're iterating through it,
+			// because Object has been resolved when we call ResolveOutgoingRPCs.
+			UE_LOG(LogTemp, Log, TEXT("!!! Resolving outgoing RPC depending on object: %s, target: %s, function: %s"), *Object->GetName(), *RPCParams.TargetObject->GetName(), *RPCParams.Function->GetName());
+			SendRPC(RPCParams.TargetObject, RPCParams.Function, RPCParams.Parameters, true);
+		}
+		OutgoingRPCs.Remove(Object);
+	}
 }

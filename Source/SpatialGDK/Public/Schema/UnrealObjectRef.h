@@ -60,3 +60,15 @@ struct UnrealObjectRef
 	worker::Option<FString> Path;
 	worker::Option<UnrealObjectRef> Outer;
 };
+
+uint32 GetTypeHash(const UnrealObjectRef& ObjectRef)
+{
+	uint32 Result = 1327u;
+	// TODO: Need to fix this for FString
+	//Result = (Result * 977u) + std::hash<Worker_EntityId>{}(ObjectRef.Entity);
+	//Result = (Result * 977u) + std::hash<std::uint32_t>{}(ObjectRef.Offset);
+	//Result = (Result * 977u) + (ObjectRef.Path ? 1327u * (std::hash<std::string>{}(*ObjectRef.Path) + 977u) : 977u);
+	//Result = (Result * 977u) + (ObjectRef.Outer ? 1327u * (GetTypeHash(*ObjectRef.Outer) + 977u) : 977u);
+	return Result;
+}
+

@@ -79,6 +79,9 @@ public:
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer);
 
+	void AddActorChannel(const Worker_EntityId& EntityId, USpatialActorChannel* Channel);
+	USpatialActorChannel* GetActorChannelByEntityId(const Worker_EntityId& EntityId) const;
+
 	//TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
 	USpatialPlayerSpawner* PlayerSpawner;
@@ -100,6 +103,8 @@ protected:
 
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
+
+	TMap<Worker_EntityId, USpatialActorChannel*> EntityToActorChannel;
 
 	// Timer manager.
 	FTimerManager* TimerManager;

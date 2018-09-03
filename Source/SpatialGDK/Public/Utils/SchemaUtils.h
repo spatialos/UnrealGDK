@@ -3,7 +3,8 @@
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
-#include "EngineClasses/SpatialMemoryWriter.h"
+#include "EngineClasses/SpatialNetBitWriter.h"
+#include "Schema/UnrealObjectRef.h"
 
 inline void Schema_AddString(Schema_Object* Object, Schema_FieldId Id, const FString& Value)
 {
@@ -25,7 +26,7 @@ inline FString Schema_GetString(const Schema_Object* Object, Schema_FieldId Id)
 	return Schema_IndexString(Object, Id, 0);
 }
 
-inline void Schema_AddPayload(Schema_Object* Object, Schema_FieldId Id, const FSpatialNetBitWriter& Writer)
+inline void Schema_AddPayload(Schema_Object* Object, Schema_FieldId Id, FSpatialNetBitWriter& Writer)
 {
 	std::uint32_t PayloadSize = Writer.GetNumBytes();
 	std::uint8_t* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(char) * PayloadSize);

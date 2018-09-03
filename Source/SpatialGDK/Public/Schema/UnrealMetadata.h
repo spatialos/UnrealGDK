@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CoreTypes/Component.h"
+#include "Schema/Component.h"
 #include "Utils/SchemaUtils.h"
 #include "Platform.h"
 
@@ -52,11 +52,11 @@ struct UnrealMetadata : Component
 		Data.schema_type = Schema_CreateComponentData(UNREAL_METADATA_COMPONENT_ID);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		if (!StaticPath.empty())
+		if (!StaticPath.IsEmpty())
 		{
 			Schema_AddString(ComponentObject, 1, StaticPath);
 		}
-		if (!OwnerWorkerId.empty())
+		if (!OwnerWorkerId.IsEmpty())
 		{
 			Schema_AddString(ComponentObject, 2, OwnerWorkerId);
 		}

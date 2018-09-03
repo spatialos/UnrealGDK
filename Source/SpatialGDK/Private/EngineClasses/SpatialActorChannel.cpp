@@ -10,7 +10,6 @@
 #include "SpatialNetConnection.h"
 #include "SpatialNetDriver.h"
 #include "SpatialPackageMapClient.h"
-#include "SpatialTypeBinding.h"
 #include "SpatialSender.h"
 #include "SpatialReceiver.h"
 
@@ -347,7 +346,7 @@ bool USpatialActorChannel::ReplicateActor()
 				if (PlayerController)
 				{
 					PlayerState = PlayerController->PlayerState;
-				}Connection
+				}
 			}
 			if (PlayerState)
 			{
@@ -442,7 +441,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject *Object, const FReplicatio
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
 		TArray<uint16> Temp = RepChanged;
-		Replicator.RepLayout->MergeChangeConnectionList((uint8*)Object, HistoryItem.Changed, Temp, RepChanged);
+		Replicator.RepLayout->MergeChangeList((uint8*)Object, HistoryItem.Changed, Temp, RepChanged);
 	}
 
 	const bool bCompareIndexSame = Replicator.RepState->LastCompareIndex == ChangelistState->CompareIndex;
@@ -522,7 +521,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), EntityId);
 
 		// Inform USpatialInterop of this new actor channel/entity pairing
-		//NetDriver->Interop->AddActorChannel(EntityId, this);
+		NetDriver->AddActorChannel(EntityId, this);
 	}
 }
 
@@ -554,7 +553,7 @@ void USpatialActorChannel::RegisterEntityId(const worker::EntityId& ActorEntityI
 	NetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
 
 	// Inform USpatialInterop of this new actor channel/entity pairing
-	//NetDriver->Interop->AddActorChannel(ActorEntityId, this);
+	NetDriver->AddActorChannel(ActorEntityId, this);
 
 	// If a Singleton was created, update the GSM with the proper Id.
 	//if (Interop->IsSingletonClass(Actor->GetClass()))

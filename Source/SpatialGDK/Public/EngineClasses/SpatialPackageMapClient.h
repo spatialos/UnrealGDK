@@ -5,16 +5,13 @@
 #include "CoreMinimal.h"
 #include "Engine/PackageMapClient.h"
 #include <improbable/c_worker.h>
-#include "CoreTypes/UnrealMetadata.h"
-#include "CoreTypes/UnrealObjectRef.h"
+#include "Schema/UnrealMetadata.h"
+#include "Schema/UnrealObjectRef.h"
 
 #include "SpatialPackageMapClient.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSPackageMap, Log, All);
 
-/**
- * 
- */
 UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {

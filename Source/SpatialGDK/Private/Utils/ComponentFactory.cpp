@@ -5,7 +5,7 @@
 #include "SpatialActorChannel.h"
 #include "SpatialNetDriver.h"
 #include "SpatialPackageMapClient.h"
-#include "SpatialMemoryWriter.h"
+#include "EngineClasses/SpatialNetBitWriter.h"
 #include "SpatialConstants.h"
 
 ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& UnresolvedObjectsMap, USpatialNetDriver* InNetDriver)
@@ -97,7 +97,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 			RepLayout_SerializePropertiesForStruct(*RepLayout, ValueDataWriter, PackageMap, const_cast<uint8*>(Data), bHasUnmapped);
 		}
 
-		Schema_AddString(Object, Id, std::string(reinterpret_cast<char*>(ValueDataWriter.GetData()), ValueDataWriter.GetNumBytes()));
+		Schema_AddString(Object, Id, FString(reinterpret_cast<char*>(ValueDataWriter.GetData())));
 	}
 	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
 	{

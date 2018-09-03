@@ -28,9 +28,7 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 			Receiver->OnAddComponent(Op->add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			Receiver->OnRemoveComponent(Op->remove_component);
 			break;
-
 
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			Receiver->OnComponentUpdate(Op->component_update);
@@ -40,7 +38,6 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 			Receiver->OnCommandRequest(Op->command_request);
 			break;
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			Receiver->OnCommandResponse(Op->command_response);
 			break;
 
 		// Authority Change

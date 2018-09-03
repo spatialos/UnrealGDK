@@ -4,17 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "UObject/CoreNet.h"
-#include "SpatialPackageMapClient.h"
 
 class USpatialPackageMapClient;
 
 class SPATIALGDK_API FSpatialNetBitWriter : public FNetBitWriter
 {
 public:
-	FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<const UObject*>& InUnresolvedObjects)
-		: FNetBitWriter(InPackageMap, 0)
-		, UnresolvedObjects(InUnresolvedObjects)
-	{}
+	FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<const UObject*>& InUnresolvedObjects);
 
 	using FArchive::operator<<; // For visibility of the overloads we don't override
 

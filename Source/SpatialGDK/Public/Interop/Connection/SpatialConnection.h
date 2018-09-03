@@ -9,6 +9,9 @@
 UCLASS()
 class USpatialConnection : public UObject
 {
+
+	GENERATED_BODY()
+
 public:
 	void Init();
 

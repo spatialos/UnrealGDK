@@ -9,9 +9,14 @@
 #include "SpatialNetConnection.h"
 #include "SpatialPackageMapClient.h"
 #include "SpatialInterop.h"
+#include "SpatialSender.h"
+#include "Utils/ComponentReader.h"
+#include "Utils/RepLayoutUtils.h"
 
-#include "CoreTypes/UnrealMetadata.h"
-#include "CoreTypes/DynamicComponent.h"
+#include "Schema/UnrealMetadata.h"
+#include "Schema/DynamicComponent.h"
+
+#include "SpatialConstants.h"
 
 template <typename T>
 T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
@@ -30,6 +35,7 @@ T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
 void USpatialReceiver::Init(USpatialNetDriver* NetDriver)
 {
 	this->NetDriver = NetDriver;
+	this->PackageMap = NetDriver->PackageMap;
 	this->World = NetDriver->GetWorld();
 }
 
@@ -163,9 +169,9 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		check(PackageMap);
 
 		SubobjectToOffsetMap SubobjectNameToOffset;
-		for (auto& KVPair : UnrealMetadataComponent->SubobjectNameToOffset)
+		for (auto& Pair : UnrealMetadataComponent->SubobjectNameToOffset)
 		{
-			SubobjectNameToOffset.Add(UTF8_TO_TCHAR(KVPair.first.c_str()), KVPair.second);
+			SubobjectNameToOffset.Add(Pair.Key, Pair.Value);
 		}
 
 		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(EntityActor, EntityId, SubobjectNameToOffset);
@@ -194,9 +200,9 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
 		if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
 		{
-			checkf(!UnrealMetadataComponent->OwnerWorkerId.empty(), TEXT("A player controller entity must have an owner worker ID."));
+			checkf(!UnrealMetadataComponent->OwnerWorkerId.IsEmpty(), TEXT("A player controller entity must have an owner worker ID."));
 			FString URLString = FURL().ToString();
-			FString OwnerWorkerId = UTF8_TO_TCHAR(UnrealMetadataComponent->OwnerWorkerId.c_str());
+			FString OwnerWorkerId = UnrealMetadataComponent->OwnerWorkerId;
 			URLString += TEXT("?workerId=") + OwnerWorkerId;
 			Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), true);
 			check(Connection);
@@ -205,7 +211,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		else
 		{
 			// Either spawn the actor or get it from the level if it has a persistent name.
-			if (UnrealMetadataComponent->StaticPath.empty())
+			if (UnrealMetadataComponent->StaticPath.IsEmpty())
 			{
 				UE_LOG(LogTemp, Log, TEXT("!!! Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
 				EntityActor = SpawnNewEntity(PositionComponent, ActorClass, true);
@@ -213,7 +219,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 			}
 			else
 			{
-				FString FullPath = UTF8_TO_TCHAR(UnrealMetadataComponent->StaticPath.c_str());
+				FString FullPath = UnrealMetadataComponent->StaticPath;
 				UE_LOG(LogTemp, Log, TEXT("!!! Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
 				EntityActor = FindObject<AActor>(World, *FullPath);
 			}
@@ -250,9 +256,9 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		}
 
 		SubobjectToOffsetMap SubobjectNameToOffset;
-		for (auto& KVPair : UnrealMetadataComponent->SubobjectNameToOffset)
+		for (auto& Pair : UnrealMetadataComponent->SubobjectNameToOffset)
 		{
-			SubobjectNameToOffset.Add(UTF8_TO_TCHAR(KVPair.first.c_str()), KVPair.second);
+			SubobjectNameToOffset.Add(Pair.Key, Pair.Value);
 		}
 
 		PackageMap->ResolveEntityActor(EntityActor, EntityId, SubobjectNameToOffset);
@@ -265,7 +271,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		{
 			if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data && PendingAddComponent.Data->bIsDynamic)
 			{
-				ApplyComponentData(EntityId, *static_cast<DynamicComponent*>(PendingAddComponent.Data.get())->Data, Channel, PackageMap);
+				ApplyComponentData(EntityId, *static_cast<DynamicComponent*>(PendingAddComponent.Data.get())->Data, Channel);
 			}
 		}
 
@@ -356,8 +362,7 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 
 UClass* USpatialReceiver::GetNativeEntityClass(Metadata* MetadataComponent)
 {
-	FString Metadata = UTF8_TO_TCHAR(MetadataComponent->EntityType.c_str());
-	return FindObject<UClass>(ANY_PACKAGE, *Metadata);
+	return FindObject<UClass>(ANY_PACKAGE, *MetadataComponent->EntityType);
 }
 
 // Note that in SpatialGDK, this function will not be called on the spawning worker.
@@ -396,7 +401,7 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
 	check(Info);
 
-	bool bAutonomousProxy = NetDriver->GetNetMode() == NM_Client && HasComponentAuthority(EntityId, Info->RPCComponents[RPC_Client]);
+	bool bAutonomousProxy = NetDriver->GetNetMode() == NM_Client && View->GetAuthority(EntityId, Info->RPCComponents[RPC_Client] == WORKER_AUTHORITY_AUTHORITATIVE);
 
 	if (Data.component_id == Info->SingleClientComponent || Data.component_id == Info->MultiClientComponent)
 	{
@@ -420,7 +425,7 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 
 void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 {
-	if (View->HasComponentAuthority(Op.entity_id, Op.update.component_id))
+	if (View->GetAuthority(Op.entity_id, Op.update.component_id) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping because we sent this update"));
 		return;
@@ -443,7 +448,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
 	check(Info);
 
-	USpatialActorChannel* ActorChannel = GetActorChannelByEntityId(Op.entity_id);
+	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
 	bool bIsServer = NetDriver->IsServer();
 
 	if (Op.update.component_id == Info->SingleClientComponent)
@@ -473,7 +478,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	{
 		check(ActorChannel);
 		const TArray<UFunction*>& RPCArray = Info->RPCs.FindChecked(RPC_NetMulticast);
-		ReceiveMulticastUpdate(Op.update, Op.entity_id, RPCArray, PackageMap, NetDriver);
+		ReceiveMulticastUpdate(Op.update, Op.entity_id, RPCArray);
 	}
 	else
 	{
@@ -483,7 +488,77 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 
 void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 {
+	Schema_FieldId CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
+	UE_LOG(LogTemp, Verbose, TEXT("Received command request (entity: %lld, component: %d, command: %d)"), Op.entity_id, Op.request.component_id, CommandIndex);
 
+	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == 1)
+	{
+		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
+		FString URLString = Schema_GetString(Payload, 1);
+
+		URLString.Append(TEXT("?workerId=")).Append(UTF8_TO_TCHAR(Op.caller_worker_id));
+
+		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), false);
+
+		Worker_CommandResponse CommandResponse = {};
+		CommandResponse.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
+		CommandResponse.schema_type = Schema_CreateCommandResponse(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
+		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
+		Schema_AddBool(ResponseObject, 1, true);
+
+		Worker_Connection_SendCommandResponse(NetDriver->Connection, Op.request_id, &CommandResponse);
+
+		// TODO: Sahil - Eventually uncomment this but for now leave this block as is.
+		//NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Message, Op.caller_worker_id, Op.request_id);
+
+		return;
+	}
+
+	Worker_CommandResponse Response = {};
+	Response.component_id = Op.request.component_id;
+	Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, CommandIndex);
+
+	if (UClass* Class = TypebindingManager->FindClassByComponentId(Op.request.component_id))
+	{
+		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
+		check(Info);
+
+		ERPCType RPCType = RPC_Count;
+		for (int i = RPC_Client; i <= RPC_CrossServer; i++)
+		{
+			if (Info->RPCComponents[i] == Op.request.component_id)
+			{
+				RPCType = (ERPCType)i;
+				break;
+			}
+		}
+		check(RPCType <= RPC_CrossServer);
+
+		const TArray<UFunction*>* RPCArray = Info->RPCs.Find(RPCType);
+		check(RPCArray);
+		check((int)CommandIndex - 1 < RPCArray->Num());
+
+		UFunction* Function = (*RPCArray)[CommandIndex - 1];
+
+		uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
+		FMemory::Memzero(Parms, Function->ParmsSize);
+
+		UObject* TargetObject = nullptr;
+		ReceiveRPCCommandRequest(Op.request, Op.entity_id, Function, TargetObject, Parms);
+
+		if (TargetObject)
+		{
+			TargetObject->ProcessEvent(Function, Parms);
+		}
+
+		// Destroy the parameters.
+		for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+		{
+			It->DestroyValue_InContainer(Parms);
+		}
+	}
+
+	Sender->SendCommandResponse(Op.request_id, Response);
 }
 
 void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel)
@@ -496,6 +571,59 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	Reader.ApplyComponentUpdate(ComponentUpdate, TargetObject, Channel);
 
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
+}
+
+void USpatialReceiver::ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, Worker_EntityId EntityId, const TArray<UFunction*>& RPCArray)
+{
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
+
+	for (Schema_FieldId EventIndex = 1; (int)EventIndex <= RPCArray.Num(); EventIndex++)
+	{
+		UFunction* Function = RPCArray[EventIndex - 1];
+		for (uint32 i = 0; i < Schema_GetObjectCount(EventsObject, EventIndex); i++)
+		{
+			uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
+			FMemory::Memzero(Parms, Function->ParmsSize);
+
+			Schema_Object* EventData = Schema_IndexObject(EventsObject, EventIndex, i);
+
+			UnrealObjectRef TargetObjectRef;
+			TargetObjectRef.Entity = EntityId;
+			TargetObjectRef.Offset = Schema_GetUint32(EventData, 1);
+
+			FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
+			if (!TargetNetGUID.IsValid())
+			{
+				// TODO: Handle RPC to unresolved object
+				checkNoEntry();
+			}
+
+			UObject* TargetObject = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+			checkf(TargetObject, TEXT("Object Ref %s (NetGUID %s) does not correspond to a UObject."), *TargetObjectRef.ToString(), *TargetNetGUID.ToString());
+
+			TSet<UnrealObjectRef> UnresolvedRefs;
+
+			// TODO: Valentyn can you check this
+			FString PayloadData = Schema_GetString(EventData, 2);
+			// A bit hacky, we should probably include the number of bits with the data instead.
+			int64 CountBits = PayloadData.Len() * 8;
+			FSpatialNetBitReader PayloadReader(PackageMap, (uint8*)*PayloadData, CountBits, UnresolvedRefs);
+
+			TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
+			RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
+
+			// TODO: Check for unresolved objects in the payload
+
+			TargetObject->ProcessEvent(Function, Parms);
+
+			// Destroy the parameters.
+			// warning: highly dependent on UObject::ProcessEvent freeing of parms!
+			for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+			{
+				It->DestroyValue_InContainer(Parms);
+			}
+		}
+	}
 }
 
 UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class)
@@ -564,4 +692,231 @@ void USpatialReceiver::ProcessQueuedResolvedObjects()
 		ResolvePendingOperations_Internal(It.Key, It.Value);
 	}
 	ResolvedObjectQueue.Empty();
+}
+
+void USpatialReceiver::ResolvePendingOperations(UObject* Object, const UnrealObjectRef& ObjectRef)
+{
+	if (bInCriticalSection)
+	{
+		ResolvedObjectQueue.Add(TPair<UObject*, UnrealObjectRef>{ Object, ObjectRef });
+	}
+	else
+	{
+		ResolvePendingOperations_Internal(Object, ObjectRef);
+	}
+}
+
+void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<UnrealObjectRef>& UnresolvedRefs)
+{
+	for (const UnrealObjectRef& UnresolvedRef : UnresolvedRefs)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Added pending incoming property for object ref: %s, target object: %s"), *UnresolvedRef.ToString(), *ChannelObjectPair.Value->GetName());
+		IncomingRefsMap.FindOrAdd(UnresolvedRef).Add(ChannelObjectPair);
+	}
+
+	if (ObjectReferencesMap.Num() == 0)
+	{
+		UnresolvedRefsMap.Remove(ChannelObjectPair);
+	}
+}
+
+void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef)
+{
+	UE_LOG(LogTemp, Log, TEXT("!!! Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
+	Sender->ResolveOutgoingOperations(Object);
+	ResolveIncomingOperations(Object, ObjectRef);
+	Sender->ResolveOutgoingRPCs(Object);
+}
+
+void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef)
+{
+	// TODO: queue up resolved objects since they were resolved during process ops
+	// and then resolve all of them at the end of process ops
+
+	TSet<FChannelObjectPair>* TargetObjectSet = IncomingRefsMap.Find(ObjectRef);
+	if (!TargetObjectSet) return;
+
+	UE_LOG(LogTemp, Log, TEXT("!!! Resolving incoming operations depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+
+	for (FChannelObjectPair& ChannelObjectPair : *TargetObjectSet)
+	{
+		FObjectReferencesMap* UnresolvedRefs = UnresolvedRefsMap.Find(ChannelObjectPair);
+
+		if (!UnresolvedRefs)
+		{
+			continue;
+		}
+
+		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key;
+		UObject* ReplicatingObject = ChannelObjectPair.Value;
+
+		bool bStillHasUnresolved = false;
+		bool bSomeObjectsWereMapped = false;
+		TArray<UProperty*> RepNotifies;
+
+		FRepLayout& RepLayout = DependentChannel->GetObjectRepLayout(ReplicatingObject);
+		FRepStateStaticBuffer& ShadowData = DependentChannel->GetObjectStaticBuffer(ReplicatingObject);
+
+		ResolveObjectReferences(RepLayout, ReplicatingObject, *UnresolvedRefs, ShadowData.GetData(), (uint8*)ReplicatingObject, ShadowData.Num(), RepNotifies, bSomeObjectsWereMapped, bStillHasUnresolved);
+
+		if (bSomeObjectsWereMapped)
+		{
+			UE_LOG(LogTemp, Log, TEXT("!!! Resolved for target object %s"), *ReplicatingObject->GetName());
+			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies);
+		}
+
+		if (!bStillHasUnresolved)
+		{
+			UnresolvedRefsMap.Remove(ChannelObjectPair);
+		}
+	}
+
+	IncomingRefsMap.Remove(ObjectRef);
+}
+
+void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved)
+{
+	for (auto It = ObjectReferencesMap.CreateIterator(); It; ++It)
+	{
+		int32 AbsOffset = It.Key();
+
+		if (AbsOffset >= MaxAbsOffset)
+		{
+			UE_LOG(LogTemp, Log, TEXT("!!! ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset: %d"), AbsOffset);
+			It.RemoveCurrent();
+			continue;
+		}
+
+		FObjectReferences& ObjectReferences = It.Value();
+		UProperty* Property = ObjectReferences.Property;
+		FRepParentCmd& Parent = RepLayout.Parents[ObjectReferences.ParentIndex];
+
+		if (ObjectReferences.Array)
+		{
+			check(Property->IsA<UArrayProperty>());
+
+			// TODO: storedarray's data will be invalidated if this is the first resolved ref 
+			Property->CopySingleValue(StoredData + AbsOffset, Data + AbsOffset);
+
+			FScriptArray* StoredArray = (FScriptArray*)(StoredData + AbsOffset);
+			FScriptArray* Array = (FScriptArray*)(Data + AbsOffset);
+
+			int32 NewMaxOffset = FMath::Min(StoredArray->Num(), Array->Num()) * Property->ElementSize;
+
+			bool bArrayHasUnresolved = false;
+			ResolveObjectReferences(RepLayout, ReplicatedObject, *ObjectReferences.Array, (uint8*)StoredArray->GetData(), (uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped, bArrayHasUnresolved);
+			if (!bArrayHasUnresolved)
+			{
+				It.RemoveCurrent();
+			}
+			else
+			{
+				bOutStillHasUnresolved = true;
+			}
+			continue;
+		}
+
+		bool bResolvedSomeRefs = false;
+		UObject* SinglePropObject = nullptr;
+
+		for (auto UnresolvedIt = ObjectReferences.UnresolvedRefs.CreateIterator(); UnresolvedIt; ++UnresolvedIt)
+		{
+			UnrealObjectRef& ObjectRef = *UnresolvedIt;
+
+			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+			if (NetGUID.IsValid())
+			{
+				UObject* Object = PackageMap->GetObjectFromNetGUID(NetGUID, true);
+				check(Object);
+
+				UE_LOG(LogTemp, Log, TEXT("!!! ResolveObjectReferences: Resolved object ref: Offset: %d, Object ref: %s, PropName: %s, ObjName: %s"), AbsOffset, *ObjectRef.ToString(), *Property->GetNameCPP(), *Object->GetName());
+
+				UnresolvedIt.RemoveCurrent();
+				bResolvedSomeRefs = true;
+
+				if (ObjectReferences.bSingleProp)
+				{
+					SinglePropObject = Object;
+				}
+			}
+		}
+
+		if (bResolvedSomeRefs)
+		{
+			if (!bOutSomeObjectsWereMapped)
+			{
+				ReplicatedObject->PreNetReceive();
+				bOutSomeObjectsWereMapped = true;
+			}
+
+			//if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
+			//{
+			//	Property->CopySingleValue(StoredData + AbsOffset, Data + AbsOffset);
+			//}
+
+			if (ObjectReferences.bSingleProp)
+			{
+				UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property);
+				check(ObjectProperty);
+
+				ObjectProperty->SetObjectPropertyValue(Data + AbsOffset, SinglePropObject);
+			}
+			else
+			{
+				// TODO: Valentyn can you fix this
+				//FSpatialNetBitReader Reader(PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits);
+				//check(Property->IsA<UStructProperty>());
+				//ReadStructProperty(Reader, PackageMap, Cast<UStructProperty>(Property), Data + AbsOffset, Driver, bOutStillHasUnresolved);
+			}
+
+			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
+			{
+				if (Parent.RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + AbsOffset, Data + AbsOffset))
+				{
+					RepNotifies.AddUnique(Parent.Property);
+				}
+			}
+		}
+
+		if (ObjectReferences.UnresolvedRefs.Num() > 0)
+		{
+			bOutStillHasUnresolved = true;
+		}
+		else
+		{
+			It.RemoveCurrent();
+		}
+	}
+}
+
+void USpatialReceiver::ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worker_EntityId EntityId, UFunction* Function, UObject*& OutTargetObject, void* Data)
+{
+	// TODO: Valentyn check this function
+	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
+
+	UnrealObjectRef TargetObjectRef;
+	TargetObjectRef.Entity = EntityId;
+	TargetObjectRef.Offset = Schema_GetUint32(RequestObject, 1);
+
+	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
+	if (!TargetNetGUID.IsValid())
+	{
+		// TODO: Handle RPC to unresolved object
+		checkNoEntry();
+	}
+
+	OutTargetObject = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
+	checkf(OutTargetObject, TEXT("Object Ref %s (NetGUID %s) does not correspond to a UObject."), *TargetObjectRef.ToString(), *TargetNetGUID.ToString());
+
+	TSet<UnrealObjectRef> UnresolvedRefs;
+
+	FString PayloadData = Schema_GetString(RequestObject, 2);
+	// A bit hacky, we should probably include the number of bits with the data instead.
+	int64 CountBits = PayloadData.Len() * 8;
+	FSpatialNetBitReader PayloadReader(PackageMap, (uint8*)*PayloadData, CountBits, UnresolvedRefs);
+
+	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
+	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Data);
+
+	// TODO: Check for unresolved objects in the payload
 }

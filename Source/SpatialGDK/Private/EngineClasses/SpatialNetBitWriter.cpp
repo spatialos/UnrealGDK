@@ -7,6 +7,11 @@
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 
+FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<const UObject*>& InUnresolvedObjects)
+	: FNetBitWriter(InPackageMap, 0)
+	, UnresolvedObjects(InUnresolvedObjects)
+{}
+
 void FSpatialNetBitWriter::SerializeObjectRef(UnrealObjectRef& ObjectRef)
 {
 	*this << ObjectRef.Entity;
@@ -16,8 +21,7 @@ void FSpatialNetBitWriter::SerializeObjectRef(UnrealObjectRef& ObjectRef)
 	SerializeBits(&HasPath, 1);
 	if (HasPath)
 	{
-		FString Path = FString(UTF8_TO_TCHAR(ObjectRef.Path->c_str()));
-		*this << Path;
+		*this << *ObjectRef.Path.data();
 	}
 
 	uint8 HasOuter = !ObjectRef.Outer.empty();

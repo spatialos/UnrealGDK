@@ -15,7 +15,7 @@ enum ERPCType
 	RPC_Count
 };
 
-enum EReplicatedPropertyGroup
+enum EReplicatedPropertyGroup : uint32
 {
 	GROUP_SingleClient,
 	GROUP_MultiClient

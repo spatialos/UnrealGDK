@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CoreTypes/Component.h"
+#include "Schema/Component.h"
 #include "Utils/SchemaUtils.h"
 #include "Platform.h"
 

@@ -46,10 +46,14 @@ public:
 	void SendComponentUpdates(UObject* Object, USpatialActorChannel* Channel, const FPropertyChangeState& Changes);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters);
+	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
 
 	void SendReserveEntityIdRequest(USpatialActorChannel* Channel);
 	void SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged);
 	void SendDeleteEntityRequest(Worker_EntityId EntityId);
+
+	void ResolveOutgoingOperations(UObject* Object);
+	void ResolveOutgoingRPCs(UObject* Object);
 
 private:
 	// Actor Lifecycle

@@ -7,7 +7,7 @@
 #include "SpatialNetDriver.h"
 #include "SpatialActorChannel.h"
 #include "SpatialPackageMapClient.h"
-#include "CoreTypes/StandardLibrary.h"
+#include "Schema/StandardLibrary.h"
 
 #include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
@@ -15,6 +15,8 @@
 #include <memory>
 
 #include "SpatialReceiver.generated.h"
+
+class USpatialSender;
 
 using FChannelObjectPair = TPair<USpatialActorChannel*, UObject*>;
 using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
@@ -94,6 +96,8 @@ public:
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
 	void ProcessQueuedResolvedObjects();
+	void ResolvePendingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
+	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<UnrealObjectRef>& UnresolvedRefs);
 
 private:
 	void EnterCriticalSection();
@@ -106,9 +110,12 @@ private:
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel);
+	void ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worker_EntityId EntityId, UFunction* Function, UObject*& OutTargetObject, void* Data);
+	void ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, Worker_EntityId EntityId, const TArray<UFunction*>& RPCArray);
 
-	void ResolvePendingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
 	void ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef);
+	void ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
+	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);
 
 	UObject* GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class);
 
@@ -119,9 +126,11 @@ private:
 	friend T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId);
 
 	USpatialNetDriver* NetDriver;
+	USpatialPackageMapClient* PackageMap;
 	UWorld* World;
 	USpatialView* View;
 	USpatialTypebindingManager* TypebindingManager;
+	USpatialSender* Sender;
 
 	// TODO: Figure out how to remove entries when Channel/Actor gets deleted
 	TMap<UnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
