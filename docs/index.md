@@ -18,12 +18,13 @@ You can [sign up for SpatialOS Unreal GDK updates](http://go.pardot.com/l/169082
 * Unreal Game Development Kit repository: [github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
 
 ## Recommended use
-We are releasing the GDK in [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) so we can react to feedback and iterate on development quickly. To facilitate this, during our pre-alpha stage we don't have a formal deprecation cycle for APIs and workflows. This means that everything and anything can change. In addition, documentation is limited and some aspects of the GDK are not optimized.
+We are releasing the GDK in [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) so we can react to feedback and iterate on development quickly. To facilitate this, during our pre-alpha stage we don't have a formal deprecation cycle for APIs and workflows. This means that everything and anything can change. In addition, documentation is limited and some aspects of the GDK are not optimized.
 
 Given this, we don’t recommend using the the Unreal GDK for games in the production phase just yet.
 
 **Who is it for?**<br>
 We recommend you start using the GDK if:
+
 * You don’t mind the rough edges and are interested in contributing to the GDK (see our [contributions]({{urlRoot}}/contributing) policy).
 * You want to start evaluating the GDK or prototyping on it for a future project.
 
@@ -48,7 +49,7 @@ Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issu
 We are not currently accepting public contributions - see our [contributions]({{urlRoot}}/contributing) policy. However, we are accepting issues and we do want your feedback.
 
 ## SpatialOS Documentation
-For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/13.1/shared/concepts/spatialos). <br/>
+For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/latest/shared/concepts/spatialos). <br/>
 
 ## Installation and setup
 For prerequisites, installation and setup, see the [Installation and setup]({{urlRoot}}/setup-and-installing.md) documentation.

@@ -1,8 +1,8 @@
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
 # Feature list
 
-The SpatialOS Unreal GDK works by approximating SpatialOS entities to Unreal Actors. Any properties and commands within an entity’s component work in the way properties and RPCs work when applied to Actors. (You can find out more about SpatialOS [entities, components and properties](https://docs.improbable.io/reference/13.1/shared/concepts/entities) in the SpatialOS documentation.)
+The SpatialOS Unreal GDK works by approximating SpatialOS entities to Unreal Actors. Any properties and commands within an entity’s component work in the way properties and RPCs work when applied to Actors. (You can find out more about SpatialOS [entities, components and properties](https://docs.improbable.io/reference/latest/shared/concepts/entities) in the SpatialOS documentation.)
 
 The SpatialOS Unreal GDK pre-alpha release (2018-07-31) has the following features:
 
@@ -34,7 +34,7 @@ The SpatialOS Unreal GDK also supports:
 
 ## Static component replication
 
-The SpatialOS Unreal GDK supports only one instance of each type of static component replication for components owned by an Actor. For example, an Actor can have only one `FooComponent` and one `BarComponent`; it can’t have two `FooComponent`s or two `BarComponent`s.
+The SpatialOS Unreal GDK supports only one instance of each type of static component replication for components owned by an Actor. For example, an Actor can have one `FooComponent` but not two `FooComponent`s.
 
 Properties and RPCs within components have the same support as an Actor’s properties and RPCs.
 

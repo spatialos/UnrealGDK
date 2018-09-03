@@ -1,4 +1,4 @@
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
 # Interop Code Generator (ICG)
 
@@ -6,7 +6,7 @@
 
 The Interop Code Generator (ICG) is part of the SpatialOS Unreal GDK toolbar. It takes a set of Unreal classes and generates routing code (called ["type bindings"]({{urlRoot}}/content/glossary#type-bindings)) that enables automated communication between Unreal and SpatialOS.
 
-The ICG creates SpatialOS `.schema` files from `UObject` class layouts via Unreal's reflection system (a system in Unreal for programs to self-examine). See the Unreal website’s blog on [the reflection system](https://www.unrealengine.com/en-US/blog/unreal-property-system-reflection) and SpatialOS [documentation on schema](https://docs.improbable.io/reference/13.1/shared/schema/introduction).
+The ICG creates SpatialOS `.schema` files from `UObject` class layouts via Unreal's reflection system (a system in Unreal for programs to self-examine). See the Unreal website’s blog on [the reflection system](https://www.unrealengine.com/en-US/blog/unreal-property-system-reflection) and SpatialOS [documentation on schema](https://docs.improbable.io/reference/latest/shared/schema/introduction).
 
 The `.schema` files enable SpatialOS to understand and store Unreal data. The ICG also creates `SpatialTypeBinding` classes (known as [type bindings]({{urlRoot}}/content/glossary#type-bindings)).
 
@@ -14,8 +14,8 @@ You will want to generate type bindings for all **replicated Actors** and **repl
 
 These classes:
 
-* convert entity property updates to and from SpatialOS in the form of [component updates](https://docs.improbable.io/reference/13.1/csharpsdk/using/sending-data#sending-and-receiving-component-updates).
-* send and receive Unreal RPCs (remote procedure calls) via [SpatialOS commands](https://docs.improbable.io/reference/13.1/shared/design/commands).
+* convert entity property updates to and from SpatialOS in the form of [component updates](https://docs.improbable.io/reference/latest/csharpsdk/using/sending-data#sending-and-receiving-component-updates).
+* send and receive Unreal RPCs (remote procedure calls) via [SpatialOS commands](https://docs.improbable.io/reference/latest/shared/design/commands).
 * have logic to handle conditional replication based on Unreal Actor ownership.
 
 > [Known Issue]({{urlRoot}}/known-issues.md): the ICG is not optimized.

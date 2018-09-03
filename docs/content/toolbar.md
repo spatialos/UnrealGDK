@@ -1,8 +1,8 @@
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
 # SpatialOS Unreal GDK toolbar
 
-The SpatialOS Unreal GDK toolbar is an easy way to run and alter [`spatial` command-line tool](https://docs.improbable.io/reference/13.1/shared/glossary#the-spatial-command-line-tool) (SpatialOS documentation) commands from inside the Unreal Editor.
+The SpatialOS Unreal GDK toolbar is an easy way to run and alter [`spatial` command-line tool](https://docs.improbable.io/reference/latest/shared/glossary#the-spatial-command-line-tool) (SpatialOS documentation) commands from inside the Unreal Editor.
 
 ## Add the SpatialOS Unreal GDK toolbar to your Unreal project
 
@@ -35,7 +35,7 @@ You can also access these from the **Window** menu:
 
 
 * Snapshot</br>
-Generates a [SpatialOS snapshot](https://docs.improbable.io/reference/13.1/shared/glossary#snapshot) (SpatialOS documentation).
+Generates a [SpatialOS snapshot](https://docs.improbable.io/reference/latest/shared/glossary#snapshot) (SpatialOS documentation).
 
 * Codegen</br>
 Creates [SpatialOS Unreal GDK interop code]({{urlRoot}}/content/interop).
@@ -47,7 +47,7 @@ Runs `spatial local launch` with the launch configuration specified in the setti
 Stops `spatial local launch`.
 
 * Inspector</br>
-Opens the [Inspector](https://docs.improbable.io/reference/13.1/shared/glossary#inspector) (SpatialOS documentation) in a browser.
+Opens the [Inspector](https://docs.improbable.io/reference/latest/shared/glossary#inspector) (SpatialOS documentation) in a browser.
 
 ## Settings
 
@@ -61,7 +61,7 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
     If you're using a non-standard structure, you'll need to set this yourself. This is empty by default. If you leave it empty, it defaults to `<ProjectFileLocation>/../spatial`.
 
     * **Launch Configuration**</br>
-    The [launch configuration file](https://docs.improbable.io/reference/13.1/shared/reference/file-formats/launch-config) (SpatialOS documentation) to use when running `spatial local launch` using the `Launch` button.
+    The [launch configuration file](https://docs.improbable.io/reference/latest/shared/reference/file-formats/launch-config) (SpatialOS documentation) to use when running `spatial local launch` using the `Launch` button.
 
     * **Stop on Exit**</br>
     If enabled, shuts down running deployments when you close the Unreal Editor.

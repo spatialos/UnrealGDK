@@ -1,4 +1,4 @@
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
 # Set up and get started with the SpatialOS Unreal GDK
 
@@ -13,17 +13,17 @@ This guide explains how to set up the [SpatialOS Unreal GDK](https://github.com/
 * Recommended storage: 15GB+ available space
 
 ### Network settings
-* Refer to the [SpatialOS network settings](https://docs.improbable.io/reference/13.1/shared/get-started/requirements#network-settings) (SpatialOS documentation)
+* Refer to the [SpatialOS network settings](https://docs.improbable.io/reference/latest/shared/get-started/requirements#network-settings) (SpatialOS documentation)
 
 ### Software
 To build the SpatialOS Unreal GDK module you need the following installed:
 
 * Windows 10, with Command Prompt or PowerShell as your terminal
 * [Git for Windows](https://gitforwindows.org)
-* [SpatialOS version 13.1](https://console.improbable.io/installer/download/stable/latest/win).
+* [SpatialOS version 13.2](https://console.improbable.io/installer/download/stable/latest/win).
 This installs:<br>
-    - the [`spatial` CLI](https://docs.improbable.io/reference/13.1/shared/spatial-cli-introduction)<br>
-    - the SpatialOS [Launcher](https://docs.improbable.io/reference/13.1/shared/operate/launcher)<br>
+    - the [`spatial` CLI](https://docs.improbable.io/reference/latest/shared/spatial-cli-introduction)<br>
+    - the SpatialOS [Launcher](https://docs.improbable.io/reference/latest/shared/operate/launcher)<br>
     - the 32-bit and 64-bit Visual C++ Redistributables<br>
 * The [Windows SDK 8.1](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive)
 * Visual Studio [2015](https://visualstudio.microsoft.com/vs/older-downloads/) or [2017](https://visualstudio.microsoft.com/downloads/) (we recommend 2017). During the installation, make sure you select the following items in the Workloads tab:<br>
@@ -142,7 +142,7 @@ To run a cloud deployment, you need to prepare your server-worker and client-wor
 1. Navigate to `StarterProject\spatial`.
 1. Upload the assemblies to the cloud, specifying an assembly name (this covers both assemblies): `spatial cloud upload <assembly_name>`
 1. Launch a deployment, specifying a deployment name: `spatial cloud launch <assembly_name> one_worker_test.json <deployment_name> --snapshot=snapshots\default.snapshot`
-1. Follow the steps [here](https://docs.improbable.io/reference/13.1/shared/get-started/tour#start-a-game-client) (SpatialOS documentation) to launch the game.
+1. Follow the steps [here](https://docs.improbable.io/reference/latest/shared/get-started/tour#start-a-game-client) (SpatialOS documentation) to launch the game.
 
 ## Next steps
 

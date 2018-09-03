@@ -1,4 +1,4 @@
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
 # Unreal GDK known issues
 
@@ -7,7 +7,7 @@ Known issue = any major user-facing bug or lack of user-facing feature that:
 1. diverges from user expectations from a SpatialOS project (e.g. interacting across worker boundaries)
 
 | Issue | Date added | Ticket | Workaround? |
-|-------|-------------------|--------|-------------|-------|
+|-------|-------------------|--------|-------------|
 | Order of reliable RPCs is not respected in case of unresolved UObject* parameter. | 2018-06-14 | [UNR-363](https://improbableio.atlassian.net/browse/UNR-336) | Potential user-code workaround to explicitly enforce the order of RPCs. |
 | Project build `PCHUsageMode` must be set to `UseExplicitOrSharedPCHs`. | 2018-06-27 |[UNR-354](https://improbableio.atlassian.net/browse/UNR-354)| |
 | Adaptive Unity builds are not supported. | 2018-07-28 | | Disable `bUseAdaptiveUnityBuild` following [Epic’s documentation](https://docs.unrealengine.com/en-US/Programming/UnrealBuildSystem/Configuration). |
