@@ -26,5 +26,5 @@ private:
 
 	class USpatialReceiver* Receiver;
 
-	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> ComponentAuthorityMap;
+	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
 };

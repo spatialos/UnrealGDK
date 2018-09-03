@@ -67,6 +67,8 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 
 	NetDriver = Cast<USpatialNetDriver>(Connection->Driver);
 	check(NetDriver);
+	Sender = NetDriver->Sender;
+	Receiver = NetDriver->Receiver;
 }
 
 void USpatialActorChannel::DeleteEntityIfAuthoritative()

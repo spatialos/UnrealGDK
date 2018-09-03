@@ -37,6 +37,8 @@ void USpatialReceiver::Init(USpatialNetDriver* NetDriver)
 	this->NetDriver = NetDriver;
 	this->PackageMap = NetDriver->PackageMap;
 	this->World = NetDriver->GetWorld();
+	this->View = NetDriver->View;
+	this->TypebindingManager = NetDriver->TypebindingManager;
 }
 
 void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
@@ -427,7 +429,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 {
 	if (View->GetAuthority(Op.entity_id, Op.update.component_id) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping because we sent this update"));
+		UE_LOG(LogTemp, Verbose, TEXT("Skipping because we sent this update"));
 		return;
 	}
 
@@ -439,12 +441,17 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case PERSISTENCE_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case UNREAL_METADATA_COMPONENT_ID:
-		UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping because this is hand-written Spatial component"));
+		UE_LOG(LogTemp, Verbose, TEXT("Skipping because this is hand-written Spatial component"));
 		return;
 	}
 
 	UClass* Class = TypebindingManager->FindClassByComponentId(Op.update.component_id);
-	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
+	if (Class == nullptr)
+	{
+		return;
+	}
+	//checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
+
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
 	check(Info);
 

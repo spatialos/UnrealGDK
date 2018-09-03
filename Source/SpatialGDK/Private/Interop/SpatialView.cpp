@@ -87,10 +87,18 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 
 Worker_Authority USpatialView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
-	return ComponentAuthorityMap[EntityId][ComponentId];
+	if (TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
+	{
+		if (Worker_Authority* Authority = ComponentAuthorityMap->Find(ComponentId))
+		{
+			return *Authority;
+		}
+	}
+
+	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 }
 
 void USpatialView::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 {
-	ComponentAuthorityMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.component_id) = (Worker_Authority)Op.authority;
+	EntityComponentAuthorityMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.component_id) = (Worker_Authority)Op.authority;
 }

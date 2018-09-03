@@ -37,6 +37,9 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
+	TypebindingManager = NewObject<USpatialTypebindingManager>();
+	TypebindingManager->Init();
+
 	//SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(SpatialOSInstance, TEXT("Unreal"));
 
 	// Set up the worker config.
@@ -140,16 +143,14 @@ void USpatialNetDriver::OnSpatialOSConnected()
 {
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS."));
 
-	Sender = NewObject<USpatialSender>();
-	Sender->Init(this);
-
-	Receiver = NewObject<USpatialReceiver>();
-	Receiver->Init(this);
-
 	View = NewObject<USpatialView>();
-	View->Init(this);
-
+	Sender = NewObject<USpatialSender>();
+	Receiver = NewObject<USpatialReceiver>();
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
+
+	View->Init(this);
+	Sender->Init(this);
+	Receiver->Init(this);
 	PlayerSpawner->Init(this, TimerManager);
 
 	// Each connection stores a URL with various optional settings (host, port, map, netspeed...)

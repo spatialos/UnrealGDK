@@ -20,6 +20,7 @@ void USpatialSender::Init(USpatialNetDriver* NetDriver)
 	Connection = NetDriver->Connection;
 	PackageMap = NetDriver->PackageMap;
 	TypebindingManager = NetDriver->TypebindingManager;
+	Receiver = NetDriver->Receiver;
 }
 
 Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, const FVector& Location, const FString& EntityType, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel)
