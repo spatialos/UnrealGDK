@@ -43,10 +43,9 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 	UpdateFields.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
 	Schema_GetUniqueFieldIds(ComponentObject, UpdateFields.GetData());
 
-	TArray<uint16> Handles;
-	for (std::uint32_t FieldId : UpdateFields)
+	if (UpdateFields.Num() == 0)
 	{
-		Handles.Add((uint16)FieldId);
+		return;
 	}
 
 	FObjectReplicator& Replicator = Channel->PreReceiveSpatialUpdate(Object);
@@ -61,60 +60,49 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 	TArray<UProperty*> RepNotifies;
 
-	if (Handles.Num() > 0)
+	for (std::uint32_t FieldId : UpdateFields)
 	{
-		FChangelistIterator ChangelistIterator(Handles, 0);
-		FRepHandleIterator HandleIterator(ChangelistIterator, Cmds, BaseHandleToCmdIndex, 0, 1, 0, Cmds.Num() - 1);
-		while (HandleIterator.NextHandle())
+		// FieldId is the same as rep handle
+		check((int)FieldId - 1 < BaseHandleToCmdIndex.Num());
+		const FRepLayoutCmd& Cmd = Cmds[BaseHandleToCmdIndex[FieldId - 1].CmdIndex];
+		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
+
+		if (bIsServer || ConditionMap.IsRelevant(Parent.Condition))
 		{
-			const FRepLayoutCmd& Cmd = Cmds[HandleIterator.CmdIndex];
-			const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
+			// This swaps Role/RemoteRole as we write it
+			const FRepLayoutCmd& SwappedCmd = Parent.RoleSwapIndex != -1 ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
 
-			if (bIsServer || ConditionMap.IsRelevant(Parent.Condition))
+			uint8* Data = (uint8*)Object + SwappedCmd.Offset;
+
+			if (bIsInitialData || GetPropertyCount(ComponentObject, FieldId, Cmd.Property) > 0 || ClearedIds->Find(FieldId) != INDEX_NONE)
 			{
-				// This swaps Role/RemoteRole as we write it
-				const FRepLayoutCmd& SwappedCmd = Parent.RoleSwapIndex != -1 ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
-
-				uint8* Data = (uint8*)Object + SwappedCmd.Offset;
-
-				if (bIsInitialData || GetPropertyCount(ComponentObject, HandleIterator.Handle, Cmd.Property) > 0 || ClearedIds->Find(HandleIterator.Handle) != INDEX_NONE)
+				if (Cmd.Type == REPCMD_DynamicArray)
 				{
-					if (Cmd.Type == REPCMD_DynamicArray)
-					{
-						ApplyArray(ComponentObject, HandleIterator.Handle, Cast<UArrayProperty>(Cmd.Property), Data, SwappedCmd.Offset, Cmd.ParentIndex);
-					}
-					else
-					{
-						ApplyProperty(ComponentObject, HandleIterator.Handle, 0, Cmd.Property, Data, SwappedCmd.Offset, Cmd.ParentIndex);
-					}
+					ApplyArray(ComponentObject, FieldId, Cast<UArrayProperty>(Cmd.Property), Data, SwappedCmd.Offset, Cmd.ParentIndex);
+				}
+				else
+				{
+					ApplyProperty(ComponentObject, FieldId, 0, Cmd.Property, Data, SwappedCmd.Offset, Cmd.ParentIndex);
+				}
 
-					if (Cmd.Property->GetFName() == NAME_RemoteRole)
+				if (Cmd.Property->GetFName() == NAME_RemoteRole)
+				{
+					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
+					// the client RPCs component.
+					UByteProperty* ByteProperty = Cast<UByteProperty>(Cmd.Property);
+					if (!bIsServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
 					{
-						// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
-						// the client RPCs component.
-						UByteProperty* ByteProperty = Cast<UByteProperty>(Cmd.Property);
-						if (!bIsServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
-						{
-							ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
-						}
-					}
-
-					// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
-					if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
-					{
-						if (Parent.RepNotifyCondition == REPNOTIFY_Always || !Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.Offset, Data))
-						{
-							RepNotifies.AddUnique(Parent.Property);
-						}
+						ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
 					}
 				}
-			}
 
-			if (Cmd.Type == REPCMD_DynamicArray)
-			{
-				if (!HandleIterator.JumpOverArray())
+				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
+				if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
 				{
-					break;
+					if (Parent.RepNotifyCondition == REPNOTIFY_Always || !Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.Offset, Data))
+					{
+						RepNotifies.AddUnique(Parent.Property);
+					}
 				}
 			}
 		}
@@ -134,7 +122,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, st
 		FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewUnresolvedRefs);
 		bool bHasUnmapped = false;
 
-		ReadStructProperty(ValueDataReader, StructProperty, Data, bHasUnmapped);
+		ReadStructProperty(ValueDataReader, StructProperty, NetDriver, Data, bHasUnmapped);
 
 		if (bHasUnmapped)
 		{
@@ -297,29 +285,6 @@ void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId Id, UArra
 		{
 			ObjectReferencesMap.Remove(Offset);
 		}
-	}
-}
-
-void ComponentReader::ReadStructProperty(FSpatialNetBitReader& Reader, UStructProperty* Property, uint8* Data, bool& bOutHasUnmapped)
-{
-	UScriptStruct* Struct = Property->Struct;
-
-	if (Struct->StructFlags & STRUCT_NetSerializeNative)
-	{
-		UScriptStruct::ICppStructOps* CppStructOps = Struct->GetCppStructOps();
-		check(CppStructOps); // else should not have STRUCT_NetSerializeNative
-		bool bSuccess = true;
-		if (!CppStructOps->NetSerialize(Reader, PackageMap, bSuccess, Data))
-		{
-			bOutHasUnmapped = true;
-		}
-		checkf(bSuccess, TEXT("NetSerialize on %s failed."), *Struct->GetStructCPPName());
-	}
-	else
-	{
-		TSharedPtr<FRepLayout> RepLayout = NetDriver->GetStructRepLayout(Struct);
-
-		RepLayout_SerializePropertiesForStruct(*RepLayout, Reader, PackageMap, Data, bOutHasUnmapped);
 	}
 }
 

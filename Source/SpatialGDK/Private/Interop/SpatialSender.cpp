@@ -170,11 +170,14 @@ void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel*
 
 	for (uint16 Handle : Changes.RepChanged)
 	{
-		ResetOutgoingRepUpdate(Channel, Object, Handle);
-
-		if (TSet<const UObject*>* UnresolvedObjects = UnresolvedObjectsMap.Find(Handle))
+		if (Handle > 0)
 		{
-			QueueOutgoingRepUpdate(Channel, Object, Handle, *UnresolvedObjects);
+			ResetOutgoingRepUpdate(Channel, Object, Handle);
+
+			if (TSet<const UObject*>* UnresolvedObjects = UnresolvedObjectsMap.Find(Handle))
+			{
+				QueueOutgoingRepUpdate(Channel, Object, Handle, *UnresolvedObjects);
+			}
 		}
 	}
 
@@ -266,16 +269,19 @@ void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* P
 
 void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
 {
+	UE_LOG(LogTemp, Log, TEXT("Sending reserve entity Id request for %s"), *Channel->Actor->GetName());
 	Worker_RequestId RequestId = Worker_Connection_SendReserveEntityIdRequest(Connection, nullptr);
-	Receiver->AddPendingActorRequest(RequestId);
+	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
 void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
 {
+	UE_LOG(LogTemp, Log, TEXT("Sending create entity request for %s"), *Channel->Actor->GetName());
+
 	FSoftClassPath ActorClassPath(Channel->Actor->GetClass());
 
 	Worker_RequestId RequestId = CreateEntity(PlayerWorkerId, Location, ActorClassPath.ToString(), Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
-	Receiver->AddPendingActorRequest(RequestId);
+	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
 void USpatialSender::SendDeleteEntityRequest(Worker_EntityId EntityId)
@@ -491,7 +497,7 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object)
 			// End with zero to indicate the end of the list of handles.
 			PropertyHandles.Add(0);
 
-			//SendSpatialUpdateForObject(DependentChannel, ReplicatingObject, PropertyHandles, TArray<uint16>());
+			SendComponentUpdates(ReplicatingObject, DependentChannel, DependentChannel->GetChangeStateForObject(ReplicatingObject, nullptr, PropertyHandles, TArray<uint16>()));
 		}
 	}
 

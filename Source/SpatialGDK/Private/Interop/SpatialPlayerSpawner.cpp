@@ -56,30 +56,31 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	++NumberOfAttempts;
 }
 
-void USpatialPlayerSpawner::ReceivePlayerSpawnResponse()
+void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp& Op)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Got a response"));
-	//if(op.StatusCode == worker::StatusCode::kSuccess)
-	//{
-	//	UE_LOG(LogSpatialGDKPlayerSpawner, Display, TEXT("Player spawned sucessfully"));
-	//}
-	//else if(NumberOfAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-	//{
-	//	UE_LOG(LogSpatialGDKPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""),
-	//		*FString(op.Message.c_str()));
 
-	//	FTimerHandle RetryTimer;
-	//	FTimerDelegate TimerCallback;
-	//	TimerCallback.BindLambda([this, RetryTimer]()
-	//	{
-	//		this->SendPlayerSpawnRequest();
-	//	});
+	if(Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+	{
+		UE_LOG(LogSpatialGDKPlayerSpawner, Display, TEXT("Player spawned sucessfully"));
+	}
+	else if(NumberOfAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+	{
+		UE_LOG(LogSpatialGDKPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""),
+			UTF8_TO_TCHAR(Op.message));
 
-	//	TimerManager->SetTimer(RetryTimer, TimerCallback, SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts), false);
-	//}
-	//else
-	//{
-	//	UE_LOG(LogSpatialGDKPlayerSpawner, Fatal, TEXT("Player spawn request failed too many times. (%u attempts)"),
-	//		SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-	//}
+		FTimerHandle RetryTimer;
+		FTimerDelegate TimerCallback;
+		TimerCallback.BindLambda([this, RetryTimer]()
+		{
+			this->SendPlayerSpawnRequest();
+		});
+
+		TimerManager->SetTimer(RetryTimer, TimerCallback, SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts), false);
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKPlayerSpawner, Fatal, TEXT("Player spawn request failed too many times. (%u attempts)"),
+			SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+	}
 }

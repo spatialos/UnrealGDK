@@ -44,6 +44,7 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 			Receiver->OnCommandRequest(Op->command_request);
 			break;
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
+			Receiver->OnCommandResponse(Op->command_response);
 			break;
 
 		// Authority Change

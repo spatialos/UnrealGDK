@@ -2,6 +2,9 @@
 
 #include "Platform.h"
 #include "RepLayout.h"
+#include "EngineClasses/SpatialNetBitReader.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 
 void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdStart, const int32 CmdEnd, void* Data, bool& bHasUnmapped);
 
@@ -127,5 +130,28 @@ inline void RepLayout_ReceivePropertiesForRPC(FRepLayout& RepLayout, FNetBitRead
 				//	Channel->ChIndex, *Object->GetName(), *Function->GetName(), *Parents[i].Property->GetName());
 			}
 		}
+	}
+}
+
+inline void ReadStructProperty(FSpatialNetBitReader& Reader, UStructProperty* Property, USpatialNetDriver* NetDriver, uint8* Data, bool& bOutHasUnmapped)
+{
+	UScriptStruct* Struct = Property->Struct;
+
+	if (Struct->StructFlags & STRUCT_NetSerializeNative)
+	{
+		UScriptStruct::ICppStructOps* CppStructOps = Struct->GetCppStructOps();
+		check(CppStructOps); // else should not have STRUCT_NetSerializeNative
+		bool bSuccess = true;
+		if (!CppStructOps->NetSerialize(Reader, NetDriver->PackageMap, bSuccess, Data))
+		{
+			bOutHasUnmapped = true;
+		}
+		checkf(bSuccess, TEXT("NetSerialize on %s failed."), *Struct->GetStructCPPName());
+	}
+	else
+	{
+		TSharedPtr<FRepLayout> RepLayout = NetDriver->GetStructRepLayout(Struct);
+
+		RepLayout_SerializePropertiesForStruct(*RepLayout, Reader, NetDriver->PackageMap, Data, bOutHasUnmapped);
 	}
 }

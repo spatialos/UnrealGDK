@@ -88,10 +88,11 @@ public:
 
 	void OnComponentUpdate(Worker_ComponentUpdateOp& Op);
 	void OnCommandRequest(Worker_CommandRequestOp& Op);
+	void OnCommandResponse(Worker_CommandResponseOp& Op);
 
 	void OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op);
 	void OnCreateEntityIdResponse(Worker_CreateEntityResponseOp& Op);
-	void AddPendingActorRequest(Worker_RequestId RequestId);
+	void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel);
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 

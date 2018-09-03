@@ -244,9 +244,18 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
 	check(Info);
 
-	bool wroteSomething = false;
-	ComponentUpdates.Add(CreateComponentUpdate(Info->SingleClientComponent, PropertyChangeState, GROUP_SingleClient, wroteSomething));
-	ComponentUpdates.Add(CreateComponentUpdate(Info->MultiClientComponent, PropertyChangeState, GROUP_MultiClient, wroteSomething));
+	bool bWroteSomething = false;
+	Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info->SingleClientComponent, PropertyChangeState, GROUP_SingleClient, bWroteSomething);
+	if (bWroteSomething)
+	{
+		ComponentUpdates.Add(SingleClientUpdate);
+	}
+	bWroteSomething = false;
+	Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info->MultiClientComponent, PropertyChangeState, GROUP_MultiClient, bWroteSomething);
+	if (bWroteSomething)
+	{
+		ComponentUpdates.Add(MultiClientUpdate);
+	}
 
 	return ComponentUpdates;
 }

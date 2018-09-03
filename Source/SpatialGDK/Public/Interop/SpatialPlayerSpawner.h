@@ -26,7 +26,7 @@ public:
 
 	// Client
 	void SendPlayerSpawnRequest();
-	void ReceivePlayerSpawnResponse();
+	void ReceivePlayerSpawnResponse(Worker_CommandResponseOp& Op);
 
 private:
 	USpatialNetDriver* NetDriver;

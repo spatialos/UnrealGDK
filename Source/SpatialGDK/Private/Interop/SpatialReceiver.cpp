@@ -5,10 +5,11 @@
 #include "EngineMinimal.h"
 #include "EntityRegistry.h"
 #include "GameFramework/PlayerController.h"
-#include "SpatialActorChannel.h"
-#include "SpatialNetConnection.h"
-#include "SpatialPackageMapClient.h"
-#include "SpatialSender.h"
+#include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
+#include "Interop/SpatialSender.h"
+#include "Interop/SpatialPlayerSpawner.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/RepLayoutUtils.h"
 
@@ -459,6 +460,8 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 
 	if (Op.update.component_id == Info->SingleClientComponent)
 	{
+		if (bIsServer) return; // TODO: Temporary hack until we ignore component updates that are received for authority change
+
 		check(ActorChannel);
 
 		UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
@@ -466,6 +469,8 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	}
 	else if (Op.update.component_id == Info->MultiClientComponent)
 	{
+		if (bIsServer) return; // TODO: Temporary hack until we ignore component updates that are received for authority change
+
 		check(ActorChannel);
 
 		UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
@@ -482,6 +487,8 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	}
 	else if (Op.update.component_id == Info->RPCComponents[RPC_NetMulticast])
 	{
+		if (bIsServer) return; // TODO: Temporary hack until we ignore component updates that are received for authority change
+
 		check(ActorChannel);
 		const TArray<UFunction*>& RPCArray = Info->RPCs.FindChecked(RPC_NetMulticast);
 		ReceiveMulticastUpdate(Op.update, Op.entity_id, RPCArray);
@@ -567,6 +574,14 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	Sender->SendCommandResponse(Op.request_id, Response);
 }
 
+void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
+{
+	if (Op.entity_id == SpatialConstants::SPAWNER_ENTITY_ID && Op.response.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
+	{
+		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponse(Op);
+	}
+}
+
 void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel)
 {
 	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
@@ -609,11 +624,10 @@ void USpatialReceiver::ReceiveMulticastUpdate(const Worker_ComponentUpdate& Comp
 
 			TSet<UnrealObjectRef> UnresolvedRefs;
 
-			// TODO: Valentyn can you check this
-			FString PayloadData = Schema_GetString(EventData, 2);
+			TArray<uint8> PayloadData = Schema_GetPayload(EventData, 2);
 			// A bit hacky, we should probably include the number of bits with the data instead.
-			int64 CountBits = PayloadData.Len() * 8;
-			FSpatialNetBitReader PayloadReader(PackageMap, (uint8*)*PayloadData, CountBits, UnresolvedRefs);
+			int64 CountBits = PayloadData.Num() * 8;
+			FSpatialNetBitReader PayloadReader(PackageMap, PayloadData.GetData(), CountBits, UnresolvedRefs);
 
 			TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 			RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
@@ -661,6 +675,7 @@ UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChann
 
 void USpatialReceiver::OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op)
 {
+	UE_LOG(LogTemp, Log, TEXT("Received reserve entity Id: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
 	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))
 	{
 		Channel->OnReserveEntityIdResponse(Op);
@@ -675,20 +690,21 @@ void USpatialReceiver::OnCreateEntityIdResponse(Worker_CreateEntityResponseOp& O
 	}
 }
 
-void USpatialReceiver::AddPendingActorRequest(Worker_RequestId RequestId)
+void USpatialReceiver::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel)
 {
-	PendingActorRequests.Add(RequestId);
+	PendingActorRequests.Add(RequestId, Channel);
 }
 
 USpatialActorChannel* USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
 {
-	USpatialActorChannel** Channel = PendingActorRequests.Find(RequestId);
-	if (Channel == nullptr)
+	USpatialActorChannel** ChannelPtr = PendingActorRequests.Find(RequestId);
+	if (ChannelPtr == nullptr)
 	{
 		return nullptr;
 	}
+	USpatialActorChannel* Channel = *ChannelPtr;
 	PendingActorRequests.Remove(RequestId);
-	return *Channel;
+	return Channel;
 }
 
 void USpatialReceiver::ProcessQueuedResolvedObjects()
@@ -869,10 +885,10 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 			}
 			else
 			{
-				// TODO: Valentyn can you fix this
-				//FSpatialNetBitReader Reader(PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits);
-				//check(Property->IsA<UStructProperty>());
-				//ReadStructProperty(Reader, PackageMap, Cast<UStructProperty>(Property), Data + AbsOffset, Driver, bOutStillHasUnresolved);
+				TSet<UnrealObjectRef> NewUnresolvedRefs;
+				FSpatialNetBitReader BitReader(PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits, NewUnresolvedRefs);
+				check(Property->IsA<UStructProperty>());
+				ReadStructProperty(BitReader, Cast<UStructProperty>(Property), NetDriver, Data + AbsOffset, bOutStillHasUnresolved);
 			}
 
 			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
@@ -897,7 +913,6 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 void USpatialReceiver::ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worker_EntityId EntityId, UFunction* Function, UObject*& OutTargetObject, void* Data)
 {
-	// TODO: Valentyn check this function
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
 	UnrealObjectRef TargetObjectRef;
@@ -916,10 +931,10 @@ void USpatialReceiver::ReceiveRPCCommandRequest(const Worker_CommandRequest& Com
 
 	TSet<UnrealObjectRef> UnresolvedRefs;
 
-	FString PayloadData = Schema_GetString(RequestObject, 2);
+	TArray<uint8> PayloadData = Schema_GetPayload(RequestObject, 2);
 	// A bit hacky, we should probably include the number of bits with the data instead.
-	int64 CountBits = PayloadData.Len() * 8;
-	FSpatialNetBitReader PayloadReader(PackageMap, (uint8*)*PayloadData, CountBits, UnresolvedRefs);
+	int64 CountBits = PayloadData.Num() * 8;
+	FSpatialNetBitReader PayloadReader(PackageMap, PayloadData.GetData(), CountBits, UnresolvedRefs);
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Data);
