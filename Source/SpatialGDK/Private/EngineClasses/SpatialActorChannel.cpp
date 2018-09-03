@@ -13,8 +13,6 @@
 #include "SpatialSender.h"
 #include "SpatialReceiver.h"
 
-#include "SpatialInterop.h"
-
 DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
 
 namespace
@@ -550,7 +548,7 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	Replicator.CallRepNotifies(false);
 }
 
-void USpatialActorChannel::RegisterEntityId(const worker::EntityId& ActorEntityId)
+void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId)
 {
 	NetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
 
@@ -592,7 +590,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 		return;
 	}
 	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
-	EntityId = (worker::EntityId)Op.entity_id;
+	EntityId = Op.entity_id;
 	RegisterEntityId(EntityId);
 }
 

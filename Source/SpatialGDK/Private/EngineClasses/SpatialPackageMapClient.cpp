@@ -165,7 +165,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(const UObje
 	return NetGUID;
 }
 
-void FSpatialNetGUIDCache::RemoveEntityNetGUID(worker::EntityId EntityId)
+void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 {
 	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
 	UnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);

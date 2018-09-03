@@ -84,13 +84,18 @@ public:
 
 	//TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
+	UPROPERTY()
 	USpatialPlayerSpawner* PlayerSpawner;
 
 	Worker_Connection* Connection;
 
+	UPROPERTY()
 	USpatialSender* Sender;
+	UPROPERTY()
 	USpatialReceiver* Receiver;
+	UPROPERTY()
 	USpatialTypebindingManager* TypebindingManager;
+	UPROPERTY()
 	USpatialView* View;
 
 	UPROPERTY()

@@ -8,7 +8,6 @@
 #include "SpatialActorChannel.h"
 #include "SpatialNetConnection.h"
 #include "SpatialPackageMapClient.h"
-#include "SpatialInterop.h"
 #include "SpatialSender.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/RepLayoutUtils.h"

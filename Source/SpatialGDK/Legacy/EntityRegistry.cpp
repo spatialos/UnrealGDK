@@ -6,54 +6,54 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogEntityRegistry, Log, All);
 DEFINE_LOG_CATEGORY(LogEntityRegistry);
 
-void UEntityRegistry::AddToRegistry(const worker::EntityId& EntityId, AActor* Actor)
+void UEntityRegistry::AddToRegistry(const Worker_EntityId& EntityId, AActor* Actor)
 {
-  EntityIdToActor.Add(worker::EntityId(EntityId), Actor);
-  ActorToEntityId.Add(Actor, EntityId);
+	EntityIdToActor.Add(EntityId, Actor);
+	ActorToEntityId.Add(Actor, EntityId);
 }
 
 void UEntityRegistry::RemoveFromRegistry(const AActor* Actor)
 {
-  worker::EntityId EntityId = GetEntityIdFromActor(Actor);
-  RemoveFromRegistryImpl(Actor, EntityId);
+	Worker_EntityId EntityId = GetEntityIdFromActor(Actor);
+	RemoveFromRegistryImpl(Actor, EntityId);
 }
 
-void UEntityRegistry::RemoveFromRegistry(const worker::EntityId& EntityId)
+void UEntityRegistry::RemoveFromRegistry(const Worker_EntityId& EntityId)
 {
-  AActor* Actor = GetActorFromEntityId(EntityId);
-  RemoveFromRegistryImpl(Actor, EntityId);
+	AActor* Actor = GetActorFromEntityId(EntityId);
+	RemoveFromRegistryImpl(Actor, EntityId);
 }
 
-void UEntityRegistry::RemoveFromRegistryImpl(const AActor* Actor, const worker::EntityId& EntityId)
+void UEntityRegistry::RemoveFromRegistryImpl(const AActor* Actor, const Worker_EntityId& EntityId)
 {
-  ActorToEntityId.Remove(Actor);
+	ActorToEntityId.Remove(Actor);
 
-  if (EntityId != -1)
-  {
-    EntityIdToActor.Remove(EntityId);
-  }
-  else
-  {
-    UE_LOG(LogEntityRegistry, Warning, TEXT("Couldn't remove Actor from registry: EntityId == -1"));
-  }
+	if (EntityId != -1)
+	{
+		EntityIdToActor.Remove(EntityId);
+	}
+	else
+	{
+		UE_LOG(LogEntityRegistry, Warning, TEXT("Couldn't remove Actor from registry: EntityId == -1"));
+	}
 }
 
-worker::EntityId UEntityRegistry::GetEntityIdFromActor(const AActor* Actor) const
+Worker_EntityId UEntityRegistry::GetEntityIdFromActor(const AActor* Actor) const
 {
-  if (ActorToEntityId.Contains(Actor))
-  {
-    return *ActorToEntityId.Find(Actor);
-  }
+	if (ActorToEntityId.Contains(Actor))
+	{
+		return *ActorToEntityId.Find(Actor);
+	}
 
-  return worker::EntityId();
+	return Worker_EntityId();
 }
 
-AActor* UEntityRegistry::GetActorFromEntityId(const worker::EntityId& EntityId) const
+AActor* UEntityRegistry::GetActorFromEntityId(const Worker_EntityId& EntityId) const
 {
-  if (EntityIdToActor.Contains(EntityId))
-  {
-    return *EntityIdToActor.Find(EntityId);
-  }
+	if (EntityIdToActor.Contains(EntityId))
+	{
+		return *EntityIdToActor.Find(EntityId);
+	}
 
-  return nullptr;
+	return nullptr;
 }

@@ -148,9 +148,6 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	Receiver = NewObject<USpatialReceiver>();
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 
-	View->Init(this);
-	Sender->Init(this);
-	Receiver->Init(this);
 	PlayerSpawner->Init(this, TimerManager);
 
 	// Each connection stores a URL with various optional settings (host, port, map, netspeed...)
@@ -184,6 +181,10 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	}
 
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+
+	View->Init(this);
+	Sender->Init(this);
+	Receiver->Init(this);
 }
 
 void USpatialNetDriver::OnSpatialOSDisconnected(const FString& Reason)
