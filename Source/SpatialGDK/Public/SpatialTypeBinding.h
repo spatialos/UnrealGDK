@@ -242,7 +242,14 @@ public:
 	virtual void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const PURE_VIRTUAL(USpatialTypeBinding::ReceiveAddComponent, );
 	virtual worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const PURE_VIRTUAL(USpatialTypeBinding::GetInterestOverrideMap, return {}; );
 
+	void SerializeStruct(UStruct* Struct, FArchive& Ar, void* Data) const;
+
 protected:
+
+	void SerializeProperties_DynamicArray(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdIndex, uint8* Data, bool& bHasUnmapped) const;
+	void SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdStart, const int32 CmdEnd, void* Data, bool& bHasUnmapped) const;
+	void SerializePropertiesForStruct(FRepLayout& RepLayout, FArchive& Ar, void* Data, bool& bHasUnmapped) const;
+
 	UPROPERTY()
 	USpatialInterop* Interop;
 

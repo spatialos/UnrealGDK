@@ -8,7 +8,7 @@ USpatialGDKEditorToolbarSettings::USpatialGDKEditorToolbarSettings(const FObject
 	SpatialOSSnapshotFile(GetSpatialOSSnapshotFile())
 {
 	ProjectRootFolder.Path = TEXT("");
-	SpatialOSSnapshotPath.Path = GetSpatialOSSnapshotPath();
+	SpatialOSSnapshotPath.Path = TEXT("");
 	InteropCodegenOutputFolder.Path = TEXT("");
 	GeneratedSchemaOutputFolder.Path = TEXT("");
 }
