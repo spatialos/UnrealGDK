@@ -6,10 +6,10 @@
 
 void USpatialConnection::FinishDestroy()
 {
-	if (Connection)
+	if (WorkerConnection)
 	{
-		Worker_Connection_Destroy(Connection);
-		Connection = nullptr;
+		Worker_Connection_Destroy(WorkerConnection);
+		WorkerConnection = nullptr;
 	}
 
 	Super::FinishDestroy();
@@ -35,11 +35,11 @@ void USpatialConnection::Connect(ReceptionistConfig Config)
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, this]
 	{
-		Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
+		WorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-		if (Worker_Connection_IsConnected(Connection))
+		if (Worker_Connection_IsConnected(WorkerConnection))
 		{
 			AsyncTask(ENamedThreads::GameThread, [this] {
 				OnConnected.ExecuteIfBound();
@@ -109,37 +109,48 @@ Worker_ConnectionParameters USpatialConnection::CreateConnectionParameters(Conne
 	return ConnectionParams;
 }
 
-Worker_OpList* USpatialConnection::GetOpList(uint32_t TimeoutMillis)
+Worker_OpList* USpatialConnection::GetOpList()
 {
-	return Worker_Connection_GetOpList(Connection, TimeoutMillis);
+	return Worker_Connection_GetOpList(WorkerConnection, 0);
 }
 
-Worker_RequestId USpatialConnection::SendReserveEntityIdRequest(const uint32_t* TimeoutMillis)
+Worker_RequestId USpatialConnection::SendReserveEntityIdRequest()
 {
-	return Worker_Connection_SendReserveEntityIdRequest(Connection, TimeoutMillis);
+	return Worker_Connection_SendReserveEntityIdRequest(WorkerConnection, nullptr);
 }
 
-Worker_RequestId USpatialConnection::SendCreateEntityRequest(uint32_t ComponentCount, const Worker_ComponentData* Components, const Worker_EntityId* EntityId, const uint32_t* TimeoutMillis)
+Worker_RequestId USpatialConnection::SendCreateEntityRequest(uint32_t ComponentCount, const Worker_ComponentData* Components, const Worker_EntityId* EntityId)
 {
-	return Worker_Connection_SendCreateEntityRequest(Connection, ComponentCount, Components, EntityId, TimeoutMillis);
+	return Worker_Connection_SendCreateEntityRequest(WorkerConnection, ComponentCount, Components, EntityId, nullptr);
 }
 
-Worker_RequestId USpatialConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, const uint32_t* TimeoutMillis)
+Worker_RequestId USpatialConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
 {
-	return Worker_Connection_SendDeleteEntityRequest(Connection, EntityId, TimeoutMillis);
+	return Worker_Connection_SendDeleteEntityRequest(WorkerConnection, EntityId, nullptr);
 }
 
 void USpatialConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate)
 {
-	Worker_Connection_SendComponentUpdate(Connection, EntityId, ComponentUpdate);
+	Worker_Connection_SendComponentUpdate(WorkerConnection, EntityId, ComponentUpdate);
 }
 
-Worker_RequestId USpatialConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId, const uint32_t* TimeoutMillis, const Worker_CommandParameters* CommandParameters)
+Worker_RequestId USpatialConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
 {
-	return Worker_Connection_SendCommandRequest(Connection, EntityId, Request, CommandId, TimeoutMillis, CommandParameters);
+	Worker_CommandParameters CommandParams{};
+	return Worker_Connection_SendCommandRequest(WorkerConnection, EntityId, Request, CommandId, nullptr, &CommandParams);
 }
 
 void USpatialConnection::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
 {
-	return Worker_Connection_SendCommandResponse(Connection, RequestId, Response);
+	return Worker_Connection_SendCommandResponse(WorkerConnection, RequestId, Response);
+}
+
+void USpatialConnection::SendLogMessage(const uint8_t Level, const char* LoggerName, const char* Message)
+{
+	Worker_LogMessage LogMessage{};
+	LogMessage.level = Level;
+	LogMessage.logger_name = LoggerName;
+	LogMessage.message = Message;
+
+	Worker_Connection_SendLogMessage(WorkerConnection, &LogMessage);
 }
