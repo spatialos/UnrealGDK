@@ -22,13 +22,13 @@ Given this, we don’t recommend using the the Unreal GDK for games in the produ
 
 **Who is it for?**<br>
 We recommend you start using the GDK if:
-* You don’t mind the rough edges and are interested in contributing to the GDK (see our [contributions](.github/CONTRIBUTING.md) policy).
+* You don’t mind the rough edges and are interested in contributing to the GDK (see our [contributions](https://docs.improbable.io/unreal/pre-alpha/contributing) policy).
 * You want to start evaluating the GDK or prototyping on it for a future project.
 
 Although every feature you need to build your optimal SpatialOS game may not be ready yet, this is a great time to get involved and shape the Unreal GDK. We are committed to improving the GDK rapidly, aiming for an alpha release in Fall 2018.
 
 ## Feature List
-See the [full feature list](docs/features.md) for what is supported in the Unreal GDK
+See the [full feature list](https://docs.improbable.io/unreal/pre-alpha/features) for what is supported in the Unreal GDK
   
 ## Give us feedback
 We have released the Unreal GDK this early in development because we want your feedback. Please come and talk to us about the software and the documentation via:
@@ -43,18 +43,18 @@ Visit the **feedback** section in our [forums](https://forums.improbable.io/) an
 Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issues).
 
 ## Contributions
-We are not currently accepting public contributions - see our [contributions](.github/CONTRIBUTING.md) policy. However, we are accepting issues and we do want your feedback.
+We are not currently accepting public contributions - see our [contributions](https://docs.improbable.io/unreal/pre-alpha/contributing) policy. However, we are accepting issues and we do want your feedback.
 
 ## Documentation
-For guidance on using the SpatialOS Unreal GDK, see the [documentation in this GitHub repository](docs/readme.md).
+For guidance on using the SpatialOS Unreal GDK, see the [official documentation](https://docs.improbable.io/unreal/pre-alpha/index).
 
 For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/13.1/shared/concepts/spatialos). <br/>
 
 ## Installation and setup
-For prerequisites, installation and setup, see the [Installation and setup](docs/setup-and-installing.md) documentation.
+For prerequisites, installation and setup, see the [Installation and setup](https://docs.improbable.io/unreal/pre-alpha/setup-and-installing) documentation.
 
 ## Known issues
-See the [Known issues](docs/known-issues.md) documentation.
+See the [Known issues](https://docs.improbable.io/unreal/pre-alpha/known-issues) documentation.
 
 ## Troubleshooting
 Run into problems? See the [troubleshooting](docs/content/troubleshooting.md) documentation.
@@ -67,7 +67,7 @@ See the [latest roadmap (Trello board)](https://trello.com/b/7wtbtwmL/unreal-gdk
 
 ## Unreal Engine changes
 In order to transform Unreal from a single server engine to a distributed model, we had to make a small number of changes to UE4 code. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our forked [Unreal Engine repo, `4.19-SpatialOSUnrealGDK` branch](https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK).
-> You may get a 404 error from this link. To get access, see [these instructions](docs/setup-and-installing.md#unreal-engine-eula). <br/>
+> You may get a 404 error from this link. To get access, see [these instructions](https://docs.improbable.io/unreal/pre-alpha/setup-and-installing#unreal-engine-eula). <br/>
 
 ## Email updates
 You can [sign up for SpatialOS Unreal GDK updates](http://go.pardot.com/l/169082/2018-06-15/27ld2t) direct to your mailbox.
