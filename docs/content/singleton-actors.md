@@ -1,4 +1,4 @@
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](../../README.md#recommended-use).
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
 # Singleton Actors
 
@@ -13,7 +13,7 @@ You can define any class as a Singleton Actor. At the moment the Unreal GDK only
 
 Each server-worker should instantiate their own local version of each Singleton Actor. For `GameMode` and `GameState`, Unreal Engine does this automatically.
 
-Due to Unreal server-workers spawning their own instances of each Singleton Actor, proper replication and authority management of Singleton Actors becomes a bit tricky. To solve this issue, we have introduced the concept of a Global State Manager (GSM) to enable proper replication of Singleton Actors. The GSM solves the problem of replicating Singleton Actors by only allowing the server-worker with [authority](https://docs.improbable.io/reference/13.1/shared/glossary#read-and-write-access-authority) over the GSM to execute the initial replication of these Actors. All other server-workers will then link their local Singleton Actors to their respective SpatialOS entity.
+Due to Unreal server-workers spawning their own instances of each Singleton Actor, proper replication and authority management of Singleton Actors becomes a bit tricky. To solve this issue, we have introduced the concept of a Global State Manager (GSM) to enable proper replication of Singleton Actors. The GSM solves the problem of replicating Singleton Actors by only allowing the server-worker with [authority](https://docs.improbable.io/reference/latest/shared/glossary#read-and-write-access-authority) over the GSM to execute the initial replication of these Actors. All other server-workers will then link their local Singleton Actors to their respective SpatialOS entity.
 
 ## Setting up Singleton Actors
 
@@ -31,11 +31,12 @@ class TESTSUITE_API AExampleGameGameState : public AGameStateBase
 {
   GENERATED_BODY()
   ...
+}
 ```
 
 ### Streaming queries
 
-To make sure all server-workers check out Singleton Actor entities, you need to configure the worker to have [streaming queries](https://docs.improbable.io/reference/13.1/shared/worker-configuration/bridge-config#streaming-queries) for each Singleton Actor’s components.
+To make sure all server-workers check out Singleton Actor entities, you need to configure the worker to have [streaming queries](https://docs.improbable.io/reference/latest/shared/worker-configuration/bridge-config#streaming-queries) for each Singleton Actor’s components.
 
 In our example with `ExampleGameGameState`, the Interop Code Generator creates a schema component called `ExampleGameGameStateMultiClientRepData`. You need to add this as a streaming query to the worker configuration file (spatial/workers/unreal/spatialos.UnrealWorker.worker.json).
 
@@ -58,5 +59,5 @@ In the `bridge` field of the worker configuration file, there should be a sectio
 
 This creates two streaming queries, one for the `GlobalStateManager` and one for the `ExampleGameGameState` component. For each Singleton Actor you register, you need to add another streaming query for that Singleton Actor’s `MultiClientRepData` component. We understand this workflow is a little clumsy and will be improved in the future.
 
-And that's it! You have successfully specified a Singleton Actor. Make sure you generate a new snapshot and [type bindings](./interop.md) using the [SpatialOS Unreal GDK toolbar](./toolbar.md).
+And that's it! You have successfully specified a Singleton Actor. Make sure you generate a new snapshot and [type bindings]({{urlRoot}}/content/interop) using the [SpatialOS Unreal GDK toolbar]({{urlRoot}}/content/toolbar).
 
