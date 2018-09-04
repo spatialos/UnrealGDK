@@ -38,6 +38,7 @@ public:
 	OnConnectedDelegate OnConnected;
 
 	Worker_Connection* Connection;
+	bool bIsConnected;
 
 private:
 	Worker_ConnectionParameters CreateConnectionParameters(ConnectionConfig& Config);
