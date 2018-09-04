@@ -25,24 +25,24 @@ public:
 
 	bool IsConnected();
 
-	Worker_OpList* GetOpList(uint32_t TimeoutMillis);
-
-	Worker_RequestId SendReserveEntityIdRequest(const uint32_t* TimeoutMillis);
-	Worker_RequestId SendCreateEntityRequest(uint32_t ComponentCount, const Worker_ComponentData* Components, const Worker_EntityId* EntityId, const uint32_t* TimeoutMillis);
-	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, const uint32_t* TimeoutMillis);
-
+	// Worker Connection Interface
+	Worker_OpList* GetOpList();
+	Worker_RequestId SendReserveEntityIdRequest();
+	Worker_RequestId SendCreateEntityRequest(uint32_t ComponentCount, const Worker_ComponentData* Components, const Worker_EntityId* EntityId);
+	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
 	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate);
-	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId, const uint32_t* TimeoutMillis, const Worker_CommandParameters* CommandParameters);
+	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
+	void SendLogMessage(const uint8_t Level, const char* LoggerName, const char* Message);
 
 	OnConnectedDelegate OnConnected;
-
-	Worker_Connection* Connection;
-	bool bIsConnected;
 
 private:
 	Worker_ConnectionParameters CreateConnectionParameters(ConnectionConfig& Config);
 
 private:
+	Worker_Connection* WorkerConnection;
 	Worker_Locator* Locator;
+
+	bool bIsConnected;
 };

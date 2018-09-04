@@ -86,7 +86,6 @@ public:
 
 	UPROPERTY()
 	USpatialConnection* Connection;
-
 	UPROPERTY()
 	USpatialView* View;
 	UPROPERTY()
@@ -107,7 +106,7 @@ public:
 private:
 	ReceptionistConfig WorkerConfig;
 
-	//TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
+	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;

@@ -121,6 +121,8 @@ void USpatialNetDriver::OnConnected()
 {
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS."));
 
+	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
+
 	View = NewObject<USpatialView>();
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
@@ -752,7 +754,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 	if (Connection != nullptr && Connection->IsConnected())
 	{
-		Worker_OpList* OpList = Connection->GetOpList(0);
+		Worker_OpList* OpList = Connection->GetOpList();
 
 		View->ProcessOps(OpList);
 

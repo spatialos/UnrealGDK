@@ -132,7 +132,7 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 		UnresolvedObjectsMap.Empty();
 
 		TArray<Worker_ComponentData> ActorComponentDatas = DataFactory.CreateComponentDatas(Component, ComponentChanges);
-		ComponentDatas.Append(DynamicComponentDatas);
+		ComponentDatas.Append(ActorComponentDatas);
 
 		for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
 		{
@@ -151,7 +151,7 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 	}
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
-	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(ComponentDatas.Num(), ComponentDatas.GetData(), &EntityId, nullptr);
+	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(ComponentDatas.Num(), ComponentDatas.GetData(), &EntityId);
 	PendingActorRequests.Add(CreateEntityRequestId, Channel);
 
 	return CreateEntityRequestId;
@@ -218,8 +218,7 @@ void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* P
 		if (!UnresolvedObject)
 		{
 			check(EntityId > 0);
-			Worker_CommandParameters CommandParams = {};
-			Connection->SendCommandRequest(EntityId, &CommandRequest, RPCInfo->Index + 1, nullptr, &CommandParams);
+			Connection->SendCommandRequest(EntityId, &CommandRequest, RPCInfo->Index + 1); 
 		}
 		break;
 	}
@@ -270,7 +269,7 @@ void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* P
 void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
 {
 	UE_LOG(LogTemp, Log, TEXT("Sending reserve entity Id request for %s"), *Channel->Actor->GetName());
-	Worker_RequestId RequestId = Connection->SendReserveEntityIdRequest(nullptr);
+	Worker_RequestId RequestId = Connection->SendReserveEntityIdRequest();
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
@@ -286,7 +285,7 @@ void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, cons
 
 void USpatialSender::SendDeleteEntityRequest(Worker_EntityId EntityId)
 {
-	Connection->SendDeleteEntityRequest(EntityId, nullptr);
+	Connection->SendDeleteEntityRequest(EntityId);
 }
 
 void USpatialSender::ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle)
