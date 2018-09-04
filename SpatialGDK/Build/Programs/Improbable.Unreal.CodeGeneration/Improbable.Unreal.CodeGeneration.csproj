@@ -1,0 +1,171 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{E3A484B8-548A-4D9E-9F9C-ACA98F6E5DC2}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Improbable.Unreal.CodeGeneration</RootNamespace>
+    <AssemblyName>UnrealCodeGenerator</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Improbable.Unreal.CodeGeneration.UnrealCodeGenerator</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="CodeGenerator">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Improbable.CodeGeneration\CodeGenerator.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Jobs\UnrealCallbackDispatcherJob.cs" />
+    <Compile Include="Jobs\UnrealEntityPipelineJob.cs" />
+    <Compile Include="CodeGeneratorOptions.cs" />
+    <Compile Include="Jobs\JobGenerator.cs" />
+    <Compile Include="Jobs\UnrealEntityTemplateJob.cs" />
+    <Compile Include="Jobs\UnrealCommanderJob.cs" />
+    <Compile Include="Jobs\UnrealCommandJob.cs" />
+    <Compile Include="Jobs\UnrealComponentJob.cs" />
+    <Compile Include="Jobs\UnrealCommonHeaderJob.cs" />
+    <Compile Include="Jobs\UnrealEnumJob.cs" />
+    <Compile Include="Jobs\UnrealTypeJob.cs" />
+    <Compile Include="Model\UnrealTypeMappings.cs" />
+    <Compile Include="Properties\Properties.cs" />
+    <Compile Include="SchemaProcessing\UnrealSchemaProcessor.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\UnrealBuiltInTypeReference.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\UnrealEnumTypeReference.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\UnrealListTypeReference.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\UnrealMapTypeReference.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\UnrealOptionTypeReference.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\UnrealTypeReference.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\IUnrealTypeReference.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\UnrealUserTypeReference.cs" />
+    <Compile Include="SchemaProcessing\Details\UnrealCommandDetails.cs" />
+    <Compile Include="SchemaProcessing\Details\UnrealComponentDetails.cs" />
+    <Compile Include="SchemaProcessing\Details\UnrealEnumDetails.cs" />
+    <Compile Include="SchemaProcessing\Details\UnrealEventDetails.cs" />
+    <Compile Include="SchemaProcessing\Details\UnrealFieldDetails.cs" />
+    <Compile Include="SchemaProcessing\Details\UnrealPackageDetails.cs" />
+    <Compile Include="SchemaProcessing\Details\UnrealTypeDetails.cs" />
+    <Compile Include="Templates\UnrealEntityTemplateHeaderGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealCommanderHeaderGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealEntityTemplateImplementationGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealCommandResponderHeaderGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealCommanderImplementationGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealCommonHeaderGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealComponentUpdateHeaderGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealComponentHeaderGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealCommandResponderImplementationGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealComponentUpdateImplementationGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealComponentImplementationGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealListHeaderGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealListImplementationGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealOptionHeaderGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealMapHeaderGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealOptionImplementationGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealMapImplementationGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealEnumHeaderGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealTypeImplementationGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealTypeHeaderGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealAddEntityOpWrapperHeaderGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealEntityPipelineHeaderGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealEntityPipelineImplementationGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealCallbackDispatcherHeaderGeneratorPart.cs" />
+    <Compile Include="Templates\UnrealCallbackDispatcherImplementationGeneratorPart.cs" />
+    <Compile Include="UnrealCodeGenerator.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Improbable.TextTemplating">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Improbable.CodeGeneration\Improbable.TextTemplating.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <T4Files Include="Templates\UnrealTypeHeaderGenerator.tt" />
+    <T4Files Include="Templates\UnrealTypeImplementationGenerator.tt" />
+    <T4Files Include="Templates\UnrealCommonHeaderGenerator.tt" />
+    <T4Files Include="Templates\UnrealComponentHeaderGenerator.tt" />
+    <T4Files Include="Templates\UnrealComponentImplementationGenerator.tt" />
+    <T4Files Include="Templates\UnrealComponentUpdateHeaderGenerator.tt" />
+    <T4Files Include="Templates\UnrealComponentUpdateImplementationGenerator.tt" />
+    <T4Files Include="Templates\UnrealCommandResponderHeaderGenerator.tt" />
+    <T4Files Include="Templates\UnrealCommandResponderImplementationGenerator.tt" />
+    <T4Files Include="Templates\UnrealCommanderHeaderGenerator.tt" />
+    <T4Files Include="Templates\UnrealCommanderImplementationGenerator.tt" />
+    <T4Files Include="Templates\UnrealEntityTemplateHeaderGenerator.tt" />
+    <T4Files Include="Templates\UnrealEntityTemplateImplementationGenerator.tt" />
+    <T4Files Include="Templates\UnrealEnumHeaderGenerator.tt" />
+    <T4Files Include="Templates\UnrealMapHeaderGenerator.tt" />
+    <T4Files Include="Templates\UnrealMapImplementationGenerator.tt" />
+    <T4Files Include="Templates\UnrealOptionHeaderGenerator.tt" />
+    <T4Files Include="Templates\UnrealOptionImplementationGenerator.tt" />
+    <T4Files Include="Templates\UnrealListHeaderGenerator.tt" />
+    <T4Files Include="Templates\UnrealListImplementationGenerator.tt" />
+    <T4Files Include="Templates\UnrealAddEntityOpWrapperHeaderGenerator.tt" />
+    <T4Files Include="Templates\UnrealEntityPipelineHeaderGenerator.tt" />
+    <T4Files Include="Templates\UnrealEntityPipelineImplementationGenerator.tt" />
+    <T4Files Include="Templates\UnrealCallbackDispatcherHeaderGenerator.tt" />
+    <T4Files Include="Templates\UnrealCallbackDispatcherImplementationGenerator.tt" />
+  </ItemGroup>
+  <ItemGroup />
+  <UsingTask TaskName="Improbable.TextTemplating.TransformAllTask" AssemblyFile="..\..\packages\Improbable.CodeGeneration\Improbable.TextTemplating.dll" />
+  <Target Name="BeforeBuild">
+    <TransformAllTask InputFiles="@(T4Files)" ProjectDirectory="$(MSBuildProjectDirectory)" Imports="Improbable.CodeGeneration.Jobs" ClassNameSpace="Improbable.Unreal.CodeGeneration">
+      <Output TaskParameter="OutputFiles" PropertyName="GeneratedFiles" />
+    </TransformAllTask>
+    <ItemGroup>
+      <Compile Include="$(GeneratedFiles)" />
+    </ItemGroup>
+  </Target>
+  <PropertyGroup>
+    <PostBuildEvent>copy $(SolutionDir)\$(OutDir)\*.dll $(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\ /Y
+copy $(SolutionDir)\$(OutDir)\UnrealCodeGenerator.exe $(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\ /Y</PostBuildEvent>
+  </PropertyGroup>
+</Project>
