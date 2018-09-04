@@ -251,8 +251,10 @@ bool USpatialActorChannel::ReplicateActor()
 
 		if (bIsNetOwned != bOldIsOwned || bFirstReplication)
 		{
-			Binding->UpdateEntityACL(this, bIsNetOwned);
-			bFirstReplication = false;
+			if (Binding->UpdateEntityACL(this, bIsNetOwned))
+			{
+				bFirstReplication = false;
+			}
 		}
 	}
 
@@ -552,6 +554,8 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 
 		FEntityId ActorEntityId = GetEntityId();
 
+		// Check whether the InterestOverrideMap has changed since the last spatial update
+		// Done by comparing the old map to the new one, element by element
 		bool bMapsMatch = true;
 		if (OldInterestOverrideMap.size() != InterestOverrideMap.size())
 		{

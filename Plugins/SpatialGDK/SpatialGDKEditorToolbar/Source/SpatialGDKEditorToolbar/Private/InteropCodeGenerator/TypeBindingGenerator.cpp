@@ -748,7 +748,7 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 
 		void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;
 		worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bNetOwned) const override;
-		void UpdateEntityACL(USpatialActorChannel* Channel, bool bNetOwned) const override;)""");
+		bool UpdateEntityACL(USpatialActorChannel* Channel, bool bNetOwned) const override;)""");
 
 	HeaderWriter.PrintNewLine();
 
@@ -1583,7 +1583,7 @@ void GenerateFunction_GetInterestOverrideMap(FCodeWriter& SourceWriter, UClass* 
 void GenerateFunction_UpdateEntityACL(FCodeWriter& SourceWriter, UClass* Class)
 {
 	SourceWriter.BeginFunction(
-	{ "void", "UpdateEntityACL(USpatialActorChannel* Channel, bool bNetOwned) const" },
+	{ "bool", "UpdateEntityACL(USpatialActorChannel* Channel, bool bNetOwned) const" },
 		TypeBindingName(Class));
 	SourceWriter.Printf(R"""(
 		TSharedPtr<worker::Connection> PinnedConnection = Interop->GetSpatialOS()->GetConnection().Pin();
@@ -1593,7 +1593,10 @@ void GenerateFunction_UpdateEntityACL(FCodeWriter& SourceWriter, UClass* Class)
 		if (PinnedConnection.IsValid() && PinnedView.IsValid())
 		{
 			worker::Option<improbable::EntityAcl::Data &> Data = PinnedView->Entities[Id].Get<improbable::EntityAcl>();
-			if (Data.empty()) return;
+			if (Data.empty())
+			{
+				return false;
+			}
 			worker::Map<uint32_t, improbable::WorkerRequirementSet> WriteACL = Data->component_write_acl();
 
 			std::string PlayerWorkerId;
@@ -1610,7 +1613,10 @@ void GenerateFunction_UpdateEntityACL(FCodeWriter& SourceWriter, UClass* Class)
 			improbable::EntityAcl::Update Update;
 			Update.set_component_write_acl(WriteACL);
 			PinnedConnection->SendComponentUpdate<improbable::EntityAcl>(Id, Update);
-		})""",
+			return true;
+		}
+
+		return false;)""",
 		*SchemaRPCComponentName(ERPCType::RPC_Client, Class, true));
 	SourceWriter.End();
 }
