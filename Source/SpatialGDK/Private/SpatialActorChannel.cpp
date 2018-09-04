@@ -611,15 +611,6 @@ void USpatialActorChannel::RegisterEntityId(const FEntityId& ActorEntityId)
 		});
 
 		PackageMap->ResolveEntityActor(Actor, ActorEntityId, SubobjectNameToOffset);
-		UE_LOG(LogTemp, Log, TEXT("MCS: Full name stable for networking: %s"), *Actor->GetName());
-	}
-	else if (Actor->IsNameStableForNetworking())
-	{
-		UE_LOG(LogTemp, Log, TEXT("MCS: Name stable for networking: %s"), *Actor->GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Log, TEXT("MCS: Name NOT stable for networking: %s"), *Actor->GetName());
 	}
 }
 
