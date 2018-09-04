@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Engine/PackageMapClient.h"
-#include <improbable/c_worker.h>
+
 #include "Schema/UnrealMetadata.h"
 #include "Schema/UnrealObjectRef.h"
+
+#include <improbable/c_worker.h>
 
 #include "SpatialPackageMapClient.generated.h"
 

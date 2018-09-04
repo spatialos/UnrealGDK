@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "Paths.h"
-#include "PlatformProcess.h"
+#include "HAL/PlatformProcess.h"
+#include "Misc/Paths.h"
 
 /**
  * This class ensures that the CoreSdkDll is loaded before it is needed by code.

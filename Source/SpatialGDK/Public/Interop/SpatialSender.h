@@ -1,11 +1,13 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "CoreMinimal.h"
 
-#include "RepDataUtils.h"
+#include "Utils/RepDataUtils.h"
 
-#include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
+#include <improbable/c_worker.h>
 
 #include "SpatialSender.generated.h"
 

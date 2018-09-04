@@ -1,14 +1,15 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTypebindingManager.h"
 
-#include "Core.h"
 #include "AssetRegistryModule.h"
-#include "Engine/Blueprint.h"
 #include "Class.h"
-#include "UObjectIterator.h"
-#include "GameFramework/Actor.h"
+#include "Core.h"
+#include "Engine/Blueprint.h"
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
+#include "GameFramework/Actor.h"
+#include "UObjectIterator.h"
 
 void USpatialTypebindingManager::Init()
 {

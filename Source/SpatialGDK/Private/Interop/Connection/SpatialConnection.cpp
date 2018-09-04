@@ -1,6 +1,19 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialConnection.h"
-#include <Async.h>
+
+#include "Async/Async.h"
+
+void USpatialConnection::FinishDestroy()
+{
+	if (Connection)
+	{
+		Worker_Connection_Destroy(Connection);
+		Connection = nullptr;
+	}
+
+	Super::FinishDestroy();
+}
 
 void USpatialConnection::Connect(ReceptionistConfig Config)
 {
@@ -8,7 +21,7 @@ void USpatialConnection::Connect(ReceptionistConfig Config)
 	Worker_ComponentVtable DefaultVtable = {};
 
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
-	ConnectionParams.worker_type = TCHAR_TO_ANSI(*Config.WorkerType);
+	ConnectionParams.worker_type = TCHAR_TO_UTF8(*Config.WorkerType);
 	ConnectionParams.enable_protocol_logging_at_startup = Config.EnableProtocolLoggingAtStartup;
 	ConnectionParams.component_vtable_count = 0;
 	ConnectionParams.default_component_vtable = &DefaultVtable;
@@ -16,12 +29,12 @@ void USpatialConnection::Connect(ReceptionistConfig Config)
 	ConnectionParams.network.use_external_ip = Config.UseExternalIp;
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
-		TCHAR_TO_ANSI(*Config.ReceptionistHost), Config.ReceptionistPort,
-		TCHAR_TO_ANSI(*Config.WorkerId), &ConnectionParams);
+		TCHAR_TO_UTF8(*Config.ReceptionistHost), Config.ReceptionistPort,
+		TCHAR_TO_UTF8(*Config.WorkerId), &ConnectionParams);
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, this]
 	{
-		this->Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
+		Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
@@ -33,23 +46,23 @@ void USpatialConnection::Connect(LocatorConfig Config)
 {
 	Worker_ConnectionParameters ConnectionParams = CreateConnectionParameters(Config);
 
-	Locator = Worker_Locator_Create(TCHAR_TO_ANSI(*Config.LocatorHost), &Config.LocatorParameters);
+	Locator = Worker_Locator_Create(TCHAR_TO_UTF8(*Config.LocatorHost), &Config.LocatorParameters);
 
 	Worker_DeploymentListFuture* DeploymentListFuture = Worker_Locator_GetDeploymentListAsync(Locator);
-	/*Worker_DeploymentListFuture_Get(DeploymentListFuture, nullptr, nullptr, 
+	/*Worker_DeploymentListFuture_Get(DeploymentListFuture, nullptr, nullptr,
 		[ConnectionParams, this](void* UserData, Worker_DeploymentList* DeploymentList)
 	{
-		if(DeploymentList->error != nullptr)
+		if (DeploymentList->error != nullptr)
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s"), DeploymentList->error);
 		}
 
-		if(DeploymentList->deployment_count == 0)
+		if (DeploymentList->deployment_count == 0)
 		{
 			UE_LOG(LogTemp, Error, TEXT("Received empty list of deployments. Failed to connect."));
 		}
 
-		Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(Locator, DeploymentList->deployments[0].deployment_name, 
+		Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(Locator, DeploymentList->deployments[0].deployment_name,
 			&ConnectionParams, nullptr, nullptr);
 
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, this]
@@ -65,7 +78,7 @@ void USpatialConnection::Connect(LocatorConfig Config)
 
 bool USpatialConnection::IsConnected()
 {
-	if(Connection != nullptr)
+	if (Connection != nullptr)
 	{
 		return Worker_Connection_IsConnected(Connection) != 0;
 	}
@@ -82,7 +95,7 @@ Worker_ConnectionParameters USpatialConnection::CreateConnectionParameters(Conne
 	Worker_ComponentVtable DefaultVtable = {};
 
 	Worker_ConnectionParameters ConnectionParams;
-	ConnectionParams.worker_type = TCHAR_TO_ANSI(*Config.WorkerType);
+	ConnectionParams.worker_type = TCHAR_TO_UTF8(*Config.WorkerType);
 	ConnectionParams.enable_protocol_logging_at_startup = Config.EnableProtocolLoggingAtStartup;
 	ConnectionParams.default_component_vtable = &DefaultVtable;
 	ConnectionParams.network = NetworkParams;

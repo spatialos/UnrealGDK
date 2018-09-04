@@ -7,8 +7,8 @@
 #include "Engine.h"
 #include "IpNetDriver.h"
 
-#include "ConnectionConfig.h"
-#include "SpatialOutputDevice.h"
+#include "Interop/Connection/ConnectionConfig.h"
+#include "Interop/SpatialOutputDevice.h"
 
 #include <improbable/c_worker.h>
 

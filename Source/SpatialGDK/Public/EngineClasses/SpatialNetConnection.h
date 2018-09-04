@@ -4,11 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "IpConnection.h"
+
 #include "SpatialNetConnection.generated.h"
 
-/**
- * 
- */
 UCLASS(transient)
 class SPATIALGDK_API USpatialNetConnection : public UIpConnection
 {

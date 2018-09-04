@@ -5,8 +5,9 @@
 #include "ModuleManager.h"
 #include "Paths.h"
 #include "PlatformProcess.h"
-#include "SpatialGDKSettings.h"
 #include "UObjectBase.h"
+
+#include "SpatialGDKSettings.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKModule"
 

@@ -3,9 +3,10 @@
 #pragma once
 
 #include "Engine/ActorChannel.h"
-#include "SpatialNetDriver.h"
-#include "SpatialView.h"
-#include "SpatialTypebindingManager.h"
+
+#include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/SpatialView.h"
+#include "Interop/SpatialTypebindingManager.h"
 #include "Utils/RepDataUtils.h"
 
 #include <improbable/c_worker.h>

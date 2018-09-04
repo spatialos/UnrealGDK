@@ -1,8 +1,9 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include <improbable/c_worker.h>
+#include "Interop/Connection/ConnectionConfig.h"
+
 #include <improbable/c_schema.h>
-
-#include "ConnectionConfig.h"
+#include <improbable/c_worker.h>
 
 #include "SpatialConnection.generated.h"
 
@@ -15,6 +16,8 @@ class USpatialConnection : public UObject
 	GENERATED_BODY()
 
 public:
+	virtual void FinishDestroy() override;
+
 	void Init();
 
 	void Connect(ReceptionistConfig Config);
@@ -33,7 +36,7 @@ public:
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
 
 	OnConnectedDelegate OnConnected;
-	
+
 	Worker_Connection* Connection;
 
 private:

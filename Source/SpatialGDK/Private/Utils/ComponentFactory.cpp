@@ -1,12 +1,13 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Utils/ComponentFactory.h"
-#include "Utils/RepLayoutUtils.h"
+#include "ComponentFactory.h"
 
-#include "SpatialActorChannel.h"
-#include "SpatialNetDriver.h"
-#include "SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "SpatialConstants.h"
+#include "Utils/RepLayoutUtils.h"
 
 ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& UnresolvedObjectsMap, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)

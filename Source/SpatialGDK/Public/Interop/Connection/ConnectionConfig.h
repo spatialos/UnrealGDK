@@ -1,7 +1,10 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
+#include "Containers/UnrealString.h"
+
 #include <improbable/c_worker.h>
-#include "UnrealString.h"
 
 struct ConnectionConfig
 {
@@ -20,7 +23,7 @@ struct ConnectionConfig
 
 struct ReceptionistConfig : public ConnectionConfig
 {
-	ReceptionistConfig() 
+	ReceptionistConfig()
 		: ReceptionistHost(TEXT("127.0.0.1"))
 		, ReceptionistPort(7777)
 	{}

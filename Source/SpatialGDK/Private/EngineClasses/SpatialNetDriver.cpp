@@ -2,22 +2,6 @@
 
 #include "SpatialNetDriver.h"
 
-#include "SpatialConnection.h"
-#include "SpatialView.h"
-#include "SpatialSender.h"
-#include "SpatialReceiver.h"
-#include "SpatialTypebindingManager.h"
-#include "GlobalStateManager.h"
-#include "SpatialPlayerSpawner.h"
-
-#include "SpatialActorChannel.h"
-#include "SpatialConstants.h"
-#include "SpatialNetConnection.h"
-#include "SpatialPackageMapClient.h"
-#include "SpatialPendingNetGame.h"
-
-#include "Utils/EntityRegistry.h"
-
 #include "Engine/ActorChannel.h"
 #include "Engine/ChildConnection.h"
 #include "Engine/NetworkObjectList.h"
@@ -26,6 +10,20 @@
 #include "Net/DataReplication.h"
 #include "Net/RepLayout.h"
 #include "SocketSubsystem.h"
+
+#include "Interop/Connection/SpatialConnection.h"
+#include "Interop/GlobalStateManager.h"
+#include "Interop/SpatialPlayerSpawner.h"
+#include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
+#include "Interop/SpatialTypebindingManager.h"
+#include "Interop/SpatialView.h"
+#include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialPendingNetGame.h"
+#include "SpatialConstants.h"
+#include "Utils/EntityRegistry.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -483,12 +481,12 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					Channel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
 					if (Channel)
 					{
-						if(TypebindingManager->FindClassInfoByClass(Actor->GetClass()) == nullptr)
+						if (TypebindingManager->FindClassInfoByClass(Actor->GetClass()) == nullptr)
 						{
 							Channel->bCoreActor = false;
 						}
 
-						if(Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+						if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 						{
 							SingletonActorChannels.Add(Actor->GetClass(), TPair<AActor*, USpatialActorChannel*>(Actor, Channel));
 						}
@@ -759,7 +757,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		View->ProcessOps(OpList);
 
 		Worker_OpList_Destroy(OpList);
-
 	}
 }
 
@@ -771,7 +768,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame* Stack,
 	UObject* SubObject)
 {
-	if(!Connection->IsConnected())
+	if (!Connection->IsConnected())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
 		return;

@@ -1,8 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialNetConnection.h"
-#include "SpatialNetDriver.h"
-#include "SpatialPackageMapClient.h"
+
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {

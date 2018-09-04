@@ -2,8 +2,9 @@
 
 #include "SpatialNetBitReader.h"
 
-#include "SpatialPackageMapClient.h"
-#include "WeakObjectPtr.h"
+#include "UObject/WeakObjectPtr.h"
+
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "SpatialConstants.h"
 
 FSpatialNetBitReader::FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<UnrealObjectRef>& InUnresolvedRefs)
