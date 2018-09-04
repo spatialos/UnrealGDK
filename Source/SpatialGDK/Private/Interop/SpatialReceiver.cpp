@@ -3,21 +3,20 @@
 #include "SpatialReceiver.h"
 
 #include "EngineMinimal.h"
-#include "Utils/EntityRegistry.h"
 #include "GameFramework/PlayerController.h"
+
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/SpatialSender.h"
+#include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
-#include "GlobalStateManager.h"
-#include "Utils/ComponentReader.h"
-#include "Utils/RepLayoutUtils.h"
-
-#include "Schema/UnrealMetadata.h"
+#include "Interop/SpatialSender.h"
 #include "Schema/DynamicComponent.h"
-
+#include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
+#include "Utils/ComponentReader.h"
+#include "Utils/EntityRegistry.h"
+#include "Utils/RepLayoutUtils.h"
 
 template <typename T>
 T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
@@ -149,10 +148,10 @@ void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 
 void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 {
-	if(Op.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID 
+	if (Op.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID
 		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		GlobalStateManager->ExecuteInitialSingletonActorReplication();	
+		GlobalStateManager->ExecuteInitialSingletonActorReplication();
 	}
 }
 
@@ -197,7 +196,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 	{
 		UClass* ActorClass = GetNativeEntityClass(MetadataComponent);
 
-		if(ActorClass == nullptr)
+		if (ActorClass == nullptr)
 		{
 			return;
 		}
@@ -474,9 +473,10 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	check(Info);
 
 	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
-	if(ActorChannel == nullptr)
+	if (ActorChannel == nullptr)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No actor channel for Entity %d"), Op.entity_id);
+		return;
 	}
 
 	if (Op.update.component_id == Info->SingleClientComponent)

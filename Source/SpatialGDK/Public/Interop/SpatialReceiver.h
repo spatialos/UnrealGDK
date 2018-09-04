@@ -3,16 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialTypebindingManager.h"
-#include "SpatialNetDriver.h"
-#include "SpatialActorChannel.h"
-#include "SpatialPackageMapClient.h"
+
+#include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
+#include "Interop/SpatialTypebindingManager.h"
 #include "Schema/StandardLibrary.h"
 
-#include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
-
-#include <memory>
+#include <improbable/c_worker.h>
 
 #include "SpatialReceiver.generated.h"
 

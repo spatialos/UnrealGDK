@@ -1,8 +1,10 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
-#include "Platform.h"
-#include "Array.h"
-#include "RepLayout.h"
+#include "Containers/Array.h"
+#include "HAL/Platform.h"
+#include "Net/RepLayout.h"
 
 // Storage for a changelist created by the replication system when replicating from the server.
 struct FPropertyChangeState

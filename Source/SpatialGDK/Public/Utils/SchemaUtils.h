@@ -1,10 +1,12 @@
-#pragma once
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include <improbable/c_schema.h>
-#include <improbable/c_worker.h>
+#pragma once
 
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Schema/UnrealObjectRef.h"
+
+#include <improbable/c_schema.h>
+#include <improbable/c_worker.h>
 
 inline void Schema_AddString(Schema_Object* Object, Schema_FieldId Id, const FString& Value)
 {
@@ -139,7 +141,7 @@ inline StringToEntityMap Schema_GetStringToEntityMap(Schema_Object* Object, Sche
 	StringToEntityMap Map;
 
 	int32 MapCount = (int32)Schema_GetObjectCount(Object, Id);
-	for(int32 i = 0; i < MapCount; i++)
+	for (int32 i = 0; i < MapCount; i++)
 	{
 		Schema_Object* PairObject = Schema_IndexObject(Object, Id, i);
 
@@ -154,12 +156,12 @@ inline StringToEntityMap Schema_GetStringToEntityMap(Schema_Object* Object, Sche
 
 inline void Schema_AddStringToEntityMap(Schema_Object* Object, Schema_FieldId Id, StringToEntityMap& Map)
 {
-	if(Map.Num() == 0)
+	if (Map.Num() == 0)
 	{
 		return;
 	}
 
-	for(auto& Pair : Map)
+	for (auto& Pair : Map)
 	{
 		Schema_Object* PairObject = Schema_AddObject(Object, 1);
 		Schema_AddString(PairObject, SCHEMA_MAP_KEY_FIELD_ID, Pair.Key);

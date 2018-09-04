@@ -2,8 +2,9 @@
 
 #include "SpatialNetBitWriter.h"
 
-#include "SpatialPackageMapClient.h"
-#include "WeakObjectPtr.h"
+#include "UObject/WeakObjectPtr.h"
+
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 

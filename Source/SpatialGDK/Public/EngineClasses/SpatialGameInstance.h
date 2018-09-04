@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+
 #include "SpatialGameInstance.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDK, Log, All);

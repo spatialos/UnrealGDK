@@ -7,6 +7,7 @@
 #include "Developer/Settings/Public/ISettingsModule.h"
 #include "Developer/Settings/Public/ISettingsSection.h"
 #include "ModuleManager.h"
+
 #include "SpatialGDKLoader.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKModule, Log, All);

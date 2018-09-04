@@ -1,12 +1,14 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
-
-#include <improbable/c_worker.h>
-#include <improbable/c_schema.h>
-
-#include "Utils/SchemaUtils.h"
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+
+#include "Utils/SchemaUtils.h"
+
+#include <improbable/c_schema.h>
+#include <improbable/c_worker.h>
 
 #include "GlobalStateManager.generated.h"
 
@@ -19,7 +21,7 @@ UCLASS()
 class SPATIALGDK_API UGlobalStateManager : public UObject
 {
 	GENERATED_BODY()
-	
+
 public:
 
 	void Init(USpatialNetDriver* InNetDriver);
@@ -30,6 +32,8 @@ public:
 	void LinkExistingSingletonActors();
 	void ExecuteInitialSingletonActorReplication();
 	void UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId);
+
+	bool IsSingletonEntity(Worker_EntityId EntityId);
 
 private:
 	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);

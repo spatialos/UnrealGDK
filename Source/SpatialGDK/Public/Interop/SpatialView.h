@@ -1,11 +1,13 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "CoreMinimal.h"
 
-#include <improbable/c_worker.h>
-#include <improbable/c_schema.h>
-
 #include "Schema/UnrealMetadata.h"
+
+#include <improbable/c_schema.h>
+#include <improbable/c_worker.h>
 
 #include "SpatialView.generated.h"
 
@@ -30,7 +32,6 @@ private:
 	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
 	USpatialReceiver* Receiver;
-	TArray<Worker_Op*> QueuedComponentUpdateOps;
 
 	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
 	TMap<Worker_EntityId, TSharedPtr<UnrealMetadata>> EntityUnrealMetadataMap;

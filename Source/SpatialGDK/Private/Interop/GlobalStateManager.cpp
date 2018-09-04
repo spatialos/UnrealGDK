@@ -1,18 +1,16 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "GlobalStateManager.h"
 
-#include "SpatialSender.h"
-#include "SpatialNetDriver.h"
-#include "SpatialActorChannel.h"
-#include "SpatialConstants.h"
-#include "SpatialNetConnection.h"
-#include "SpatialConnection.h"
-#include "SpatialPackageMapClient.h"
-
-#include "Utils/EntityRegistry.h"
-
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
+#include "Interop/Connection/SpatialConnection.h"
+#include "Interop/SpatialSender.h"
 #include "Schema/UnrealMetadata.h"
+#include "SpatialConstants.h"
+#include "Utils/EntityRegistry.h"
 
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
@@ -32,12 +30,12 @@ void UGlobalStateManager::ApplyUpdate(const Worker_ComponentUpdate& Update)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	if(Schema_GetObjectCount(ComponentObject, 1) == 1)
+	if (Schema_GetObjectCount(ComponentObject, 1) == 1)
 	{
 		SingletonNameToEntityId = Schema_GetStringToEntityMap(ComponentObject, 1);
 	}
 
-	if(Schema_GetObjectCount(ComponentObject, 2) == 1)
+	if (Schema_GetObjectCount(ComponentObject, 2) == 1)
 	{
 		StablyNamedPathToEntityId = Schema_GetStringToEntityMap(ComponentObject, 2);
 	}
@@ -78,7 +76,7 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 
 
 		UnrealMetadata* Metadata = View->GetUnrealMetadata(SingletonEntityId);
-		if(Metadata == nullptr)
+		if (Metadata == nullptr)
 		{
 			// Don't have entity checked out
 			continue;
@@ -172,4 +170,16 @@ void UGlobalStateManager::GetSingletonActorAndChannel(FString ClassName, AActor*
 
 	OutChannel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
 	NetDriver->SingletonActorChannels.Add(SingletonActorClass, TPair<AActor*, USpatialActorChannel*>(OutActor, OutChannel));
+}
+
+bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId)
+{
+	for (const auto& Pair : SingletonNameToEntityId)
+	{
+		if (Pair.Value == EntityId)
+		{
+			return true;
+		}
+	}
+	return false;
 }

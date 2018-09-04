@@ -1,7 +1,10 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
-#include "Platform.h"
-#include "RepLayout.h"
+#include "HAL/Platform.h"
+#include "Net/RepLayout.h"
+
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"

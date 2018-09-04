@@ -4,8 +4,9 @@
 
 #include "Engine/NetConnection.h"
 #include "Net/RepLayout.h"
-#include "SpatialActorChannel.h"
-#include "SpatialNetDriver.h"
+
+#include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialNetDriver.h"
 
 class FSpatialConditionMapFilter
 {

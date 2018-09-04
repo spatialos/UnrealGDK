@@ -1,18 +1,20 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialActorChannel.h"
+
 #include "Engine/DemoNetDriver.h"
-#include "Utils/EntityRegistry.h"
 #include "GameFramework/PlayerState.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
+
+#include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
+#include "Interop/SpatialSender.h"
+#include "Interop/SpatialReceiver.h"
+#include "Interop/GlobalStateManager.h"
 #include "SpatialConstants.h"
-#include "SpatialNetConnection.h"
-#include "SpatialNetDriver.h"
-#include "SpatialPackageMapClient.h"
-#include "SpatialSender.h"
-#include "SpatialReceiver.h"
-#include "GlobalStateManager.h"
+#include "Utils/EntityRegistry.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
 
@@ -97,21 +99,11 @@ bool USpatialActorChannel::IsCriticalEntity()
 		return true;
 	}
 
-	// Don't delete if the actor is a Singleton
-	//PathNameToEntityIdMap* SingletonNameToEntityId = SpatialNetDriver->GetSpatialInterop()->GetSingletonNameToEntityId();
-
-	//if (SingletonNameToEntityId == nullptr)
-	//{
-	//	return false;
-	//}
-
-	//for(const auto& Pair : *SingletonNameToEntityId)
-	//{
-	//	if (Pair.second == ActorEntityId.ToSpatialEntityId())
-	//	{
-	//		return true;
-	//	}
-	//}
+	// Don't delete if singleton entity
+	if (NetDriver->GlobalStateManager->IsSingletonEntity(EntityId))
+	{
+		return true;
+	}
 
 	return false;
 }
@@ -391,7 +383,7 @@ bool USpatialActorChannel::ReplicateActor()
 		{
 			if (ActorComponent->GetIsReplicated()) // Only replicated subobjects with type bindings
 			{
-				if(NetDriver->TypebindingManager->IsSupportedClass(ActorComponent->GetClass()))
+				if (NetDriver->TypebindingManager->IsSupportedClass(ActorComponent->GetClass()))
 				{
 					bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, RepFlags);
 				}

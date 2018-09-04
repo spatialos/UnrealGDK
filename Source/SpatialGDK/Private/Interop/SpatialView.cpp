@@ -1,8 +1,9 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView.h"
 
-#include "SpatialNetDriver.h"
-#include "SpatialReceiver.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/SpatialReceiver.h"
 
 void USpatialView::Init(USpatialNetDriver* NetDriver)
 {
@@ -11,6 +12,8 @@ void USpatialView::Init(USpatialNetDriver* NetDriver)
 
 void USpatialView::ProcessOps(Worker_OpList* OpList)
 {
+	TArray<Worker_Op*> QueuedComponentUpdateOps;
+
 	for (size_t i = 0; i < OpList->op_count; ++i)
 	{
 		Worker_Op* Op = &OpList->ops[i];
@@ -86,11 +89,10 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 		}
 	}
 
-	for(Worker_Op* Op : QueuedComponentUpdateOps)
+	for (Worker_Op* Op : QueuedComponentUpdateOps)
 	{
 		Receiver->OnComponentUpdate(Op->component_update);
 	}
-	QueuedComponentUpdateOps.Empty();
 
 	Receiver->ProcessQueuedResolvedObjects();
 }
@@ -110,11 +112,11 @@ Worker_Authority USpatialView::GetAuthority(Worker_EntityId EntityId, Worker_Com
 
 UnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
 {
-	if(TSharedPtr<UnrealMetadata>* UnrealMetadataPtr = EntityUnrealMetadataMap.Find(EntityId))
+	if (TSharedPtr<UnrealMetadata>* UnrealMetadataPtr = EntityUnrealMetadataMap.Find(EntityId))
 	{
 		return UnrealMetadataPtr->Get();
 	}
-	
+
 	return nullptr;
 }
 
@@ -125,7 +127,7 @@ void USpatialView::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 
 void USpatialView::OnAddComponent(Worker_AddComponentOp& Op)
 {
-	if(Op.data.component_id == UnrealMetadata::ComponentId)
+	if (Op.data.component_id == UnrealMetadata::ComponentId)
 	{
 		EntityUnrealMetadataMap.Add(Op.entity_id, MakeShared<UnrealMetadata>(Op.data));
 	}
@@ -133,7 +135,7 @@ void USpatialView::OnAddComponent(Worker_AddComponentOp& Op)
 
 void USpatialView::OnRemoveComponent(Worker_RemoveComponentOp& Op)
 {
-	if(Op.component_id == UnrealMetadata::ComponentId)
+	if (Op.component_id == UnrealMetadata::ComponentId)
 	{
 		EntityUnrealMetadataMap.Remove(Op.entity_id);
 	}

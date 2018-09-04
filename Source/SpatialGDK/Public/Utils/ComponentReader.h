@@ -1,7 +1,9 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
-#include "SpatialReceiver.h"
 #include "EngineClasses/SpatialNetBitReader.h"
+#include "Interop/SpatialReceiver.h"
 
 class ComponentReader
 {

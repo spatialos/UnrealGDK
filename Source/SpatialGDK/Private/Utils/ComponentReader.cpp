@@ -1,13 +1,15 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "ComponentReader.h"
 
+#include "Net/DataReplication.h"
+#include "Net/RepLayout.h"
+
+#include "EngineClasses/SpatialNetBitReader.h"
+#include "Interop/SpatialConditionMapFilter.h"
+#include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 #include "Utils/RepLayoutUtils.h"
-#include "DataReplication.h"
-#include "RepLayout.h"
-#include "SpatialConditionMapFilter.h"
-#include "EngineClasses/SpatialNetBitReader.h"
-#include "SpatialConstants.h"
 
 ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<UnrealObjectRef>& InUnresolvedRefs)
 	: PackageMap(InNetDriver->PackageMap)

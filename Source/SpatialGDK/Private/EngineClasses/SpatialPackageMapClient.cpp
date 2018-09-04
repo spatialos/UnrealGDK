@@ -1,16 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialPackageMapClient.h"
+
 #include "GameFramework/Actor.h"
 #include "EngineUtils.h"
-#include "Utils/EntityRegistry.h"
-#include "SpatialActorChannel.h"
-#include "SpatialConstants.h"
-#include "SpatialNetDriver.h"
-#include "SpatialReceiver.h"
-#include "SpatialSender.h"
 
+#include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
 #include "Schema/UnrealObjectRef.h"
+#include "SpatialConstants.h"
+#include "Utils/EntityRegistry.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSPackageMap);
 

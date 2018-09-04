@@ -1,17 +1,18 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialPlayerSpawner.h"
+
 #include "SocketSubsystem.h"
-#include "SpatialNetConnection.h"
-#include "SpatialConstants.h"
-#include "SpatialNetDriver.h"
-#include "SpatialConnection.h"
 #include "TimerManager.h"
 
+#include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/Connection/SpatialConnection.h"
+#include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 
-#include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
+#include <improbable/c_worker.h>
 
 using namespace worker;
 
@@ -60,11 +61,11 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp&
 {
 	UE_LOG(LogTemp, Warning, TEXT("Got a response"));
 
-	if(Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialGDKPlayerSpawner, Display, TEXT("Player spawned sucessfully"));
 	}
-	else if(NumberOfAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+	else if (NumberOfAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 	{
 		UE_LOG(LogSpatialGDKPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""),
 			UTF8_TO_TCHAR(Op.message));

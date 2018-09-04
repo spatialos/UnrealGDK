@@ -1,13 +1,15 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGameInstance.h"
+
 #include "Engine/NetConnection.h"
-#include "SpatialNetDriver.h"
-#include "SpatialPendingNetGame.h"
 #if WITH_EDITOR
 #include "Editor/EditorEngine.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #endif
+
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPendingNetGame.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDK);
 

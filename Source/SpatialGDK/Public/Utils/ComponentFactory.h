@@ -1,12 +1,12 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
-#include "Utils/RepDataUtils.h"
 #include "Interop/SpatialTypebindingManager.h"
+#include "Utils/RepDataUtils.h"
 
-#include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
-
-#include <vector>
+#include <improbable/c_worker.h>
 
 class USpatialNetDriver;
 class USpatialPackageMap;

@@ -1,19 +1,18 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialSender.h"
 
-#include "SpatialActorChannel.h"
-#include "SpatialPackageMapClient.h"
-#include "SpatialNetDriver.h"
-#include "SpatialConnection.h"
-#include "SpatialReceiver.h"
-#include "SpatialNetBitWriter.h"
-#include "SpatialConstants.h"
-#include "ComponentFactory.h"
+#include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialNetBitWriter.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
+#include "Interop/Connection/SpatialConnection.h"
+#include "Interop/SpatialReceiver.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
+#include "SpatialConstants.h"
+#include "Utils/ComponentFactory.h"
 #include "Utils/RepLayoutUtils.h"
-
-#include <vector>
 
 void USpatialSender::Init(USpatialNetDriver* NetDriver)
 {
@@ -182,7 +181,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel*
 		}
 	}
 
-	for(Worker_ComponentUpdate& Update : ComponentUpdates)
+	for (Worker_ComponentUpdate& Update : ComponentUpdates)
 	{
 		Connection->SendComponentUpdate(EntityId, &Update);
 	}
@@ -197,7 +196,7 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters)
 {
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(TargetObject->GetClass());
-	if(Info == nullptr)
+	if (Info == nullptr)
 	{
 		return;
 	}
