@@ -2,26 +2,29 @@
 
 #include "SpatialNetDriver.h"
 
-#include "Engine/ActorChannel.h"
-#include "Engine/ChildConnection.h"
-#include "Engine/NetworkObjectList.h"
-#include "EngineGlobals.h"
-#include "EntityRegistry.h"
-#include "GameFramework/GameNetworkManager.h"
-#include "Net/DataReplication.h"
-#include "Net/RepLayout.h"
-#include "SocketSubsystem.h"
+#include "SpatialView.h"
+#include "SpatialSender.h"
+#include "SpatialReceiver.h"
+#include "SpatialTypebindingManager.h"
+#include "GlobalStateManager.h"
+#include "SpatialPlayerSpawner.h"
+
 #include "SpatialActorChannel.h"
 #include "SpatialConstants.h"
 #include "SpatialNetConnection.h"
 #include "SpatialPackageMapClient.h"
 #include "SpatialPendingNetGame.h"
-#include "SpatialPlayerSpawner.h"
 
-#include "SpatialSender.h"
-#include "SpatialReceiver.h"
-#include "SpatialTypebindingManager.h"
-#include "SpatialView.h"
+#include "Utils/EntityRegistry.h"
+
+#include "Engine/ActorChannel.h"
+#include "Engine/ChildConnection.h"
+#include "Engine/NetworkObjectList.h"
+#include "EngineGlobals.h"
+#include "GameFramework/GameNetworkManager.h"
+#include "Net/DataReplication.h"
+#include "Net/RepLayout.h"
+#include "SocketSubsystem.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -146,6 +149,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	View = NewObject<USpatialView>();
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
+	GlobalStateManager = NewObject<UGlobalStateManager>();
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 
 	PlayerSpawner->Init(this, TimerManager);
@@ -185,6 +189,7 @@ void USpatialNetDriver::OnSpatialOSConnected()
 	View->Init(this);
 	Sender->Init(this);
 	Receiver->Init(this);
+	GlobalStateManager->Init(this);
 }
 
 void USpatialNetDriver::OnSpatialOSDisconnected(const FString& Reason)
@@ -506,16 +511,14 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 							Channel->bCoreActor = false;
 						}
 
-						// If Singleton, add to map and don't set up channel. Entity might already exist
-						//if (Interop->IsSingletonClass(Actor->GetClass()))
-						//{
-						//	SingletonActorChannels.Add(Actor->GetClass(), TPair<AActor*, USpatialActorChannel*>(Actor, Channel));
-						//}
-						//else
-						//{
-						//}
-
-						Channel->SetChannelActor(Actor);
+						if(Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+						{
+							SingletonActorChannels.Add(Actor->GetClass(), TPair<AActor*, USpatialActorChannel*>(Actor, Channel));
+						}
+						else
+						{
+							Channel->SetChannelActor(Actor);
+						}
 					}
 					// if we couldn't replicate it for a reason that should be temporary, and this Actor is updated very infrequently, make sure we update it again soon
 					else if (Actor->NetUpdateFrequency < 1.0f)

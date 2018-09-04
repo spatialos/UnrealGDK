@@ -18,7 +18,7 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 		{
 		// Critical Section
 		case WORKER_OP_TYPE_CRITICAL_SECTION:
-			Receiver->OnCriticalSection(Op->critical_section.in_critical_section);
+			Receiver->OnCriticalSection(Op->critical_section.in_critical_section != 0);
 			break;
 
 		// Entity Lifetime
@@ -31,13 +31,15 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 
 		// Components
 		case WORKER_OP_TYPE_ADD_COMPONENT:
+			OnAddComponent(Op->add_component);
 			Receiver->OnAddComponent(Op->add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
+			OnRemoveComponent(Op->remove_component);
 			break;
 
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			Receiver->OnComponentUpdate(Op->component_update);
+			QueuedComponentUpdateOps.Add(Op);
 			break;
 		// Commands
 		case WORKER_OP_TYPE_COMMAND_REQUEST:
@@ -50,6 +52,7 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 		// Authority Change
 		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
 			OnAuthorityChange(Op->authority_change);
+			Receiver->OnAuthorityChange(Op->authority_change);
 			break;
 
 		// World Command Responses
@@ -83,6 +86,12 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 		}
 	}
 
+	for(Worker_Op* Op : QueuedComponentUpdateOps)
+	{
+		Receiver->OnComponentUpdate(Op->component_update);
+	}
+	QueuedComponentUpdateOps.Empty();
+
 	Receiver->ProcessQueuedResolvedObjects();
 }
 
@@ -99,7 +108,33 @@ Worker_Authority USpatialView::GetAuthority(Worker_EntityId EntityId, Worker_Com
 	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 }
 
+UnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
+{
+	if(TSharedPtr<UnrealMetadata>* UnrealMetadataPtr = EntityUnrealMetadataMap.Find(EntityId))
+	{
+		return UnrealMetadataPtr->Get();
+	}
+	
+	return nullptr;
+}
+
 void USpatialView::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 {
 	EntityComponentAuthorityMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.component_id) = (Worker_Authority)Op.authority;
+}
+
+void USpatialView::OnAddComponent(Worker_AddComponentOp& Op)
+{
+	if(Op.data.component_id == UnrealMetadata::ComponentId)
+	{
+		EntityUnrealMetadataMap.Add(Op.entity_id, MakeShared<UnrealMetadata>(Op.data));
+	}
+}
+
+void USpatialView::OnRemoveComponent(Worker_RemoveComponentOp& Op)
+{
+	if(Op.component_id == UnrealMetadata::ComponentId)
+	{
+		EntityUnrealMetadataMap.Remove(Op.entity_id);
+	}
 }

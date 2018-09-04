@@ -1,157 +1,170 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKEditorGenerateSnapshot.h"
-#include "SpatialConstants.h"
+
 #include "SpatialGDKEditorToolbarSettings.h"
+#include "SpatialConstants.h"
+#include "Utils/SchemaUtils.h"
+#include "Schema/StandardLibrary.h"
+#include "Schema/UnrealMetadata.h"
+
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
 #include "UObjectIterator.h"
+
 #include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
-namespace
+using StringToEntityIdMap = TMap<FString, Worker_EntityId>;
+
+const WorkerAttributeSet UnrealWorkerAttributeSet{ TArray<FString>{TEXT("UnrealWorker")} };
+const WorkerAttributeSet UnrealClientAttributeSet{ TArray<FString>{TEXT("UnrealClient")} };
+
+const WorkerRequirementSet UnrealWorkerPermission{ {UnrealWorkerAttributeSet} };
+const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
+const WorkerRequirementSet AnyWorkerPermission{ {UnrealClientAttributeSet, UnrealWorkerAttributeSet} };
+
+const Coordinates Origin{ 0, 0, 0 };
+
+void CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 {
+	Worker_Entity SpawnerEntity;
+	SpawnerEntity.entity_id = SpatialConstants::SPAWNER_ENTITY_ID;
+	SpawnerEntity.component_count = 6;
 
-//using PathNameToEntityIdMap = worker::Map<std::string, worker::EntityId>;
-//
-//const WorkerAttributeSet UnrealWorkerAttributeSet{worker::List<std::string>{"UnrealWorker"}};
-//const WorkerAttributeSet UnrealClientAttributeSet{worker::List<std::string>{"UnrealClient"}};
-//
-//const WorkerRequirementSet UnrealWorkerWritePermission{{UnrealWorkerAttributeSet}};
-//const WorkerRequirementSet UnrealClientWritePermission{{UnrealClientAttributeSet}};
-//const WorkerRequirementSet AnyWorkerReadPermission{{UnrealClientAttributeSet, UnrealWorkerAttributeSet}};
-//
-//// RTTB
-//const WorkerAttributeSet CAPIClientAttributeSet{worker::List<std::string>{"CAPIClient"}};
-//const WorkerAttributeSet CAPIWorkerAttributeSet{worker::List<std::string>{"CAPIWorker"}};
-//const WorkerRequirementSet CAPIWorkerPermission{{CAPIWorkerAttributeSet}};
-//const WorkerRequirementSet CAPIPermission{{CAPIClientAttributeSet, CAPIWorkerAttributeSet}};
-//
-//const Coordinates Origin{0, 0, 0};
+	Worker_ComponentData PlayerSpawnerData = {};
+	PlayerSpawnerData.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
+	PlayerSpawnerData.schema_type = Schema_CreateComponentData(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID);
 
-//Worker_Entity CreateSpawnerEntity()
-//{
-	//Worker_Entity SpawnerEntity;
-	//SpawnerEntity.entity_id = SpatialConstants::SPAWNER_ENTITY_ID;
+	TArray<Worker_ComponentData> Components;
 
-	//return improbable::unreal::FEntityBuilder::Begin()
-	//	.AddPositionComponent(Position::Data{Origin}, UnrealWorkerWritePermission)
-	//	.AddMetadataComponent(Metadata::Data("SpatialSpawner"))
-	//	.SetPersistence(true)
-	//	.SetReadAcl(AnyWorkerReadPermission)
-	//	.AddComponent<unreal::PlayerSpawner>(unreal::PlayerSpawner::Data{}, UnrealWorkerWritePermission)
-	//	.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, UnrealWorkerWritePermission)
-	//	.Build();
-//}
+	WriteAclMap ComponentWriteAcl;
+	ComponentWriteAcl.Add(POSITION_COMPONENT_ID, UnrealWorkerPermission);
+	ComponentWriteAcl.Add(METADATA_COMPONENT_ID, UnrealWorkerPermission);
+	ComponentWriteAcl.Add(PERSISTENCE_COMPONENT_ID, UnrealWorkerPermission);
+	ComponentWriteAcl.Add(UNREAL_METADATA_COMPONENT_ID, UnrealWorkerPermission);
+	ComponentWriteAcl.Add(ENTITY_ACL_COMPONENT_ID, UnrealWorkerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, UnrealWorkerPermission);
 
-//worker::Entity CreateSpecialSpawner()
-//{
-//	improbable::unreal::UnrealMetadata::Data UnrealMetadata;
-//
-//	return improbable::unreal::FEntityBuilder::Begin()
-//		.AddPositionComponent(Position::Data{Origin}, CAPIWorkerPermission)
-//		.AddMetadataComponent(Metadata::Data("SpecialSpawner"))
-//		.SetPersistence(true)
-//		.SetReadAcl(CAPIPermission)
-//		.AddComponent<unreal::SpecialSpawner>(unreal::SpecialSpawner::Data{}, CAPIWorkerPermission)
-//		.AddComponent<improbable::unreal::UnrealMetadata>(UnrealMetadata, CAPIWorkerPermission)
-//		.Build();
-//}
+	Components.Add(Position(Origin).CreatePositionData());
+	Components.Add(Metadata(TEXT("SpatialSpawner")).CreateMetadataData());
+	Components.Add(Persistence().CreatePersistenceData());
+	Components.Add(UnrealMetadata().CreateUnrealMetadataData());
+	Components.Add(PlayerSpawnerData);
+	Components.Add(EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+	SpawnerEntity.components = Components.GetData();
 
-//worker::Map<worker::EntityId, worker::Entity> CreateLevelEntities(UWorld* World)
-//{
-//	worker::Map<worker::EntityId, worker::Entity> LevelEntities;
-//
-//	// Set up grid of "placeholder" entities to allow workers to be authoritative over _something_.
-//	int PlaceholderCount = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST - SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST + 1;
-//	int PlaceholderCountAxis = sqrt(PlaceholderCount);
-//	checkf(PlaceholderCountAxis * PlaceholderCountAxis == PlaceholderCount, TEXT("The number of placeholders must be a square number."));
-//	checkf(PlaceholderCountAxis % 2 == 0, TEXT("The number of placeholders on each axis must be even."));
-//	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
-//	int PlaceholderEntityIdCounter = SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST;
-//	for (int x = -PlaceholderCountAxis / 2; x < PlaceholderCountAxis / 2; x++)
-//	{
-//		for (int y = -PlaceholderCountAxis / 2; y < PlaceholderCountAxis / 2; y++)
-//		{
-//			const Coordinates PlaceholderPosition{x * CHUNK_SIZE + CHUNK_SIZE * 0.5f, 0, y * CHUNK_SIZE + CHUNK_SIZE * 0.5f};
-//			LevelEntities.emplace(PlaceholderEntityIdCounter, improbable::unreal::FEntityBuilder::Begin()
-//				.AddPositionComponent(Position::Data{PlaceholderPosition}, UnrealWorkerWritePermission)
-//				.AddMetadataComponent(Metadata::Data("Placeholder"))
-//				.SetPersistence(true)
-//				.SetReadAcl(AnyWorkerReadPermission)
-//				.AddComponent<unreal::UnrealLevelPlaceholder>(unreal::UnrealLevelPlaceholder::Data{}, UnrealWorkerWritePermission)
-//				.Build());
-//			PlaceholderEntityIdCounter++;
-//		}
-//	}
-//	// Sanity check.
-//	check(PlaceholderEntityIdCounter == SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1);
-//	return LevelEntities;
-//}
+	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &SpawnerEntity);
+}
 
-//bool CreateSingletonToIdMap(PathNameToEntityIdMap& SingletonNameToEntityId)
-//{
-//	for (TObjectIterator<UClass> It; It; ++It)
-//	{
-//		// Find all singleton classes
-//		if (It->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) == false)
-//		{
-//			continue;
-//		}
-//
-//		// Ensure we don't process skeleton or reinitialised classes
-//		if (	It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
-//			||	It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
-//		{
-//			continue;
-//		}
-//
-//		// Id is initially 0 to indicate that this Singleton entity has not been created yet.
-//		// When the worker authoritative over the GSM sees 0, it knows it is safe to create it.
-//		SingletonNameToEntityId.emplace(std::string(TCHAR_TO_UTF8(*It->GetPathName())), 0);
-//	}
-//
-//	return true;
-//}
-//
-//worker::Entity CreateGlobalStateManagerEntity(const PathNameToEntityIdMap& SingletonNameToEntityId)
-//{
-//	return improbable::unreal::FEntityBuilder::Begin()
-//		.AddPositionComponent(Position::Data{Origin}, UnrealWorkerWritePermission)
-//		.AddMetadataComponent(Metadata::Data("GlobalStateManager"))
-//		.SetPersistence(true)
-//		.SetReadAcl(AnyWorkerReadPermission)
-//		.AddComponent<unreal::GlobalStateManager>(unreal::GlobalStateManager::Data{ SingletonNameToEntityId, {} }, UnrealWorkerWritePermission)
-//		.AddComponent<improbable::unreal::UnrealMetadata>(improbable::unreal::UnrealMetadata::Data{}, UnrealWorkerWritePermission)
-//		.Build();
-//}
+Worker_ComponentData CreateGlobalStateManagerData()
+{
+	StringToEntityMap SingletonNameToEntityId;
+	StringToEntityMap StablyNamedPathToEntityId;
 
-} // ::
+	for (TObjectIterator<UClass> It; It; ++It)
+	{
+		// Find all singleton classes
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) == false)
+		{
+			continue;
+		}
 
-//bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
-//{
-//	FString DirectoryPath = FPaths::GetPath(SavePath);
-//	if (!FPaths::CollapseRelativeDirectories(DirectoryPath))
-//	{
-//		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Invalid path: %s - snapshot not generated"), *DirectoryPath);
-//		return false;
-//	}
-//
-//	if (!FPaths::DirectoryExists(DirectoryPath))
-//	{
-//		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot directory does not exist - creating directory: %s"), *DirectoryPath);
-//		if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*DirectoryPath))
-//		{
-//			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Unable to create directory: %s - snapshot not generated"), *DirectoryPath);
-//			return false;
-//		}
-//	}
-//	return true;
-//}
+		// Ensure we don't process skeleton or reinitialized classes
+		if (It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive) || It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
+		{
+			continue;
+		}
+
+		// Id is initially 0 to indicate that this Singleton entity has not been created yet.
+		// When the worker authoritative over the GSM sees 0, it knows it is safe to create it.
+		SingletonNameToEntityId.Add(*It->GetPathName(), 0);
+	}
+
+	Worker_ComponentData Data;
+	Data.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID;
+	Data.schema_type = Schema_CreateComponentData(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+	Schema_AddStringToEntityMap(ComponentObject, 1, SingletonNameToEntityId);
+	Schema_AddStringToEntityMap(ComponentObject, 2, StablyNamedPathToEntityId);
+
+	return Data;
+}
+
+void CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
+{
+	Worker_Entity GSM;
+	GSM.entity_id = SpatialConstants::GLOBAL_STATE_MANAGER;
+	GSM.component_count = 6;
+
+	Worker_ComponentData GSMData = {};
+	GSMData.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID;
+	GSMData.schema_type = Schema_CreateComponentData(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID);
+
+	TArray<Worker_ComponentData> Components;
+
+	WriteAclMap ComponentWriteAcl;
+	ComponentWriteAcl.Add(POSITION_COMPONENT_ID, UnrealWorkerPermission);
+	ComponentWriteAcl.Add(METADATA_COMPONENT_ID, UnrealWorkerPermission);
+	ComponentWriteAcl.Add(PERSISTENCE_COMPONENT_ID, UnrealWorkerPermission);
+	ComponentWriteAcl.Add(UNREAL_METADATA_COMPONENT_ID, UnrealWorkerPermission);
+	ComponentWriteAcl.Add(ENTITY_ACL_COMPONENT_ID, UnrealWorkerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID, UnrealWorkerPermission);
+
+	Components.Add(Position(Origin).CreatePositionData());
+	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
+	Components.Add(Persistence().CreatePersistenceData());
+	Components.Add(UnrealMetadata().CreateUnrealMetadataData());
+	Components.Add(CreateGlobalStateManagerData());
+	Components.Add(EntityAcl(UnrealWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+	GSM.components = Components.GetData();
+
+	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &GSM);
+}
+
+bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
+{
+	FString DirectoryPath = FPaths::GetPath(SavePath);
+	if (!FPaths::CollapseRelativeDirectories(DirectoryPath))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Invalid path: %s - snapshot not generated"), *DirectoryPath);
+		return false;
+	}
+
+	if (!FPaths::DirectoryExists(DirectoryPath))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot directory does not exist - creating directory: %s"), *DirectoryPath);
+		if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*DirectoryPath))
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Unable to create directory: %s - snapshot not generated"), *DirectoryPath);
+			return false;
+		}
+	}
+	return true;
+}
 
 bool SpatialGDKGenerateSnapshot(UWorld* World)
 {
+	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotPath(), Settings->GetSpatialOSSnapshotFile());
+	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
+	{
+		return false;
+	}
+
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Saving snapshot to: %s"), *SavePath);
+
+	Worker_ComponentVtable DefaultVtable{};
+	Worker_SnapshotParameters Parameters{};
+	Parameters.default_component_vtable = &DefaultVtable;
+	Worker_SnapshotOutputStream* OutputStream = Worker_SnapshotOutputStream_Create(TCHAR_TO_ANSI(*SavePath), &Parameters);
+
+	CreateSpawnerEntity(OutputStream);
+	CreateGlobalStateManager(OutputStream);
+
+	Worker_SnapshotOutputStream_Destroy(OutputStream);
 	//const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
 	//FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotPath(), Settings->GetSpatialOSSnapshotFile());
 	//if (!ValidateAndCreateSnapshotGenerationPath(SavePath))

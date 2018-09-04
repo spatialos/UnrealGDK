@@ -17,12 +17,12 @@ class USpatialActorChannel;
 class USpatialNetConnection;
 class USpatialPackageMapClient;
 
+class USpatialView;
 class USpatialSender;
 class USpatialReceiver;
-class USpatialReceiver;
-class USpatialPlayerSpawner;
 class USpatialTypebindingManager;
-class USpatialView;
+class UGlobalStateManager;
+class USpatialPlayerSpawner;
 
 class UEntityRegistry;
 
@@ -82,13 +82,10 @@ public:
 	void AddActorChannel(const Worker_EntityId& EntityId, USpatialActorChannel* Channel);
 	USpatialActorChannel* GetActorChannelByEntityId(const Worker_EntityId& EntityId) const;
 
-	//TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
-
-	UPROPERTY()
-	USpatialPlayerSpawner* PlayerSpawner;
-
 	Worker_Connection* Connection;
 
+	UPROPERTY()
+	USpatialView* View;
 	UPROPERTY()
 	USpatialSender* Sender;
 	UPROPERTY()
@@ -96,12 +93,15 @@ public:
 	UPROPERTY()
 	USpatialTypebindingManager* TypebindingManager;
 	UPROPERTY()
-	USpatialView* View;
-
+	UGlobalStateManager* GlobalStateManager;
+	UPROPERTY()
+	USpatialPlayerSpawner* PlayerSpawner;
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
 
-protected:
+	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
+
+private:
 	FSpatialGDKWorkerConfigurationData WorkerConfig;
 
 	//TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
@@ -113,8 +113,6 @@ protected:
 
 	// Timer manager.
 	FTimerManager* TimerManager;
-
-	// Package map shared by all connections.
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
@@ -138,6 +136,5 @@ protected:
 	int32 ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated);
 #endif
 
-private:
 	friend class USpatialNetConnection;
 };

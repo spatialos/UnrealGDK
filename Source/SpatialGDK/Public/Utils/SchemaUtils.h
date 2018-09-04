@@ -131,3 +131,38 @@ inline UnrealObjectRef Schema_GetObjectRef(Schema_Object* Object, Schema_FieldId
 {
 	return Schema_IndexObjectRef(Object, Id, 0);
 }
+
+using StringToEntityMap = TMap<FString, Worker_EntityId>;
+
+inline StringToEntityMap Schema_GetStringToEntityMap(Schema_Object* Object, Schema_FieldId Id)
+{
+	StringToEntityMap Map;
+
+	int32 MapCount = (int32)Schema_GetObjectCount(Object, Id);
+	for(int32 i = 0; i < MapCount; i++)
+	{
+		Schema_Object* PairObject = Schema_IndexObject(Object, Id, i);
+
+		FString String = Schema_GetString(PairObject, SCHEMA_MAP_KEY_FIELD_ID);
+		Worker_EntityId Entity = Schema_GetEntityId(PairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+
+		Map.Add(String, Entity);
+	}
+
+	return Map;
+}
+
+inline void Schema_AddStringToEntityMap(Schema_Object* Object, Schema_FieldId Id, StringToEntityMap& Map)
+{
+	if(Map.Num() == 0)
+	{
+		return;
+	}
+
+	for(auto& Pair : Map)
+	{
+		Schema_Object* PairObject = Schema_AddObject(Object, 1);
+		Schema_AddString(PairObject, SCHEMA_MAP_KEY_FIELD_ID, Pair.Key);
+		Schema_AddEntityId(PairObject, SCHEMA_MAP_VALUE_FIELD_ID, Pair.Value);
+	}
+}

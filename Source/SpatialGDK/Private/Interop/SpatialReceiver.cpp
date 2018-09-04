@@ -3,13 +3,14 @@
 #include "SpatialReceiver.h"
 
 #include "EngineMinimal.h"
-#include "EntityRegistry.h"
+#include "Utils/EntityRegistry.h"
 #include "GameFramework/PlayerController.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialPlayerSpawner.h"
+#include "GlobalStateManager.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/RepLayoutUtils.h"
 
@@ -35,11 +36,12 @@ T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
+	View = InNetDriver->View;
+	Sender = InNetDriver->Sender;
 	PackageMap = InNetDriver->PackageMap;
 	World = InNetDriver->GetWorld();
-	View = InNetDriver->View;
 	TypebindingManager = InNetDriver->TypebindingManager;
-	Sender = InNetDriver->Sender;
+	GlobalStateManager = InNetDriver->GlobalStateManager;
 }
 
 void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
@@ -119,6 +121,10 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case UNREAL_METADATA_COMPONENT_ID:
 		Data = MakeShared<UnrealMetadata>(Op.data);
 		break;
+	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
+		GlobalStateManager->ApplyData(Op.data);
+		GlobalStateManager->LinkExistingSingletonActors();
+		return;
 	default:
 		Data = MakeShared<DynamicComponent>(Op.data);
 		break;
@@ -141,7 +147,14 @@ void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 	}
 }
 
-
+void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
+{
+	if(Op.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID 
+		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		GlobalStateManager->ExecuteInitialSingletonActorReplication();	
+	}
+}
 
 void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 {
@@ -365,7 +378,8 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 
 UClass* USpatialReceiver::GetNativeEntityClass(Metadata* MetadataComponent)
 {
-	return FindObject<UClass>(ANY_PACKAGE, *MetadataComponent->EntityType);
+	UClass* Class = FindObject<UClass>(ANY_PACKAGE, *MetadataComponent->EntityType);
+	return Class->IsChildOf<AActor>() ? Class : nullptr;
 }
 
 // Note that in SpatialGDK, this function will not be called on the spawning worker.
@@ -451,46 +465,37 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	{
 		return;
 	}
-	//checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
 
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
 	check(Info);
 
 	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
-	bool bIsServer = NetDriver->IsServer();
+	if(ActorChannel == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No actor channel for Entity %d"), Op.entity_id);
+	}
 
 	if (Op.update.component_id == Info->SingleClientComponent)
 	{
-		if (bIsServer) return; // TODO: Temporary hack until we ignore component updates that are received for authority change
-
-		check(ActorChannel);
-
 		UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
 		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel);
 	}
 	else if (Op.update.component_id == Info->MultiClientComponent)
 	{
-		if (bIsServer) return; // TODO: Temporary hack until we ignore component updates that are received for authority change
-
-		check(ActorChannel);
-
 		UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
 		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel);
 	}
 	else if (Op.update.component_id == Info->HandoverComponent)
 	{
-		if (!bIsServer)
+		if (!NetDriver->IsServer())
 		{
-			UE_LOG(LogTemp, Verbose, TEXT("!!! Skipping Handover component because we're a client."));
+			UE_LOG(LogTemp, Verbose, TEXT("Skipping Handover component because we're a client."));
 			return;
 		}
 		// TODO: Handover
 	}
 	else if (Op.update.component_id == Info->RPCComponents[RPC_NetMulticast])
 	{
-		if (bIsServer) return; // TODO: Temporary hack until we ignore component updates that are received for authority change
-
-		check(ActorChannel);
 		const TArray<UFunction*>& RPCArray = Info->RPCs.FindChecked(RPC_NetMulticast);
 		ReceiveMulticastUpdate(Op.update, Op.entity_id, RPCArray);
 	}
@@ -508,23 +513,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == 1)
 	{
 		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
-		FString URLString = Schema_GetString(Payload, 1);
-
-		URLString.Append(TEXT("?workerId=")).Append(UTF8_TO_TCHAR(Op.caller_worker_id));
-
-		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), false);
-
-		Worker_CommandResponse CommandResponse = {};
-		CommandResponse.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
-		CommandResponse.schema_type = Schema_CreateCommandResponse(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
-		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
-		Schema_AddBool(ResponseObject, 1, true);
-
-		Worker_Connection_SendCommandResponse(NetDriver->Connection, Op.request_id, &CommandResponse);
-
-		// TODO: Sahil - Eventually uncomment this but for now leave this block as is.
-		//NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Message, Op.caller_worker_id, Op.request_id);
-
+		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Schema_GetString(Payload, 1), Op.caller_worker_id, Op.request_id);
 		return;
 	}
 

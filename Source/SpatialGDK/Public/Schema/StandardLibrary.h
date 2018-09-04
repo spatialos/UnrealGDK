@@ -16,9 +16,9 @@ struct Coordinates
 	inline static Coordinates FromFVector(const FVector& Location)
 	{
 		Coordinates Coords;
-		Coords.X = 0.01 * Location.X;
-		Coords.Y = 0.01 * Location.Y;
-		Coords.Z = 0.01 * Location.Z;
+		Coords.X = 0.01 * Location.Y;
+		Coords.Y = 0.01 * Location.Z;
+		Coords.Z = 0.01 * Location.X;
 
 		return Coords;
 	}
@@ -26,9 +26,9 @@ struct Coordinates
 	inline static FVector ToFVector(const Coordinates& Coords)
 	{
 		FVector Location;
-		Location.X = 100.0 * Coords.X;
-		Location.Y = 100.0 * Coords.Y;
-		Location.Z = 100.0 * Coords.Z;
+		Location.X = 100.0 * Coords.Z;
+		Location.Y = 100.0 * Coords.X;
+		Location.Z = 100.0 * Coords.Y;
 
 		return Location;
 	}

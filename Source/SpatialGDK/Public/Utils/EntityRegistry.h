@@ -14,22 +14,6 @@ class SPATIALGDK_API UEntityRegistry : public UObject
 	GENERATED_BODY()
 
 public:
-	/**
-	* Finds all Blueprint assets present in the paths specified in the list and registers
-	* them in the registry so that they can be used as templates for instantiation
-	* When an entity is added.
-	*
-	* @param BlueprintPaths list containing all Blueprint paths that will be scanned for Blueprint
-	* assets.
-	*/
-	void RegisterEntityBlueprints(const TArray<FString>& BlueprintPaths);
-
-	/**
-	* Returns the UClass type for a specified class name if the UClass
-	* type has been registered to the specified class name.
-	*
-	* @param ClassName from which a UClass is acquired.
-	**/
 
 	/**
 	* Adds a mapping from an Worker_EntityId to a AActor to the registry
