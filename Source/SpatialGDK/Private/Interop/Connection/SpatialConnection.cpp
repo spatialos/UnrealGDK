@@ -38,7 +38,17 @@ void USpatialConnection::Connect(ReceptionistConfig Config)
 
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-		AsyncTask(ENamedThreads::GameThread, [this]{ this->OnConnected.ExecuteIfBound(); });
+		if (Worker_Connection_IsConnected(Connection))
+		{
+			AsyncTask(ENamedThreads::GameThread, [this] {
+				OnConnected.ExecuteIfBound();
+				bIsConnected = true;
+			});
+		}
+		else
+		{
+			// TODO: Poll ops for disconnected reason and try to reconnect
+		}
 	});
 }
 
@@ -78,12 +88,7 @@ void USpatialConnection::Connect(LocatorConfig Config)
 
 bool USpatialConnection::IsConnected()
 {
-	if (Connection != nullptr)
-	{
-		return Worker_Connection_IsConnected(Connection) != 0;
-	}
-
-	return false;
+	return bIsConnected;
 }
 
 Worker_ConnectionParameters USpatialConnection::CreateConnectionParameters(ConnectionConfig& Config)

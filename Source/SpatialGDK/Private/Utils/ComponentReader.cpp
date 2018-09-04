@@ -72,7 +72,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		if (bIsServer || ConditionMap.IsRelevant(Parent.Condition))
 		{
 			// This swaps Role/RemoteRole as we write it
-			const FRepLayoutCmd& SwappedCmd = Parent.RoleSwapIndex != -1 ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
+			const FRepLayoutCmd& SwappedCmd = (!bIsServer && Parent.RoleSwapIndex != -1) ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
 
 			uint8* Data = (uint8*)Object + SwappedCmd.Offset;
 

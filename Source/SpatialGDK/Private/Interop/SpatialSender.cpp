@@ -263,7 +263,7 @@ void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* P
 		{
 			It->DestroyValue_InContainer(Parameters);
 		}
-		delete[] Parameters; // I'm continuously vomiting
+		delete[] (uint8*)Parameters;
 	}
 }
 
