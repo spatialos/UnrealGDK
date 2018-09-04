@@ -57,6 +57,7 @@ struct UnrealObjectRef
 
 	Worker_EntityId Entity;
 	uint32 Offset;
+	// TODO: Write our own Option class
 	worker::Option<FString> Path;
 	worker::Option<UnrealObjectRef> Outer;
 };

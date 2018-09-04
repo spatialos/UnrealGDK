@@ -62,6 +62,7 @@ public:
 
 	bool IsSupportedClass(UClass* Class);
 	FClassInfo* FindClassInfoByClass(UClass* Class);
+	FClassInfo* FindClassInfoByComponentId(Worker_ComponentId ComponentId);
 	UClass* FindClassByComponentId(Worker_ComponentId ComponentId);
 
 private:

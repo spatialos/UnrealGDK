@@ -2,7 +2,7 @@
 
 #include "SpatialActorChannel.h"
 #include "Engine/DemoNetDriver.h"
-#include "EntityRegistry.h"
+#include "Utils/EntityRegistry.h"
 #include "GameFramework/PlayerState.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
@@ -12,6 +12,7 @@
 #include "SpatialPackageMapClient.h"
 #include "SpatialSender.h"
 #include "SpatialReceiver.h"
+#include "GlobalStateManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
 
@@ -556,10 +557,10 @@ void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId
 	NetDriver->AddActorChannel(ActorEntityId, this);
 
 	// If a Singleton was created, update the GSM with the proper Id.
-	//if (Interop->IsSingletonClass(Actor->GetClass()))
-	//{
-	//	Interop->UpdateSingletonId(Actor->GetClass()->GetPathName(), ActorEntityId);
-	//}
+	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		NetDriver->GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), ActorEntityId);
+	}
 
 	if (Actor->IsFullNameStableForNetworking())
 	{

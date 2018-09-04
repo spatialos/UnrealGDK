@@ -172,14 +172,16 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 	return nullptr;
 }
 
+FClassInfo* USpatialTypebindingManager::FindClassInfoByComponentId(Worker_ComponentId ComponentId)
+{
+	UClass* Class = FindClassByComponentId(ComponentId);
+	return Class != nullptr ? FindClassInfoByClass(Class) : nullptr;
+}
+
 UClass* USpatialTypebindingManager::FindClassByComponentId(Worker_ComponentId ComponentId)
 {
 	UClass** Class = ComponentToClassMap.Find(ComponentId);
-	if (Class)
-	{
-		return *Class;
-	}
-	return nullptr;
+	return Class != nullptr ? *Class : nullptr;
 }
 
 bool USpatialTypebindingManager::IsSupportedClass(UClass* Class)

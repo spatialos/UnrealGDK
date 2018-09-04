@@ -17,6 +17,7 @@
 #include "SpatialReceiver.generated.h"
 
 class USpatialSender;
+class UGlobalStateManager;
 
 using FChannelObjectPair = TPair<USpatialActorChannel*, UObject*>;
 using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
@@ -85,6 +86,7 @@ public:
 	void OnAddEntity(Worker_AddEntityOp& Op);
 	void OnAddComponent(Worker_AddComponentOp& Op);
 	void OnRemoveEntity(Worker_RemoveEntityOp& Op);
+	void OnAuthorityChange(Worker_AuthorityChangeOp& Op);
 
 	void OnComponentUpdate(Worker_ComponentUpdateOp& Op);
 	void OnCommandRequest(Worker_CommandRequestOp& Op);
@@ -127,11 +129,12 @@ private:
 	friend T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId);
 
 	USpatialNetDriver* NetDriver;
+	USpatialView* View;
+	USpatialSender* Sender;
 	USpatialPackageMapClient* PackageMap;
 	UWorld* World;
-	USpatialView* View;
 	USpatialTypebindingManager* TypebindingManager;
-	USpatialSender* Sender;
+	UGlobalStateManager* GlobalStateManager;
 
 	// TODO: Figure out how to remove entries when Channel/Actor gets deleted
 	TMap<UnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
