@@ -384,13 +384,10 @@ bool USpatialActorChannel::ReplicateActor()
 
 		for (UActorComponent* ActorComp : Actor->GetReplicatedComponents())
 		{
-			if (ActorComp && ActorComp->GetIsReplicated()) // Only replicated subobjects with type bindings
+			if (ActorComp && ActorComp->GetIsReplicated())
 			{
-				if(Interop->GetTypeBindingByClass(ActorComp->GetClass()))
-				{
-					bWroteSomethingImportant |= ReplicateSubobject(ActorComp, RepFlags);
-					bWroteSomethingImportant |= ActorComp->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
-				}
+				bWroteSomethingImportant |= ReplicateSubobject(ActorComp, RepFlags);
+				bWroteSomethingImportant |= ActorComp->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 			}
 		}
 	}
@@ -453,8 +450,6 @@ bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, const FReplicationFl
 
 	if (RepChanged.Num() > 0)
 	{
-		USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
-		check(Interop);
 		Interop->SendSpatialUpdateSubobject(this, Obj, &Replicator, RepChanged, TArray<uint16>());
 		Replicator.RepState->HistoryEnd++;
 	}
