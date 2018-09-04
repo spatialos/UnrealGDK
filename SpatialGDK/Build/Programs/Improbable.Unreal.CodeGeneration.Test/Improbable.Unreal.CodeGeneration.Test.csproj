@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{519D7EBE-8C44-4AE5-A629-61C3586C8919}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Improbable</RootNamespace>
+    <AssemblyName>Improbable.Unreal.CodeGeneration.Test</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>
+    </StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="CodeGenerator">
+      <HintPath>..\..\packages\Improbable.CodeGeneration\CodeGenerator.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\packages\NUnit.3.9.0\lib\net35\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Jobs\CodegenJobTest.cs" />
+    <Compile Include="Jobs\JobRunnerTest.cs" />
+    <Compile Include="Jobs\StubCodegenJob.cs" />
+    <Compile Include="Jobs\UnrealCommanderJobTest.cs" />
+    <Compile Include="Jobs\UnrealCommandJobTest.cs" />
+    <Compile Include="Jobs\UnrealComponentJobTest.cs" />
+    <Compile Include="Jobs\UnrealEntityTemplateJobTest.cs" />
+    <Compile Include="Jobs\UnrealEnumJobTest.cs" />
+    <Compile Include="Jobs\JobGeneratorTest.cs" />
+    <Compile Include="SchemaProcessing\UnrealSchemaProcessorTests.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\UnrealBuiltInTypeReferenceTest.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\UnrealCommandDetailsTest.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\UnrealEnumTypeReferenceTest.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\UnrealListTypeReferenceTest.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\UnrealMapTypeReferenceTest.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\UnrealOptionTypeReferenceTest.cs" />
+    <Compile Include="SchemaProcessing\UnrealTypeDetailsTest.cs" />
+    <Compile Include="SchemaProcessing\TypeReferences\UnrealUserTypeReferenceTest.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Improbable.Unreal.CodeGeneration\Improbable.Unreal.CodeGeneration.csproj">
+      <Project>{e3a484b8-548a-4d9e-9f9c-aca98f6e5dc2}</Project>
+      <Name>Improbable.Unreal.CodeGeneration</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
