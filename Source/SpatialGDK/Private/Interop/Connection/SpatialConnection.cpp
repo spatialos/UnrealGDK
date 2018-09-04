@@ -21,7 +21,8 @@ void USpatialConnection::Connect(ReceptionistConfig Config)
 	Worker_ComponentVtable DefaultVtable = {};
 
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
-	ConnectionParams.worker_type = TCHAR_TO_UTF8(*Config.WorkerType);
+	FTCHARToUTF8 WorkerTypeCStr(*Config.WorkerType);
+	ConnectionParams.worker_type = WorkerTypeCStr.Get();
 	ConnectionParams.enable_protocol_logging_at_startup = Config.EnableProtocolLoggingAtStartup;
 	ConnectionParams.component_vtable_count = 0;
 	ConnectionParams.default_component_vtable = &DefaultVtable;
