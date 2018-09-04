@@ -1,0 +1,57 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#
+
+#>
+
+#include "<#= optionTypeReference.UnderlyingCapitalisedName #>Option.h"
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// =========== 
+
+U<#= optionTypeReference.UnderlyingCapitalisedName #>Option::U<#= optionTypeReference.UnderlyingCapitalisedName #>Option()
+{
+}
+
+U<#= optionTypeReference.UnderlyingCapitalisedName #>Option* U<#= optionTypeReference.UnderlyingCapitalisedName #>Option::Init(const worker::Option<<#= optionTypeReference.UnderlyingQualifiedName #>>& underlying)
+{
+	Underlying = worker::Option<<#= optionTypeReference.UnderlyingQualifiedName #>>(underlying);
+	return this;
+}
+
+U<#= optionTypeReference.UnderlyingCapitalisedName #>Option* U<#= optionTypeReference.UnderlyingCapitalisedName #>Option::SetValue(<#= optionTypeReference.UnderlyingValueType.ArgumentName #> value)
+{
+	auto underlyingValue = <#= optionTypeReference.UnderlyingValueType.ConvertUnrealValueToUnderlyingValue("value") #>;
+	Underlying.emplace(underlyingValue);
+	return this;
+}
+
+bool U<#= optionTypeReference.UnderlyingCapitalisedName #>Option::HasValue()
+{
+	return !Underlying.empty();
+}
+
+<#= optionTypeReference.UnderlyingValueType.UnrealType #> U<#= optionTypeReference.UnderlyingCapitalisedName #>Option::GetValue()
+{
+	return <#= optionTypeReference.UnderlyingValueType.ConvertUnderlyingValueToUnrealLocalVariable("(*(Underlying.data()))") #>;
+}
+
+void U<#= optionTypeReference.UnderlyingCapitalisedName #>Option::Clear()
+{
+	Underlying.clear();
+}
+
+bool U<#= optionTypeReference.UnderlyingCapitalisedName #>Option::operator==(const worker::Option<<#= optionTypeReference.UnderlyingQualifiedName #>>& OtherUnderlying) const
+{
+	return Underlying == OtherUnderlying;
+}
+
+bool U<#= optionTypeReference.UnderlyingCapitalisedName #>Option::operator!=(const worker::Option<<#= optionTypeReference.UnderlyingQualifiedName #>>& OtherUnderlying) const
+{
+	return Underlying != OtherUnderlying;
+}
+
+worker::Option<<#= optionTypeReference.UnderlyingQualifiedName #>> U<#= optionTypeReference.UnderlyingCapitalisedName #>Option::GetUnderlying()
+{
+	return Underlying;
+}

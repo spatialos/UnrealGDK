@@ -51,6 +51,6 @@ private:
 
 	void RemoveFromRegistryImpl(const AActor* Actor, const Worker_EntityId& EntityId);
 
-	TMap<Worker_EntityId, AActor*> EntityIdToActor;
+	TMap<int64, AActor*> EntityIdToActor;
 	TMap<AActor*, Worker_EntityId> ActorToEntityId;
 };

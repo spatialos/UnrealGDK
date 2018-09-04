@@ -97,6 +97,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 				}
 				else
 				{
+					RPCType = RPC_Count;
 					checkNoEntry();
 				}
 

@@ -1,0 +1,52 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#
+
+#>
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// =========== 
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "improbable/collections.h"
+
+<# foreach (var requiredInclude in optionTypeReference.UnderlyingValueType.RequiredIncludes) { #>
+#include <#= requiredInclude #>
+<# } #>
+
+#include "<#= optionTypeReference.UnderlyingCapitalisedName #>Option.generated.h"
+
+/**
+ *
+ */
+UCLASS(BlueprintType)
+class SPATIALGDK_API U<#= optionTypeReference.UnderlyingCapitalisedName #>Option : public UObject
+{
+    GENERATED_BODY()
+
+  public:
+    U<#= optionTypeReference.UnderlyingCapitalisedName #>Option();
+    U<#= optionTypeReference.UnderlyingCapitalisedName #>Option* Init(const worker::Option<<#= optionTypeReference.UnderlyingQualifiedName #>>& underlying);
+
+    UFUNCTION(BlueprintCallable, Category = "<#= optionTypeReference.UnderlyingCapitalisedName #>Option")
+    U<#= optionTypeReference.UnderlyingCapitalisedName #>Option* SetValue(<#= optionTypeReference.UnderlyingValueType.ArgumentName #> value);
+
+    UFUNCTION(BlueprintPure, Category = "<#= optionTypeReference.UnderlyingCapitalisedName #>Option")
+    bool HasValue();
+
+	UFUNCTION(BlueprintPure, Category = "<#= optionTypeReference.UnderlyingCapitalisedName #>Option")
+	<#= optionTypeReference.UnderlyingValueType.UnrealType #> GetValue();
+
+	UFUNCTION(BlueprintCallable, Category = "<#= optionTypeReference.UnderlyingCapitalisedName #>Option")
+	void Clear();
+
+    worker::Option<<#= optionTypeReference.UnderlyingQualifiedName #>> GetUnderlying();
+
+	bool operator==(const worker::Option<<#= optionTypeReference.UnderlyingQualifiedName #>>& OtherUnderlying) const;
+	bool operator!=(const worker::Option<<#= optionTypeReference.UnderlyingQualifiedName #>>& OtherUnderlying) const;	
+
+  private:
+    worker::Option<<#= optionTypeReference.UnderlyingQualifiedName #>> Underlying;
+};

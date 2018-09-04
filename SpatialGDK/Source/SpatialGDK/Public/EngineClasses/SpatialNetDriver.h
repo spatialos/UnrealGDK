@@ -112,7 +112,7 @@ private:
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
 
-	TMap<Worker_EntityId, USpatialActorChannel*> EntityToActorChannel;
+	TMap<int64, USpatialActorChannel*> EntityToActorChannel;
 
 	// Timer manager.
 	FTimerManager* TimerManager;

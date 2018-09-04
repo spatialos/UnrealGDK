@@ -1,0 +1,33 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#
+
+#>
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// ===========
+
+#pragma once
+
+#include "SpatialGDKWorkerTypes.h"
+<#var requiredIncludes = new List<string>();#>
+<# foreach (var unrealComponent in unrealComponents)
+{
+	requiredIncludes.Add(unrealComponent.UnderlyingPackageDetails.Include);
+}
+
+foreach (var distinctInclude in requiredIncludes.Distinct()) { #>
+#include "<#= distinctInclude #>"
+<# } #>
+
+namespace improbable
+{
+namespace unreal
+{
+	<#= DefineComponentsType() #>
+
+} // ::unreal
+} // ::improbable
+

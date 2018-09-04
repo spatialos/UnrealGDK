@@ -1,0 +1,67 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#
+
+#>
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// ===========
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerTypes.h"
+#include "EntityPipelineBlock.h"
+#include "ScopedViewCallbacks.h"
+<# foreach (var unrealComponent in unrealComponents) { #>
+#include "<#= unrealComponent.CapitalisedName #>AddComponentOp.h"
+<# } #>
+#include "EntityPipeline.generated.h"
+
+UCLASS()
+class SPATIALGDK_API UEntityPipeline : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	UEntityPipeline();
+
+	/**
+	* Initialise the UEntityPipeline. Calling Init() more than once results in an error.
+	*/
+	void Init(const TWeakPtr<SpatialOSView>& InView, UCallbackDispatcher* InCallbackDispatcher);
+
+	/**
+	* Deregister all callbacks. Init() may be called again after this method is called.
+	*/
+	void DeregisterAllCallbacks();
+
+	void AddBlock(UEntityPipelineBlock* NewBlock);
+	void ProcessOps(const TWeakPtr<SpatialOSView>& InView, const TWeakPtr<SpatialOSConnection>& InConnection, UWorld* World);
+
+	void OnAddEntity(const worker::AddEntityOp& Op) { FirstBlock->AddEntity(Op); }
+	void OnRemoveEntity(const worker::RemoveEntityOp& Op) { FirstBlock->RemoveEntity(Op); }
+	void OnCriticalSection(const worker::CriticalSectionOp& Op) { if (Op.InCriticalSection) { FirstBlock->EnterCriticalSection(); } else { FirstBlock->LeaveCriticalSection(); } }
+	void OnRemoveComponent(const worker::ComponentId ComponentId, const worker::RemoveComponentOp& Op) { FirstBlock->RemoveComponent(ComponentId, Op); }
+	void OnAuthorityChange(const worker::ComponentId ComponentId, const worker::AuthorityChangeOp& Op) { FirstBlock->ChangeAuthority(ComponentId, Op); }
+
+<# foreach (var unrealComponent in unrealComponents) { #>
+	void Add<#= unrealComponent.CapitalisedName #>ComponentOp(const worker::AddComponentOp<<#= unrealComponent.UnderlyingQualifiedName #>>& Op);
+	void Remove<#= unrealComponent.CapitalisedName #>ComponentOp(const worker::RemoveComponentOp& Op);
+<# } #>
+
+	FORCEINLINE bool IsInitialized() { return bInitialised; }
+
+private:
+	UPROPERTY()
+	UEntityPipelineBlock* FirstBlock;
+	UPROPERTY()
+	UEntityPipelineBlock* LastBlock;
+	UPROPERTY()
+	UCallbackDispatcher* CallbackDispatcher;
+
+	bool bInitialised;
+	improbable::unreal::callbacks::FScopedViewCallbacks Callbacks;
+};

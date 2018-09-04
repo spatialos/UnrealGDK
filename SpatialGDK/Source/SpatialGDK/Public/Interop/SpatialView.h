@@ -33,6 +33,6 @@ private:
 
 	USpatialReceiver* Receiver;
 
-	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
-	TMap<Worker_EntityId, TSharedPtr<UnrealMetadata>> EntityUnrealMetadataMap;
+	TMap<int64, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
+	TMap<int64, TSharedPtr<UnrealMetadata>> EntityUnrealMetadataMap;
 };

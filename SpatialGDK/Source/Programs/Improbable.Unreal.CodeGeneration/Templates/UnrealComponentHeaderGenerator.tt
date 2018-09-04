@@ -1,0 +1,154 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#
+
+#>
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// ===========
+// DO NOT EDIT - this file is automatically regenerated.
+// ===========
+
+#pragma once
+
+#include "SpatialOsComponent.h"
+#include "CoreMinimal.h"
+#include "<#= unrealComponent.CapitalisedName #>ComponentUpdate.h"
+#include "<#= unrealComponent.CapitalisedName #>AddComponentOp.h"
+#include "ComponentId.h"
+#include "SpatialGDKViewTypes.h"
+#include "SpatialGDKWorkerTypes.h"
+#include "<#= unrealComponent.UnderlyingPackageDetails.Include #>"
+
+<#var requiredIncludes = unrealComponent.FieldDetailsList.SelectMany(fieldDetails => { return fieldDetails.TypeReference.RequiredIncludes; })
+														 .Where(include => include != null)
+														 .Distinct();
+foreach (var requiredInclude in requiredIncludes) { #>
+#include <#= requiredInclude #>
+<# } #>
+<# foreach (var commandDetails in unrealComponent.CommandDetailsList) { #>
+#include "<#= commandDetails.CapitalisedName #>CommandResponder.h"
+<# } #>
+
+<# foreach (var eventDetails in unrealComponent.EventDetailsList) { #>
+#include "<#= eventDetails.EventTypeReference.CapitalisedName #>.h"
+<# } #>
+
+#include "<#= unrealComponent.CapitalisedName #>Component.generated.h"
+
+class UCallbackDispatcher;
+class UComponentUpdateOpWrapperBase;
+
+USTRUCT()
+struct F<#= unrealComponent.CapitalisedName #>ComponentSnapshot
+{
+	GENERATED_BODY()
+
+	F<#= unrealComponent.CapitalisedName #>ComponentSnapshot()<#= FillSnapshotInitializerList() #>
+	{
+	}
+
+<# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
+	<#= fieldDetails.TypeReference.SnapshotType + " " + fieldDetails.CapitalisedName #>;
+<# } #>
+};
+
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
+class SPATIALGDK_API U<#= unrealComponent.CapitalisedName #>Component : public USpatialOsComponent
+{
+    GENERATED_BODY()
+
+public:
+    U<#= unrealComponent.CapitalisedName #>Component();
+	virtual ~U<#= unrealComponent.CapitalisedName #>Component() override = default;
+
+    virtual void BeginDestroy() override;
+
+    UFUNCTION(BlueprintPure, Category = "<#= unrealComponent.CapitalisedName #>Component")
+    FComponentId GetComponentId();
+
+    const static worker::ComponentId ComponentId;
+
+    void Init(const TWeakPtr<SpatialOSConnection>& InConnection, const TWeakPtr<SpatialOSView>& InView, worker::EntityId InEntityId, UCallbackDispatcher* InCallbackDispatcher) override;
+
+	void Disable(const worker::EntityId InEntityId, UCallbackDispatcher* CallbackDispatcher);
+
+	void ApplyInitialState(const UAddComponentOpWrapperBase& Op) override;
+
+	DEPRECATED(12.1, "Please use TriggerAutomaticComponentUpdate.")
+	void ReplicateChanges(float DeltaSeconds) override;
+
+	void TriggerAutomaticComponentUpdate(float DeltaSeconds) override;
+
+	UFUNCTION(BlueprintCallable, Category = "<#= unrealComponent.CapitalisedName #>Component")
+	void TriggerManualComponentUpdate();
+
+<# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
+    UPROPERTY(BlueprintAssignable, Category = "<#= unrealComponent.CapitalisedName #>Component")
+    FSpatialComponentUpdated On<#= fieldDetails.CapitalisedName #>Update;
+
+<# } #>
+<# foreach (var eventDetails in unrealComponent.EventDetailsList) { #>
+    UPROPERTY(BlueprintAssignable, Category = "<#= unrealComponent.CapitalisedName #>Component")
+    F<#= eventDetails.EventTypeReference.CapitalisedName #>Delegate On<#= eventDetails.CapitalisedName #>;
+	UFUNCTION(BlueprintCallable, Category = "<#= unrealComponent.CapitalisedName #>Component")
+<# if (eventDetails.NumTypeFields() > 0) { #>
+    void <#= eventDetails.CapitalisedName #>(<#= eventDetails.EventTypeReference.ArgumentName #> Data);
+<# } #>
+<# else { #>
+	void <#= eventDetails.CapitalisedName #>();
+<# } #>
+<# } #>
+
+<# foreach (var commandDetails in unrealComponent.CommandDetailsList) { #>
+    UPROPERTY(BlueprintAssignable, Category = "<#= unrealComponent.CapitalisedName #>Component")
+    <#= commandDetails.UnrealCommandDelegateName #> On<#= commandDetails.UnderlyingCapitalisedName #>CommandRequest;
+<# } #>
+
+	DEPRECATED(12.1, "This function is deprecated, the component updates are now sent automatically. Use MaxUpdatesPerSecond property to control the update frequency, or set it to 0 and use TriggerManualComponentUpdate for more control.")
+    UFUNCTION(BlueprintCallable, Category = "<#= unrealComponent.CapitalisedName #>Component", meta=(DeprecatedFunction, DeprecationMessage="This function is deprecated, the component updates are now sent automatically. Use MaxUpdatesPerSecond property to control the update frequency, or set it to 0 and use TriggerManualComponentUpdate for more control."))
+    void SendComponentUpdate(U<#= unrealComponent.CapitalisedName #>ComponentUpdate* update);
+
+    UPROPERTY(BlueprintAssignable, Category = "<#= unrealComponent.CapitalisedName #>Component")
+    FSpatialComponentUpdated OnComponentUpdate;
+
+<# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
+	DEPRECATED(12.0, "This function is deprecated, access the <#= fieldDetails.CapitalisedName #> property directly.")
+    UFUNCTION(BlueprintPure, Category = "<#= unrealComponent.CapitalisedName #>Component", meta=(DeprecatedFunction, DeprecationMessage="This function is deprecated, access the <#= fieldDetails.CapitalisedName #> property directly."))
+    <#= fieldDetails.TypeReference.UnrealType #> Get<#= fieldDetails.CapitalisedName #>();
+<# } #>
+
+<# foreach (var fieldDetails in unrealComponent.FieldDetailsList) { #>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    <#= fieldDetails.TypeReference.UnrealType #> <#= fieldDetails.CapitalisedName #>;
+<# } #>
+
+private:
+	void GenerateSnapshot();
+
+	UPROPERTY()
+	U<#= unrealComponent.CapitalisedName #>ComponentUpdate* ComponentUpdater;
+
+<# foreach (var eventDetails in unrealComponent.EventDetailsList) { #>
+	UPROPERTY()
+	<#= eventDetails.EventTypeReference.UnrealType #> <#= eventDetails.CapitalisedName #>Wrapper;
+	<# } #>
+
+	F<#= unrealComponent.CapitalisedName #>ComponentSnapshot* Snapshot;
+
+    void OnComponentUpdateDispatcherCallback(UComponentUpdateOpWrapperBase& Op);
+
+	void OnAuthorityChangeDispatcherCallback(const worker::AuthorityChangeOp& Op) override;
+
+	void ReplicateChangesInternal();
+	void SendComponentUpdateInternal(U<#= unrealComponent.CapitalisedName #>ComponentUpdate* update);
+    void ApplyComponentUpdate(const <#= unrealComponent.UnderlyingQualifiedName #>::Update& update);
+	void NotifyUpdate(const <#= unrealComponent.UnderlyingQualifiedName #>::Update& update);
+
+<# foreach (var commandDetails in unrealComponent.CommandDetailsList) { #>
+
+    void On<#= commandDetails.UnderlyingCapitalisedName #>CommandRequestDispatcherCallback(
+        const worker::CommandRequestOp<<#= unrealComponent.UnderlyingQualifiedName #>::Commands::<#= commandDetails.UnderlyingCapitalisedName #>>& op);
+
+<# } #>
+};
