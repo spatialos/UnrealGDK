@@ -169,6 +169,50 @@ bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const 
 	return true;
 }
 
+
+void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessTravel /*= false*/)
+{
+	// Intentionally does not call Super::NotifyActorDestroyed, but most of the functionality is copied here 
+	// The native UNetDriver would normally store destruction info here for "StartupActors" - replicated actors
+	// placed in the level, but we handle this flow differently in the GDK
+
+	checkf(!IsSeamlessTravel, TEXT("Seamless travel is not currently supported in the SpatialOS GDK"));
+
+	// Remove the actor from the property tracker map
+	RepChangedPropertyTrackerMap.Remove(ThisActor);
+
+	const bool bIsServer = ServerConnection == nullptr;
+
+	if (bIsServer)
+	{
+		for (int32 i = ClientConnections.Num() - 1; i >= 0; i--)
+		{
+			UNetConnection* Connection = ClientConnections[i];
+			if (ThisActor->bNetTemporary)
+			{
+				Connection->SentTemporaries.Remove(ThisActor);
+			}
+
+			UActorChannel* Channel = Connection->ActorChannels.FindRef(ThisActor);
+			if (Channel)
+			{
+				check(Channel->OpenedLocally);
+				Channel->bClearRecentActorRefs = false;
+				Channel->Close();
+			}
+
+			// Remove it from any dormancy lists
+			Connection->DormantReplicatorMap.Remove(ThisActor);
+		}
+	}
+
+	// Remove this actor from the network object list
+	GetNetworkObjectList().Remove(ThisActor);
+
+	// Remove from renamed list if destroyed
+	RenamedStartupActors.Remove(ThisActor->GetFName());
+}
+
 //SpatialGDK: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.
 #if WITH_SERVER_CODE
 
