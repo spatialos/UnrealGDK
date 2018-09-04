@@ -321,7 +321,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 {
 	AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId);
 
-	UE_LOG(LogTemp, Log, TEXT("CAPIPipelineBlock: Remove Actor: %s %lld"), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId);
+	UE_LOG(LogTemp, Log, TEXT("Remove Actor: %s %lld"), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
 	if (!Actor || Actor->IsPendingKill())
@@ -457,6 +457,10 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case UNREAL_METADATA_COMPONENT_ID:
 		UE_LOG(LogTemp, Verbose, TEXT("Skipping because this is hand-written Spatial component"));
+		return;
+	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
+		NetDriver->GlobalStateManager->ApplyUpdate(Op.update);
+		NetDriver->GlobalStateManager->LinkExistingSingletonActors();
 		return;
 	}
 

@@ -5,6 +5,7 @@
 #include "SpatialNetConnection.h"
 #include "SpatialConstants.h"
 #include "SpatialNetDriver.h"
+#include "SpatialConnection.h"
 #include "TimerManager.h"
 
 #include "Utils/SchemaUtils.h"
@@ -36,7 +37,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(FString URLString, const c
 	Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
 	Schema_AddBool(ResponseObject, 1, true);
 
-	Worker_Connection_SendCommandResponse(NetDriver->Connection, RequestId, &CommandResponse);
+	NetDriver->Connection->SendCommandResponse(RequestId, &CommandResponse);
 }
 
 void USpatialPlayerSpawner::SendPlayerSpawnRequest()
@@ -50,7 +51,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	Schema_AddString(RequestObject, 1, DummyURL.ToString(true));
 
 	Worker_CommandParameters CommandParams = {};
-	Worker_Connection_SendCommandRequest(NetDriver->Connection, SpatialConstants::SPAWNER_ENTITY_ID, &CommandRequest, 1, nullptr, &CommandParams);
+	NetDriver->Connection->SendCommandRequest(SpatialConstants::SPAWNER_ENTITY_ID, &CommandRequest, 1, nullptr, &CommandParams);
 
 	++NumberOfAttempts;
 }

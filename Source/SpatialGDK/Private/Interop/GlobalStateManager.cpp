@@ -7,6 +7,7 @@
 #include "SpatialActorChannel.h"
 #include "SpatialConstants.h"
 #include "SpatialNetConnection.h"
+#include "SpatialConnection.h"
 #include "SpatialPackageMapClient.h"
 
 #include "Utils/EntityRegistry.h"
@@ -29,7 +30,17 @@ void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
 
 void UGlobalStateManager::ApplyUpdate(const Worker_ComponentUpdate& Update)
 {
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
+	if(Schema_GetObjectCount(ComponentObject, 1) == 1)
+	{
+		SingletonNameToEntityId = Schema_GetStringToEntityMap(ComponentObject, 1);
+	}
+
+	if(Schema_GetObjectCount(ComponentObject, 2) == 1)
+	{
+		StablyNamedPathToEntityId = Schema_GetStringToEntityMap(ComponentObject, 2);
+	}
 }
 
 void UGlobalStateManager::LinkExistingSingletonActors()
@@ -121,7 +132,7 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 
 	Schema_AddStringToEntityMap(UpdateObject, 1, SingletonNameToEntityId);
 
-	Worker_Connection_SendComponentUpdate(NetDriver->Connection, SpatialConstants::GLOBAL_STATE_MANAGER, &Update);
+	NetDriver->Connection->SendComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER, &Update);
 }
 
 void UGlobalStateManager::GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel)

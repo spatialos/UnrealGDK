@@ -6,7 +6,8 @@
 #include "CoreOnline.h"
 #include "Engine.h"
 #include "IpNetDriver.h"
-#include "SpatialGDKWorkerConfigurationData.h"
+
+#include "ConnectionConfig.h"
 #include "SpatialOutputDevice.h"
 
 #include <improbable/c_worker.h>
@@ -17,6 +18,7 @@ class USpatialActorChannel;
 class USpatialNetConnection;
 class USpatialPackageMapClient;
 
+class USpatialConnection;
 class USpatialView;
 class USpatialSender;
 class USpatialReceiver;
@@ -82,7 +84,8 @@ public:
 	void AddActorChannel(const Worker_EntityId& EntityId, USpatialActorChannel* Channel);
 	USpatialActorChannel* GetActorChannelByEntityId(const Worker_EntityId& EntityId) const;
 
-	Worker_Connection* Connection;
+	UPROPERTY()
+	USpatialConnection* Connection;
 
 	UPROPERTY()
 	USpatialView* View;
@@ -102,7 +105,7 @@ public:
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
 private:
-	FSpatialGDKWorkerConfigurationData WorkerConfig;
+	ReceptionistConfig WorkerConfig;
 
 	//TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
@@ -120,7 +123,7 @@ private:
 	void Connect();
 
 	UFUNCTION()
-	void OnSpatialOSConnected();
+	void OnConnected();
 
 	UFUNCTION()
 	void OnSpatialOSConnectFailed(const FString& Reason);
