@@ -1876,10 +1876,26 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 			UActorComponent* TargetObject = ActorChannel->Actor->FindComponentByClass<%s>();)""",
 			*GetFullCPPName(Class));
 	}
-	else
+	else if (Class->IsChildOf(AActor::StaticClass()))
 	{
 		SourceWriter.Printf(R"""(
 			AActor* TargetObject = ActorChannel->Actor;)""");
+	}
+	else
+	{
+		SourceWriter.Printf(R"""(
+			UObject* TargetObject = nullptr;
+			TArray<UObject*> DefaultSubobjects;
+			ActorChannel->Actor->GetDefaultSubobjects(DefaultSubobjects);
+			for (auto Subobject : DefaultSubobjects)
+			{
+				if (Subobject->GetClass() == GetBoundClass())
+				{
+					TargetObject = Subobject;
+					break;
+				}
+			}
+			check(TargetObject);)""");
 	}
 
 	SourceWriter.Printf(R"""(
