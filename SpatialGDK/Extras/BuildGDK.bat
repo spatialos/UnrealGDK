@@ -40,11 +40,11 @@ call :MarkStartOfBlock "Setup variables"
     set /p PINNED_CORE_SDK_VERSION=<core-sdk.version
     set /p PINNED_CODE_GENERATOR_VERSION=<code-generator.version
 
-    set BUILD_DIR=%~dp0build
+    set BUILD_DIR=%~dp0\..\Build\build
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
-    set PACKAGE_TARGET_DIR=%~dp0packages
-    set WORKER_SDK_DIR=%~dp0Source\SpatialGDK\Public\WorkerSdk
-    set BINARIES_DIR=%~dp0Binaries\ThirdParty\Improbable
+    set PACKAGE_TARGET_DIR=%~dp0\..\Build\packages
+    set WORKER_SDK_DIR=%~dp0\..\Source\SpatialGDK\Public\WorkerSdk
+    set BINARIES_DIR=%~dp0\..\Binaries\ThirdParty\Improbable
 call :MarkEndOfBlock "Setup variables"
 
 call :MarkStartOfBlock "Clean folders"
@@ -81,21 +81,15 @@ call :MarkStartOfBlock "Unpack dependencies"
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip\" -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-linux.zip\"      -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"        -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                   -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force; "^
-                        "Expand-Archive -Path \"%BUILD_DIR%\code_generation\Improbable.CodeGeneration.zip\"    -DestinationPath \"%PACKAGE_TARGET_DIR%\Improbable.CodeGeneration\" -Force; "^
-                        "Expand-Archive -Path \"%~dp0Source\Programs\Improbable.Unreal.CodeGeneration.Test\NUnit\NUnit.zip\" -DestinationPath \"%PACKAGE_TARGET_DIR%\" -Force"
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                   -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force; "
 
     rem Include the WorkerSDK header files.
     xcopy /s /i /q "%CORE_SDK_DIR%\cpp-src\include" "%WORKER_SDK_DIR%"
     xcopy /s /i /q "%BINARIES_DIR%\Win64\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"
 
-call :MarkStartOfBlock "Build CodeGeneration"
-    %MSBUILD_EXE% /nologo /verbosity:minimal Source\Programs\Improbable.Unreal.CodeGeneration\UnrealCodeGeneration.sln /property:Configuration=Release
-call :MarkEndOfBlock "Build CodeGeneration"
-
 call :MarkStartOfBlock "Build C# utilities"
-    %MSBUILD_EXE% /nologo /verbosity:minimal Source\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
+    %MSBUILD_EXE% /nologo /verbosity:minimal ..\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
 call :MarkEndOfBlock "Build C# utilities"
 
 call :MarkEndOfBlock "%~0"
