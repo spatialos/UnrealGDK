@@ -2,6 +2,7 @@
 
 #include "SpatialNetDriver.h"
 
+#include "SpatialConnection.h"
 #include "SpatialView.h"
 #include "SpatialSender.h"
 #include "SpatialReceiver.h"
@@ -45,10 +46,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	//SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(SpatialOSInstance, TEXT("Unreal"));
 
-	// Set up the worker config.
-	// todo-giray: Give this the correct value
-	WorkerConfig.Networking.UseExternalIp = false;
-	WorkerConfig.SpatialGDKApplication.WorkerPlatform = bInitAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
+	WorkerConfig.WorkerType = bInitAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
+	WorkerConfig.WorkerId = WorkerConfig.WorkerType + FGuid::NewGuid().ToString();
 
 	// We do this here straight away to trigger LoadMap.
 	if (bInitAsClient)
@@ -114,35 +113,13 @@ void USpatialNetDriver::Connect()
 		return;
 	}
 
-	Worker_ConnectionParameters Params = Worker_DefaultConnectionParameters();
-	Params.worker_type = TCHAR_TO_UTF8(*WorkerConfig.SpatialGDKApplication.WorkerPlatform);
-	Params.network.tcp.multiplex_level = 4;
+	Connection = NewObject<USpatialConnection>();
+	Connection->OnConnected.BindUFunction(this, FName("OnConnected"));
 
-	Worker_ComponentVtable DefaultVtable = {};
-	Params.default_component_vtable = &DefaultVtable;
-
-	std::string Hostname = "127.0.0.1";
-	std::uint16_t Port = 7777;
-	std::string WorkerId = std::string(TCHAR_TO_UTF8(*WorkerConfig.SpatialGDKApplication.WorkerPlatform)) + std::string(TCHAR_TO_UTF8(*FGuid::NewGuid().ToString()));
-
-	// Start connecting
-	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(Hostname.c_str(), Port, WorkerId.c_str(), &Params);
-
-	// Wait for connection
-	Connection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
-	Worker_ConnectionFuture_Destroy(ConnectionFuture);
-
-	if (Worker_Connection_IsConnected(Connection))
-	{
-		OnSpatialOSConnected();
-	}
-	else
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to connect to SpatialOS"));
-	}
+	Connection->Connect(WorkerConfig);
 }
 
-void USpatialNetDriver::OnSpatialOSConnected()
+void USpatialNetDriver::OnConnected()
 {
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS."));
 
@@ -775,9 +752,9 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	// Not calling Super:: on purpose.
 	UNetDriver::TickDispatch(DeltaTime);
 
-	if (Connection != nullptr && Worker_Connection_IsConnected(Connection))
+	if (Connection != nullptr && Connection->IsConnected())
 	{
-		Worker_OpList* OpList = Worker_Connection_GetOpList(Connection, 0);
+		Worker_OpList* OpList = Connection->GetOpList(0);
 
 		View->ProcessOps(OpList);
 
@@ -794,7 +771,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame* Stack,
 	UObject* SubObject)
 {
-	if(!Worker_Connection_IsConnected(Connection))
+	if(!Connection->IsConnected())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
 		return;

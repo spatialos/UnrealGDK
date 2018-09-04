@@ -4,6 +4,7 @@
 #include "SpatialActorChannel.h"
 #include "SpatialPackageMapClient.h"
 #include "SpatialNetDriver.h"
+#include "SpatialConnection.h"
 #include "SpatialReceiver.h"
 #include "SpatialNetBitWriter.h"
 #include "SpatialConstants.h"
@@ -151,7 +152,7 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 	}
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
-	Worker_RequestId CreateEntityRequestId = Worker_Connection_SendCreateEntityRequest(Connection, ComponentDatas.Num(), ComponentDatas.GetData(), &EntityId, nullptr);
+	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(ComponentDatas.Num(), ComponentDatas.GetData(), &EntityId, nullptr);
 	PendingActorRequests.Add(CreateEntityRequestId, Channel);
 
 	return CreateEntityRequestId;
@@ -183,14 +184,14 @@ void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel*
 
 	for(Worker_ComponentUpdate& Update : ComponentUpdates)
 	{
-		Worker_Connection_SendComponentUpdate(Connection, EntityId, &Update);
+		Connection->SendComponentUpdate(EntityId, &Update);
 	}
 }
 
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
 {
 	Worker_ComponentUpdate Update = Position::CreatePositionUpdate(Coordinates::FromFVector(Location));
-	Worker_Connection_SendComponentUpdate(Connection, EntityId, &Update);
+	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
 void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters)
@@ -219,7 +220,7 @@ void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* P
 		{
 			check(EntityId > 0);
 			Worker_CommandParameters CommandParams = {};
-			Worker_Connection_SendCommandRequest(Connection, EntityId, &CommandRequest, RPCInfo->Index + 1, nullptr, &CommandParams);
+			Connection->SendCommandRequest(EntityId, &CommandRequest, RPCInfo->Index + 1, nullptr, &CommandParams);
 		}
 		break;
 	}
@@ -230,7 +231,7 @@ void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* P
 		if (!UnresolvedObject)
 		{
 			check(EntityId > 0);
-			Worker_Connection_SendComponentUpdate(Connection, EntityId, &ComponentUpdate);
+			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 		}
 		break;
 	}
@@ -270,7 +271,7 @@ void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* P
 void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
 {
 	UE_LOG(LogTemp, Log, TEXT("Sending reserve entity Id request for %s"), *Channel->Actor->GetName());
-	Worker_RequestId RequestId = Worker_Connection_SendReserveEntityIdRequest(Connection, nullptr);
+	Worker_RequestId RequestId = Connection->SendReserveEntityIdRequest(nullptr);
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
@@ -286,7 +287,7 @@ void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, cons
 
 void USpatialSender::SendDeleteEntityRequest(Worker_EntityId EntityId)
 {
-	Worker_Connection_SendDeleteEntityRequest(Connection, EntityId, nullptr);
+	Connection->SendDeleteEntityRequest(EntityId, nullptr);
 }
 
 void USpatialSender::ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle)
@@ -449,7 +450,7 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 
 void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response)
 {
-	Worker_Connection_SendCommandResponse(Connection, request_id, &Response);
+	Connection->SendCommandResponse(request_id, &Response);
 }
 
 void USpatialSender::ResolveOutgoingOperations(UObject* Object)
