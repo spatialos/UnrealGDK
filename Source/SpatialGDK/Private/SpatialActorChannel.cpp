@@ -174,13 +174,13 @@ TArray<uint16> USpatialActorChannel::SkipOverChangelistArrays(FObjectReplicator&
 	return InitialRepChanged;
 }
 
-FPropertyChangeState USpatialActorChannel::CreateSubobjectChangeState(UActorComponent* Component)
+FPropertyChangeState USpatialActorChannel::CreateSubobjectChangeState(UObject* Subobject)
 {
-	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Component)).Get();
+	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Subobject)).Get();
 
 	TArray<uint16> InitialRepChanged = SkipOverChangelistArrays(Replicator);
 
-	return GetChangeStateSubobject(Component, &Replicator, InitialRepChanged, TArray<uint16>());
+	return GetChangeStateSubobject(Subobject, &Replicator, InitialRepChanged, TArray<uint16>());
 }
 
 bool USpatialActorChannel::ReplicateActor()
@@ -380,6 +380,8 @@ bool USpatialActorChannel::ReplicateActor()
 	}
 	else
 	{
+		FOutBunch DummyOutBunch;
+
 		for (UActorComponent* ActorComp : Actor->GetReplicatedComponents())
 		{
 			if (ActorComp && ActorComp->GetIsReplicated()) // Only replicated subobjects with type bindings
@@ -387,6 +389,7 @@ bool USpatialActorChannel::ReplicateActor()
 				if(Interop->GetTypeBindingByClass(ActorComp->GetClass()))
 				{
 					bWroteSomethingImportant |= ReplicateSubobject(ActorComp, RepFlags);
+					bWroteSomethingImportant |= ActorComp->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 				}
 			}
 		}
@@ -421,6 +424,12 @@ bool USpatialActorChannel::ReplicateActor()
 
 bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, const FReplicationFlags &RepFlags)
 {
+	USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
+	check(Interop);
+	if (Interop->GetTypeBindingByClass(Obj->GetClass()) == nullptr)
+	{
+		return false;
+	}
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Obj)).Get();
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
@@ -454,6 +463,12 @@ bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, const FReplicationFl
 	Replicator.RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
 
 	return RepChanged.Num() > 0;
+}
+
+bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, FOutBunch &Bunch, const FReplicationFlags &RepFlags)
+{
+	// Intentionally don't call Super::ReplicateSubobject
+	return ReplicateSubobject(Obj, RepFlags);
 }
 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
@@ -596,6 +611,15 @@ void USpatialActorChannel::RegisterEntityId(const FEntityId& ActorEntityId)
 		});
 
 		PackageMap->ResolveEntityActor(Actor, ActorEntityId, SubobjectNameToOffset);
+		UE_LOG(LogTemp, Log, TEXT("MCS: Full name stable for networking: %s"), *Actor->GetName());
+	}
+	else if (Actor->IsNameStableForNetworking())
+	{
+		UE_LOG(LogTemp, Log, TEXT("MCS: Name stable for networking: %s"), *Actor->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("MCS: Name NOT stable for networking: %s"), *Actor->GetName());
 	}
 }
 

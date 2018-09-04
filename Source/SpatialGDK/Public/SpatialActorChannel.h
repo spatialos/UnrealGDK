@@ -96,7 +96,8 @@ public:
 	void SendReserveEntityIdRequest();
 	void RegisterEntityId(const FEntityId& ActorEntityId);
 	bool ReplicateSubobject(UObject *Obj, const FReplicationFlags &RepFlags);
-	FPropertyChangeState CreateSubobjectChangeState(UActorComponent* Component);
+	virtual bool ReplicateSubobject(UObject *Obj, FOutBunch &Bunch, const FReplicationFlags &RepFlags) override;
+	FPropertyChangeState CreateSubobjectChangeState(UObject* Subobject);
 	TArray<uint16> SkipOverChangelistArrays(FObjectReplicator& Replicator);
 
 	// Called by SpatialInterop when receiving an update.

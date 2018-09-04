@@ -1296,11 +1296,11 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 
 	SourceWriter.Print(TEXT("// Setup initial data."));
 
-	GenerateBody_SpatialComponents(SourceWriter, Class, SpatialComponents);
+	GenerateBody_SpatialComponents(SourceWriter, Class, nullptr, SpatialComponents);
 
 	for (UClass* ComponentClass : Components)
 	{
-		GenerateBody_SpatialComponents(SourceWriter, ComponentClass, SpatialComponents);
+		GenerateBody_SpatialComponents(SourceWriter, ComponentClass, Class, SpatialComponents);
 	}
 
 	// Create Entity.
@@ -1378,7 +1378,7 @@ void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class
 	SourceWriter.End();
 }
 
-void GenerateBody_SpatialComponents(FCodeWriter& SourceWriter, UClass* Class, TArray<FString>& SpatialComponents)
+void GenerateBody_SpatialComponents(FCodeWriter& SourceWriter, UClass* Class, UClass* OwnerClass, TArray<FString>& SpatialComponents)
 {
 	SourceWriter.PrintNewLine();
 	FString ClassName = Class->GetName();
@@ -1406,18 +1406,29 @@ void GenerateBody_SpatialComponents(FCodeWriter& SourceWriter, UClass* Class, TA
 
 	SourceWriter.PrintNewLine();
 
-	if (Class->IsChildOf(UActorComponent::StaticClass()))
+	if (OwnerClass == nullptr)
 	{
-		SourceWriter.Printf("FPropertyChangeState %sChangeState = Channel->CreateSubobjectChangeState(Channel->Actor->FindComponentByClass<%s>());", *ClassName, *GetFullCPPName(Class));
-		SourceWriter.Printf("USpatialTypeBinding_%s* %sTypeBinding = Cast<USpatialTypeBinding_%s>(Interop->GetTypeBindingByClass(%s::StaticClass()));",
-			*ClassName, *ClassName, *ClassName, *GetFullCPPName(Class));
-		SourceWriter.Printf("%sTypeBinding->BuildSpatialComponentUpdate(%sChangeState, Channel, %s);", *ClassName, *ClassName, *FString::Join(BuildUpdateArgs, TEXT(", ")));
+		// Updating the base class
+		SourceWriter.Printf("BuildSpatialComponentUpdate(InitialChanges, Channel, %s);", *FString::Join(BuildUpdateArgs, TEXT(", ")));
 	}
 	else
 	{
-		SourceWriter.Printf("BuildSpatialComponentUpdate(InitialChanges, Channel, %s);", *FString::Join(BuildUpdateArgs, TEXT(", ")));
-	}
+		// Updating a subobject
+		TArray<UObject*> DefaultSubobjects;
+		OwnerClass->GetDefaultObjectSubobjects(DefaultSubobjects);
 
+		for (auto Subobject : DefaultSubobjects)
+		{
+			if (Subobject->GetClass() == Class)
+			{
+				SourceWriter.Printf("FPropertyChangeState %sChangeState = Channel->CreateSubobjectChangeState(Channel->Actor->GetDefaultSubobjectByName(\"%s\"));", *ClassName, *Subobject->GetFName().ToString());
+				SourceWriter.Printf("USpatialTypeBinding_%s* %sTypeBinding = Cast<USpatialTypeBinding_%s>(Interop->GetTypeBindingByClass(%s::StaticClass()));",
+					*ClassName, *ClassName, *ClassName, *GetFullCPPName(Class));
+				SourceWriter.Printf("%sTypeBinding->BuildSpatialComponentUpdate(%sChangeState, Channel, %s);", *ClassName, *ClassName, *FString::Join(BuildUpdateArgs, TEXT(", ")));
+				break;
+			}
+		}
+	}
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{

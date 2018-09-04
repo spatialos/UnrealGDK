@@ -372,12 +372,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	for (int CmdIndex = 0; CmdIndex < RepLayout.Cmds.Num(); ++CmdIndex)
 	{
 		FRepLayoutCmd& Cmd = RepLayout.Cmds[CmdIndex];
-		FRepParentCmd& Parent = RepLayout.Parents[Cmd.ParentIndex];
 
 		if (Cmd.Type == REPCMD_Return || Cmd.Property == nullptr)
 		{
 			continue;
 		}
+
+		FRepParentCmd& Parent = RepLayout.Parents[Cmd.ParentIndex];
 
 		// In a FRepLayout, all the root level replicated properties in a class are stored in the Parents array.
 		// The Cmds array is an expanded version of the Parents array. This usually maps 1:1 with the Parents array (as most properties
@@ -597,6 +598,17 @@ TArray<UClass*> GetAllSupportedComponents(UClass* Class)
 
 					AddComponentClassToSet(Node->ComponentTemplate->GetClass(), ComponentClasses, Class);
 				}
+			}
+		}
+
+		// Iterate over all subobjects and add any non ActorComponents
+		TArray<UObject*> DefaultSubobjects;
+		ContainerCDO->GetDefaultSubobjects(DefaultSubobjects);
+		for (auto Subobject : DefaultSubobjects)
+		{
+			if (Cast<UActorComponent>(Subobject) == nullptr)
+			{
+				AddComponentClassToSet(Subobject->GetClass(), ComponentClasses, Class);
 			}
 		}
 	}
