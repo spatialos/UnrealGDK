@@ -3,6 +3,7 @@
 #include "SpatialTypeBinding.h"
 #include "SpatialPackageMapClient.h"
 #include "SpatialInterop.h"
+#include "SpatialNetDriver.h"
 
 void USpatialTypeBinding::Init(USpatialInterop* InInterop, USpatialPackageMapClient* InPackageMap)
 {
