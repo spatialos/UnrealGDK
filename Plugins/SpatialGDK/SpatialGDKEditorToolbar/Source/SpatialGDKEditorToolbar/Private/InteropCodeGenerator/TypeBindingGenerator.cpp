@@ -1416,18 +1416,15 @@ void GenerateBody_SpatialComponents(FCodeWriter& SourceWriter, UClass* Class, UC
 		// Updating a subobject
 		TArray<UObject*> DefaultSubobjects;
 		OwnerClass->GetDefaultObjectSubobjects(DefaultSubobjects);
-
-		for (auto Subobject : DefaultSubobjects)
+		UObject** Subobject = DefaultSubobjects.FindByPredicate([Class](const UObject* Obj)
 		{
-			if (Subobject->GetClass() == Class)
-			{
-				SourceWriter.Printf("FPropertyChangeState %sChangeState = Channel->CreateSubobjectChangeState(Channel->Actor->GetDefaultSubobjectByName(\"%s\"));", *ClassName, *Subobject->GetFName().ToString());
-				SourceWriter.Printf("USpatialTypeBinding_%s* %sTypeBinding = Cast<USpatialTypeBinding_%s>(Interop->GetTypeBindingByClass(%s::StaticClass()));",
-					*ClassName, *ClassName, *ClassName, *GetFullCPPName(Class));
-				SourceWriter.Printf("%sTypeBinding->BuildSpatialComponentUpdate(%sChangeState, Channel, %s);", *ClassName, *ClassName, *FString::Join(BuildUpdateArgs, TEXT(", ")));
-				break;
-			}
-		}
+			return (Obj->GetClass() == Class);
+		});
+		check(Subobject);
+		SourceWriter.Printf("FPropertyChangeState %sChangeState = Channel->CreateSubobjectChangeState(Channel->Actor->GetDefaultSubobjectByName(\"%s\"));", *ClassName, *(*Subobject)->GetFName().ToString());
+		SourceWriter.Printf("USpatialTypeBinding_%s* %sTypeBinding = Cast<USpatialTypeBinding_%s>(Interop->GetTypeBindingByClass(%s::StaticClass()));",
+			*ClassName, *ClassName, *ClassName, *GetFullCPPName(Class));
+		SourceWriter.Printf("%sTypeBinding->BuildSpatialComponentUpdate(%sChangeState, Channel, %s);", *ClassName, *ClassName, *FString::Join(BuildUpdateArgs, TEXT(", ")));
 	}
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
@@ -1884,17 +1881,14 @@ void GenerateFunction_ReceiveUpdate_RepData(FCodeWriter& SourceWriter, UClass* C
 	else
 	{
 		SourceWriter.Printf(R"""(
-			UObject* TargetObject = nullptr;
 			TArray<UObject*> DefaultSubobjects;
 			ActorChannel->Actor->GetDefaultSubobjects(DefaultSubobjects);
-			for (auto Subobject : DefaultSubobjects)
+			UObject** Subobject = DefaultSubobjects.FindByPredicate([this](const UObject* Obj)
 			{
-				if (Subobject->GetClass() == GetBoundClass())
-				{
-					TargetObject = Subobject;
-					break;
-				}
-			}
+				return (Obj->GetClass() == GetBoundClass());
+			});
+			check(Subobject);
+			UObject* TargetObject = *Subobject;
 			check(TargetObject);)""");
 	}
 
